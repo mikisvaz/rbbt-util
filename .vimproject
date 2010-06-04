@@ -1,0 +1,11 @@
+ruby=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf" {
+ bin=bin {
+ }
+ lib=lib {
+ }
+ test=test {
+  test_helper.rb
+ }
+ data=data{
+ }
+}
