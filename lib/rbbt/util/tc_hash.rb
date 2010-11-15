@@ -45,7 +45,7 @@ class TCHash < TokyoCabinet::HDB
   alias original_keys keys
   def keys
     list = self.original_keys
-    FIELD_INFO_ENTRIES.values do |field| list.delete field  end
+    FIELD_INFO_ENTRIES.values.each do |field| list.delete field end
     list
   end
 
@@ -58,9 +58,16 @@ class TCHash < TokyoCabinet::HDB
 
   alias original_each each
   def each
-    self.original_each {|k, v| yield(k, Serializer.load(v)) unless FIELD_INFO_ENTRIES.values.include? k }
+    self.original_each{|k, v| 
+      yield(k, Serializer.load(v)) unless FIELD_INFO_ENTRIES.values.include? k 
+    }
   end
 
+  def collect
+    res = []
+    self.each{|k, v| res << [k,v]}
+    res
+  end
 
   alias original_open open
   def open(write = false)

@@ -1,5 +1,5 @@
 require 'fileutils'
-require 'rbbt'
+require 'rbbt/util/base'
 require 'rbbt/util/misc'
 
 # Provides caching functionality for files downloaded from the internet

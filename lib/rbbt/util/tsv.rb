@@ -1,4 +1,6 @@
-require 'tc_hash'
+require 'rbbt/util/misc'
+require 'rbbt/util/open'
+require 'rbbt/util/tc_hash'
 require 'digest'
 require 'fileutils'
 
@@ -45,31 +47,17 @@ class TSV
   #{{{ Parsing
   
   def self.parse_fields(io, delimiter = "\t")
-    sep_reg = Regexp === delimiter ? delimiter : Regexp.quote(delimiter)
-    fields = io.split(/#{sep_reg}/, -1)
+    return [] if io.nil?
+    fields = io.split(delimiter, -1)
     fields
   end
 
-  def self.field_pos(fields, field)
-    case
-    when Integer === field
-      field
-    else
-      raise FieldNotFoundError, "TSV has no field information" if fields.nil?
-      fields.each_with_index{|f,i| return i if f =~ /#{Regexp.quote(field)}/i}
-      raise FieldNotFoundError, "Field #{ field } was not found"
-    end
-  end
-
-  def self.zip_fields(list)
+  def self.zip_fields(list, fields = nil)
     return [] if list.nil? || list.empty?
-    list[0].zip(*list[1..-1])
-  end
-
-  def self.each_line(file, &block)
-    while !file.eof
-      yield file.gets.chomp
-    end
+    fields ||= list.fields if list.respond_to? :fields
+    zipped = list[0].zip(*list[1..-1])
+    zipped = zipped.collect{|v| NamedArray.name(v, fields)} if fields 
+    zipped 
   end
 
   def self.parse(file, options = {})
@@ -83,7 +71,9 @@ class TSV
       :fix              => nil,
       :exclude          => nil,
       :select           => nil,
+      :grep             => nil,
       :single           => false,
+      :unique           => false,
       :flatten          => false,
       :keep_empty       => false,
       :case_insensitive => false,
@@ -101,7 +91,9 @@ class TSV
     first_line    = true
     id_pos        = nil
     extra_pos     = nil
-    Open.read(file){|line|
+
+    while line = file.gets
+      line.chomp!
 
       if first_line
         first_line = false
@@ -112,21 +104,19 @@ class TSV
           header_fields[0] = header_fields[0][(0 + options[:header_hash].length)..-1] # Remove initial hash character
         end
 
-        id_pos = field_pos(header_fields, options[:native])
+        id_pos = Misc.field_position(header_fields, options[:native])
 
         if options[:extra].nil?
           parts = parse_fields(line, options[:sep])
           extra_pos = (0..(parts.length - 1 )).to_a
           extra_pos.delete(id_pos) 
         else
-          extra_pos = options[:extra].collect{|pos| field_pos(header_fields, pos) }
+          extra_pos = options[:extra].collect{|pos| Misc.field_position(header_fields, pos) }
         end
 
         next if header_line
       end
 
-      # Get header file if present
-      
       # Select and fix lines
       next if ! options[:exclude].nil? &&   options[:exclude].call(line)
       next if ! options[:select].nil?  && ! options[:select].call(line)
@@ -139,7 +129,7 @@ class TSV
 
       # Get id field
       next if parts[id_pos].nil? || parts[id_pos].empty?
-      ids    = parse_fields(parts[id_pos], options[:sep2])
+      ids = parse_fields(parts[id_pos], options[:sep2])
       ids.collect!{|id| id.downcase } if options[:case_insensitive]
 
       # Get extra fields
@@ -152,7 +142,9 @@ class TSV
 
       case
       when options[:single]
-        data[main_entry] ||= extra.first
+        data[main_entry] ||= extra.flatten.first
+      when options[:unique]
+        data[main_entry] = extra.collect{|value| parse_fields(value, options[:sep2]).first}
       when options[:flatten] && ! options[:single]
         data[main_entry] ||= []
         values = extra.collect{|value| parse_fields(value, options[:sep2])}.flatten.compact
@@ -163,7 +155,7 @@ class TSV
           entry = data[$1]
         end
         extra.each_with_index do |value, i|
-          next if (value.nil? || value.empty?) && ! options[:keep_empty]
+          next if ((value.nil? || value.empty?) and ! options[:keep_empty])
           fields = parse_fields(value, options[:sep2])
           fields = [""] if fields.empty?
           entry[i] ||= []
@@ -171,7 +163,7 @@ class TSV
         end
         data[main_entry] = entry
       end
-    }
+    end
 
     # Save header information
     key_field = nil
@@ -197,7 +189,7 @@ class TSV
       return self
     when String === file && File.exists?(file)
       @filename = File.expand_path file
-      file = File.open(file)
+      file = Open.open(file, :grep => options[:grep] )
     when File === file
       @filename = File.expand_path file.path
     when String === file
@@ -226,19 +218,50 @@ class TSV
       @data, @key_field, @fields = TSV.parse(file, options)
     end
 
+    file.close
     @case_insensitive = options[:case_insensitive] == true
   end
 
-  def follow(value)
-    if String === value && value =~ /__Ref:(.*)/
-      return @data[$1]
-    else
-      return value
+
+  #{{{ Accesor Methods
+
+  def keys
+    @data.keys
+  end
+
+  def values
+    @data.values
+  end
+
+  def size
+    @data.size
+  end
+
+  # Write
+
+  def []=(key, value)
+    key = key.downcase if @case_insensitive
+    @data[key] = value
+  end
+
+
+  def merge!(new_data)
+    new_data.each do |key, value|
+      self[key] = value
     end
   end
 
-  def [](key)
+  # Read
 
+  def follow(value)
+    if String === value && value =~ /__Ref:(.*)/
+      return self[$1]
+    else
+      value = NamedArray.name value, fields if Array === value and fields 
+      value
+    end
+  end
+  def [](key)
     if Array === key
       return @data[key] if @data[key] != nil
       key.each{|k| v = self[k]; return v unless v.nil?}
@@ -247,19 +270,6 @@ class TSV
 
     key = key.downcase if @case_insensitive
     follow @data[key]
-  end
-
-  def []=(key, value)
-    key = key.downcase if @case_insensitive
-    @data[key] = value
-  end
-
-  def keys
-    @data.keys
-  end
-
-  def values
-    @data.values
   end
 
   def values_at(*keys)
@@ -274,22 +284,29 @@ class TSV
     end
   end
 
-  def merge!(new_data)
-    new_data.each do |key, value|
-      self[key] = value
+  def collect
+    if block_given?
+      @data.collect do |key, value|
+        value = follow(value)
+        key, values = yield key, value
+      end
+    else
+      @data.collect do |key, value|
+        [key, follow(value)]
+      end
     end
   end
 
-  def sort_by(&block)
-    @data.sort_by &block
-  end
-
   def sort(&block)
-    @data.sort &block
+    collect.sort(&block).collect{|p|
+      key, value = p
+      value = NamedArray.name value, fields if fields
+      [key, value]
+    }
   end
 
-  def size
-    @data.size
+  def sort_by(&block)
+    collect.sort_by &block
   end
 
   #{{{ Index
@@ -303,11 +320,11 @@ class TSV
   def index(options = {})
     pos = nil
     if options[:field] && key_field !~ /#{Regexp.quote options[:field]}/i && ! fields.nil? && fields.any?
-      pos = TSV.field_pos(fields, options[:field])
+      pos = Misc.field_position(fields, options[:field])
     end
 
     data = {}
-    each do |key, values|
+    self.each do |key, values|
       key, values = self.class.reorder(key, values, pos) unless pos.nil?
       
       next if key.nil?
@@ -349,9 +366,9 @@ class TSV
 
   def slice(*fields)
     new = TSV.new({}, :case_insensitive => @case_insensitive)
-    positions = fields.collect{|field| TSV.field_pos(self.fields, field)}
+    positions = fields.collect{|field| Misc.field_position(self.fields, field)}
     data.each do |key, values|
-      new[key] = values.values_at(*positions)
+      new[key] = follow(values).values_at(*positions)
     end
     new.fields = fields
     new.key_field = self.key_field
@@ -385,6 +402,6 @@ end
 
 
 if __FILE__ == $0
-
- i = TSV.index('/home/mvazquezg/rbbt/data/organisms/Hsa/identifiers2', :format => "Ensembl Protein ID", :persistence => true)
+  t = TSV.new('/home/mvazquezg/git/NGS/data/Matador/protein_drug', :persistence => false)
+  p t.keys.length
 end

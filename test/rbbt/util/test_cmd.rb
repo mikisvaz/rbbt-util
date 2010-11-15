@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../../test_helper'
+require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
 require 'rbbt/util/cmd'
 require 'test/unit'
 
@@ -20,4 +20,11 @@ class TestCmd < Test::Unit::TestCase
     assert_equal("test", CMD.cmd("echo '{opt}' test", "-n" => true).read)
     assert_equal("test2\n", CMD.cmd("cut", "-f" => 2, "-d" => '" "', :in => "test1 test2").read)
   end
+
+  def test_pipe
+    assert_equal("test\n", CMD.cmd("echo '{opt}' test", :pipe => true).read)
+    assert_equal("test", CMD.cmd("echo '{opt}' test", "-n" => true, :pipe => true).read)
+    assert_equal("test2\n", CMD.cmd("cut", "-f" => 2, "-d" => '" "', :in => "test1 test2", :pipe => true).read)
+  end
+
 end
