@@ -1,4 +1,6 @@
 require 'open4'
+require 'rbbt/util/misc'
+require 'stringio'
 
 module CMD
   class CMDError < StandardError;end
@@ -49,6 +51,83 @@ module CMD
 
   def self.cmd(cmd, options = {}, &block)
     in_content = options.delete(:in)
+    stderr     = options.delete(:stderr)
+    pipe       = options.delete(:pipe)
+    post       = options.delete(:post)
+
+    # Process cmd_options
+    cmd_options = process_cmd_options options
+    if cmd =~ /'\{opt\}'/
+      cmd.sub!('\'{opt}\'', cmd_options) 
+    else
+      cmd << " " << cmd_options
+    end
+
+    sout, serr = IO.pipe, IO.pipe
+
+    case 
+    when (IO === in_content and not StringIO === in_content)
+      sin = [in_content, nil]
+    else StringIO === in_content
+      sin = IO.pipe
+    end
+
+    pid = fork {
+      begin
+        sin.last.close if sin.last
+        STDIN.reopen sin.first
+        sin.first.close
+
+        serr.first.close
+        STDERR.reopen serr.last
+        serr.last.close
+
+        sout.first.close
+        STDOUT.reopen sout.last
+        sout.last.close
+
+        exec(cmd)
+      rescue Exception
+        STDERR.puts $!.message
+      end
+
+    }
+    sin.first.close
+    sout.last.close
+    serr.last.close
+
+    case 
+    when String === in_content
+      sin.last.write in_content
+      sin.last.close
+    when StringIO === in_content
+      Thread.new do
+        while l = in_content.gets
+          sin.last.write l
+        end
+        sin.last.close
+      end
+    end
+
+    Thread.new do
+      while l = serr.first.gets
+        STDERR.puts l if stderr
+      end
+      serr.first.close
+    end
+
+    if pipe
+      SmartIO.tie_pmid sout.first, pid, post
+      sout.first
+    else
+      out = StringIO.new sout.first.read
+      Process.wait pid
+      out
+    end
+  end
+
+  def self.cmd2(cmd, options = {}, &block)
+    in_content = options.delete(:in)
     pipe       = options.delete(:pipe)
     stderr     = options.delete(:stderr)
     post       = options.delete(:post)
@@ -69,13 +148,14 @@ module CMD
     end
 
     begin
-      pid, sin, sout, serr = Open4.open4 cmd
 
       # Input stream
       case
       when in_content.nil?
+        pid, sin, sout, serr = Open4.open4 cmd
         sin.close
       when String === in_content
+        pid, sin, sout, serr = Open4.open4 cmd
         sin.write in_content
         sin.close
       when IO === in_content
@@ -107,7 +187,7 @@ module CMD
         else
           serr.close
         end
- 
+
         out = sout.read
         sout.close
         Process.waitpid(pid)
