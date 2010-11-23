@@ -16,16 +16,15 @@ module TmpFile
     File.join(Rbbt.tmpdir,random_name(s,max))
   end
 
-  def self.with_file(content = nil)
+  def self.with_file(content = nil, erase = true)
     tmpfile = tmp_file
 
     File.open(tmpfile, 'w') do |f| f.write content end if content != nil
 
     result = yield(tmpfile)
 
-    FileUtils.rm tmpfile if File.exists? tmpfile
+    FileUtils.rm tmpfile if File.exists?(tmpfile) and erase
 
     result
   end
-
 end

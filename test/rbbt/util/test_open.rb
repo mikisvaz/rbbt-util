@@ -62,6 +62,13 @@ class TestOpen < Test::Unit::TestCase
       Open.read(file, :grep => '^1\|3') do |line| sum += line.to_i end
       assert_equal(1 + 3, sum)
     end
+
+    TmpFile.with_file(content) do |file|
+      sum = 0
+      Open.read(file, :grep => ["1","3"]) do |line| sum += line.to_i end
+      assert_equal(1 + 3, sum)
+    end
+ 
   end
 
   def test_gzip

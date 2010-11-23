@@ -3,7 +3,7 @@ require 'rbbt/util/tsv'
 require 'rbbt/util/tmpfile'
 
 class TestTSV < Test::Unit::TestCase
-  def _test_keep_empty
+  def test_keep_empty
     content =<<-EOF
 #Id ValueA ValueB Comment
 row1 a|aa|aaa b c
@@ -18,7 +18,7 @@ row2 A B
     end
   end
 
-  def _test_slice
+  def test_slice
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a b c
@@ -31,7 +31,7 @@ row2 A B C
     end
   end
 
-  def _test_hash
+  def test_hash
     content =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -46,7 +46,21 @@ row2    A    B
     end
   end
 
-  def _test_tsv
+  def test_large
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :native => "OtherID", :large => true)
+      assert_equal "OtherID", tsv.key_field
+      assert_equal ["Id", "ValueA", "ValueB"], tsv.fields
+      assert_equal ["a", "aa", "aaa"], tsv["Id2"][1]
+    end
+  end
+  def test_tsv
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -62,7 +76,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_extra
+  def test_extra
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -93,7 +107,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_persistence
+  def test_persistence
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -112,7 +126,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_index
+  def test_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -134,7 +148,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_values_at
+  def test_values_at
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -148,7 +162,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_named_array
+  def test_named_array
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -185,7 +199,7 @@ row2    A    B    Id3
   end
 
 
-  def _test_sort
+  def test_sort
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2

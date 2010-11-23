@@ -67,18 +67,21 @@ module Open
   end
 
   # Grep
-
-  def self.grep_open(file, grep)
-    CMD.cmd("grep '#{grep}' '#{ file }'", :pipe => true)
+  
+  def self.grep(stream, grep)
+    case 
+    when Array === grep
+      TmpFile.with_file(grep * "\n", false) do |f|
+        CMD.cmd("grep", "-F" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
+      end
+    else
+      CMD.cmd("grep '#{grep}' -", :in => stream, :pipe => true)
+    end
   end
-
-  def self.grep_open_stream(stream, grep)
-    CMD.cmd("grep '#{grep}' -", :pipe => true, :in => stream)
-  end
-
+  
   def self.file_open(file, grep)
     if grep
-      grep_open(file, grep)
+      grep(File.open(file), grep)
     else
       File.open(file)
     end

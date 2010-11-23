@@ -4,12 +4,14 @@ module CMD
   class CMDError < StandardError;end
 
   module SmartIO 
-    def self.tie_pmid(io, pid)
+    def self.tie_pmid(io, pid, post = nil)
       io.instance_eval{
-        @pid = pid
+        @pid  = pid
+        @post = post
         alias original_close close
         def close
           Process.waitpid(@pid, Process::WNOHANG)
+          @post.call if @post
           original_close
         end
 
@@ -49,6 +51,7 @@ module CMD
     in_content = options.delete(:in)
     pipe       = options.delete(:pipe)
     stderr     = options.delete(:stderr)
+    post       = options.delete(:post)
 
     # Process cmd_options
     cmd_options = process_cmd_options options
@@ -81,12 +84,13 @@ module CMD
             sin.write l
           end
           sin.close
+          in_content.close
         end
       end
 
       if pipe
         sout.extend SmartIO
-        SmartIO.tie_pmid sout, pid
+        SmartIO.tie_pmid sout, pid, post
         return sout
       else
         if stderr
@@ -113,7 +117,8 @@ module CMD
       end
 
     rescue StandardError
-      out = sout.read unless sout.closed?
+      out = sout.read unless sout.nil? or sout.closed?
+      out ||= ""
       raise CMDError, ["","---","- Message(STDERR): #{$!.message}", "- Backtrace: #{$!.backtrace * ";;" }", "- STDOUT:\n#{ out[1..100] }", "---"] * "\n" 
     end
   end

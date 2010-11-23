@@ -59,7 +59,7 @@ class TSV
     zipped = zipped.collect{|v| NamedArray.name(v, fields)} if fields 
     zipped 
   end
-
+  
   def self.parse(file, options = {})
 
     # Prepare options
@@ -75,11 +75,11 @@ class TSV
       :single           => false,
       :unique           => false,
       :flatten          => false,
+      :overwrite        => false,
       :keep_empty       => false,
       :case_insensitive => false,
-      :header_hash  => '#' ,
+      :header_hash      => '#' ,
       :persistence_file => nil
-    
 
     options[:extra]   = [options[:extra]] if options[:extra] != nil && ! (Array === options[:extra])
     options[:flatten] = true if options[:single]
@@ -87,35 +87,33 @@ class TSV
     # Open data store
     data = options[:persistence_file].nil? ? {} : PersistenceHash.get(options[:persistence_file], true)
 
-    header_fields = nil
-    first_line    = true
-    id_pos        = nil
-    extra_pos     = nil
 
-    while line = file.gets
+    #{{{ Process first line
+
+    line = file.gets
+    raise "Empty content" if line.nil?
+
+    if line =~ /^#{options[:header_hash]}/
+      header_fields    = parse_fields(line, options[:sep])
+      header_fields[0] = header_fields[0][(0 + options[:header_hash].length)..-1] # Remove initial hash character
+      line = file.gets
+    else
+      header_fields = nil
+    end
+
+    id_pos = Misc.field_position(header_fields, options[:native])
+
+    if options[:extra].nil?
+      parts = parse_fields(line.chomp, options[:sep])
+      extra_pos = (0..(parts.length - 1 )).to_a
+      extra_pos.delete(id_pos) 
+    else
+      extra_pos = options[:extra].collect{|pos| Misc.field_position(header_fields, pos) }
+    end
+    
+    #{{{ Process rest
+    while line do
       line.chomp!
-
-      if first_line
-        first_line = false
-        header_line = line =~ /^#{options[:header_hash]}/
-
-        if header_line
-          header_fields    = parse_fields(line, options[:sep])
-          header_fields[0] = header_fields[0][(0 + options[:header_hash].length)..-1] # Remove initial hash character
-        end
-
-        id_pos = Misc.field_position(header_fields, options[:native])
-
-        if options[:extra].nil?
-          parts = parse_fields(line, options[:sep])
-          extra_pos = (0..(parts.length - 1 )).to_a
-          extra_pos.delete(id_pos) 
-        else
-          extra_pos = options[:extra].collect{|pos| Misc.field_position(header_fields, pos) }
-        end
-
-        next if header_line
-      end
 
       # Select and fix lines
       next if ! options[:exclude].nil? &&   options[:exclude].call(line)
@@ -135,34 +133,49 @@ class TSV
       # Get extra fields
       extra = parts.values_at(*extra_pos)
 
-      main_entry = ids.shift
-      ids.each do |id|
-        data[id] = "__Ref:#{main_entry}"
-      end
+      extra.collect!{|value| parse_fields(value, options[:sep2])}  
+      extra.collect!{|values| values.first}       if options[:unique]
+      extra.flatten!                              if options[:flatten]
+      extra = extra.first                         if options[:single]
 
-      case
-      when options[:single]
-        data[main_entry] ||= extra.flatten.first
-      when options[:unique]
-        data[main_entry] = extra.collect{|value| parse_fields(value, options[:sep2]).first}
-      when options[:flatten] && ! options[:single]
-        data[main_entry] ||= []
-        values = extra.collect{|value| parse_fields(value, options[:sep2])}.flatten.compact
-        data[main_entry] = data[main_entry] + values
+      if options[:overwrite]
+        main_entry = ids.shift
+        ids.each do |id|
+          data[id] = "__Ref:#{main_entry}"  
+        end
+
+        data[main_entry] = extra
       else
-        entry = data[main_entry] || []
-        while entry =~ /__Ref:(.*)/ do
-          entry = data[$1]
+        main_entry = ids.shift
+        ids.each do |id|
+          data[id] = "__Ref:#{main_entry}"
         end
-        extra.each_with_index do |value, i|
-          next if ((value.nil? || value.empty?) and ! options[:keep_empty])
-          fields = parse_fields(value, options[:sep2])
-          fields = [""] if fields.empty?
-          entry[i] ||= []
-          entry[i].concat fields
+
+        case
+        when (options[:single] or options[:unique])
+          data[main_entry] ||= extra
+        when options[:flatten]
+          data[main_entry] ||= []
+          data[main_entry].concat extra
+        else
+          entry = data[main_entry] || []
+          while entry =~ /__Ref:(.*)/ do
+            entry = data[$1]
+          end
+
+          extra.each_with_index do |fields, i|
+            if fields.empty?
+              next unless options[:keep_empty]
+              fields = [""]
+            end
+            entry[i] ||= []
+            entry[i].concat fields
+          end
+
+          data[main_entry] = entry
         end
-        data[main_entry] = entry
       end
+      line = file.gets
     end
 
     # Save header information
@@ -187,15 +200,17 @@ class TSV
       @filename = Hash
       @data = file
       return self
-    when String === file && File.exists?(file)
-      @filename = File.expand_path file
-      file = Open.open(file, :grep => options[:grep] )
     when File === file
       @filename = File.expand_path file.path
-    when String === file
-      @filename = String
-      file = StringIO.new(file)
+    when String === file && File.exists?(file)
+      @filename = File.expand_path file
+      file = Open.open(file)
+    when StringIO
+    else 
+      raise "File #{file} not found"
     end
+      
+    file = Open.grep(file, options[:grep]) if options[:grep]
 
     if options[:persistence]
       options.delete :persistence
