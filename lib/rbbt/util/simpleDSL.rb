@@ -6,6 +6,7 @@
 module SimpleDSL
 
   class ConfigFileMissingError < StandardError; end
+  class NoRuby2Ruby < StandardError; end
 
   private
 
@@ -38,8 +39,20 @@ module SimpleDSL
 
     # Execute
     if actions.is_a? Proc
+      begin
+        require 'parse_tree_extensions'
+        require 'parse_tree'
+        require 'ruby2ruby'
+        @config[@@method_name] = actions.to_ruby.collect[1..-2].join
+      rescue Exception
+        @config[@@method_name] = NoRuby2Ruby.new "The gem ruby2ruby is not installed. It will not work on ruby 1.9."
+      end
+      
       instance_eval &actions
     elsif File.exists?(actions)
+      
+      @config[@@method_name] = File.open(actions).read
+
       eval File.open(actions).read
     end
 
@@ -63,6 +76,17 @@ module SimpleDSL
     end
   end
 
+  def config(action = nil)
+    if action
+      config = @config[action.to_sym]
+    else
+      config = @config[:DSL_action]
+    end
+
+    raise config if NoRuby2Ruby === config
+
+    config
+  end
 end
 
 

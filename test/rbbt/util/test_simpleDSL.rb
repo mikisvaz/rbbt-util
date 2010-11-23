@@ -14,7 +14,6 @@ class TestDSL < Test::Unit::TestCase
     def actions
       @actions
     end
-
   end
 
   def setup 
@@ -33,13 +32,23 @@ class TestDSL < Test::Unit::TestCase
     assert_raise(NoMethodError){@parser.cues}
   end
 
+  def test_config
+    config = <<-EOC
+  action1("Hello")
+  action2("Good bye")
+    EOC
+
+    begin
+      assert(@parser.config(:action) == config)
+    rescue SimpleDSL::NoRuby2Ruby
+    end
+  end
+
   def test_parse
     @parser.parse :action do
       action3 "Back again"
     end
 
      assert_equal({:action1 =>"Hello", :action2 =>"Good bye", :action3 =>"Back again"}, @parser.actions)
-
   end
-
 end
