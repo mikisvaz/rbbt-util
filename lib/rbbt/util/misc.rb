@@ -3,6 +3,23 @@ require 'open4'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.profile
+    require 'ruby-prof'
+    RubyProf.start
+    begin
+      res = yield
+    rescue Exception
+      puts "Profiling aborted"
+      raise $!
+    ensure
+      result = RubyProf.stop
+      printer = RubyProf::FlatPrinter.new(result)
+      printer.print(STDOUT, 0)
+    end
+
+    res
+  end
+
   def self.fixutf8(string)
     if string.respond_to?(:valid_encoding?) and ! string.valid_encoding?
       @@ic ||= Iconv.new('UTF-8//IGNORE', 'UTF-8')
