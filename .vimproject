@@ -3,21 +3,19 @@ ruby=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
  bin=bin {
   excel2tsv.rb
  }
- lib=lib {
-  util=rbbt/util{
-   simpleopt.rb
-   pkg_config.rb
-   base.rb
-   misc.rb
-   tmpfile.rb
-   filecache.rb
-   cmd.rb
-   open.rb
-   tc_hash.rb
-   tsv.rb
-   simpleDSL.rb
-   cachehelper.rb
-  }
+ lib=lib/rbbt/util {
+  simpleopt.rb
+  pkg_config.rb
+  base.rb
+  misc.rb
+  tmpfile.rb
+  filecache.rb
+  cmd.rb
+  open.rb
+  tc_hash.rb
+  tsv.rb
+  simpleDSL.rb
+  cachehelper.rb
  }
  test=test {
   test_helper.rb
