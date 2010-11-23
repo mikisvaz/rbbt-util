@@ -148,6 +148,29 @@ row2    A    B    Id3
     end
   end
 
+  def test_best_index
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b|A    Id1
+row2    A    a|B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :native => "OtherID", :persistence => true)
+      index = tsv.index(:case_insensitive => false, :order => true)
+      assert_equal "Id1", index['a'].first
+      assert_equal "Id3", index['A'].first
+      assert_equal "OtherID", index.key_field
+    end
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :native => "OtherID")
+      index = tsv.index(:case_insensitive => true)
+      assert index["row1"].include? "Id1"
+      assert_equal "OtherID", index.key_field
+    end
+  end
+
   def test_values_at
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID

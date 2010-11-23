@@ -331,8 +331,10 @@ class TSV
     [others[pos], others.unshift(native)]
   end
 
-
   def index(options = {})
+    order = options[:order]
+    
+
     pos = nil
     if options[:field] && key_field !~ /#{Regexp.quote options[:field]}/i && ! fields.nil? && fields.any?
       pos = Misc.field_position(fields, options[:field])
@@ -351,12 +353,20 @@ class TSV
         key = [key]
       end
 
-      values.flatten.compact.each do |value|
+      values.flatten.compact.each_with_index do |value,i|
         value = value.downcase if options[:case_insensitive]
-        data[value] ||= []  
-        data[value].concat key
+        if order
+          data[value]    ||= []  
+          data[value][i] ||= []  
+          data[value][i].concat key
+        else
+          data[value]    ||= []  
+          data[value].concat key
+        end
       end
     end
+
+    data.each{|k,v| v.flatten!.compact!} if order
 
     if options[:persistence_file]
       if File.exists? options[:persistence_file]
@@ -374,7 +384,6 @@ class TSV
     else
       index.key_field = key_field
     end
-
 
     index
   end
