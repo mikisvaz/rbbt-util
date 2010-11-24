@@ -12,7 +12,11 @@ module CMD
         @post = post
         alias original_close close
         def close
-          Process.waitpid(@pid, Process::WNOHANG)
+          begin
+            Process.waitpid(@pid, Process::WNOHANG)
+          rescue
+          end
+
           @post.call if @post
           original_close
         end
@@ -23,7 +27,6 @@ module CMD
           self.close
           data
         end
-
       }
       io
     end
@@ -50,6 +53,7 @@ module CMD
   end
 
   def self.cmd(cmd, options = {}, &block)
+    options = Misc.add_defaults options, :stderr => true
     in_content = options.delete(:in)
     stderr     = options.delete(:stderr)
     pipe       = options.delete(:pipe)
@@ -74,9 +78,11 @@ module CMD
 
     pid = fork {
       begin
+
         sin.last.close if sin.last
         STDIN.reopen sin.first
         sin.first.close
+
 
         serr.first.close
         STDERR.reopen serr.last
@@ -86,9 +92,11 @@ module CMD
         STDOUT.reopen sout.last
         sout.last.close
 
+        STDOUT.sync = STDERR.sync = true
         exec(cmd)
       rescue Exception
         STDERR.puts $!.message
+        STDERR.puts $!.backtrace * "\n"
       end
 
     }
@@ -121,7 +129,7 @@ module CMD
       sout.first
     else
       out = StringIO.new sout.first.read
-      Process.wait pid
+      Process.waitpid pid
       out
     end
   end

@@ -116,9 +116,11 @@ class TSV
       line.chomp!
 
       # Select and fix lines
-      next if ! options[:exclude].nil? &&   options[:exclude].call(line)
-      next if ! options[:select].nil?  && ! options[:select].call(line)
-      line = options[:fix].call(line) if ! options[:fix].nil?
+      if (options[:exclude] and   options[:exclude].call(line)) or
+         (options[:select]  and not options[:select].call(line))
+         line = file.gets
+         next
+      end
 
       ### Process line
 
@@ -399,7 +401,7 @@ class TSV
 
     new
   end
-
+ 
   #{{{ Helpers
 
   def self.index(file, options = {})
