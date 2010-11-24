@@ -1,4 +1,3 @@
-require 'open4'
 require 'rbbt/util/misc'
 require 'stringio'
 
@@ -6,14 +5,14 @@ module CMD
   class CMDError < StandardError;end
 
   module SmartIO 
-    def self.tie_pmid(io, pid, post = nil)
+    def self.tie(io, pid = nil, post = nil)
       io.instance_eval{
         @pid  = pid
         @post = post
         alias original_close close
         def close
           begin
-            Process.waitpid(@pid, Process::WNOHANG)
+            Process.waitpid(@pid, Process::WNOHANG) if @pid
           rescue
           end
 
@@ -24,7 +23,7 @@ module CMD
         alias original_read read
         def read
           data = Misc.fixutf8(original_read)
-          self.close
+          self.close unless self.closed?
           data
         end
       }
@@ -125,89 +124,13 @@ module CMD
     end
 
     if pipe
-      SmartIO.tie_pmid sout.first, pid, post
+      SmartIO.tie sout.first, pid, post
       sout.first
     else
       out = StringIO.new sout.first.read
+      SmartIO.tie out
       Process.waitpid pid
       out
-    end
-  end
-
-  def self.cmd2(cmd, options = {}, &block)
-    in_content = options.delete(:in)
-    pipe       = options.delete(:pipe)
-    stderr     = options.delete(:stderr)
-    post       = options.delete(:post)
-
-    # Process cmd_options
-    cmd_options = process_cmd_options options
-    if cmd =~ /'\{opt\}'/
-      cmd.sub!('\'{opt}\'', cmd_options) 
-    else
-      cmd << " " << cmd_options
-    end
-
-    # Use block if given
-    if block_given?
-      status = Open4.popen4(cmd) &block
-      raise CMDError if ! status.success?
-      return
-    end
-
-    begin
-
-      # Input stream
-      case
-      when in_content.nil?
-        pid, sin, sout, serr = Open4.open4 cmd
-        sin.close
-      when String === in_content
-        pid, sin, sout, serr = Open4.open4 cmd
-        sin.write in_content
-        sin.close
-      when IO === in_content
-        Thread.new do
-          while l = in_content.gets
-            sin.write l
-          end
-          sin.close
-          in_content.close
-        end
-      end
-
-      if pipe
-        sout.extend SmartIO
-        SmartIO.tie_pmid sout, pid, post
-        return sout
-      else
-        if stderr
-          Thread.new do
-            begin
-              while l = serr.gets
-                STDERR.puts l
-              end
-              serr.close
-            rescue
-              retry
-            end
-          end
-        else
-          serr.close
-        end
-
-        out = sout.read
-        sout.close
-        Process.waitpid(pid)
-        raise StandardError, serr.read if $? && ! $?.success?
-        sout = StringIO.new Misc.fixutf8(out)
-        return sout
-      end
-
-    rescue StandardError
-      out = sout.read unless sout.nil? or sout.closed?
-      out ||= ""
-      raise CMDError, ["","---","- Message(STDERR): #{$!.message}", "- Backtrace: #{$!.backtrace * ";;" }", "- STDOUT:\n#{ out[1..100] }", "---"] * "\n" 
     end
   end
 end

@@ -1,4 +1,3 @@
-require 'open4'
 
 module Misc
   class FieldNotFoundError < StandardError;end

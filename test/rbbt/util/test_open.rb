@@ -11,19 +11,18 @@ class TestOpen < Test::Unit::TestCase
   end
 
   def test_nice
-    nice =  0.5
+    nice =  1
 
     Open.wget('http://google.com', :quiet => true, :nice => nice).read =~ /html/
     t = Time.now
     Open.wget('http://google.com', :quiet => true, :nice => nice).read =~ /html/
-    assert((Time.now - t) >= nice)
+    assert(Time.now - t + 0.5 >= nice)
 
-    t = Time.now
     Open.wget('http://google.com', :quiet => true, :nice => nice, :nice_key => 1).read =~ /html/
     Open.wget('http://google.com', :quiet => true, :nice => nice, :nice_key => 2).read =~ /html/
-    assert((Time.now - t) < nice)
+    t = Time.now
     Open.wget('http://google.com', :quiet => true, :nice => nice, :nice_key => 1).read =~ /html/
-    assert((Time.now - t) >= nice)
+    assert(Time.now - t + 0.5 >= nice)
   end
 
   def test_remote?

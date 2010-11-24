@@ -37,16 +37,22 @@ class TCHash < TokyoCabinet::HDB
     end
   end
 
-  alias original_values values
-  def values
-    self.values.collect{|v| Serializer.load v}
-  end
-
   alias original_keys keys
   def keys
     list = self.original_keys
-    FIELD_INFO_ENTRIES.values.each do |field| list.delete field end
+    indexes = FIELD_INFO_ENTRIES.values.collect do |field| list.index(field) end.compact
+    indexes.each do |index| list.delete_at index end
     list
+  end
+
+  alias original_values values
+  def values
+    values = self.original_values
+    keys   = self.original_keys
+    indexes = FIELD_INFO_ENTRIES.values.collect do |field| keys.index(field) end.compact
+    indexes.each do |index| values.delete_at index end
+
+    values.collect{|v| Serializer.load(v)}
   end
 
   def merge!(data)
@@ -56,13 +62,20 @@ class TCHash < TokyoCabinet::HDB
     end
   end
 
-  alias original_each each
-  def each
-    self.original_each{|k, v| 
-      yield(k, Serializer.load(v)) unless FIELD_INFO_ENTRIES.values.include? k 
-    }
+  # This version of each fixes a problem in ruby 1.9. It also
+  # removes the special entries
+  def each19(&block)
+    values = self.original_values.collect{|v| Serializer.load v}
+    keys   = self.original_keys
+    indexes = FIELD_INFO_ENTRIES.values.collect do |field| keys.index(field) end.compact
+    indexes.each do |index| values.delete_at index; keys.delete_at index end
+
+    keys.zip(values).each &block
   end
 
+  alias original_each each
+  alias each each19
+  
   def collect
     res = []
     self.each{|k, v| res << [k,v]}
@@ -109,4 +122,23 @@ class TCHash < TokyoCabinet::HDB
     write ? d.write : d.read
     d
   end
+end
+
+if __FILE__ == $0
+  require 'rbbt/util/tmpfile'
+
+  TmpFile.with_file do |f|
+    a = TCHash.new f
+    1000.times do |i|
+      a[i.to_s] = i
+    end
+
+    t = Time.now
+    1001.times do 
+      #a.keys
+      a.each do |k,v| puts "#{ k }\t#{v}" end
+    end
+    puts Time.now - t
+  end
+
 end

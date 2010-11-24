@@ -19,7 +19,7 @@ module Open
     time = Time.now   
 
     if LAST_TIME[key] != nil && (time < LAST_TIME[key] + lag)
-      sleep (LAST_TIME[key] + lag + 0.5) - time
+      sleep (LAST_TIME[key] + lag) - time
     end
 
     LAST_TIME[key] = Time.now   
