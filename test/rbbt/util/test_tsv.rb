@@ -115,7 +115,7 @@ row2    A    B    Id3
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(File.open(filename), :sep => /\s+/, :native => "OtherID", :persistence => true)
+      tsv = TSV.new(filename, :sep => /\s+/, :native => "OtherID", :persistence => true)
       assert_equal ["Id", "ValueA", "ValueB"], tsv.fields
       tsv['Id4'] = [["row3"],["aA"],["bB","bbBB"]]
       assert_equal ["aA"], tsv["Id4"][1]
@@ -123,6 +123,8 @@ row2    A    B    Id3
       assert_equal ["Id", "ValueA", "ValueB"], tsv.fields
       assert_equal ["aA"], tsv["Id4"][1]
       assert_equal [["b"],["B"]], tsv.values_at("Id1", "Id3").collect{|values| values[2]}
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :native => "OtherID", :persistence => true, :flatten => true)
+      assert(tsv["Id3"].include? "A")
     end
   end
 

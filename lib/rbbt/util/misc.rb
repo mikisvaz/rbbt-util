@@ -1,4 +1,4 @@
-
+require 'iconv'
 module Misc
   class FieldNotFoundError < StandardError;end
 

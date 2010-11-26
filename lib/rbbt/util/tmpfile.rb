@@ -1,7 +1,14 @@
 require 'fileutils'
-require 'rbbt/util/base.rb' 
 
 module TmpFile
+
+  TMPDIR = "/tmp/tmpfiles" 
+  FileUtils.mkdir TMPDIR unless File.exist? TMPDIR
+
+  def self.tmp_dir=(tmpdir)
+    TMPDIR.replace tmpdir
+    FileUtils.mkdir TMPDIR unless File.exist? TMPDIR
+  end
 
   # Creates a random file name, with the given suffix and a random number
   # up to +max+
@@ -13,7 +20,7 @@ module TmpFile
 
   # Creates a random filename in the temporary directory
   def self.tmp_file(s = "",max=10000000)
-    File.join(Rbbt.tmpdir,random_name(s,max))
+    File.join(TMPDIR, random_name(s,max))
   end
 
   def self.with_file(content = nil, erase = true)

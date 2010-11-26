@@ -7,7 +7,7 @@ require 'iconv'
 class TestOpen < Test::Unit::TestCase
 
   def test_wget
-    assert(Open.wget('http://google.com', :quiet => true).read =~ /html/)
+    assert(Misc.fixutf8(Open.wget('http://google.com', :quiet => true).read) =~ /html/)
   end
 
   def test_nice

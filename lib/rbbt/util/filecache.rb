@@ -1,9 +1,16 @@
 require 'fileutils'
-require 'rbbt/util/base'
 require 'rbbt/util/misc'
 
 # Provides caching functionality for files downloaded from the internet
 module FileCache
+  CACHEDIR = "/tmp/rbbt_cache" 
+  FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
+
+  def self.cache_dir=(cachedir)
+    CACHEDIR.replace cachedir
+    FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
+  end
+
 
   def self.path(filename)
     filename = File.basename filename
@@ -13,7 +20,7 @@ module FileCache
     base = filename.sub(/\..+/,'')
     dirs = base.scan(/./).values_at(0,1,2,3,4).compact.reverse
 
-    File.join(File.join(Rbbt.cachedir, *dirs), filename) 
+    File.join(File.join(CACHEDIR, *dirs), filename) 
   end
 
   def self.add(filename, content)
@@ -26,6 +33,10 @@ module FileCache
     FileUtils.chmod 0666, path
 
     path
+  end
+
+  def self.found(filename)
+    File.exists? FileCache.path(filename)
   end
 
   def self.get(filename)

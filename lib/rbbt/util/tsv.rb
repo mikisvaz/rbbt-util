@@ -19,18 +19,16 @@ class TSV
 
   PersistenceHash = TCHash
 
-  CACHE_DIR="/tmp/tsv_persistent_cache"
-  FileUtils.mkdir_p(CACHE_DIR) unless File.exist?(CACHE_DIR)
-  def self.cachedir=(dir)
-    @@cachedir=dir
-    FileUtils.mkdir_p(dir) unless File.exist?(dir)
-  end
-  def self.cachedir
-    @@cachedir ||= CACHE_DIR
+  CACHEDIR="/tmp/tsv_persistent_cache"
+  FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
+
+  def self.cache_dir=(cachedir)
+    CACHEDIR.replace cachedir
+    FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
   end
 
   def self.get_persistence_file(file, prefix, options = {})
-    File.join(cachedir, prefix.gsub(/\s/,'_').gsub(/\//,'>') + Digest::MD5.hexdigest([file, options].inspect))
+    File.join(CACHEDIR, prefix.gsub(/\s/,'_').gsub(/\//,'>') + Digest::MD5.hexdigest([file, options].inspect))
   end
 
   @debug = ENV['TSV_DEBUG'] == "true"
@@ -122,6 +120,8 @@ class TSV
          next
       end
 
+      line = options[:fix].call line if options[:fix]
+
       ### Process line
 
       # Chunk fields
@@ -134,6 +134,7 @@ class TSV
 
       # Get extra fields
       extra = parts.values_at(*extra_pos)
+      extra = parts if options[:extra].nil? and (options[:flatten] or options[:single])
 
       extra.collect!{|value| parse_fields(value, options[:sep2])}  
       extra.collect!{|values| values.first}       if options[:unique]
@@ -157,8 +158,12 @@ class TSV
         when (options[:single] or options[:unique])
           data[main_entry] ||= extra
         when options[:flatten]
-          data[main_entry] ||= []
-          data[main_entry].concat extra
+          if PersistenceHash === data
+            data[main_entry] = (data[main_entry] || []).concat extra
+          else
+            data[main_entry] ||= []
+            data[main_entry].concat extra
+          end
         else
           entry = data[main_entry] || []
           while entry =~ /__Ref:(.*)/ do
@@ -171,7 +176,7 @@ class TSV
               fields = [""]
             end
             entry[i] ||= []
-            entry[i].concat fields
+            entry[i] = entry[i].concat fields
           end
 
           data[main_entry] = entry
@@ -211,8 +216,6 @@ class TSV
     else 
       raise "File #{file} not found"
     end
-      
-    file = Open.grep(file, options[:grep]) if options[:grep]
 
     if options[:persistence]
       options.delete :persistence
@@ -224,6 +227,8 @@ class TSV
         @key_field = @data.key_field
         @fields    = @data.fields
       else
+        file = Open.grep(file, options[:grep]) if options[:grep]
+
         TSV.log "Persistent Parsing for #{ @filename } in #{persistence_file}"
         @data, @key_field, @fields = TSV.parse(file, options.merge(:persistence_file => persistence_file))
         @data.key_field            = @key_field
@@ -232,6 +237,7 @@ class TSV
       end
     else
       TSV.log "Non-persistent parsing for #{ @filename }"
+      file = Open.grep(file, options[:grep]) if options[:grep]
       @data, @key_field, @fields = TSV.parse(file, options)
     end
 
@@ -424,10 +430,4 @@ class TSV
       data.index(opt_index)
     end
   end
-end
-
-
-if __FILE__ == $0
-  t = TSV.new('/home/mvazquezg/git/NGS/data/Matador/protein_drug', :persistence => false)
-  p t.keys.length
 end

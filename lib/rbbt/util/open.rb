@@ -1,4 +1,3 @@
-require 'rbbt/util/base'
 require 'rbbt/util/cmd'
 require 'rbbt/util/misc'
 require 'rbbt/util/tmpfile'
@@ -10,8 +9,13 @@ module Open
   class OpenURLError < StandardError; end
   class OpenGzipError < StandardError; end
 
-  REMOTE_CACHEDIR =  File.join(Rbbt.cachedir, 'open-remote/') unless defined? REMOTE_CACHEDIR
+  REMOTE_CACHEDIR = "/tmp/open_cache" 
   FileUtils.mkdir REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
+
+  def self.cache_dir=(cachedir)
+    REMOTE_CACHEDIR.replace cachedir
+    FileUtils.mkdir REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
+  end
 
   # Remote WGET
   LAST_TIME = {}
@@ -26,7 +30,7 @@ module Open
   end
 
   def self.wget(url, options = {})
-    options = Misc.add_defaults options, "--user-agent=" => 'firefox'
+    options = Misc.add_defaults options, "--user-agent=" => 'firefox', :pipe => true
 
     wait(options[:nice], options[:nice_key]) if options[:nice]
     options.delete(:nice)
@@ -137,7 +141,7 @@ module Open
            io.close
            file_open(in_cache(url), options[:grep])
          end
-    io = unzip(io) if zip? url
+    io = unzip(io)  if zip?  url
     io = gunzip(io) if gzip? url
 
     io

@@ -1,5 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
 require 'rbbt/util/filecache'
+require 'rbbt-util'
 require 'test/unit'
 
 class TestFileCache < Test::Unit::TestCase
