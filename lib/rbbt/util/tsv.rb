@@ -347,6 +347,7 @@ class TSV
   end
 
   def index(options = {})
+    options = Misc.add_defaults options, :order => false
     order = options[:order]
     
 
