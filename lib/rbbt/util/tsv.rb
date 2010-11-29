@@ -127,14 +127,22 @@ class TSV
       # Chunk fields
       parts = parse_fields(line, options[:sep])
 
+      # Get next line
+      line = file.gets
+
       # Get id field
       next if parts[id_pos].nil? || parts[id_pos].empty?
       ids = parse_fields(parts[id_pos], options[:sep2])
       ids.collect!{|id| id.downcase } if options[:case_insensitive]
 
       # Get extra fields
-      extra = parts.values_at(*extra_pos)
-      extra = parts if options[:extra].nil? and (options[:flatten] or options[:single])
+      
+      if options[:extra].nil? and (options[:flatten] or options[:single])
+        extra = parts 
+        extra.delete_at(id_pos)
+      else
+        extra = parts.values_at(*extra_pos)
+      end
 
       extra.collect!{|value| parse_fields(value, options[:sep2])}  
       extra.collect!{|values| values.first}       if options[:unique]
@@ -182,7 +190,6 @@ class TSV
           data[main_entry] = entry
         end
       end
-      line = file.gets
     end
 
     # Save header information
