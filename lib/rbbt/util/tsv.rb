@@ -24,7 +24,7 @@ class TSV
 
   def self.cache_dir=(cachedir)
     CACHEDIR.replace cachedir
-    FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
+    FileUtils.mkdir_p CACHEDIR unless File.exist? CACHEDIR
   end
 
   def self.get_persistence_file(file, prefix, options = {})
