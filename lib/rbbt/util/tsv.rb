@@ -40,7 +40,18 @@ class TSV
     @debug = value
   end
 
+  def self.headers(file, options = {})
+    options = Misc.add_defaults options, :sep => "\t", :header_hash => "#"
+    io = Open.open(file)
+    line = io.gets
+    io.close
 
+    if line =~ /^#{options[:header_hash]}/
+      line.sub(/^#{options[:header_hash]}/,'').split(options[:sep])
+    else
+      nil
+    end
+  end
 
   #{{{ Parsing
   

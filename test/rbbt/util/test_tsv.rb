@@ -31,6 +31,19 @@ row2 A B C
     end
   end
 
+  def test_headers
+    content =<<-EOF
+#ID ValueA ValueB Comment
+row1 a b c
+row2 A B C
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      assert_equal ['ID', 'ValueA', 'ValueB', 'Comment'], TSV.headers(filename, :sep => ' ')
+    end
+  end
+
+
   def test_hash
     content =<<-EOF
 #Id    ValueA    ValueB
@@ -60,6 +73,7 @@ row2    A    B    Id3
       assert_equal ["a", "aa", "aaa"], tsv["Id2"][1]
     end
   end
+
   def test_tsv
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
