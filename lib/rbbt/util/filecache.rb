@@ -6,11 +6,14 @@ module FileCache
   CACHEDIR = "/tmp/rbbt_cache" 
   FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
 
-  def self.cache_dir=(cachedir)
+  def self.cachedir=(cachedir)
     CACHEDIR.replace cachedir
     FileUtils.mkdir_p CACHEDIR unless File.exist? CACHEDIR
   end
 
+  def self.cachedir
+    CACHEDIR
+  end
 
   def self.path(filename)
     filename = File.basename filename

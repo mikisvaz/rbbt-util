@@ -5,10 +5,15 @@ module TmpFile
   TMPDIR = "/tmp/tmpfiles" 
   FileUtils.mkdir TMPDIR unless File.exist? TMPDIR
 
-  def self.tmp_dir=(tmpdir)
+  def self.tmpdir=(tmpdir)
     TMPDIR.replace tmpdir
     FileUtils.mkdir TMPDIR unless File.exist? TMPDIR
   end
+
+  def self.tmpdir
+    TMPDIR
+  end
+
 
   # Creates a random file name, with the given suffix and a random number
   # up to +max+

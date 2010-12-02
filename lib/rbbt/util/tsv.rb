@@ -22,9 +22,13 @@ class TSV
   CACHEDIR="/tmp/tsv_persistent_cache"
   FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
 
-  def self.cache_dir=(cachedir)
+  def self.cachedir=(cachedir)
     CACHEDIR.replace cachedir
     FileUtils.mkdir_p CACHEDIR unless File.exist? CACHEDIR
+  end
+
+  def self.cachedir
+    CACHEDIR
   end
 
   def self.get_persistence_file(file, prefix, options = {})

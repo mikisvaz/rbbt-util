@@ -12,9 +12,13 @@ module Open
   REMOTE_CACHEDIR = "/tmp/open_cache" 
   FileUtils.mkdir REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
 
-  def self.cache_dir=(cachedir)
+  def self.cachedir=(cachedir)
     REMOTE_CACHEDIR.replace cachedir
     FileUtils.mkdir REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
+  end
+
+  def self.cachedir
+    REMOTE_CACHEDIR
   end
 
   # Remote WGET
