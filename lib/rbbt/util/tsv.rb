@@ -57,6 +57,92 @@ class TSV
     end
   end
 
+  #{{{ Accesor Methods
+
+  def keys
+    @data.keys
+  end
+
+  def values
+    @data.values
+  end
+
+  def size
+    @data.size
+  end
+
+  # Write
+
+  def []=(key, value)
+    key = key.downcase if @case_insensitive
+    @data[key] = value
+  end
+
+
+  def merge!(new_data)
+    new_data.each do |key, value|
+      self[key] = value
+    end
+  end
+
+  # Read
+
+  def follow(value)
+    if String === value && value =~ /__Ref:(.*)/
+      return self[$1]
+    else
+      value = NamedArray.name value, fields if Array === value and fields 
+      value
+    end
+  end
+  def [](key)
+    if Array === key
+      return @data[key] if @data[key] != nil
+      key.each{|k| v = self[k]; return v unless v.nil?}
+      return nil
+    end
+
+    key = key.downcase if @case_insensitive
+    follow @data[key]
+  end
+
+  def values_at(*keys)
+    keys.collect{|k|
+      self[k]
+    }
+  end
+
+  def each(&block)
+    @data.each do |key, value|
+      block.call(key, follow(value))
+    end
+  end
+
+  def collect
+    if block_given?
+      @data.collect do |key, value|
+        value = follow(value)
+        key, values = yield key, value
+      end
+    else
+      @data.collect do |key, value|
+        [key, follow(value)]
+      end
+    end
+  end
+
+  def sort(&block)
+    collect.sort(&block).collect{|p|
+      key, value = p
+      value = NamedArray.name value, fields if fields
+      [key, value]
+    }
+  end
+
+  def sort_by(&block)
+    collect.sort_by &block
+  end
+
   #{{{ Parsing
   
   def self.parse_fields(io, delimiter = "\t")
@@ -267,98 +353,17 @@ class TSV
     @case_insensitive = options[:case_insensitive] == true
   end
 
-
-  #{{{ Accesor Methods
-
-  def keys
-    @data.keys
-  end
-
-  def values
-    @data.values
-  end
-
-  def size
-    @data.size
-  end
-
-  # Write
-
-  def []=(key, value)
-    key = key.downcase if @case_insensitive
-    @data[key] = value
-  end
-
-
-  def merge!(new_data)
-    new_data.each do |key, value|
-      self[key] = value
-    end
-  end
-
-  # Read
-
-  def follow(value)
-    if String === value && value =~ /__Ref:(.*)/
-      return self[$1]
-    else
-      value = NamedArray.name value, fields if Array === value and fields 
-      value
-    end
-  end
-  def [](key)
-    if Array === key
-      return @data[key] if @data[key] != nil
-      key.each{|k| v = self[k]; return v unless v.nil?}
-      return nil
-    end
-
-    key = key.downcase if @case_insensitive
-    follow @data[key]
-  end
-
-  def values_at(*keys)
-    keys.collect{|k|
-      self[k]
-    }
-  end
-
-  def each(&block)
-    @data.each do |key, value|
-      block.call(key, follow(value))
-    end
-  end
-
-  def collect
-    if block_given?
-      @data.collect do |key, value|
-        value = follow(value)
-        key, values = yield key, value
-      end
-    else
-      @data.collect do |key, value|
-        [key, follow(value)]
-      end
-    end
-  end
-
-  def sort(&block)
-    collect.sort(&block).collect{|p|
-      key, value = p
-      value = NamedArray.name value, fields if fields
-      [key, value]
-    }
-  end
-
-  def sort_by(&block)
-    collect.sort_by &block
-  end
-
   #{{{ Index
   def self.reorder(native, others, pos)
-    return [native, others] if pos.nil? 
+    return [native, others] if pos.nil? or others[pos].nil?
 
-    [others[pos], others.unshift(native)]
+    new_native = others[pos].dup
+
+    new_others = others.dup
+    new_others.delete_at pos
+    new_others.unshift native.dup
+
+    [new_native, new_others]
   end
 
   def index(options = {})
@@ -366,13 +371,19 @@ class TSV
     order = options[:order]
     
 
-    pos = nil
-    if options[:field] && key_field !~ /#{Regexp.quote options[:field]}/i && ! fields.nil? && fields.any?
+    case
+    when options[:field].nil?
+      pos = nil
+    when Integer === options[:field]
+      pos = options[:field]
+    when key_field =~ /#{Regexp.quote options[:field]}/i
+      pos = nil
+    when (not fields.nil? and fields.any?)
       pos = Misc.field_position(fields, options[:field])
     end
 
     data = {}
-    self.each do |key, values|
+    each do |key, values|
       key, values = self.class.reorder(key, values, pos) unless pos.nil?
       
       next if key.nil?
@@ -399,6 +410,25 @@ class TSV
 
     data.each{|k,v| v.flatten!.compact!} if order
 
+    each do |key, values| 
+      key, values = self.class.reorder(key, values, pos) unless pos.nil?
+
+      if Array === key
+        key.flatten!
+        key.compact
+      else
+        key = [key]
+      end
+      
+      key.each do |key|
+        if options[:case_insensitive]
+          data[key.downcase] = key 
+        else
+          data[key] = key 
+        end
+      end
+    end
+
     if options[:persistence_file]
       if File.exists? options[:persistence_file]
         index = TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => options[:case_insensitive])
@@ -410,7 +440,7 @@ class TSV
       index = TSV.new(data, :case_insensitive => options[:case_insensitive])
     end
 
-    if ! pos.nil?
+    if not pos.nil? and not fields.nil?
       index.key_field = fields[pos] 
     else
       index.key_field = key_field
@@ -430,7 +460,91 @@ class TSV
 
     new
   end
- 
+
+  def smart_merge(other, field = nil)
+
+    if self.fields and other.fields 
+      common_fields = self.fields & other.fields
+      common_fields.delete field
+      new_fields    = ([other.key_field] + other.fields) - self.fields - [self.key_field]
+    else
+      nofieldinfo = true
+    end
+
+    this_index  = self.index(:order => true, :field => field)
+    if other.fields and not Integer === field and other.fields.include? field
+      other_index = other.slice(field).index(:order => true)
+    else
+      other_index = other.index(:order => true)
+    end
+
+    each do |key, values|
+      new_data = nil
+      next if this_index[key].nil? 
+
+      this_index[key].each do |common_id|
+        if other_index[common_id] and other_index[common_id].any?
+          if nofieldinfo
+            new_data         = other[other_index[common_id]].dup
+            new_data.unshift other_index[common_id].dup
+            new_data.delete_if do |new_datavalues| new_datavalues.include? common_id end
+          else
+            new_data        = other[other_index[common_id]].dup
+            new_data_fields = other.fields.dup                                    
+
+            if other.key_field != field
+              new_data.delete_at(Misc.field_position(other.fields, field))
+              new_data.unshift other_index[common_id]
+
+              new_data_fields.delete_at(Misc.field_position(other.fields, field)) 
+              new_data_fields.unshift other.key_field                             
+            end
+
+            new_data = NamedArray.name(new_data, new_data_fields)
+          end
+          break
+        end
+      end
+
+      next if new_data.nil?
+
+      if nofieldinfo
+        values.concat new_data
+      else
+        common_fields.each do |common_field|
+          values[common_field] += new_data[common_field]
+        end
+
+        values.concat new_data.values_at(*new_fields)
+      end
+
+      self[key] = values
+    end
+
+    self.fields = self.fields + new_fields unless self.fields.nil?
+  end
+
+  def to_s
+    str = ""
+
+    if fields
+      str << "#" << key_field << "\t" << fields * "\t" << "\n"
+    end
+
+    each do |key, values|
+      case
+      when values.nil?
+        str << key.dup << "\n"
+      when Array === values.first
+        str << key.dup <<  "\t" << values.collect{|list| (list || []) * "|"} * "\t" << "\n"
+      else
+        str << key.dup <<  "\t" << values * "\t" << "\n"
+      end
+    end
+
+    str
+  end
+
   #{{{ Helpers
 
   def self.index(file, options = {})

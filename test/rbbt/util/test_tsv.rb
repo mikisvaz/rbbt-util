@@ -43,6 +43,16 @@ row2 A B C
     end
   end
 
+  def test_headerless
+    content =<<-EOF
+row1 a b c
+row2 A B C
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      assert_equal 3, TSV.new(filename, :sep => ' ')['row1'].length
+    end
+  end
 
   def test_hash
     content =<<-EOF
@@ -141,6 +151,20 @@ row2    A    B    Id3
       assert(tsv["Id3"].include? "A")
     end
   end
+
+  def test_index_headerless
+    content =<<-EOF
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/)
+      index = tsv.index(:case_insensitive => true, :field => 2)
+      assert index["row1"].include? "Id1"
+    end
+  end
+
 
   def test_index
     content =<<-EOF
@@ -256,6 +280,90 @@ row2    A    B    Id3
       assert_equal "row2", tsv.sort_by{|k,v| v["ValueB"]}.first[0]
       assert_equal "B", tsv.sort_by{|k,v| v["ValueB"]}.first[1]["ValueB"].first
     end
+  end
+
+  def test_smart_merge
+    content1 =<<-EOF
+#Id    ValueA    ValueB 
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+    content2 =<<-EOF
+#ValueC    ValueB    OtherID
+c|cc|ccc    b    Id1|Id2
+C    B    Id3
+    EOF
+
+    tsv1 = tsv2 = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    tsv1.smart_merge tsv2, "ValueB"
+
+    assert_equal %w(C), tsv1["row2"]["ValueC"]   
+    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]   
+  end
+
+  def test_smart_merge_common_fields
+    content1 =<<-EOF
+#Id    ValueA    ValueB 
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+    content2 =<<-EOF
+#ValueC    ValueB    OtherID    ValueA
+c|cc|ccc    b    Id1|Id2    aaaa
+C    B    Id3    AA
+    EOF
+
+    tsv1 = tsv2 = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    tsv1.smart_merge tsv2, "ValueB"
+
+    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]   
+    assert_equal %w(C), tsv1["row2"]["ValueC"]   
+
+    assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
+  end
+
+  def test_smart_merge_headerless
+    content1 =<<-EOF
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+    content2 =<<-EOF
+c|cc|ccc    b    Id1|Id2
+C    B    Id3
+    EOF
+
+    tsv1 = tsv2 = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    tsv1.smart_merge tsv2, 1
+
+    assert_equal %w(C), tsv1["row2"][2]   
+    assert_equal %w(Id1 Id2), tsv1["row1"][3]   
   end
 end
 

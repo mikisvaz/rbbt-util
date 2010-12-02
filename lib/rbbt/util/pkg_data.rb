@@ -45,7 +45,7 @@ module PKGData
 
       FILES[file.to_s] = path
 
-      if ! File.exists?(path) or File.directory?(path)
+      if ! File.exists?(path)
         sharedir = sharedir(caller[2])
         get_datafile(file, path, get, sharedir)
       end

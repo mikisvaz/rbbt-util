@@ -66,8 +66,8 @@ class TCHash < TokyoCabinet::HDB
   def each19(&block)
     values = self.original_values.collect{|v| Serializer.load v}
     keys   = self.original_keys
-    indexes = FIELD_INFO_ENTRIES.values.collect do |field| keys.index(field) end.compact
-    indexes.each do |index| values.delete_at index; keys.delete_at index end
+    indexes = FIELD_INFO_ENTRIES.values.collect do |field| keys.index(field) end.compact.sort.reverse
+    indexes.sort.reverse.each do |index| values.delete_at(index); keys.delete_at(index) end
 
     keys.zip(values).each &block
   end
