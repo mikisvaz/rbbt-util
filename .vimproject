@@ -15,6 +15,7 @@ ruby=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    cachehelper.rb
 
    misc.rb
+   log.rb
    tmpfile.rb
    filecache.rb
    cmd.rb
@@ -26,8 +27,6 @@ ruby=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
  test=test {
   test_helper.rb
   util=rbbt/util{
-   test_base.rb
-
    test_simpleDSL.rb
 
    test_misc.rb
