@@ -13,7 +13,7 @@ module PKGConfig
   end
 
   def load_cfg(pkg_variables)
-    pkg_cfg_files = [File.join(ENV["HOME"], '.' + self.to_s)]
+    pkg_cfg_files = [ ENV['RBBT_CONFIG'] || "", File.join(ENV["HOME"], '.' + self.to_s), File.join('/etc/', '.' +  self.to_s)]
 
     pkg_variables.each do |variable|
       self.class_eval %{
