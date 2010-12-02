@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{rbbt-util}
-  s.version = "0.4.2"
+  s.version = "0.4.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/cachehelper.rb",
     "lib/rbbt/util/cmd.rb",
     "lib/rbbt/util/filecache.rb",
+    "lib/rbbt/util/log.rb",
     "lib/rbbt/util/misc.rb",
     "lib/rbbt/util/open.rb",
     "lib/rbbt/util/pkg_config.rb",
