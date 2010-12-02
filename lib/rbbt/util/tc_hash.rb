@@ -31,7 +31,6 @@ class TCHash < TokyoCabinet::HDB
   end
 
   def values_at(*args)
-    puts "Finding #{args.inspect}"
     args.collect do |key|
       self[key]
     end
@@ -122,23 +121,4 @@ class TCHash < TokyoCabinet::HDB
     write ? d.write : d.read
     d
   end
-end
-
-if __FILE__ == $0
-  require 'rbbt/util/tmpfile'
-
-  TmpFile.with_file do |f|
-    a = TCHash.new f
-    1000.times do |i|
-      a[i.to_s] = i
-    end
-
-    t = Time.now
-    1001.times do 
-      #a.keys
-      a.each do |k,v| puts "#{ k }\t#{v}" end
-    end
-    puts Time.now - t
-  end
-
 end

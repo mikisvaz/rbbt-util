@@ -222,19 +222,19 @@ row2    A    B    Id3
     end
   end
 
-  begin
-    def _test_helpers
+  def test_helpers
+    begin
       require 'rbbt/sources/organism'
       filename = File.join(Organism.datadir('Sce'), 'identifiers')
-
+      missing = true
       index = TSV.index(filename, :persistence => true, :native => "Associated Gene Name")
       assert index['1020'].include? 'CDK5'
       index = TSV.index(filename, :persistence => true, :native => "Associated Gene Name")
       assert index[[nil,'1020']].include? 'CDK5'
       index = TSV.index(filename, :persistence => true, :native => "Associated Gene Name")
       assert index[['MISSING','1020']].include? 'CDK5'
+    rescue Exception
     end
-  rescue
   end
 
 

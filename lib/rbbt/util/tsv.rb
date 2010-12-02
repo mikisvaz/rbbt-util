@@ -119,7 +119,7 @@ class TSV
     if options[:extra].nil?
       parts = parse_fields(line.chomp, options[:sep])
       extra_pos = (0..(parts.length - 1 )).to_a
-      extra_pos.delete(id_pos) 
+      extra_pos.delete(id_pos)  
     else
       extra_pos = options[:extra].collect{|pos| Misc.field_position(header_fields, pos) }
     end
@@ -383,7 +383,7 @@ class TSV
       else
         key = [key]
       end
-
+      
       values.flatten.compact.each_with_index do |value,i|
         value = value.downcase if options[:case_insensitive]
         if order

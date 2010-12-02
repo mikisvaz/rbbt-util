@@ -63,7 +63,7 @@ module Misc
     fields.each_with_index{|f,i| return i if f == field}
     field_re = Regexp.new /#{field}/i
     fields.each_with_index{|f,i| return i if f =~ field_re}
-    raise FieldNotFoundError, "Field #{ field } was not found" unless quiet
+    raise FieldNotFoundError, "Field '#{ field }' was not found" unless quiet
   end
 end
 
