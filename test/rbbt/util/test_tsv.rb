@@ -282,6 +282,19 @@ row2    A    B    Id3
     end
   end
 
+  def test_to_s
+    content =<<-EOF
+#Id	ValueA	ValueB	OtherID
+row1	a|aa|aaa	b	Id1|Id2
+row2	A	B	Id3
+  EOF
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/)
+      assert_equal content, tsv.to_s
+    end
+  end
+
+
   def test_smart_merge
     content1 =<<-EOF
 #Id    ValueA    ValueB 
@@ -365,5 +378,72 @@ C    B    Id3
     assert_equal %w(C), tsv1["row2"][2]   
     assert_equal %w(Id1 Id2), tsv1["row1"][3]   
   end
+
+  def test_reorder_simple
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/)
+
+      tsv1 = tsv.reorder("ValueA")
+
+      assert_equal "ValueA", tsv1.key_field
+      assert_equal %w(Id ValueB OtherID), tsv1.fields
+      assert_equal ["B"], tsv1["A"]["ValueB"] 
+      assert_equal ["b","C"], tsv1["a"]["ValueB"] 
+      assert_equal ["b"], tsv1["aa"]["ValueB"] 
+      
+    end
+  end
+
+  def test_reorder_simple_headerless
+    content =<<-EOF
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/)
+
+      tsv1 = tsv.reorder(0)
+
+      assert_nil tsv1.key_field
+      assert_equal ["B"], tsv1["A"][1] 
+      assert_equal ["b","C"], tsv1["a"][1] 
+      assert_equal ["b"], tsv1["aa"][1] 
+      assert_equal ["row1"], tsv1["aa"][0] 
+      assert_equal ["row1","row3"], tsv1["a"][0] 
+    end
+  end
+
+
+  def test_reorder_remove_field
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/)
+
+      tsv1 = tsv.reorder("ValueA", ["ValueB", "Id"])
+
+      assert_equal "ValueA", tsv1.key_field
+      assert_equal %w(ValueB Id), tsv1.fields
+      assert_equal ["B"], tsv1["A"]["ValueB"] 
+      assert_equal ["b","C"], tsv1["a"]["ValueB"] 
+      assert_equal ["row1"], tsv1["aa"]["Id"] 
+      assert_equal ["row1","row3"], tsv1["a"]["Id"] 
+    end
+  end
+
 end
 

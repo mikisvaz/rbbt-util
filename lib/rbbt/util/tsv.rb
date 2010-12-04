@@ -307,7 +307,7 @@ class TSV
   end
 
   attr_accessor :data, :key_field, :fields, :case_insensitive, :filename
-  def initialize(file, options = {})
+  def initialize(file = {}, options = {})
     @case_insensitive = options[:case_insensitive] == true
 
     case
@@ -522,6 +522,68 @@ class TSV
     end
 
     self.fields = self.fields + new_fields unless self.fields.nil?
+  end
+
+  def reorder(new_key_field, other_fields = nil)
+    return self.dup if new_key_field == key_field and (other_fields.nil? || other_fields == fields)
+
+    begin
+      new_key_field_pos = Misc.field_position(fields, new_key_field)
+    rescue FieldNotFoundError
+      new_key_field_pos = :main
+    end
+
+    if other_fields.nil?
+      if fields.nil?
+        other_fields = (0..values.first.length - 1).to_a
+      else
+        other_fields = fields.dup
+      end
+      unless new_key_field_pos == :main
+        other_fields.delete_at new_key_field_pos 
+        other_fields.unshift :main 
+      end
+    end
+    
+    other_field_pos = other_fields.collect{|field|
+      if field == key_field or field == :main
+        -1
+      else
+        Misc.field_position(fields, field)
+      end
+    }
+
+    new = TSV.new
+    each do |key, values|
+      if new_key_field_pos == :main
+        new_key_list = [key]
+      else
+        new_key_list           = values[new_key_field_pos]
+      end
+
+      new_values             = values.clone
+      new_values.push [key]
+      new_values = new_values.values_at(*other_field_pos)
+
+      new_key_list.each do |new_key|
+        if new[new_key].nil?
+          new[new_key] = new_values
+        else
+          new[new_key] = new[new_key].zip(new_values).collect{|v| v.flatten}
+        end
+      end
+
+    end
+
+    new.key_field = new_key_field unless Integer === new_key_field 
+
+    if not fields.nil?
+      new_fields    = fields.dup
+      new_fields.push key_field
+      new.fields = new_fields.values_at(*other_field_pos)
+    end
+
+    new
   end
 
   def to_s
