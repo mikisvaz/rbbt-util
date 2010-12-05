@@ -37,13 +37,26 @@ module Misc
   end
 
   def self.string2hash(string)
-    hash = {}
-    string.split(',').each do |part|
-      key, value = part.split('=>')
-      hash[key] = value
+
+    options = {}
+    string.split(/#/).each do |str|
+      if str.match(/(.*)=(.*)/)
+        option, value = $1, $2
+      else
+        option, value = str, true
+      end
+
+      option = option.sub(":",'').to_sym if option.chars.first == ':'
+
+      
+      if value == true
+        options[option] = option.to_s.chars.first != '!' 
+      else
+        options[option] = begin eval(value) rescue value end
+      end
     end
-    
-    hash
+
+    options
   end
 
   def self.sensiblewrite(path, content)

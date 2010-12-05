@@ -100,6 +100,25 @@ row2    A    B    Id3
     end
   end
 
+  def test_open_file
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open_file(filename + '#:sep=/\s+/#:native=OtherID')
+      assert_equal "OtherID", tsv.key_field
+      assert_equal ["Id", "ValueA", "ValueB"], tsv.fields
+      assert_equal ["a", "aa", "aaa"], tsv["Id1"][1]
+      assert_equal ["a", "aa", "aaa"], tsv["Id2"][1]
+    end
+  end
+
+
+
   def test_extra
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
@@ -174,7 +193,7 @@ row2    A    B    Id3
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(File.open(filename), :sep => /\s+/, :native => "OtherID", :persistence => true)
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :native => "OtherID", :persistence => false)
       index = tsv.index(:case_insensitive => true)
       assert index["row1"].include? "Id1"
       assert_equal "OtherID", index.key_field
@@ -287,7 +306,7 @@ row2    A    B    Id3
 #Id	ValueA	ValueB	OtherID
 row1	a|aa|aaa	b	Id1|Id2
 row2	A	B	Id3
-  EOF
+    EOF
     TmpFile.with_file(content) do |filename|
       tsv = TSV.new(File.open(filename), :sep => /\s+/)
       assert_equal content, tsv.to_s
@@ -379,6 +398,7 @@ C    B    Id3
     assert_equal %w(Id1 Id2), tsv1["row1"][3]   
   end
 
+
   def test_reorder_simple
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
@@ -397,7 +417,7 @@ row3    a    C    Id4
       assert_equal ["B"], tsv1["A"]["ValueB"] 
       assert_equal ["b","C"], tsv1["a"]["ValueB"] 
       assert_equal ["b"], tsv1["aa"]["ValueB"] 
-      
+
     end
   end
 
@@ -442,6 +462,23 @@ row3    a    C    Id4
       assert_equal ["b","C"], tsv1["a"]["ValueB"] 
       assert_equal ["row1"], tsv1["aa"]["Id"] 
       assert_equal ["row1","row3"], tsv1["a"]["Id"] 
+    end
+  end
+
+  def test_through
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/)
+
+      tsv.through "ValueA" do |key, values|
+        assert(tsv.keys.include? values["Id"].first)
+      end
     end
   end
 

@@ -311,6 +311,13 @@ class TSV
     @case_insensitive = options[:case_insensitive] == true
 
     case
+    when TSV === file
+      @filename         = file.filename
+      @data             = file.data
+      @key_field        = file.key_field
+      @fields           = file.fields
+      @case_insensitive = file.case_insensitive
+      return self
     when Hash === file || PersistenceHash === file
       @filename = Hash
       @data = file
@@ -353,8 +360,214 @@ class TSV
     @case_insensitive = options[:case_insensitive] == true
   end
 
+  def self.open_file(file)
+    raise "File '#{file}' not in correct format: filename#options." \
+      unless file.match(/(.*?)#(.*)/)
+
+    file, options = $1, Misc.string2hash($2.to_s)
+
+    TSV.new(file, options)
+  end
+
+  def to_s
+    str = ""
+
+    if fields
+      str << "#" << key_field << "\t" << fields * "\t" << "\n"
+    end
+
+    each do |key, values|
+      case
+      when values.nil?
+        str << key.dup << "\n"
+      when Array === values.first
+        str << key.dup <<  "\t" << values.collect{|list| (list || []) * "|"} * "\t" << "\n"
+      else
+        str << key.dup <<  "\t" << values * "\t" << "\n"
+      end
+    end
+
+    str
+  end
+
+  #{{{ New
+
+  def self.reorder(key_field, fields, new_key_field, new_fields)
+    return [-1, nil, key_field, fields] if (new_key_field.nil? or new_key_field == :main) and new_fields.nil?
+    return [new_key_field, nil, nil, nil] if Integer === new_key_field  and new_fields.nil? and fields.nil?
+
+    if new_fields.nil? 
+      new_fields = fields.dup
+      new_fields.delete_at(Misc.field_position(fields, new_key_field))
+      new_fields.unshift(key_field)
+    end
+
+    positions = new_fields.collect do |field|
+      if field == :main or field == nil or field == key_field
+        -1
+      else
+        Misc.field_position fields, field
+      end
+    end
+
+    if new_key_field == :main
+      new_key_field = key_field
+      key_position  = -1 
+    else
+      key_position  = Misc.field_position fields, new_key_field
+      new_key_field = fields[key_position]
+    end
+
+    [key_position, positions, new_key_field, new_fields]
+  end
+
+
+  def through(new_key_field = nil, new_fields = nil, &block)
+
+    if new_key_field.nil? or new_key_field == :main or key_field == new_key_field
+      if  new_fields.nil? or fields == new_fields
+         each &block 
+         return [key_field, fields]
+      end
+
+      positions = new_fields.collect{|field| Misc.field_position fields, field}
+
+      if fields.nil?
+        each do |key, values|
+          yield key, values.values_at(*positions)
+        end
+        return [key_field, nil]
+      else
+        new_fields = fields.values_at *positions 
+        each do |key, values|
+          new_values = NamedArray.name values.values_at(*positions), new_fields
+          yield key, new_values
+        end
+        return [key_field, new_fields]
+      end
+
+    else
+      key_position, positions, new_key_field, new_fields = TSV.reorder(key_field, fields, new_key_field, new_fields)
+
+      each do |key, values|
+        new_values     = values.dup
+        new_values.push [key]
+        new_keys       = new_values[key_position]
+
+        case 
+        when positions
+          new_values     = new_values.values_at(*positions) 
+        when (positions.nil? and key_position != -1)
+          new_values.delete_at key_position
+          new_values.unshift(new_values.pop)
+        end
+
+        new_values = NamedArray.name(new_values, new_fields) if new_fields
+
+        new_keys = [new_keys] unless Array === new_keys
+        new_keys.each do |new_key|
+          yield new_key, new_values
+        end
+      end
+
+      return [new_key_field, new_fields]
+    end
+  end
+
+  def reorder(new_key_field, new_fields = nil, options = {})
+    options = Misc.add_defaults options
+    return TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => case_insensitive) \
+      if options[:persistence_file] and File.exists?(options[:persistence_file])
+
+    new = {}
+    new_key_field, new_fields = through new_key_field, new_fields do |key, values|
+      if new[key].nil?
+        new[key] = values
+      else
+        new[key] = new[key].zip(values)
+      end
+    end
+
+    new.each do |key,values| 
+      values.each{|list| list.flatten!}
+    end
+
+    if options[:persistence_file]
+      reordered = TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => options[:case_insensitive])
+      reordered.merge! new
+    else
+      reordered = TSV.new(new, :case_insensitive => options[:case_insensitive])
+    end
+
+    reordered.key_field = new_key_field
+    reordered.fields    = new_fields
+
+    reordered
+  end
+
+  def index(options = {})
+    options = Misc.add_defaults options, :order => false
+    return TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => options[:case_insensitive]) \
+      if options[:persistence_file] and File.exists?(options[:persistence_file])
+
+    new = {}
+    if options[:order]
+      new_key_field, new_fields = through options[:field], options[:others] do |key, values|
+
+        values.each_with_index do |list, i|
+          next if list.nil? or list.empty?
+          list = [list] unless Array === list
+          list.each do |value|
+            next if value.nil? or value.empty?
+            value = value.downcase if options[:case_insensitive]
+            new[value] ||= []
+            new[value][i] ||= []
+            new[value][i] << key
+          end
+        end
+
+      end
+
+      new.each do |key, values| 
+        values.flatten!
+        values.compact!
+      end
+    else
+      new_key_field, new_fields = through options[:field], options[:others] do |key, values|
+        values.each do |list|
+          next if list.nil? 
+          if Array === list
+            list.each do |value|
+              value = value.downcase if options[:case_insensitive]
+              new[value] ||= []
+              new[value] << key
+            end
+          else
+            next if list.empty?
+            value = list
+            value = value.downcase if options[:case_insensitive]
+            new[value] ||= []
+            new[value] << key
+          end
+        end
+      end
+    end
+
+    if options[:persistence_file]
+      index = TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => options[:case_insensitive])
+      index.merge! new
+    else
+      index = TSV.new(new, :case_insensitive => options[:case_insensitive])
+    end
+
+    index.key_field = new_key_field
+    index.fields    = new_fields
+    index
+  end
+
   #{{{ Index
-  def self.reorder(native, others, pos)
+
+  def self.reorder2(native, others, pos)
     return [native, others] if pos.nil? or others[pos].nil?
 
     new_native = others[pos].dup
@@ -366,10 +579,10 @@ class TSV
     [new_native, new_others]
   end
 
-  def index(options = {})
+
+  def index2(options = {})
     options = Misc.add_defaults options, :order => false
     order = options[:order]
-    
 
     case
     when options[:field].nil?
@@ -449,6 +662,9 @@ class TSV
     index
   end
 
+  #{{{ Slice
+
+
   def slice(*fields)
     new = TSV.new({}, :case_insensitive => @case_insensitive)
     positions = fields.collect{|field| Misc.field_position(self.fields, field)}
@@ -461,6 +677,8 @@ class TSV
     new
   end
 
+  #{{{ Merge
+  
   def smart_merge(other, field = nil)
 
     if self.fields and other.fields 
@@ -524,7 +742,11 @@ class TSV
     self.fields = self.fields + new_fields unless self.fields.nil?
   end
 
-  def reorder(new_key_field, other_fields = nil)
+  #{{{ Reorder
+  
+
+
+  def reorder2(new_key_field, other_fields = nil)
     return self.dup if new_key_field == key_field and (other_fields.nil? || other_fields == fields)
 
     begin
@@ -584,27 +806,6 @@ class TSV
     end
 
     new
-  end
-
-  def to_s
-    str = ""
-
-    if fields
-      str << "#" << key_field << "\t" << fields * "\t" << "\n"
-    end
-
-    each do |key, values|
-      case
-      when values.nil?
-        str << key.dup << "\n"
-      when Array === values.first
-        str << key.dup <<  "\t" << values.collect{|list| (list || []) * "|"} * "\t" << "\n"
-      else
-        str << key.dup <<  "\t" << values * "\t" << "\n"
-      end
-    end
-
-    str
   end
 
   #{{{ Helpers
