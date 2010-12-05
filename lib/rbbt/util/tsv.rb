@@ -396,6 +396,7 @@ class TSV
     return [-1, nil, key_field, fields] if (new_key_field.nil? or new_key_field == :main) and new_fields.nil?
     return [new_key_field, nil, nil, nil] if Integer === new_key_field  and new_fields.nil? and fields.nil?
 
+    new_fields = [new_fields] if String === new_fields
     if new_fields.nil? 
       new_fields = fields.dup
       new_fields.delete_at(Misc.field_position(fields, new_key_field))
@@ -493,10 +494,10 @@ class TSV
     end
 
     if options[:persistence_file]
-      reordered = TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => options[:case_insensitive])
+      reordered = TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => case_insensitive)
       reordered.merge! new
     else
-      reordered = TSV.new(new, :case_insensitive => options[:case_insensitive])
+      reordered = TSV.new(new, :case_insensitive => case_insensitive)
     end
 
     reordered.key_field = new_key_field
@@ -564,120 +565,6 @@ class TSV
     index.fields    = new_fields
     index
   end
-
-  #{{{ Index
-
-  def self.reorder2(native, others, pos)
-    return [native, others] if pos.nil? or others[pos].nil?
-
-    new_native = others[pos].dup
-
-    new_others = others.dup
-    new_others.delete_at pos
-    new_others.unshift native.dup
-
-    [new_native, new_others]
-  end
-
-
-  def index2(options = {})
-    options = Misc.add_defaults options, :order => false
-    order = options[:order]
-
-    case
-    when options[:field].nil?
-      pos = nil
-    when Integer === options[:field]
-      pos = options[:field]
-    when key_field =~ /#{Regexp.quote options[:field]}/i
-      pos = nil
-    when (not fields.nil? and fields.any?)
-      pos = Misc.field_position(fields, options[:field])
-    end
-
-    data = {}
-    each do |key, values|
-      key, values = self.class.reorder(key, values, pos) unless pos.nil?
-      
-      next if key.nil?
-
-      if Array === key
-        key.flatten!
-        key.compact
-      else
-        key = [key]
-      end
-      
-      values.flatten.compact.each_with_index do |value,i|
-        value = value.downcase if options[:case_insensitive]
-        if order
-          data[value]    ||= []  
-          data[value][i] ||= []  
-          data[value][i].concat key
-        else
-          data[value]    ||= []  
-          data[value].concat key
-        end
-      end
-    end
-
-    data.each{|k,v| v.flatten!.compact!} if order
-
-    each do |key, values| 
-      key, values = self.class.reorder(key, values, pos) unless pos.nil?
-
-      if Array === key
-        key.flatten!
-        key.compact
-      else
-        key = [key]
-      end
-      
-      key.each do |key|
-        if options[:case_insensitive]
-          data[key.downcase] = key 
-        else
-          data[key] = key 
-        end
-      end
-    end
-
-    if options[:persistence_file]
-      if File.exists? options[:persistence_file]
-        index = TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => options[:case_insensitive])
-      else
-        index = TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => options[:case_insensitive])
-        index.merge! data
-      end
-    else
-      index = TSV.new(data, :case_insensitive => options[:case_insensitive])
-    end
-
-    if not pos.nil? and not fields.nil?
-      index.key_field = fields[pos] 
-    else
-      index.key_field = key_field
-    end
-
-    index
-  end
-
-  #{{{ Slice
-
-
-  def slice(*fields)
-    new = TSV.new({}, :case_insensitive => @case_insensitive)
-    positions = fields.collect{|field| Misc.field_position(self.fields, field)}
-    data.each do |key, values|
-      new[key] = follow(values).values_at(*positions)
-    end
-    new.fields = fields
-    new.key_field = self.key_field
-
-    new
-  end
-
-  #{{{ Merge
   
   def smart_merge(other, field = nil)
 
@@ -691,7 +578,7 @@ class TSV
 
     this_index  = self.index(:order => true, :field => field)
     if other.fields and not Integer === field and other.fields.include? field
-      other_index = other.slice(field).index(:order => true)
+      other_index = other.index(:others => field, :order => true)
     else
       other_index = other.index(:order => true)
     end
@@ -740,72 +627,6 @@ class TSV
     end
 
     self.fields = self.fields + new_fields unless self.fields.nil?
-  end
-
-  #{{{ Reorder
-  
-
-
-  def reorder2(new_key_field, other_fields = nil)
-    return self.dup if new_key_field == key_field and (other_fields.nil? || other_fields == fields)
-
-    begin
-      new_key_field_pos = Misc.field_position(fields, new_key_field)
-    rescue FieldNotFoundError
-      new_key_field_pos = :main
-    end
-
-    if other_fields.nil?
-      if fields.nil?
-        other_fields = (0..values.first.length - 1).to_a
-      else
-        other_fields = fields.dup
-      end
-      unless new_key_field_pos == :main
-        other_fields.delete_at new_key_field_pos 
-        other_fields.unshift :main 
-      end
-    end
-    
-    other_field_pos = other_fields.collect{|field|
-      if field == key_field or field == :main
-        -1
-      else
-        Misc.field_position(fields, field)
-      end
-    }
-
-    new = TSV.new
-    each do |key, values|
-      if new_key_field_pos == :main
-        new_key_list = [key]
-      else
-        new_key_list           = values[new_key_field_pos]
-      end
-
-      new_values             = values.clone
-      new_values.push [key]
-      new_values = new_values.values_at(*other_field_pos)
-
-      new_key_list.each do |new_key|
-        if new[new_key].nil?
-          new[new_key] = new_values
-        else
-          new[new_key] = new[new_key].zip(new_values).collect{|v| v.flatten}
-        end
-      end
-
-    end
-
-    new.key_field = new_key_field unless Integer === new_key_field 
-
-    if not fields.nil?
-      new_fields    = fields.dup
-      new_fields.push key_field
-      new.fields = new_fields.values_at(*other_field_pos)
-    end
-
-    new
   end
 
   #{{{ Helpers

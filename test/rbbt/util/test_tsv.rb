@@ -27,7 +27,7 @@ row2 A B C
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.new(File.open(filename), :sep => /\s/)
-      assert_equal [["a"],["c"]], tsv.slice("ValueA", "Comment")["row1"]
+      assert_equal [["a"],["c"]], tsv.reorder(:main, ["ValueA", "Comment"])["row1"]
     end
   end
 
@@ -258,7 +258,8 @@ row2    A    B    Id3
       assert_equal ["a", "aa", "aaa"], tsv["id1"][1]
       assert_equal ["a", "aa", "aaa"], tsv["Id2"]["ValueA"]
 
-      tsv_sliced = tsv.slice("ValueA", "ValueB")
+      tsv_sliced = tsv.reorder(:main, ["ValueA", "ValueB"])
+
       assert_equal ["ValueA", "ValueB"], tsv_sliced.fields
       assert_equal ["a", "aa", "aaa"], tsv_sliced["id1"][0]
       assert_equal ["a", "aa", "aaa"], tsv_sliced["Id2"]["ValueA"]
