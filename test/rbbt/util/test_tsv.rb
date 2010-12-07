@@ -7,7 +7,7 @@ class TestTSV < Test::Unit::TestCase
     content =<<-EOF
 #Id ValueA ValueB Comment
 row1 a|aa|aaa b c
-row2 A B 
+row2 A B
     EOF
 
     TmpFile.with_file(content) do |filename|
@@ -315,9 +315,38 @@ row2	A	B	Id3
   end
 
 
+  def test_smart_merge_single
+    content1 =<<-EOF
+#Id    ValueA    ValueB
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+    content2 =<<-EOF
+#ValueC    ValueB    OtherID
+c|cc|ccc    b    Id1|Id2
+C    B    Id3
+    EOF
+
+    tsv1 = tsv2 = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.new(File.open(filename), :sep => /\s+/, :unique => true)
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.new(File.open(filename), :sep => /\s+/, :unique => true)
+    end
+
+    tsv1.smart_merge tsv2, "ValueB"
+
+    assert_equal "C", tsv1["row2"]["ValueC"]
+    assert %w(c cc ccc).include? tsv1["row1"]["ValueC"]
+    assert_equal "Id1", tsv1["row1"]["OtherID"]
+  end
+
   def test_smart_merge
     content1 =<<-EOF
-#Id    ValueA    ValueB 
+#Id    ValueA    ValueB
 row1    a|aa|aaa    b
 row2    A    B
     EOF
@@ -339,13 +368,129 @@ C    B    Id3
 
     tsv1.smart_merge tsv2, "ValueB"
 
-    assert_equal %w(C), tsv1["row2"]["ValueC"]   
-    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]   
+    assert_equal %w(C), tsv1["row2"]["ValueC"]
+    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
   end
 
+  def test_smart_merge_through_index_find_headers
+    content1 =<<-EOF
+#Id    ValueA    ValueBB
+row1    a|aa|aaa    bb
+row2    A    BB
+    EOF
+
+    content2 =<<-EOF
+#ValueC    ValueB    OtherID    ValueA
+c|cc|ccc    b    Id1|Id2    aaaa
+C    B    Id3    AA
+    EOF
+
+    index =<<-EOF
+#ValueB    ValueBB
+b    bb
+B    BB
+    EOF
+
+    tsv1 = tsv2 = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    TmpFile.with_file(index) do |filename|
+      index = TSV.index(filename, :sep => /\s+/)
+    end
+
+    tsv1.smart_merge tsv2, index
+
+    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
+    assert_equal %w(C), tsv1["row2"]["ValueC"]
+
+    assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
+  end
+
+
+  def test_smart_merge_through_string_find_headers
+    content1 =<<-EOF
+#Id    ValueA    ValueBB
+row1    a|aa|aaa    bb
+row2    A    BB
+    EOF
+
+    content2 =<<-EOF
+#ValueC    ValueB    OtherID    ValueA
+c|cc|ccc    b    Id1|Id2    aaaa
+C    B    Id3    AA
+    EOF
+
+    index =<<-EOF
+#ValueB    ValueBB
+b    bb
+B    BB
+    EOF
+
+    tsv1 = tsv2 = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    TmpFile.with_file(index) do |filename|
+      tsv1.smart_merge tsv2, "through:#{filename}#:sep=/\\s+/"
+    end
+
+    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
+    assert_equal %w(C), tsv1["row2"]["ValueC"]
+
+    assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
+  end
+
+  def test_smart_merge_through_string
+    content1 =<<-EOF
+#Id    ValueA    ValueBB
+row1    a|aa|aaa    bb
+row2    A    BB
+    EOF
+
+    content2 =<<-EOF
+#ValueC    ValueB    OtherID    ValueA
+c|cc|ccc    b    Id1|Id2    aaaa
+C    B    Id3    AA
+    EOF
+
+    index =<<-EOF
+#ValueB    ValueBB
+b    bb
+B    BB
+    EOF
+
+    tsv1 = tsv2 = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.new(File.open(filename), :sep => /\s+/)
+    end
+
+    TmpFile.with_file(index) do |filename|
+      tsv1.smart_merge tsv2, "through:#{filename}#:sep=/\\s+/#using:ValueBB"
+    end
+
+    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
+    assert_equal %w(C), tsv1["row2"]["ValueC"]
+
+    assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
+  end
   def test_smart_merge_common_fields
     content1 =<<-EOF
-#Id    ValueA    ValueB 
+#Id    ValueA    ValueB
 row1    a|aa|aaa    b
 row2    A    B
     EOF
@@ -367,8 +512,8 @@ C    B    Id3    AA
 
     tsv1.smart_merge tsv2, "ValueB"
 
-    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]   
-    assert_equal %w(C), tsv1["row2"]["ValueC"]   
+    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
+    assert_equal %w(C), tsv1["row2"]["ValueC"]
 
     assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
   end
@@ -395,8 +540,8 @@ C    B    Id3
 
     tsv1.smart_merge tsv2, 1
 
-    assert_equal %w(C), tsv1["row2"][2]   
-    assert_equal %w(Id1 Id2), tsv1["row1"][3]   
+    assert_equal %w(C), tsv1["row2"][2]
+    assert_equal %w(Id1 Id2), tsv1["row1"][3]
   end
 
 
@@ -415,9 +560,9 @@ row3    a    C    Id4
 
       assert_equal "ValueA", tsv1.key_field
       assert_equal %w(Id ValueB OtherID), tsv1.fields
-      assert_equal ["B"], tsv1["A"]["ValueB"] 
-      assert_equal ["b","C"], tsv1["a"]["ValueB"] 
-      assert_equal ["b"], tsv1["aa"]["ValueB"] 
+      assert_equal ["B"], tsv1["A"]["ValueB"]
+      assert_equal ["b","C"], tsv1["a"]["ValueB"]
+      assert_equal ["b"], tsv1["aa"]["ValueB"]
 
     end
   end
@@ -435,11 +580,11 @@ row3    a    C    Id4
       tsv1 = tsv.reorder(0)
 
       assert_nil tsv1.key_field
-      assert_equal ["B"], tsv1["A"][1] 
-      assert_equal ["b","C"], tsv1["a"][1] 
-      assert_equal ["b"], tsv1["aa"][1] 
-      assert_equal ["row1"], tsv1["aa"][0] 
-      assert_equal ["row1","row3"], tsv1["a"][0] 
+      assert_equal ["B"], tsv1["A"][1]
+      assert_equal ["b","C"], tsv1["a"][1]
+      assert_equal ["b"], tsv1["aa"][1]
+      assert_equal ["row1"], tsv1["aa"][0]
+      assert_equal ["row1","row3"], tsv1["a"][0]
     end
   end
 
@@ -459,10 +604,10 @@ row3    a    C    Id4
 
       assert_equal "ValueA", tsv1.key_field
       assert_equal %w(ValueB Id), tsv1.fields
-      assert_equal ["B"], tsv1["A"]["ValueB"] 
-      assert_equal ["b","C"], tsv1["a"]["ValueB"] 
-      assert_equal ["row1"], tsv1["aa"]["Id"] 
-      assert_equal ["row1","row3"], tsv1["a"]["Id"] 
+      assert_equal ["B"], tsv1["A"]["ValueB"]
+      assert_equal ["b","C"], tsv1["a"]["ValueB"]
+      assert_equal ["row1"], tsv1["aa"]["Id"]
+      assert_equal ["row1","row3"], tsv1["a"]["Id"]
     end
   end
 
@@ -483,5 +628,23 @@ row3    a    C    Id4
     end
   end
 
+  def test_process
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/)
+
+      tsv.process "ValueA" do |field_values,key,values|
+        field_values.collect{|v| "Pref:#{v}"}
+      end
+
+      assert_equal ["Pref:A"], tsv["row2"]["ValueA"]
+    end
+  end
 end
 

@@ -94,8 +94,7 @@ module CMD
         STDOUT.sync = STDERR.sync = true
         exec(cmd)
       rescue Exception
-        STDERR.puts $!.message
-        STDERR.puts $!.backtrace * "\n"
+        raise CMDError $!.message
       end
 
     }

@@ -10,7 +10,7 @@ begin
     gem.email = "miguel.vazquez@fdi.ucm.es"
     gem.homepage = "http://github.com/mikisvaz/rbbt-util"
     gem.authors = ["Miguel Vazquez"]
-    gem.files = Dir['lib/**/*.rb']
+    gem.files = Dir['lib/**/*.rb', 'share/**/*.rb', 'share/**/Rakefile', 'LICENSE']
     gem.test_files = Dir['test/**/test_*.rb']
 
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings

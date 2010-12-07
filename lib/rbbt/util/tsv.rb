@@ -1,6 +1,7 @@
 require 'rbbt/util/misc'
 require 'rbbt/util/open'
 require 'rbbt/util/tc_hash'
+require 'rbbt/util/tmpfile'
 require 'digest'
 require 'fileutils'
 
@@ -175,7 +176,7 @@ class TSV
       :unique           => false,
       :flatten          => false,
       :overwrite        => false,
-      :keep_empty       => false,
+      :keep_empty       => true,
       :case_insensitive => false,
       :header_hash      => '#' ,
       :persistence_file => nil
@@ -191,6 +192,7 @@ class TSV
 
     line = file.gets
     raise "Empty content" if line.nil?
+    line.chomp!
 
     if line =~ /^#{options[:header_hash]}/
       header_fields    = parse_fields(line, options[:sep])
@@ -199,20 +201,21 @@ class TSV
     else
       header_fields = nil
     end
-
+    
     id_pos = Misc.field_position(header_fields, options[:native])
 
     if options[:extra].nil?
-      parts = parse_fields(line.chomp, options[:sep])
-      extra_pos = (0..(parts.length - 1 )).to_a
-      extra_pos.delete(id_pos)  
+      extra_pos = nil
+      max_cols = 0
     else
       extra_pos = options[:extra].collect{|pos| Misc.field_position(header_fields, pos) }
     end
-    
+
     #{{{ Process rest
     while line do
       line.chomp!
+
+      line = options[:fix].call line if options[:fix]
 
       # Select and fix lines
       if (options[:exclude] and   options[:exclude].call(line)) or
@@ -220,8 +223,6 @@ class TSV
          line = file.gets
          next
       end
-
-      line = options[:fix].call line if options[:fix]
 
       ### Process line
 
@@ -237,12 +238,18 @@ class TSV
       ids.collect!{|id| id.downcase } if options[:case_insensitive]
 
       # Get extra fields
-      
-      if options[:extra].nil? and (options[:flatten] or options[:single])
+
+      if options[:extra].nil? and not (options[:flatten] or options[:single])
         extra = parts 
         extra.delete_at(id_pos)
+        max_cols = extra.size if extra.size > (max_cols || 0)
       else
-        extra = parts.values_at(*extra_pos)
+        if extra_pos.nil?
+          extra = parts
+          extra.delete_at id_pos
+        else
+          extra = parts.values_at(*extra_pos)
+        end
       end
 
       extra.collect!{|value| parse_fields(value, options[:sep2])}  
@@ -293,12 +300,28 @@ class TSV
       end
     end
 
+    if options[:keep_empty] and not max_cols.nil?
+      data.each do |key,values| 
+        new_values = values
+        max_cols.times do |i|
+          new_values[i] ||= [""]
+        end
+        data[key] = new_values
+      end
+    end
+
+
     # Save header information
     key_field = nil
     fields   = nil
     if header_fields && header_fields.any?
       key_field = header_fields[id_pos] 
-      fields = header_fields.values_at(*extra_pos) 
+      if extra_pos.nil?
+        fields = header_fields
+        fields.delete_at(id_pos) 
+      else
+        fields = header_fields.values_at(*extra_pos) 
+      end
     end
 
     data.read if PersistenceHash === data
@@ -306,9 +329,10 @@ class TSV
     [data, key_field, fields]
   end
 
-  attr_accessor :data, :key_field, :fields, :case_insensitive, :filename
+  attr_accessor :data, :key_field, :fields, :list, :case_insensitive, :filename
   def initialize(file = {}, options = {})
     @case_insensitive = options[:case_insensitive] == true
+    @list = ! (options[:flatten] == true || options[:single] == true || options[:unique] == true)
 
     case
     when TSV === file
@@ -317,9 +341,10 @@ class TSV
       @key_field        = file.key_field
       @fields           = file.fields
       @case_insensitive = file.case_insensitive
+      @list             = file.is_list
       return self
-    when Hash === file || PersistenceHash === file
-      @filename = Hash
+    when (Hash === file or PersistenceHash === file)
+      @filename = "Hash:" + Digest::MD5.hexdigest(file.inspect)
       @data = file
       return self
     when File === file
@@ -360,14 +385,6 @@ class TSV
     @case_insensitive = options[:case_insensitive] == true
   end
 
-  def self.open_file(file)
-    raise "File '#{file}' not in correct format: filename#options." \
-      unless file.match(/(.*?)#(.*)/)
-
-    file, options = $1, Misc.string2hash($2.to_s)
-
-    TSV.new(file, options)
-  end
 
   def to_s
     str = ""
@@ -392,93 +409,93 @@ class TSV
 
   #{{{ New
 
-  def self.reorder(key_field, fields, new_key_field, new_fields)
-    return [-1, nil, key_field, fields] if (new_key_field.nil? or new_key_field == :main) and new_fields.nil?
-    return [new_key_field, nil, nil, nil] if Integer === new_key_field  and new_fields.nil? and fields.nil?
-
-    new_fields = [new_fields] if String === new_fields
-    if new_fields.nil? 
-      new_fields = fields.dup
-      new_fields.delete_at(Misc.field_position(fields, new_key_field))
-      new_fields.unshift(key_field)
-    end
-
-    positions = new_fields.collect do |field|
-      if field == :main or field == nil or field == key_field
+  def self.field_positions(key_field, fields, *selected)
+    selected.collect do |sel|
+      case
+      when (sel.nil? or sel == :main or sel == key_field)
         -1
+      when Integer === sel
+        sel
       else
-        Misc.field_position fields, field
+        Misc.field_position fields, sel
       end
     end
-
-    if new_key_field == :main
-      new_key_field = key_field
-      key_position  = -1 
-    else
-      key_position  = Misc.field_position fields, new_key_field
-      new_key_field = fields[key_position]
-    end
-
-    [key_position, positions, new_key_field, new_fields]
   end
 
+  def field_positions(*selected)
+    return nil if selected.nil? or selected == [nil]
+    TSV.field_positions(key_field, fields, *selected)
+  end
+
+  def fields_at(*positions)
+    return nil if fields.nil?
+    return nil if positions.nil? or positions == [nil]
+    (fields + [key_field]).values_at(*positions)
+  end
 
   def through(new_key_field = nil, new_fields = nil, &block)
+    new_key_position = (field_positions(new_key_field) || [-1]).first
 
-    if new_key_field.nil? or new_key_field == :main or key_field == new_key_field
-      if  new_fields.nil? or fields == new_fields
-         each &block 
-         return [key_field, fields]
-      end
+    if new_key_position == -1
 
-      positions = new_fields.collect{|field| Misc.field_position fields, field}
-
-      if fields.nil?
-        each do |key, values|
-          yield key, values.values_at(*positions)
-        end
-        return [key_field, nil]
+      if new_fields.nil? or new_fields == fields
+        each &block 
+        return [key_field, fields]
       else
-        new_fields = fields.values_at *positions 
+        new_field_positions = field_positions(*new_fields)
         each do |key, values|
-          new_values = NamedArray.name values.values_at(*positions), new_fields
-          yield key, new_values
+          yield key, values.values_at(*new_field_positions)
         end
-        return [key_field, new_fields]
+        return [key_field, fields_at(*new_field_positions)]
       end
 
     else
-      key_position, positions, new_key_field, new_fields = TSV.reorder(key_field, fields, new_key_field, new_fields)
+      new_field_positions = field_positions(*new_fields)
 
-      each do |key, values|
-        new_values     = values.dup
-        new_values.push [key]
-        new_keys       = new_values[key_position]
-
-        case 
-        when positions
-          new_values     = new_values.values_at(*positions) 
-        when (positions.nil? and key_position != -1)
-          new_values.delete_at key_position
-          new_values.unshift(new_values.pop)
-        end
-
-        new_values = NamedArray.name(new_values, new_fields) if new_fields
-
-        new_keys = [new_keys] unless Array === new_keys
-        new_keys.each do |new_key|
-          yield new_key, new_values
-        end
+      new_field_names = fields_at(*new_field_positions)
+      if new_field_names.nil? and fields
+        new_field_names = fields.dup
+        new_field_names.delete_at new_key_position
+        new_field_names.unshift key_field
       end
 
-      return [new_key_field, new_fields]
+      each do |key, values|
+        if list
+          tmp_values = values + [[key]]
+        else
+          tmp_values = values + [key]
+        end
+
+        if new_field_positions.nil?
+          new_values = values.dup
+          new_values.delete_at new_key_position
+          new_values.unshift [key] 
+        else
+          new_values = tmp_values.values_at(*new_field_positions)
+        end
+
+        tmp_values[new_key_position].each do |new_key|
+          if new_field_names
+            yield new_key, NamedArray.name(new_values, new_field_names)
+          else
+            yield new_key, new_values
+          end
+        end
+      end
+      return [(fields_at(new_key_position) || [nil]).first, new_field_names]
     end
   end
+  
+  def process(field)
+    through do |key, values|
+      values[field].replace yield values[field], key, values
+    end
+  end
+
 
   def reorder(new_key_field, new_fields = nil, options = {})
     options = Misc.add_defaults options
-    return TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => case_insensitive) \
-      if options[:persistence_file] and File.exists?(options[:persistence_file])
+    return TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => case_insensitive)  if options[:persistence_file] and File.exists?(options[:persistence_file])
 
     new = {}
     new_key_field, new_fields = through new_key_field, new_fields do |key, values|
@@ -490,7 +507,7 @@ class TSV
     end
 
     new.each do |key,values| 
-      values.each{|list| list.flatten!}
+      values.each{|list| list.flatten! if Array === list}
     end
 
     if options[:persistence_file]
@@ -506,10 +523,20 @@ class TSV
     reordered
   end
 
+  def slice(new_fields, options = {})
+    reorder(:main, new_fields)
+  end
+
   def index(options = {})
     options = Misc.add_defaults options, :order => false
-    return TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => options[:case_insensitive]) \
-      if options[:persistence_file] and File.exists?(options[:persistence_file])
+
+    if options[:persistence] and ! options[:persistence_file]
+      options[:persistence_file] = TSV.get_persistence_file(filename, "index:#{ filename }_#{options[:field]}:", options)
+    end
+
+    if options[:persistence_file] and File.exists?(options[:persistence_file])
+      return TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => options[:case_insensitive]) 
+    end
 
     new = {}
     if options[:order]
@@ -517,14 +544,18 @@ class TSV
 
         values.each_with_index do |list, i|
           next if list.nil? or list.empty?
+
           list = [list] unless Array === list
+
           list.each do |value|
             next if value.nil? or value.empty?
             value = value.downcase if options[:case_insensitive]
-            new[value] ||= []
-            new[value][i] ||= []
-            new[value][i] << key
+            new[value]    ||= []
+            new[value][i + 1] ||= []
+            new[value][i + 1] << key
           end
+          new[key]    ||= []
+          new[key][0] = key
         end
 
       end
@@ -533,8 +564,11 @@ class TSV
         values.flatten!
         values.compact!
       end
+
     else
       new_key_field, new_fields = through options[:field], options[:others] do |key, values|
+        new[key] ||= []
+        new[key] << key 
         values.each do |list|
           next if list.nil? 
           if Array === list
@@ -565,71 +599,141 @@ class TSV
     index.fields    = new_fields
     index
   end
-  
-  def smart_merge(other, field = nil)
+
+  def smart_merge(other, match = nil)
 
     if self.fields and other.fields 
-      common_fields = self.fields & other.fields
-      common_fields.delete field
-      new_fields    = ([other.key_field] + other.fields) - self.fields - [self.key_field]
+      common_fields = ([self.key_field] + self.fields)   & ([other.key_field] + other.fields)
+      new_fields    = ([other.key_field] + other.fields) - ([self.key_field] + self.fields)
+
+      common_fields.delete match if String === match
+      common_fields.delete_at match if Integer === match
+
+      this_common_field_positions   = self.field_positions *common_fields 
+      other_common_field_positions  = other.field_positions *common_fields 
+      other_new_field_positions     = other.field_positions *new_fields
     else
       nofieldinfo = true
     end
 
-    this_index  = self.index(:order => true, :field => field)
-    if other.fields and not Integer === field and other.fields.include? field
-      other_index = other.index(:others => field, :order => true)
-    else
-      other_index = other.index(:order => true)
+    case
+    when TSV === match
+      match_index = match
+      matching_code_position = nil
+
+    when Array === match
+      match_index = match.first
+      matching_code_position = field_positions(match.last).first
+
+    when match =~ /^through:(.*)/
+      through = $1
+      if through =~ /(.*)#using:(.*)/
+        through = $1
+        matching_code_position = field_positions($2).first
+      else
+        matching_code_position = nil
+      end
+      match_index = TSV.open_file(through).index
+    when field_positions(match).first
+      matching_code_position = field_positions(match).first
+      match_index = nil
     end
 
-    each do |key, values|
-      new_data = nil
-      next if this_index[key].nil? 
-
-      this_index[key].each do |common_id|
-        if other_index[common_id] and other_index[common_id].any?
-          if nofieldinfo
-            new_data         = other[other_index[common_id]].dup
-            new_data.unshift other_index[common_id].dup
-            new_data.delete_if do |new_datavalues| new_datavalues.include? common_id end
-          else
-            new_data        = other[other_index[common_id]].dup
-            new_data_fields = other.fields.dup                                    
-
-            if other.key_field != field
-              new_data.delete_at(Misc.field_position(other.fields, field))
-              new_data.unshift other_index[common_id]
-
-              new_data_fields.delete_at(Misc.field_position(other.fields, field)) 
-              new_data_fields.unshift other.key_field                             
-            end
-
-            new_data = NamedArray.name(new_data, new_data_fields)
-          end
+    if matching_code_position.nil? and match_index.fields
+      match_index.fields.each do |field| 
+        if matching_code_position = field_positions(field).first
           break
         end
       end
-
-      next if new_data.nil?
-
-      if nofieldinfo
-        values.concat new_data
-      else
-        common_fields.each do |common_field|
-          values[common_field] += new_data[common_field]
-        end
-
-        values.concat new_data.values_at(*new_fields)
-      end
-
-      self[key] = values
     end
 
-    self.fields = self.fields + new_fields unless self.fields.nil?
+    if match_index and match_index.key_field == other.key_field
+      other_index = nil
+    else
+      other_index = (match === String and other.field_positions(match)) ? 
+        other.index(:other => match, :order => true) : other.index(:order => true)
+    end
+
+    each do |key,values|
+      if matching_code_position.nil? or matching_code_position == -1
+        matching_codes = [key] 
+      else
+        matching_codes = values[matching_code_position]
+        matching_codes = [matching_codes] unless  matching_codes.nil? or Array === matching_codes
+      end
+
+      next if matching_codes.nil?
+
+      matching_codes.each do |matching_code|
+        if match_index
+          if match_index[matching_code]
+            matching_code_fix = match_index[matching_code].first
+          else
+            matching_code_fix = nil
+          end
+        else
+          matching_code_fix = matching_code
+        end
+
+        next if matching_code_fix.nil?
+
+        if other_index
+          other_codes = other_index[matching_code_fix]
+        else
+          other_codes = matching_code_fix
+        end
+
+        next if other_codes.nil? or other_codes.empty?
+        other_code = other_codes.first
+
+        if nofieldinfo
+          if list
+            other_values = [[other_code]] + other[other_code]
+          else
+            other_values = [other_code] + other[other_code]
+          end
+          other_values.delete_if do |list| 
+            list = [list] unless Array === list
+            list.collect{|e| case_insensitive ? e.downcase : e }.
+                 select{|e| case_insensitive ? e == matching_code.downcase : e == matching_code }.any?
+          end
+
+          new_values = values + other_values 
+        else
+          if list
+            other_values = other[other_code] + [[other_code]]
+          else
+            other_values = other[other_code] + [other_code]
+          end
+  
+
+          new_values = values.dup
+
+          if list
+            this_common_field_positions.zip(other_common_field_positions).each do |tpos, opos|
+              new_values_tops = new_values[tpos]
+
+              if other.list
+                new_values_tops += other_values[opos]
+              else
+                new_values_tops += [other_values[opos]]
+              end
+
+              new_values[tpos] = new_values_tops.uniq
+            end
+          end
+
+          new_values.concat other_values.values_at *other_new_field_positions
+        end
+
+        self[key] = new_values
+      end
+    end
+
+    self.fields = self.fields + new_fields unless nofieldinfo
   end
 
-  #{{{ Helpers
+   #{{{ Helpers
 
   def self.index(file, options = {})
     opt_data = options.dup
@@ -644,11 +748,22 @@ class TSV
 
     if ! opt_index[:persistence_file].nil? && File.exists?(opt_index[:persistence_file])
       TSV.log "Reloading persistent index for #{ file }: #{opt_index[:persistence_file]}"
-      TSV.new(PersistenceHash.get(opt_index[:persistence_file], false),opt_index)
+      TSV.new(PersistenceHash.get(opt_index[:persistence_file], false), opt_index)
     else
       TSV.log "Creating index for #{ file }: #{opt_index[:persistence_file]}"
       data = TSV.new(file, opt_data)
       data.index(opt_index)
     end
   end
+
+  def self.open_file(file)
+    if file =~ /(.*?)#(.*)/
+      file, options = $1, Misc.string2hash($2.to_s)
+    else
+      options = {}
+    end
+
+    TSV.new(file, options)
+  end
+
 end

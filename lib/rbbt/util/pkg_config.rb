@@ -12,8 +12,10 @@ module PKGConfig
     end
   end
 
-  def load_cfg(pkg_variables)
-    pkg_cfg_files = [ ENV['RBBT_CONFIG'] || "", File.join(ENV["HOME"], '.' + self.to_s), File.join('/etc/', '.' +  self.to_s)]
+  def load_cfg(pkg_variables, default = nil)
+    pkg_cfg_files = [ ENV['RBBT_CONFIG'] || "", 
+      File.join(ENV["HOME"], '.' + self.to_s), 
+      File.join('/etc/', '.' +  self.to_s)]
 
     pkg_variables.each do |variable|
       self.class_eval %{
@@ -27,7 +29,14 @@ module PKGConfig
     end
 
     file = pkg_cfg_files.select{|file| File.exists? file}.first
-    raise NoConfig, "No config file found. [#{pkg_cfg_files * ", "}]" if file.nil?
+    if file.nil?
+      if default
+        file = pkg_cfg_files[1]
+        Open.write(file, default)
+      else
+        raise NoConfig, "No config file found. [#{pkg_cfg_files * ", "}]" if file.nil?
+      end
+    end
     load_config file, pkg_variables
   end
 end

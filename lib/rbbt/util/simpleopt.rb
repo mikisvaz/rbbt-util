@@ -54,11 +54,4 @@ module SOPT
     options
     
   end
-
-end
-
-if __FILE__ == $0
-
-  p SOPT.parse('-h--help:-f*:--out*')
-
 end

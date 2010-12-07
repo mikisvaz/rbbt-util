@@ -29,7 +29,14 @@ module Misc
   end
 
   def self.add_defaults(options, defaults = {})
-    new_options = options.dup
+    case
+    when Hash === options
+      new_options = options.dup
+    when String === options
+      new_options = string2hash options
+    else
+      raise "Format of '#{options.inspect}' not understood"
+    end
     defaults.each do |key, value|
       new_options[key] = value if new_options[key].nil?
     end

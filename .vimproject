@@ -1,4 +1,4 @@
-ruby=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf" {
+rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf" {
  Rakefile
  bin=bin {
   excel2tsv.rb
@@ -9,6 +9,7 @@ ruby=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   util=rbbt/util {
    pkg_config.rb
    pkg_data.rb
+   data_module.rb
 
    simpleDSL.rb
    simpleopt.rb
@@ -22,19 +23,24 @@ ruby=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    open.rb
    tc_hash.rb
    tsv.rb
+   excel2tsv.rb
+
+   rake_helper.rb
   }
  }
  test=test {
   test_helper.rb
+  test_rbbt.rb
   util=rbbt/util{
-   test_simpleDSL.rb
-
-   test_misc.rb
-   test_tmpfile.rb
-   test_filecache.rb
    test_cmd.rb
+   test_data_module.rb
+   test_excel2tsv.rb
+   test_filecache.rb
+   test_misc.rb
    test_open.rb
+   test_simpleDSL.rb
    test_tc_hash.rb
+   test_tmpfile.rb
    test_tsv.rb
   }
  }

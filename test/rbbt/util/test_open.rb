@@ -11,7 +11,7 @@ class TestOpen < Test::Unit::TestCase
   end
 
   def test_nice
-    nice =  1
+    nice =  0.5
 
     Open.wget('http://google.com', :quiet => true, :nice => nice).read =~ /html/
     t = Time.now
