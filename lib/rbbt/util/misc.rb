@@ -2,6 +2,15 @@ require 'iconv'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.env_add(var, value, sep = ":", prepend = true)
+    return if ENV[var] =~ /(#{sep}|^)#{Regexp.quote value}(#{sep}|$)/
+    if prepend
+      ENV[var] = value + sep + ENV[var]
+    else
+      ENV[var] += sep + ENV[var]
+    end
+  end
+
   def self.profile
     require 'ruby-prof'
     RubyProf.start

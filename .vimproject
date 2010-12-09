@@ -11,6 +11,7 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   util=rbbt/util {
    pkg_config.rb
    pkg_data.rb
+   pkg_software.rb
    data_module.rb
 
    simpleDSL.rb
@@ -26,6 +27,7 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    tc_hash.rb
    tsv.rb
    excel2tsv.rb
+
 
    rake_helper.rb
   }
@@ -47,6 +49,11 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    test_tsv.rb
   }
  }
- data=data{
+ share=share{
+  software=install/software{
+   lib=lib{
+    install_helpers
+   }
+  }
  }
 }
