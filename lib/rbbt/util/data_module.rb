@@ -21,7 +21,7 @@ module DataModule
     begin
       @@mod.add_datafiles filename => ['', self.to_s, @@sharedir]
     rescue RuntimeError
-      puts $!.message
+      Log.debug $!.message
       old_method_missing name, *args, &block
     end
 

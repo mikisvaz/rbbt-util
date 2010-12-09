@@ -1,4 +1,5 @@
 require 'rbbt/util/misc'
+require 'rbbt/util/log'
 require 'stringio'
 
 module CMD
@@ -52,11 +53,15 @@ module CMD
   end
 
   def self.cmd(cmd, options = {}, &block)
-    options = Misc.add_defaults options, :stderr => true
+    options = Misc.add_defaults options, :stderr => Log::DEBUG
     in_content = options.delete(:in)
     stderr     = options.delete(:stderr)
     pipe       = options.delete(:pipe)
     post       = options.delete(:post)
+
+    if stderr == true
+      stderr = Log::HIGH
+    end
 
     # Process cmd_options
     cmd_options = process_cmd_options options
@@ -94,7 +99,7 @@ module CMD
         STDOUT.sync = STDERR.sync = true
         exec(cmd)
       rescue Exception
-        raise CMDError $!.message
+        raise CMDError, $!.message
       end
 
     }
@@ -117,7 +122,7 @@ module CMD
 
     Thread.new do
       while l = serr.first.gets
-        STDERR.puts l if stderr
+        Log.log l, stderr if Integer === stderr
       end
       serr.first.close
     end

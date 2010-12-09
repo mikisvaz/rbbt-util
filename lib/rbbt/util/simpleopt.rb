@@ -52,6 +52,5 @@ module SOPT
     rest.each do |e| ARGV << e end
 
     options
-    
   end
 end

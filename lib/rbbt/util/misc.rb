@@ -67,13 +67,20 @@ module Misc
   end
 
   def self.sensiblewrite(path, content)
-    case
-    when String === content
-      File.open(path, 'w') do |f|  f.write content  end
-    when (IO === content or StringIO === content)
-      File.open(path, 'w') do |f|  while l = content.gets; f.write l; end  end
-    else
-      File.open(path, 'w') do |f|  end
+    begin
+      case
+      when String === content
+        File.open(path, 'w') do |f|  f.write content  end
+      when (IO === content or StringIO === content)
+        File.open(path, 'w') do |f|  while l = content.gets; f.write l; end  end
+      else
+        File.open(path, 'w') do |f|  end
+      end
+    rescue Interrupt
+      raise "Interrupted (Ctrl-c)"
+    rescue Exception
+      FileUtils.rm_f path
+      raise $!
     end
   end
 
