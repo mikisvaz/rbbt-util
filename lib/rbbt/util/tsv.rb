@@ -397,6 +397,8 @@ class TSV
       case
       when values.nil?
         str << key.dup << "\n"
+      when (not Array === values)
+        str << key.dup << "\t" << values.to_s << "\n"
       when Array === values.first
         str << key.dup <<  "\t" << values.collect{|list| (list || []) * "|"} * "\t" << "\n"
       else
