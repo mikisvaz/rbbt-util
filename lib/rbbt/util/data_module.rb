@@ -2,12 +2,28 @@ module DataModule
 
   def self.extended(base)
     if defined? base::PKG and base::PKG
-      @@mod = base::PKG
+      base.pkg_module = base::PKG
     else
-      @@mod = Rbbt
+      base.pkg_module = Rbbt
     end
 
-    base.module_eval{ @@sharedir = PKGData.get_caller_sharedir}
+    base.sharedir = PKGData.get_caller_sharedir 
+  end
+
+  def pkg_module
+    @pkg_module
+  end
+
+  def pkg_module=(pkg_module)
+    @pkg_module = pkg_module
+  end
+
+  def sharedir
+    @sharedir
+  end
+
+  def sharedir=(sharedir)
+    @sharedir = sharedir
   end
 
   alias old_method_missing method_missing
@@ -19,20 +35,13 @@ module DataModule
     end
 
     begin
-      @@mod.add_datafiles filename => ['', self.to_s, @@sharedir]
-    rescue RuntimeError
+      pkg_module.add_datafiles filename => ['', self.to_s, sharedir]
+    rescue 
       Log.debug $!.message
       old_method_missing name, *args, &block
     end
 
-    case
-    when (not File.exists? @@mod.find_datafile(filename))
-      nil
-    when (TSV.headers @@mod.find_datafile(filename))
-      TSV.new(@@mod.find_datafile(filename))
-    else
-      Open.read(@@mod.find_datafile(filename))
-    end
+    pkg_module.find_datafile filename
   end
 
   module WithKey

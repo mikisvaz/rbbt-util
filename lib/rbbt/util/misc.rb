@@ -11,6 +11,15 @@ module Misc
     end
   end
 
+  def self.count(list)
+    counts = Hash.new 0
+    list.each do |item|
+      counts[item] += 1
+    end
+
+    counts
+  end
+
   def self.profile
     require 'ruby-prof'
     RubyProf.start

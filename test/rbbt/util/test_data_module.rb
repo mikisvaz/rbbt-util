@@ -26,7 +26,7 @@ class TestDataModule < Test::Unit::TestCase
   end
 
   def test_module
-    assert_equal "File 1", DataTest.file1.chomp
+    assert_equal "File 1", Open.read(DataTest.file1).chomp
     assert_equal "Hello world", DataTest.salute("world")
     assert_equal "Hello world", DataTest.salute("world")
     assert_equal "Hello world", DataTest::with_key("world").salute

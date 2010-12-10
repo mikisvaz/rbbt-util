@@ -28,13 +28,13 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    tsv.rb
    excel2tsv.rb
 
-
    rake_helper.rb
   }
  }
  test=test {
   test_helper.rb
   test_rbbt.rb
+  test_pkg.rb
   util=rbbt/util{
    test_cmd.rb
    test_data_module.rb

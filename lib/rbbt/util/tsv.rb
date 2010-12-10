@@ -46,13 +46,18 @@ class TSV
   end
 
   def self.headers(file, options = {})
+    if file =~ /(.*)#(.*)/ and File.exists? $1
+      options.merge! Misc.string2hash $2
+      file = $1
+    end
+
     options = Misc.add_defaults options, :sep => "\t", :header_hash => "#"
     io = Open.open(file)
     line = io.gets
     io.close
 
     if line =~ /^#{options[:header_hash]}/
-      line.sub(/^#{options[:header_hash]}/,'').split(options[:sep])
+      line.chomp.sub(/^#{options[:header_hash]}/,'').split(options[:sep])
     else
       nil
     end
@@ -409,6 +414,11 @@ class TSV
 
   #{{{ New
 
+  def self.fields_include(key_field, fields, field)
+    return true if field == key_field or fields.include? field
+    return false
+  end
+
   def self.field_positions(key_field, fields, *selected)
     selected.collect do |sel|
       case
@@ -420,6 +430,10 @@ class TSV
         Misc.field_position fields, sel
       end
     end
+  end
+
+  def fields_include(field)
+    return TSV.fields_include key_field, fields, field
   end
 
   def field_positions(*selected)
@@ -488,7 +502,7 @@ class TSV
   
   def process(field)
     through do |key, values|
-      values[field].replace yield values[field], key, values
+      values[field].replace yield(values[field], key, values) unless values[field].nil? 
     end
   end
 
@@ -600,11 +614,12 @@ class TSV
     index
   end
 
-  def smart_merge(other, match = nil)
+  def smart_merge(other, match = nil, new_fields = nil)
 
+    new_fields = [new_fields] if String === new_fields
     if self.fields and other.fields 
       common_fields = ([self.key_field] + self.fields)   & ([other.key_field] + other.fields)
-      new_fields    = ([other.key_field] + other.fields) - ([self.key_field] + self.fields)
+      new_fields    ||= ([other.key_field] + other.fields) - ([self.key_field] + self.fields)
 
       common_fields.delete match if String === match
       common_fields.delete_at match if Integer === match
@@ -633,7 +648,11 @@ class TSV
       else
         matching_code_position = nil
       end
-      match_index = TSV.open_file(through).index
+      index_fields = TSV.headers(through)
+      target_field = index_fields.select{|field| other.fields_include field}.first
+      Log.debug "Target Field: #{ target_field }"
+      match_index = TSV.open_file(through).index(:field => target_field)
+
     when field_positions(match).first
       matching_code_position = field_positions(match).first
       match_index = nil
@@ -650,17 +669,19 @@ class TSV
     if match_index and match_index.key_field == other.key_field
       other_index = nil
     else
-      other_index = (match === String and other.field_positions(match)) ? 
+      other_index = (match === String and other.fields_include(match)) ? 
         other.index(:other => match, :order => true) : other.index(:order => true)
     end
 
     each do |key,values|
+      Log.debug "Key: #{ key }. Values: #{values * ", "}"
       if matching_code_position.nil? or matching_code_position == -1
         matching_codes = [key] 
       else
         matching_codes = values[matching_code_position]
         matching_codes = [matching_codes] unless  matching_codes.nil? or Array === matching_codes
       end
+      Log.debug "Matching codes: #{matching_codes}"
 
       next if matching_codes.nil?
 
@@ -675,18 +696,22 @@ class TSV
           matching_code_fix = matching_code
         end
 
+        Log.debug "Matching code (fix): #{matching_code_fix}"
         next if matching_code_fix.nil?
 
         if other_index
+          Log.debug "Using other_index"
           other_codes = other_index[matching_code_fix]
         else
           other_codes = matching_code_fix
         end
+        Log.debug "Other codes: #{other_codes}"
 
         next if other_codes.nil? or other_codes.empty?
         other_code = other_codes.first
 
         if nofieldinfo
+          next if other[other_code].nil?
           if list
             other_values = [[other_code]] + other[other_code]
           else
@@ -700,10 +725,18 @@ class TSV
 
           new_values = values + other_values 
         else
-          if list
-            other_values = other[other_code] + [[other_code]]
+          if other[other_code].nil?
+            if list
+              other_values = [[]] * other.fields.length
+            else
+              other_values = [] * other.fields.length
+            end
           else
-            other_values = other[other_code] + [other_code]
+            if list
+              other_values = other[other_code] + [[other_code]]
+            else
+              other_values = other[other_code] + [other_code]
+            end
           end
   
 
