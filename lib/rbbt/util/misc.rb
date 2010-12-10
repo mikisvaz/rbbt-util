@@ -2,6 +2,24 @@ require 'iconv'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.env_add(var, value, sep = ":", prepend = true)
+    return if ENV[var] =~ /(#{sep}|^)#{Regexp.quote value}(#{sep}|$)/
+    if prepend
+      ENV[var] = value + sep + ENV[var]
+    else
+      ENV[var] += sep + ENV[var]
+    end
+  end
+
+  def self.count(list)
+    counts = Hash.new 0
+    list.each do |item|
+      counts[item] += 1
+    end
+
+    counts
+  end
+
   def self.profile
     require 'ruby-prof'
     RubyProf.start
@@ -67,13 +85,20 @@ module Misc
   end
 
   def self.sensiblewrite(path, content)
-    case
-    when String === content
-      File.open(path, 'w') do |f|  f.write content  end
-    when (IO === content or StringIO === content)
-      File.open(path, 'w') do |f|  while l = content.gets; f.write l; end  end
-    else
-      File.open(path, 'w') do |f|  end
+    begin
+      case
+      when String === content
+        File.open(path, 'w') do |f|  f.write content  end
+      when (IO === content or StringIO === content)
+        File.open(path, 'w') do |f|  while l = content.gets; f.write l; end  end
+      else
+        File.open(path, 'w') do |f|  end
+      end
+    rescue Interrupt
+      raise "Interrupted (Ctrl-c)"
+    rescue Exception
+      FileUtils.rm_f path
+      raise $!
     end
   end
 

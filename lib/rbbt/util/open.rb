@@ -44,11 +44,19 @@ module Open
     quiet = options.delete(:quiet)
     options["--quiet"] = quiet if options["--quiet"].nil?
 
+    stderr = case
+             when options['stderr']
+               options['stderr'] 
+             when options['--quiet']
+               false
+             else
+               nil
+             end
     begin
       CMD.cmd("wget '#{ url }'", options.merge(
         '-O' => '-', 
         :pipe => pipe, 
-        :stderr => (options[:stderr].nil? ? ! options["--quiet"] : options[:stderr]) 
+        :stderr => stderr
       ))
     rescue
      STDERR.puts $!.backtrace.inspect
@@ -128,7 +136,9 @@ module Open
   # Open Read Write
 
   def self.open(url, options = {})
-    wget_options = {"--quiet" => true}.merge(options[:wget_options] || {})
+    options = Misc.add_defaults options, :noz => false
+
+    wget_options = options[:wget_options] || {}
     wget_options[:nice] = options.delete(:nice)
     wget_options[:nice_key] = options.delete(:nice_key)
 
@@ -145,8 +155,8 @@ module Open
            io.close
            file_open(in_cache(url), options[:grep])
          end
-    io = unzip(io)  if zip?  url
-    io = gunzip(io) if gzip? url
+    io = unzip(io)  if zip?  url and not options[:noz]
+    io = gunzip(io) if gzip? url and not options[:noz]
 
     io
   end

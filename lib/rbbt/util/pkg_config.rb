@@ -4,6 +4,42 @@ module PKGConfig
   class NoConfig < Exception; end
   class NoVariables < Exception; end
 
+  class RootdirNotFoundError < StandardError; end
+
+  def self.rootdir_for_file(file = __FILE__)
+    dir = File.expand_path(File.dirname file)
+
+    while not File.exists?(File.join(dir, 'lib')) and dir != '/'
+      dir = File.dirname(dir)
+    end
+
+    if File.exists? File.join(dir, 'lib')
+      dir
+    else
+      raise RootdirNotFoundError
+    end
+  end
+
+  def self.get_caller_rootdir
+    caller.each do |line|
+      next if line =~ /\/pkg_config\.rb/ 
+        begin
+          return PKGConfig.rootdir_for_file(line)
+        rescue RootdirNotFoundError
+        end
+    end
+    raise RootdirNotFoundError
+  end
+
+
+  def self.extended(base)
+    base.module_eval{ @@rootdir = PKGConfig.get_caller_rootdir}
+  end
+
+  def rootdir
+    @@rootdir
+  end
+
   def load_config(file, pkg_variables)
     config = YAML.load_file(file)
 

@@ -23,7 +23,7 @@ module PKGData
 
   def self.get_caller_sharedir
     caller.each do |line|
-      next if line =~ /\/data_module\.rb/ 
+      next if line =~ /\/data_module\.rb/  or line =~ /\/pkg_data\.rb/ 
         begin
           return PKGData.sharedir_for_file(line)
         rescue SharedirNotFoundError
@@ -95,12 +95,12 @@ module PKGData
 
       path = File.join(datadir, subpath.to_s, file.to_s)
 
-      FILES[file.to_s] = path
-
       if not File.exists?(path)
         sharedir ||= PKGData.get_caller_sharedir
         get_datafile(file.to_s, path, get, sharedir)
       end
+
+      FILES[file.to_s] = path
     end
   end
 

@@ -11,7 +11,15 @@ begin
     gem.homepage = "http://github.com/mikisvaz/rbbt-util"
     gem.authors = ["Miguel Vazquez"]
     gem.files = Dir['lib/**/*.rb', 'share/**/*.rb', 'share/**/Rakefile', 'LICENSE']
+    gem.executables = ['tsv.rb', 'tchash.rb']
     gem.test_files = Dir['test/**/test_*.rb']
+
+    
+    gem.add_dependency('rake')
+    gem.add_dependency('spreadsheet')
+    gem.add_dependency('ruby-prof')
+    gem.add_dependency('tokyocabinet')
+    gem.add_dependency('progress-monitor')
 
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end

@@ -1,0 +1,254 @@
+#vim: ft=sh
+
+SOFTWARE_DIR="$RBBT_SOFTWARE_DIR"
+OPT_DIR="$SOFTWARE_DIR/opt"; [ -d $OPT_SRC_DIR ] || mkdir -p $OPT_SRC_DIR
+OPT_BIN_DIR="$OPT_DIR/bin"; [ -d $OPT_BIN_DIR ] || mkdir -p $OPT_BIN_DIR
+OPT_SRC_DIR="$SOFTWARE_DIR/src"; [ -d $OPT_SRC_DIR ] || mkdir -p $OPT_SRC_DIR
+OPT_SCM_DIR="$SOFTWARE_DIR/scm"; [ -d $OPT_SCM_DIR ] || mkdir -p $OPT_SCM_DIR
+OPT_BUILD_DIR="$SOFTWARE_DIR/.build"; [ -d $OPT_BUILD_DIR ] || mkdir -p $OPT_BUILD_DIR
+
+#source "$HOME/config/bash/_utility_functions"
+
+function expand_path(){
+  name=$(basename $1)
+  dir=$(dirname $1)
+
+  echo "$(cd $dir && pwd)/$name"
+}
+
+
+#{{{ GET PKG OPT_BUILD_DIR
+
+# From SRC
+get_pkg(){
+    local name="$1"
+    local url="$2"
+
+    if [ ! -f "$OPT_SRC_DIR/$name.pkg" ]; then
+        wget "$url" -O "$OPT_SRC_DIR/$name.pkg" 
+    fi
+}
+
+uncompress_pkg(){
+    local name="$1"
+    local pkg="$OPT_SRC_DIR/$name.pkg"
+
+    local old_pwd="`expand_path $(pwd)`"
+    clean_build
+
+    cd "$OPT_BUILD_DIR"
+
+    (tar xvfz $pkg || tar xvfj $pkg || unzip $pkg || echo "Error decompressing") 2> /dev/null
+
+    cd "$old_pwd"
+}
+
+get_src(){
+    local name="$1"
+    local url="$2"
+
+    get_pkg "$name" "$url"
+    uncompress_pkg "$name"
+}
+
+# From SNV
+get_svn(){
+    local name="$1"
+    local url="$2"
+
+    local old_pwd="`expand_path $(pwd)`"
+
+    cd $OPT_SCM_DIR
+    if [ -d "$name" ]; then
+        cd "$name" 
+        svn update
+    else
+        git checkout "$url" "$name"
+    fi
+
+    clean_build
+
+    cd $OPT_BUILD_DIR
+    ln -s "$OPT_SCM_DIR/$name" "$name"
+
+    cd "$old_pwd"
+
+}
+
+# From GIT
+get_git(){
+    local name="$1"
+    local url="$2"
+
+    local old_pwd="`expand_path $(pwd)`"
+
+    cd $OPT_SCM_DIR
+    if [ -d "$name" ]; then
+        cd "$name" 
+        git stash
+        git pull origin master
+        git rebase master
+        git stash apply
+    else
+        git clone "$url" "$name"
+    fi
+
+    clean_build
+
+    cd $OPT_BUILD_DIR
+    ln -s "$OPT_SCM_DIR/$name" "$name"
+
+    cd "$old_pwd"
+}
+
+
+#{{{ BUILD PKG in OPT_BUILD_DIR
+
+clean_build(){
+    rm -Rf $OPT_BUILD_DIR/*
+}
+
+build_dir(){
+    echo $OPT_BUILD_DIR/`ls $OPT_BUILD_DIR |head -n 1`
+}
+
+compile(){
+    local name=$1; shift
+    local extra="$@"
+    [ -f Makefile ] && make && make install
+    [ -f build.xml ] && ant
+    [ -f setup.rb ] && ruby -Ilib/ setup.rb --prefix="$(opt_dir "$name")" $extra
+    [ -f setup.py ] && python setup.py build &&  python setup.py install --user && clean_build
+}
+
+build(){
+    local name=$1; shift
+    local extra="$@"
+
+    echo "Building $name"
+
+    local old_pwd="`expand_path $(pwd)`"
+    cd "`build_dir`"
+    echo `pwd`
+    ls
+
+    if [ -f aclocal.m4 ]; then
+        autoconf
+    fi
+
+    if [ -f autogen.sh ]; then
+        ./autogen.sh
+    fi
+
+    if [ -f aclocal.m4 ]; then
+        autoconf
+    fi
+
+    if [ -f configure ]; then 
+        ./configure --prefix="$(opt_dir "$name")" $extra
+        compile "$name" $extra
+        setup "$name"
+        clean_build
+    else
+        compile "$name" $extra
+        move_opt "$name"
+        setup "$name"
+        clean_build
+    fi
+    
+    cd "$old_pwd"
+}
+
+#{{{ SETUP
+
+versioned?(){
+    local name="$1"
+    echo $name | grep ':' &>/dev/null
+}
+
+opt_dir(){
+    local name="$1"
+    if versioned? "$name"; then
+        local real_name=`echo $1 | sed 's/:.*//'`
+        local version=`echo $1 | sed 's/.*://'`
+        echo "$OPT_DIR/$real_name/$version"
+    else
+        echo "$OPT_DIR/$name"
+    fi
+}
+
+move_opt(){
+    local name="$1"
+    local pkg_dir="`opt_dir \"$name\"`"
+
+    mkdir -p $(dirname "$pkg_dir")
+    mv "`build_dir`" "$pkg_dir"
+}
+
+setup(){
+    local name="$1"
+    local pkg_dir="`opt_dir \"$name\"`"
+
+    if versioned? "$name"; then
+        rm -f "$(dirname $pkg_dir)/current"
+        ln -sf "$pkg_dir" "$(dirname $pkg_dir)/current"
+        pkg_dir="$(dirname $pkg_dir)/current"
+    fi
+
+    if [ -d "$pkg_dir/bin/" ]; then
+        local old_pwd="`expand_path $(pwd)`"
+        cd "$OPT_DIR/bin" 
+
+        for exe in `ls "$pkg_dir/bin/"`;do 
+            rm -f ./$exe
+            ln -s "$pkg_dir/bin/$exe" . 2>/dev/null
+        done
+
+        cd "$old_pwd"
+    fi
+    
+    ([ -d "$pkg_dir/lib" ]           && add2file "$OPT_DIR/.ld-paths" "$pkg_dir/lib")
+    ([ -d "$pkg_dir/lib/pkgconfig" ] && add2file "$OPT_DIR/.pkgconfig-paths" "$pkg_dir/lib/pkgconfig")
+}
+
+#{{{ HELPERS
+
+install_src(){
+    local name="$1"
+    local url="$2"
+    shift;shift;
+    local extra="$@"
+    
+    get_pkg "$name" "$url"
+    uncompress_pkg "$name"
+    build "$name"  "$extra"
+}
+
+install_git(){
+    local name="$1"
+    local url="$2"
+    shift;shift;
+    local extra="$@"
+    
+    get_git "$name" "$url"
+    build "$name" $extra
+}
+
+install_jar(){
+    local name="$1"
+    local url="$2"
+
+    wget "$url" -O "$OPT_DIR/jars/$name.jar"
+}
+
+jar2bin(){
+    local name="$1";shift
+    local extra="$@"
+
+    echo "#!/bin/bash" > $OPT_DIR/bin/$name
+    echo "java $extra -jar '$OPT_DIR/jars/$name.jar'" >> $OPT_DIR/bin/$name
+
+    chmod +x $OPT_DIR/bin/$name
+}
+
+# vim: ft=sh
