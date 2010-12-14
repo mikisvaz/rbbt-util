@@ -74,6 +74,7 @@ install_src "$name" "$url"
     FileUtils.chmod 0774, File.join(sharedir, 'install', 'software', 'xclip')
 
     Rbbt.add_software :xclip => ['','']
+    Rbbt.find_software :xclip
     assert File.exists? File.join(Rbbt.bin_dir, 'xclip')
 
     FileUtils.rm_rf  File.join(sharedir, 'install', 'software', 'xclip')

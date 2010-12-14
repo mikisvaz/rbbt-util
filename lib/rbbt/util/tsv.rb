@@ -165,7 +165,7 @@ class TSV
     zipped 
   end
   
-  def self.parse(file, options = {})
+  def self.parse(data, file, options = {})
 
     # Prepare options
     options = add_defaults options, 
@@ -189,8 +189,6 @@ class TSV
     options[:extra]   = [options[:extra]] if options[:extra] != nil && ! (Array === options[:extra])
     options[:flatten] = true if options[:single]
 
-    # Open data store
-    data = options[:persistence_file].nil? ? {} : PersistenceHash.get(options[:persistence_file], true)
 
 
     #{{{ Process first line
@@ -331,7 +329,7 @@ class TSV
 
     data.read if PersistenceHash === data
 
-    [data, key_field, fields]
+    [key_field, fields]
   end
 
   attr_accessor :data, :key_field, :fields, :list, :case_insensitive, :filename
@@ -372,18 +370,20 @@ class TSV
         @key_field = @data.key_field
         @fields    = @data.fields
       else
+        @data = PersistenceHash.get(persistence_file, true)
         file = Open.grep(file, options[:grep]) if options[:grep]
 
         TSV.log "Persistent Parsing for #{ @filename } in #{persistence_file}"
-        @data, @key_field, @fields = TSV.parse(file, options.merge(:persistence_file => persistence_file))
+        @key_field, @fields = TSV.parse(@data, file, options.merge(:persistence_file => persistence_file))
         @data.key_field            = @key_field
         @data.fields               = @fields
         @data.read
       end
     else
       TSV.log "Non-persistent parsing for #{ @filename }"
+      @data = {}
       file = Open.grep(file, options[:grep]) if options[:grep]
-      @data, @key_field, @fields = TSV.parse(file, options)
+      @key_field, @fields = TSV.parse(@data, file, options)
     end
 
     file.close

@@ -11,7 +11,8 @@ row2 A B
     EOF
 
     TmpFile.with_file(content) do |filename|
-      data, key_field, fields = TSV.parse(File.open(filename), :sep => /\s+/, :keep_empty => true)
+      data = {}
+      key_field, fields = TSV.parse(data, File.open(filename), :sep => /\s+/, :keep_empty => true)
       assert_equal ["ValueA", "ValueB", "Comment"], fields
       assert_equal ["c"], data["row1"][2]
       assert_equal [""], data["row2"][2]
@@ -62,7 +63,8 @@ row2    A    B
     EOF
 
     TmpFile.with_file(content) do |filename|
-      data, key_field, fields = TSV.parse(File.open(filename), :sep => /\s+/)
+      data = {}
+      key_field, fields = TSV.parse(data, File.open(filename), :sep => /\s+/)
       assert_equal "Id", key_field
       assert_equal ["ValueA", "ValueB"], fields
       assert_equal ["a", "aa", "aaa"], data["row1"][0]

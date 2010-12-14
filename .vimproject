@@ -28,6 +28,8 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    tsv.rb
    excel2tsv.rb
 
+   workflow.rb
+
    rake_helper.rb
   }
  }
@@ -47,6 +49,7 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    test_tc_hash.rb
    test_tmpfile.rb
    test_tsv.rb
+   test_workflow.rb
   }
  }
  share=share{

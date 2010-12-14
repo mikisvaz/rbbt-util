@@ -25,7 +25,7 @@ module PKGSoftware
 
   def self.get_caller_sharedir
     caller.each do |line|
-      next if line =~ /\/data_module\.rb/  or line =~ /\/pkg_data\.rb/ 
+      next if line =~ /\/data_module\.rb/  or line =~ /\/pkg_software\.rb/ 
         begin
           return PKGData.sharedir_for_file(line)
         rescue SharedirNotFoundError
@@ -61,19 +61,18 @@ module PKGSoftware
 
   def add_software(pkgs = {})
     pkgs.each do |pkg, info|
-      subpath, get, datadir = info
+      subpath, get, sharedir = info
 
       setup_env(software_dir)
 
       path = File.join(opt_dir, subpath.to_s, pkg.to_s)
-
 
       if not File.exists?(path)
         sharedir ||= PKGSoftware.get_caller_sharedir
         get_pkg(pkg.to_s, path, get, sharedir)
       end
 
-      SOFTWARE[file.to_s] = path
+      SOFTWARE[pkg.to_s] = path
     end
   end
 
@@ -86,9 +85,13 @@ module PKGSoftware
     Misc.env_add 'PATH', bin_dir
 
     FileUtils.mkdir_p opt_dir unless File.exists? opt_dir
-    %w(.ld-paths .pkgconfig-paths .aclocal-paths .java-classpaths .post_install).each do |file|
+    %w(.ld-paths .pkgconfig-paths .aclocal-paths .java-classpaths).each do |file|
       filename = File.join(opt_dir, file)
       FileUtils.touch filename unless File.exists? filename
+    end
+
+    if not File.exists?  File.join(opt_dir,'.post_install')
+      Open.write(File.join(opt_dir,'.post_install'),"#!/bin/bash\n")
     end
 
     Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
@@ -109,14 +112,19 @@ module PKGSoftware
     end
 
     Open.read(File.join opt_dir, '.aclocal-paths').split(/\n/).each do |line|
-      Misc.env_add('ACLOCAL_FLAGS', "-I#{File.join(opt_dir, line.chomp)}")
+      Misc.env_add('ACLOCAL_FLAGS', "-I#{File.join(opt_dir, line.chomp)}", ' ')
     end
 
     Open.read(File.join opt_dir, '.java-classpaths').split(/\n/).each do |line|
-      Misc.env_add('CLASSPATH', "-I#{File.join(opt_dir,'java', 'lib', line.chomp)}")
+      Misc.env_add('CLASSPATH', "#{File.join(opt_dir,'java', 'lib', line.chomp)}")
+    end
+
+    Dir.glob(File.join opt_dir, 'jars', '*').each do |file|
+      Misc.env_add('CLASSPATH', "#{File.expand_path(file)}")
     end
 
     File.chmod 0774, File.join(opt_dir, '.post_install')
+
     CMD.cmd(File.join(opt_dir, '.post_install'))
   end
 end

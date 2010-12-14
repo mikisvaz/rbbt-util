@@ -5,6 +5,7 @@ OPT_DIR="$SOFTWARE_DIR/opt"; [ -d $OPT_SRC_DIR ] || mkdir -p $OPT_SRC_DIR
 OPT_BIN_DIR="$OPT_DIR/bin"; [ -d $OPT_BIN_DIR ] || mkdir -p $OPT_BIN_DIR
 OPT_SRC_DIR="$SOFTWARE_DIR/src"; [ -d $OPT_SRC_DIR ] || mkdir -p $OPT_SRC_DIR
 OPT_SCM_DIR="$SOFTWARE_DIR/scm"; [ -d $OPT_SCM_DIR ] || mkdir -p $OPT_SCM_DIR
+OPT_JAR_DIR="$OPT_DIR/jars"; [ -d $OPT_JAR_DIR ] || mkdir -p $OPT_JAR_DIR
 OPT_BUILD_DIR="$SOFTWARE_DIR/.build"; [ -d $OPT_BUILD_DIR ] || mkdir -p $OPT_BUILD_DIR
 
 #source "$HOME/config/bash/_utility_functions"
@@ -238,7 +239,9 @@ install_jar(){
     local name="$1"
     local url="$2"
 
-    wget "$url" -O "$OPT_DIR/jars/$name.jar"
+    [ -d  "$OPT_DIR/$name/" ] || mkdir -p  "$OPT_DIR/$name/"
+    wget "$url" -O "$OPT_DIR/$name/$name.jar"
+    ln -s "$OPT_DIR/$name/$name.jar" "$OPT_JAR_DIR/$name.jar" 
 }
 
 jar2bin(){
@@ -246,7 +249,7 @@ jar2bin(){
     local extra="$@"
 
     echo "#!/bin/bash" > $OPT_DIR/bin/$name
-    echo "java $extra -jar '$OPT_DIR/jars/$name.jar'" >> $OPT_DIR/bin/$name
+    echo "java $extra -jar '$OPT_JAR_DIR/$name.jar'" >> $OPT_DIR/bin/$name
 
     chmod +x $OPT_DIR/bin/$name
 }
