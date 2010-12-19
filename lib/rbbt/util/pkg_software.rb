@@ -70,6 +70,7 @@ module PKGSoftware
       if not File.exists?(path)
         sharedir ||= PKGSoftware.get_caller_sharedir
         get_pkg(pkg.to_s, path, get, sharedir)
+        setup_env(software_dir)
       end
 
       SOFTWARE[pkg.to_s] = path
@@ -79,7 +80,6 @@ module PKGSoftware
   def find_software(pkg)
     SOFTWARE[pkg.to_s]
   end
-
 
   def setup_env(software_dir)
     Misc.env_add 'PATH', bin_dir
