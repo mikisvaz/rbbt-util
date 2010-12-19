@@ -38,6 +38,7 @@ module DataModule
       pkg_module.add_datafiles filename => ['', self.to_s, sharedir]
     rescue 
       Log.debug $!.message
+      Log.debug $!.backtrace * "\n"
       old_method_missing name, *args, &block
     end
 
