@@ -648,5 +648,115 @@ row3    a    C    Id4
       assert_equal ["Pref:A"], tsv["row2"]["ValueA"]
     end
   end
+
+  def test_open_stringoptions
+     content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(filename + '#:sep=/\s+/')
+
+      tsv.process "ValueA" do |field_values,key,values|
+        field_values.collect{|v| "Pref:#{v}"}
+      end
+
+      assert_equal ["Pref:A"], tsv["row2"]["ValueA"]
+    end
+  end
+
+  def test_select
+     content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(filename + '#:sep=/\s+/')
+      assert tsv.list
+      
+      new = tsv.select %w(b Id4)
+      assert_equal %w(row1 row3).sort, new.keys
+
+      new = tsv.select "ValueB" => %w(b Id4)
+      assert_equal %w(row1).sort, new.keys
+
+      new = tsv.select /b|Id4/
+      assert_equal %w(row1 row3).sort, new.keys
+
+      new = tsv.select "ValueB" => /b|Id4/
+      assert_equal %w(row1).sort, new.keys
+
+      tsv = TSV.new(filename + '#:sep=/\s+/#:unique')
+      assert ! tsv.list
+      
+      new = tsv.select %w(b Id4)
+    end
+  end
+
+  def test_field_compare
+     content =<<-EOF
+#Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+    
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(filename + '#:sep=/\s+/')
+
+      assert tsv.fields.include?("LetterValue")
+    end
+  end
+
+  def test_add_field
+     content =<<-EOF
+#Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+ 
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(filename + '#:sep=/\s+/')
+      tsv.add_field "Str length" do |k,v| 
+        (v.flatten * " ").length 
+      end
+      
+
+      assert tsv.fields.include?("Str length")
+    end
+ 
+  end
+
+  def test_tsv_cache
+      content =<<-EOF
+#Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+ 
+    TmpFile.with_file(content) do |filename|
+      tsv = CacheHelper.tsv_cache('test_tsv_cache', filename) do 
+        TSV.new(filename + '#:sep=/\s+/')
+      end
+      tsv
+      
+      tsv1 = CacheHelper.tsv_cache('test_tsv_cache', filename) do 
+        assert false
+      end
+
+      assert_equal tsv.fields, tsv1.fields
+      
+      CacheHelper.clean 'test_tsv_cache'
+    end
+
+ end
 end
 

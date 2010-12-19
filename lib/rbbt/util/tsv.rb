@@ -16,6 +16,13 @@ end
 class TSV
   class FieldNotFoundError < StandardError;end
 
+  module Field
+    def ==(string)
+      return false unless String === string
+      self.sub(/#.*/,'').casecmp(string.sub(/#.*/,'')) == 0
+    end
+  end
+
   #{{{ Persistence
 
   PersistenceHash = TCHash
@@ -36,14 +43,7 @@ class TSV
     File.join(CACHEDIR, prefix.gsub(/\s/,'_').gsub(/\//,'>') + Digest::MD5.hexdigest([file, options].inspect))
   end
 
-  @debug = ENV['TSV_DEBUG'] == "true"
-  def self.log(message)
-    STDERR.puts message if @debug == true
-  end
-
-  def self.debug=(value)
-    @debug = value
-  end
+  #{{{ Headers and Field Stuff
 
   def self.headers(file, options = {})
     if file =~ /(.*)#(.*)/ and File.exists? $1
@@ -63,361 +63,8 @@ class TSV
     end
   end
 
-  #{{{ Accesor Methods
-
-  def keys
-    @data.keys
-  end
-
-  def values
-    @data.values
-  end
-
-  def size
-    @data.size
-  end
-
-  # Write
-
-  def []=(key, value)
-    key = key.downcase if @case_insensitive
-    @data[key] = value
-  end
-
-
-  def merge!(new_data)
-    new_data.each do |key, value|
-      self[key] = value
-    end
-  end
-
-  # Read
-
-  def follow(value)
-    if String === value && value =~ /__Ref:(.*)/
-      return self[$1]
-    else
-      value = NamedArray.name value, fields if Array === value and fields 
-      value
-    end
-  end
-  def [](key)
-    if Array === key
-      return @data[key] if @data[key] != nil
-      key.each{|k| v = self[k]; return v unless v.nil?}
-      return nil
-    end
-
-    key = key.downcase if @case_insensitive
-    follow @data[key]
-  end
-
-  def values_at(*keys)
-    keys.collect{|k|
-      self[k]
-    }
-  end
-
-  def each(&block)
-    @data.each do |key, value|
-      block.call(key, follow(value))
-    end
-  end
-
-  def collect
-    if block_given?
-      @data.collect do |key, value|
-        value = follow(value)
-        key, values = yield key, value
-      end
-    else
-      @data.collect do |key, value|
-        [key, follow(value)]
-      end
-    end
-  end
-
-  def sort(&block)
-    collect.sort(&block).collect{|p|
-      key, value = p
-      value = NamedArray.name value, fields if fields
-      [key, value]
-    }
-  end
-
-  def sort_by(&block)
-    collect.sort_by &block
-  end
-
-  #{{{ Parsing
-  
-  def self.parse_fields(io, delimiter = "\t")
-    return [] if io.nil?
-    fields = io.split(delimiter, -1)
-    fields
-  end
-
-  def self.zip_fields(list, fields = nil)
-    return [] if list.nil? || list.empty?
-    fields ||= list.fields if list.respond_to? :fields
-    zipped = list[0].zip(*list[1..-1])
-    zipped = zipped.collect{|v| NamedArray.name(v, fields)} if fields 
-    zipped 
-  end
-  
-  def self.parse(data, file, options = {})
-
-    # Prepare options
-    options = add_defaults options, 
-      :sep              => "\t",
-      :sep2             => "|",
-      :native           => 0,
-      :extra            => nil,
-      :fix              => nil,
-      :exclude          => nil,
-      :select           => nil,
-      :grep             => nil,
-      :single           => false,
-      :unique           => false,
-      :flatten          => false,
-      :overwrite        => false,
-      :keep_empty       => true,
-      :case_insensitive => false,
-      :header_hash      => '#' ,
-      :persistence_file => nil
-
-    options[:extra]   = [options[:extra]] if options[:extra] != nil && ! (Array === options[:extra])
-    options[:flatten] = true if options[:single]
-
-
-
-    #{{{ Process first line
-
-    line = file.gets
-    raise "Empty content" if line.nil?
-    line.chomp!
-
-    if line =~ /^#{options[:header_hash]}/
-      header_fields    = parse_fields(line, options[:sep])
-      header_fields[0] = header_fields[0][(0 + options[:header_hash].length)..-1] # Remove initial hash character
-      line = file.gets
-    else
-      header_fields = nil
-    end
-    
-    id_pos = Misc.field_position(header_fields, options[:native])
-
-    if options[:extra].nil?
-      extra_pos = nil
-      max_cols = 0
-    else
-      extra_pos = options[:extra].collect{|pos| Misc.field_position(header_fields, pos) }
-    end
-
-    #{{{ Process rest
-    while line do
-      line.chomp!
-
-      line = options[:fix].call line if options[:fix]
-
-      # Select and fix lines
-      if (options[:exclude] and   options[:exclude].call(line)) or
-         (options[:select]  and not options[:select].call(line))
-         line = file.gets
-         next
-      end
-
-      ### Process line
-
-      # Chunk fields
-      parts = parse_fields(line, options[:sep])
-
-      # Get next line
-      line = file.gets
-
-      # Get id field
-      next if parts[id_pos].nil? || parts[id_pos].empty?
-      ids = parse_fields(parts[id_pos], options[:sep2])
-      ids.collect!{|id| id.downcase } if options[:case_insensitive]
-
-      # Get extra fields
-
-      if options[:extra].nil? and not (options[:flatten] or options[:single])
-        extra = parts 
-        extra.delete_at(id_pos)
-        max_cols = extra.size if extra.size > (max_cols || 0)
-      else
-        if extra_pos.nil?
-          extra = parts
-          extra.delete_at id_pos
-        else
-          extra = parts.values_at(*extra_pos)
-        end
-      end
-
-      extra.collect!{|value| parse_fields(value, options[:sep2])}  
-      extra.collect!{|values| values.first}       if options[:unique]
-      extra.flatten!                              if options[:flatten]
-      extra = extra.first                         if options[:single]
-
-      if options[:overwrite]
-        main_entry = ids.shift
-        ids.each do |id|
-          data[id] = "__Ref:#{main_entry}"  
-        end
-
-        data[main_entry] = extra
-      else
-        main_entry = ids.shift
-        ids.each do |id|
-          data[id] = "__Ref:#{main_entry}"
-        end
-
-        case
-        when (options[:single] or options[:unique])
-          data[main_entry] ||= extra
-        when options[:flatten]
-          if PersistenceHash === data
-            data[main_entry] = (data[main_entry] || []).concat extra
-          else
-            data[main_entry] ||= []
-            data[main_entry].concat extra
-          end
-        else
-          entry = data[main_entry] || []
-          while entry =~ /__Ref:(.*)/ do
-            entry = data[$1]
-          end
-
-          extra.each_with_index do |fields, i|
-            if fields.empty?
-              next unless options[:keep_empty]
-              fields = [""]
-            end
-            entry[i] ||= []
-            entry[i] = entry[i].concat fields
-          end
-
-          data[main_entry] = entry
-        end
-      end
-    end
-
-    if options[:keep_empty] and not max_cols.nil?
-      data.each do |key,values| 
-        new_values = values
-        max_cols.times do |i|
-          new_values[i] ||= [""]
-        end
-        data[key] = new_values
-      end
-    end
-
-
-    # Save header information
-    key_field = nil
-    fields   = nil
-    if header_fields && header_fields.any?
-      key_field = header_fields[id_pos] 
-      if extra_pos.nil?
-        fields = header_fields
-        fields.delete_at(id_pos) 
-      else
-        fields = header_fields.values_at(*extra_pos) 
-      end
-    end
-
-    data.read if PersistenceHash === data
-
-    [key_field, fields]
-  end
-
-  attr_accessor :data, :key_field, :fields, :list, :case_insensitive, :filename
-  def initialize(file = {}, options = {})
-    @case_insensitive = options[:case_insensitive] == true
-    @list = ! (options[:flatten] == true || options[:single] == true || options[:unique] == true)
-
-    case
-    when TSV === file
-      @filename         = file.filename
-      @data             = file.data
-      @key_field        = file.key_field
-      @fields           = file.fields
-      @case_insensitive = file.case_insensitive
-      @list             = file.is_list
-      return self
-    when (Hash === file or PersistenceHash === file)
-      @filename = "Hash:" + Digest::MD5.hexdigest(file.inspect)
-      @data = file
-      return self
-    when File === file
-      @filename = File.expand_path file.path
-    when String === file && File.exists?(file)
-      @filename = File.expand_path file
-      file = Open.open(file)
-    when StringIO
-    else 
-      raise "File #{file} not found"
-    end
-
-    if options[:persistence]
-      options.delete :persistence
-      persistence_file = TSV.get_persistence_file @filename, "file:#{ @filename }:", options
-
-      if File.exists? persistence_file
-        TSV.log "Loading Persistence for #{ @filename } in #{persistence_file}"
-        @data      = PersistenceHash.get(persistence_file, false)
-        @key_field = @data.key_field
-        @fields    = @data.fields
-      else
-        @data = PersistenceHash.get(persistence_file, true)
-        file = Open.grep(file, options[:grep]) if options[:grep]
-
-        TSV.log "Persistent Parsing for #{ @filename } in #{persistence_file}"
-        @key_field, @fields = TSV.parse(@data, file, options.merge(:persistence_file => persistence_file))
-        @data.key_field            = @key_field
-        @data.fields               = @fields
-        @data.read
-      end
-    else
-      TSV.log "Non-persistent parsing for #{ @filename }"
-      @data = {}
-      file = Open.grep(file, options[:grep]) if options[:grep]
-      @key_field, @fields = TSV.parse(@data, file, options)
-    end
-
-    file.close
-    @case_insensitive = options[:case_insensitive] == true
-  end
-
-
-  def to_s
-    str = ""
-
-    if fields
-      str << "#" << key_field << "\t" << fields * "\t" << "\n"
-    end
-
-    each do |key, values|
-      case
-      when values.nil?
-        str << key.dup << "\n"
-      when (not Array === values)
-        str << key.dup << "\t" << values.to_s << "\n"
-      when Array === values.first
-        str << key.dup <<  "\t" << values.collect{|list| (list || []) * "|"} * "\t" << "\n"
-      else
-        str << key.dup <<  "\t" << values * "\t" << "\n"
-      end
-    end
-
-    str
-  end
-
-  #{{{ New
-
   def self.fields_include(key_field, fields, field)
-    return true if field == key_field or fields.include? field
+    return true if key_field == field or fields.include? field
     return false
   end
 
@@ -449,8 +96,10 @@ class TSV
     (fields + [key_field]).values_at(*positions)
   end
 
+  #{{{ Iteration, Merging, etc
   def through(new_key_field = nil, new_fields = nil, &block)
     new_key_position = (field_positions(new_key_field) || [-1]).first
+    new_fields = [new_fields] if String === new_fields
 
     if new_key_position == -1
 
@@ -460,7 +109,11 @@ class TSV
       else
         new_field_positions = field_positions(*new_fields)
         each do |key, values|
-          yield key, values.values_at(*new_field_positions)
+          if values.nil?
+            yield key, nil
+          else
+            yield key, values.values_at(*new_field_positions)
+          end
         end
         return [key_field, fields_at(*new_field_positions)]
       end
@@ -541,6 +194,51 @@ class TSV
 
   def slice(new_fields, options = {})
     reorder(:main, new_fields)
+  end
+
+  def add_field(name = nil)
+    each do |key, values|
+      self[key] = values << yield(key, values)
+    end
+
+    fields << name if list
+    if PersistenceHash === @data
+      @data.fields = fields
+    end
+  end
+
+  def select(method)
+    new = TSV.new({})
+    new.key_field = key_field
+    new.fields    = fields.dup
+    
+    case
+    when Array === method
+      through do |key, values|
+        new[key] = values if ([key,values].flatten & method).any?
+      end
+    when Regexp === method
+      through do |key, values|
+        new[key] = values if [key,values].flatten.select{|v| v =~ method}.any?
+      end
+    when Hash === method
+      key  = method.keys.first
+      method = method.values.first
+      case
+      when (Array === method and (:main == key or key_field == key))
+        method.each{|item| if values = self[item]; then  new[item] = values; end}
+      when Array === method
+        through :main, key do |key, values|
+          new[key] = values if (values.flatten & method).any?
+        end
+      when Regexp === method
+        through :main, key do |key, values|
+          new[key] = values if values.flatten.select{|v| v =~ method}.any?
+        end
+      end
+    end
+
+    new
   end
 
   def index(options = {})
@@ -768,7 +466,7 @@ class TSV
     self.fields = self.fields + new_fields unless nofieldinfo
   end
 
-   #{{{ Helpers
+  #{{{ Helpers
 
   def self.index(file, options = {})
     opt_data = options.dup
@@ -782,10 +480,10 @@ class TSV
     opt_index.merge! :persistence_file => get_persistence_file(file, "index:#{ file }_#{options[:field]}:", opt_index) if options[:persistence]
 
     if ! opt_index[:persistence_file].nil? && File.exists?(opt_index[:persistence_file])
-      TSV.log "Reloading persistent index for #{ file }: #{opt_index[:persistence_file]}"
+      Log.low "Reloading persistent index for #{ file }: #{opt_index[:persistence_file]}"
       TSV.new(PersistenceHash.get(opt_index[:persistence_file], false), opt_index)
     else
-      TSV.log "Creating index for #{ file }: #{opt_index[:persistence_file]}"
+      Log.low "Creating index for #{ file }: #{opt_index[:persistence_file]}"
       data = TSV.new(file, opt_data)
       data.index(opt_index)
     end
@@ -801,4 +499,414 @@ class TSV
     TSV.new(file, options)
   end
 
+  #{{{ Accesor Methods
+
+  def keys
+    @data.keys
+  end
+
+  def values
+    @data.values
+  end
+
+  def size
+    @data.size
+  end
+
+  # Write
+
+  def []=(key, value)
+    key = key.downcase if @case_insensitive
+    @data[key] = value
+  end
+
+
+  def merge!(new_data)
+    new_data.each do |key, value|
+      self[key] = value
+    end
+  end
+
+  # Read
+
+  def follow(value)
+    if String === value && value =~ /__Ref:(.*)/
+      return self[$1]
+    else
+      value = NamedArray.name value, fields if Array === value and fields 
+      value
+    end
+  end
+
+  def [](key)
+    if Array === key
+      return @data[key] if @data[key] != nil
+      key.each{|k| v = self[k]; return v unless v.nil?}
+      return nil
+    end
+
+    key = key.downcase if @case_insensitive
+    follow @data[key]
+  end
+
+  def values_at(*keys)
+    keys.collect{|k|
+      self[k]
+    }
+  end
+
+  def each(&block)
+    @data.each do |key, value|
+      block.call(key, follow(value))
+    end
+  end
+
+  def collect
+    if block_given?
+      @data.collect do |key, value|
+        value = follow(value)
+        key, values = yield key, value
+      end
+    else
+      @data.collect do |key, value|
+        [key, follow(value)]
+      end
+    end
+  end
+
+  def sort(&block)
+    collect.sort(&block).collect{|p|
+      key, value = p
+      value = NamedArray.name value, fields if fields
+      [key, value]
+    }
+  end
+
+  def sort_by(&block)
+    collect.sort_by &block
+  end
+
+  def to_s
+    str = ""
+
+    if fields
+      str << "#" << key_field << "\t" << fields * "\t" << "\n"
+    end
+
+    each do |key, values|
+      case
+      when values.nil?
+        str << key.dup << "\n"
+      when (not Array === values)
+        str << key.dup << "\t" << values.to_s << "\n"
+      when Array === values.first
+        str << key.dup <<  "\t" << values.collect{|list| (list || []) * "|"} * "\t" << "\n"
+      else
+        str << key.dup <<  "\t" << values * "\t" << "\n"
+      end
+    end
+
+    str
+  end
+
+  #{{{ Parsing
+  
+  def self.parse_fields(io, delimiter = "\t")
+    return [] if io.nil?
+    fields = io.split(delimiter, -1)
+    fields
+  end
+
+  def self.zip_fields(list, fields = nil)
+    return [] if list.nil? || list.empty?
+    fields ||= list.fields if list.respond_to? :fields
+    zipped = list[0].zip(*list[1..-1])
+    zipped = zipped.collect{|v| NamedArray.name(v, fields)} if fields 
+    zipped 
+  end
+  
+  def self.parse(data, file, options = {})
+
+    # Prepare options
+    options = add_defaults options, 
+      :sep              => "\t",
+      :sep2             => "|",
+      :native           => 0,
+      :extra            => nil,
+      :fix              => nil,
+      :exclude          => nil,
+      :select           => nil,
+      :grep             => nil,
+      :single           => false,
+      :unique           => false,
+      :flatten          => false,
+      :overwrite        => false,
+      :keep_empty       => true,
+      :case_insensitive => false,
+      :header_hash      => '#' ,
+      :persistence_file => nil
+
+    options[:extra]   = [options[:extra]] if options[:extra] != nil && ! (Array === options[:extra])
+    options[:flatten] = true if options[:single]
+
+
+
+    #{{{ Process first line
+
+    line = file.gets
+    raise "Empty content" if line.nil?
+    line.chomp!
+
+    if line =~ /^#{options[:header_hash]}/
+      header_fields    = parse_fields(line, options[:sep])
+      header_fields[0] = header_fields[0][(0 + options[:header_hash].length)..-1] # Remove initial hash character
+      line = file.gets
+    else
+      header_fields = nil
+    end
+    
+    id_pos = Misc.field_position(header_fields, options[:native])
+
+    if options[:extra].nil?
+      extra_pos = nil
+      max_cols = 0
+    else
+      extra_pos = options[:extra].collect{|pos| Misc.field_position(header_fields, pos) }
+    end
+
+    #{{{ Process rest
+    while line do
+      line.chomp!
+
+      line = options[:fix].call line if options[:fix]
+
+      # Select and fix lines
+      if (options[:exclude] and   options[:exclude].call(line)) or
+         (options[:select]  and not options[:select].call(line))
+         line = file.gets
+         next
+      end
+
+      ### Process line
+
+      # Chunk fields
+      parts = parse_fields(line, options[:sep])
+
+      # Get next line
+      line = file.gets
+
+      # Get id field
+      next if parts[id_pos].nil? || parts[id_pos].empty?
+      ids = parse_fields(parts[id_pos], options[:sep2])
+      ids.collect!{|id| id.downcase } if options[:case_insensitive]
+
+      # Get extra fields
+
+      if options[:extra].nil? and not (options[:flatten] or options[:single])
+        extra = parts 
+        extra.delete_at(id_pos)
+        max_cols = extra.size if extra.size > (max_cols || 0)
+      else
+        if extra_pos.nil?
+          extra = parts
+          extra.delete_at id_pos
+        else
+          extra = parts.values_at(*extra_pos)
+        end
+      end
+
+      extra.collect!{|value| parse_fields(value, options[:sep2])}  
+      extra.collect!{|values| values.first}       if options[:unique]
+      extra.flatten!                              if options[:flatten]
+      extra = extra.first                         if options[:single]
+
+      if options[:overwrite]
+        main_entry = ids.shift
+        ids.each do |id|
+          data[id] = "__Ref:#{main_entry}"  
+        end
+
+        data[main_entry] = extra
+      else
+        main_entry = ids.shift
+        ids.each do |id|
+          data[id] = "__Ref:#{main_entry}"
+        end
+
+        case
+        when (options[:single] or options[:unique])
+          data[main_entry] ||= extra
+        when options[:flatten]
+          if PersistenceHash === data
+            data[main_entry] = (data[main_entry] || []).concat extra
+          else
+            data[main_entry] ||= []
+            data[main_entry].concat extra
+          end
+        else
+          entry = data[main_entry] || []
+          while entry =~ /__Ref:(.*)/ do
+            entry = data[$1]
+          end
+
+          extra.each_with_index do |fields, i|
+            if fields.empty?
+              next unless options[:keep_empty]
+              fields = [""]
+            end
+            entry[i] ||= []
+            entry[i] = entry[i].concat fields
+          end
+
+          data[main_entry] = entry
+        end
+      end
+    end
+
+    if options[:keep_empty] and not max_cols.nil?
+      data.each do |key,values| 
+        new_values = values
+        max_cols.times do |i|
+          new_values[i] ||= [""]
+        end
+        data[key] = new_values
+      end
+    end
+
+
+    # Save header information
+    key_field = nil
+    fields   = nil
+    if header_fields && header_fields.any?
+      key_field = header_fields[id_pos] 
+      if extra_pos.nil?
+        fields = header_fields
+        fields.delete_at(id_pos) 
+      else
+        fields = header_fields.values_at(*extra_pos) 
+      end
+    end
+
+    data.read if PersistenceHash === data
+
+    [key_field, fields]
+  end
+
+  attr_accessor :data, :key_field, :fields, :list, :case_insensitive, :filename
+  def fields
+    fields = @fields
+    fields.each do |f| f.extend Field end if Array === fields
+    fields
+  end
+
+  def initialize(file = {}, options = {})
+    options = Misc.add_defaults options
+    options[:persistence] = true if options[:persistence_file]
+
+    if String === file && file =~ /(.*?)#(.*)/
+      file, file_options = $1, $2
+      options = Misc.add_defaults file_options, options
+    end
+
+    @case_insensitive = options[:case_insensitive] == true
+    @list = ! (options[:flatten] == true || options[:single] == true || options[:unique] == true)
+
+    case
+    when TSV === file
+      Log.low "Copying TSV"
+      @filename         = file.filename
+
+      if options[:persistence] and not PersistenceHash === file.data
+        persistence_file = options.delete(:persistence_file) || TSV.get_persistence_file(@filename, "file:#{ @filename }:", options)
+        Log.low "Making persistance #{ persistence_file }"
+        @data = TCHash.get(persistence_file)
+        @data.merge! file
+        @data.key_field        = file.key_field
+        @data.fields           = file.fields
+      else
+        @data             = file.data
+      end
+
+      @key_field        = file.key_field
+      @fields           = file.fields
+      @case_insensitive = file.case_insensitive
+      @list             = file.list
+      return self
+    when Hash === file
+      Log.low "Encapsulating Hash"
+      @filename = "Hash:" + Digest::MD5.hexdigest(file.inspect)
+      if options[:persistence] 
+        persistence_file = options.delete(:persistence_file) || TSV.get_persistence_file(@filename, "file:#{ @filename }:", options)
+        Log.low "Making persistance #{ persistence_file }"
+        @data = TCHash.get(persistence_file)
+        @data.merge! file
+      else
+        @data = file
+      end
+      return self
+    when PersistenceHash === file
+      Log.low "Encapsulating PersistenceHash"
+      @filename = "PersistenceHash:" + Digest::MD5.hexdigest(file.inspect)
+      @data             = file
+      @key_field        = file.key_field
+      @fields           = file.fields
+      return self
+    when File === file
+      @filename = File.expand_path file.path
+    when String === file && File.exists?(file)
+      @filename = File.expand_path file
+      file = Open.open(file)
+    when StringIO
+    else 
+      raise "File #{file} not found"
+    end
+
+    if options[:persistence]
+      options.delete :persistence
+      persistence_file = options.delete(:persistence_file) || TSV.get_persistence_file(@filename, "file:#{ @filename }:", options)
+
+      if File.exists? persistence_file
+        Log.low "Loading Persistence for #{ @filename } in #{persistence_file}"
+        @data      = PersistenceHash.get(persistence_file, false)
+        @key_field = @data.key_field
+        @fields    = @data.fields
+      else
+        @data = PersistenceHash.get(persistence_file, true)
+        file = Open.grep(file, options[:grep]) if options[:grep]
+
+        Log.low "Persistent Parsing for #{ @filename } in #{persistence_file}"
+        @key_field, @fields = TSV.parse(@data, file, options.merge(:persistence_file => persistence_file))
+        @data.key_field            = @key_field
+        @data.fields               = @fields
+        @data.read
+      end
+    else
+      Log.low "Non-persistent parsing for #{ @filename }"
+      @data = {}
+      file = Open.grep(file, options[:grep]) if options[:grep]
+      @key_field, @fields = TSV.parse(@data, file, options)
+    end
+
+    file.close
+    @case_insensitive = options[:case_insensitive] == true
+  end
+
+end
+
+#{{{ CacheHelper
+require 'rbbt/util/cachehelper'
+module CacheHelper
+   def self.tsv_cache(name, key = [])
+     cache_file = CacheHelper.build_filename name, key
+
+     if File.exists? cache_file
+       Log.debug "TSV cache file '#{cache_file}' found"
+       hash = TCHash.get(cache_file)
+       TSV.new(hash)
+     else
+       Log.debug "Producing TSV cache file '#{cache_file}'"
+       data = yield
+       TSV.new(data, :persistence_file => cache_file)
+     end
+  end
 end
