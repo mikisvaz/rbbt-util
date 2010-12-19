@@ -155,8 +155,8 @@ module Open
            io.close
            file_open(in_cache(url), options[:grep])
          end
-    io = unzip(io)  if zip?  url and not options[:noz]
-    io = gunzip(io) if gzip? url and not options[:noz]
+    io = unzip(io)  if (zip?  url and not options[:noz]) or options[:zip]
+    io = gunzip(io) if (gzip? url and not options[:noz]) or options[:gzip]
 
     io
   end
