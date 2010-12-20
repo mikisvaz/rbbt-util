@@ -34,6 +34,7 @@ module Open
   end
 
   def self.wget(url, options = {})
+    Log.low "WGET:\n -URL: #{ url }\n -OPTIONS: #{options.inspect}"
     options = Misc.add_defaults options, "--user-agent=" => 'firefox', :pipe => true
 
     wait(options[:nice], options[:nice_key]) if options[:nice]
@@ -42,7 +43,18 @@ module Open
 
     pipe  = options.delete(:pipe)
     quiet = options.delete(:quiet)
-    options["--quiet"] = quiet if options["--quiet"].nil?
+    post  = options.delete(:post)
+    cookies = options.delete(:cookies)
+
+    options["--quiet"]     = quiet if options["--quiet"].nil?
+    options["--post-data="] ||= post if post
+
+    if cookies
+      options["--save-cookies"] = cookies
+      options["--load-cookies"] = cookies
+      options["--keep-session-cookies"] = true
+    end
+
 
     stderr = case
              when options['stderr']
@@ -52,6 +64,7 @@ module Open
              else
                nil
              end
+
     begin
       CMD.cmd("wget '#{ url }'", options.merge(
         '-O' => '-', 
@@ -141,6 +154,9 @@ module Open
     wget_options = options[:wget_options] || {}
     wget_options[:nice] = options.delete(:nice)
     wget_options[:nice_key] = options.delete(:nice_key)
+    wget_options[:quiet] = options.delete(:quiet)
+    wget_options[:post] = options.delete(:post)
+    wget_options[:cookies] = options.delete(:cookies)
 
     io = case
          when (not remote?(url))

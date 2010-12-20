@@ -1,6 +1,24 @@
 require 'iconv'
+
+class RBBTError < StandardError
+  attr_accessor :info
+
+  alias old_to_s to_s
+  def to_s
+    str = old_to_s
+    if info
+      str << "\n" << "Additional Info:\n---\n" << info << "---"
+    end
+    str
+  end
+end
+
 module Misc
   class FieldNotFoundError < StandardError;end
+
+  def self.this_dir
+    File.expand_path(File.dirname(caller[0]))
+  end
 
   def self.env_add(var, value, sep = ":", prepend = true)
     ENV[var] ||= ""
@@ -110,6 +128,14 @@ module Misc
     field_re = Regexp.new /#{field}/i
     fields.each_with_index{|f,i| return i if f =~ field_re}
     raise FieldNotFoundError, "Field '#{ field }' was not found" unless quiet
+  end
+end
+
+module PDF2Text
+  def self.pdf2text(filename)
+    TmpFile.with_file(Open.read(filename)) do |pdf|
+      CMD.cmd("pdftotext #{pdf} -", :pipe => false, :stderr => true)
+    end
   end
 end
 

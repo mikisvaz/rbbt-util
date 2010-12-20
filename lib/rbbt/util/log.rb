@@ -5,11 +5,11 @@ module Log
   MEDIUM = 2
   HIGH   = 3
 
-  def severity=(severity)
+  def self.severity=(severity)
     @@severity = severity
   end
 
-  def severity
+  def self.severity
     @@severity
   end
 

@@ -27,4 +27,18 @@ class TestCmd < Test::Unit::TestCase
     assert_equal("test2\n", CMD.cmd("cut", "-f" => 2, "-d" => '" "', :in => "test1 test2", :pipe => true).read)
   end
 
+  def test_error
+    assert_raise CMD::CMDError do CMD.cmd('fake-command') end
+    assert_raise CMD::CMDError do CMD.cmd('ls -fake_option') end
+
+    assert_raise CMD::CMDError do CMD.cmd('fake-command', :stderr => true) end
+    assert_raise CMD::CMDError do CMD.cmd('ls -fake_option', :stderr => true) end
+ 
+    assert_nothing_raised CMD::CMDError do CMD.cmd('fake-command', :stderr => false, :pipe => true) end
+    assert_nothing_raised CMD::CMDError do CMD.cmd('ls -fake_option', :stderr => false, :pipe => true) end
+ 
+    assert_raise CMD::CMDError do CMD.cmd('fake-command', :stderr => true, :pipe => true).read end
+    assert_raise CMD::CMDError do CMD.cmd('ls -fake_option', :stderr => true, :pipe => true).read end
+  end
+
 end

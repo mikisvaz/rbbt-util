@@ -10,7 +10,7 @@ class TestTCHash < Test::Unit::TestCase
       t["2"] = 3
 
       t.collect do |k,v| 
-        puts k 
+        ["1", "2"].include? k 
       end
     end
   end

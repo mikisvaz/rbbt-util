@@ -2,6 +2,7 @@ require 'rbbt/util/misc'
 require 'rbbt/util/open'
 require 'rbbt/util/tc_hash'
 require 'rbbt/util/tmpfile'
+require 'rbbt/util/log'
 require 'digest'
 require 'fileutils'
 
@@ -859,7 +860,7 @@ class TSV
     when StringIO
     else 
       raise "File #{file} not found"
-    end
+   end
 
     if options[:persistence]
       options.delete :persistence

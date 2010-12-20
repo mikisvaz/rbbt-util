@@ -39,7 +39,7 @@ class TCHash < TokyoCabinet::HDB
   alias original_keys keys
   def keys
     list = self.original_keys
-    indexes = FIELD_INFO_ENTRIES.values.collect do |field| list.index(field) end.compact
+    indexes = FIELD_INFO_ENTRIES.values.collect do |field| list.index(field) end.compact.sort.reverse
     indexes.each do |index| list.delete_at index end
     list
   end
@@ -48,17 +48,10 @@ class TCHash < TokyoCabinet::HDB
   def values
     values = self.original_values
     keys   = self.original_keys
-    indexes = FIELD_INFO_ENTRIES.values.collect do |field| keys.index(field) end.compact
+    indexes = FIELD_INFO_ENTRIES.values.collect do |field| keys.index(field) end.compact.sort.reverse
     indexes.each do |index| values.delete_at index end
 
     values.collect{|v| Serializer.load(v)}
-  end
-
-  def merge!(data)
-    new_data = {}
-    data.each do |key, values|
-      self[key] = values
-    end
   end
 
   # This version of each fixes a problem in ruby 1.9. It also
@@ -77,8 +70,15 @@ class TCHash < TokyoCabinet::HDB
   
   def collect
     res = []
-    self.each{|k, v| res << [k,v]}
+    self.each{|k, v| res << yield(k,v)}
     res
+  end
+
+  def merge!(data)
+    new_data = {}
+    data.each do |key, values|
+      self[key] = values
+    end
   end
 
   alias original_open open

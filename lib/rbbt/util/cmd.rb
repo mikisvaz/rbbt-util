@@ -3,18 +3,25 @@ require 'rbbt/util/log'
 require 'stringio'
 
 module CMD
-  class CMDError < StandardError;end
+  class CMDError < RBBTError;end
 
   module SmartIO 
-    def self.tie(io, pid = nil, post = nil)
+    def self.tie(io, pid = nil, cmd = "",  post = nil)
       io.instance_eval{
         @pid  = pid
+        @cmd  = cmd
         @post = post
         alias original_close close
         def close
           begin
-            Process.waitpid(@pid, Process::WNOHANG) if @pid
+            Process.waitpid(@pid) if @pid
           rescue
+          end
+
+          if $? and not $?.success?
+            Log.debug "Raising exception"
+            exception      = CMDError.new "Command [#{@pid}] #{@cmd} failed with error status #{$?.exitstatus}"
+            raise exception
           end
 
           @post.call if @post
@@ -107,6 +114,8 @@ module CMD
     sout.last.close
     serr.last.close
 
+    Log.debug "CMD: [#{pid}] #{cmd}"
+
     case 
     when String === in_content
       sin.last.write in_content
@@ -120,20 +129,39 @@ module CMD
       end
     end
 
-    Thread.new do
-      while l = serr.first.gets
-        Log.log l, stderr if Integer === stderr
-      end
-      serr.first.close
-    end
-
     if pipe
-      SmartIO.tie sout.first, pid, post
+      Thread.new do
+        while l = serr.first.gets
+          Log.log l, stderr if Integer === stderr
+        end
+        serr.first.close
+      end
+
+      SmartIO.tie sout.first, pid, cmd, post
       sout.first
+
     else
+      err = ""
+      Thread.new do
+        while l = serr.first.gets
+          err << l if Integer === stderr
+        end
+        serr.first.close
+      end
+
       out = StringIO.new sout.first.read
-      SmartIO.tie out
+      SmartIO.tie out, pid, cmd, post
+
       Process.waitpid pid
+
+      if not $?.success?
+        exception      = CMDError.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}"
+        exception.info = err if Integer === stderr and stderr >= Log.severity
+        raise exception
+      else
+        Log.log err, stderr if Integer === stderr
+      end
+
       out
     end
   end

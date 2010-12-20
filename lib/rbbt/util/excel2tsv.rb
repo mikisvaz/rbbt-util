@@ -1,4 +1,5 @@
 require 'rbbt/util/tsv'
+require 'rbbt/util/open'
 require 'spreadsheet'
 
 class TSV
@@ -8,7 +9,7 @@ class TSV
     header = true unless header == false
     sheet ||= 0
     TmpFile.with_file do |filename|
-      workbook = Spreadsheet.open File.open(file)
+      workbook = Spreadsheet.open Open.open(file)
       sheet    = workbook.worksheet sheet
 
       rows = []

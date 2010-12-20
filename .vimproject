@@ -21,16 +21,14 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    misc.rb
    log.rb
    tmpfile.rb
-   filecache.rb
    cmd.rb
+   filecache.rb
    open.rb
    tc_hash.rb
    tsv.rb
    excel2tsv.rb
 
    workflow.rb
-
-   rake_helper.rb
   }
  }
  test=test {
