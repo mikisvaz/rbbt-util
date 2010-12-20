@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{rbbt-util}
-  s.version = "1.0.1"
+  s.version = "1.1.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
-  s.date = %q{2010-12-14}
+  s.date = %q{2010-12-20}
   s.description = %q{Utilities for handling tsv files, caches, etc}
   s.email = %q{miguel.vazquez@fdi.ucm.es}
   s.executables = ["tsv.rb", "tchash.rb"]
@@ -36,6 +36,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/tc_hash.rb",
     "lib/rbbt/util/tmpfile.rb",
     "lib/rbbt/util/tsv.rb",
+    "lib/rbbt/util/workflow.rb",
     "share/install/software/lib/install_helpers"
   ]
   s.homepage = %q{http://github.com/mikisvaz/rbbt-util}
@@ -54,6 +55,7 @@ Gem::Specification.new do |s|
     "test/rbbt/util/test_tc_hash.rb",
     "test/rbbt/util/test_tmpfile.rb",
     "test/rbbt/util/test_tsv.rb",
+    "test/rbbt/util/test_workflow.rb",
     "test/test_helper.rb",
     "test/test_pkg.rb",
     "test/test_rbbt.rb"
