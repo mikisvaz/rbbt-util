@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
-  s.date = %q{2010-12-20}
+  s.date = %q{2011-01-13}
   s.description = %q{Utilities for handling tsv files, caches, etc}
   s.email = %q{miguel.vazquez@fdi.ucm.es}
   s.executables = ["tsv.rb", "tchash.rb"]
