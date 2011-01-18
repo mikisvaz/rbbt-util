@@ -202,9 +202,9 @@ class TSV
       self[key] = values << yield(key, values)
     end
 
-    fields << name if list
-    if PersistenceHash === @data
-      @data.fields = fields
+    if fields != nil
+      new_fields = fields << name
+      fields = new_fields
     end
   end
 
@@ -466,6 +466,41 @@ class TSV
 
     self.fields = self.fields + new_fields unless nofieldinfo
   end
+  
+
+  def self.field_matches(tsv, values)
+    if values.flatten.sort[0..9].compact.collect{|n| n.to_i} == (1..10).to_a
+      return {}
+    end
+
+    key_field = tsv.key_field
+    fields    = tsv.fields
+
+    field_values = {} 
+    fields.each{|field| 
+      field_values[field] = []
+    }
+
+    tsv.through do |key,entry_values|
+      fields.zip(entry_values).each do |field,entry_field_values|
+        field_values[field].concat entry_field_values
+      end
+    end
+
+    field_values.each do |field,field_value_list|
+      field_value_list.replace(values & field_value_list.flatten.uniq)
+    end
+
+    field_values[key_field] = values & tsv.keys 
+
+    field_values
+  end
+
+  def field_matches(values)
+    TSV.field_matches(self, values)
+  end
+
+
 
   #{{{ Helpers
 
@@ -587,23 +622,35 @@ class TSV
     collect.sort_by &block
   end
 
-  def to_s
+  def values_to_s(values)
+      case
+      when (values.nil? and fields.nil?)
+        "\n"
+      when (values.nil? and not fields.nil?)
+        ([""] * fields.length) * "\t" + "\n"
+      when (not Array === values)
+        values.to_s << "\n"
+      when Array === values.first
+        "\t" << values.collect{|list| (list || []) * "|"} * "\t" << "\n"
+      else
+        "\t" << values * "\t" << "\n"
+      end
+  end
+
+  def to_s(keys = nil)
     str = ""
 
     if fields
       str << "#" << key_field << "\t" << fields * "\t" << "\n"
     end
 
-    each do |key, values|
-      case
-      when values.nil?
-        str << key.dup << "\n"
-      when (not Array === values)
-        str << key.dup << "\t" << values.to_s << "\n"
-      when Array === values.first
-        str << key.dup <<  "\t" << values.collect{|list| (list || []) * "|"} * "\t" << "\n"
-      else
-        str << key.dup <<  "\t" << values * "\t" << "\n"
+    if keys.nil?
+      each do |key, values|
+        str << key.dup << values_to_s(values)
+      end
+    else
+      keys.zip(values_at(*keys)).each do |key, values|
+        str << key.dup << values_to_s(values)
       end
     end
 
@@ -625,7 +672,82 @@ class TSV
     zipped = zipped.collect{|v| NamedArray.name(v, fields)} if fields 
     zipped 
   end
-  
+
+  def self.key_order(file, options = {})
+    # Prepare options
+    options = add_defaults options, 
+      :sep              => "\t",
+      :sep2             => "|",
+      :native           => 0,
+      :fix              => nil,
+      :exclude          => nil,
+      :select           => nil,
+      :grep             => nil,
+      :case_insensitive => false,
+      :header_hash      => '#'
+
+    options[:extra]   = [options[:extra]] if options[:extra] != nil && ! (Array === options[:extra])
+
+    if String === file and File.exists? file
+      file = File.open(file)
+    end
+
+    #{{{ Process first line
+
+    line = file.gets
+    raise "Empty content" if line.nil?
+    line.chomp!
+
+    if line =~ /^#{options[:header_hash]}/
+      header_fields    = parse_fields(line, options[:sep])
+      header_fields[0] = header_fields[0][(0 + options[:header_hash].length)..-1] # Remove initial hash character
+      line = file.gets
+    else
+      header_fields = nil
+    end
+    
+    id_pos = Misc.field_position(header_fields, options[:native])
+
+    if options[:extra].nil?
+      extra_pos = nil
+      max_cols = 0
+    else
+      extra_pos = options[:extra].collect{|pos| Misc.field_position(header_fields, pos) }
+    end
+
+    ids = []
+    #{{{ Process rest
+    while line do
+      line.chomp!
+
+      line = options[:fix].call line if options[:fix]
+      break if not line
+
+      # Select and fix lines
+      if line.empty?                                               or
+         (options[:exclude] and     options[:exclude].call(line))  or
+         (options[:select]  and not options[:select].call(line))
+
+         line = file.gets
+         next
+      end
+
+      ### Process line
+
+      # Chunk fields
+      parts = parse_fields(line, options[:sep])
+
+      # Get next line
+      line = file.gets
+
+      # Get id field
+      next if parts[id_pos].nil? || parts[id_pos].empty?
+      ids << parts[id_pos]
+    end
+
+    ids
+  end
+ 
   def self.parse(data, file, options = {})
 
     # Prepare options
@@ -647,6 +769,7 @@ class TSV
       :header_hash      => '#' ,
       :persistence_file => nil
 
+    options[:unique]  = options[:uniq] if options[:unique].nil?
     options[:extra]   = [options[:extra]] if options[:extra] != nil && ! (Array === options[:extra])
     options[:flatten] = true if options[:single]
 
@@ -680,10 +803,13 @@ class TSV
       line.chomp!
 
       line = options[:fix].call line if options[:fix]
+      break if not line
 
       # Select and fix lines
-      if (options[:exclude] and   options[:exclude].call(line)) or
+      if line.empty?                                               or
+         (options[:exclude] and     options[:exclude].call(line))  or
          (options[:select]  and not options[:select].call(line))
+
          line = file.gets
          next
       end
@@ -795,9 +921,17 @@ class TSV
 
   attr_accessor :data, :key_field, :fields, :list, :case_insensitive, :filename
   def fields
+    return nil if @fields.nil?
     fields = @fields
     fields.each do |f| f.extend Field end if Array === fields
     fields
+  end
+
+  def fields=(new_fields)
+    @fields = new_fields
+    if PersistenceHash === @data
+      @data.fields = new_fields
+    end
   end
 
   def initialize(file = {}, options = {})

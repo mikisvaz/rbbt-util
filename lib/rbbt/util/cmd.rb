@@ -14,6 +14,7 @@ module CMD
         alias original_close close
         def close
           begin
+            self.original_read unless self.closed? or self.eof?
             Process.waitpid(@pid) if @pid
           rescue
           end

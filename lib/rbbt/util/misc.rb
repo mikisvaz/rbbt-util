@@ -169,6 +169,12 @@ class NamedArray < Array
     keys = keys.collect{|k| Misc.field_position(fields, k) }
     original_values_at(*keys)
   end
+
+  def zip_fields
+    zipped = self[0].zip(*self[1..-1])
+    zipped = zipped.collect{|v| NamedArray.name(v, fields)} if fields 
+    zipped 
+  end
 end
 
 

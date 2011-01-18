@@ -316,6 +316,30 @@ row2	A	B	Id3
     end
   end
 
+  def test_to_s_ordered
+    content =<<-EOF
+#Id	ValueA	ValueB	OtherID
+row1	a|aa|aaa	b	Id1|Id2
+row2	A	B	Id3
+    EOF
+
+    content2 =<<-EOF
+#Id	ValueA	ValueB	OtherID
+row2	A	B	Id3
+row1	a|aa|aaa	b	Id1|Id2
+    EOF
+
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/)
+      assert_equal content, tsv.to_s(%w(row1 row2))
+      assert_not_equal content, tsv.to_s(%w(row2 row1))
+      assert_equal content2, tsv.to_s(%w(row2 row1))
+    end
+  end
+
+
+
 
   def test_smart_merge_single
     content1 =<<-EOF
@@ -646,6 +670,20 @@ row3    a    C    Id4
       end
 
       assert_equal ["Pref:A"], tsv["row2"]["ValueA"]
+    end
+  end
+
+  def test_break_with_fix
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :fix => proc{|l| l =~ /^row2/? nil : l})
+      assert_equal %w(row1), tsv.keys
     end
   end
 
