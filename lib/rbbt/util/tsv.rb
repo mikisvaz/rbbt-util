@@ -767,7 +767,9 @@ class TSV
       :keep_empty       => true,
       :case_insensitive => false,
       :header_hash      => '#' ,
+      :cast             => nil,
       :persistence_file => nil
+       
 
     options[:unique]  = options[:uniq] if options[:unique].nil?
     options[:extra]   = [options[:extra]] if options[:extra] != nil && ! (Array === options[:extra])
@@ -846,6 +848,23 @@ class TSV
       extra.collect!{|values| values.first}       if options[:unique]
       extra.flatten!                              if options[:flatten]
       extra = extra.first                         if options[:single]
+
+      if options[:cast]
+        if Array === extra[0]
+          e = extra
+        else
+          e = [extra]
+        end
+
+        e.each do |list|
+          case
+          when String === options[:cast]
+            list.collect!{|elem| elem.send(options[:cast])}
+          when Proc === options[:cast]
+            list.collect!{|elem| options[:cast].call elem}
+          end
+        end
+      end
 
       if options[:overwrite]
         main_entry = ids.shift

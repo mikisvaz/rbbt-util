@@ -772,6 +772,25 @@ row3    a    C    Id4
  
   end
 
+  def test_cast
+     content =<<-EOF
+#Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+ 
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(filename + '#:sep=/\s+/#:cast="to_sym"')
+      assert tsv['row1']["OtherID"].include?(:Id1)
+      assert ! tsv['row1']["OtherID"].include?("Id1")
+
+      tsv = TSV.new(filename + '#:sep=/\s+/')
+      assert tsv['row1']["OtherID"].include?("Id1")
+      assert ! tsv['row1']["OtherID"].include?(:Id1)
+    end
+  end
+
   def test_tsv_cache
       content =<<-EOF
 #Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
