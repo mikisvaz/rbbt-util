@@ -28,6 +28,8 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    tsv.rb
    excel2tsv.rb
 
+   R.rb
+
    workflow.rb
   }
  }
@@ -51,6 +53,9 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   }
  }
  share=share{
+  Rlib=lib/{
+   util.R
+  }
   software=install/software{
    lib=lib{
     install_helpers
