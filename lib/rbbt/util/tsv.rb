@@ -144,11 +144,15 @@ class TSV
           new_values = tmp_values.values_at(*new_field_positions)
         end
 
-        tmp_values[new_key_position].each do |new_key|
-          if new_field_names
-            yield new_key, NamedArray.name(new_values, new_field_names)
-          else
-            yield new_key, new_values
+        if not Array === tmp_values[new_key_position]
+          yield tmp_values[new_key_position], NamedArray.name(new_values, new_field_names)  
+        else
+          tmp_values[new_key_position].each do |new_key|
+            if new_field_names
+              yield new_key, NamedArray.name(new_values, new_field_names)
+            else
+              yield new_key, new_values
+            end
           end
         end
       end
@@ -806,6 +810,11 @@ class TSV
 
       line = options[:fix].call line if options[:fix]
       break if not line
+
+      if options[:header_hash] && line =~ /^#{options[:header_hash]}/
+        line = file.gets
+        next
+      end
 
       # Select and fix lines
       if line.empty?                                               or
