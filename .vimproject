@@ -25,8 +25,11 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    filecache.rb
    open.rb
    tc_hash.rb
+
    tsv.rb
    excel2tsv.rb
+   bed.rb
+   data_store.rb
 
    R.rb
 
@@ -38,6 +41,8 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   test_rbbt.rb
   test_pkg.rb
   util=rbbt/util{
+   test_R.rb
+   test_bed.rb
    test_cmd.rb
    test_data_module.rb
    test_excel2tsv.rb
@@ -53,7 +58,7 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   }
  }
  share=share{
-  Rlib=lib/{
+  Rlib=lib/R{
    util.R
   }
   software=install/software{
