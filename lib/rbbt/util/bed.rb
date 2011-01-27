@@ -14,18 +14,22 @@ class Bed
     end
 
     def self.deserialise(entry)
-      SERIALIZER.parse(entry)
+      SERIALIZER.load(entry)
     end
 
-    def self.format(entry, record_size)
+    def self.format(entry, index, record_size)
       data = serialize(entry)
       padding = record_size - data.length
-      [data + "\0" * padding].pack("a#{record_size}")
+      [index, data + "\0" * padding].pack("la#{record_size}")
+    end
+
+    def self.index(format)
+      format.unpack("s").first
     end
 
     def self.unformat(format, record_size)
-      data = format.unpack("a#{record_size}").first
-      SERIALIZER.load(data)
+      index, data = format.unpack("la#{record_size}")
+      deserialise(data)
     end
 
     def self.get_record_size(entries)
@@ -47,15 +51,15 @@ class Bed
         Log.debug("Opening FixWidthTable in #{ file } writing. Record size: #{record_size}")
         @file = File.open(@filename, 'wb')
         @record_size = record_size
-        @file.write [record_size].pack("S")
+        @file.write [record_size].pack("L")
         @file.write [@range ? 1 : 0 ].pack("C")
         @size = 0
       else
         Log.debug("Opening FixWidthTable in #{ file } for reading")
         @file        = File.open(@filename, 'rb')
-        @record_size = @file.read(2).unpack("S").first
+        @record_size = @file.read(4).unpack("L").first
         @range       = @file.read(1).unpack("C").first == 1
-        @size        = (File.size(@filename) - 3) / @record_size
+        @size        = (File.size(@filename) - 5) / (@record_size + 4)
         Log.debug("Record size #{@record_size}")
       end
     end
@@ -69,20 +73,55 @@ class Bed
       @file = File.open(@filename, 'rb')
     end
 
-    def add(entry)
+    def add(entry, index)
       @size += 1
-      format = FixWidthTable.format(entry, @record_size)
+      format = FixWidthTable.format(entry, index, @record_size)
       @file.write format
     end
 
-    def [](index)
-      Log.debug("Getting Index #{ index }. Size: #{size}")
+    def index(index)
       return nil if index < 0 or index >= size
-      @file.seek(3 + (@record_size) * index, IO::SEEK_SET)
+      @file.seek(5 + (@record_size + 4) * index, IO::SEEK_SET)
 
-      format = @file.read(@record_size)
+      format = @file.read(@record_size + 4)
+      FixWidthTable.index(format)
+    end
+
+    def [](index)
+      return nil if index < 0 or index >= size
+      @file.seek(5 + (@record_size + 4) * index, IO::SEEK_SET)
+
+      format = @file.read(@record_size + 4)
       FixWidthTable.unformat(format, @record_size)
     end
+
+    def closest(pos)
+      upper = size - 1
+      lower = 0
+
+      return -1 if upper < lower
+
+      while(upper >= lower) do
+        idx = lower + (upper - lower) / 2
+        comp = pos <=> index(idx)
+
+        if comp == 0
+          break 
+        elsif comp > 0
+          lower = idx + 1
+        else
+          upper = idx - 1
+        end
+      end
+
+      if index(idx) > pos
+        idx = idx - 1
+      end
+
+      idx
+    end
+
+
   end
 
   #{{{ Persistence
@@ -109,7 +148,7 @@ class Bed
     options = Misc.add_defaults options, :range => nil, :key => 0, :value => 1, :persistence => false, :persistence_file => nil, :tsv => {}
 
     options[:persistence] = true if options[:persistence].nil? and options[:persistence_file]
-  
+
     filename = nil
     case
     when TSV === tsv
@@ -174,7 +213,7 @@ class Bed
       record_size = FixWidthTable.get_record_size(@index)
 
       table = FixWidthTable.new @persistence_file, record_size, @range
-      @index.each do |entry| table.add entry end
+      @index.each do |entry| table.add entry, entry.start end
       table.read
 
       @index = table
@@ -216,7 +255,11 @@ class Bed
       r_end   = pos.to_i
     end
 
-    idx = closest(r_start)
+    if FixWidthTable === @index
+      idx = @index.closest(r_start)
+    else
+      idx = closest(r_start)
+    end
 
     return [] if idx >= @index.size
     return [] if idx <0 and r_start == r_end
@@ -246,7 +289,11 @@ class Bed
       r_end   = pos.to_i
     end
 
-    idx = closest(r_start) 
+    if FixWidthTable === @index
+      idx = @index.closest(r_start)
+    else
+      idx = closest(r_start)
+    end
 
     return [] if idx >= @index.size
     return [] if idx <0 and r_start == r_end

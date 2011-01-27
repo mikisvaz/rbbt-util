@@ -177,6 +177,12 @@ class NamedArray < Array
   end
 end
 
+def benchmark
+  require 'benchmark'
+  puts(Benchmark.measure do
+    yield
+  end)
+end
 
 def profile 
   require 'ruby-prof'

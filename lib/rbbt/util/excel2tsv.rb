@@ -1,7 +1,6 @@
-require 'rbbt/util/tsv'
-require 'rbbt/util/open'
 require 'spreadsheet'
-
+require 'rbbt/util/tsv'
+require 'rbbt/util/tmpfile'
 class TSV
   def self.excel2tsv(file, options = {})
     sheet = options.delete :sheet

@@ -50,6 +50,6 @@ module Log
 end
 
 def ddd(message, file = $stdout)
-  Log.debug "       " << caller.first
+  Log.debug "DEVEL => " << caller.first
   Log.debug "DEVEL: " << message.inspect
 end

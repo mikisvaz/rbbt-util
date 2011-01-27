@@ -146,6 +146,7 @@ module Open
     !! (file =~ /\.zip/)
   end
 
+
   # Open Read Write
 
   def self.open(url, options = {})

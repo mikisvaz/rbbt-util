@@ -777,8 +777,8 @@ class TSV
       :grep             => nil,
       :single           => false,
       :unique           => false,
+      :merge            => false,
       :flatten          => false,
-      :overwrite        => false,
       :keep_empty       => true,
       :case_insensitive => false,
       :header_hash      => '#' ,
@@ -789,8 +789,6 @@ class TSV
     options[:unique]  = options[:uniq] if options[:unique].nil?
     options[:extra]   = [options[:extra]] if options[:extra] != nil && ! (Array === options[:extra])
     options[:flatten] = true if options[:single]
-
-
 
     #{{{ Process first line
 
@@ -886,35 +884,31 @@ class TSV
         end
       end
 
-      if options[:overwrite]
-        main_entry = ids.shift
-        ids.each do |id|
-          data[id] = "__Ref:#{main_entry}"  
-        end
+      main_entry = ids.shift
+      ids.each do |id| data[id] = "__Ref:#{main_entry}"  end
 
-        data[main_entry] = extra
-      else
-        main_entry = ids.shift
-        ids.each do |id|
-          data[id] = "__Ref:#{main_entry}"
-        end
+      case
+      when (options[:single] or options[:unique] or not options[:merge])
+        data[main_entry] = extra unless data.include? main_entry
+      when options[:flatten]
+        entry = data[main_entry]
 
-        case
-        when (options[:single] or options[:unique])
-          data[main_entry] ||= extra
-        when options[:flatten]
+        if entry.nil?
+          data[main_entry] = extra
+        else
+          while entry =~ /__Ref:(.*)/ do entry = data[$1] end
           if PersistenceHash === data
-            data[main_entry] = (data[main_entry] || []).concat extra
+            data[main_entry] = entry.concat extra
           else
-            data[main_entry] ||= []
             data[main_entry].concat extra
           end
+        end
+      else
+        entry = data[main_entry]
+        if entry.nil?
+          data[main_entry] = extra
         else
-          entry = data[main_entry] || []
-          while entry =~ /__Ref:(.*)/ do
-            entry = data[$1]
-          end
-
+          while entry =~ /__Ref:(.*)/ do entry = data[$1] end
           extra.each_with_index do |fields, i|
             if fields.empty?
               next unless options[:keep_empty]
@@ -923,7 +917,6 @@ class TSV
             entry[i] ||= []
             entry[i] = entry[i].concat fields
           end
-
           data[main_entry] = entry
         end
       end
@@ -938,7 +931,6 @@ class TSV
         data[key] = new_values
       end
     end
-
 
     # Save header information
     key_field = nil
@@ -1033,7 +1025,7 @@ class TSV
     when StringIO
     else 
       raise "File #{file} not found"
-   end
+    end
 
     if options[:persistence]
       options.delete :persistence
@@ -1070,17 +1062,17 @@ end
 #{{{ CacheHelper
 require 'rbbt/util/cachehelper'
 module CacheHelper
-   def self.tsv_cache(name, key = [])
-     cache_file = CacheHelper.build_filename name, key
+  def self.tsv_cache(name, key = [])
+    cache_file = CacheHelper.build_filename name, key
 
-     if File.exists? cache_file
-       Log.debug "TSV cache file '#{cache_file}' found"
-       hash = TCHash.get(cache_file)
-       TSV.new(hash)
-     else
-       Log.debug "Producing TSV cache file '#{cache_file}'"
-       data = yield
-       TSV.new(data, :persistence_file => cache_file)
-     end
+    if File.exists? cache_file
+      Log.debug "TSV cache file '#{cache_file}' found"
+      hash = TCHash.get(cache_file)
+      TSV.new(hash)
+    else
+      Log.debug "Producing TSV cache file '#{cache_file}'"
+      data = yield
+      TSV.new(data, :persistence_file => cache_file)
+    end
   end
 end

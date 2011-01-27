@@ -33,8 +33,13 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
 
    R.rb
 
+   rake.rb
+
    workflow.rb
   }
+ }
+ integration_test=integration_test{
+  test_bed.rb
  }
  test=test {
   test_helper.rb
@@ -63,7 +68,6 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   }
   software=install/software{
    lib=lib{
-    install_helpers
    }
   }
  }

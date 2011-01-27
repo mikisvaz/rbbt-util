@@ -1,5 +1,6 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
 require 'rbbt/util/bed'
+require 'rbbt/util/tmpfile'
 
 class TestBed < Test::Unit::TestCase
   def load_data(data)
@@ -63,23 +64,48 @@ g:         ____
 
   def test_format
     entry = Bed::Entry.new "Hola", 0, 10, nil
-    format = Bed::FixWidthTable.format(entry, 100)
+    format = Bed::FixWidthTable.format(entry,1, 100)
     assert_equal entry, Bed::FixWidthTable.unformat(format, 100)
   end
 
   def test_table
     TmpFile.with_file do |f|
       table = Bed::FixWidthTable.new(f, 100, false)
-      table.add Bed::Entry.new "Entry1", 0, 10, nil
-      table.add Bed::Entry.new "Entry2", 10, 20, nil
-      table.add Bed::Entry.new "Entry3", 10, 20, nil
+      table.add Bed::Entry.new("Entry1", 0, 10, nil), 0
+      table.add Bed::Entry.new("Entry2", 10, 20, nil), 10
+      table.add Bed::Entry.new("Entry3", 10, 20, nil), 10
 
       table.read 
 
+      assert_equal "Entry1", table[0].value
       assert_equal "Entry2", table[1].value
+      assert_equal "Entry3", table[2].value
     end
 
   end
+
+  def test_range_point
+     data =<<-EOF
+#ID Pos
+a 1
+b 10
+c 20
+d 12
+e 26
+f 11
+g 25
+    EOF
+
+    TmpFile.with_file(data) do |f|
+      bed = Bed.new TSV.new(f, :sep=>" ", :unique => true), :key => "Pos" , :value => "ID", :persistence => true
+
+      bed = Bed.new TSV.new(f, :sep=>" ", :unique => true), :key => "Pos" , :value => "ID", :persistence => true
+
+      assert_equal %w(), bed[0].sort
+      assert_equal %w(a b c d f), bed[(0..20)].sort
+      assert_equal %w(b), bed[10].sort
+    end
+   end
 
   def test_range_persistence
     data =<<-EOF
