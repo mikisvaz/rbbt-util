@@ -38,24 +38,30 @@ class Bed
       max
     end
 
-    attr_accessor :size
-    def initialize(file, record_size = nil, rewrite = false)
+    attr_accessor :size, :range
+    def initialize(file, record_size = nil, range = false, rewrite = false)
       @filename = file
+      @range = range
 
       if rewrite or not File.exists? file
         Log.debug("Opening FixWidthTable in #{ file } writing. Record size: #{record_size}")
         @file = File.open(@filename, 'wb')
         @record_size = record_size
         @file.write [record_size].pack("S")
-        @file.seek 2, IO::SEEK_SET
-        @size = 2
+        @file.write [@range ? 1 : 0 ].pack("C")
+        @size = 0
       else
         Log.debug("Opening FixWidthTable in #{ file } for reading")
-        @file = File.open(@filename, 'rb')
+        @file        = File.open(@filename, 'rb')
         @record_size = @file.read(2).unpack("S").first
-        @size = (File.size(@filename) - 2) / @record_size
+        @range       = @file.read(1).unpack("C").first == 1
+        @size        = (File.size(@filename) - 3) / @record_size
         Log.debug("Record size #{@record_size}")
       end
+    end
+
+    def length
+      @size / @record_size
     end
 
     def read
@@ -64,15 +70,15 @@ class Bed
     end
 
     def add(entry)
-      @size += @record_size
+      @size += 1
       format = FixWidthTable.format(entry, @record_size)
       @file.write format
     end
 
     def [](index)
-      Log.debug("Getting Index #{ index }")
+      Log.debug("Getting Index #{ index }. Size: #{size}")
       return nil if index < 0 or index >= size
-      @file.seek(2 + (@record_size) * index, IO::SEEK_SET)
+      @file.seek(3 + (@record_size) * index, IO::SEEK_SET)
 
       format = @file.read(@record_size)
       FixWidthTable.unformat(format, @record_size)
@@ -98,9 +104,11 @@ class Bed
   end
 
 
-  attr_accessor :index, :range
+  attr_accessor :index, :range, :persistence_file
   def initialize(tsv, options = {})
     options = Misc.add_defaults options, :range => nil, :key => 0, :value => 1, :persistence => false, :persistence_file => nil, :tsv => {}
+
+    options[:persistence] = true if options[:persistence].nil? and options[:persistence_file]
   
     filename = nil
     case
@@ -122,18 +130,22 @@ class Bed
     end
 
     if options[:persistence] and options[:persistence_file].nil?
-      options[:persistence_file] = Bed.get_persistence_file(filename, (options[:range].nil? ? "Point:" : "Range:"),  options)
+      options[:persistence_file] = Bed.get_persistence_file(filename, (options[:range].nil? ? "Point:#{filename}" : "Range:#{filename}"),  options)
     end
 
-    if options[:persistence_file] and File.exists? options[:persistence_file]
-      @index = FixWidthTable.new options[:persistence_file]
+    @persistence_file = options[:persistence_file]
+
+    if @persistence_file and File.exists?(@persistence_file)
+      Log.low("Loading Persistence Bed File: #{ @persistence_file }")
+
+      @index = FixWidthTable.new @persistence_file
+      @range = @index.range
       return
     end
 
     tsv = TSV.new(tsv, options[:tsv]) unless TSV === tsv
 
     @index = []
-    max_size = 0
     entry = nil
     tsv.through options[:key], options[:value] do |key, values|
       if @range
@@ -141,8 +153,7 @@ class Bed
       else
         entry = Entry.new(values[0], key.to_i, nil, nil)
       end
-      max_size =
-        @index << entry
+      @index << entry
     end
 
     @index.sort!{|a,b| a.start <=> b.start}
@@ -159,10 +170,10 @@ class Bed
       end
     end
 
-    if options[:persistence_file]
+    if @persistence_file
       record_size = FixWidthTable.get_record_size(@index)
 
-      table = FixWidthTable.new options[:persistence_file], record_size
+      table = FixWidthTable.new @persistence_file, record_size, @range
       @index.each do |entry| table.add entry end
       table.read
 
@@ -201,13 +212,16 @@ class Bed
       r_start = pos.begin
       r_end   = pos.end
     else
-      r_start = pos
-      r_end   = pos
+      r_start = pos.to_i
+      r_end   = pos.to_i
     end
 
     idx = closest(r_start)
-    
-    return [] if idx < 0 
+
+    return [] if idx >= @index.size
+    return [] if idx <0 and r_start == r_end
+
+    idx = 0 if idx < 0
 
     idx -= @index[idx].overlap if @index[idx].overlap
 
@@ -216,8 +230,8 @@ class Bed
     while l.start <= r_end
       values << l.value if l.end >= r_start 
       idx += 1
+      break if idx >= @index.size
       l = @index[idx]
-      break if l.nil?
     end
 
     values
@@ -228,19 +242,25 @@ class Bed
       r_start = pos.begin
       r_end   = pos.end
     else
-      r_start = pos
-      r_end   = pos
+      r_start = pos.to_i
+      r_end   = pos.to_i
     end
 
-
     idx = closest(r_start) 
-    idx += 1 unless @index[idx].start == r_start
+
+    return [] if idx >= @index.size
+    return [] if idx <0 and r_start == r_end
+
+    idx = 0 if idx < 0
+
+    idx += 1 unless @index[idx].start >= r_start
 
     values = []
     l = @index[idx]
     while l.start <= r_end
       values << l.value
       idx += 1
+      break if idx >= @index.size
       l = @index[idx]
     end
 

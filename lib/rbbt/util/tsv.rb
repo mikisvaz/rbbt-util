@@ -203,12 +203,12 @@ class TSV
 
   def add_field(name = nil)
     each do |key, values|
-      self[key] = values << yield(key, values)
+      self[key] = values + [yield(key, values)]
     end
 
     if fields != nil
-      new_fields = fields << name
-      fields = new_fields
+      new_fields = fields + [name]
+      self.fields = new_fields
     end
   end
 
@@ -216,6 +216,8 @@ class TSV
     new = TSV.new({})
     new.key_field = key_field
     new.fields    = fields.dup
+    new.list      = list
+    new.filename  = filename + "#Select: #{method.inspect}"
     
     case
     when Array === method
@@ -226,6 +228,10 @@ class TSV
       through do |key, values|
         new[key] = values if [key,values].flatten.select{|v| v =~ method}.any?
       end
+    when String === method
+      through do |key, values|
+        new[key] = values if [key,values].flatten.select{|v| v == method}.any?
+      end
     when Hash === method
       key  = method.keys.first
       method = method.values.first
@@ -234,14 +240,19 @@ class TSV
         method.each{|item| if values = self[item]; then  new[item] = values; end}
       when Array === method
         through :main, key do |key, values|
-          new[key] = values if (values.flatten & method).any?
+          new[key] = self[key] if (values.flatten & method).any?
         end
       when Regexp === method
         through :main, key do |key, values|
-          new[key] = values if values.flatten.select{|v| v =~ method}.any?
+          new[key] = self[key] if values.flatten.select{|v| v =~ method}.any?
+        end
+      when String === method
+        through :main, key do |key, values|
+          new[key] = self[key] if values.flatten.select{|v| v == method}.any?
         end
       end
     end
+
 
     new
   end
@@ -996,7 +1007,7 @@ class TSV
       @list             = file.list
       return self
     when Hash === file
-      Log.low "Encapsulating Hash"
+      Log.low "Encapsulating Hash in TSV object"
       @filename = "Hash:" + Digest::MD5.hexdigest(file.inspect)
       if options[:persistence] 
         persistence_file = options.delete(:persistence_file) || TSV.get_persistence_file(@filename, "file:#{ @filename }:", options)

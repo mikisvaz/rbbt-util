@@ -765,7 +765,6 @@ row3    a    C    Id4
       tsv.add_field "Str length" do |k,v| 
         (v.flatten * " ").length 
       end
-      
 
       assert tsv.fields.include?("Str length")
     end
