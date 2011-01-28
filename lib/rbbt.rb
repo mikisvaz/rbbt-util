@@ -13,3 +13,4 @@ module Rbbt
   self.load_cfg(%w(tmpdir cachedir datadir))
 end
 
+

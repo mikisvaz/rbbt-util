@@ -642,9 +642,9 @@ class TSV
       when (values.nil? and fields.nil?)
         "\n"
       when (values.nil? and not fields.nil?)
-        ([""] * fields.length) * "\t" + "\n"
+        "\t" << ([""] * fields.length) * "\t" << "\n"
       when (not Array === values)
-        values.to_s << "\n"
+        "\t" << values.to_s << "\n"
       when Array === values.first
         "\t" << values.collect{|list| (list || []) * "|"} * "\t" << "\n"
       else
@@ -661,10 +661,12 @@ class TSV
 
     if keys.nil?
       each do |key, values|
+        key = key.to_s if Symbol === key
         str << key.dup << values_to_s(values)
       end
     else
       keys.zip(values_at(*keys)).each do |key, values|
+        key = key.to_s if Symbol === key
         str << key.dup << values_to_s(values)
       end
     end

@@ -1,10 +1,61 @@
 require 'rbbt/util/open'
 require 'rbbt/util/tsv'
 require 'rbbt/util/log'
-require 'rake'
+require 'rbbt/util/rake'
 
 module PKGData
-  FILES = {} unless defined? FILES
+  attr_accessor :claims
+  def self.extended(base)
+    base.claims = {}
+  end
+
+  module Path
+    attr_accessor :base
+
+    def method_missing(name, *args, &block)
+      new = File.join(self.dup, name.to_s)
+      new.extend Path
+      new.base = base
+      new
+    end
+
+    def [](name)
+      new = File.join(self.dup, name.to_s)
+      new.extend Path
+      new.base = base
+      new
+    end
+
+    def tsv(options = {})
+      produce
+      TSV.new self, options
+    end
+
+    def index(field = nil, other = nil, options = {})
+      produce
+      TSV.index self, options.merge(:field => field, :other => other)
+    end
+
+    def open
+      produce
+      Open.open(self)
+    end
+
+    def read
+      produce
+      Open.read(self)
+    end
+
+    def produce
+      Log.debug("Base #{ base.inspect }")
+      return if File.exists? self
+
+      Log.debug("Trying to produce '#{ self }'")
+      file, producer = base.reclaim self
+      base.produce(self, producer[:get], producer[:subdir], producer[:sharedir])
+    end
+  end
+
   class SharedirNotFoundError < StandardError; end
 
   def self.sharedir_for_file(file = __FILE__)
@@ -32,79 +83,81 @@ module PKGData
     raise SharedirNotFoundError
   end
 
-  def run_rake(path, dir, task = nil)
-    rakefile = File.join(dir, 'Rakefile')
-    return nil unless File.exists? rakefile
-    if task.nil?
-      task ||= :default
+  def files
+    path = datadir.dup.extend Path
+    path.base = self
+    path
+  end
+
+  def in_datadir?(file)
+    if File.expand_path(file.to_s) =~ /^#{Regexp.quote File.expand_path(datadir)}/
+      true
     else
-      task.sub!(/\/$/,'') if String === task
-      path = File.dirname(path)
+      false
     end
-
-    load rakefile
-    old_dir = FileUtils.pwd
-    begin
-      FileUtils.mkdir_p path
-      FileUtils.chdir path
-      Rake::Task[task].invoke
-      Rake::Task[task].reenable
-    ensure
-      FileUtils.chdir old_dir
-    end
-    true
   end
 
-  def get_datafile(file, path, get, sharedir)
-    Log.log "Getting data file '#{ file }' into '#{ path }'. Get: #{get.to_s}"
+  def claim(file, get = nil, subdir = nil, sharedir = nil)
+    file = case
+           when (file.nil? or file === :all)
+             File.join(datadir, subdir.to_s)
+           when in_datadir?(file)
+             file
+           else
+             File.join(datadir, subdir.to_s, file.to_s)
+           end
 
-    FileUtils.mkdir_p File.dirname(path) unless File.exists?(File.dirname(path))
+    sharedir ||= PKGData.get_caller_sharedir
+    claims[file] = {:get => get, :subdir => subdir, :sharedir => sharedir}
+    produce(file, get, subdir, sharedir) if TSV === get
+    produce(file, get, subdir, sharedir) if String === get and not File.exists?(get) and reclaim(file).nil? and not File.basename(get.to_s) == "Rakefile"
+  end
 
-    case
+  def reclaim(file)
+    file = File.expand_path(file.dup)
+    return nil unless in_datadir? file
+
+    while file != File.expand_path(datadir)
+      if @claims[file]
+        return [file, @claims[file]]
+      end
+      file = File.dirname(file)
+    end
+    nil
+  end
+
+  def declaim(file)
+    @claims.delete file if @claims.include? file
+  end
+
+  def produce_with_rake(rakefile, subdir, file)
+    task  = File.expand_path(file).sub(/^.*#{Regexp.quote(File.join(datadir, subdir))}\/?/, '')
+    RakeHelper.run(rakefile, task, File.join(File.join(datadir, subdir)))
+  end
+
+  def produce(file, get, subdir, sharedir)
+    Log.low "Getting data file '#{ file }' into '#{ subdir }'. Get: #{get.class}"
+
+    FileUtils.mkdir_p File.dirname(file) unless File.exists?(File.dirname(file))
+
+    case 
     when get.nil?
-      load File.join(sharedir, 'install', file)
-
+      FileUtils.cp File.join(sharedir, subdir.to_s, File.basename(file.to_s)), file.to_s
     when Proc === get
-      Open.write(path, get.call(file, path))
-
+      Open.write(file, get.call)
     when TSV === get
-      Open.write(path, get.to_s)
-
-    when String === get
-      install_dir =File.expand_path(File.join(sharedir, 'install')) 
-      rake_dir  = File.join(install_dir, File.dirname(get), file)
-      rake_task = nil
-
-      until rake_dir == install_dir
-        return if run_rake(path, rake_dir, rake_task)
-        rake_task = File.join(File.basename(rake_dir), rake_task || "")
-        rake_dir  = File.dirname(rake_dir)
-      end
-
-      if (File.exists?(File.join(sharedir, get)) and not File.directory?(File.join(sharedir, get)))
-        Open.write(path, Open.open(File.join(sharedir, get)))
+      Open.write(file, get.to_s)
+    when ((String === get or Symbol === get) and File.basename(get.to_s) == "Rakefile")
+      if Symbol === get
+        rakefile = File.join(sharedir, subdir, get.to_s)
       else
-        Open.write(path, Open.open(get, :wget_options => {:pipe => true}, :nocache => true))
+        rakefile = File.join(sharedir, get.to_s)
       end
+      produce_with_rake(rakefile, subdir, file)
+    when String === get
+      Open.write(file, Open.read(get, :wget_options => {:pipe => true}, :nocache => true))
+    else
+      raise "Unknown Get: #{get.class}"
     end
-  end
-
-  def add_datafiles(files = {})
-    files.each do |file, info|
-      subpath, get, sharedir = info
-
-      path = File.join(datadir, subpath.to_s, file.to_s)
-
-      if not File.exists?(path)
-        sharedir ||= PKGData.get_caller_sharedir
-        get_datafile(file.to_s, path, get, sharedir)
-      end
-
-      FILES[file.to_s] = path
-    end
-  end
-
-  def find_datafile(file)
-    FILES[file.to_s]
   end
 end

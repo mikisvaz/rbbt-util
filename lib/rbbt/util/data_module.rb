@@ -1,5 +1,6 @@
 module DataModule
 
+  attr_accessor :sharedir, :rakefile, :pkg_module
   def self.extended(base)
     if defined? base::PKG and base::PKG
       base.pkg_module = base::PKG
@@ -8,41 +9,14 @@ module DataModule
     end
 
     base.sharedir = PKGData.get_caller_sharedir 
-  end
-
-  def pkg_module
-    @pkg_module
-  end
-
-  def pkg_module=(pkg_module)
-    @pkg_module = pkg_module
-  end
-
-  def sharedir
-    @sharedir
-  end
-
-  def sharedir=(sharedir)
-    @sharedir = sharedir
-  end
-
-  alias old_method_missing method_missing
-  def method_missing(name, *args, &block)
-    if args.any?
-      filename = File.join(self.to_s, args.first, name.to_s)
-    else
-      filename = File.join(self.to_s, name.to_s)
+    
+    Dir.glob(File.join(base.sharedir, 'install', base.to_s, '**','Rakefile')).each do |rakefile|
+      RakeHelper.files(rakefile).each do |file|
+        base.pkg_module.claim file, 
+          rakefile.sub(/^#{Regexp.quote File.join(base.sharedir)}\/?/,''), 
+          File.dirname(rakefile).sub(/^#{Regexp.quote File.join(base.sharedir, 'install')}\/?/,'')
+      end
     end
-
-    begin
-      pkg_module.add_datafiles filename => ['', self.to_s, sharedir]
-    rescue 
-      Log.debug $!.message
-      Log.debug $!.backtrace * "\n"
-      old_method_missing name, *args, &block
-    end
-
-    pkg_module.find_datafile filename
   end
 
   module WithKey
@@ -79,4 +53,22 @@ module DataModule
     o.key = key
     o
   end
+
+
+  alias old_method_missing method_missing
+  def method_missing(name, *args, &block)
+    begin
+      if args.any?
+        pkg_module.files[self.to_s][args.first][name] 
+      else
+        pkg_module.files[self.to_s][name] 
+      end
+    rescue
+      Log.debug $!.message
+      Log.debug $!.backtrace * "\n"
+      old_method_missing name, *args, &block
+    end
+  end
+
+
 end

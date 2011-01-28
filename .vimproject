@@ -38,9 +38,6 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    workflow.rb
   }
  }
- integration_test=integration_test{
-  test_bed.rb
- }
  test=test {
   test_helper.rb
   test_rbbt.rb
@@ -54,6 +51,8 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    test_filecache.rb
    test_misc.rb
    test_open.rb
+   test_pkg_data.rb
+   test_rake.rb
    test_simpleDSL.rb
    test_simpleopt.rb
    test_tc_hash.rb
@@ -61,6 +60,10 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    test_tsv.rb
    test_workflow.rb
   }
+ }
+ integration_test=integration_test{
+  test_bed.rb
+  test_workflow.rb
  }
  share=share{
   Rlib=lib/R{

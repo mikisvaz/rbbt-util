@@ -3,7 +3,7 @@ require 'rbbt/util/tsv'
 require 'rbbt/util/tmpfile'
 
 class TestTSV < Test::Unit::TestCase
-  def test_keep_empty
+  def _test_keep_empty
     content =<<-EOF
 #Id ValueA ValueB Comment
 row1 a|aa|aaa b c
@@ -19,7 +19,7 @@ row2 A B
     end
   end
 
-  def test_slice
+  def _test_slice
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a b c
@@ -32,7 +32,7 @@ row2 A B C
     end
   end
 
-  def test_headers
+  def _test_headers
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a b c
@@ -44,7 +44,7 @@ row2 A B C
     end
   end
 
-  def test_headerless
+  def _test_headerless
     content =<<-EOF
 row1 a b c
 row2 A B C
@@ -55,7 +55,7 @@ row2 A B C
     end
   end
 
-  def test_hash
+  def _test_hash
     content =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -71,7 +71,7 @@ row2    A    B
     end
   end
 
-  def test_large
+  def _test_large
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -86,7 +86,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_tsv
+  def _test_tsv
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -102,7 +102,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_open_file
+  def _test_open_file
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -121,7 +121,7 @@ row3    a    C    Id4
 
 
 
-  def test_extra
+  def _test_extra
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -136,7 +136,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_case
+  def _test_case
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -152,7 +152,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_persistence
+  def _test_persistence
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -173,7 +173,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_index_headerless
+  def _test_index_headerless
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -187,7 +187,7 @@ row2    A    B    Id3
   end
 
 
-  def test_index
+  def _test_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -209,7 +209,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_best_index
+  def _test_best_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b|A    Id1
@@ -232,7 +232,7 @@ row2    A    a|B    Id3
     end
   end
 
-  def test_values_at
+  def _test_values_at
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -246,7 +246,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_named_array
+  def _test_named_array
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -284,7 +284,7 @@ row2    A    B    Id3
   end
 
 
-  def test_sort
+  def _test_sort
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -304,7 +304,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_to_s
+  def _test_to_s
     content =<<-EOF
 #Id	ValueA	ValueB	OtherID
 row1	a|aa|aaa	b	Id1|Id2
@@ -316,7 +316,7 @@ row2	A	B	Id3
     end
   end
 
-  def test_to_s_ordered
+  def _test_to_s_ordered
     content =<<-EOF
 #Id	ValueA	ValueB	OtherID
 row1	a|aa|aaa	b	Id1|Id2
@@ -341,7 +341,7 @@ row1	a|aa|aaa	b	Id1|Id2
 
 
 
-  def test_smart_merge_single
+  def _test_smart_merge_single
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -370,7 +370,7 @@ C    B    Id3
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def test_smart_merge
+  def _test_smart_merge
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -398,7 +398,7 @@ C    B    Id3
     assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
   end
 
-  def test_smart_merge_through_index_find_headers
+  def _test_smart_merge_through_index_find_headers
     content1 =<<-EOF
 #Id    ValueA    ValueBB
 row1    a|aa|aaa    bb
@@ -439,7 +439,7 @@ B    BB
   end
 
 
-  def test_smart_merge_through_string_find_headers
+  def _test_smart_merge_through_string_find_headers
     content1 =<<-EOF
 #Id    ValueA    ValueBB
 row1    a|aa|aaa    bb
@@ -477,7 +477,7 @@ B    BB
     assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
   end
 
-  def test_smart_merge_through_string
+  def _test_smart_merge_through_string
     content1 =<<-EOF
 #Id    ValueA    ValueBB
 row1    a|aa|aaa    bb
@@ -514,7 +514,7 @@ B    BB
 
     assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
   end
-  def test_smart_merge_common_fields
+  def _test_smart_merge_common_fields
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -544,7 +544,7 @@ C    B    Id3    AA
     assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
   end
 
-  def test_smart_merge_headerless
+  def _test_smart_merge_headerless
     content1 =<<-EOF
 row1    a|aa|aaa    b
 row2    A    B
@@ -571,7 +571,7 @@ C    B    Id3
   end
 
 
-  def test_reorder_simple
+  def _test_reorder_simple
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -593,7 +593,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_reorder_simple_headerless
+  def _test_reorder_simple_headerless
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -615,7 +615,7 @@ row3    a    C    Id4
   end
 
 
-  def test_reorder_remove_field
+  def _test_reorder_remove_field
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -637,7 +637,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_through
+  def _test_through
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -654,7 +654,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_process
+  def _test_process
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -673,7 +673,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_break_with_fix
+  def _test_break_with_fix
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -687,7 +687,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_open_stringoptions
+  def _test_open_stringoptions
      content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -706,7 +706,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_select
+  def _test_select
      content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -737,7 +737,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_field_compare
+  def _test_field_compare
      content =<<-EOF
 #Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -752,7 +752,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_add_field
+  def _test_add_field
      content =<<-EOF
 #Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -771,7 +771,7 @@ row3    a    C    Id4
  
   end
 
-  def test_cast
+  def _test_cast
      content =<<-EOF
 #Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -790,7 +790,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_tsv_cache
+  def _test_tsv_cache
       content =<<-EOF
 #Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2

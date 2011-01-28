@@ -19,16 +19,6 @@ module B
   self.load_cfg(%w(datadir), {"datadir" => "/tmp/B"}.to_yaml)
 end
 
-module DA
-  PKG=A
-  extend DataModule
-end
-
-module DB
-  PKG=B
-  extend DataModule
-end
-
 class TestPKG < Test::Unit::TestCase
   def test_datadir
     assert_equal "/tmp/A", A.datadir

@@ -3,12 +3,13 @@ require 'rbbt/util/open'
 require 'rbbt/util/log'
 
 module RakeHelper
-  def self.files(rakefile, task = :default)
+  def self.files(rakefile, task = :default, chdir = nil)
     status = nil
     files = nil
     TmpFile.with_file do |f|
       pid = Process.fork{
         require 'rake'
+        FileUtils.chdir chdir if chdir
 
         Rake::FileTask.module_eval do
           class << self
@@ -28,7 +29,7 @@ module RakeHelper
         load rakefile
 
         Open.write(f, Rake::FileTask.files * "\n")
-      exit
+        exit
       }
 
 
@@ -39,9 +40,10 @@ module RakeHelper
     files
   end
 
-  def self.run(rakefile, task = :default)
+  def self.run(rakefile, task = :default, chdir = nil)
     pid = Process.fork{
       require 'rake'
+      FileUtils.chdir chdir if chdir
 
       Rake::FileTask.module_eval do
         class << self

@@ -1,9 +1,10 @@
+require 'rbbt'
 require 'rbbt/util/misc'
 require 'rbbt/util/log'
 require 'stringio'
 
 module CMD
-  class CMDError < RBBTError;end
+  class CMDError < RBBTError; end
 
   module SmartIO 
     def self.tie(io, pid = nil, cmd = "",  post = nil)
