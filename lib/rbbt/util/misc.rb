@@ -80,6 +80,14 @@ module Misc
     new_options
   end
 
+  def self.process_options(hash, *keys)
+    if keys.length == 1
+      hash.delete keys.first.to_sym
+    else
+      keys.collect do |key| hash.delete(key.to_sym) || hash.delete(key.to_s) end
+    end
+  end
+
   def self.string2hash(string)
 
     options = {}
@@ -91,7 +99,7 @@ module Misc
       end
 
       option = option.sub(":",'').to_sym if option.chars.first == ':'
-
+      value  = value.sub(":",'').to_sym if String === value and value.chars.first == ':'
       
       if value == true
         options[option] = option.to_s.chars.first != '!' 
@@ -129,10 +137,18 @@ module Misc
     fields.each_with_index{|f,i| return i if f =~ field_re}
     raise FieldNotFoundError, "Field '#{ field }' was not found" unless quiet
   end
+
+  def self.first(list)
+    return nil if list.nil?
+    return list.first
+  end
+
 end
 
 module PDF2Text
   def self.pdf2text(filename)
+    require 'rbbt/util/cmd'
+    require 'rbbt/util/tmpfile'
     TmpFile.with_file(Open.read(filename)) do |pdf|
       CMD.cmd("pdftotext #{pdf} -", :pipe => false, :stderr => true)
     end

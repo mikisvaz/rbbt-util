@@ -6,7 +6,13 @@ class TCHash < TokyoCabinet::HDB
 
   Serializer = Marshal
 
-  FIELD_INFO_ENTRIES = {:fields => '__tokyocabinet_hash_fields', :key_field => '__tokyocabinet_hash_native_field'}
+  FIELD_INFO_ENTRIES = {
+    :fields    => '__tokyocabinet_hash_fields', 
+    :key_field => '__tokyocabinet_hash_key_field',
+    :filename  => '__tokyocabinet_hash_filename',
+    :type      => '__tokyocabinet_hash_type',
+    :case_insensitive      => '__tokyocabinet_hash_case_insensitive'
+  }
   CONNECTIONS = {}
 
   FIELD_INFO_ENTRIES.each do |entry, key|

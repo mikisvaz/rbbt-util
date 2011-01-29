@@ -24,6 +24,7 @@ class TestMisc < Test::Unit::TestCase
     assert(Misc.string2hash("a=b")["a"] == 'b')
     assert(Misc.string2hash("a=b#c=d#:h=j")["c"] == 'd')
     assert(Misc.string2hash("a=b#c=d#:h=j")[:h] == 'j')
+    assert(Misc.string2hash("a=b#c=d#:h=:j")[:h] == :j)
   end
   
   def test_named_array

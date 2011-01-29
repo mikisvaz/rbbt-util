@@ -5,7 +5,7 @@ require 'rbbt/util/tmpfile'
 class TestBed < Test::Unit::TestCase
   def load_data(data)
     Log.debug("Data:\n#{Open.read(data)}")
-    tsv = TSV.new(data, :sep=>":", :cast => proc{|e| e =~ /(\s*)(_*)/; ($1.length..($1.length + $2.length - 1))}, :unique => true)
+    tsv = TSV.new(data, :list, :sep=>":", :cast => proc{|e| e =~ /(\s*)(_*)/; ($1.length..($1.length + $2.length - 1))})
     tsv.add_field "Start" do |key, values|
       values["Range"].first
     end
@@ -29,7 +29,7 @@ g 25
     EOF
 
     TmpFile.with_file(data) do |f|
-      bed = Bed.new TSV.new(f, :sep=>" ", :unique => true), :key => "Pos" , :value => "ID"
+      bed = Bed.new TSV.new(f, :list, :sep=>" "), :key => "Pos" , :value => "ID"
 
       assert_equal %w(), bed[0].sort
       assert_equal %w(b), bed[10].sort
@@ -97,9 +97,9 @@ g 25
     EOF
 
     TmpFile.with_file(data) do |f|
-      bed = Bed.new TSV.new(f, :sep=>" ", :unique => true), :key => "Pos" , :value => "ID", :persistence => true
+      bed = Bed.new TSV.new(f,:list, :sep=>" "), :key => "Pos" , :value => "ID", :persistence => true
 
-      bed = Bed.new TSV.new(f, :sep=>" ", :unique => true), :key => "Pos" , :value => "ID", :persistence => true
+      bed = Bed.new TSV.new(f,:list, :sep=>" "), :key => "Pos" , :value => "ID", :persistence => true
 
       assert_equal %w(), bed[0].sort
       assert_equal %w(a b c d f), bed[(0..20)].sort

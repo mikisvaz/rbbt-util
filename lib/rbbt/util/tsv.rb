@@ -3,16 +3,9 @@ require 'rbbt/util/open'
 require 'rbbt/util/tc_hash'
 require 'rbbt/util/tmpfile'
 require 'rbbt/util/log'
+require 'rbbt/util/persistence'
 require 'digest'
 require 'fileutils'
-
-def add_defaults(options, defaults = {})
-  new_options = options.dup
-  defaults.each do |key, value|
-    new_options[key] = value if new_options[key].nil?
-  end
-  new_options
-end
 
 class TSV
   class FieldNotFoundError < StandardError;end
@@ -26,8 +19,6 @@ class TSV
 
   #{{{ Persistence
 
-  PersistenceHash = TCHash
-
   CACHEDIR="/tmp/tsv_persistent_cache"
   FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
 
@@ -40,10 +31,7 @@ class TSV
     CACHEDIR
   end
 
-  def self.get_persistence_file(file, prefix, options = {})
-    File.join(CACHEDIR, prefix.gsub(/\s/,'_').gsub(/\//,'>') + Digest::MD5.hexdigest([file, options].inspect))
-  end
-
+  
   #{{{ Headers and Field Stuff
 
   def self.headers(file, options = {})
@@ -130,7 +118,7 @@ class TSV
       end
 
       each do |key, values|
-        if list
+        if type == :double
           tmp_values = values + [[key]]
         else
           tmp_values = values + [key]
@@ -169,7 +157,7 @@ class TSV
 
   def reorder(new_key_field, new_fields = nil, options = {})
     options = Misc.add_defaults options
-    return TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => case_insensitive)  if options[:persistence_file] and File.exists?(options[:persistence_file])
+    return TSV.new(Persistence::TSV.get(options[:persistence_file], false), :case_insensitive => case_insensitive)  if options[:persistence_file] and File.exists?(options[:persistence_file])
 
     new = {}
     new_key_field, new_fields = through new_key_field, new_fields do |key, values|
@@ -185,7 +173,7 @@ class TSV
     end
 
     if options[:persistence_file]
-      reordered = TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => case_insensitive)
+      reordered = TSV.new(Persistence::TSV.get(options[:persistence_file], false), :case_insensitive => case_insensitive)
       reordered.merge! new
     else
       reordered = TSV.new(new, :case_insensitive => case_insensitive)
@@ -216,8 +204,9 @@ class TSV
     new = TSV.new({})
     new.key_field = key_field
     new.fields    = fields.dup
-    new.list      = list
+    new.type      = type
     new.filename  = filename + "#Select: #{method.inspect}"
+    new.case_insensitive  = case_insensitive
     
     case
     when Array === method
@@ -258,76 +247,69 @@ class TSV
   end
 
   def index(options = {})
-    options = Misc.add_defaults options, :order => false
+    options = Misc.add_defaults options, :order => false, :persistence => false
 
-    if options[:persistence] and ! options[:persistence_file]
-      options[:persistence_file] = TSV.get_persistence_file(filename, "index:#{ filename }_#{options[:field]}:", options)
-    end
+    new, extra = Persistence.persist(filename, :Index, :tsv, options) do |filename, options|
+      new = {}
+      if options[:order]
+        new_key_field, new_fields = through options[:target], options[:others] do |key, values|
 
-    if options[:persistence_file] and File.exists?(options[:persistence_file])
-      return TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => options[:case_insensitive]) 
-    end
+          values.each_with_index do |list, i|
+            next if list.nil? or list.empty?
 
-    new = {}
-    if options[:order]
-      new_key_field, new_fields = through options[:field], options[:others] do |key, values|
+            list = [list] unless Array === list
 
-        values.each_with_index do |list, i|
-          next if list.nil? or list.empty?
-
-          list = [list] unless Array === list
-
-          list.each do |value|
-            next if value.nil? or value.empty?
-            value = value.downcase if options[:case_insensitive]
-            new[value]    ||= []
-            new[value][i + 1] ||= []
-            new[value][i + 1] << key
-          end
+            list.each do |value|
+              next if value.nil? or value.empty?
+              value = value.downcase if options[:case_insensitive]
+              new[value]    ||= []
+              new[value][i + 1] ||= []
+              new[value][i + 1] << key
+            end
           new[key]    ||= []
           new[key][0] = key
+          end
+
         end
 
-      end
+        new.each do |key, values| 
+          values.flatten!
+          values.compact!
+        end
 
-      new.each do |key, values| 
-        values.flatten!
-        values.compact!
-      end
-
-    else
-      new_key_field, new_fields = through options[:field], options[:others] do |key, values|
-        new[key] ||= []
-        new[key] << key 
-        values.each do |list|
-          next if list.nil? 
-          if Array === list
-            list.each do |value|
+      else
+        new_key_field, new_fields = through options[:target], options[:others] do |key, values|
+          new[key] ||= []
+          new[key] << key 
+          values.each do |list|
+            next if list.nil? 
+            if Array === list
+              list.each do |value|
+                value = value.downcase if options[:case_insensitive]
+                new[value] ||= []
+                new[value] << key
+              end
+            else
+              next if list.empty?
+              value = list
               value = value.downcase if options[:case_insensitive]
               new[value] ||= []
               new[value] << key
             end
-          else
-            next if list.empty?
-            value = list
-            value = value.downcase if options[:case_insensitive]
-            new[value] ||= []
-            new[value] << key
           end
         end
       end
+
+      [new, {:key_field => new_key_field, :fields => new_fields, :type => :double, :case_insensitive => options[:case_insensitive]}]
     end
 
-    if options[:persistence_file]
-      index = TSV.new(PersistenceHash.get(options[:persistence_file], false), :case_insensitive => options[:case_insensitive])
-      index.merge! new
-    else
-      index = TSV.new(new, :case_insensitive => options[:case_insensitive])
-    end
-
-    index.key_field = new_key_field
-    index.fields    = new_fields
-    index
+    new = TSV.new(new)
+    new.filename = "Index: " + filename + options.inspect
+    new.fields = extra[:fields]
+    new.key_field = extra[:key_field]
+    new.case_insensitive = extra[:case_insensitive]
+    new.type = extra[:type]
+    new
   end
 
   def smart_merge(other, match = nil, new_fields = nil)
@@ -428,7 +410,7 @@ class TSV
 
         if nofieldinfo
           next if other[other_code].nil?
-          if list
+          if type == :double
             other_values = [[other_code]] + other[other_code]
           else
             other_values = [other_code] + other[other_code]
@@ -442,13 +424,13 @@ class TSV
           new_values = values + other_values 
         else
           if other[other_code].nil?
-            if list
+            if type == :double
               other_values = [[]] * other.fields.length
             else
               other_values = [] * other.fields.length
             end
           else
-            if list
+            if type == :double
               other_values = other[other_code] + [[other_code]]
             else
               other_values = other[other_code] + [other_code]
@@ -458,11 +440,11 @@ class TSV
 
           new_values = values.dup
 
-          if list
+          if type == :double
             this_common_field_positions.zip(other_common_field_positions).each do |tpos, opos|
               new_values_tops = new_values[tpos]
 
-              if other.list
+              if other.type == :double
                 new_values_tops += other_values[opos]
               else
                 new_values_tops += [other_values[opos]]
@@ -520,6 +502,19 @@ class TSV
   #{{{ Helpers
 
   def self.index(file, options = {})
+    options = Misc.add_defaults options, :data_persistence => true, :persistence => true
+    persistence, persistence_file = Misc.process_options options, :persistence, :persistence_file
+    options[:persistence], options[:persistence_file] =  options.values_at :data_persistence, :data_persistence_file
+    options.delete :data_persistence
+    options.delete :data_persistence_file
+
+    index, extra = Persistence.persist(file, :Index, :tsv, options) do |file, options, filename|
+      TSV.new(file, :double, options).index
+    end
+    index
+  end
+
+  def self.index2(file, options = {})
     opt_data = options.dup
     opt_index = options.dup
     opt_data.delete  :field
@@ -532,7 +527,7 @@ class TSV
 
     if ! opt_index[:persistence_file].nil? && File.exists?(opt_index[:persistence_file])
       Log.low "Reloading persistent index for #{ file }: #{opt_index[:persistence_file]}"
-      TSV.new(PersistenceHash.get(opt_index[:persistence_file], false), opt_index)
+      TSV.new(Persistence::TSV.get(opt_index[:persistence_file], false), opt_index)
     else
       Log.low "Creating index for #{ file }: #{opt_index[:persistence_file]}"
       data = TSV.new(file, opt_data)
@@ -551,6 +546,23 @@ class TSV
   end
 
   #{{{ Accesor Methods
+  attr_accessor :filename, :type, :case_insensitive, :key_field, :fields, :data
+
+  def fields
+    return nil if @fields.nil?
+    fields = @fields
+    fields.each do |f| f.extend Field end if Array === fields
+    fields
+  end
+
+  def fields=(new_fields)
+    @fields = new_fields
+    if Persistence::TSV === @data
+      @data.fields = new_fields
+    end
+  end
+
+
 
   def keys
     @data.keys
@@ -581,6 +593,7 @@ class TSV
   # Read
 
   def follow(value)
+    return nil if value.nil?
     if String === value && value =~ /__Ref:(.*)/
       return self[$1]
     else
@@ -596,7 +609,7 @@ class TSV
       return nil
     end
 
-    key = key.downcase if @case_insensitive
+    key = key.downcase if @case_insensitive and key !~ /^__Ref:/
     follow @data[key]
   end
 
@@ -764,11 +777,226 @@ class TSV
 
     ids
   end
+
+  def self.parse_header(stream, sep, header_hash)
+    fields, key_field = nil
+    options = {}
+    
+    line = stream.gets
+
+    if line and line =~ /^#{header_hash}: (.*)/
+      options = Misc.string2hash $1
+      line = stream.gets
+    end
+
+    sep = options[:sep] if options[:sep]
+
+    if line and line =~ /^#{header_hash}/
+      line.chomp!
+      fields = parse_fields(line, sep)
+      key_field = fields.shift
+      key_field = key_field[(0 + header_hash.length)..-1] # Remove initial hash character
+      line = stream.gets
+    end
+
+    raise "Empty content" if line.nil?
+    return key_field, fields, options, line
+  end
+
+  def self.parse(stream, options = {})
+    # Prepare options
+    options = Misc.add_defaults options, 
+      :case_insensitive => false,
+      :type             => :double,
+
+      :merge            => false,
+      :keep_empty       => true,
+      :cast             => nil,
+
+      :sep              => "\t",
+      :sep2             => "|",
+      :header_hash      => '#',
+
+      :key              => 0,
+      :fields           => nil,
+
+      :fix              => nil,
+      :exclude          => nil,
+      :select           => nil,
+      :grep             => nil
+
+
+    sep, header_hash =
+      Misc.process_options options, :sep,  :header_hash
+
+    key_field, other_fields, more_options, line = TSV.parse_header(stream, sep, header_hash)
+
+    sep     = more_options[:sep] if more_options[:sep]
+    options = Misc.add_defaults options, more_options
+    sep2    = Misc.process_options options, :sep2
+
+    key, others =
+      Misc.process_options options, :key, :others
+
+    if key_field.nil?
+      key_pos      = key
+      key_field, fields = nil
+    else
+      all_fields = [key_field].concat other_fields
+
+      key_pos   = Misc.field_position(all_fields, key)
+
+      if String === others or Symbol === others
+        others = [others]
+      end
+
+      if others.nil?
+        other_pos    = (0..(all_fields.length - 1)).to_a
+        other_pos.delete key_pos
+      else
+        other_pos = Misc.field_position(all_fields, *others)
+      end
+
+      key_field = all_fields[key_pos]
+      fields    = all_fields.values_at *other_pos
+    end
+
+    case_insensitive, type, merge, keep_empty, cast = 
+      Misc.process_options options, :case_insensitive, :type, :merge, :keep_empty, :cast
+    fix, exclude, select, grep = 
+      Misc.process_options options, :fix, :exclude, :select, :grep 
+    
+    #{{{ Process rest
+    data = {}
+    single = type.to_sym != :double
+    max_cols = 0
+    while line do
+      line.chomp!
+
+      line = fix.call line if fix
+      break if not line
+
+      if header_hash and line =~ /^#{header_hash}/
+        line = stream.gets
+        next
+      end
+
+      if line.empty?                           or
+         (exclude and     exclude.call(line))  or
+         (select  and not select.call(line))
+
+         line = stream.gets
+         next
+      end
+
+      # Chunk fields
+      parts = parse_fields(line, sep)
+
+      # Get next line
+      line = stream.gets
+
+      # Get id field
+      next if parts[key_pos].nil? || parts[key_pos].empty?
+     
+      if single
+        ids = parse_fields(parts[key_pos], sep2)
+        ids.collect!{|id| id.downcase} if case_insensitive
+        
+        id = ids.shift
+        ids.each do |id2| data[id2] = "__Ref:#{id}"  end
+
+        if key_field.nil?
+          other_pos    = (0..(parts.length - 1)).to_a
+          other_pos.delete key_pos
+        end
+
+        extra = parts.values_at(*other_pos).collect{|f| parse_fields(f, sep2).first}
+        extra.collect! do |elem| 
+          case
+          when String === cast
+            elem.send(cast)
+          when Proc === cast
+            cast.call elem
+          end
+        end if cast
+
+        max_cols = extra.size if extra.size > (max_cols || 0)
+        case type
+        when :list
+          data[id] = extra unless data.include? id
+        when :flat
+          data[id] = extra.flatten unless data.include? id  
+        when :single
+          data[id] = extra.flatten.first unless data.include? id  
+        end
  
-  def self.parse(data, file, options = {})
+      else
+        ids = parse_fields(parts[key_pos], sep2)
+        ids.collect!{|id| id.downcase} if case_insensitive
+
+        id = ids.shift
+        ids.each do |id2| data[id2] = "__Ref:#{id}"  end
+
+        if key_field.nil?
+          other_pos    = (0..(parts.length - 1)).to_a
+          other_pos.delete key_pos
+        end
+
+        extra = parts.values_at(*other_pos).collect{|f| parse_fields(f, sep2)}
+        extra.collect! do |list| 
+          case
+          when String === cast
+            list.collect{|elem| elem.send(cast)}
+          when Proc === cast
+            list.collect{|elem| cast.call elem}
+          end
+        end if cast
+
+        max_cols = extra.size if extra.size > (max_cols || 0)
+        if merge
+          data[id] = extra unless data.include? id
+        else
+          if not data.include? id
+            data[id] = extra
+          else
+            entry = data[id]
+            while entry =~ /__Ref:(.*)/ do entry = data[$1] end
+            extra.each_with_index do |f, i|
+              if f.empty?
+                next unless keep_empty
+                f= [""]
+              end
+              entry[i] ||= []
+              entry[i] = entry[i].concat f
+            end
+            data[id] = entry
+          end
+        end
+      end
+    end
+
+    if keep_empty and max_cols > 0
+      data.each do |key, values| 
+        next if values =~ /__Ref:/
+        new_values = values
+        max_cols.times do |i|
+          if type == :double
+            new_values[i] = [""] if new_values[i].nil? or new_values[i].empty?
+          else
+            new_values[i] = "" if new_values[i].nil?
+          end
+        end
+        data[key] = new_values
+      end
+    end
+
+    [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive}]
+  end
+ 
+  def self.parse2(data, file, options = {})
 
     # Prepare options
-    options = add_defaults options, 
+    options = Misc.add_defaults options, 
       :sep              => "\t",
       :sep2             => "|",
       :native           => 0,
@@ -899,7 +1127,7 @@ class TSV
           data[main_entry] = extra
         else
           while entry =~ /__Ref:(.*)/ do entry = data[$1] end
-          if PersistenceHash === data
+          if Persistence::TSV === data
             data[main_entry] = entry.concat extra
           else
             data[main_entry].concat extra
@@ -947,27 +1175,61 @@ class TSV
       end
     end
 
-    data.read if PersistenceHash === data
+    data.read if Persistence::TSV === data
 
     [key_field, fields]
   end
-
-  attr_accessor :data, :key_field, :fields, :list, :case_insensitive, :filename
-  def fields
-    return nil if @fields.nil?
-    fields = @fields
-    fields.each do |f| f.extend Field end if Array === fields
-    fields
-  end
-
-  def fields=(new_fields)
-    @fields = new_fields
-    if PersistenceHash === @data
-      @data.fields = new_fields
+  def initialize(file = {}, type = :double, options = {})
+    if Hash === type
+      options = type 
+      type    = :double 
     end
+
+    if String === file and file =~/(.*?)#(.*)/ and File.exists? $1
+      options = Misc.add_defaults options, Misc.string2hash($2) 
+      file = $1
+    end
+
+    options = Misc.add_defaults options, :persistence => false, :case_insensitive => false, :type => type
+
+    @filename = Misc.process_options options, :filename
+    @filename ||= case
+                  when (String === file and File.exists? file)
+                    File.expand_path file
+                  when File === file
+                    File.expand_path file.path
+                  else
+                    Digest::MD5.hexdigest(file.inspect)
+                  end
+
+    if block_given?
+      @data, extra = Persistence.persist(@filename, :TSV, :tsv, options) do |filename, options| yield filename, options end
+    else
+      @data, extra = Persistence.persist(@filename, :TSV, :tsv, options) do |filename, options|
+        data, extra = nil
+        case
+        when String === file
+          File.open(file) do |f|
+            data, extra = TSV.parse(f, options)
+          end
+        when File === file
+          data, extra = TSV.parse(file, options)
+        when Hash === file
+          data = file
+          extra = {:case_insensitive => options[:case_insensitive], :type => type}
+        end
+
+        [data, extra]
+      end
+    end
+
+    @type             = extra[:type]
+    @key_field        = extra[:key_field]
+    @fields           = extra[:fields]
+    @case_insensitive = extra[:case_insensitive]
   end
 
-  def initialize(file = {}, options = {})
+  def initialize2(file = {}, options = {})
     options = Misc.add_defaults options
     options[:persistence] = true if options[:persistence_file]
 
@@ -984,7 +1246,7 @@ class TSV
       Log.low "Copying TSV"
       @filename         = file.filename
 
-      if options[:persistence] and not PersistenceHash === file.data
+      if options[:persistence] and not Persistence::TSV === file.data
         persistence_file = options.delete(:persistence_file) || TSV.get_persistence_file(@filename, "file:#{ @filename }:", options)
         Log.low "Making persistance #{ persistence_file }"
         @data = TCHash.get(persistence_file)
@@ -1012,9 +1274,9 @@ class TSV
         @data = file
       end
       return self
-    when PersistenceHash === file
-      Log.low "Encapsulating PersistenceHash"
-      @filename = "PersistenceHash:" + Digest::MD5.hexdigest(file.inspect)
+    when Persistence::TSV === file
+      Log.low "Encapsulating Persistence::TSV"
+      @filename = "Persistence::TSV:" + Digest::MD5.hexdigest(file.inspect)
       @data             = file
       @key_field        = file.key_field
       @fields           = file.fields
@@ -1035,11 +1297,11 @@ class TSV
 
       if File.exists? persistence_file
         Log.low "Loading Persistence for #{ @filename } in #{persistence_file}"
-        @data      = PersistenceHash.get(persistence_file, false)
+        @data      = Persistence::TSV.get(persistence_file, false)
         @key_field = @data.key_field
         @fields    = @data.fields
       else
-        @data = PersistenceHash.get(persistence_file, true)
+        @data = Persistence::TSV.get(persistence_file, true)
         file = Open.grep(file, options[:grep]) if options[:grep]
 
         Log.low "Persistent Parsing for #{ @filename } in #{persistence_file}"
@@ -1074,7 +1336,7 @@ module CacheHelper
     else
       Log.debug "Producing TSV cache file '#{cache_file}'"
       data = yield
-      TSV.new(data, :persistence_file => cache_file)
+      TSV.new(data,  :persistence_file => cache_file)
     end
   end
 end

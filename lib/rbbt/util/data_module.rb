@@ -54,7 +54,6 @@ module DataModule
     o
   end
 
-
   alias old_method_missing method_missing
   def method_missing(name, *args, &block)
     begin

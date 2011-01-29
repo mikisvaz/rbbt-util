@@ -33,7 +33,7 @@ module PKGData
 
     def index(field = nil, other = nil, options = {})
       produce
-      TSV.index self, options.merge(:field => field, :other => other)
+      TSV.index self, options.merge(:target => field, :others => other)
     end
 
     def open
@@ -47,7 +47,6 @@ module PKGData
     end
 
     def produce
-      Log.debug("Base #{ base.inspect }")
       return if File.exists? self
 
       Log.debug("Trying to produce '#{ self }'")

@@ -1,4 +1,3 @@
-require 'rbbt'
 require 'rbbt/util/misc'
 require 'rbbt/util/log'
 require 'stringio'
