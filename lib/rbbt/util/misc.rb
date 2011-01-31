@@ -143,12 +143,17 @@ module Misc
     return list.first
   end
 
+  def self.chunk(text, split)
+    text.split(split)[1..-1]
+  end
+
 end
 
 module PDF2Text
   def self.pdf2text(filename)
     require 'rbbt/util/cmd'
     require 'rbbt/util/tmpfile'
+    require 'rbbt/util/open'
     TmpFile.with_file(Open.read(filename)) do |pdf|
       CMD.cmd("pdftotext #{pdf} -", :pipe => false, :stderr => true)
     end

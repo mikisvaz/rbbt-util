@@ -52,16 +52,15 @@ module Persistence
         else
           data, extra = [res, nil]
         end
-        ddd data.filename
 
         case persistence_type.to_sym
         when :tsv 
-          if Hash === data or Object::TSV === data
+          if Hash === data or Object::TSV === data or Persistence::TSV === data
             Log.debug "Creating #{Persistence::TSV} for #{ persistence_file }"
             per = Persistence::TSV.get persistence_file
             per.write
             data.each{|k,v| per[k.to_s] = v}
-            %w(case_insensitive fields key_field type filename). each do |key| 
+            %w(case_insensitive fields key_field type filename).each do |key| 
               if data.respond_to? key
                 per.send "#{key}=".to_sym, data.send(key.to_sym) 
               else

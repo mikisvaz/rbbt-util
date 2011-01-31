@@ -175,7 +175,15 @@ module Open
     io = unzip(io)  if (zip?  url and not options[:noz]) or options[:zip]
     io = gunzip(io) if (gzip? url and not options[:noz]) or options[:gzip]
 
-    io
+    if block_given?
+      yield io 
+    else
+      io
+    end
+  end
+
+  def self.can_open?(file)
+    String === file and (File.exists?(file) or remote?(url))
   end
 
   def self.read(file, options = {}, &block)

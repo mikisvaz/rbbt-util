@@ -32,4 +32,19 @@ class TestMisc < Test::Unit::TestCase
     assert_equal(1, a['a'])
   end
 
+  def test_chunk
+    test =<<-EOF
+This is an example file. Entries are separated by Entry
+-- Entry
+1
+2
+3
+-- Entry
+4
+5
+6
+    EOF
+
+    assert_equal "1\n2\n3", Misc.chunk(test, /^-- Entry/).first.strip
+  end
 end

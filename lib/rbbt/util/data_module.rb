@@ -68,6 +68,4 @@ module DataModule
       old_method_missing name, *args, &block
     end
   end
-
-
 end
