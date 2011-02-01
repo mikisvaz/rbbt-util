@@ -14,7 +14,8 @@ module DataModule
       RakeHelper.files(rakefile).each do |file|
         base.pkg_module.claim file, 
           rakefile.sub(/^#{Regexp.quote File.join(base.sharedir)}\/?/,''), 
-          File.dirname(rakefile).sub(/^#{Regexp.quote File.join(base.sharedir, 'install')}\/?/,'')
+          File.dirname(rakefile).sub(/^#{Regexp.quote File.join(base.sharedir, 'install')}\/?/,''),
+          base.to_s
       end
     end
   end

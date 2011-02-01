@@ -26,24 +26,57 @@ module PKGData
       new
     end
 
+    def namespace
+      file, producer = base.reclaim self
+      producer[:namespace] if producer
+    end
+
+    def namespace_identifiers
+      file, producer = base.reclaim self
+      subdir = producer[:subdir]
+      
+      identifier_files = []
+      path = self
+      while path != File.join(base.datadir, subdir)
+        path = File.dirname(path)
+        path.extend Path
+        path.base = base
+        if path.identifiers.exists? 
+          identifier_files << path.identifiers
+        end
+      end
+
+      return identifier_files
+    end
+
     def tsv(options = {})
       produce
-      TSV.new self, options
+      ns = namespace
+      TSV.new self, options.merge(:namespace => ns)
     end
 
-    def index(field = nil, other = nil, options = {})
+    def index(options = {})
       produce
-      TSV.index self, options.merge(:target => field, :others => other)
+      TSV.index self, options
     end
 
-    def open
+    def open(options = {})
       produce
-      Open.open(self)
+      Open.open(self, options)
     end
 
-    def read
+    def read(options = {})
       produce
-      Open.read(self)
+      Open.read(self, options)
+    end
+
+    def exists?
+      begin
+        produce
+      rescue
+        false
+      end
+      true
     end
 
     def produce
@@ -84,7 +117,7 @@ module PKGData
 
   def files
     path = datadir.dup.extend Path
-    path.base = self
+    path.base      = self
     path
   end
 
@@ -96,7 +129,7 @@ module PKGData
     end
   end
 
-  def claim(file, get = nil, subdir = nil, sharedir = nil)
+  def claim(file, get = nil, subdir = nil, namespace = nil,  sharedir = nil)
     file = case
            when (file.nil? or file === :all)
              File.join(datadir, subdir.to_s)
@@ -107,7 +140,7 @@ module PKGData
            end
 
     sharedir ||= PKGData.get_caller_sharedir
-    claims[file] = {:get => get, :subdir => subdir, :sharedir => sharedir}
+    claims[file] = {:get => get, :subdir => subdir, :sharedir => sharedir, :namespace => namespace}
     produce(file, get, subdir, sharedir) if TSV === get
     produce(file, get, subdir, sharedir) if String === get and not File.exists?(get) and reclaim(file).nil? and not File.basename(get.to_s) == "Rakefile"
   end

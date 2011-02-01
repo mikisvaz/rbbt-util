@@ -2,12 +2,21 @@ require 'rbbt/util/misc'
 
 class TSV
   ## Make sure we overwrite the methods declared by attr_accessor
-  attr_accessor :filename, :type, :case_insensitive, :key_field, :fields, :data
+  attr_accessor :filename, :type, :namespace, :case_insensitive, :key_field, :fields, :data
+
+  def self.zip_fields(list, fields = nil)
+    return [] if list.nil? || list.empty?
+    fields ||= list.fields if list.respond_to? :fields
+    zipped = list[0].zip(*list[1..-1])
+    zipped = zipped.collect{|v| NamedArray.name(v, fields)} if fields 
+    zipped 
+  end
+
 
   module Field
     def ==(string)
       return false unless String === string
-      self.sub(/#.*/,'').casecmp(string.sub(/#.*/,'')) == 0
+      self.sub(/.*?:/,'').casecmp(string.sub(/.*?:/,'')) == 0
     end
   end
 
@@ -18,11 +27,20 @@ class TSV
     fields
   end
 
+  def all_fields
+    return nil if @fields.nil?
+    fields = @fields.dup
+    fields.unshift key_field
+    fields.each do |f| f.extend Field end if Array === fields
+    fields
+  end
+
   def self.identify_field(key, fields, field)
     return field if Integer === field
     return nil if fields.nil?
     return :key if field.nil? or field == 0 or field.to_sym == :key or key == field
-    return fields.index field
+    return fields.collect{|f| f.to_s}.index field if fields.collect{|f| f.to_s}.index field
+    return fields.index field 
   end
 
   def identify_field(field)
@@ -134,6 +152,10 @@ class TSV
       else
         "\t" << values * "\t" << "\n"
       end
+  end
+
+  def include?(key)
+    data.include? key
   end
 
   def to_s(keys = nil)

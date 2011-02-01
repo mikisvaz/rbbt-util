@@ -183,7 +183,7 @@ module Open
   end
 
   def self.can_open?(file)
-    String === file and (File.exists?(file) or remote?(url))
+    String === file and (File.exists?(file) or remote?(file))
   end
 
   def self.read(file, options = {}, &block)

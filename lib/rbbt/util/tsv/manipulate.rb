@@ -41,10 +41,13 @@ class TSV
                         f.push key_field
                         f.values_at *new_field_positions.collect{|pos| pos == :key ? -1 : pos }
                       end if fields
-    
-    # Cycle through
 
-    each do |key, fields|
+    # Cycle through
+                      
+    if new_key_position == :key and ( new_fields.nil? or new_fields == fields)
+      each do |key, fields| yield key, fields end
+    else
+      each do |key, fields|
         new_key_value = case
                         when (new_key_position.nil? or new_key_position == :key)
                           key
@@ -74,8 +77,11 @@ class TSV
                              end
                              f.values_at *new_field_positions.collect{|pos| pos == :key ? -1 : pos }
                            end
-      new_field_values = NamedArray.name new_field_values, new_field_names
-      yield new_key_value, new_field_values
+        new_field_values = NamedArray.name new_field_values, new_field_names
+
+        next if new_key_value.nil? or (String === new_key_value and new_key_value.empty?)
+        yield new_key_value, new_field_values
+      end
     end
 
     # Return new field names
@@ -117,6 +123,10 @@ class TSV
     extra.each do |key, values| new.send("#{ key }=".to_sym, values) end if not extra.nil?
 
     new
+  end
+
+  def slice(fields)
+    reorder :key, fields
   end
 
   def sort(*fields)
@@ -211,68 +221,6 @@ class TSV
   end
 
 
-  def index(options = {})
-    options = Misc.add_defaults options, :order => false, :persistence => false
-
-    new, extra = Persistence.persist(self, :Index, :tsv, options) do |tsv, options, filename|
-      new = {}
-      if options[:order]
-        new_key_field, new_fields = through options[:target], options[:others] do |key, values|
-          if Array === key
-            keys = key
-          else
-            keys = [key]
-          end
-
-          values.each_with_index do |list,i|
-            list = [list] unless Array === list
-            list.each do |elem|
-              elem.downcase if options[:case_insensitive]
-              new[elem] ||= []
-              new[elem][i + 1] = (new[elem][i + 1] || []) + keys
-            end
-          end
-
-          new[key]    ||= []
-          new[options[:case_insensitive] ? key.downcase : key ][0] = (new[options[:case_insensitive] ? key.downcase : key ][0] || []) + keys
-
-        end
-
-
-        new.each do |key, values| 
-          values.flatten!
-          values.compact!
-        end
-
-      else
-        new_key_field, new_fields = through options[:target], options[:others] do |key, values|
-          if Array === key
-            keys = key
-          else
-            keys = [key]
-          end
-
-          values.each do |list|
-            list = [list] unless Array === list
-            list.each do |elem|
-              elem.downcase if options[:case_insensitive]
-              new[elem] = (new[elem] || []) + keys
-            end
-          end
-        end
-      end
-
-      [new, {:key_field => new_key_field, :fields => new_fields, :type => :list, :filename => (filename.nil? ? nil : "Index:" + filename), :case_insensitive => options[:case_insensitive]}]
-    end
-
-    new = TSV.new(new)
-    new.filename = "Index: " + filename + options.inspect
-    new.fields = extra[:fields]
-    new.key_field = extra[:key_field]
-    new.case_insensitive = extra[:case_insensitive]
-    new.type = extra[:type]
-    new
-  end
-
+  
 
 end

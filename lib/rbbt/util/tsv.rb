@@ -9,6 +9,8 @@ require 'fileutils'
 
 require 'rbbt/util/tsv/parse'
 require 'rbbt/util/tsv/accessor'
+require 'rbbt/util/tsv/manipulate'
+require 'rbbt/util/tsv/index'
 class TSV
 
   def self.headers(file, options = {})
@@ -37,7 +39,7 @@ class TSV
   end
 
   def initialize(file = {}, type = :double, options = {})
-
+    
     # Process Options
     
     if Hash === type
@@ -68,7 +70,7 @@ class TSV
                   when Persistence::TSV === file
                     File.expand_path file.filename
                   else
-                    Digest::MD5.hexdigest(file.inspect)
+                    file.class.to_s
                   end
 
     # Process With Persistence
@@ -84,8 +86,12 @@ class TSV
       @data, extra = Persistence.persist(@filename, :TSV, :tsv, options) do |filename, options|
         data, extra = nil
 
+
         case
           ## Parse source
+        when (String === file and file.respond_to? :open)
+          data, extra = TSV.parse(file.open(:grep => options[:grep]) , options)
+          extra[:namespace] ||= file.namespace
         when Open.can_open?(file)
           Open.open(file, :grep => options[:grep]) do |f|
             data, extra = TSV.parse(f, options)

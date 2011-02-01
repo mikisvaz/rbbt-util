@@ -53,3 +53,8 @@ def ddd(message, file = $stdout)
   Log.debug "DEVEL => " << caller.first
   Log.debug "DEVEL: " << message.inspect
 end
+
+def ppp(message)
+  puts "=> " << caller.first
+  puts message.inspect
+end

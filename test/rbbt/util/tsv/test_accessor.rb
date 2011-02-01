@@ -53,7 +53,7 @@ row1	a|aa|aaa	b	Id1|Id2
 
   def test_field_compare
      content =<<-EOF
-#Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
+#Id    Letter:LetterValue    Other:LetterValue    OtherID
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
 row3    a    C    Id4

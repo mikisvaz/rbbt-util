@@ -19,14 +19,18 @@ module Persistence
   end
  
   def self.get_persistence_file(file, prefix, options = {})
-    File.join(CACHEDIR, prefix.to_s.gsub(/\s/,'_').gsub(/\//,'>') + Digest::MD5.hexdigest([file, options].inspect))
+#    ppp  [file, options]
+    name = prefix.to_s << ":" << file.to_s << ":"
+    File.join(CACHEDIR, name.to_s.gsub(/\s/,'_').gsub(/\//,'>') + Digest::MD5.hexdigest([file, options].inspect))
   end
 
   def self.persist(file, prefix = "", persistence_type = :string, options = {})
-    options = Misc.add_defaults options, :persistence => true
+    options = Misc.add_defaults options, :persistence => false
 
     persistence, persistence_file =
       Misc.process_options options, :persistence, :persistence_file
+
+    persistence = true if not persistence_file.nil?
 
     filename = Misc.process_options options, :filename
     filename ||= case
@@ -36,8 +40,10 @@ module Persistence
                     File.expand_path file.path
                   when TSV === file
                     file.filename
+                  when String === file
+                    file
                   else
-                    Digest::MD5.hexdigest(file.inspect)
+                    file.class.to_s
                   end
 
     if persistence
@@ -55,12 +61,12 @@ module Persistence
 
         case persistence_type.to_sym
         when :tsv 
-          if Hash === data or Object::TSV === data or Persistence::TSV === data
-            Log.debug "Creating #{Persistence::TSV} for #{ persistence_file }"
+          if Hash === data or Object::TSV === data 
+            Log.debug "Creating #{Persistence::TSV} in #{ persistence_file }"
             per = Persistence::TSV.get persistence_file
             per.write
-            data.each{|k,v| per[k.to_s] = v}
-            %w(case_insensitive fields key_field type filename).each do |key| 
+            data.each{|k,v| next if k.nil?; per[k.to_s] = v}
+            Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
               if data.respond_to? key
                 per.send "#{key}=".to_sym, data.send(key.to_sym) 
               else
@@ -89,7 +95,7 @@ module Persistence
           data        = Persistence::TSV.get persistence_file
           
           extra = {}
-          %W(case_insensitive fields key_field type filename).each{|key| extra[key.to_sym] = data.send key.to_sym}
+          Persistence::TSV::FIELD_INFO_ENTRIES.keys.each{|key| extra[key.to_sym] = data.send key.to_sym}
 
           return [data, extra]
         when :string
@@ -102,6 +108,7 @@ module Persistence
 
       end
     else
+      Log.low "Non Persistent processing for #{ filename }"
       yield file, options
     end
   end

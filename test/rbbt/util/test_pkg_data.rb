@@ -49,7 +49,7 @@ class TestPKGData < Test::Unit::TestCase
     begin
       Rbbt.claim :foo, TSV.new({:a => 1, :b => 2})
       assert File.exists? Rbbt.files.foo
-      assert_equal "1", Rbbt.files.foo.tsv(:single => true)["a"]
+      assert_equal "1", Rbbt.files.foo.tsv(:type => :single)["a"]
     ensure
       FileUtils.rm Rbbt.files.foo if File.exists? Rbbt.files.foo
     end
@@ -74,7 +74,7 @@ class TestPKGData < Test::Unit::TestCase
     end
   end
 
-  def test_claim_rakefile2
+  def _test_claim_rakefile2
     begin
       FileUtils.mkdir_p File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/')
       Open.write(File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/Rakefile'), "file :foo do |t| Open.write(t.name, 'bar') end")
@@ -98,6 +98,27 @@ class TestPKGData < Test::Unit::TestCase
       Open.write(File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/Rakefile'), "file :foo do |t| Open.write(t.name, 'bar') end")
       Rbbt.claim :all, "test/Rake/Rakefile", 'test' 
       assert_equal "bar", Rbbt.files.test.foo.read
+    ensure
+      begin
+        FileUtils.rm File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/Rakefile')
+        FileUtils.rmdir File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake')
+        FileUtils.rmdir File.join(PKGData.sharedir_for_file(__FILE__), 'test')
+        FileUtils.rm Rbbt.files.test.foo 
+        FileUtils.rm_r Rbbt.files.test
+      rescue
+      end
+    end
+  end
+
+  def test_claim_namespace_identifiers
+    begin
+      FileUtils.mkdir_p File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/')
+      Open.write(File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/Rakefile'), "
+                 file :foo do |t| Open.write(t.name, 'bar') end
+                 file :identifiers do |t| Open.write(t.name, 'bar') end
+                 ")
+      Rbbt.claim :all, "test/Rake/Rakefile", 'test' 
+      assert_equal 1, Rbbt.files.test.foo.namespace_identifiers.length
     ensure
       begin
         FileUtils.rm File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/Rakefile')

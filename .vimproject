@@ -32,8 +32,8 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
     parse.rb
     accessor.rb
     manipulate.rb
+    index.rb
    }
-   tsv_old.rb
    excel2tsv.rb
    bed.rb
 

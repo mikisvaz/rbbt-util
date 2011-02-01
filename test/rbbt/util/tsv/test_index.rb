@@ -1,205 +1,69 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../../..', 'test_helper.rb')
 require 'rbbt/util/tsv'
-require 'rbbt/util/tsv/manipulate'
+require 'rbbt/util/tsv/index'
 
 class TestTSVManipulate < Test::Unit::TestCase
 
-  def _test_indentify_fields
-    content =<<-EOF
-#ID ValueA ValueB Comment
-row1 a b c
-row2 A B C
-    EOF
-
-    TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(File.open(filename), :double, :sep => /\s/)
-      assert_equal :key, tsv.identify_field("ID")
-    end
-  end
-
-
-  def _test_reorder_simple
+  def _test_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
-row3    a    C    Id4
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(File.open(filename), :sep => /\s+/)
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID", :persistence => false)
+      index = tsv.index(:case_insensitive => true)
+      assert index["row1"].include? "Id1"
+      assert_equal "OtherID", index.key_field
+    end
 
-      tsv1 = tsv.reorder("ValueA")
-
-      assert_equal "ValueA", tsv1.key_field
-      assert_equal %w(Id ValueB OtherID), tsv1.fields
-      assert_equal ["B"], tsv1["A"]["ValueB"]
-      assert_equal ["b","C"], tsv1["a"]["ValueB"]
-      assert_equal ["b"], tsv1["aa"]["ValueB"]
-
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID")
+      index = tsv.index(:case_insensitive => true)
+      assert index["row1"].include? "Id1"
+      assert_equal "OtherID", index.key_field
     end
   end
 
-  def _test_reorder_simple_headerless
+  def _test_index_headerless
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
-row3    a    C    Id4
     EOF
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.new(File.open(filename), :sep => /\s+/)
-
-      tsv1 = tsv.reorder 0 
-
-      assert_nil tsv1.key_field
-      assert_equal ["B"], tsv1["A"][1]
-      assert_equal ["b","C"], tsv1["a"][1]
-      assert_equal ["b"], tsv1["aa"][1]
-      assert_equal ["row1"], tsv1["aa"][0]
-      assert_equal ["row1","row3"], tsv1["a"][0]
+      index = tsv.index(:case_insensitive => true, :target => 2)
+      assert index["row1"].include? "Id1"
     end
   end
 
 
-  def _test_reorder_remove_field
+  def _test_best_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
-row1    a|aa|aaa    b    Id1|Id2
-row2    A    B    Id3
-row3    a    C    Id4
+row1    a|aa|aaa    b|A    Id1
+row2    A    a|B    Id3
+row3    A    a|B    Id4
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(File.open(filename), :sep => /\s+/)
-
-      tsv1 = tsv.reorder("ValueA", ["ValueB", "Id"])
-
-      assert_equal "ValueA", tsv1.key_field
-      assert_equal %w(ValueB Id), tsv1.fields
-      assert_equal ["B"], tsv1["A"]["ValueB"]
-      assert_equal ["b","C"], tsv1["a"]["ValueB"]
-      assert_equal ["row1"], tsv1["aa"]["Id"]
-      assert_equal ["row1","row3"], tsv1["a"]["Id"]
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID", :persistence => true)
+      index = tsv.index(:case_insensitive => false, :order => true)
+      assert_equal "Id1", index['a'].first
+      assert_equal "Id3", index['A'].first
+      assert_equal "OtherID", index.key_field
     end
-  end
-
-  def _test_through
-    content =<<-EOF
-#Id    ValueA    ValueB    OtherID
-row1    a|aa|aaa    b    Id1|Id2
-row2    A    B    Id3
-row3    a    C    Id4
-    EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(File.open(filename), :sep => /\s+/)
-
-      tsv.through "ValueA" do |key, values|
-        assert(tsv.keys.include? values["Id"].first)
-      end
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID")
+      index = tsv.index(:case_insensitive => true)
+      assert index["row1"].include? "Id1"
+      assert_equal "OtherID", index.key_field
     end
   end
 
-
-  def _test_slice
-    content =<<-EOF
-#ID ValueA ValueB Comment
-row1 a b c
-row2 A B C
-    EOF
-
-    TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(File.open(filename), :double, :sep => /\s/)
-      assert_equal [["a"],["c"]], tsv.reorder(:key, ["ValueA", "Comment"])["row1"]
-    end
-  end
-
-  def _test_sort
-    content =<<-EOF
-#Id    ValueA    ValueB    OtherID    Pos
-row1    a|aa|aaa    b    Id1|Id2    2
-row2    A    B    Id3    1
-row3    A|AA|AAA|AAA    B    Id3    3
-    EOF
-
-    TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(File.open(filename), :sep => /\s+/)
-      assert_equal %w(row1 row2 row3), tsv.sort
-      assert_equal %w(row1 row2 row3), tsv.sort(:key)
-      assert_equal %w(row2 row1 row3), tsv.sort("Pos")
-      assert_equal %w(row3 row2 row1), tsv.sort("ValueA") do |values| values["ValueA"].length end
-    end
-  end
-
-  def _test_select
-     content =<<-EOF
-#Id    ValueA    ValueB    OtherID
-row1    a|aa|aaa    b    Id1|Id2
-row2    A    B    Id3
-row3    a    C    Id4
-    EOF
-
-    TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(filename + '#:sep=/\s+/')
-      assert tsv.type == :double
-      
-      new = tsv.select %w(b Id4)
-      assert_equal %w(row1 row3).sort, new.keys
-
-      new = tsv.select "ValueB" => %w(b Id4)
-      assert_equal %w(row1).sort, new.keys
-
-      new = tsv.select /b|Id4/
-      assert_equal %w(row1 row3).sort, new.keys
-
-      new = tsv.select "ValueB" => /b|Id4/
-      assert_equal %w(row1).sort, new.keys
-
-      tsv = TSV.new(filename + '#:sep=/\s+/#:type=:flat')
-      assert tsv.type != :double
-      
-      new = tsv.select %w(b Id4)
-      assert_equal %w(row1 row3).sort, new.keys.sort
-    end
-  end
-
-  def test_process
-    content =<<-EOF
-#Id    ValueA    ValueB    OtherID
-row1    a|aa|aaa    b    Id1|Id2
-row2    A    B    Id3
-row3    a    C    Id4
-    EOF
-
-    TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(File.open(filename), :sep => /\s+/)
-
-      tsv.process "ValueA" do |field_values,key,values|
-        field_values.collect{|v| "Pref:#{v}"}
-      end
-
-      assert_equal ["Pref:A"], tsv["row2"]["ValueA"]
-    end
-  end
-
-  def _test_add_field
-     content =<<-EOF
-#Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
-row1    a|aa|aaa    b    Id1|Id2
-row2    A    B    Id3
-row3    a    C    Id4
-    EOF
- 
-    TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(filename + '#:sep=/\s+/')
-      tsv.add_field "Str length" do |k,v| 
-        (v.flatten * " ").length 
-      end
-
-      assert tsv.fields.include?("Str length")
-    end
-  end
 
 #  def _test_open_file
 #    content =<<-EOF
@@ -240,35 +104,35 @@ row3    a    C    Id4
 
 
 
-#  def _test_smart_merge_single
-#    content1 =<<-EOF
-##Id    ValueA    ValueB
-#row1    a|aa|aaa    b
-#row2    A    B
-#    EOF
-#
-#    content2 =<<-EOF
-##ValueC    ValueB    OtherID
-#c|cc|ccc    b    Id1|Id2
-#C    B    Id3
-#    EOF
-#
-#    tsv1 = tsv2 = nil
-#    TmpFile.with_file(content1) do |filename|
-#      tsv1 = TSV.new(File.open(filename), :list, :sep => /\s+/)
-#    end
-#
-#    TmpFile.with_file(content2) do |filename|
-#      tsv2 = TSV.new(File.open(filename), :list, :sep => /\s+/)
-#    end
-#
-#    tsv1.smart_merge tsv2, "ValueB"
-#
-#    assert_equal "C", tsv1["row2"]["ValueC"]
-#    assert %w(c cc ccc).include? tsv1["row1"]["ValueC"]
-#    assert_equal "Id1", tsv1["row1"]["OtherID"]
-#  end
-#
+  def test_smart_merge_single
+    content1 =<<-EOF
+#Id    ValueA    ValueB
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+    content2 =<<-EOF
+#ValueC    ValueB    OtherID
+c|cc|ccc    b    Id1|Id2
+C    B    Id3
+    EOF
+
+    tsv1 = tsv2 = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.new(File.open(filename), :list, :sep => /\s+/)
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.new(File.open(filename), :list, :sep => /\s+/)
+    end
+
+    tsv1 = tsv1.smart_merge tsv2, "ValueB"
+
+    assert_equal "C", tsv1["row2"]["ValueC"]
+    assert %w(c cc ccc).include? tsv1["row1"]["ValueC"]
+    assert_equal "Id1", tsv1["row1"]["OtherID"]
+  end
+
 #  def _test_smart_merge
 #    content1 =<<-EOF
 ##Id    ValueA    ValueB

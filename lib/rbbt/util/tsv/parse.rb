@@ -53,6 +53,7 @@ class TSV
     options = Misc.add_defaults options, 
       :case_insensitive => false,
       :type             => :double,
+      :namespace        => nil,
 
       :merge            => false,
       :keep_empty       => true,
@@ -106,8 +107,8 @@ class TSV
       fields    = all_fields.values_at *other_pos
     end
 
-    case_insensitive, type, merge, keep_empty, cast = 
-      Misc.process_options options, :case_insensitive, :type, :merge, :keep_empty, :cast
+    case_insensitive, type, namespace, merge, keep_empty, cast = 
+      Misc.process_options options, :case_insensitive, :type, :namespace, :merge, :keep_empty, :cast
     fix, exclude, select, grep = 
       Misc.process_options options, :fix, :exclude, :select, :grep 
 
@@ -235,7 +236,7 @@ class TSV
       end
     end
 
-    [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive}]
+    [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive, :namespace => namespace}]
   end
 
 end
