@@ -16,6 +16,10 @@ end
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.path_relative_to(path, subdir)
+    File.expand_path(path).sub(/^#{Regexp.quote File.expand_path(subdir)}\/?/,'')
+  end
+
   def self.this_dir
     File.expand_path(File.dirname(caller[0]))
   end
@@ -104,7 +108,18 @@ module Misc
       if value == true
         options[option] = option.to_s.chars.first != '!' 
       else
-        options[option] = begin eval(value) rescue value end
+        options[option] = Thread.start do
+          $SAFE = 3;
+          begin  
+            if value =~ /\/(.*)\//
+              Regexp.new /#{$1}/
+            else
+              eval(value) 
+            end
+          rescue 
+            value 
+          end
+        end.value
       end
     end
 
@@ -198,20 +213,31 @@ class NamedArray < Array
   end
 end
 
-def benchmark
+def benchmark(bench = true)
   require 'benchmark'
-  puts(Benchmark.measure do
+  if bench
+    res = nil
+    puts(Benchmark.measure do
+      res = yield
+    end)
+    res
+  else
     yield
-  end)
+  end
 end
 
-def profile 
+def profile(prof = true)
   require 'ruby-prof'
-  RubyProf.start
-  yield
-  result = RubyProf.stop
+  if prof
+    RubyProf.start
+    res = yield
+    result = RubyProf.stop
 
   # Print a flat profile to text
-  printer = RubyProf::FlatPrinter.new(result)
-  printer.print(STDOUT, 0)
+    printer = RubyProf::FlatPrinter.new(result)
+    printer.print(STDOUT, 0)
+    res
+  else
+    yield
+  end
 end

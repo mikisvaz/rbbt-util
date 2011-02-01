@@ -4,7 +4,7 @@ require 'rbbt/util/tmpfile'
 
 class TestTSV < Test::Unit::TestCase
 
-  def test_tsv
+  def _test_tsv
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -21,7 +21,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_grep
+  def _test_grep
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -45,11 +45,12 @@ row3    a    C    Id4
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.new(filename + '#:sep=/\s+/')
+      ddd tsv
       assert_equal ["A"], tsv["row2"]["ValueA"]
     end
   end
 
-  def test_headers
+  def _test_headers
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a b c
@@ -62,7 +63,7 @@ row2 A B C
     end
   end
 
-  def test_headerless
+  def _test_headerless
     content =<<-EOF
 row1 a b c
 row2 A B C
@@ -73,7 +74,7 @@ row2 A B C
     end
   end
 
-  def test_extra
+  def _test_extra
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -88,7 +89,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_case
+  def _test_case
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -109,7 +110,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_persistence
+  def _test_persistence
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -132,7 +133,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_named_array
+  def _test_named_array
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2

@@ -32,6 +32,10 @@ class TestMisc < Test::Unit::TestCase
     assert_equal(1, a['a'])
   end
 
+  def test_path_relative_to
+    assert_equal "test/foo", Misc.path_relative_to('test/test/foo', 'test')
+  end
+
   def test_chunk
     test =<<-EOF
 This is an example file. Entries are separated by Entry

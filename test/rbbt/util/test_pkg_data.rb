@@ -3,7 +3,7 @@ require 'rbbt'
 require 'rbbt/util/pkg_data'
 
 class TestPKGData < Test::Unit::TestCase
-  def _test_claims
+  def test_claims
     begin
       assert Rbbt.claims.empty?
       Rbbt.claim :foo, "bar"
@@ -13,12 +13,12 @@ class TestPKGData < Test::Unit::TestCase
     end
   end
 
-  def _test_path
+  def test_path
     assert_equal File.join(Rbbt.datadir, 'Organism/Hsa'), Rbbt.files.Organism.Hsa
     Rbbt.files.Organism.Hsa.identifiers.produce
   end
 
-  def _test_claim_proc
+  def test_claim_proc
     begin
       assert_nil Rbbt.reclaim(Rbbt.files.foo)
 
@@ -33,7 +33,7 @@ class TestPKGData < Test::Unit::TestCase
     end
   end
 
-  def _test_claim_cp
+  def test_claim_cp
     begin
       Open.write File.join(Rbbt.rootdir, 'share', 'foo'), "bar"
       Rbbt.claim :foo
@@ -45,7 +45,7 @@ class TestPKGData < Test::Unit::TestCase
     end
   end
 
-  def _test_claim_tsv
+  def test_claim_tsv
     begin
       Rbbt.claim :foo, TSV.new({:a => 1, :b => 2})
       assert File.exists? Rbbt.files.foo
@@ -55,7 +55,7 @@ class TestPKGData < Test::Unit::TestCase
     end
   end
 
-  def _test_claim_rakefile
+  def test_claim_rakefile
     begin
       FileUtils.mkdir_p File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/')
       Open.write(File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/Rakefile'), "file :foo do |t| Open.write(t.name, 'bar') end")
@@ -74,7 +74,7 @@ class TestPKGData < Test::Unit::TestCase
     end
   end
 
-  def _test_claim_rakefile2
+  def test_claim_rakefile2
     begin
       FileUtils.mkdir_p File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/')
       Open.write(File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/Rakefile'), "file :foo do |t| Open.write(t.name, 'bar') end")
@@ -92,7 +92,7 @@ class TestPKGData < Test::Unit::TestCase
     end
   end
 
-  def _test_claim_rakefile3
+  def test_claim_rakefile3
     begin
       FileUtils.mkdir_p File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/')
       Open.write(File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/Rakefile'), "file :foo do |t| Open.write(t.name, 'bar') end")

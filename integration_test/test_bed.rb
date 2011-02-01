@@ -63,7 +63,17 @@ class TestBed < Test::Unit::TestCase
      assert_equal Rbbt.files.Organism.Hsa.identifiers, Rbbt.files.Organism.Hsa.gene_positions.namespace_identifiers.first
   end
 
-  def test_organism
+  def test_index
+    i = nil
+    profile false do
+      i = Organism.Hsa.identifiers.index :persistence => true, :persistence_update => true, :order => false, :target => "Associated Gene Name"
+    end
+
+    assert i.case_insensitive
+    assert i["1020"].include? "CDK5"
+  end
+
+  def _test_organism
     Organism.Hsa.identifiers2.index :target => "Ensembl Protein ID", :persistence => false
   end
 
@@ -72,8 +82,11 @@ class TestBed < Test::Unit::TestCase
     require 'rbbt/sources/pharmagkb'
 
     human = Organism::Hsa
-    data = TSV.new _test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
-    p PhGx.files.KEGG.pathways.fields
+    p KEGG.files
+    p Rbbt.claims.keys * "\n"
+    p PhGx.files.KEGG.gene_pathway.tsv_fields
+
+    #data = TSV.new _test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
   end
 end
 

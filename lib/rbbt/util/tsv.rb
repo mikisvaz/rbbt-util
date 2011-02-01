@@ -39,7 +39,6 @@ class TSV
   end
 
   def initialize(file = {}, type = :double, options = {})
-    
     # Process Options
     
     if Hash === type
@@ -83,45 +82,49 @@ class TSV
     when block_given?
       @data, extra = Persistence.persist(@filename, :TSV, :tsv, options) do |filename, options| yield filename, options end
     else
-      @data, extra = Persistence.persist(@filename, :TSV, :tsv, options) do |filename, options|
-        data, extra = nil
+      case
+      when Hash === file
+        @data = file
+      when TSV === file
+        @data = file.dup
+      when Persistence::TSV === file
+        @data  = file
+      else
+        @data, extra = Persistence.persist(@filename, :TSV, :tsv, options) do |filename, options|
+          data, extra = nil
 
-
-        case
-          ## Parse source
-        when (String === file and file.respond_to? :open)
-          data, extra = TSV.parse(file.open(:grep => options[:grep]) , options)
-          extra[:namespace] ||= file.namespace
-        when Open.can_open?(file)
-          Open.open(file, :grep => options[:grep]) do |f|
-            data, extra = TSV.parse(f, options)
-          end
-        when File === file
-          file = Open.grep(file, options[:grep]) if options[:grep]
-          data, extra = TSV.parse(file, options)
-          ## Encapsulate Hash or TSV
-        when Hash === file
-          data = file
-          extra = {:case_insensitive => options[:case_insensitive], :type => type}
-        when TSV === file
-          data = file.dup
-        when Persistence::TSV === file
-          data  = file
-          extra = {}
-          %w(case_insensitive fields key_field type filename).each do |key| 
-            if data.respond_to? key
-              extra[key] = data.send(key.to_sym)
+          case
+            ## Parse source
+          when (String === file and file.respond_to? :open)
+            data, extra = TSV.parse(file.open(:grep => options[:grep]) , options)
+            extra[:namespace] ||= file.namespace
+          when Open.can_open?(file)
+            Open.open(file, :grep => options[:grep]) do |f|
+              data, extra = TSV.parse(f, options)
             end
+          when File === file
+            file = Open.grep(file, options[:grep]) if options[:grep]
+            data, extra = TSV.parse(file, options)
+            ## Encapsulate Hash or TSV
+          else
+            raise "Unknown input in TSV.new #{file.inspect}"
           end
-        else
-          raise "Unknown input in TSV.new #{file.inspect}"
-        end
 
-        [data, extra]
+          [data, extra]
+        end
       end
+      extra.each do |key, values|
+        self.send("#{ key }=".to_sym, values) if self.respond_to? "#{ key }=".to_sym 
+      end if not extra.nil?
+
+      return
     end
 
-    extra.each do |key, values| self.send("#{ key }=".to_sym, values) end if not extra.nil?
+    %w(case_insensitive fields key_field type filename cast).each do |key| 
+      if @data.respond_to? key
+        extra[key] = @data.send(key.to_sym) if options.include? key
+      end
+    end
   end
 
   def write

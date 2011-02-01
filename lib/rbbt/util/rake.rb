@@ -17,7 +17,11 @@ module RakeHelper
           end
           def self.define_task(file, *args, &block)
             @@files ||= []
-            @@files << file
+            if Hash === file
+              @@files << file.keys.first.to_s
+            else
+              @@files << file.to_s
+            end
             old_define_task(file, *args, &block)
           end
 

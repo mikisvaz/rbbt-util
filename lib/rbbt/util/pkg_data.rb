@@ -70,6 +70,10 @@ module PKGData
       Open.read(self, options)
     end
 
+    def tsv_fields(sep = nil, header_hash = nil)
+      TSV.parse_header self.open, sep, header_hash
+    end
+
     def exists?
       begin
         produce
@@ -84,6 +88,9 @@ module PKGData
 
       Log.debug("Trying to produce '#{ self }'")
       file, producer = base.reclaim self
+
+      raise "File #{self} has not been claimed, cannot produce" if file.nil? or producer.nil?
+
       base.produce(self, producer[:get], producer[:subdir], producer[:sharedir])
     end
   end
@@ -129,6 +136,8 @@ module PKGData
     end
   end
 
+  # file is the complete path of the file inside the datadir
+  # get is the get method. :Rakefile for 
   def claim(file, get = nil, subdir = nil, namespace = nil,  sharedir = nil)
     file = case
            when (file.nil? or file === :all)
@@ -172,9 +181,10 @@ module PKGData
 
     FileUtils.mkdir_p File.dirname(file) unless File.exists?(File.dirname(file))
 
+    relative_path = Misc.path_relative_to file, datadir
     case 
     when get.nil?
-      FileUtils.cp File.join(sharedir, subdir.to_s, File.basename(file.to_s)), file.to_s
+      FileUtils.cp File.join(sharedir, subdir.to_s, relative_path), file.to_s
     when Proc === get
       Open.write(file, get.call)
     when TSV === get
@@ -186,7 +196,7 @@ module PKGData
         rakefile = File.join(sharedir, get.to_s)
       end
       produce_with_rake(rakefile, subdir, file)
-    when String === get
+    when (String === get and Open.remote? get)
       Open.write(file, Open.read(get, :wget_options => {:pipe => true}, :nocache => true))
     else
       raise "Unknown Get: #{get.class}"

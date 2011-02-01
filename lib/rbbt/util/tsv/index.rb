@@ -3,13 +3,19 @@ require 'rbbt/util/tsv/manipulate'
 class TSV
 
   def index(options = {})
-    options = Misc.add_defaults options, :order => false, :persistence => false
+    options = Misc.add_defaults options, :order => false, :persistence => false, :target => :key, :fields => nil, :case_insensitive => true, :tsv_serializer => :list
 
-    ddd options
     new, extra = Persistence.persist(self, :Index, :tsv, options) do |tsv, options, filename|
+      order, target, fields, case_insensitive = Misc.process_options options, :order, :target, :fields, :case_insensitive
+
       new = {}
-      if options[:order]
-        new_key_field, new_fields = through options[:target], options[:fields] do |key, values|
+      
+      ## Ordered
+      if order
+
+        # through 
+         
+        new_key_field, new_fields = through target, fields do |key, values|
           if Array === key
             keys = key
           else
@@ -19,44 +25,53 @@ class TSV
           values.each_with_index do |list,i|
             list = [list] unless Array === list
             list.each do |elem|
-              elem.downcase if options[:case_insensitive]
+              elem.downcase if case_insensitive
               new[elem] ||= []
               new[elem][i + 1] ||= []
               new[elem][i + 1].concat keys
             end
           end
 
-          new[key]    ||= []
-          new[options[:case_insensitive] ? key.downcase : key ][0] = (new[options[:case_insensitive] ? key.downcase : key ][0] || []) + keys
-
+          keys.each do |key|
+            key = key.downcase if case_insensitive
+            new[key]    ||= []
+            new[key][0] ||= []
+            new[key][0].concat keys
+          end
         end
+
+        # flatten
 
         new.each do |key, values| 
           values.flatten!
           values.compact!
         end
-
+      
+      ## Not ordered
       else
-        double_keys = true unless type != :double or identify_field(options[:target]) == :key
+        double_keys = true unless type != :double or identify_field(target) == :key
         new.each do |key, fields| fields.flatten! end
 
-        new_key_field, new_fields = through options[:target], options[:others] do |key, values|
-          values.each do |list|
-            list = [list] unless Array === list
-            list.collect!{|e| e.downcase} if options[:case_insensitive]
-            list.each do |elem|
-              new[elem] ||= []
-              if double_keys
-                new[elem].concat key 
-              else
-                new[elem] << key 
-              end
+        new_key_field, new_fields = through target, fields do |key, values|
+          values.unshift type == :double ? [key] : key
+          if type == :flat
+            list = values
+          else
+            list = values.flatten unless type == :flat
+          end
+          list.collect!{|e| e.downcase} if case_insensitive
+          list.each do |elem|
+            new[elem] ||= []
+            if double_keys
+              new[elem].concat key 
+            else
+              new[elem] << key 
             end
           end
         end
       end
 
-      [new, {:key_field => new_key_field, :fields => new_fields, :type => :list, :filename => (filename.nil? ? nil : "Index:" + filename), :case_insensitive => options[:case_insensitive]}]
+      [new, {:key_field => new_key_field, :fields => new_fields, :type => :list, :filename => (filename.nil? ? nil : "Index:" + filename), :case_insensitive => case_insensitive}]
     end
 
     new  = TSV.new(new) if Hash === new
@@ -69,12 +84,27 @@ class TSV
   end
 
   def self.index(file, options = {})
-    options = Misc.add_defaults options, :data_persistence => false, :persistence => false
+    options = Misc.add_defaults options,
+      :persistence => false, :persistence_file => nil, :persistence_update => false, :persistence_source => file, :tsv_serializer => :list,
+      :data_persistence => false, :data_persistence_file => nil, :data_persistence_update => false, :data_persistence_source => file
 
-    options_data = {:persistence => Misc.process_options(options, :data_persistence),
-      :persistence_file => Misc.process_options(options, :data_persistence_file)}
+    options_data = {
+      :persistence        => Misc.process_options(options, :data_persistence),
+      :persistence_file   => Misc.process_options(options, :data_persistence_file),
+      :persistence_update => Misc.process_options(options, :data_persistence_update),
+      :persistence_source => Misc.process_options(options, :data_persistence_source),
+    }
 
-    TSV.new(file, :double, options_data).index options
+    options_data[:type] = :flat if options[:order] == false
+
+    new = Persistence.persist(file, :Index, :tsv, options) do |file, options, filename|
+
+      index = TSV.new(file, :double, options_data).index options
+      ddd index.class
+      index
+    end
+
+    new
   end
 
   def smart_merge(other, match = nil, fields2add = nil)

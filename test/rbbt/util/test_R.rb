@@ -3,7 +3,7 @@ require 'rbbt/util/R'
 
 class TestR < Test::Unit::TestCase
   def test_sum
-    assert_equal "6", R.run('cat(3+3)').read
+    assert_equal "6", R.run('cat(3+3)').read.split(/\n/).last
   end
 end
 

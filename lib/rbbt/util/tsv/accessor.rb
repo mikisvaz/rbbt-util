@@ -2,7 +2,7 @@ require 'rbbt/util/misc'
 
 class TSV
   ## Make sure we overwrite the methods declared by attr_accessor
-  attr_accessor :filename, :type, :namespace, :case_insensitive, :key_field, :fields, :data
+  attr_accessor :filename, :type, :namespace, :case_insensitive, :key_field, :fields, :data, :cast
 
   def self.zip_fields(list, fields = nil)
     return [] if list.nil? || list.empty?

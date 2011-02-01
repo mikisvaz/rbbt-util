@@ -151,31 +151,42 @@ class TSV
         id = ids.shift
         ids.each do |id2| data[id2] = "__Ref:#{id}"  end
 
+        next if data.include?(id) and type != :flat
+
         if key_field.nil?
           other_pos    = (0..(parts.length - 1)).to_a
           other_pos.delete key_pos
         end
 
-        extra = parts.values_at(*other_pos).collect{|f| parse_fields(f, sep2).first}
+        if type == :flat
+          extra = parts.values_at(*other_pos).collect{|f| parse_fields(f, sep2)}.flatten
+        else
+          extra = parts.values_at(*other_pos).collect{|f| parse_fields(f, sep2).first}
+        end
+
         extra.collect! do |elem| 
           case
-          when String === cast
-            elem.send(cast)
-          when Proc === cast
-            cast.call elem
-          end
+            when String === cast
+              elem.send(cast)
+            when Proc === cast
+              cast.call elem
+            end
         end if cast
 
-        max_cols = extra.size if extra.size > (max_cols || 0)
-        case type
-        when :list
-          data[id] = extra unless data.include? id
-        when :flat
-          data[id] = extra.flatten unless data.include? id  
-        when :single
-          data[id] = extra.flatten.first unless data.include? id  
+        case
+        when type == :single
+            data[id] = extra.first
+        when type == :flat
+          if data.include? id
+            data[id].concat extra
+          else
+            data[id] = extra 
+          end
+        else
+          data[id] = extra 
         end
- 
+
+        max_cols = extra.size if extra.size > (max_cols || 0) unless type == :flat
       else
         ids = parse_fields(parts[key_pos], sep2)
         ids.collect!{|id| id.downcase} if case_insensitive
@@ -199,7 +210,7 @@ class TSV
         end if cast
 
         max_cols = extra.size if extra.size > (max_cols || 0)
-        if merge
+        if not merge
           data[id] = extra unless data.include? id
         else
           if not data.include? id
@@ -236,7 +247,7 @@ class TSV
       end
     end
 
-    [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive, :namespace => namespace}]
+    [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive, :namespace => namespace, :cast => !!cast}]
   end
 
 end

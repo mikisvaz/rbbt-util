@@ -18,7 +18,7 @@ module R
 
     Log.debug "R Script:\n#{ cmd }"
 
-    CMD.cmd('R --vanilla --slave', options.merge(:in => cmd))
+    CMD.cmd('R --vanilla --slave --quiet', options.merge(:in => cmd))
   end
 
 end
