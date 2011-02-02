@@ -71,7 +71,7 @@ module PKGData
     end
 
     def tsv_fields(sep = nil, header_hash = nil)
-      TSV.parse_header self.open, sep, header_hash
+      TSV.parse_header(self.open, sep, header_hash).values_at 0, 1
     end
 
     def exists?

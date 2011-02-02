@@ -4,7 +4,7 @@ require 'rbbt/util/tmpfile'
 
 class TestTSV < Test::Unit::TestCase
 
-  def _test_tsv
+  def test_tsv
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -21,7 +21,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_grep
+  def test_grep
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -50,7 +50,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_headers
+  def test_headers
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a b c
@@ -63,7 +63,7 @@ row2 A B C
     end
   end
 
-  def _test_headerless
+  def test_headerless
     content =<<-EOF
 row1 a b c
 row2 A B C
@@ -74,7 +74,7 @@ row2 A B C
     end
   end
 
-  def _test_extra
+  def test_extra
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -89,7 +89,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_case
+  def test_case
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -110,7 +110,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_persistence
+  def test_persistence
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -133,7 +133,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_named_array
+  def test_named_array
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
