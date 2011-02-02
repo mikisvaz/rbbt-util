@@ -11,6 +11,7 @@ require 'rbbt/util/tsv/parse'
 require 'rbbt/util/tsv/accessor'
 require 'rbbt/util/tsv/manipulate'
 require 'rbbt/util/tsv/index'
+require 'rbbt/util/tsv/attach'
 class TSV
 
   def self.headers(file, options = {})
@@ -98,6 +99,9 @@ class TSV
           when (String === file and file.respond_to? :open)
             data, extra = TSV.parse(file.open(:grep => options[:grep]) , options)
             extra[:namespace] ||= file.namespace
+            extra[:datadir]   ||= file.datadir
+          when StringIO === file
+            data, extra = TSV.parse(file, options)
           when Open.can_open?(file)
             Open.open(file, :grep => options[:grep]) do |f|
               data, extra = TSV.parse(f, options)

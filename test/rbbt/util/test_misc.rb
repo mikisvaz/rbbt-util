@@ -51,4 +51,5 @@ This is an example file. Entries are separated by Entry
 
     assert_equal "1\n2\n3", Misc.chunk(test, /^-- Entry/).first.strip
   end
+
 end

@@ -16,8 +16,27 @@ end
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.string2const(string)
+    return nil if string.nil?
+    mod = Kernel
+
+    string.to_s.split('::').each do |str|
+      mod = mod.const_get str
+    end
+
+    mod
+  end
+
   def self.path_relative_to(path, subdir)
     File.expand_path(path).sub(/^#{Regexp.quote File.expand_path(subdir)}\/?/,'')
+  end
+
+  def self.in_directory?(file, directory)
+    if File.expand_path(file.to_s) =~ /^#{Regexp.quote File.expand_path(directory)}/
+      true
+    else
+      false
+    end
   end
 
   def self.this_dir

@@ -45,7 +45,6 @@ row3    a    C    Id4
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.new(filename + '#:sep=/\s+/')
-      ddd tsv
       assert_equal ["A"], tsv["row2"]["ValueA"]
     end
   end
@@ -146,6 +145,20 @@ row2    A    B    Id3
       assert_equal ["Id", "ValueA", "ValueB"], tsv.fields
       assert_equal ["a", "aa", "aaa"], tsv["id1"][1]
       assert_equal ["a", "aa", "aaa"], tsv["Id2"]["ValueA"]
+   end
+  end
+
+  def test_one_col
+    content =<<-EOF
+#Id
+row1
+row2
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :sep => /\s+/)
+      assert_equal "Id", tsv.key_field
+      assert_equal [], tsv.fields
    end
   end
 

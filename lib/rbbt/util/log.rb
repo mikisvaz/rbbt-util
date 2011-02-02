@@ -51,11 +51,15 @@ module Log
 end
 
 def ddd(message, file = $stdout)
-  Log.debug "DEVEL => " << caller.first
-  Log.debug "DEVEL: " << message.inspect
+  Log.debug "DEVEL: " << caller.first
+  Log.debug ""
+  Log.debug "=> " << message.inspect
+  Log.debug ""
 end
 
 def ppp(message)
-  puts "=> " << caller.first
-  puts message.inspect
+  puts "PRINT: " << caller.first
+  puts ""
+  puts "=> " << message.inspect
+  puts ""
 end

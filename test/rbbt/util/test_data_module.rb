@@ -33,10 +33,12 @@ class TestDataModule < Test::Unit::TestCase
   end
 
   def test_rakefile
+    assert_equal Rbbt.files.DataTest, DataTest.datadir
     assert_equal "File 1", Rbbt.files.DataTest.file1.read
     assert_equal "Hello world", DataTest.salute("world")
     assert_equal "Hello world", DataTest::with_key("world").salute
     assert_equal "Hello world", DataTest::World.salute
+    assert_equal "DataTest", Rbbt.files.DataTest.tsv_file.namespace
     assert_equal "DataTest", Rbbt.files.DataTest.tsv_file.tsv.namespace
     FileUtils.rm_rf File.join(Rbbt.datadir, 'DataTest')
   end

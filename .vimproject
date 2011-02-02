@@ -19,6 +19,8 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    cachehelper.rb
 
    misc.rb
+   path.rb
+   namespace.rb
    log.rb
    tmpfile.rb
    cmd.rb
@@ -33,6 +35,7 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
     accessor.rb
     manipulate.rb
     index.rb
+    attach.rb
    }
    excel2tsv.rb
    bed.rb

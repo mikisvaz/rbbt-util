@@ -7,6 +7,7 @@ require 'fileutils'
 
 class Test::Unit::TestCase
   include FileUtils
+
   def test_datafile(file)
     File.join(File.dirname(__FILE__), 'data', file)
   end

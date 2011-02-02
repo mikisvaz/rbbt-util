@@ -54,6 +54,7 @@ class TSV
       :case_insensitive => false,
       :type             => :double,
       :namespace        => nil,
+      :identifiers      => nil,
 
       :merge            => false,
       :keep_empty       => true,
@@ -77,8 +78,8 @@ class TSV
 
     key_field, other_fields, more_options, line = TSV.parse_header(stream, sep, header_hash)
 
-    sep     = more_options[:sep] if more_options[:sep]
     options = Misc.add_defaults options, more_options
+    sep     = options[:sep] if options[:sep]
     sep2    = Misc.process_options options, :sep2
 
     key, others =
@@ -247,7 +248,7 @@ class TSV
       end
     end
 
-    [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive, :namespace => namespace, :cast => !!cast}]
+    [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive, :namespace => namespace, :datadir => options[:datadir], :identifiers => options[:identifiers], :cast => !!cast}]
   end
 
 end

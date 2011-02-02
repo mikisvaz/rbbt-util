@@ -4,7 +4,7 @@ require 'rbbt/util/tsv/index'
 
 class TestTSVManipulate < Test::Unit::TestCase
 
-  def test_index
+  def _test_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -26,7 +26,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_index_headerless
+  def _test_index_headerless
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -40,7 +40,7 @@ row2    A    B    Id3
   end
 
 
-  def test_best_index
+  def _test_best_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b|A    Id1
@@ -64,8 +64,9 @@ row3    A    a|B    Id4
     end
   end
 
+  #{{{ Test Attach
 
-#  def test_open_file
+#  def _test_open_file
 #    content =<<-EOF
 ##Id    ValueA    ValueB    OtherID
 #row1    a|aa|aaa    b    Id1|Id2
@@ -86,7 +87,8 @@ row3    A    a|B    Id4
 #
 
 
-#  def test_helpers
+
+#  def _test_helpers
 #    begin
 #      require 'rbbt/sources/organism'
 #      filename = File.join(Organism.datadir('Sce'), 'identifiers')
@@ -104,7 +106,7 @@ row3    A    a|B    Id4
 
 
 
-  def _test_smart_merge_single
+  def ___test_smart_merge_single
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -133,7 +135,7 @@ C    B    Id3
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-#  def test_smart_merge
+#  def _test_smart_merge
 #    content1 =<<-EOF
 ##Id    ValueA    ValueB
 #row1    a|aa|aaa    b
@@ -161,7 +163,7 @@ C    B    Id3
 #    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
 #  end
 #
-#  def test_smart_merge_through_index_find_headers
+#  def _test_smart_merge_through_index_find_headers
 #    content1 =<<-EOF
 ##Id    ValueA    ValueBB
 #row1    a|aa|aaa    bb
@@ -202,7 +204,7 @@ C    B    Id3
 #  end
 #
 #
-#  def test_smart_merge_through_string_find_headers
+#  def _test_smart_merge_through_string_find_headers
 #    content1 =<<-EOF
 ##Id    ValueA    ValueBB
 #row1    a|aa|aaa    bb
@@ -240,7 +242,7 @@ C    B    Id3
 #    assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
 #  end
 #
-#  def test_smart_merge_through_string
+#  def _test_smart_merge_through_string
 #    content1 =<<-EOF
 ##Id    ValueA    ValueBB
 #row1    a|aa|aaa    bb
@@ -278,7 +280,7 @@ C    B    Id3
 #    assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
 #  end
 #
-#  def test_smart_merge_common_fields
+#  def _test_smart_merge_common_fields
 #    content1 =<<-EOF
 ##Id    ValueA    ValueB
 #row1    a|aa|aaa    b
@@ -308,7 +310,7 @@ C    B    Id3
 #    assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
 #  end
 #
-#  def test_smart_merge_headerless
+#  def _test_smart_merge_headerless
 #    content1 =<<-EOF
 #row1    a|aa|aaa    b
 #row2    A    B
@@ -335,7 +337,7 @@ C    B    Id3
 #  end
 
 
-#  def test_join
+#  def _test_join
 #     content =<<-EOF
 ##Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
 #row1    a|aa|aaa    b    Id1|Id2

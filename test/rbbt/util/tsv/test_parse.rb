@@ -49,5 +49,23 @@ row2    A    B
     end
   end
 
+  def test_options_line
+    content =<<-EOF
+#: :sep=/\\s+/
+#Id    ValueA    ValueB
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      data = {}
+      data, extra = TSV.parse(File.open(filename))
+      assert_equal "Id", extra[:key_field]
+      assert_equal ["ValueA", "ValueB"], extra[:fields]
+      assert_equal ["a", "aa", "aaa"], data["row1"][0]
+    end
+  end
+
+
 end
 

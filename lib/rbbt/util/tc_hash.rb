@@ -1,3 +1,4 @@
+require 'rbbt/util/misc'
 require 'tokyocabinet'
 
 class TCHash < TokyoCabinet::HDB
@@ -35,6 +36,8 @@ class TCHash < TokyoCabinet::HDB
 
   FIELD_INFO_ENTRIES = {
     :serializer       => '__tokyocabinet_hash_serializer',
+    :identifiers      => '__tokyocabinet_hash_identifiers',
+    :datadir          => '__tokyocabinet_hash_datadir',
     :fields           => '__tokyocabinet_hash_fields',
     :key_field        => '__tokyocabinet_hash_key_field',
     :filename         => '__tokyocabinet_hash_filename',
@@ -76,11 +79,8 @@ class TCHash < TokyoCabinet::HDB
       if serializer_str.nil? or serializer_str.empty? 
         @serializer = Marshal
       else
-        base = Kernel
-        serializer_str.split('::').each do |str|
-          base = base.const_get str
-        end
-        @serializer = base
+        mod = Misc.string2const serializer_str
+       @serializer = mod
       end
     end
   end

@@ -100,12 +100,12 @@ class TSV
     new = Persistence.persist(file, :Index, :tsv, options) do |file, options, filename|
 
       index = TSV.new(file, :double, options_data).index options
-      ddd index.class
       index
     end
 
     new
   end
+
 
   def smart_merge(other, match = nil, fields2add = nil)
 
@@ -192,4 +192,5 @@ class TSV
 
     new
   end
+
 end

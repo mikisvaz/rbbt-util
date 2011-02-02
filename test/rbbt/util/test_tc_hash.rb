@@ -31,7 +31,6 @@ class TestTCHash < Test::Unit::TestCase
   def test_stringArraySerializer
     TmpFile.with_file do |f|
       t = TCHash.get f, true, TCHash::StringArraySerializer
-      ddd t.serializer
       t["1"] = [1,2]
       t["2"] = [3,4]
 
@@ -67,8 +66,5 @@ class TestTCHash < Test::Unit::TestCase
       end
     end
   end
-
-
-
 end
 

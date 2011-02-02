@@ -3,10 +3,10 @@ require 'rbbt-util'
 require 'rbbt/sources/organism'
 
 class TestBed < Test::Unit::TestCase
-  def test_tsv_speed
+  def _test_tsv_speed
     data = nil
     profile do
-      data = TSV.new test_datafile("Metastasis.tsv"), :unique=> true
+      data = TSV.new _test_datafile("Metastasis.tsv"), :unique=> true
     end
 
     profile do
@@ -14,17 +14,17 @@ class TestBed < Test::Unit::TestCase
     end
   end
 
-  def test_index
+  def _test_index
     index = Organism.Hsa.identifiers.index 
     index = Organism.Hsa.identifiers.index 
     assert_equal "1020", Misc.first(index["CDK5"])
   end
 
-  def test_bed_speed
+  def _test_bed_speed
     require 'rbbt/sources/organism'
     data = nil
 
-    data = TSV.new test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
+    data = TSV.new _test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
 
     chromosome_bed = {}
 
@@ -59,11 +59,11 @@ class TestBed < Test::Unit::TestCase
     end
   end
 
-  def test_namespace_identifiers
+  def _test_namespace_identifiers
      assert_equal Rbbt.files.Organism.Hsa.identifiers, Rbbt.files.Organism.Hsa.gene_positions.namespace_identifiers.first
   end
 
-  def test_index
+  def _test_index
     i = nil
     profile false do
       i = Organism.Hsa.identifiers.index :persistence => true, :persistence_update => true, :order => false, :target => "Associated Gene Name"
@@ -73,18 +73,25 @@ class TestBed < Test::Unit::TestCase
     assert i["1020"].include? "CDK5"
   end
 
-  def test_organism
+  def _test_organism
     Organism.Hsa.identifiers2.index :target => "Ensembl Protein ID", :persistence => false
   end
 
-  def test_NGS
+  def _test_NGS
     require 'rbbt/sources/kegg'
     require 'rbbt/sources/pharmagkb'
 
     human = Organism::Hsa
     p PhGx.files.KEGG.gene_pathway.tsv_fields
 
-    #data = TSV.new test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
+    #data = TSV.new _test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
+  end
+
+  def test_namespace
+    assert_equal Organism::Hsa, Organism::Hsa.identifiers.namespace
+    assert_equal Organism::Hsa, Rbbt.files.Organism.Hsa.identifiers.namespace
+
+    assert_equal Rbbt.files.Organism.Hsa.identifiers, Organism::Hsa.gene_positions.namespace.identifiers
   end
 end
 

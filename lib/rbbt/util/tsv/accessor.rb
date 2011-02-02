@@ -2,7 +2,7 @@ require 'rbbt/util/misc'
 
 class TSV
   ## Make sure we overwrite the methods declared by attr_accessor
-  attr_accessor :filename, :type, :namespace, :case_insensitive, :key_field, :fields, :data, :cast
+  attr_accessor :filename, :identifiers, :datadir, :type, :namespace, :case_insensitive, :key_field, :fields, :data, :cast
 
   def self.zip_fields(list, fields = nil)
     return [] if list.nil? || list.empty?
@@ -14,9 +14,41 @@ class TSV
 
 
   module Field
+    attr_accessor :namespace
+
+    def self.field(field, namespace = nil)
+      field.extend Field
+      field.namespace = namespace
+      field
+    end
+
+    def self.namespace(string)
+      return nil unless string.match(/(.+):/)
+      namespace_str = $1
+      return nil if namespace_str.nil? or namespace_str.empty?
+      namespace_str
+    end
+
     def ==(string)
       return false unless String === string
-      self.sub(/.*?:/,'').casecmp(string.sub(/.*?:/,'')) == 0
+      self.sub(/.*:/,'').casecmp(string.sub(/.*:/,'')) == 0
+    end
+
+    def namespace
+      Field.namespace(self) || @namespace
+    end
+  end
+
+  def identifier_files
+    case
+    when (identifiers and Array == identifiers)
+      identifiers.collect{|f| Path.path(f, datadir, namespace)}
+    when (identifiers and Array == identifiers)
+      Path.path(identifiers, datadir, namespace)
+    when (not namespace.nil? and Misc.string2const(namespace) and Misc.string2const(namespace).respond_to? :identifier_files)
+      Misc.string2const(namespace).identifier_files
+    else
+      Path.path(filename, datadir, namespace).identifier_files
     end
   end
 
@@ -24,7 +56,8 @@ class TSV
     return nil if @fields.nil?
     fields = @fields
     fields.each do |f| f.extend Field end if Array === fields
-    fields
+    fields.each do |f| f.namespace = namespace end unless namespace.nil?
+    NamedArray.name(fields, @fields)
   end
 
   def all_fields
@@ -32,6 +65,7 @@ class TSV
     fields = @fields.dup
     fields.unshift key_field
     fields.each do |f| f.extend Field end if Array === fields
+    NamedArray.name(fields, [key_field] +  @fields)
     fields
   end
 
@@ -179,5 +213,4 @@ class TSV
 
     str
   end
-
 end

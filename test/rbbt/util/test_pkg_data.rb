@@ -118,7 +118,7 @@ class TestPKGData < Test::Unit::TestCase
                  file :identifiers do |t| Open.write(t.name, 'bar') end
                  ")
       Rbbt.claim :all, "test/Rake/Rakefile", 'test' 
-      assert_equal 1, Rbbt.files.test.foo.namespace_identifiers.length
+      assert_equal 1, Rbbt.files.test.foo.identifier_files.length
     ensure
       begin
         FileUtils.rm File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/Rakefile')

@@ -4,6 +4,11 @@ require 'rbbt/util/tsv'
 
 class TestTSVAcessor < Test::Unit::TestCase
 
+  def test_zip_fields
+    a = [%w(1 2), %w(a b)]
+    assert_equal a, TSV.zip_fields(TSV.zip_fields(a))
+  end
+
   def test_values_at
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
@@ -79,7 +84,35 @@ row2 A B C
     end
   end
 
+  def test_named_fields
+    content =<<-EOF
+#ID ValueA ValueB Comment
+row1 a b c
+row2 A B C
+    EOF
 
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :double, :sep => /\s/)
 
+      assert_equal "ValueA", tsv.fields["ValueA"]
+    end
+  end
+
+  def test_field_namespace
+    content =<<-EOF
+#ID Organism::Hsa:ValueA ValueB Comment
+row1 a b c
+row2 A B C
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new File.open(filename), :double, :sep => /\s/, :namespace => "Test"
+      assert_equal "Test", tsv.namespace
+
+      assert_equal TSV::Field.field("ValueA"), tsv.fields["ValueA"]
+      assert_equal "Organism::Hsa", tsv.fields["ValueA"].namespace
+      assert_equal "Test", tsv.fields["ValueB"].namespace
+    end
+  end
 end
 

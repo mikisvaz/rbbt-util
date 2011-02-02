@@ -1,98 +1,13 @@
 require 'rbbt/util/open'
 require 'rbbt/util/tsv'
 require 'rbbt/util/log'
+require 'rbbt/util/path'
 require 'rbbt/util/rake'
 
 module PKGData
   attr_accessor :claims
-  def self.extended(base)
-    base.claims = {}
-  end
-
-  module Path
-    attr_accessor :base
-
-    def method_missing(name, *args, &block)
-      new = File.join(self.dup, name.to_s)
-      new.extend Path
-      new.base = base
-      new
-    end
-
-    def [](name)
-      new = File.join(self.dup, name.to_s)
-      new.extend Path
-      new.base = base
-      new
-    end
-
-    def namespace
-      file, producer = base.reclaim self
-      producer[:namespace] if producer
-    end
-
-    def namespace_identifiers
-      file, producer = base.reclaim self
-      subdir = producer[:subdir]
-      
-      identifier_files = []
-      path = self
-      while path != File.join(base.datadir, subdir)
-        path = File.dirname(path)
-        path.extend Path
-        path.base = base
-        if path.identifiers.exists? 
-          identifier_files << path.identifiers
-        end
-      end
-
-      return identifier_files
-    end
-
-    def tsv(options = {})
-      produce
-      ns = namespace
-      TSV.new self, options.merge(:namespace => ns)
-    end
-
-    def index(options = {})
-      produce
-      TSV.index self, options
-    end
-
-    def open(options = {})
-      produce
-      Open.open(self, options)
-    end
-
-    def read(options = {})
-      produce
-      Open.read(self, options)
-    end
-
-    def tsv_fields(sep = nil, header_hash = nil)
-      TSV.parse_header(self.open, sep, header_hash).values_at 0, 1
-    end
-
-    def exists?
-      begin
-        produce
-      rescue
-        false
-      end
-      true
-    end
-
-    def produce
-      return if File.exists? self
-
-      Log.debug("Trying to produce '#{ self }'")
-      file, producer = base.reclaim self
-
-      raise "File #{self} has not been claimed, cannot produce" if file.nil? or producer.nil?
-
-      base.produce(self, producer[:get], producer[:subdir], producer[:sharedir])
-    end
+  def self.extended(pkg_module)
+    pkg_module.claims = {}
   end
 
   class SharedirNotFoundError < StandardError; end
@@ -124,16 +39,13 @@ module PKGData
 
   def files
     path = datadir.dup.extend Path
-    path.base      = self
+    path.pkg_module      = self
+    path.datadir         = datadir
     path
   end
 
   def in_datadir?(file)
-    if File.expand_path(file.to_s) =~ /^#{Regexp.quote File.expand_path(datadir)}/
-      true
-    else
-      false
-    end
+    Misc.in_directory? file, datadir
   end
 
   # file is the complete path of the file inside the datadir
@@ -185,6 +97,8 @@ module PKGData
     case 
     when get.nil?
       FileUtils.cp File.join(sharedir, subdir.to_s, relative_path), file.to_s
+    when StringIO === get
+      Open.write(file, get.read)
     when Proc === get
       Open.write(file, get.call)
     when TSV === get
