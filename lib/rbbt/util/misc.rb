@@ -98,7 +98,9 @@ module Misc
       raise "Format of '#{options.inspect}' not understood"
     end
     defaults.each do |key, value|
-      new_options[key] = value if new_options[key].nil?
+      next unless new_options[key].nil?
+
+      new_options[key] = value 
     end
     new_options
   end
@@ -130,7 +132,12 @@ module Misc
         options[option] = Thread.start do
           $SAFE = 3;
           begin  
-            if value =~ /\/(.*)\//
+            case 
+            when value =~ /^true|T/i
+              true
+            when value =~ /^false|F/i
+              false
+            when value =~ /\/(.*)\//
               Regexp.new /#{$1}/
             else
               eval(value) 

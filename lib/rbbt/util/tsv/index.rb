@@ -3,7 +3,7 @@ require 'rbbt/util/tsv/manipulate'
 class TSV
 
   def index(options = {})
-    options = Misc.add_defaults options, :order => false, :persistence => false, :target => :key, :fields => nil, :case_insensitive => true, :tsv_serializer => :list
+    options = Misc.add_defaults options, :order => false, :persistence => false, :target => :key, :fields => nil, :case_insensitive => case_insensitive, :tsv_serializer => :list
 
     new, extra = Persistence.persist(self, :Index, :tsv, options) do |tsv, options, filename|
       order, target, fields, case_insensitive = Misc.process_options options, :order, :target, :fields, :case_insensitive
@@ -24,20 +24,24 @@ class TSV
 
           values.each_with_index do |list,i|
             list = [list] unless Array === list
+            i += 1 if fields.nil?
             list.each do |elem|
               elem.downcase if case_insensitive
               new[elem] ||= []
-              new[elem][i + 1] ||= []
-              new[elem][i + 1].concat keys
+              new[elem][i] ||= []
+              new[elem][i].concat keys
             end
           end
 
-          keys.each do |key|
-            key = key.downcase if case_insensitive
-            new[key]    ||= []
-            new[key][0] ||= []
-            new[key][0].concat keys
+          if fields.nil?
+            keys.each do |key|
+              key = key.downcase if case_insensitive
+              new[key]    ||= []
+              new[key][0] ||= []
+              new[key][0].concat keys
+            end
           end
+
         end
 
         # flatten
@@ -53,7 +57,7 @@ class TSV
         new.each do |key, fields| fields.flatten! end
 
         new_key_field, new_fields = through target, fields do |key, values|
-          values.unshift type == :double ? [key] : key
+          values.unshift type == :double ? [key] : key if fields.nil?
           if type == :flat
             list = values
           else
@@ -69,9 +73,14 @@ class TSV
             end
           end
         end
+
       end
 
-      [new, {:key_field => new_key_field, :fields => new_fields, :type => :list, :filename => (filename.nil? ? nil : "Index:" + filename), :case_insensitive => case_insensitive}]
+      new.each do |key, values| 
+        values.uniq!
+      end
+
+      [new, {:key_field => new_key_field + "|" + new_fields * "|", :fields => [new_key_field], :type => :flat, :filename => (filename.nil? ? nil : "Index:" + filename), :case_insensitive => case_insensitive}]
     end
 
     new  = TSV.new(new) if Hash === new

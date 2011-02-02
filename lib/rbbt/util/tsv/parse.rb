@@ -49,7 +49,13 @@ class TSV
   end
 
   def self.parse(stream, options = {})
+
     # Prepare options
+    
+    key_field, other_fields, more_options, line = TSV.parse_header(stream, options[:sep], options[:header_hash])
+
+    options = Misc.add_defaults options, more_options
+
     options = Misc.add_defaults options, 
       :case_insensitive => false,
       :type             => :double,
@@ -60,9 +66,9 @@ class TSV
       :keep_empty       => true,
       :cast             => nil,
 
+      :header_hash      => '#',
       :sep              => "\t",
       :sep2             => "|",
-      :header_hash      => '#',
 
       :key              => 0,
       :fields           => nil,
@@ -71,16 +77,9 @@ class TSV
       :exclude          => nil,
       :select           => nil,
       :grep             => nil
-
-
-    sep, header_hash =
-      Misc.process_options options, :sep,  :header_hash
-
-    key_field, other_fields, more_options, line = TSV.parse_header(stream, sep, header_hash)
-
-    options = Misc.add_defaults options, more_options
-    sep     = options[:sep] if options[:sep]
-    sep2    = Misc.process_options options, :sep2
+    
+    header_hash, sep, sep2 =
+      Misc.process_options options, :header_hash, :sep, :sep2
 
     key, others =
       Misc.process_options options, :key, :others

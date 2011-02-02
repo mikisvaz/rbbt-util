@@ -202,9 +202,31 @@ class TSV
     new
   end
  
-  def process(field)
+  def process(field, &block)
     through do |key, values|
-      values[field].replace yield(values[field], key, values) unless values[field].nil? 
+      if type == :flat
+        field_values = values
+      else
+        field_values = values[field]
+      end
+
+      next if values[field].nil? 
+      new_values = case 
+                   when block.arity == 1
+                     yield(field_values)
+                   when block.arity == 2
+                     yield(field_values, key)
+                   when block.arity == 3
+                     yield(field_values, key, values)
+                   else
+                     raise "Unknown arity in block"
+                   end
+
+      if type == :flat
+        self[key] = new_values
+      else
+        values[field].replace new_values
+      end
     end
   end
 

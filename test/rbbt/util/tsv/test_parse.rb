@@ -51,7 +51,7 @@ row2    A    B
 
   def test_options_line
     content =<<-EOF
-#: :sep=/\\s+/
+#: :sep=/\\s+/#:case_insensitive=true
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
 row2    A    B
@@ -61,6 +61,7 @@ row2    A    B
       data = {}
       data, extra = TSV.parse(File.open(filename))
       assert_equal "Id", extra[:key_field]
+      assert_equal true, extra[:case_insensitive]
       assert_equal ["ValueA", "ValueB"], extra[:fields]
       assert_equal ["a", "aa", "aaa"], data["row1"][0]
     end

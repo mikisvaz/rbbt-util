@@ -186,7 +186,7 @@ B    Id3
 
   end
 
-  def test_attach_using_index
+  def _test_attach_using_index
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -225,5 +225,50 @@ row2    E
     assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
 
   end
+
+
+  def test_find_path
+     content1 =<<-EOF
+#: :sep=/\\s+/#:case_insensitive=false
+#Id    ValueA    ValueB
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+    content2 =<<-EOF
+#: :sep=/\\s+/#:case_insensitive=false
+#ValueE    OtherID
+e    Id1|Id2
+E    Id3
+    EOF
+
+    content_identifiers =<<-EOF
+#: :sep=/\\s+/#:case_insensitive=false
+#Id    ValueE
+row1    e
+row2    E
+    EOF
+
+    tsv1 = tsv2 = identifiers = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.new(File.open(filename), :key => "ValueA")
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.new(File.open(filename), :double)
+    end
+
+    TmpFile.with_file(content_identifiers) do |filename|
+      identifiers = TSV.new(File.open(filename), :flat, :sep => /\s+/)
+    end
+
+ 
+    ppp TSV.find_path([tsv1,identifiers,tsv2])
+    ppp TSV.build_traverse_index([tsv1,identifiers,tsv2])
+  
+  end
+
+
+
 end
 

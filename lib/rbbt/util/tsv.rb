@@ -53,7 +53,7 @@ class TSV
       file = $1
     end
 
-    options = Misc.add_defaults options, :persistence => false, :case_insensitive => false, :type => type
+    options = Misc.add_defaults options, :persistence => false, :type => type
 
     # Extract Filename
 

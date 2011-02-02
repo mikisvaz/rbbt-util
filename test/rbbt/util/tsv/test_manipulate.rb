@@ -4,7 +4,7 @@ require 'rbbt/util/tsv/manipulate'
 
 class TestTSVManipulate < Test::Unit::TestCase
 
-  def _test_indentify_fields
+  def test_indentify_fields
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a b c
@@ -18,7 +18,7 @@ row2 A B C
   end
 
 
-  def _test_reorder_simple
+  def test_reorder_simple
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -40,7 +40,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_reorder_simple_headerless
+  def test_reorder_simple_headerless
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -62,7 +62,7 @@ row3    a    C    Id4
   end
 
 
-  def _test_reorder_remove_field
+  def test_reorder_remove_field
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -84,7 +84,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_through
+  def test_through
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -102,7 +102,7 @@ row3    a    C    Id4
   end
 
 
-  def _test_slice
+  def test_slice
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a b c
@@ -115,7 +115,7 @@ row2 A B C
     end
   end
 
-  def _test_sort
+  def test_sort
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID    Pos
 row1    a|aa|aaa    b    Id1|Id2    2
@@ -132,7 +132,7 @@ row3    A|AA|AAA|AAA    B    Id3    3
     end
   end
 
-  def _test_select
+  def test_select
      content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -183,7 +183,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_add_field
+  def test_add_field
      content =<<-EOF
 #Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -201,7 +201,7 @@ row3    a    C    Id4
     end
   end
 
-#  def _test_open_file
+#  def test_open_file
 #    content =<<-EOF
 ##Id    ValueA    ValueB    OtherID
 #row1    a|aa|aaa    b    Id1|Id2
@@ -222,7 +222,7 @@ row3    a    C    Id4
 #
 
 
-#  def _test_helpers
+#  def test_helpers
 #    begin
 #      require 'rbbt/sources/organism'
 #      filename = File.join(Organism.datadir('Sce'), 'identifiers')
@@ -240,7 +240,7 @@ row3    a    C    Id4
 
 
 
-#  def _test_smart_merge_single
+#  def test_smart_merge_single
 #    content1 =<<-EOF
 ##Id    ValueA    ValueB
 #row1    a|aa|aaa    b
@@ -269,7 +269,7 @@ row3    a    C    Id4
 #    assert_equal "Id1", tsv1["row1"]["OtherID"]
 #  end
 #
-#  def _test_smart_merge
+#  def test_smart_merge
 #    content1 =<<-EOF
 ##Id    ValueA    ValueB
 #row1    a|aa|aaa    b
@@ -297,7 +297,7 @@ row3    a    C    Id4
 #    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
 #  end
 #
-#  def _test_smart_merge_through_index_find_headers
+#  def test_smart_merge_through_index_find_headers
 #    content1 =<<-EOF
 ##Id    ValueA    ValueBB
 #row1    a|aa|aaa    bb
@@ -338,7 +338,7 @@ row3    a    C    Id4
 #  end
 #
 #
-#  def _test_smart_merge_through_string_find_headers
+#  def test_smart_merge_through_string_find_headers
 #    content1 =<<-EOF
 ##Id    ValueA    ValueBB
 #row1    a|aa|aaa    bb
@@ -376,7 +376,7 @@ row3    a    C    Id4
 #    assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
 #  end
 #
-#  def _test_smart_merge_through_string
+#  def test_smart_merge_through_string
 #    content1 =<<-EOF
 ##Id    ValueA    ValueBB
 #row1    a|aa|aaa    bb
@@ -414,7 +414,7 @@ row3    a    C    Id4
 #    assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
 #  end
 #
-#  def _test_smart_merge_common_fields
+#  def test_smart_merge_common_fields
 #    content1 =<<-EOF
 ##Id    ValueA    ValueB
 #row1    a|aa|aaa    b
@@ -444,7 +444,7 @@ row3    a    C    Id4
 #    assert_equal %w(a aa aaa aaaa), tsv1["row1"]["ValueA"]
 #  end
 #
-#  def _test_smart_merge_headerless
+#  def test_smart_merge_headerless
 #    content1 =<<-EOF
 #row1    a|aa|aaa    b
 #row2    A    B
@@ -471,7 +471,7 @@ row3    a    C    Id4
 #  end
 
 
-#  def _test_join
+#  def test_join
 #     content =<<-EOF
 ##Id    LetterValue#ValueA    LetterValue#ValueB    OtherID
 #row1    a|aa|aaa    b    Id1|Id2

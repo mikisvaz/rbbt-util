@@ -163,5 +163,21 @@ row2
   end
 
 
+  def test_case_insensitive
+     content1 =<<-EOF
+#: :sep=/\\s+/#:case_insensitive=false
+#Id    ValueA    ValueB
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+   tsv1 = tsv2 = identifiers = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.new(File.open(filename), :key => "ValueA")
+      assert !tsv1.case_insensitive
+      assert tsv1.include? "A"
+    end
+
+  end
 end
 

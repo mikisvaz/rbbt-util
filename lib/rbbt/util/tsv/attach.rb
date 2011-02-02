@@ -73,12 +73,41 @@ class TSV
   end
 
   #{{{ Attach Helper
+ 
+  def self.find_path(files)
+    ids = files.collect{|f| TSV === f ? f.all_fields : f.tsv_all_fields }
+    id_list = []
 
-  def self.create_index2(tsv1, tsv2)
-    path = find_indentifier_path(tsv1, tsv2)
+    ids.each_with_index do |list, i|
+      break if i == ids.length - 1
+      match = list & ids[i + 1]
+      return nil if match.empty?
+      id_list << match.first
+    end
 
+    id_list.zip(files[0..-1])
   end
-  
+
+  def self.build_traverse_index(files, target = nil)
+    path = find_path(files)
+
+    current_id, current_file = path.shift
+    index   = current_file.index :target => current_id  
+
+    while not path.empty?
+      ddd index
+      current_id, current_file = path.shift
+      current_index   = current_file.index :target => current_id, :fields => (path.empty? ? target : path.first.first)
+      index.process 0 do |value|
+        current_index.values_at(*value).flatten.uniq
+      end
+      ddd index
+    end
+
+    index
+  end
+
+ 
   def self.create_index(tsv1, tsv2)
     identifiers1 = tsv1.identifier_files.first
 

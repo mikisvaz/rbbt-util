@@ -14,7 +14,7 @@ module Log
   end
 
   def self.log(message, severity = MEDIUM)
-    STDERR.puts caller * "\n" if @@severity == -1
+    STDERR.puts caller * "\n" if @@severity == -1 and not message.empty?
     STDERR.puts "#{Time.now}[#{severity.to_s}]: " +  message if severity >= @@severity
   end
 
