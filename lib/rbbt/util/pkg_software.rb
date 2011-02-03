@@ -64,7 +64,6 @@ module PKGSoftware
       FileUtils.mkdir_p File.dirname(path) unless File.exists? File.dirname(path)
       subdir = Misc.path_relative_to File.dirname(path), opt_dir
       source = File.join(sharedir, 'install/software', subdir, pkg)
-      ddd source
       
       FileUtils.cp File.join(sharedir, 'install/software', subdir, pkg), path
     when (get.nil? or get.empty?)

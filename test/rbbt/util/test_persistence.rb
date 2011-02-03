@@ -41,12 +41,12 @@ class TestPersistence < Test::Unit::TestCase
   def test_tsv
     object = {:a => 1, :b => 2}
     TmpFile.with_file do |f|
-      Persistence.persist("token_file", :Test, :tsv, :persistence_file => f) do 
+      Persistence.persist("token_file", :Test, :tsv_extra, :persistence_file => f) do 
         [object, {:fields => ["Number"], :key_field => "Letter", :type => :list, :filename => "foo"}]
       end
 
       assert File.exists? f
-      new, extra = Persistence.persist("token_file", :Test, :tsv, :persistence_file => f)
+      new, extra = Persistence.persist("token_file", :Test, :tsv_extra, :persistence_file => f)
 
       assert_equal 1, new["a"]
       assert_equal "Letter", new.key_field
@@ -54,7 +54,68 @@ class TestPersistence < Test::Unit::TestCase
       rm f
     end
   end
+  
+  def test_tsv2
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
 
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(filename, :sep => /\s+/, :key => "OtherID")
+      tsv2 = Persistence.persist_tsv_string(tsv, 'Test', {}) do tsv end
+      tsv2 = Persistence.persist_tsv_string(tsv, 'Test', {}) do tsv end
+
+      (Object::TSV::EXTRA_ACCESSORS + [:fields, :key_field]).each do |key|
+        assert_equal tsv.send(key), tsv2.send(key)
+      end
+      tsv.each do |key,values|
+        assert_equal values, tsv2[key]
+      end
+    end
+  end
+  
+  def test_tsv3
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(filename, :sep => /\s+/, :key => "OtherID")
+      tsv2 = Persistence.persist_tsv(tsv, 'Test', {}) do tsv end
+      tsv2 = Persistence.persist_tsv(tsv, 'Test', {}) do tsv end
+
+      (Object::TSV::EXTRA_ACCESSORS + [:fields, :key_field]).each do |key|
+        assert_equal tsv.send(key), tsv2.send(key)
+      end
+      tsv.each do |key,values|
+        assert_equal values, tsv2[key]
+      end
+    end
+  end
+
+  def test_tsv4
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv  = Persistence.persist_tsv(filename, 'Test', {}) do TSV.new(filename, :sep => /\s+/, :key => "OtherID") end
+      tsv2 = Persistence.persist_tsv(filename, 'Test', {}) do tsv end
+
+      (Object::TSV::EXTRA_ACCESSORS + [:fields, :key_field]).each do |key|
+        assert_equal tsv.send(key), tsv2.send(key)
+      end
+      tsv.each do |key,values|
+        assert_equal values, tsv2[key]
+      end
+    end
+  end
 
 end
 

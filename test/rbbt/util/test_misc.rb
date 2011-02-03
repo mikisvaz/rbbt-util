@@ -52,4 +52,27 @@ This is an example file. Entries are separated by Entry
     assert_equal "1\n2\n3", Misc.chunk(test, /^-- Entry/).first.strip
   end
 
+  def test_hash2string
+    hash = {}
+    assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
+
+    hash = {:a => 1}
+    assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
+ 
+    hash = {:a => true}
+    assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
+
+    hash = {:a => Misc}
+    assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
+ 
+    hash = {:a => :b}
+    assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
+ 
+    hash = {:a => /test/}
+    assert_equal({}, Misc.string2hash(Misc.hash2string(hash)))
+ 
+
+
+ end
+
 end

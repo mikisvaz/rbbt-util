@@ -2,7 +2,9 @@ require 'rbbt/util/misc'
 
 class TSV
   ## Make sure we overwrite the methods declared by attr_accessor
-  attr_accessor :filename, :identifiers, :datadir, :type, :namespace, :case_insensitive, :key_field, :fields, :data, :cast
+  MAIN_ACCESSORS = :data,  :key_field, :fields, :cast
+  EXTRA_ACCESSORS = :filename, :identifiers, :datadir, :type, :namespace, :case_insensitive
+  attr_accessor *(MAIN_ACCESSORS + EXTRA_ACCESSORS)
 
   def self.zip_fields(list, fields = nil)
     return [] if list.nil? || list.empty?
@@ -41,10 +43,17 @@ class TSV
 
   def identifier_files
     case
-    when (identifiers and Array == identifiers)
-      identifiers.collect{|f| Path.path(f, datadir, namespace)}
-    when (identifiers and Array == identifiers)
-      Path.path(identifiers, datadir, namespace)
+    when (identifiers and TSV === identifiers)
+      [identifiers]
+    when (identifiers and Array === identifiers)
+      case
+      when (TSV === identifiers.first or identifiers.empty?)
+        identifiers
+      when
+        identifiers.collect{|f| Path.path(f, datadir, namespace)}
+      end
+    when (identifiers and not Array === identifiers)
+      [Path.path(identifiers, datadir, namespace)]
     when (not namespace.nil? and Misc.string2const(namespace) and Misc.string2const(namespace).respond_to? :identifier_files)
       Misc.string2const(namespace).identifier_files
     else
@@ -71,8 +80,8 @@ class TSV
 
   def self.identify_field(key, fields, field)
     return field if Integer === field
+    return :key if field.nil? or field == 0 or field.to_sym == :key or key == field 
     return nil if fields.nil?
-    return :key if field.nil? or field == 0 or field.to_sym == :key or key == field
     return fields.collect{|f| f.to_s}.index field if fields.collect{|f| f.to_s}.index field
     return fields.index field 
   end
@@ -195,6 +204,7 @@ class TSV
   def to_s(keys = nil)
     str = ""
 
+    str << "#: " << Misc.hash2string(EXTRA_ACCESSORS.collect{|key| [key, self.send(key)]}) << "\n"
     if fields
       str << "#" << key_field << "\t" << fields * "\t" << "\n"
     end

@@ -113,6 +113,14 @@ module Misc
     end
   end
 
+  def self.hash2string(hash)
+    hash.collect{|k,v| 
+      next unless %w(Symbol String Float Fixnum Integer TrueClass FalseClass Module Class Object).include? v.class.to_s
+      [ Symbol === k ? ":" << k.to_s : k,
+        Symbol === v ? ":" << v.to_s : v] * "="
+    }.compact * "#"
+  end
+
   def self.string2hash(string)
 
     options = {}
@@ -130,20 +138,24 @@ module Misc
         options[option] = option.to_s.chars.first != '!' 
       else
         options[option] = Thread.start do
-          $SAFE = 3;
-          begin  
-            case 
-            when value =~ /^true|T/i
-              true
-            when value =~ /^false|F/i
-              false
-            when value =~ /\/(.*)\//
-              Regexp.new /#{$1}/
-            else
-              eval(value) 
+          $SAFE = 0;
+          case 
+          when value =~ /^(?:true|T)$/i
+            true
+          when value =~ /^(?:false|F)$/i
+            false
+          when (String === value and value =~ /^\/(.*)\/$/)
+            Regexp.new /#{$1}/
+          else
+            begin
+              Kernel.const_get value
+            rescue
+              begin  
+                eval(value) 
+              rescue Exception
+                value 
+              end
             end
-          rescue 
-            value 
           end
         end.value
       end
@@ -176,7 +188,7 @@ module Misc
     fields.each_with_index{|f,i| return i if f == field}
     field_re = Regexp.new /#{field}/i
     fields.each_with_index{|f,i| return i if f =~ field_re}
-    raise FieldNotFoundError, "Field '#{ field }' was not found" unless quiet
+    raise FieldNotFoundError, "Field #{ field.inspect } was not found" unless quiet
   end
 
   def self.first(list)

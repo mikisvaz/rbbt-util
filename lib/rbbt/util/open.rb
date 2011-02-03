@@ -80,7 +80,7 @@ module Open
   # Cache
 
   def self.in_cache(url, options = {})
-    digest = Digest::MD5.hexdigest(url)
+    digest = Digest::MD5.hexdigest([url, options["--post-data"]].inspect)
 
     filename = File.join(REMOTE_CACHEDIR, digest)
     if File.exists? filename
@@ -91,7 +91,7 @@ module Open
   end
   
   def self.add_cache(url, data, options = {})
-    digest = Digest::MD5.hexdigest(url)
+    digest = Digest::MD5.hexdigest([url, options["--post-data"]].inspect)
     Misc.sensiblewrite(File.join(REMOTE_CACHEDIR, digest), data)
   end
 
@@ -164,13 +164,13 @@ module Open
            file_open(url, options[:grep])
          when options[:nocache]
            wget(url, wget_options)
-         when in_cache(url)
-           file_open(in_cache(url), options[:grep])
+         when in_cache(url, wget_options)
+           file_open(in_cache(url, wget_options), options[:grep])
          else
            io = wget(url, wget_options)
-           add_cache(url, io)
+           add_cache(url, io, wget_options)
            io.close
-           file_open(in_cache(url), options[:grep])
+           file_open(in_cache(url, wget_options), options[:grep])
          end
     io = unzip(io)  if (zip?  url and not options[:noz]) or options[:zip]
     io = gunzip(io) if (gzip? url and not options[:noz]) or options[:gzip]

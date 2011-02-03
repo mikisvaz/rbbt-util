@@ -47,6 +47,10 @@ class TSV
   def attach_index(other, index, fields = nil)
     fields = other.fields if fields.nil?
 
+    other = other.tsv unless TSV === other
+    field_positions = fields.collect{|field| other.identify_field field}
+    field_names     = field_positions.collect{|pos| pos == :key ? other.key_field : other.fields[pos] }
+
     through do |key, values|
       source_keys = index[key]
       next if source_keys.nil? or source_keys.empty?
@@ -54,7 +58,13 @@ class TSV
       all_new_values = []
       source_keys.each do |source_key|
         next unless other.include? source_key
-        new_values = other[source_key].values_at *fields
+        new_values = field_positions.collect do |pos|
+          if pos == :key
+            source_key
+          else
+            other[source_key][pos]
+          end
+        end
         new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
         new_values.collect!{|v| v.first} if not type == :double and     other.type == :double
         all_new_values << new_values
@@ -69,13 +79,14 @@ class TSV
       end
     end
 
-    self.fields = self.fields.concat other.fields.values_at *fields
+    self.fields = self.fields.concat field_names
   end
 
   #{{{ Attach Helper
  
+  # May make an extra index!
   def self.find_path(files)
-    ids = files.collect{|f| TSV === f ? f.all_fields : f.tsv_all_fields }
+    ids = files.collect{|f| f.all_fields}
     id_list = []
 
     ids.each_with_index do |list, i|
@@ -84,48 +95,63 @@ class TSV
       return nil if match.empty?
       id_list << match.first
     end
-
-    id_list.zip(files[0..-1])
+    
+    if id_list.last.first != files.last.all_fields.first
+      id_list << files.last.all_fields.first
+      id_list.zip(files)
+    else
+      id_list.zip(files[0..-1])
+    end
   end
 
-  def self.build_traverse_index(files, target = nil)
+  def self.build_traverse_index(files)
     path = find_path(files)
 
+    return nil if path.nil?
+    
+    traversal_ids = path.collect{|p| p.first}
+    
+    Log.medium "Found Traversal: #{traversal_ids * " => "}"
+
+    current_key = files.first.all_fields.first
+    target = files.last.all_fields.first
+    target = nil
     current_id, current_file = path.shift
-    index   = current_file.index :target => current_id  
+    index   = current_file.index :target => current_id, :fields =>  current_key, :persistence => false
 
     while not path.empty?
-      ddd index
       current_id, current_file = path.shift
-      current_index   = current_file.index :target => current_id, :fields => (path.empty? ? target : path.first.first)
+      current_index   = current_file.index :target => current_id, :fields => index.fields.first, :persistence =>  true
       index.process 0 do |value|
         current_index.values_at(*value).flatten.uniq
       end
-      ddd index
+      index.fields = current_index.fields
     end
+
 
     index
   end
 
- 
-  def self.create_index(tsv1, tsv2)
-    identifiers1 = tsv1.identifier_files.first
+  def self.find_traversal(tsv1, tsv2)
+    identifiers1 = tsv1.identifier_files || []
+    identifiers2 = tsv2.identifier_files || []
 
-    identifiers2 = tsv2.identifier_files.first
 
-    index = nil
+    identifiers1.unshift tsv1
+    identifiers2.unshift tsv2
 
-    case
-    when (identifiers2 and identifiers2.tsv_all_fields.include?(tsv1.key_field) and identifiers2.tsv_all_fields.include?(tsv2.key_field))
-      index = identifiers2.index :target => tsv2.key_field, :fields => tsv1.key_field
-    when (identifiers1 and identifiers1.all_fields.include?(tsv2.key_field) and  identifiers1.all_fields.include?(tsv1.key_field))
-      index = identifiers1.index :target => tsv2.key_field, :fields => tsv1.key_field
-    else
-      raise "Cannot traverse identifiers"
+    files1 = []
+    files2 = []
+    while identifiers1.any?
+      files1.push identifiers1.shift
+      identifiers2.each_with_index do |e,i|
+        files2 = identifiers2[(0..i)]
+        index  = build_traverse_index(files1 + files2.reverse)
+        return index if not index.nil?
+      end
     end
 
-
-    index
+    return nil
   end
 
   def attach(other, fields = nil)
@@ -135,7 +161,8 @@ class TSV
     when self.fields.include?(other.key_field)
       attach_source_key other, other.key_field, fields
     else
-      index = TSV.create_index self, other
+      index = TSV.find_traversal(self, other)
+      raise "Cannot traverse identifiers" if index.nil?
       attach_index other, index, fields
     end
   end

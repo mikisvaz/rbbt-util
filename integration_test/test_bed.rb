@@ -14,17 +14,47 @@ class TestBed < Test::Unit::TestCase
     end
   end
 
+  def _test_genes
+    require 'rbbt/sources/organism'
+    require 'rbbt/sources/kegg'
+    require 'rbbt/sources/pharmagkb'
+
+    data = TSV.new _test_datafile('genes.txt'), :persistence => false
+    data.key_field = "Associated Gene Name"
+    data.fields = []
+    data.identifiers = Organism::Hsa.identifiers
+
+    data.attach KEGG.gene_pathway
+    data.attach PharmaGKB.gene_pathway, ["Name", :key]
+
+    data.add_field "SNPsandGO" do |key,values|
+      SNPsandGO.predict(values["Unirprot ID"], values["Mutation"])
+    end
+    
+
+    #i = Organism::Hsa.identifiers.index :fields => "Associated Gene Name", :target => "Ensembl Gene ID"
+    #i = KEGG.identifiers.index :target => "KEGG Gene ID"
+    #i = KEGG.identifiers.index :target => "KEGG Gene ID"
+
+    #ddd i.keys.length
+
+    puts data.to_s
+
+  end
+
   def _test_index
     index = Organism.Hsa.identifiers.index 
     index = Organism.Hsa.identifiers.index 
     assert_equal "1020", Misc.first(index["CDK5"])
   end
 
-  def _test_bed_speed
+  def test_bed_speed
     require 'rbbt/sources/organism'
+    require 'rbbt/sources/kegg'
+    require 'rbbt/sources/pharmagkb'
     data = nil
 
-    data = TSV.new _test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
+    data = TSV.new test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
 
     chromosome_bed = {}
 
@@ -33,9 +63,12 @@ class TestBed < Test::Unit::TestCase
 
       %w(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y).collect do |chromosome|
         subset = positions.select("Chromosome Name" => chromosome)
+        ppp subset
         [chromosome, Bed.new(subset, :range => ["Gene Start", "Gene End"], :value => "Entrez Gene ID", :persistence => true).persistence_file]
       end
-    end.each{|chromosome, persistence_file| chromosome_bed[chromosome] = Bed.new(nil, :persistence_file => persistence_file)}
+    end.each{|chromosome, persistence_file| 
+      chromosome_bed[chromosome] = Bed.new({}, :persistence_file => persistence_file)
+    }
 
     benchmark do
       data.add_field "Entrez Gene ID" do |position, values|
@@ -44,7 +77,6 @@ class TestBed < Test::Unit::TestCase
         }.flatten
       end
     end
-
 
     benchmark do
       data.add_field "Ensembl Gene ID" do |position, values|
@@ -57,6 +89,11 @@ class TestBed < Test::Unit::TestCase
         Organism::Hsa.normalize(values["Entrez Gene ID"], :field => "Associated Gene Name")
       end
     end
+
+    data.identifiers = Organism::Hsa.identifiers
+    data.attach KEGG.gene_pathway
+
+    puts data.to_s
   end
 
   def _test_namespace_identifiers
@@ -81,13 +118,12 @@ class TestBed < Test::Unit::TestCase
     require 'rbbt/sources/kegg'
     require 'rbbt/sources/pharmagkb'
 
-    human = Organism::Hsa
-    p PhGx.files.KEGG.gene_pathway.tsv_fields
-
-    #data = TSV.new _test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
+    data = TSV.new _test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
+    data.identifiers = Organism::Hsa.identifiers
+    data.attach KEGG.gene_pathway
   end
 
-  def test_namespace
+  def _test_namespace
     assert_equal Organism::Hsa, Organism::Hsa.identifiers.namespace
     assert_equal Organism::Hsa, Rbbt.files.Organism.Hsa.identifiers.namespace
 

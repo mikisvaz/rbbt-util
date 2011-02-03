@@ -119,6 +119,7 @@ row2    A    B    Id3
     TmpFile.with_file(content) do |filename|
       tsv = TSV.new(filename, :sep => /\s+/, :key => "OtherID", :persistence => true)
       assert_equal ["Id", "ValueA", "ValueB"], tsv.fields
+
       tsv.write
       tsv['Id4'] = [["row3"],["aA"],["bB","bbBB"]]
       assert_equal ["aA"], tsv["Id4"][1]

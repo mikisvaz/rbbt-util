@@ -71,6 +71,10 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   }
  }
  integration_test=integration_test{
+  data=data{
+   genes.txt
+   Metastasis.tsv
+  }
   test_bed.rb
   test_workflow.rb
  }

@@ -109,12 +109,12 @@ module Path
     Open.read(self, options)
   end
 
-  def tsv_fields(sep = nil, header_hash = nil)
+  def fields(sep = nil, header_hash = nil)
     produce
-    TSV.parse_header(self.open, sep, header_hash).values_at 0, 1
+    TSV.parse_header(self.open, sep, header_hash)[1]
   end
 
-  def tsv_all_fields(sep = nil, header_hash = nil)
+  def all_fields(sep = nil, header_hash = nil)
     produce
     TSV.parse_header(self.open, sep, header_hash).values_at(0, 1).flatten
   end

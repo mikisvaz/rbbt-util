@@ -35,6 +35,7 @@ class TCHash < TokyoCabinet::HDB
   CONNECTIONS = {}
 
   FIELD_INFO_ENTRIES = {
+    :type             => '__tokyocabinet_hash_type',
     :serializer       => '__tokyocabinet_hash_serializer',
     :identifiers      => '__tokyocabinet_hash_identifiers',
     :datadir          => '__tokyocabinet_hash_datadir',

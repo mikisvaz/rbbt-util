@@ -3,9 +3,9 @@ require 'rbbt/util/tsv/manipulate'
 class TSV
 
   def index(options = {})
-    options = Misc.add_defaults options, :order => false, :persistence => false, :target => :key, :fields => nil, :case_insensitive => case_insensitive, :tsv_serializer => :list
+    options = Misc.add_defaults options, :order => false, :persistence => true, :target => :key, :fields => nil, :case_insensitive => case_insensitive, :tsv_serializer => :list
 
-    new, extra = Persistence.persist(self, :Index, :tsv, options) do |tsv, options, filename|
+    new = Persistence.persist(self, :Index, :tsv, options) do |tsv, options, filename|
       order, target, fields, case_insensitive = Misc.process_options options, :order, :target, :fields, :case_insensitive
 
       new = {}
@@ -80,21 +80,28 @@ class TSV
         values.uniq!
       end
 
-      [new, {:key_field => new_key_field + "|" + new_fields * "|", :fields => [new_key_field], :type => :flat, :filename => (filename.nil? ? nil : "Index:" + filename), :case_insensitive => case_insensitive}]
-    end
+      key_field = case
+                      when new_key_field
+                        new_key_field + "|" + new_fields * "|"
+                      else
+                        nil
+                      end
 
-    new  = TSV.new(new) if Hash === new
-    new.filename = "Index: " + filename.to_s + options.inspect
-    new.fields = extra[:fields]
-    new.key_field = extra[:key_field]
-    new.case_insensitive = extra[:case_insensitive]
-    new.type = extra[:type]
-    new
+      fields = case
+                   when new_key_field.nil?
+                     nil
+                   else
+                     [new_key_field]
+                   end
+
+      new = TSV.new([new, {:key_field => key_field, :fields => fields, :type => :flat, :filename => (filename.nil? ? nil : "Index:" + filename), :case_insensitive => case_insensitive}])
+      new
+    end
   end
 
   def self.index(file, options = {})
     options = Misc.add_defaults options,
-      :persistence => false, :persistence_file => nil, :persistence_update => false, :persistence_source => file, :tsv_serializer => :list,
+      :persistence => true, :persistence_file => nil, :persistence_update => false, :persistence_source => file, :tsv_serializer => :list,
       :data_persistence => false, :data_persistence_file => nil, :data_persistence_update => false, :data_persistence_source => file
 
     options_data = {
@@ -107,12 +114,8 @@ class TSV
     options_data[:type] = :flat if options[:order] == false
 
     new = Persistence.persist(file, :Index, :tsv, options) do |file, options, filename|
-
-      index = TSV.new(file, :double, options_data).index options
-      index
+      TSV.new(file, :double, options_data).index options
     end
-
-    new
   end
 
 
@@ -202,4 +205,44 @@ class TSV
     new
   end
 
+  def self.field_matches(tsv, values)
+    if values.flatten.sort[0..9].compact.collect{|n| n.to_i} == (1..10).to_a
+      return {}
+    end
+
+    key_field = tsv.key_field
+    fields = tsv.fields
+
+    field_values = {}
+    fields.each{|field|
+      field_values[field] = []
+    }
+
+    if type == :double
+      tsv.through do |key,entry_values|
+        fields.zip(entry_values).each do |field,entry_field_values|
+          field_values[field].concat entry_field_values
+        end
+      end
+    else
+      tsv.through do |key,entry_values|
+        fields.zip(entry_values).each do |field,entry_field_values|
+          field_values[field] << entry_field_values
+        end 
+      end
+    end
+
+    field_values.each do |field,field_value_list|
+      field_value_list.replace(values & field_value_list.flatten.uniq)
+    end
+
+    field_values[key_field] = values & tsv.keys
+
+    field_values
+  end
+
+  def field_matches(values)
+    TSV.field_matches(self, values)
+  end
 end
+

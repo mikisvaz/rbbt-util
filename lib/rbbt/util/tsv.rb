@@ -39,6 +39,9 @@ class TSV
     end
   end
 
+  def self.encapsulate_persistence(file, options)
+  end
+
   def initialize(file = {}, type = :double, options = {})
     # Process Options
     
@@ -57,6 +60,8 @@ class TSV
 
     # Extract Filename
 
+    file, extra  = file if Array === file and file.length == 2 and Hash === file.last
+
     @filename = Misc.process_options options, :filename
     @filename ||= case
                   when (String === file and File.exists? file)
@@ -65,9 +70,9 @@ class TSV
                     file
                   when File === file
                     File.expand_path file.path
-                  when TSV === file
+                  when TSV === file 
                     File.expand_path file.filename
-                  when Persistence::TSV === file
+                  when (Persistence::TSV === file and file.filename)
                     File.expand_path file.filename
                   else
                     file.class.to_s
@@ -81,17 +86,21 @@ class TSV
     #         TSV: Duplicate
     case
     when block_given?
-      @data, extra = Persistence.persist(@filename, :TSV, :tsv, options) do |filename, options| yield filename, options end
+      @data, extra = Persistence.persist(@filename, :TSV, :tsv_extra, options.merge(:force_array => true)) do |filename, options| yield filename, options end
+      extra.each do |key, values|
+        self.send("#{ key }=".to_sym, values) if self.respond_to? "#{ key }=".to_sym 
+      end if not extra.nil?
+ 
     else
       case
-      when Hash === file
+      when Hash === file 
         @data = file
       when TSV === file
-        @data = file.dup
+        @data = file.data
       when Persistence::TSV === file
         @data  = file
       else
-        @data, extra = Persistence.persist(@filename, :TSV, :tsv, options) do |filename, options|
+        @data, extra = Persistence.persist(@filename, :TSV, :tsv_extra, options) do |filename, options|
           data, extra = nil
 
           case
@@ -117,14 +126,15 @@ class TSV
           [data, extra]
         end
       end
+
       extra.each do |key, values|
         self.send("#{ key }=".to_sym, values) if self.respond_to? "#{ key }=".to_sym 
       end if not extra.nil?
 
-      return
+      return 
     end
 
-    %w(case_insensitive fields key_field type filename cast).each do |key| 
+    %w(case_insensitive namespace fields key_field type filename cast).each do |key| 
       if @data.respond_to? key
         extra[key] = @data.send(key.to_sym) if options.include? key
       end

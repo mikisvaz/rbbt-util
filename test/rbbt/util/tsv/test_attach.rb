@@ -4,7 +4,7 @@ require 'rbbt/util/tsv/attach'
 require 'rbbt'
 
 class TestAttach < Test::Unit::TestCase
-  def _test_attach_same_key
+  def test_attach_same_key
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -54,7 +54,7 @@ row3    B    Id3
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def _test_attach_source_field
+  def test_attach_source_field
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -92,7 +92,7 @@ B    Id3
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def _test_attach_index
+  def test_attach_index
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -139,7 +139,7 @@ row2    E
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def _test_attach
+  def test_attach
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -186,7 +186,7 @@ B    Id3
 
   end
 
-  def _test_attach_using_index
+  def test_attach_using_index
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -237,9 +237,9 @@ row2    A    B
 
     content2 =<<-EOF
 #: :sep=/\\s+/#:case_insensitive=false
-#ValueE    OtherID
-e    Id1|Id2
-E    Id3
+#OtherID ValueE
+Id1|Id2    e    
+Id3        E    
     EOF
 
     content_identifiers =<<-EOF
@@ -251,7 +251,7 @@ row2    E
 
     tsv1 = tsv2 = identifiers = nil
     TmpFile.with_file(content1) do |filename|
-      tsv1 = TSV.new(File.open(filename), :key => "ValueA")
+      tsv1 = TSV.new(File.open(filename), :key => "Id")
     end
 
     TmpFile.with_file(content2) do |filename|
@@ -262,13 +262,10 @@ row2    E
       identifiers = TSV.new(File.open(filename), :flat, :sep => /\s+/)
     end
 
+    tsv2.identifiers = identifiers
+    tsv1.attach tsv2
  
-    ppp TSV.find_path([tsv1,identifiers,tsv2])
-    ppp TSV.build_traverse_index([tsv1,identifiers,tsv2])
-  
+    assert_equal %w(ValueA ValueB ValueE), tsv1.fields
   end
-
-
-
 end
 

@@ -6,6 +6,7 @@ class TSV
     # Get positions
 
     new_key_position = identify_field new_key_field
+    
     new_field_positions = case
                           when Integer === new_fields
                             [new_fields]
