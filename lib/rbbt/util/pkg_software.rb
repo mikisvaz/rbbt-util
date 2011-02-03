@@ -1,4 +1,5 @@
 require 'rbbt/util/open'
+require 'rbbt/util/misc'
 require 'rbbt/util/tsv'
 require 'rbbt/util/log'
 require 'rbbt/util/cmd'
@@ -52,7 +53,21 @@ module PKGSoftware
 
     FileUtils.mkdir_p File.dirname(path) unless File.exists?(File.dirname(path))
 
-    if get.nil? or get.empty?
+    case
+    when get == :directory
+      FileUtils.mkdir_p File.dirname(path) unless File.exists? File.dirname(path)
+      subdir = Misc.path_relative_to File.dirname(path), opt_dir
+      source = File.join(sharedir, 'install/software', subdir, pkg)
+      
+      FileUtils.cp_r File.join(sharedir, 'install/software', subdir, pkg), path
+    when get == :binary
+      FileUtils.mkdir_p File.dirname(path) unless File.exists? File.dirname(path)
+      subdir = Misc.path_relative_to File.dirname(path), opt_dir
+      source = File.join(sharedir, 'install/software', subdir, pkg)
+      ddd source
+      
+      FileUtils.cp File.join(sharedir, 'install/software', subdir, pkg), path
+    when (get.nil? or get.empty?)
       CMD.cmd("#{File.join(sharedir, 'install', 'software', pkg)} #{File.join(Rbbt.rootdir, 'share/install/software/lib', 'install_helpers')} #{software_dir}", :stderr => Log::HIGH)
     else 
       CMD.cmd("#{File.join(sharedir, 'install', 'software', get)} #{File.join(Rbbt.rootdir, 'share/install/software/lib', 'install_helpers')} #{software_dir}")
