@@ -3,7 +3,7 @@ class TSV
   #{{{ Attach Methods
   
   def attach_same_key(other, fields = nil)
-    fields = other.fields if fields.nil?
+    fields = other.fields - [key_field].concat(self.fields) if fields.nil?
 
     through do |key, values|
       next unless other.include? key
@@ -17,7 +17,11 @@ class TSV
   end
 
   def attach_source_key(other, source, fields = nil)
-    fields = other.fields if fields.nil?
+    fields = other.fields - [key_field].concat(self.fields) if fields.nil?
+
+    other = other.tsv unless TSV === other
+    field_positions = fields.collect{|field| other.identify_field field}
+    field_names     = field_positions.collect{|pos| pos == :key ? other.key_field : other.fields[pos] }
 
     through do |key, values|
       source_keys = values[source]
@@ -26,7 +30,14 @@ class TSV
       all_new_values = []
       source_keys.each do |source_key|
         next unless other.include? source_key
-        new_values = other[source_key].values_at *fields
+        new_values = field_positions.collect do |pos|
+          if pos == :key
+            source_key
+          else
+            other[source_key][pos]
+          end
+        end
+
         new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
         new_values.collect!{|v| v.first} if not type == :double and     other.type == :double
         all_new_values << new_values
@@ -41,11 +52,11 @@ class TSV
       end
     end
 
-    self.fields = self.fields.concat other.fields.values_at *fields
+    self.fields = self.fields.concat field_names
   end
 
   def attach_index(other, index, fields = nil)
-    fields = other.fields if fields.nil?
+    fields = other.fields - [key_field].concat(self.fields) if fields.nil?
 
     other = other.tsv unless TSV === other
     field_positions = fields.collect{|field| other.identify_field field}
@@ -136,7 +147,6 @@ class TSV
     identifiers1 = tsv1.identifier_files || []
     identifiers2 = tsv2.identifier_files || []
 
-
     identifiers1.unshift tsv1
     identifiers2.unshift tsv2
 
@@ -155,6 +165,8 @@ class TSV
   end
 
   def attach(other, fields = nil)
+    fields = other.fields - [key_field].concat(self.fields) if fields.nil?
+    Log.high("Attaching fields:#{fields.inspect} from #{other.filename.inspect}.")
     case
     when key_field == other.key_field
       attach_same_key other, fields
@@ -165,6 +177,7 @@ class TSV
       raise "Cannot traverse identifiers" if index.nil?
       attach_index other, index, fields
     end
+    Log.medium("Attachment of fields:#{fields.inspect} from #{other.filename.inspect} finished.")
   end
 
 end

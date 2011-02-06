@@ -5,7 +5,7 @@ require 'rbbt/sources/organism'
 
 class TestPath < Test::Unit::TestCase
   def test_namespace
-    assert_equal "Rbbt", Rbbt.files.foo.namespace
+    assert_equal nil, Rbbt.files.foo.namespace
   end
  
   def test_indentifier_files

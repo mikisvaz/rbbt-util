@@ -4,7 +4,7 @@ require 'rbbt/util/tsv/index'
 
 class TestTSVManipulate < Test::Unit::TestCase
 
-  def test_index
+  def _test_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -26,7 +26,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_index_headerless
+  def _test_index_headerless
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -40,7 +40,7 @@ row2    A    B    Id3
   end
 
 
-  def test_best_index
+  def _test_best_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b|A    Id1
@@ -96,7 +96,7 @@ C    B    Id3
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def test_index_to_key
+  def _test_index_to_key
      content =<<-EOF
 #: :sep=/\\s+/
 #Id    ValueA    ValueB
@@ -109,5 +109,50 @@ row2    A    B
       tsv1 = TSV.new(File.open(filename), :double, :sep => /\s+/, :key => "ValueA", :case_insensitive =>  true)
     end
   end
+
+  # {{{ Test sorted index
+
+  def load_data(data)
+    Log.debug("Data:\n#{Open.read(data)}")
+    tsv = TSV.new(data, :list, :sep=>":", :cast => proc{|e| e =~ /(\s*)(_*)/; ($1.length..($1.length + $2.length - 1))})
+    tsv.add_field "Start" do |key, values|
+      values["Range"].first
+    end
+    tsv.add_field "End" do |key, values|
+      values["Range"].last
+    end
+
+    ddd tsv.fields
+    tsv = tsv.slice ["Start", "End"]
+    ddd tsv.fields
+ 
+    tsv
+  end
+
+  def test_sorted_index
+    data =<<-EOF
+#ID:Range
+#:012345678901234567890
+a:   ______
+b: ______
+c:    _______
+d:  ____
+e:    ______
+f:             ___
+g:         ____
+    EOF
+    TmpFile.with_file(data) do |datafile|
+      tsv = load_data(datafile)
+      f   = tsv.sorted_index
+
+      assert_equal %w(), f[0].sort
+      assert_equal %w(b), f[1].sort
+      assert_equal %w(), f[20].sort
+      assert_equal %w(), f[(20..100)].sort
+      assert_equal %w(a b d), f[3].sort
+      assert_equal %w(a b c d e), f[(3..4)].sort
+    end
+  end
+
 end
 

@@ -161,6 +161,10 @@ row3    a    C    Id4
       
       new = tsv.select %w(b Id4)
       assert_equal %w(row1 row3).sort, new.keys.sort
+
+
+      new = tsv.select do |k,v| v["ValueA"].include? "A" end
+      assert_equal %w(row2).sort, new.keys.sort
     end
   end
 

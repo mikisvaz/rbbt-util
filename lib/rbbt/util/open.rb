@@ -163,6 +163,7 @@ module Open
          when (not remote?(url))
            file_open(url, options[:grep])
          when options[:nocache]
+           # What about grep?
            wget(url, wget_options)
          when in_cache(url, wget_options)
            file_open(in_cache(url, wget_options), options[:grep])
@@ -172,8 +173,8 @@ module Open
            io.close
            file_open(in_cache(url, wget_options), options[:grep])
          end
-    io = unzip(io)  if (zip?  url and not options[:noz]) or options[:zip]
-    io = gunzip(io) if (gzip? url and not options[:noz]) or options[:gzip]
+    io = unzip(io)  if (zip?(url)  and not options[:noz]) or options[:zip]
+    io = gunzip(io) if (gzip?(url) and not options[:noz]) or options[:gzip]
 
     if block_given?
       yield io 

@@ -63,7 +63,7 @@ class TSV
       :identifiers      => nil,
 
       :merge            => false,
-      :keep_empty       => true,
+      :keep_empty       => (type == :single and type == :flat),
       :cast             => nil,
 
       :header_hash      => '#',
@@ -158,7 +158,7 @@ class TSV
           other_pos.delete key_pos
         end
 
-        if type == :flat
+        if type == :flat 
           extra = parts.values_at(*other_pos).collect{|f| parse_fields(f, sep2)}.flatten
         else
           extra = parts.values_at(*other_pos).collect{|f| parse_fields(f, sep2).first}

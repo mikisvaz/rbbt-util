@@ -113,7 +113,7 @@ module PKGData
     when (String === get and Open.remote? get)
       Open.write(file, Open.read(get, :wget_options => {:pipe => true}, :nocache => true))
     else
-      raise "Unknown Get: #{get.class}"
+      raise "Unknown Get: #{get.class} #{get}"
     end
   end
 end

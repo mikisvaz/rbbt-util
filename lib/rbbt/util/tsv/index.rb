@@ -1,11 +1,19 @@
 require 'rbbt/util/tsv/manipulate'
+require 'rbbt/util/fix_width_table'
 
 class TSV
 
   def index(options = {})
     options = Misc.add_defaults options, :order => false, :persistence => true, :target => :key, :fields => nil, :case_insensitive => case_insensitive, :tsv_serializer => :list
 
-    new = Persistence.persist(self, :Index, :tsv, options) do |tsv, options, filename|
+    prefix = case
+             when options[:target]
+               "Index[#{options[:target]}]"
+             else
+               "Index[:key]"
+             end
+
+    new = Persistence.persist(self, prefix, :tsv, options) do |tsv, options, filename|
       order, target, fields, case_insensitive = Misc.process_options options, :order, :target, :fields, :case_insensitive
 
       new = {}
@@ -113,7 +121,14 @@ class TSV
 
     options_data[:type] = :flat if options[:order] == false
 
-    new = Persistence.persist(file, :Index, :tsv, options) do |file, options, filename|
+    prefix = case
+             when options[:target]
+               "Index_static[#{options[:target]}]"
+             else
+               "Index_static[:key]"
+             end
+
+    new = Persistence.persist(file, prefix, :tsv, options) do |file, options, filename|
       TSV.new(file, :double, options_data).index options
     end
   end
@@ -244,5 +259,47 @@ class TSV
   def field_matches(values)
     TSV.field_matches(self, values)
   end
+
+  def sorted_index(pos_start = nil, pos_end = nil)
+    raise "Please specify indexing fields" if (pos_start.nil? and fields.length > 2)
+
+
+    case
+    when (pos_start.nil? and pos_end.nil? and fields.length == 2)
+      pos_start = fields.first
+      pos_end   = fields.last
+    when (pos_start.nil? and pos_end.nil? and fields.length == 1)
+      pos_start = fields.first
+    end
+
+    range = ! pos_end.nil?
+
+    index = Persistence.persist(filename, "SortedIndex[#{range ? pos_start + ":" + pos_end: pos_start}]", :fwt, :start => pos_start, :end => pos_end, :range => range) do |filename, options|
+      pos_start, pos_end, range = Misc.process_options options, :start, :end, :range
+      data = case
+             when (type == :double and range)
+               collect do |key, values|
+                 p_start, p_end = values.values_at pos_start, pos_end
+                 next if p_start.nil? or p_end.nil? or p_start.empty? or p_end.empty?
+                 [[p_start.first, p_end.first], key]
+               end
+             when (type == :double and not range)
+               collect do |key, values|
+                 p_start = values.values_at pos_start
+                 next if p_start.nil? or p_start.empty? 
+                 [p_start.first, key]
+               end
+             when range
+               slice [pos_start, pos_end]
+             else
+               slice pos_start
+             end
+      data
+    end
+
+    index
+  end
+
+
 end
 

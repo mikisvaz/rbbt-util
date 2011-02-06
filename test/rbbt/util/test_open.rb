@@ -83,7 +83,6 @@ class TestOpen < Test::Unit::TestCase
       FileUtils.rm file + '.gz'
     end
   end
-
   
 end
 

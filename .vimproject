@@ -27,6 +27,7 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    filecache.rb
    open.rb
    tc_hash.rb
+   fix_width_table.rb
    persistence.rb
 
    tsv.rb

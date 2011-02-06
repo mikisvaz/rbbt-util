@@ -6,6 +6,7 @@ module Path
   attr_accessor :pkg_module, :datadir
 
   def self.find_files_back_to(path, target, subdir)
+    return [] if path.nil?
     raise "Path #{ path } not in directory #{ subdir }" if not Misc.in_directory? path, subdir
 
     pkg_module = path.pkg_module
@@ -56,15 +57,16 @@ module Path
 
   def namespace
     return nil if pkg_module.nil? 
-    file, producer = Misc.string2const(pkg_module).reclaim self
-    namespace = case
-                when (not producer.nil? and not producer[:namespace].nil?)
-                  producer[:namespace]
-                else
-                  pkg_module.to_s
-                end
-    namespace.extend NameSpace
-    namespace
+    mod = Misc.string2const(pkg_module)
+    file, producer = mod.reclaim self
+    case
+    when (not producer.nil? and not producer[:namespace].nil?)
+      namespace = producer[:namespace]
+      namespace.extend NameSpace
+      namespace
+    else
+      return nil
+    end
   end
 
   def identifiers_in_path
@@ -118,6 +120,10 @@ module Path
     produce
     TSV.parse_header(self.open, sep, header_hash).values_at(0, 1).flatten
   end
+
+  def filename
+    self.to_s
+  end 
 
   def exists?
     begin

@@ -42,12 +42,12 @@ class TSV
   def self.encapsulate_persistence(file, options)
   end
 
-  def initialize(file = {}, type = :double, options = {})
+  def initialize(file = {}, type = nil, options = {})
     # Process Options
     
     if Hash === type
       options = type 
-      type    = :double 
+      type    = nil
     end
 
     ## Remove options from filename
@@ -100,7 +100,7 @@ class TSV
       when Persistence::TSV === file
         @data  = file
       else
-        @data, extra = Persistence.persist(@filename, :TSV, :tsv_extra, options) do |filename, options|
+        @data, extra = Persistence.persist(@filename, :TSV, :tsv_extra, options) do |file, options, filename|
           data, extra = nil
 
           case
@@ -119,9 +119,13 @@ class TSV
             file = Open.grep(file, options[:grep]) if options[:grep]
             data, extra = TSV.parse(file, options)
             ## Encapsulate Hash or TSV
+          when block_given?
+            data 
           else
             raise "Unknown input in TSV.new #{file.inspect}"
           end
+
+          extra[:filename] = filename
 
           [data, extra]
         end

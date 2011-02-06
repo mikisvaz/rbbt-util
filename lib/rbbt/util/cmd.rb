@@ -82,11 +82,12 @@ module CMD
     sout, serr = IO.pipe, IO.pipe
 
     case 
-    when (IO === in_content and not StringIO === in_content)
+    when (false and (IO === in_content and not StringIO === in_content))
       sin = [in_content, nil]
-    else StringIO === in_content
+    else 
       sin = IO.pipe
     end
+
 
     pid = fork {
       begin
@@ -94,7 +95,6 @@ module CMD
         sin.last.close if sin.last
         STDIN.reopen sin.first
         sin.first.close
-
 
         serr.first.close
         STDERR.reopen serr.last
@@ -115,16 +115,17 @@ module CMD
     sout.last.close
     serr.last.close
 
+
     Log.debug "CMD: [#{pid}] #{cmd}"
 
     case 
     when String === in_content
       sin.last.write in_content
       sin.last.close
-    when StringIO === in_content
+    when IO === in_content
       Thread.new do
-        while l = in_content.gets
-          sin.last.write l
+        while not in_content.eof?
+          sin.last.write in_content.gets
         end
         sin.last.close
       end

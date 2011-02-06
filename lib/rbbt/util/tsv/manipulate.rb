@@ -116,12 +116,18 @@ class TSV
         end
       end
 
-      # TODO Fix the filename to be more informative
-      [new, {:fields => new_fields, :key_field => new_key_field, :filename => "Reorder: #{ tsv.filename }", :type => tsv.type, :case_insensitive => tsv.case_insensitive}]
-    end
+      new = TSV.new new
 
-    new = TSV.new new
-    extra.each do |key, values| new.send("#{ key }=".to_sym, values) end if not extra.nil?
+      new.fields = new_fields
+      new.key_field = new_key_field
+      new.filename = "Reorder: #{ tsv.filename }"
+      new.type = type
+      new.case_insensitive = case_insensitive
+      new.namespace = namespace
+      new.identifiers = identifiers 
+
+      new
+    end 
 
     new
   end
@@ -157,15 +163,19 @@ class TSV
     elems.sort_by{|k,v| v}.collect{|k,v| k}
   end
 
-  def select(method)
+  def select(method = nil)
     new = TSV.new({})
     new.key_field = key_field
     new.fields    = fields.dup
     new.type      = type
-    new.filename  = filename + "#Select: #{method.inspect}"
+    new.filename  = filename + "#Select: #{method.inspect}" if filename
     new.case_insensitive  = case_insensitive
     
     case
+    when (method.nil? and block_given?)
+      through do |key, values|
+        new[key] = values if yield key, values
+      end
     when Array === method
       through do |key, values|
         new[key] = values if ([key,values].flatten & method).any?

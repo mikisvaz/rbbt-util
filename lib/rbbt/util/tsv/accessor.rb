@@ -39,6 +39,11 @@ class TSV
     def namespace
       Field.namespace(self) || @namespace
     end
+
+    def matching_namespaces(other)
+      return true if namespace.nil?
+      return namespace == other.namespace
+    end
   end
 
   def identifier_files
@@ -56,8 +61,10 @@ class TSV
       [Path.path(identifiers, datadir, namespace)]
     when (not namespace.nil? and Misc.string2const(namespace) and Misc.string2const(namespace).respond_to? :identifier_files)
       Misc.string2const(namespace).identifier_files
-    else
+    when filename
       Path.path(filename, datadir, namespace).identifier_files
+    else
+      []
     end
   end
 
@@ -161,7 +168,7 @@ class TSV
     if block_given?
       @data.collect do |key, value|
         value = follow(value)
-        key, values = yield key, value
+        yield key, value
       end
     else
       @data.collect do |key, value|

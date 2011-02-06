@@ -117,7 +117,9 @@ module Persistence
       res
     else
       Log.debug "Loading #{ persistence_file }. Prefix = #{prefix}"
-      Object::TSV.new persistence_file, :filename => filename
+      tsv = Object::TSV.new persistence_file
+      tsv.filename = filename
+      tsv
     end
   end
 
@@ -158,11 +160,13 @@ module Persistence
 
       per.write
       per.merge! res
+
       Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
         if res.respond_to?(key.to_sym)  and per.respond_to?(key.to_sym)
           per.send "#{key}=".to_sym, res.send(key.to_sym) 
         end
       end
+
       per.read
 
       tsv = Object::TSV.new per
@@ -183,6 +187,7 @@ module Persistence
           tsv.send "#{key}=".to_sym, per.send(key.to_sym) 
         end
       end
+
       tsv
     end
   end
@@ -228,6 +233,60 @@ module Persistence
     end
   end
 
+  def self.persist_fwt(file, prefix = "", options = {})
+    options = 
+      Misc.add_defaults options, :persistence_update => false, :persistence_file => nil, :filename => nil
+    persistence_update, persistence_file, filename =
+      Misc.process_options options, :persistence_update, :persistence_file, :filename
+
+    filename         ||= get_filename(file)
+    persistence_file ||= get_persistence_file(filename, prefix, options)
+
+    if persistence_update or not File.exists? persistence_file
+      Log.debug "Creating #{ persistence_file }. Prefix = #{prefix}"
+
+      range = options[:range]
+
+      res = yield file, options, filename, persistence_file
+
+      if File.exists? persistence_file
+        Log.debug "Erasing old #{ persistence_file }. Prefix = #{prefix}"
+        FileUtils.rm persistence_file
+      end
+
+
+      max_length = res.collect{|k,v| k.length}.max
+
+      if range
+        begin
+          fwt = FixWidthTable.new persistence_file, max_length, true
+          fwt.add_range res
+        rescue
+          FileUtils.rm persistence_file
+          raise $!
+        end
+      else
+        begin
+          fwt = FixWidthTable.new persistence_file, max_length, false
+          fwt.add_point res
+        rescue
+          FileUtils.rm persistence_file
+          raise $!
+        end
+      end
+
+      fwt.read
+
+      fwt
+    else
+      Log.debug "Loading #{ persistence_file }. Prefix = #{prefix}"
+
+      fwt = FixWidthTable.new persistence_file, nil, nil
+
+      fwt
+    end
+  end
+
   def self.persist(file, prefix = "", persistence_type = :string, options = {}, &block)
     options = Misc.add_defaults options, :persistence => true
     persistence =
@@ -237,7 +296,7 @@ module Persistence
 
     if not persistence
       Log.low "Non Persistent Loading for #{filename}. Prefix: #{prefix}"
-      yield file, options
+      yield file, options, filename
     else
       Log.low "Persistent Loading for #{filename}. Prefix: #{prefix}. Type #{persistence_type.to_s}"
 
@@ -254,120 +313,9 @@ module Persistence
         persist_tsv_string(file, prefix, options, &block)
       when :tsv_extra
         persist_tsv_extra(file, prefix, options, &block)
+      when :fwt
+        persist_fwt(file, prefix, options, &block)
       end
-    end
-  end
-
-
-  def self.persist2(file, prefix = "", persistence_type = :string, options = {})
-    options = Misc.add_defaults options, :persistence => false, :persistence_file => nil, :persistence_update => false, :tsv_serializer => :marshal, :force_array => false
-
-    persistence, persistence_file, persistece_update, tsv_serializer, force_array =
-      Misc.process_options options, :persistence, :persistence_file, :persistence_update, :tsv_serializer, :force_array
-
-    persistence = true if not persistence_file.nil?
-
-    filename = Misc.process_options options, :persistence_source
-    filename ||= case
-                 when (String === file and File.exists? file)
-                   File.expand_path file
-                 when File === file
-                   File.expand_path file.path
-                 when Object::TSV === file
-                   file.filename
-                 when String === file
-                   file
-                 else
-                   file.class.to_s
-                 end
-
-    if persistence
-      persistence_file ||= get_persistence_file(filename, prefix, options)
-
-      #{{{ CREATE
-      if persistece_update or not File.exists? persistence_file
-        Log.low "Creating Persistent #{prefix} for #{ filename }"
-
-        res = yield file, options, filename, persistence_file
-
-        if Array === res and res.length == 2 and (Hash === res[1] or res[1].nil?)
-          data, extra = res
-        else
-          data, extra = [res, nil]
-        end
-
-        case persistence_type.to_sym
-        when :tsv 
-          if Hash === data or Object::TSV === data 
-            tsv_serializer ||= case
-                               when (not Object::TSV === data)
-                                 :marshal
-                               when data.type == :double
-                                 :double
-                               when data.type == :single
-                                 :single
-                               else
-                                 :list
-                               end
-
-            Log.debug "Creating [#{tsv_serializer}] #{Persistence::TSV} in #{ persistence_file }"
-
-
-            per = Persistence::TSV.get persistence_file, true, tsv_serializer
-            per.write
-            per.merge! data
-
-            Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
-              if data.respond_to?(key.to_sym)  and per.respond_to?(key.to_sym)
-                per.send "#{key}=".to_sym, data.send(key.to_sym) 
-              else
-                per.send "#{key}=".to_sym, extra[key.to_sym] if extra and extra.include? key.to_sym
-              end
-            end
-            per.read
-
-            data = per
-          end
-        when :string
-          Open.write(persistence_file, data.to_s)
-        when :marshal
-          Open.write(persistence_file, Marshal.dump(data))
-        when :yaml
-          Open.write(persistence_file, YAML.dump(data))
-        end
-
-        if Array === res and res.length == 2 and (Hash === res[1] or res[1].nil?)
-          if persistence_type.to_sym == :tsv and not force_array
-            Object::TSV.new [data, extra]
-          else
-            return [data, extra]
-          end
-        else
-          return data
-        end
-
-        #{{{ LOAD
-      else
-        Log.low "Opening Persistent #{prefix} for #{ filename }"
-        case persistence_type.to_sym
-        when :tsv
-          data        = Persistence::TSV.get persistence_file
-
-          extra = {}
-          Persistence::TSV::FIELD_INFO_ENTRIES.keys.each{|key| extra[key.to_sym] = data.send key.to_sym}
-
-          return [data, extra]
-        when :string
-          return [Open.read(persistence_type), nil]
-        when :marshal
-          return [File.open(persistence_file){|f| Marshal.load(f)}, nil]
-        when :yaml
-          return [File.open(persistence_file){|f| YAML.load(f)}, nil]
-        end
-      end
-    else
-      Log.low "Non Persistent #{prefix} for #{ filename }"
-      yield file, options
     end
   end
 end
