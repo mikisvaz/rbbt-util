@@ -3,7 +3,7 @@ require 'rbbt/util/persistence'
 
 class TestPersistence < Test::Unit::TestCase
 
-  def _test_string
+  def test_string
     string = "test string"
     TmpFile.with_file do |f|
       Persistence.persist("token_file", :Test, :string, :persistence_file => f) do string end
@@ -14,7 +14,7 @@ class TestPersistence < Test::Unit::TestCase
     end
   end
 
-  def _test_yaml
+  def test_yaml
     object = [1,2,2]
     TmpFile.with_file do |f|
       Persistence.persist("token_file", :Test, :yaml, :persistence_file => f) do object end
@@ -26,7 +26,7 @@ class TestPersistence < Test::Unit::TestCase
     end
   end
 
-  def _test_marshal
+  def test_marshal
     object = [1,2,2]
     TmpFile.with_file do |f|
       Persistence.persist("token_file", :Test, :marshal, :persistence_file => f) do object end
@@ -38,7 +38,7 @@ class TestPersistence < Test::Unit::TestCase
     end
   end
 
-  def _test_tsv
+  def test_tsv
     object = {:a => 1, :b => 2}
     TmpFile.with_file do |f|
       Persistence.persist("token_file", :Test, :tsv_extra, :persistence_file => f) do 
@@ -55,7 +55,7 @@ class TestPersistence < Test::Unit::TestCase
     end
   end
   
-  def _test_tsv2
+  def test_tsv2
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -97,7 +97,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_tsv4
+  def test_tsv4
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2

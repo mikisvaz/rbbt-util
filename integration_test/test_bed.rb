@@ -3,10 +3,10 @@ require 'rbbt-util'
 require 'rbbt/sources/organism'
 
 class TestBed < Test::Unit::TestCase
-  def _test_tsv_speed
+  def test_tsv_speed
     data = nil
     profile do
-      data = TSV.new _test_datafile("Metastasis.tsv"), :unique=> true
+      data = TSV.new test_datafile("Metastasis.tsv"), :unique=> true
     end
 
     profile do
@@ -14,12 +14,12 @@ class TestBed < Test::Unit::TestCase
     end
   end
 
-  def _test_genes
+  def test_genes
     require 'rbbt/sources/organism'
     require 'rbbt/sources/kegg'
     require 'rbbt/sources/pharmagkb'
 
-    data = TSV.new _test_datafile('genes.txt'), :persistence => false
+    data = TSV.new test_datafile('genes.txt'), :persistence => false
     data.key_field = "Associated Gene Name"
     data.fields = []
     data.identifiers = Organism::Hsa.identifiers
@@ -42,7 +42,7 @@ class TestBed < Test::Unit::TestCase
 
   end
 
-  def _test_index
+  def test_index
     index = Organism.Hsa.identifiers.index 
     index = Organism.Hsa.identifiers.index 
     assert_equal "1020", Misc.first(index["CDK5"])
@@ -95,11 +95,11 @@ class TestBed < Test::Unit::TestCase
     #puts data.to_s
   end
 
-  def _test_namespace_identifiers
+  def test_namespace_identifiers
     assert_equal Rbbt.files.Organism.Hsa.identifiers, Rbbt.files.Organism.Hsa.gene_positions.namespace_identifiers.first
   end
 
-  def _test_index
+  def test_index
     i = nil
     profile false do
       i = Organism.Hsa.identifiers.index :persistence => true, :persistence_update => true, :order => false, :target => "Associated Gene Name"
@@ -109,15 +109,15 @@ class TestBed < Test::Unit::TestCase
     assert i["1020"].include? "CDK5"
   end
 
-  def _test_organism
+  def test_organism
     Organism.Hsa.identifiers2.index :target => "Ensembl Protein ID", :persistence => false
   end
 
-  def _test_NGS
+  def test_NGS
     require 'rbbt/sources/kegg'
     require 'rbbt/sources/pharmagkb'
 
-    data = TSV.new _test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
+    data = TSV.new test_datafile("Metastasis.tsv"), :type=> :list, :key => "Position"
     data.identifiers = Organism::Hsa.identifiers
     data.attach KEGG.gene_pathway
   end

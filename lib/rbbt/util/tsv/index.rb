@@ -101,7 +101,7 @@ class TSV
                    else
                      [new_key_field]
                    end
-      new = TSV.new([new, {:key_field => key_field, :fields => fields, :type => :flat, :filename => (filename.nil? ? nil : "Index:" + filename), :case_insensitive => case_insensitive}])
+      new = TSV.new([new, {:namespace => namespace, :key_field => key_field, :fields => fields, :type => :flat, :filename => (filename.nil? ? nil : "Index:" + filename), :case_insensitive => case_insensitive}])
       new
     end
   end
@@ -128,7 +128,7 @@ class TSV
              end
 
     new = Persistence.persist(file, prefix, :tsv, options) do |file, options, filename|
-      TSV.new(file, :double, options_data).index options
+      TSV.new(file, :double, options_data).index options.merge :persistence => false, :persistence_file => nil
     end
   end
 
@@ -261,7 +261,6 @@ class TSV
 
   def sorted_index(pos_start = nil, pos_end = nil)
     raise "Please specify indexing fields" if (pos_start.nil? and fields.length > 2)
-
 
     case
     when (pos_start.nil? and pos_end.nil? and fields.length == 2)

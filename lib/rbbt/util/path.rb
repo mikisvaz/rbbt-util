@@ -1,6 +1,5 @@
- 'rbbt/util/misc'
+require 'rbbt/util/misc'
 require 'rbbt/util/tsv'
-require 'rbbt/util/namespace'
 
 module Path
   attr_accessor :pkg_module, :datadir
@@ -106,13 +105,24 @@ module Path
 
   def fields(sep = nil, header_hash = nil)
     produce
-    TSV.parse_header(self.open, sep, header_hash)[1]
+    TSV.parse_header(self.open, sep, header_hash)[1].collect{|f| f.extend TSV::Field; f.namespace = namespace ;f}
   end
 
   def all_fields(sep = nil, header_hash = nil)
     produce
-    TSV.parse_header(self.open, sep, header_hash).values_at(0, 1).flatten
+    key_field, fields = TSV.parse_header(self.open, sep, header_hash).values_at(0, 1).flatten.collect{|f| f.extend TSV::Field; f.namespace = namespace; f}
   end
+
+  def fields_in_namespace(sep = nil, header_hash = nil)
+    produce
+    TSV.parse_header(self.open, sep, header_hash)[1].collect{|f| f.extend TSV::Field; f.namespace = namespace ;f}.select{|f| f.namespace == namespace}
+  end
+
+  def all_namespace_fields(sep = nil, header_hash = nil)
+    produce
+    key_field, fields = TSV.parse_header(self.open, sep, header_hash).values_at(0, 1).flatten.collect{|f| f.extend TSV::Field; f.namespace = namespace; f}.select{|f| f.namespace == namespace}
+  end
+
 
   def filename
     self.to_s

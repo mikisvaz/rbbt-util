@@ -6,11 +6,18 @@ class TSV
     fields = other.fields - [key_field].concat(self.fields) if fields.nil?
 
     through do |key, values|
-      next unless other.include? key
-      new_values = other[key].values_at *fields
-      new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
-      new_values.collect!{|v| v.first} if not type == :double and     other.type == :double
-      self[key] = self[key].concat new_values
+      if other.include? key
+        new_values = other[key].values_at *fields
+        new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
+        new_values.collect!{|v| v.first} if not type == :double and     other.type == :double
+        self[key] = self[key].concat new_values
+      else
+        if type == :double
+          self[key] = self[key].concat [[]] * fields.length
+        else
+          self[key] = self[key].concat [""] * fields.length
+        end
+      end
     end
 
     self.fields = self.fields.concat other.fields.values_at *fields
@@ -25,30 +32,38 @@ class TSV
 
     through do |key, values|
       source_keys = values[source]
-      next if source_keys.nil? or source_keys.empty?
-
-      all_new_values = []
-      source_keys.each do |source_key|
-        next unless other.include? source_key
-        new_values = field_positions.collect do |pos|
-          if pos == :key
-            source_key
-          else
-            other[source_key][pos]
+      if source_keys.nil? or source_keys.empty?
+        all_new_values = []
+      else
+        all_new_values = []
+        source_keys.each do |source_key|
+          next unless other.include? source_key
+          new_values = field_positions.collect do |pos|
+            if pos == :key
+              source_key
+            else
+              other[source_key][pos]
+            end
           end
-        end
 
-        new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
-        new_values.collect!{|v| v.first} if not type == :double and     other.type == :double
-        all_new_values << new_values
+          new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
+          new_values.collect!{|v| v.first} if not type == :double and     other.type == :double
+          all_new_values << new_values
+        end
       end
 
-      next if all_new_values.empty?
-
-      if type == :double
-        self[key] = self[key].concat TSV.zip_fields(all_new_values).collect{|l| l.flatten}
+      if all_new_values.empty?
+        if type == :double
+          self[key] = self[key].concat [[]] * field_positions.length
+        else
+          self[key] = self[key].concat [""] * field_positions.length
+        end
       else
-        self[key] = self[key].concat all_new_values.first
+        if type == :double
+          self[key] = self[key].concat TSV.zip_fields(all_new_values).collect{|l| l.flatten}
+        else
+          self[key] = self[key].concat all_new_values.first
+        end
       end
     end
 
@@ -64,29 +79,37 @@ class TSV
 
     through do |key, values|
       source_keys = index[key]
-      next if source_keys.nil? or source_keys.empty?
-
-      all_new_values = []
-      source_keys.each do |source_key|
-        next unless other.include? source_key
-        new_values = field_positions.collect do |pos|
-          if pos == :key
-            source_key
-          else
-            other[source_key][pos]
+      if source_keys.nil? or source_keys.empty?
+        all_new_values = []
+      else
+        all_new_values = []
+        source_keys.each do |source_key|
+          next unless other.include? source_key
+          new_values = field_positions.collect do |pos|
+            if pos == :key
+              source_key
+            else
+              other[source_key][pos]
+            end
           end
+          new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
+          new_values.collect!{|v| v.first} if not type == :double and     other.type == :double
+          all_new_values << new_values
         end
-        new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
-        new_values.collect!{|v| v.first} if not type == :double and     other.type == :double
-        all_new_values << new_values
       end
 
-      next if all_new_values.empty?
-
-      if type == :double
-        self[key] = self[key].concat TSV.zip_fields(all_new_values).collect{|l| l.flatten}
+      if all_new_values.empty?
+        if type == :double
+          self[key] = self[key].concat [[]] * field_positions.length
+        else
+          self[key] = self[key].concat [""] * field_positions.length
+        end
       else
-        self[key] = self[key].concat all_new_values.first
+        if type == :double
+          self[key] = self[key].concat TSV.zip_fields(all_new_values).collect{|l| l.flatten}
+        else
+          self[key] = self[key].concat all_new_values.first
+        end
       end
     end
 
@@ -98,16 +121,21 @@ class TSV
   # May make an extra index!
   def self.find_path(files, in_namespace = false)
     if in_namespace
-      ids = files.first.all_namespace_fields 
+      ids = [files.first.all_namespace_fields(in_namespace)]
       ids += files[1..-1].collect{|f| f.all_fields}
     else
       ids = files.collect{|f| f.all_fields}
     end
     id_list = []
 
+    ids.flatten.each do |field|
+    end
+
     ids.each_with_index do |list, i|
       break if i == ids.length - 1
-      match = list & ids[i + 1]
+      match = list.select{|field| 
+        ids[i + 1].select{|f| field == f}.any?
+      }
       return nil if match.empty?
       id_list << match.first
     end
@@ -121,7 +149,7 @@ class TSV
   end
 
   def self.build_traverse_index(files, in_namespace = false)
-    path = find_path(files)
+    path = find_path(files, in_namespace)
 
     return nil if path.nil?
     
@@ -137,7 +165,7 @@ class TSV
 
     while not path.empty?
       current_id, current_file = path.shift
-      current_index   = current_file.index :target => current_id, :fields => index.fields.first, :persistence =>  true
+      current_index   = current_file.index :target => current_id, :fields => index.fields.first, :persistence => true
       index.process 0 do |value|
         current_index.values_at(*value).flatten.uniq
       end
@@ -172,7 +200,8 @@ class TSV
     options = Misc.add_defaults options, :in_namespace => true
     in_namespace = Misc.process_options options, :in_namespace
 
-    fields = other.fields - [key_field].concat(self.fields) if fields.nil?
+    fields = other.fields - [key_field].concat(self.fields) if fields == :all
+    fields = other.fields_in_namespace - [key_field].concat(self.fields) if fields.nil?
     Log.high("Attaching fields:#{fields.inspect} from #{other.filename.inspect}.")
     case
     when key_field == other.key_field

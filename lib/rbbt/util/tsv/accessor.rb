@@ -30,9 +30,21 @@ class TSV
       namespace_str
     end
 
+    def fullname
+      return self if self =~ /:/ or namespace.nil?
+      namespace + ":" << self
+    end
+
     def ==(string)
       return false unless String === string
-      self.casecmp(string) == 0 || self.sub(/.*:/,'').casecmp(string) == 0
+      return true if self.casecmp(string) == 0
+      if Field === string
+        return true if self.fullname.casecmp(string.fullname) == 0
+      else
+        return true if self.fullname.casecmp(string)  == 0
+      end
+      return true if self.sub(/.*:/,'').casecmp(string) == 0
+      return false
     end
 
     def namespace
@@ -67,31 +79,34 @@ class TSV
     end
   end
 
-  def fields_in_namespace
+  def fields_in_namespace(namespace = nil)
+    namespace = self.namespace if namespace == nil or TrueClass === namespace
     fields.select{|f| f.namespace.nil? or f.namespace == namespace}
   end
 
   def fields
     return nil if @fields.nil?
-    fields = @fields
-    fields.each do |f| f.extend Field end if Array === fields
-    fields.each do |f| f.namespace = namespace end unless namespace.nil?
-    NamedArray.name(fields, @fields)
+    fds = @fields
+    fds.each do |f| f.extend Field end if Array === @fields
+    fds.each do |f| f.namespace = namespace end unless namespace.nil?
+    NamedArray.name(fds, @fields)
   end
 
   def all_fields
     return nil if @fields.nil?
-    fields = @fields.dup
-    fields.unshift key_field
-    fields.each do |f| f.extend Field end if Array === fields
-    fields.each do |f| f.namespace = namespace end unless namespace.nil?
-    NamedArray.name(fields, [key_field] +  @fields)
-    fields
+    all_fields = @fields.dup
+    all_fields.unshift key_field
+    all_fields.each do |f| f.extend Field end if Array === @fields
+    all_fields.each do |f| f.namespace = namespace end unless namespace.nil?
+    NamedArray.name(all_fields, [key_field] +  @fields)
+    all_fields
   end
 
-  def all_namespace_fields
-    all_fields = all_fields
+  def all_namespace_fields(namespace = nil)
+    namespace = self.namespace if namespace == nil or TrueClass === namespace
+    all_fields = self.all_fields
     return nil if all_fields.nil?
+    return all_fields if namespace.nil?
     all_fields.select{|f| f.namespace.nil? or f.namespace == namespace}
   end
 
@@ -110,7 +125,7 @@ class TSV
   def fields=(new_fields)
     new_fields.collect! do |field| 
       if Field === field
-        if field !~ /:/ and field.namespace != nil  and field.namespace != namespace
+        if field !~ /:/ and field.namespace != nil and field.namespace != namespace
           field.namespace + ":" + field.to_s
         else
           field

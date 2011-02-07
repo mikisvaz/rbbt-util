@@ -63,7 +63,7 @@ class TSV
       :identifiers      => nil,
 
       :merge            => false,
-      :keep_empty       => (type == :single and type == :flat),
+      :keep_empty       => (options[:type] != :flat and options[:type] != :single),
       :cast             => nil,
 
       :header_hash      => '#',
@@ -81,8 +81,8 @@ class TSV
     header_hash, sep, sep2 =
       Misc.process_options options, :header_hash, :sep, :sep2
 
-    key, others =
-      Misc.process_options options, :key, :others
+    key, fields =
+      Misc.process_options options, :key, :fields
 
     if key_field.nil?
       key_pos      = key
@@ -92,15 +92,19 @@ class TSV
 
       key_pos   = Misc.field_position(all_fields, key)
 
-      if String === others or Symbol === others
-        others = [others]
+      if String === fields or Symbol === fields
+        fields = [fields]
       end
 
-      if others.nil?
+      if fields.nil?
         other_pos    = (0..(all_fields.length - 1)).to_a
         other_pos.delete key_pos
       else
-        other_pos = Misc.field_position(all_fields, *others)
+        if Array === fields
+          other_pos = fields.collect{|field| Misc.field_position(all_fields, field)}
+        else
+          other_pos = Misc.field_position(all_fields, fields)
+        end
       end
 
       key_field = all_fields[key_pos]

@@ -4,7 +4,7 @@ require 'rbbt/util/tsv/attach'
 require 'rbbt'
 
 class TestAttach < Test::Unit::TestCase
-  def _test_attach_same_key
+  def test_attach_same_key
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -54,7 +54,7 @@ row3    B    Id3
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def _test_attach_source_field
+  def test_attach_source_field
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -92,7 +92,7 @@ B    Id3
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def _test_attach_index
+  def test_attach_index
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -139,7 +139,7 @@ row2    E
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def _test_attach
+  def test_attach
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -186,7 +186,7 @@ B    Id3
 
   end
 
-  def _test_attach_using_index
+  def test_attach_using_index
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -220,13 +220,12 @@ row2    E
 
     tsv2.identifiers = Rbbt.files.Test2.identifiers
 
-    tsv1.attach tsv2, "OtherID"
+    tsv1.attach tsv2, "OtherID", :in_namespace => false
 
-    assert_equal %w(ValueA ValueB OtherID), tsv1.fields
+    assert_equal tsv1.fields,%w(ValueA ValueB OtherID)
     assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
 
   end
-
 
   def test_find_path
      content1 =<<-EOF

@@ -26,7 +26,7 @@ row2    A    B    Id3
 #    end
   end
 
-  def _test_index_headerless
+  def test_index_headerless
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -40,7 +40,7 @@ row2    A    B    Id3
   end
 
 
-  def _test_best_index
+  def test_best_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b|A    Id1
@@ -96,7 +96,7 @@ C    B    Id3
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def _test_index_to_key
+  def test_index_to_key
      content =<<-EOF
 #: :sep=/\\s+/
 #Id    ValueA    ValueB
@@ -129,7 +129,7 @@ row2    A    B
     tsv
   end
 
-  def _test_sorted_index
+  def test_sorted_index
     data =<<-EOF
 #ID:Range
 #:012345678901234567890

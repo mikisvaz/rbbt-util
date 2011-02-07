@@ -81,9 +81,9 @@ row2    A    B    Id3
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID", :others => 2)
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID", :fields => 2)
       assert_equal ["b"], tsv["Id2"][0]
-      tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID", :others => 'ValueB')
+      tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID", :fields => 'ValueB')
       assert_equal ["b"], tsv["Id2"][0]
     end
   end
