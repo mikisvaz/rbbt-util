@@ -94,10 +94,15 @@ class TSV
   end
 
   #{{{ Attach Helper
- 
+
   # May make an extra index!
-  def self.find_path(files)
-    ids = files.collect{|f| f.all_fields}
+  def self.find_path(files, in_namespace = false)
+    if in_namespace
+      ids = files.first.all_namespace_fields 
+      ids += files[1..-1].collect{|f| f.all_fields}
+    else
+      ids = files.collect{|f| f.all_fields}
+    end
     id_list = []
 
     ids.each_with_index do |list, i|
@@ -115,7 +120,7 @@ class TSV
     end
   end
 
-  def self.build_traverse_index(files)
+  def self.build_traverse_index(files, in_namespace = false)
     path = find_path(files)
 
     return nil if path.nil?
@@ -139,11 +144,10 @@ class TSV
       index.fields = current_index.fields
     end
 
-
     index
   end
 
-  def self.find_traversal(tsv1, tsv2)
+  def self.find_traversal(tsv1, tsv2, in_namespace = false)
     identifiers1 = tsv1.identifier_files || []
     identifiers2 = tsv2.identifier_files || []
 
@@ -156,7 +160,7 @@ class TSV
       files1.push identifiers1.shift
       identifiers2.each_with_index do |e,i|
         files2 = identifiers2[(0..i)]
-        index  = build_traverse_index(files1 + files2.reverse)
+        index  = build_traverse_index(files1 + files2.reverse, in_namespace)
         return index if not index.nil?
       end
     end
@@ -164,16 +168,21 @@ class TSV
     return nil
   end
 
-  def attach(other, fields = nil)
+  def attach(other, fields = nil, options = {})
+    options = Misc.add_defaults options, :in_namespace => true
+    in_namespace = Misc.process_options options, :in_namespace
+
     fields = other.fields - [key_field].concat(self.fields) if fields.nil?
     Log.high("Attaching fields:#{fields.inspect} from #{other.filename.inspect}.")
     case
     when key_field == other.key_field
       attach_same_key other, fields
-    when self.fields.include?(other.key_field)
+    when (not in_namespace and self.fields.include?(other.key_field))
+      attach_source_key other, other.key_field, fields
+    when (in_namespace and self.fields_in_namespace.include?(other.key_field))
       attach_source_key other, other.key_field, fields
     else
-      index = TSV.find_traversal(self, other)
+      index = TSV.find_traversal(self, other, in_namespace)
       raise "Cannot traverse identifiers" if index.nil?
       attach_index other, index, fields
     end

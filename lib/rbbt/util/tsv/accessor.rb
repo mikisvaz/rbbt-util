@@ -67,6 +67,10 @@ class TSV
     end
   end
 
+  def fields_in_namespace
+    fields.select{|f| f.namespace.nil? or f.namespace == namespace}
+  end
+
   def fields
     return nil if @fields.nil?
     fields = @fields
@@ -83,6 +87,12 @@ class TSV
     fields.each do |f| f.namespace = namespace end unless namespace.nil?
     NamedArray.name(fields, [key_field] +  @fields)
     fields
+  end
+
+  def all_namespace_fields
+    all_fields = all_fields
+    return nil if all_fields.nil?
+    all_fields.select{|f| f.namespace.nil? or f.namespace == namespace}
   end
 
   def self.identify_field(key, fields, field)

@@ -121,13 +121,5 @@ class TestBed < Test::Unit::TestCase
     data.identifiers = Organism::Hsa.identifiers
     data.attach KEGG.gene_pathway
   end
-
-  def _test_namespace
-    require 'rbbt/sources/organism'
-    assert_equal Organism::Hsa, Organism::Hsa.identifiers.namespace.to_mod
-    assert_equal Organism::Hsa, Rbbt.files.Organism.Hsa.identifiers.namespace.to_mod
-
-    assert_equal Rbbt.files.Organism.Hsa.identifiers, Organism::Hsa.gene_positions.namespace.identifiers
-  end
 end
 

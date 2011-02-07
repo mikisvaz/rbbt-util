@@ -27,10 +27,6 @@ module DataModule
         namespace = data_module.to_s.gsub('/', '::')
 
         data_module.pkg_module.claim file_path, get, subdir, namespace, rake_sharedir
-        #base.pkg_module.claim file_path, 
-        #  rakefile.sub(/^#{Regexp.quote File.join(base.sharedir)}\/?/,''), 
-        #  File.dirname(rakefile).sub(/^#{Regexp.quote File.join(base.sharedir, 'install')}\/?/,''),
-        #  base.to_s
       end
     end
   end

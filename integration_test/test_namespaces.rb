@@ -4,17 +4,17 @@ require 'rbbt/sources/organism'
 
 class TestNameSpaces < Test::Unit::TestCase
 
-  def _test_file_namespaces
+  def test_file_namespaces
     assert_equal "Hsa", Rbbt.files.Organism.Hsa.gene_positions.namespace
     assert_equal "Hsa", Rbbt.files.Organism.Hsa.namespace
   end
  
-  def _test_tsv_namespaces
+  def test_tsv_namespaces
     assert_equal "Hsa", Rbbt.files.Organism.Hsa.gene_positions.tsv.namespace
     assert_equal "Hsa", TSV.new(Rbbt.files.Organism.Hsa.gene_positions).namespace
   end
   
-  def _test_field_namespace
+  def test_field_namespace
     assert_equal ["Hsa"], Rbbt.files.Organism.Hsa.gene_positions.tsv.all_fields.collect{|f| f.namespace}.uniq
   end
 
@@ -24,7 +24,7 @@ class TestNameSpaces < Test::Unit::TestCase
 
     gene_pos.attach Matador.protein_drug
 
-    puts gene_pos
+    assert gene_pos.fields.include? "Matador:Chemical"
   end
  
 end
