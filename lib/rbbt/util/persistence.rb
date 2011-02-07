@@ -162,7 +162,7 @@ module Persistence
       per.merge! res
 
       Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
-        if res.respond_to?(key.to_sym)  and per.respond_to?(key.to_sym)
+        if res.respond_to?(key.to_sym)  and per.respond_to?("#{key}=".to_sym)
           per.send "#{key}=".to_sym, res.send(key.to_sym) 
         end
       end
@@ -170,11 +170,6 @@ module Persistence
       per.read
 
       tsv = Object::TSV.new per
-      Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
-        if tsv.respond_to?(key.to_sym)  and per.respond_to?(key.to_sym)
-          tsv.send "#{key}=".to_sym, per.send(key.to_sym) 
-        end
-      end
 
       tsv
     else

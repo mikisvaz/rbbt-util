@@ -98,7 +98,7 @@ class TSV
       new_fields    = options[:new_fields]
 
       new = {}
-      new_key_field, new_fields = through new_key_field, new_fields do |key, values, filename|
+      new_key_field, new_fields = through new_key_field, new_fields do |key, values|
         if Array === key
           keys = key
         else
@@ -120,10 +120,9 @@ class TSV
 
       new.fields = new_fields
       new.key_field = new_key_field
-      new.filename = "Reorder: #{ tsv.filename }"
+      new.filename = filename
       new.type = type
       new.case_insensitive = case_insensitive
-      new.namespace = namespace
       new.identifiers = identifiers 
 
       new
@@ -168,7 +167,7 @@ class TSV
     new.key_field = key_field
     new.fields    = fields.dup
     new.type      = type
-    new.filename  = filename + "#Select: #{method.inspect}" if filename
+    new.filename  = filename
     new.case_insensitive  = case_insensitive
     
     case

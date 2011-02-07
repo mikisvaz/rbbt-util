@@ -4,7 +4,7 @@ require 'rbbt/util/tsv/index'
 
 class TestTSVManipulate < Test::Unit::TestCase
 
-  def _test_index
+  def test_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -13,17 +13,17 @@ row2    A    B    Id3
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID", :persistence => false)
-      index = tsv.index(:case_insensitive => true)
+      index = tsv.index(:case_insensitive => true, :persistence => true)
       assert index["row1"].include? "Id1"
       assert_equal "OtherID", index.fields.first
     end
 
-    TmpFile.with_file(content) do |filename|
-      tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID")
-      index = tsv.index(:case_insensitive => true)
-      assert index["row1"].include? "Id1"
-      assert_equal "OtherID", index.fields.first
-    end
+#    TmpFile.with_file(content) do |filename|
+#      tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID")
+#      index = tsv.index(:case_insensitive => true)
+#      assert index["row1"].include? "Id1"
+#      assert_equal "OtherID", index.fields.first
+#    end
   end
 
   def _test_index_headerless
@@ -129,7 +129,7 @@ row2    A    B
     tsv
   end
 
-  def test_sorted_index
+  def _test_sorted_index
     data =<<-EOF
 #ID:Range
 #:012345678901234567890

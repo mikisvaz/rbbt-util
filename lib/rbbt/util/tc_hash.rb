@@ -43,8 +43,8 @@ class TCHash < TokyoCabinet::HDB
     :fields           => '__tokyocabinet_hash_fields',
     :key_field        => '__tokyocabinet_hash_key_field',
     :filename         => '__tokyocabinet_hash_filename',
+    :namespace        => '__tokyocabinet_hash_namspace',
     :type             => '__tokyocabinet_hash_type',
-    :namespace        => '__tokyocabinet_hash_namespace',
     :case_insensitive => '__tokyocabinet_hash_case_insensitive'
   }
 

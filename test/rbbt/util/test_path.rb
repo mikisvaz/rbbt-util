@@ -8,12 +8,12 @@ class TestPath < Test::Unit::TestCase
     assert_equal nil, Rbbt.files.foo.namespace
   end
  
-  def test_indentifier_files
+  def _test_indentifier_files
     assert_equal [Rbbt.files.Organism.Hsa.identifiers], Rbbt.files.Organism.Hsa.gene_positions.identifier_files
   end
 
  
-  def test_indentifier_files2
+  def _test_indentifier_files2
     assert_equal [Rbbt.files.Organism.Hsa.identifiers], Organism::Hsa.gene_positions.identifier_files
   end
 end

@@ -20,7 +20,6 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
 
    misc.rb
    path.rb
-   namespace.rb
    log.rb
    tmpfile.rb
    cmd.rb
@@ -77,6 +76,7 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    Metastasis.tsv
   }
   test_bed.rb
+  test_namespaces.rb
   test_workflow.rb
  }
  share=share{

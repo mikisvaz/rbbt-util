@@ -1,4 +1,4 @@
-require 'rbbt/util/misc'
+ 'rbbt/util/misc'
 require 'rbbt/util/tsv'
 require 'rbbt/util/namespace'
 
@@ -56,34 +56,27 @@ module Path
   end
 
   def namespace
-    return nil if pkg_module.nil? 
-    mod = Misc.string2const(pkg_module)
-    file, producer = mod.reclaim self
-    case
-    when (not producer.nil? and not producer[:namespace].nil?)
-      namespace = producer[:namespace]
-      namespace.extend NameSpace
-      namespace
+    return nil if self.nil? or self.empty? or (not datadir.nil? and (self == datadir or File.dirname(self) == datadir))
+    if File.directory? self
+      File.basename(self)
     else
-      return nil
+      File.basename(File.dirname(self))
     end
   end
 
-  def identifiers_in_path
-    return nil if datadir.nil?
-    identifier_files = Path.find_files_back_to(self, 'identifiers', datadir)
-    return identifier_files.collect{|f| Path.path(f, datadir, pkg_module)}
-  end
-
-  def identifiers_in_namespace
-    namespace.identifier_files
-  end
-
   def identifier_files
-    if namespace and namespace.identifier_files
-      namespace.identifier_files 
+    if datadir.nil?
+      path = File.join(File.dirname(self), 'identifiers')
+      path.extend Path
+      path.pkg_module = pkg_module
+      if path.exists?
+        [path]
+      else
+        []
+      end
     else
-      identifiers_in_path
+      identifier_files = Path.find_files_back_to(self, 'identifiers', datadir)
+      return identifier_files.collect{|f| Path.path(f, datadir, pkg_module)}
     end
   end
 
@@ -93,7 +86,7 @@ module Path
     end
 
     produce
-    TSV.new self, key, options.merge(:namespace => namespace, :datadir => datadir)
+    TSV.new self, key, options.merge(:datadir => datadir)
   end
 
   def index(options = {})

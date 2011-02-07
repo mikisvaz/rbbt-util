@@ -96,7 +96,7 @@ module PKGData
     relative_path = Misc.path_relative_to file, datadir
     case 
     when get.nil?
-      FileUtils.cp File.join(sharedir, subdir.to_s, relative_path), file.to_s
+      FileUtils.cp File.join(sharedir, relative_path), file.to_s
     when StringIO === get
       Open.write(file, get.read)
     when Proc === get

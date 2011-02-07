@@ -101,7 +101,6 @@ class TSV
                    else
                      [new_key_field]
                    end
-
       new = TSV.new([new, {:key_field => key_field, :fields => fields, :type => :flat, :filename => (filename.nil? ? nil : "Index:" + filename), :case_insensitive => case_insensitive}])
       new
     end

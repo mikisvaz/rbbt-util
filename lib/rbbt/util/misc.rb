@@ -32,7 +32,7 @@ module Misc
   end
 
   def self.in_directory?(file, directory)
-    if File.expand_path(file.to_s) =~ /^#{Regexp.quote File.expand_path(directory)}/
+    if file.to_s =~ /^#{Regexp.quote File.expand_path(directory)}/
       true
     else
       false

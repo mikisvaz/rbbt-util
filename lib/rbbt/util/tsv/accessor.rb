@@ -3,7 +3,7 @@ require 'rbbt/util/misc'
 class TSV
   ## Make sure we overwrite the methods declared by attr_accessor
   MAIN_ACCESSORS = :data,  :key_field, :fields, :cast
-  EXTRA_ACCESSORS = :filename, :identifiers, :datadir, :type, :namespace, :case_insensitive
+  EXTRA_ACCESSORS = :filename, :identifiers, :namespace, :datadir, :type, :case_insensitive
   attr_accessor *(MAIN_ACCESSORS + EXTRA_ACCESSORS)
 
   def self.zip_fields(list, fields = nil)
@@ -13,8 +13,7 @@ class TSV
     zipped = zipped.collect{|v| NamedArray.name(v, fields)} if fields 
     zipped 
   end
-
-
+ 
   module Field
     attr_accessor :namespace
 
@@ -33,7 +32,7 @@ class TSV
 
     def ==(string)
       return false unless String === string
-      self.sub(/.*:/,'').casecmp(string.sub(/.*:/,'')) == 0
+      self.casecmp(string) == 0 || self.sub(/.*:/,'').casecmp(string) == 0
     end
 
     def namespace
@@ -45,6 +44,8 @@ class TSV
       return namespace == other.namespace
     end
   end
+
+  #{{{{ Field END
 
   def identifier_files
     case
@@ -58,11 +59,9 @@ class TSV
         identifiers.collect{|f| Path.path(f, datadir, namespace)}
       end
     when (identifiers and not Array === identifiers)
-      [Path.path(identifiers, datadir, namespace)]
-    when (not namespace.nil? and Misc.string2const(namespace) and Misc.string2const(namespace).respond_to? :identifier_files)
-      Misc.string2const(namespace).identifier_files
+      [Path.path(identifiers, datadir)]
     when filename
-      Path.path(filename, datadir, namespace).identifier_files
+      Path.path(filename, datadir).identifier_files
     else
       []
     end
@@ -81,6 +80,7 @@ class TSV
     fields = @fields.dup
     fields.unshift key_field
     fields.each do |f| f.extend Field end if Array === fields
+    fields.each do |f| f.namespace = namespace end unless namespace.nil?
     NamedArray.name(fields, [key_field] +  @fields)
     fields
   end
@@ -97,8 +97,23 @@ class TSV
     TSV.identify_field(key_field, fields, field)
   end
 
-
   def fields=(new_fields)
+    new_fields.collect! do |field| 
+      if Field === field
+        if field !~ /:/ and field.namespace != nil  and field.namespace != namespace
+          field.namespace + ":" + field.to_s
+        else
+          field
+        end
+      else
+        field
+      end
+    end if Array === new_fields
+    @fields = new_fields
+    @data.fields = new_fields if @data.respond_to? :fields=
+  end
+
+  def old_fields=(new_fields)
     @fields = new_fields
     @data.fields = new_fields if @data.respond_to? :fields=
   end

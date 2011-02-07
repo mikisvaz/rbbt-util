@@ -1,5 +1,6 @@
 require 'rbbt/util/misc'
 require 'rbbt/util/open'
+require 'rbbt/util/path'
 require 'rbbt/util/tc_hash'
 require 'rbbt/util/tmpfile'
 require 'rbbt/util/log'
@@ -64,6 +65,8 @@ class TSV
 
     @filename = Misc.process_options options, :filename
     @filename ||= case
+                  when Path === file
+                    file
                   when (String === file and File.exists? file)
                     File.expand_path file
                   when String === file
@@ -98,7 +101,12 @@ class TSV
       when TSV === file
         @data = file.data
       when Persistence::TSV === file
-        @data  = file
+        @data = file
+        Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key|
+          if @data.respond_to?(key.to_sym)  and self.respond_to?("#{key}=".to_sym)
+            self.send "#{key}=".to_sym, @data.send(key.to_sym) 
+          end
+        end
       else
         @data, extra = Persistence.persist(@filename, :TSV, :tsv_extra, options) do |file, options, filename|
           data, extra = nil
@@ -115,9 +123,13 @@ class TSV
             Open.open(file, :grep => options[:grep]) do |f|
               data, extra = TSV.parse(f, options)
             end
+            #extra[:namespace] = File.basename(File.dirname(filename))
+            #extra.delete :namespace if extra[:namespace].empty? or extra[:namespace] == "."
           when File === file
             file = Open.grep(file, options[:grep]) if options[:grep]
             data, extra = TSV.parse(file, options)
+            extra[:namespace] = File.basename(File.dirname(file.filename))
+            extra.delete :namespace if extra[:namespace].empty? or extra[:namespace] == "."
             ## Encapsulate Hash or TSV
           when block_given?
             data 
@@ -130,18 +142,17 @@ class TSV
           [data, extra]
         end
       end
-
-      extra.each do |key, values|
-        self.send("#{ key }=".to_sym, values) if self.respond_to? "#{ key }=".to_sym 
-      end if not extra.nil?
-
-      return 
     end
 
-    %w(case_insensitive namespace fields key_field type filename cast).each do |key| 
-      if @data.respond_to? key
-        extra[key] = @data.send(key.to_sym) if options.include? key
-      end
+    if not extra.nil?
+      %w(case_insensitive namespace datadir fields key_field type filename cast).each do |key| 
+        if extra.include? key.to_sym
+          self.send("#{key}=".to_sym, extra[key.to_sym])
+          if @data.respond_to? "#{key}=".to_sym
+            @data.send("#{key}=".to_sym, extra[key.to_sym])
+          end
+        end
+      end 
     end
   end
 
