@@ -218,4 +218,11 @@ class TSV
     Log.medium("Attachment of fields:#{fields.inspect} from #{other.filename.inspect} finished.")
   end
 
+  def detach(file)
+    file_fields = file.fields.collect{|field| field.fullname}
+    detached_fields = []
+    self.fields.each_with_index{|field,i| detached_fields << i if file_fields.include? field.fullname}
+    reorder :key, detached_fields
+  end
+
 end

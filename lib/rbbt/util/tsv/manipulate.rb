@@ -135,6 +135,13 @@ class TSV
     reorder :key, fields
   end
 
+  def slice_namespace(namespace)
+    fields = self.fields
+    namespace_fields = []
+    fields.each_with_index{|field,i| namespace_fields << i if field.namespace == namespace}
+    reorder :key, namespace_fields
+  end
+
   def sort(*fields)
 
     pos = case
@@ -240,7 +247,6 @@ class TSV
     end
   end
 
-
   def add_field(name = nil)
     each do |key, values|
       new_values = yield(key, values)
@@ -249,10 +255,17 @@ class TSV
       self[key] = values + [yield(key, values)]
     end
 
-    self.fields = self.fields + [name] if fields != nil
+    self.fields = self.fields + [name] if fields != nil and name != nil
   end
 
+  def add_fields(names = nil)
+    each do |key, values|
+      new_values = yield(key, values)
+      new_values = [new_values] if type == :double and not Array == new_values
 
-  
+      self[key] = values.concat yield(key, values)
+    end
 
+    self.fields = self.fields.concat names if fields != nil and names != nil
+  end
 end
