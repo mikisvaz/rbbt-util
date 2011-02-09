@@ -101,7 +101,7 @@ module Open
     case 
     when Array === grep
       TmpFile.with_file(grep * "\n", false) do |f|
-        CMD.cmd("grep", "-F" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
+        CMD.cmd("grep", "-E" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
       end
     else
       CMD.cmd("grep '#{grep}' -", :in => stream, :pipe => true)

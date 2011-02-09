@@ -21,7 +21,9 @@ module Persistence
  
   def self.get_persistence_file(file, prefix, options = {})
     name = prefix.to_s << ":" << file.to_s << ":"
-    File.join(CACHEDIR, name.to_s.gsub(/\s/,'_').gsub(/\//,'>') + Digest::MD5.hexdigest([file, options].inspect))
+    o = options.dup
+    o = o.delete_if{|k,v| Proc === v}
+    File.join(CACHEDIR, name.to_s.gsub(/\s/,'_').gsub(/\//,'>') + Digest::MD5.hexdigest([file, o].inspect))
   end
 
   def self.get_filename(file)
