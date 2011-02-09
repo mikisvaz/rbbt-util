@@ -18,12 +18,15 @@ rbbt.tsv <- function(filename, sep = "\t", comment.char ="#",  ...){
   data=read.table(file=filename, sep=sep, fill=TRUE,  as.is=TRUE, row.names=1, comment.char = comment.char, ...);
   f = file(filename, 'r');
   headers = readLines(f, 1);
-  close(f);
-  if (grep(paste("^", comment.char, sep=""), headers)){
+  if (length(grep("^#: ", headers)) > 0){ 
+      headers = readLines(f, 1); 
+  } 
+  if (length(grep("^#", headers)) > 0){
       fields = strsplit(headers, sep)[[1]];
       fields = fields[2:length(fields)];
       names(data) <- fields;
   }
+  close(f);
   return(data);
 }
 
@@ -36,7 +39,6 @@ rbbt.tsv.write <- function(filename, data, key.field = NULL){
   for (name in colnames(data)){ header = paste(header, name, sep="\t");}
   header = paste(header, "\n", sep="");
   cat(header, file=f);
-  cat(header, file=stderr());
   
   close(f);
 

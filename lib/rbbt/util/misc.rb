@@ -249,6 +249,16 @@ class NamedArray < Array
     zipped = zipped.collect{|v| NamedArray.name(v, fields)} if fields 
     zipped 
   end
+
+  def detach(file)
+    file_fields = file.fields.collect{|field| field.fullname}
+    detached_fields = []
+    self.fields.each_with_index{|field,i| detached_fields << i if file_fields.include? field.fullname}
+    fields = self.fields.values_at *detached_fields
+    values = self.values_at *detached_fields
+    values = NamedArray.name(values, fields)
+    values.zip_fields
+  end
 end
 
 def benchmark(bench = true)

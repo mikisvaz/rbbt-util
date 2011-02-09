@@ -123,20 +123,21 @@ class TSV
     while line do
       line.chomp!
 
-      line = fix.call line if fix
-      break if not line
-
-      if header_hash and line =~ /^#{header_hash}/
-        line = stream.gets
-        next
-      end
-
       if line.empty?                           or
          (exclude and     exclude.call(line))  or
          (select  and not select.call(line))
 
          line = stream.gets
          next
+      end
+
+      line = fix.call line if fix
+      break if not line
+
+
+      if header_hash and not header_hash.empty? and line =~ /^#{header_hash}/
+        line = stream.gets
+        next
       end
 
       # Chunk fields

@@ -1,4 +1,5 @@
 require 'rbbt/util/cmd'
+require 'rbbt/util/tsv'
 
 module R
 
@@ -21,4 +22,20 @@ module R
     CMD.cmd('R --vanilla --slave --quiet', options.merge(:in => cmd))
   end
 
+end
+
+class TSV
+  def R(script)
+    TmpFile.with_file do |f|
+      Open.write(f, self.to_s)
+      Log.debug(R.run(
+      <<-EOF
+data = rbbt.tsv('#{f}');
+#{script.strip}
+rbbt.tsv.write('#{f}', data);
+      EOF
+      ).read)
+      TSV.new(f, :type => :list)
+    end
+  end
 end
