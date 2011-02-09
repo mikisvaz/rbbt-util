@@ -206,9 +206,6 @@ row1    e
 row2    E
     EOF
 
-
-    require 'rbbt/sources/organism'
-
     Rbbt.claim "data", StringIO.new(content1), "Test1"
     Rbbt.claim "data", StringIO.new(content2), "Test2"
     Rbbt.claim "identifiers", StringIO.new(content_index), "Test2"

@@ -11,7 +11,7 @@ class TestR < Test::Unit::TestCase
     tsv2 = tsv.R <<-EOF
 data = data + 1
     EOF
-    puts tsv2.to_s
+    assert_equal "2", tsv2["a"].first
   end
 end
 
