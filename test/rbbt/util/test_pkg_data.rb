@@ -13,11 +13,6 @@ class TestPKGData < Test::Unit::TestCase
     end
   end
 
-  def test_path
-    assert_equal File.join(Rbbt.datadir, 'Organism/Hsa'), Rbbt.files.Organism.Hsa
-    Rbbt.files.Organism.Hsa.identifiers.produce
-  end
-
   def test_claim_proc
     begin
       assert_nil Rbbt.reclaim(Rbbt.files.foo)
