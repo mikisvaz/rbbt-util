@@ -49,6 +49,21 @@ row2    A    B
     end
   end
 
+  def test_unven_flat
+    content =<<-EOF
+row1    a    b
+row2    A    B    C
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      data = {}
+      data, extra = TSV.parse(File.open(filename), :type => :flat, :sep => /\s+/)
+      assert data["row2"].include? "C"
+    end
+  end
+
+
+
   def test_options_line
     content =<<-EOF
 #: :sep=/\\s+/#:case_insensitive=true

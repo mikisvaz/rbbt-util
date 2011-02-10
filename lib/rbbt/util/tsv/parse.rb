@@ -158,7 +158,7 @@ class TSV
 
         next if data.include?(id) and type != :flat
 
-        if other_pos.nil?
+        if other_pos.nil? or (fields == nil and type == :flat)
           other_pos    = (0..(parts.length - 1)).to_a
           other_pos.delete key_pos
         end
@@ -199,7 +199,7 @@ class TSV
         id = ids.shift
         ids.each do |id2| data[id2] = "__Ref:#{id}"  end
 
-        if other_pos.nil?
+        if other_pos.nil? or (fields == nil and type == :flat)
           other_pos    = (0..(parts.length - 1)).to_a
           other_pos.delete key_pos
         end
