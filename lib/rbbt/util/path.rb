@@ -139,6 +139,8 @@ module Path
   def produce
     return self if File.exists? self
 
+    raise "No especified pkg_data for file #{ self }, cannot produce" if pkg_data.nil?
+
     Log.debug("Trying to produce '#{ self }'")
     file, producer = pkg_module.reclaim self
 

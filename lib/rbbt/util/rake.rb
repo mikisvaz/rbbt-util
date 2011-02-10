@@ -64,7 +64,11 @@ module RakeHelper
         end
       end
 
-      load rakefile
+      if block_given?
+        yield
+      else
+        load rakefile
+      end
 
       task(:default) do |t|
         Rake::FileTask.files.each do |file| Rake::Task[file].invoke end
