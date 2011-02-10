@@ -4,6 +4,7 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   excel2tsv.rb
   tsv.rb
   tchash.rb
+  workflow.rb
  }
  lib=lib{
   rbbt.rb

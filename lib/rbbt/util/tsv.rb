@@ -102,7 +102,7 @@ class TSV
         @data = file.data
       when Persistence::TSV === file
         @data = file
-        %w(case_insensitive namespace datadir fields key_field type filename cast).each do |key|
+        %w(case_insensitive namespace identifiers datadir fields key_field type filename cast).each do |key|
           if @data.respond_to?(key.to_sym)  and self.respond_to?("#{key}=".to_sym)
             self.send "#{key}=".to_sym, @data.send(key.to_sym) 
           end
@@ -145,7 +145,7 @@ class TSV
     end
 
     if not extra.nil?
-      %w(case_insensitive namespace datadir fields key_field type filename cast).each do |key| 
+      %w(case_insensitive namespace identifiers datadir fields key_field type filename cast).each do |key| 
         if extra.include? key.to_sym
           self.send("#{key}=".to_sym, extra[key.to_sym])
           if @data.respond_to? "#{key}=".to_sym

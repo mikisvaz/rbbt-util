@@ -201,6 +201,7 @@ module Open
   end
 
   def self.write(file, content)
+    FileUtils.mkdir_p File.dirname(file)
     if String === content
       File.open(file, 'w') do |f| f.write content end
     else

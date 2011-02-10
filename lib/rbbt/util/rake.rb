@@ -12,9 +12,12 @@ module RakeHelper
         FileUtils.chdir chdir if chdir
 
         Rake::FileTask.module_eval do
-          class << self
-            alias_method :old_define_task, :define_task
+          if not self.respond_to? :old_define_task
+            class << self
+              alias_method :old_define_task, :define_task 
+            end 
           end
+
           def self.define_task(file, *args, &block)
             @@files ||= []
             if Hash === file
