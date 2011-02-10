@@ -215,7 +215,7 @@ row2    E
     tsv1 = Rbbt.files.Test1.data.tsv :double,  :sep => /\s+/
     tsv2 = Rbbt.files.Test2.data.tsv :double,  :sep => /\s+/
 
-    tsv2.identifiers = Rbbt.files.Test2.identifiers
+    tsv2.identifiers = Rbbt.files.Test2.identifiers.produce
 
     tsv1.attach tsv2, "OtherID", :in_namespace => false
 
