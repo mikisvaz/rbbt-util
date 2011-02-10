@@ -5,14 +5,14 @@
 
 Gem::Specification.new do |s|
   s.name = %q{rbbt-util}
-  s.version = "2.0.1"
+  s.version = "2.1.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
-  s.date = %q{2011-02-09}
+  s.date = %q{2011-02-10}
   s.description = %q{Utilities for handling tsv files, caches, etc}
   s.email = %q{miguel.vazquez@fdi.ucm.es}
-  s.executables = ["tsv.rb", "tchash.rb"]
+  s.executables = ["tsv.rb", "tchash.rb", "workflow.rb"]
   s.extra_rdoc_files = [
     "LICENSE"
   ]
