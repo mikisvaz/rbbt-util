@@ -51,7 +51,6 @@ row3    A    a|B    Id4
     TmpFile.with_file(content) do |filename|
       tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID", :persistence => true)
       index = tsv.index(:case_insensitive => false, :order => true)
-      ddd index
       assert_equal "Id1", index['a'].first
       assert_equal "Id3", index['A'].first
       assert_equal "OtherID", index.fields.first
@@ -67,14 +66,16 @@ row3    A    a|B    Id4
 
   #{{{ Test Attach
 
-  def ___test_smart_merge_single
+  def test_smart_merge_single
     content1 =<<-EOF
+#: :case_insensitive=false
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
 row2    A    B
     EOF
 
     content2 =<<-EOF
+#: :case_insensitive=false
 #ValueC    ValueB    OtherID
 c|cc|ccc    b    Id1|Id2
 C    B    Id3
@@ -91,9 +92,10 @@ C    B    Id3
 
     tsv1 = tsv1.smart_merge tsv2, "ValueB"
 
-    assert_equal "C", tsv1["row2"]["ValueC"]
-    assert %w(c cc ccc).include? tsv1["row1"]["ValueC"]
-    assert_equal "Id1", tsv1["row1"]["OtherID"]
+    assert_equal "C", tsv1["row2"]["ValueC"].first
+    assert %w(c cc ccc).include? tsv1["row1"]["ValueC"].first
+    ddd tsv1
+    assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"].sort
   end
 
   def test_index_to_key

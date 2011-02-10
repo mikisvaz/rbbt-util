@@ -139,14 +139,14 @@ class TSV
     #    both have fields => list of names
     #    not both have fields => nil
 
-#    fields2add = case
-#                 when (fields2add.nil? and (other.fields.nil? or self.fields.nil?))
-#                   nil
-#                 when fields2add.nil?
-#                   other.all_fields
-#                 else
-#                   fields2add
-#                 end
+    #    fields2add = case
+    #                 when (fields2add.nil? and (other.fields.nil? or self.fields.nil?))
+    #                   nil
+    #                 when fields2add.nil?
+    #                   other.all_fields
+    #                 else
+    #                   fields2add
+    #                 end
 
     # Determine common fields
     
@@ -171,6 +171,8 @@ class TSV
                                   match_source = (all_fields & match.all_fields).first
                                   index = match.index :target => other.key_field, :fields => match_source
                                   [match_source, index]
+                                when (String === match and match == key_field)
+                                  [:key, other.index]
                                 when String === match
                                   [match, other.index]
                                 when Array === match
@@ -182,32 +184,42 @@ class TSV
     # through
     new = {}
     each do |key,values|
-      source_keys = match_source == :key ? key : values[match_source]
+      source_keys = match_source == :key ? key : values[match_source_position]
       source_keys = [source_keys] unless Array === source_keys
       other_keys = case
-                  when index.nil?
-                    source_keys
-                  else
-                    index.values_at(*source_keys).flatten.compact
-                  end
+                   when index.nil?
+                     source_keys
+                   else
+                     index.values_at(*source_keys).flatten.compact
+                   end
+
       other_keys = other_keys.collect do |other_key| match_index[other_key] end.flatten unless match_index.nil?
+
 
       other_values = other_keys.collect do |other_key|
         next unless other.include? other_key
         new_fields.collect do |field|
           if field == other.key_field
-            other_key
+            if type == :double
+              [other_key]
+            else
+              other_key
+            end
           else
             other[other_key][field]
           end
         end
       end.compact
 
-      if type == :double
-        new_values = values + TSV.zip_fields(other_values)
-      else
-        new_values = values + TSV.zip_fields(other_values).collect{|v| v.first}
-      end
+      other_values = case
+                     when type == :double
+                       TSV.zip_fields(other_values).collect{|v| v.flatten.uniq}
+                     else
+                       TSV.zip_fields(other_values).collect{|v| v.flatten.first}
+                     end
+      
+      new_values = values + other_values
+
       new[key] = new_values
     end
 

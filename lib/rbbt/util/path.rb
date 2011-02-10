@@ -123,7 +123,6 @@ module Path
     key_field, fields = TSV.parse_header(self.open, sep, header_hash).values_at(0, 1).flatten.collect{|f| f.extend TSV::Field; f.namespace = namespace; f}.select{|f| f.namespace == namespace}
   end
 
-
   def filename
     self.to_s
   end 
@@ -138,7 +137,7 @@ module Path
   end
 
   def produce
-    return if File.exists? self
+    return self if File.exists? self
 
     Log.debug("Trying to produce '#{ self }'")
     file, producer = pkg_module.reclaim self
@@ -146,6 +145,8 @@ module Path
     raise "File #{self} has not been claimed, cannot produce" if file.nil? or producer.nil?
 
     pkg_module.produce(self, producer[:get], producer[:subdir], producer[:sharedir])
+
+    self
   end
 end
 

@@ -86,7 +86,7 @@ class TSV
 
     if key_field.nil?
       key_pos      = key
-      key_field, fields = nil
+      other_pos    = fields
     else
       all_fields = [key_field].concat other_fields
 
@@ -158,7 +158,7 @@ class TSV
 
         next if data.include?(id) and type != :flat
 
-        if key_field.nil?
+        if other_pos.nil?
           other_pos    = (0..(parts.length - 1)).to_a
           other_pos.delete key_pos
         end
@@ -199,7 +199,7 @@ class TSV
         id = ids.shift
         ids.each do |id2| data[id2] = "__Ref:#{id}"  end
 
-        if key_field.nil?
+        if other_pos.nil?
           other_pos    = (0..(parts.length - 1)).to_a
           other_pos.delete key_pos
         end
@@ -252,6 +252,8 @@ class TSV
       end
     end
 
+    fields = nil if Fixnum === fields or (Array === fields and fields.select{|f| Fixnum === f}.any?)
+    fields ||= other_fields
     [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive, :namespace => namespace, :datadir => options[:datadir], :identifiers => options[:identifiers], :cast => !!cast}]
   end
 
