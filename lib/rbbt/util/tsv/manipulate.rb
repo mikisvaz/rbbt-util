@@ -177,7 +177,7 @@ class TSV
     new.filename  = filename
     new.case_insensitive  = case_insensitive
     
-    case
+   case
     when (method.nil? and block_given?)
       through do |key, values|
         new[key] = values if yield key, values
@@ -199,7 +199,7 @@ class TSV
       method = method.values.first
       case
       when (Array === method and (key == :key or key_field == key))
-        method.each{|item| if values = self[item]; then  new[item] = values; end}
+        method.each{|item| new[item] = self[item] if self.include? item}
       when Array === method
         through :key, key do |key, values|
           new[key] = self[key] if (values.flatten & method).any?
@@ -250,9 +250,9 @@ class TSV
   def add_field(name = nil)
     each do |key, values|
       new_values = yield(key, values)
-      new_values = [new_values] if type == :double and not Array == new_values
+      new_values = [new_values] if type == :double and not Array === new_values
 
-      self[key] = values + [yield(key, values)]
+      self[key] = values + [new_values]
     end
 
     self.fields = self.fields + [name] if fields != nil and name != nil

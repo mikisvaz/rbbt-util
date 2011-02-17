@@ -22,7 +22,7 @@ module WorkFlow
 
     def step(step_name, options = nil)
       dependencies, options = case
-                              when ((String === options or Symbol === options) and %w(string marshal tsv tsv_string).include? options.to_s)
+                              when ((String === options or Symbol === options) and %w(string marshal yaml tsv tsv_string).include? options.to_s)
                                 [nil, {:persistence_type => options}]
                               when Hash === options
                                 [nil, options]
@@ -60,7 +60,7 @@ module WorkFlow
       last_persistence_type, @last_persistence_type = @last_persistence_type, persistence_type
 
       rule rule_def do |t|
-        Persistence.persist(t.name, "", persistence_type, :persistence_file => t.name) do
+        Persistence.persist(t, "", persistence_type, :persistence_file => t.name) do |t, options|
           $_workflow_prereq = case
                    when (t.prerequisites.nil? or (Array === t.prerequisites and t.prerequisites.empty?))
                      nil
@@ -69,7 +69,8 @@ module WorkFlow
                        raise "Error, this file should be produced already"
                      end
                    end
-          yield
+          Log.high "Executing step [#{ step_name }]"
+          yield t, options
         end
       end
     end

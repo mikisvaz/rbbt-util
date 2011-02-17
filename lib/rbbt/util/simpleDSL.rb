@@ -67,7 +67,7 @@ module SimpleDSL
   def load_config(method = nil, file = nil, &block)
     @config = {}
     if file
-      raise ConfigFileMissingError.new "File '#{ file }' is missing. Have you installed the config files? (use rbbt_config)." unless File.exists? file
+      raise ConfigFileMissingError.new "Config file '#{ file }' is missing" unless File.exists? file
       parse(method, file)
     end
 

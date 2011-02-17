@@ -248,10 +248,10 @@ class TSV
     data.include? key
   end
 
-  def to_s(keys = nil)
+  def to_s(keys = nil, no_options = false)
     str = ""
 
-    str << "#: " << Misc.hash2string(EXTRA_ACCESSORS.collect{|key| [key, self.send(key)]}) << "\n"
+    str << "#: " << Misc.hash2string(EXTRA_ACCESSORS.collect{|key| [key, self.send(key)]}) << "\n" unless no_options
     if fields
       str << "#" << key_field << "\t" << fields * "\t" << "\n"
     end

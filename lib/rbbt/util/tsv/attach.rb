@@ -87,7 +87,11 @@ class TSV
           next unless other.include? source_key
           new_values = field_positions.collect do |pos|
             if pos == :key
-              source_key
+              if other.type == :double
+                [source_key]
+              else
+                source_key
+              end
             else
               other[source_key][pos]
             end
@@ -119,7 +123,10 @@ class TSV
   #{{{ Attach Helper
 
   # May make an extra index!
-  def self.find_path(files, in_namespace = false)
+  def self.find_path(files, options = {})
+    options      = Misc.add_defaults options, :in_namespace => false
+    in_namespace = options[:in_namespace]
+
     if in_namespace
       ids = [files.first.all_namespace_fields(in_namespace)]
       ids += files[1..-1].collect{|f| f.all_fields}
@@ -127,9 +134,6 @@ class TSV
       ids = files.collect{|f| f.all_fields}
     end
     id_list = []
-
-    ids.flatten.each do |field|
-    end
 
     ids.each_with_index do |list, i|
       break if i == ids.length - 1
@@ -148,8 +152,12 @@ class TSV
     end
   end
 
-  def self.build_traverse_index(files, in_namespace = false)
-    path = find_path(files, in_namespace)
+  def self.build_traverse_index(files, options = {})
+    options      = Misc.add_defaults options, :in_namespace => false, :persist_input => false
+    in_namespace = options[:in_namespace]
+    persist_input = options[:persist_input]
+
+    path = find_path(files, options)
 
     return nil if path.nil?
     
@@ -157,11 +165,10 @@ class TSV
     
     Log.medium "Found Traversal: #{traversal_ids * " => "}"
 
-    current_key = files.first.all_fields.first
-    target = files.last.all_fields.first
-    target = nil
     current_id, current_file = path.shift
-    index   = current_file.index :target => current_id, :fields =>  current_key, :persistence => false
+    current_key = current_file.all_fields.first
+
+    index   = current_file.index :target => current_id, :fields =>  current_key, :persistence => persist_input
 
     while not path.empty?
       current_id, current_file = path.shift
@@ -175,7 +182,10 @@ class TSV
     index
   end
 
-  def self.find_traversal(tsv1, tsv2, in_namespace = false)
+  def self.find_traversal(tsv1, tsv2, options = {})
+    options      = Misc.add_defaults options, :in_namespace => false
+    in_namespace = options[:in_namespace]
+
     identifiers1 = tsv1.identifier_files || []
     identifiers2 = tsv2.identifier_files || []
 
@@ -188,7 +198,7 @@ class TSV
       files1.push identifiers1.shift
       identifiers2.each_with_index do |e,i|
         files2 = identifiers2[(0..i)]
-        index  = build_traverse_index(files1 + files2.reverse, in_namespace)
+        index  = build_traverse_index(files1 + files2.reverse, options)
         return index if not index.nil?
       end
     end
@@ -197,8 +207,8 @@ class TSV
   end
 
   def attach(other, fields = nil, options = {})
-    options = Misc.add_defaults options, :in_namespace => true
-    in_namespace = Misc.process_options options, :in_namespace
+    options      = Misc.add_defaults options, :in_namespace => false
+    in_namespace = options[:in_namespace]
 
     fields = other.fields - [key_field].concat(self.fields) if fields == :all
     fields = other.fields_in_namespace - [key_field].concat(self.fields) if fields.nil?
@@ -211,7 +221,7 @@ class TSV
     when (in_namespace and self.fields_in_namespace.include?(other.key_field))
       attach_source_key other, other.key_field, fields
     else
-      index = TSV.find_traversal(self, other, in_namespace)
+      index = TSV.find_traversal(self, other, options)
       raise "Cannot traverse identifiers" if index.nil?
       attach_index other, index, fields
     end

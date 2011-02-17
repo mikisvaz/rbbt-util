@@ -89,7 +89,7 @@ class TSV
     #         TSV: Duplicate
     case
     when block_given?
-      @data, extra = Persistence.persist(@filename, :TSV, :tsv_extra, options.merge(:force_array => true)) do |filename, options| yield filename, options end
+      @data, extra = Persistence.persist(file, :TSV, :tsv_extra, options.merge(:force_array => true)) do |file, options, filename| yield file, options, filename end
       extra.each do |key, values|
         self.send("#{ key }=".to_sym, values) if self.respond_to? "#{ key }=".to_sym 
       end if not extra.nil?
@@ -108,12 +108,12 @@ class TSV
           end
         end
       else
-        @data, extra = Persistence.persist(@filename, :TSV, :tsv_extra, options) do |file, options, filename|
+        @data, extra = Persistence.persist(file, :TSV, :tsv_extra, options) do |file, options, filename|
           data, extra = nil
 
           case
             ## Parse source
-          when (String === file and file.respond_to? :open)
+          when Path === file #(String === file and file.respond_to? :open)
             data, extra = TSV.parse(file.open(:grep => options[:grep]) , options)
             extra[:namespace] ||= file.namespace
             extra[:datadir]   ||= file.datadir
@@ -123,14 +123,13 @@ class TSV
             Open.open(file, :grep => options[:grep]) do |f|
               data, extra = TSV.parse(f, options)
             end
-            #extra[:namespace] = File.basename(File.dirname(filename))
-            #extra.delete :namespace if extra[:namespace].empty? or extra[:namespace] == "."
           when File === file
+            path = file.path
             file = Open.grep(file, options[:grep]) if options[:grep]
             data, extra = TSV.parse(file, options)
-            extra[:namespace] = File.basename(File.dirname(file.filename))
-            extra.delete :namespace if extra[:namespace].empty? or extra[:namespace] == "."
-            ## Encapsulate Hash or TSV
+          when IO === file
+            file = Open.grep(file, options[:grep]) if options[:grep]
+            data, extra = TSV.parse(file, options)
           when block_given?
             data 
           else

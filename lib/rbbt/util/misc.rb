@@ -200,6 +200,28 @@ module Misc
     text.split(split)[1..-1]
   end
 
+  def self.try3times
+    try = 0
+    begin
+      yield
+    rescue
+      try += 1
+      retry if try <= 3
+    end
+  end
+
+
+  # Divides the array into +num+ chunks of the same size by placing one
+  # element in each chunk iteratively.
+  def self.divide(array, num)
+    chunks = [[]] * num
+    array.each_with_index{|e, i|
+      c = i % num
+      chunks[c] << e
+    }
+    chunks
+  end
+
 end
 
 module PDF2Text
@@ -223,9 +245,13 @@ class NamedArray < Array
   end
 
   def positions(fields)
-    fields.collect{|field|
-      Misc.field_position(@fields, field)
-    }
+    if Array ==  fields
+      fields.collect{|field|
+        Misc.field_position(@fields, field)
+      }
+    else
+      Misc.field_position(@fields, fields)
+    end
   end
 
   alias original_get_brackets []
@@ -234,9 +260,9 @@ class NamedArray < Array
   end
 
   alias original_set_brackets []=
-  def []=(key,value)
-    original_set_brackets(Misc.field_position(fields, key), value)
-  end
+    def []=(key,value)
+      original_set_brackets(Misc.field_position(fields, key), value)
+    end
 
   alias original_values_at values_at
   def values_at(*keys)
@@ -281,7 +307,7 @@ def profile(prof = true)
     res = yield
     result = RubyProf.stop
 
-  # Print a flat profile to text
+    # Print a flat profile to text
     printer = RubyProf::FlatPrinter.new(result)
     printer.print(STDOUT, 0)
     res

@@ -85,7 +85,8 @@ module Path
     end
 
     produce
-    TSV.new self, key, options.merge(:datadir => datadir)
+    #TSV.new self, key, options.merge(:datadir => datadir, :namespace => namespace)
+    TSV.new self, key, options
   end
 
   def index(options = {})
@@ -118,7 +119,7 @@ module Path
     TSV.parse_header(self.open, sep, header_hash)[1].collect{|f| f.extend TSV::Field; f.namespace = namespace ;f}.select{|f| f.namespace == namespace}
   end
 
-  def all_namespace_fields(sep = nil, header_hash = nil)
+  def all_namespace_fields(namespace, sep = /\t/, header_hash = "#")
     produce
     key_field, fields = TSV.parse_header(self.open, sep, header_hash).values_at(0, 1).flatten.collect{|f| f.extend TSV::Field; f.namespace = namespace; f}.select{|f| f.namespace == namespace}
   end
