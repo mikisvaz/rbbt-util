@@ -85,7 +85,6 @@ module Path
     end
 
     produce
-    #TSV.new self, key, options.merge(:datadir => datadir, :namespace => namespace)
     TSV.new self, key, options
   end
 
