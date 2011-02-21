@@ -179,7 +179,13 @@ class TCHash < TokyoCabinet::HDB
   
   def collect
     res = []
-    self.each{|k, v| res << yield(k,v)}
+    self.each{|k, v| 
+      if block_given?
+        res << yield(k,v)
+      else
+        res << [k,v]
+      end
+    }
     res
   end
 
