@@ -20,6 +20,8 @@ module Persistence
   end
  
   def self.get_persistence_file(file, prefix, options = {})
+    persistence_dir = Misc.process_options options, :persistence_dir
+    persistence_dir ||= CACHEDIR
     name = prefix.to_s << ":" << file.to_s << ":"
     o = {}
     options.each do |k,v|
@@ -30,7 +32,7 @@ module Persistence
       end
     end
 
-    File.join(CACHEDIR, name.to_s.gsub(/\s/,'_').gsub(/\//,'>') + Digest::MD5.hexdigest([file, o].inspect))
+    File.join(persistence_dir, name.to_s.gsub(/\s/,'_').gsub(/\//,'>') + Digest::MD5.hexdigest([file, o].inspect))
   end
 
   def self.get_filename(file)

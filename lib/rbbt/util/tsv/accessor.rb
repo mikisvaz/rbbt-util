@@ -249,6 +249,11 @@ class TSV
   end
 
   def to_s(keys = nil, no_options = false)
+    if FalseClass === keys or TrueClass === keys
+      no_options = keys
+      keys = nil
+    end
+
     str = ""
 
     str << "#: " << Misc.hash2string(EXTRA_ACCESSORS.collect{|key| [key, self.send(key)]}) << "\n" unless no_options

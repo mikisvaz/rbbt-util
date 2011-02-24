@@ -7,6 +7,7 @@ class TSV
     ## split with delimiter, do not remove empty
     fields = io.split(delimiter, -1)
 
+
     fields
   end
 
@@ -115,6 +116,8 @@ class TSV
       Misc.process_options options, :case_insensitive, :type, :namespace, :merge, :keep_empty, :cast
     fix, exclude, select, grep = 
       Misc.process_options options, :fix, :exclude, :select, :grep 
+
+    exclude ||= Misc.process_options options, :reject if options.include? :reject
 
     #{{{ Process rest
     data = {}

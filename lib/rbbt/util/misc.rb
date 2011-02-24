@@ -200,14 +200,18 @@ module Misc
     text.split(split)[1..-1]
   end
 
-  def self.try3times
+  def self.insist(times = 3)
     try = 0
     begin
       yield
     rescue
       try += 1
-      retry if try <= 3
+      retry if try < times
     end
+  end
+
+  def self.try3times(&block)
+    insist(3, &block)
   end
 
 

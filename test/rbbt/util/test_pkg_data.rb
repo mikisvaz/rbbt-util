@@ -55,6 +55,7 @@ class TestPKGData < Test::Unit::TestCase
       FileUtils.mkdir_p File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/')
       Open.write(File.join(PKGData.sharedir_for_file(__FILE__), 'test/Rake/Rakefile'), "file :foo do |t| Open.write(t.name, 'bar') end")
       Rbbt.claim :foo, :Rakefile, 'test/Rake' 
+      
       assert_equal "bar", Rbbt.files.test.Rake.foo.read
     ensure
       begin

@@ -105,11 +105,11 @@ module PKGData
       Open.write(file, get.to_s)
     when ((String === get or Symbol === get) and File.basename(get.to_s) == "Rakefile")
       if Symbol === get
-        rakefile = File.join(sharedir, subdir, get.to_s)
+        rakefile = File.join(sharedir, (subdir || ""), get.to_s)
       else
         rakefile = File.join(sharedir, get.to_s)
       end
-      produce_with_rake(rakefile, subdir, file)
+      produce_with_rake(rakefile, (subdir || ""), file)
     when (String === get and Open.remote? get)
       Open.write(file, Open.read(get, :wget_options => {:pipe => true}, :nocache => true))
     else
