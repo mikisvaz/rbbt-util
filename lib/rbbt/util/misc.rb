@@ -1,4 +1,5 @@
 require 'iconv'
+require 'digest/md5'
 
 class RBBTError < StandardError
   attr_accessor :info
@@ -114,11 +115,24 @@ module Misc
   end
 
   def self.hash2string(hash)
-    hash.collect{|k,v| 
+    hash.sort_by{|k,v| k.to_s}.collect{|k,v| 
       next unless %w(Symbol String Float Fixnum Integer TrueClass FalseClass Module Class Object).include? v.class.to_s
       [ Symbol === k ? ":" << k.to_s : k,
         Symbol === v ? ":" << v.to_s : v] * "="
     }.compact * "#"
+  end
+
+  def self.hash2md5(hash)
+    o = {}
+    hash.each do |k,v|
+      if v.inspect =~ /:0x0/
+        o[k] = v.inspect.sub(/:0x[a-f0-9]+@/,'')
+      else
+        o[k] = v
+      end
+    end
+
+    Digest::MD5.hexdigest([file, o].inspect)
   end
 
   def self.string2hash(string)

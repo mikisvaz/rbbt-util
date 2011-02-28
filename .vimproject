@@ -46,6 +46,8 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    rake.rb
 
    workflow.rb
+
+   workflow_save.rb
   }
  }
  test=test {
@@ -59,8 +61,11 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    test_data_module.rb
    test_excel2tsv.rb
    test_filecache.rb
+   test_fix_width_table.rb
    test_misc.rb
    test_open.rb
+   test_path.rb
+   test_persistence.rb
    test_pkg_data.rb
    test_rake.rb
    test_simpleDSL.rb

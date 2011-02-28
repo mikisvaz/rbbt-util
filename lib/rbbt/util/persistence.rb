@@ -1,6 +1,7 @@
 require 'rbbt/util/tsv'
 require 'rbbt/util/misc'
 require 'rbbt/util/open'
+require 'digest/md5'
 require 'yaml'
 
 module Persistence
@@ -23,16 +24,9 @@ module Persistence
     persistence_dir = Misc.process_options options, :persistence_dir
     persistence_dir ||= CACHEDIR
     name = prefix.to_s << ":" << file.to_s << ":"
-    o = {}
-    options.each do |k,v|
-      if v.inspect =~ /:0x0/
-        o[k] = v.inspect.sub(/:0x[a-f0-9]+@/,'')
-      else
-        o[k] = v
-      end
-    end
 
-    File.join(persistence_dir, name.to_s.gsub(/\s/,'_').gsub(/\//,'>') + Digest::MD5.hexdigest([file, o].inspect))
+    options_md5 = Misc.hash2md5 options
+    File.join(persistence_dir, name.to_s.gsub(/\s/,'_').gsub(/\//,'>') + options_md5)
   end
 
   def self.get_filename(file)
