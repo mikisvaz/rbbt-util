@@ -5,13 +5,19 @@ class FixWidthTable
   def initialize(filename, value_size = nil, range = nil, update = false)
     @filename = filename
 
-    if update or not File.exists? filename
+    if update or %(memory stringio).include?(filename.to_s.downcase) or not File.exists? filename
       Log.debug "Writing FixWidthTable at #{ @filename.inspect }"
-      FileUtils.rm @filename if File.exists? @filename
       @value_size = value_size
       @range = range
       @record_size = @value_size + (@range ? 12 : 4)
-      @file = File.open(@filename, 'wb')
+
+      if %(memory stringio).include? filename.to_s.downcase
+        @file = StringIO.new
+      else
+        FileUtils.rm @filename if File.exists? @filename
+        @file = File.open(@filename, 'wb')
+      end
+
       @file.write [value_size].pack("L")
       @file.write [@range ? 1 : 0 ].pack("C")
       @size = 0
