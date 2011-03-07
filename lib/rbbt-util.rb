@@ -9,8 +9,8 @@ require 'rbbt/util/bed'
 require 'rbbt/util/cachehelper'
 require 'rbbt/util/misc'
 
-FileCache.cachedir = Rbbt.cachedir
-Open.cachedir      = File.join(Rbbt.cachedir, 'open-remote/')
-TmpFile.tmpdir     = File.join(Rbbt.tmpdir)
-Persistence.cachedir       = File.join(Rbbt.cachedir, 'persistence')
-Bed.cachedir       = File.join(Rbbt.cachedir, 'bed_cache')
+FileCache.cachedir   = Rbbt.var.cache.filecache.find :user
+Open.cachedir        = Rbbt.var.cache["open-remote"].find :user
+TmpFile.tmpdir       = Rbbt.tmp.find :user
+Persistence.cachedir = Rbbt.var.cache.persistence.find :user
+Bed.cachedir         = Rbbt.var.cache["bed-persistence"].find :user

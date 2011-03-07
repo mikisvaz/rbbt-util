@@ -25,7 +25,11 @@ module Resource
   end
 
   def self.resolve(path, pkgdir, type = :find)
-    location, subpath = path.match(/(.*?)\/(.*)/).values_at 1, 2
+    if path.match(/(.*?)\/(.*)/)
+      location, subpath = path.match(/(.*?)\/(.*)/).values_at 1, 2
+    else
+      location, subpath = path, ""
+    end
 
     case type.to_sym
     when :user

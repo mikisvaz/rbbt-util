@@ -1,12 +1,12 @@
 require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
-require 'rbbt/util/filecache'
 require 'rbbt-util'
+require 'rbbt/util/filecache'
 require 'test/unit'
 
 class TestFileCache < Test::Unit::TestCase
 
   def test_path
-    assert_equal(File.join(Rbbt.cachedir,'3','2','1','123.ext'), FileCache.path('123.ext'))
+    assert_equal(File.join(Rbbt.var.cache.filecache.find(:user),'3','2','1','123.ext'), FileCache.path('123.ext'))
   end
 
   def test_add_read

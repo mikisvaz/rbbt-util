@@ -13,6 +13,7 @@ require 'rbbt/util/tsv/accessor'
 require 'rbbt/util/tsv/manipulate'
 require 'rbbt/util/tsv/index'
 require 'rbbt/util/tsv/attach'
+require 'rbbt/util/tsv/resource'
 class TSV
 
   def self.headers(file, options = {})

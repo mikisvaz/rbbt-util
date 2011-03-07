@@ -206,16 +206,16 @@ row1    e
 row2    E
     EOF
 
-    Rbbt.claim "data", StringIO.new(content1), "Test1"
-    Rbbt.claim "data", StringIO.new(content2), "Test2"
-    Rbbt.claim "identifiers", StringIO.new(content_index), "Test2"
+    Rbbt.tmp.test.test1.data.define_as_string content1
+    Rbbt.tmp.test.test2.data.define_as_string content2
+    Rbbt.tmp.test.test2.identifiers.define_as_string content_index
 
     tsv1 = tsv2 = nil
 
-    tsv1 = Rbbt.files.Test1.data.tsv :double,  :sep => /\s+/
-    tsv2 = Rbbt.files.Test2.data.tsv :double,  :sep => /\s+/
+    tsv1 = Rbbt.tmp.test.test1.data.tsv :double,  :sep => /\s+/
+    tsv2 = Rbbt.tmp.test.test2.data.tsv :double,  :sep => /\s+/
 
-    tsv2.identifiers = Rbbt.files.Test2.identifiers.produce
+    tsv2.identifiers = Rbbt.tmp.test.test2.identifiers.produce
 
     tsv1.attach tsv2, "OtherID", :in_namespace => false
 

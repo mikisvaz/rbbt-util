@@ -10,11 +10,6 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   rbbt.rb
   rbbt-util.rb
   util=rbbt/util {
-   pkg_config.rb
-   pkg_data.rb
-   pkg_software.rb
-   data_module.rb
-
    resource.rb
 
    simpleDSL.rb
@@ -22,7 +17,6 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    cachehelper.rb
 
    misc.rb
-   path.rb
    log.rb
    tmpfile.rb
    cmd.rb
@@ -46,10 +40,6 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    R.rb
 
    rake.rb
-
-   workflow.rb
-
-   workflow_save.rb
   }
  }
  test=test {
@@ -75,7 +65,6 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    test_tc_hash.rb
    test_tmpfile.rb
    test_tsv.rb
-   test_workflow.rb
   }
  }
  integration_test=integration_test{
