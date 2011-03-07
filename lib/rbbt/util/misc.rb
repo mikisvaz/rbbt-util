@@ -132,7 +132,7 @@ module Misc
       end
     end
 
-    Digest::MD5.hexdigest([file, o].inspect)
+    Digest::MD5.hexdigest(o.inspect)
   end
 
   def self.string2hash(string)
