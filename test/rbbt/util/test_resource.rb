@@ -15,16 +15,16 @@ end
 
   tmp.work.define_as_rake tmp.Rakefile.find.produce
 
-  share.tmp.test.install.xclip.define_as_string <<-EOF
+  tmp.test.install.xclip.define_as_string <<-EOF
 name="xclip:0.12"
 url="http://downloads.sourceforge.net/project/xclip/xclip/0.12/xclip-0.12.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fxclip%2F&ts=1286472387&use_mirror=sunet"
 
 install_src "$name" "$url"
   EOF
 
-  FileUtils.chmod 0770, share.install.xclip.produce
+  FileUtils.chmod 0770, tmp.test.install.xclip.produce
 
-  software.opt.xclip.define_as_install share.tmp.test.install.xclip.find
+  software.opt.xclip.define_as_install tmp.test.install.xclip.find
 end
 
 Open.cachedir = Rbbt.tmp.cache.find :user

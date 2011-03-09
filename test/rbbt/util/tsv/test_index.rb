@@ -94,7 +94,6 @@ C    B    Id3
 
     assert_equal "C", tsv1["row2"]["ValueC"].first
     assert %w(c cc ccc).include? tsv1["row1"]["ValueC"].first
-    ddd tsv1
     assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"].sort
   end
 

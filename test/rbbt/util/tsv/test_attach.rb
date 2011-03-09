@@ -220,7 +220,6 @@ row2    E
     tsv1.attach tsv2, "OtherID", :in_namespace => false
 
     assert_equal tsv1.fields,%w(ValueA ValueB OtherID)
-    ddd tsv1
     assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
   end
 
