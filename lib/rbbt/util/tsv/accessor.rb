@@ -1,3 +1,4 @@
+require 'rbbt/util/resource'
 require 'rbbt/util/misc'
 
 class TSV
@@ -68,12 +69,12 @@ class TSV
       when (TSV === identifiers.first or identifiers.empty?)
         identifiers
       when
-        identifiers.collect{|f| Path.path(f, datadir, namespace)}
+        identifiers.collect{|f| Resource::Path.path(f, nil, namespace)}
       end
     when (identifiers and not Array === identifiers)
-      [Path.path(identifiers, datadir)]
+      [Resource::Path.path(identifiers, nil, namespace)]
     when filename
-      Path.path(filename, datadir).identifier_files
+      Resource::Path.path(filename, nil, namespace).identifier_files
     else
       []
     end

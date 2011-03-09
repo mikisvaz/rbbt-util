@@ -155,9 +155,10 @@ class TSV
       if single
         ids = parse_fields(parts[key_pos], sep2)
         ids.collect!{|id| id.downcase} if case_insensitive
+        ids = ids.reject{|_id| _id.empty?}.uniq
         
         id = ids.shift
-        ids.each do |id2| data[id2] = "__Ref:#{id}"  end
+        ids.each do |id2| data[id2] = "__Ref:#{id}" unless data.include? id2 end
 
         next if data.include?(id) and type != :flat
 
@@ -198,9 +199,10 @@ class TSV
       else
         ids = parse_fields(parts[key_pos], sep2)
         ids.collect!{|id| id.downcase} if case_insensitive
+        ids = ids.reject{|_id| _id.empty?}.uniq
 
         id = ids.shift
-        ids.each do |id2| data[id2] = "__Ref:#{id}"  end
+        ids.each do |id2| data[id2] = "__Ref:#{id}" unless data.include? id2 end
 
         if other_pos.nil? or (fields == nil and type == :flat)
           other_pos    = (0..(parts.length - 1)).to_a

@@ -6,14 +6,17 @@ module Resource
     attr_accessor :resources, :rake_dirs
   end
 
-  attr_accessor :pkgdir, :base
-
   def self.extended(base)
+    class << base
+      attr_accessor :pkgdir, :lib_dir, :base, :offsetdir, :namespace
+    end
     base.base = base
+    base.lib_dir = caller_lib_dir
+    base.pkgdir = base.to_s.downcase unless base == Rbbt
   end
 
   def self.caller_lib_dir(file = nil)
-    file = caller.reject{|l| l =~ /\/resource.rb/ }.first.sub(/\.rb.*/,'.rb') if file.nil?
+    file = caller.reject{|l| l =~ /\/resource\.rb|progress-monitor\.rb/ }.first.sub(/\.rb.*/,'.rb') if file.nil?
 
     file = File.expand_path file
     while file != '/'
@@ -24,7 +27,7 @@ module Resource
     return nil
   end
 
-  def self.resolve(path, pkgdir, type = :find)
+  def self.resolve(path, pkgdir, type = :find, lib_dir = nil)
     if path.match(/(.*?)\/(.*)/)
       location, subpath = path.match(/(.*?)\/(.*)/).values_at 1, 2
     else
@@ -40,12 +43,15 @@ module Resource
     when :global
       File.join('/', location, pkgdir, subpath)
     when :lib
-      lib_dir = caller_lib_dir
+      if not caller_lib_dir.nil?
+        path = File.join(caller_lib_dir, location, subpath)
+        return path if File.exists?(path) or lib_dir.nil?
+      end
       raise "Root of library not found" if lib_dir.nil?
-      File.join(lib_dir, location, pkgdir, subpath)
+      File.join(lib_dir, location, subpath)
     when :find
       %w(user local global lib).each do |_type|
-        file = resolve(path, pkgdir, _type.to_sym)
+        file = resolve(path, pkgdir, _type.to_sym, lib_dir)
         return file if File.exists? file
       end
 
@@ -63,10 +69,64 @@ module Resource
     @resources[path.find] = [type, content]
   end
 
+  def self.set_software_env(software_dir)
+    bin_dir = File.join(software_dir, 'bin')
+    opt_dir = File.join(software_dir, 'opt')
+
+    Misc.env_add 'PATH', bin_dir
+
+    FileUtils.mkdir_p opt_dir unless File.exists? opt_dir
+    %w(.ld-paths .pkgconfig-paths .aclocal-paths .java-classpaths).each do |file|
+      filename = File.join(opt_dir, file)
+      FileUtils.touch filename unless File.exists? filename
+    end
+
+    if not File.exists? File.join(opt_dir,'.post_install')
+      Open.write(File.join(opt_dir,'.post_install'),"#!/bin/bash\n")
+    end
+
+    Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
+      Misc.env_add('LD_LIBRARY_PATH',line.chomp)
+      Misc.env_add('LD_RUN_PATH',line.chomp)
+    end
+
+    Open.read(File.join opt_dir, '.pkgconfig-paths').split(/\n/).each do |line|
+      Misc.env_add('PKG_CONFIG_PATH',line.chomp)
+    end
+
+    Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
+      Misc.env_add('LD_LIBRARY_PATH',line.chomp)
+    end
+
+    Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
+      Misc.env_add('LD_LIBRARY_PATH',line.chomp)
+    end
+
+    Open.read(File.join opt_dir, '.aclocal-paths').split(/\n/).each do |line|
+      Misc.env_add('ACLOCAL_FLAGS', "-I#{File.join(opt_dir, line.chomp)}", ' ')
+    end
+
+    Open.read(File.join opt_dir, '.java-classpaths').split(/\n/).each do |line|
+      Misc.env_add('CLASSPATH', "#{File.join(opt_dir,'java', 'lib', line.chomp)}")
+    end
+
+    Dir.glob(File.join opt_dir, 'jars', '*').each do |file|
+      Misc.env_add('CLASSPATH', "#{File.expand_path(file)}")
+    end
+
+    File.chmod 0774, File.join(opt_dir, '.post_install')
+
+    CMD.cmd(File.join(opt_dir, '.post_install'))
+  end
+
+
+
   def self.produce(resource)
     resource = resource.find if Path === resource
     return resource if File.exists? resource
 
+    @resources ||= {}
+    @rake_dirs ||= {}
     case
     when @resources.include?(resource)
       type, content = @resources[resource]
@@ -76,65 +136,110 @@ module Resource
         Open.write(resource, content)
       when :url
         Open.write(resource, Open.read(content))
+      when :proc
+        Open.write(resource, content.call)
       when :install
-        CMD.cmd("chmod +xr #{ content }")
-        CMD.cmd([content, resource] * " ")
+        software_dir = File.dirname(File.dirname(resource.to_s))
+        preamble = <<-EOF
+#!/bin/bash
+
+RBBT_SOFTWARE_DIR="#{software_dir}"
+
+INSTALL_HELPER_FILE="#{Rbbt.share.install.software.lib.install_helpers.find :lib, caller_lib_dir(__FILE__)}"
+source "$INSTALL_HELPER_FILE"
+        EOF
+
+        CMD.cmd('bash', :in => preamble + "\n" + content.read)
+        set_software_env(software_dir)
+      else
+        raise "Could not produce #{ resource }. (#{ type }, #{ content })"
       end
       resource
 
     when @rake_dirs.select{|dir,rakefile| resource.in_dir?(dir)}.any?
       dir, rakefile = @rake_dirs.select{|dir,rakefile| resource.in_dir?(dir)}.first
       file = resource.sub(dir, '').sub(/^\//,'')
+      rakefile = rakefile.find if Resource::Path === rakefile
+      dir = dir.find if Resource::Path === dir
       FileUtils.mkdir_p dir unless File.exists? dir
       RakeHelper.run(rakefile, file, dir)
       resource
     end
   end
 
-  module Path
-    attr_accessor :pkgdir
+  def relative_to(klass, path)
+    self.offsetdir = path
+    if Rbbt == klass
+      self.pkgdir = ""
+    else
+      self.pkgdir = klass.to_s.downcase
+    end
+  end
 
-    def self.path(name = nil, pkgdir = nil)
+  def data_module(klass)
+    relative_to klass, "share/#{self.to_s.downcase}"
+    rakefile = klass.share.install[self.to_s].Rakefile
+    rakefile.lib_dir = Resource.caller_lib_dir
+
+    self[''].define_as_rake rakefile
+    self.namespace = base.to_s
+    self.lib_dir = caller_lib_dir
+  end
+
+  module Path
+    attr_accessor :pkgdir, :namespace, :lib_dir
+
+    def self.path(name = nil, pkgdir = nil, namespace = nil, lib_dir = nil)
       name = name.nil? ? "" : name.to_s
       name.extend Path
       name.pkgdir = pkgdir
+      name.namespace = namespace
+      name.lib_dir = lib_dir
       name
     end
 
-    def find(type = :find)
+    def find(type = :find, lib_dir = nil)
+      lib_dir ||= @lib_dir
       return  self if pkgdir.nil?
-      Path.path(Resource.resolve(self, pkgdir, type), nil)
+      path = Path.path(Resource.resolve(self, pkgdir, type, lib_dir), nil)
+      path.namespace = namespace
+      path
     end
 
     def produce
       Resource.produce self.find
     end
 
+    def dirname
+      Path.path(File.dirname(self), pkgdir, namespace, lib_dir)
+    end
+
     def join(name)
-      Path.path(File.join(self, name.to_s), pkgdir)
+      Path.path(File.join(self, name.to_s), pkgdir, namespace, lib_dir)
     end
 
     def [](name)
       join name
     end
     
-    def method_missing(name, *args)
+    def method_missing(name, prev = nil)
+      join prev unless prev.nil?
       join name
     end
 
-    def open
+    def open(*args)
       Resource.produce self.find
-      Open.open self.find
+      Open.open self.find, *args
     end
 
-    def read
+    def read(*args)
       Resource.produce self.find
-      Open.read self.find
+      Open.read self.find, *args
     end
 
-    def write(content)
+    def write(content, *args)
       FileUtils.mkdir_p File.dirname(self.find) unless File.exists? self.find
-      Open.write(self.find, content)
+      Open.write(self.find, content, *args)
     end
 
     def define_as_string(content)
@@ -148,9 +253,17 @@ module Resource
     def define_as_rake(rakefile)
       Resource.define_rake(self, rakefile)
     end
+    
+    def define_as_proc(&block)
+      Resource.define_resource(self, :proc, &block)
+    end
+ 
  
     def define_as_install(install_file)
       Resource.define_resource(self, :install, install_file.find)
+      self.produce
+      software_dir = File.dirname(File.dirname(self.to_s))
+      Resource.set_software_env(software_dir)
     end
 
     def in_dir?(dir)
@@ -160,10 +273,62 @@ module Resource
     def to_s
       self.find
     end
+
+    def filename
+      self.find
+    end
+
+    def exists?
+      begin
+        self.produce
+        File.exists? self.find
+      rescue
+        false
+      end
+    end
   end
 
-  def method_missing(name)
-    pkgdir = base == Rbbt ? '' : base.to_s.downcase
-    Path.path(name, pkgdir)
+  module WithKey
+    def self.extended(base)
+      class << base
+        attr_accessor :klass, :key
+      end
+    end
+
+    def method_missing(name, *args)
+      if key
+        klass.send(name, key, *args)
+      else
+        klass.send(name, *args)
+      end
+    end
   end
+
+  def with_key(key)
+    klass = self
+    o     = Object.new
+    o.extend WithKey
+    o.klass = self
+    o.key   = key
+    o
+  end
+
+  def [](name)
+    if pkgdir.nil?
+      @pkgdir = (base == Rbbt ? '' : base.to_s.downcase) 
+    end
+    name = File.join(offsetdir.to_s, name.to_s) unless offsetdir.nil? or offsetdir.empty?
+    Path.path(name, pkgdir, namespace, lib_dir)
+  end
+
+  def method_missing(name, prev = nil)
+    if prev
+      self[prev][name]
+    else
+      self[name]
+    end
+  end
+
+
 end
+

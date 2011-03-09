@@ -129,15 +129,18 @@ module Persistence
   end
 
   def self.tsv_serializer(data)
+    return :marshal if not Object::TSV === data or data.cast
+    return :integer if data.cast == "to_i" and data.type == :single
+
     case
-    when (not Object::TSV === data)
-      :marshal
     when data.type == :double
       :double
+    when data.type == :list
+      :list
     when data.type == :single
       :single
     else
-      :list
+      :marshal
     end
   end
 
@@ -254,7 +257,6 @@ module Persistence
         FileUtils.rm persistence_file
       end
 
-
       max_length = res.collect{|k,v| k.length}.max
 
       if range
@@ -262,7 +264,7 @@ module Persistence
           fwt = FixWidthTable.new persistence_file, max_length, true
           fwt.add_range res
         rescue
-          FileUtils.rm persistence_file
+          FileUtils.rm persistence_file if File.exists? persistence_file
           raise $!
         end
       else

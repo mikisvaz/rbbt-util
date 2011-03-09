@@ -33,11 +33,24 @@ module Misc
   end
 
   def self.in_directory?(file, directory)
-    if file.to_s =~ /^#{Regexp.quote File.expand_path(directory)}/
+    if File.expand_path(file) =~ /^#{Regexp.quote File.expand_path(directory)}/
       true
     else
       false
     end
+  end
+
+  def self.find_files_back_to(path, target, subdir)
+    return [] if path.nil?
+    files = []
+    while in_directory?(path, subdir)
+      path = path.dirname
+      if path[target].exists?
+        files << path[target]
+      end
+    end
+
+    files
   end
 
   def self.this_dir
@@ -47,11 +60,11 @@ module Misc
   def self.env_add(var, value, sep = ":", prepend = true)
     ENV[var] ||= ""
     return if ENV[var] =~ /(#{sep}|^)#{Regexp.quote value}(#{sep}|$)/
-    if prepend
-      ENV[var] = value + sep + ENV[var]
-    else
-      ENV[var] += sep + ENV[var]
-    end
+      if prepend
+        ENV[var] = value + sep + ENV[var]
+      else
+        ENV[var] += sep + ENV[var]
+      end
   end
 
   def self.count(list)

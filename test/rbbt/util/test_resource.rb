@@ -15,19 +15,16 @@ end
 
   tmp.work.define_as_rake tmp.Rakefile.find.produce
 
-  share.install.xclip2.define_as_string <<-EOF
-#!/bin/bash
-
-INSTALL_HELPER_FILE="#{Rbbt.share.install.software.lib.install_helpers.find}"
-RBBT_SOFTWARE_DIR="$(dirname $1)"
-source "$INSTALL_HELPER_FILE"
-
+  share.tmp.test.install.xclip.define_as_string <<-EOF
 name="xclip:0.12"
 url="http://downloads.sourceforge.net/project/xclip/xclip/0.12/xclip-0.12.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fxclip%2F&ts=1286472387&use_mirror=sunet"
 
 install_src "$name" "$url"
   EOF
-  opt.xclip.define_as_install share.install.xclip.produce
+
+  FileUtils.chmod 0770, share.install.xclip.produce
+
+  software.opt.xclip.define_as_install share.tmp.test.install.xclip.find
 end
 
 Open.cachedir = Rbbt.tmp.cache.find :user
@@ -38,6 +35,13 @@ end
 
 
 class TestResource < Test::Unit::TestCase
+  def test_methods
+    assert Resource.methods.include?("resources")
+    assert ! Resource.methods.include?("pkgdir")
+    assert ! Phgx.methods.include?("resources")
+    assert Phgx.methods.include?("pkgdir")
+
+  end
   def test_resolve
     assert_equal File.join(ENV['HOME'], '.rbbt/etc/foo'), Resource.resolve('etc/foo', '', :user)
     assert_equal File.join(ENV['HOME'], '.phgx/etc/foo'), Resource.resolve('etc/foo', 'phgx', :user)
@@ -49,7 +53,7 @@ class TestResource < Test::Unit::TestCase
     assert_equal File.join('/usr/local', 'etc/phgx/foo'), Resource.resolve('etc/foo', 'phgx', :local)
 
     assert_equal File.expand_path(File.join(File.dirname(File.expand_path(__FILE__)), '../../../', 'etc/foo')), Resource.resolve('etc/foo', '', :lib)
-    assert_equal File.expand_path(File.join(File.dirname(File.expand_path(__FILE__)), '../../../', 'etc/phgx/foo')), Resource.resolve('etc/foo', 'phgx', :lib)
+    assert_equal File.expand_path(File.join(File.dirname(File.expand_path(__FILE__)), '../../../', 'etc/foo')), Resource.resolve('etc/foo', 'phgx', :lib)
 
     assert_equal File.join(ENV['HOME'], '.rbbt/etc/foo'), Resource.resolve('etc/foo', '')
     assert_equal File.join(ENV['HOME'], '.phgx/etc/foo'), Resource.resolve('etc/foo', 'phgx')
@@ -84,8 +88,7 @@ class TestResource < Test::Unit::TestCase
   end
 
   def test_install
-    assert true
-    #assert File.exists?(Rbbt.opt.xclip.produce)
+    assert File.exists?(Rbbt.software.opt.xclip.produce)
   end
 end
 

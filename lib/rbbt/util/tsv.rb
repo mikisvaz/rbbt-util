@@ -1,6 +1,6 @@
+require 'rbbt/util/resource'
 require 'rbbt/util/misc'
 require 'rbbt/util/open'
-require 'rbbt/util/path'
 require 'rbbt/util/tc_hash'
 require 'rbbt/util/tmpfile'
 require 'rbbt/util/log'
@@ -66,7 +66,7 @@ class TSV
 
     @filename = Misc.process_options options, :filename
     @filename ||= case
-                  when Path === file
+                  when Resource::Path === file
                     file
                   when (String === file and File.exists? file)
                     File.expand_path file
@@ -114,7 +114,7 @@ class TSV
 
           case
             ## Parse source
-          when Path === file #(String === file and file.respond_to? :open)
+          when Resource::Path === file #(String === file and file.respond_to? :open)
             data, extra = TSV.parse(file.open(:grep => options[:grep]) , options)
             extra[:namespace] ||= file.namespace
             extra[:datadir]   ||= file.datadir
