@@ -5,12 +5,14 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   tsv.rb
   tchash.rb
   workflow.rb
+  rbbt_query.rb
  }
  lib=lib{
   rbbt.rb
   rbbt-util.rb
   util=rbbt/util {
    resource.rb
+   task.rb
 
    simpleDSL.rb
    simpleopt.rb
