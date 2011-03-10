@@ -332,3 +332,6 @@ source "$INSTALL_HELPER_FILE"
 
 end
 
+def resource_path(path)
+  Resource::Path.path(path)
+end

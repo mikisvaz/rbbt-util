@@ -316,6 +316,12 @@ class NamedArray < Array
     values = NamedArray.name(values, fields)
     values.zip_fields
   end
+
+  def report
+    fields.zip(self).collect do |field,value|
+      "* #{ field }: #{ Array === value ? value * "|" : value }"
+    end * "\n"
+  end
 end
 
 def benchmark(bench = true)

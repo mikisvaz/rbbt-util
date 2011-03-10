@@ -26,7 +26,7 @@ class TSV
   def attach_source_key(other, source, fields = nil)
     fields = other.fields - [key_field].concat(self.fields) if fields.nil?
 
-    other = other.tsv unless TSV === other
+    other = other.tsv(:persistence => :no_create) unless TSV === other
     field_positions = fields.collect{|field| other.identify_field field}
     field_names     = field_positions.collect{|pos| pos == :key ? other.key_field : other.fields[pos] }
 

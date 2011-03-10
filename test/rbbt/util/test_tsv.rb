@@ -178,7 +178,11 @@ row2    A    B
       assert !tsv1.case_insensitive
       assert tsv1.include? "A"
     end
-
+    def test_create_array
+      tsv = TSV.new(%w(a b c))
+      assert_equal %w(a b c).sort, tsv.keys.sort
+      assert_equal [[]] * tsv.keys.length, tsv.values
+    end
   end
 end
 

@@ -2,6 +2,7 @@ require 'rbbt/util/resource'
 
 module Resource
   module Path
+
     def tsv(type = nil, options = {})
       if options.empty? and Hash === type
         options, type = type, nil

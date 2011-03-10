@@ -97,6 +97,10 @@ class TSV
  
     else
       case
+      when Array === file
+        @data = Hash[file.collect{|v| 
+          [v,[]]
+        }]
       when Hash === file 
         @data = file
       when TSV === file

@@ -201,8 +201,24 @@ class TSV
         ids.collect!{|id| id.downcase} if case_insensitive
         ids = ids.reject{|_id| _id.empty?}.uniq
 
+        next if ids.empty?
+
         id = ids.shift
-        ids.each do |id2| data[id2] = "__Ref:#{id}" unless data.include? id2 end
+        while data.include? id and data[id] =~ /__Ref:(.*)/
+          data[id] = data[$1].collect{|e| e.dup}
+        end
+
+        all_ids = [id]
+        ids.each do |id2| 
+          if data.include? id2
+            while data[id2] =~ /__Ref:(.*)/ 
+              data[id2] = data[$1].collect{|e| e.dup}
+            end
+            all_ids << id2
+          else
+            data[id2] = "__Ref:#{id}" 
+          end
+        end
 
         if other_pos.nil? or (fields == nil and type == :flat)
           other_pos    = (0..(parts.length - 1)).to_a
@@ -220,23 +236,26 @@ class TSV
         end if cast
 
         max_cols = extra.size if extra.size > (max_cols || 0)
-        if not merge
-          data[id] = extra unless data.include? id
-        else
-          if not data.include? id
-            data[id] = extra
+
+        all_ids.each do |id|
+          if not merge
+            data[id] = extra unless data.include? id
           else
-            entry = data[id]
-            while entry =~ /__Ref:(.*)/ do entry = data[$1] end
-            extra.each_with_index do |f, i|
-              if f.empty?
-                next unless keep_empty
-                f= [""]
+            if not data.include? id
+              data[id] = extra
+            else
+              entry = data[id]
+              while entry =~ /__Ref:(.*)/ do entry = data[$1] end
+              extra.each_with_index do |f, i|
+                if f.empty?
+                  next unless keep_empty
+                  f= [""]
+                end
+                entry[i] ||= []
+                entry[i] = entry[i].concat f
               end
-              entry[i] ||= []
-              entry[i] = entry[i].concat f
+              data[id] = entry
             end
-            data[id] = entry
           end
         end
       end

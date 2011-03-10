@@ -232,6 +232,7 @@ class TSV
   end
 
   def self.field_matches(tsv, values)
+    values = [values] if not Array === values
     if values.flatten.sort[0..9].compact.collect{|n| n.to_i} == (1..10).to_a
       return {}
     end
@@ -269,6 +270,10 @@ class TSV
 
   def field_matches(values)
     TSV.field_matches(self, values)
+  end
+
+  def guess_field(values)
+    field_matches(values).sort_by{|field, matches| matches.uniq.length}.last
   end
 
   def sorted_index(pos_start = nil, pos_end = nil)

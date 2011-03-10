@@ -5,7 +5,7 @@ class FixWidthTable
   def initialize(filename, value_size = nil, range = nil, update = false)
     @filename = filename
 
-    if update or %(memory stringio).include?(filename.to_s.downcase) or not File.exists? filename
+    if update or %(memmory stringio).include?(filename.to_s.downcase) or not File.exists? filename
       Log.debug "Writing FixWidthTable at #{ @filename.inspect }"
       @value_size = value_size
       @range = range

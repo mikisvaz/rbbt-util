@@ -130,7 +130,7 @@ module Persistence
 
   def self.tsv_serializer(data)
     return :marshal if not Object::TSV === data or data.cast
-    return :integer if data.cast == "to_i" and data.type == :single
+    return :integer if (data.cast == "to_i" or data.cast == :to_i) and data.type == :single
 
     case
     when data.type == :double
@@ -295,6 +295,19 @@ module Persistence
       Misc.process_options options, :persistence
 
     filename = get_filename(file)
+
+    if persistence == :no_create
+      o = options.dup
+      options = 
+        Misc.add_defaults options, :persistence_update => false, :persistence_file => nil, :filename => nil
+      persistence_update, persistence_file, filename =
+        Misc.process_options options, :persistence_update, :persistence_file, :filename
+
+      filename         ||= get_filename(file)
+      persistence_file ||= get_persistence_file(filename, prefix, options)
+
+      persistence = false if not File.exists? persistence_file
+    end
 
     if not persistence
       Log.low "Non Persistent Loading for #{filename}. Prefix: #{prefix}"

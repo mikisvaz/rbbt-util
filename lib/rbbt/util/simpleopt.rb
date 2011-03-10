@@ -8,7 +8,7 @@ module SOPT
     opts.split(/:/).each do |opt|
       short, long = opt.sub(/\*$/,'').split('--').values_at(0,1)
       i= {
-        :arg => !opt.match(/\*$/).nil?,
+        :arg => !!opt.match(/\*$/),
       }
       i[:short] = short unless short.nil? || short.empty?
       i[:long] = '--' + long unless long.nil? || long.empty?
