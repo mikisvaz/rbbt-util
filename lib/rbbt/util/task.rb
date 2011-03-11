@@ -1,20 +1,26 @@
+require 'rbbt/util/open'
+
 class Task
   class << self
     attr_accessor :tasks, :basedir
   end
 
+  Task.tasks = {}
+
   Task.basedir = "."
 
   class Job
-    attr_reader :task, :id, :name, :options
+    attr_accessor :task, :id, :name, :options, :dependencies, :pid, :path, :previous_jobs
 
-    attr_reader :pid, :path
-
-    def initialize(task, id, name, options)
+    def initialize(task, id, name, options, dependencies)
       @task = task  
       @id =id
       @name = name
       @options = options
+      @dependencies = dependencies
+
+      @previous_jobs = Hash[*dependencies.first.collect{|job| job.task.name}.zip(dependencies.first).flatten]
+      dependencies.first.collect{|job| @previous_jobs.merge! job.previous_jobs }
 
       @path = File.join(task.basedir, id)
     end
@@ -44,16 +50,47 @@ class Task
       task.block
     end
 
+    def run_dependencies
+      jobs, files = dependencies
+      jobs.each do |job| job.start unless File.exists? job.path end
+      files.each do |file| file.produce end
+    end
+
+    def input
+      dep = dependencies.flatten.first
+      if Job === dep
+        dep.load
+      else
+        dep.read
+      end
+    end
+
     def start
-       instance_exec *arguments, &block
+      Log.medium("Starting Job '#{ name }'. Path: '#{ path }'. Options #{options.inspect}")
+
+      if dependencies.flatten.any?
+        run_dependencies
+      end
+
+      result = instance_exec *arguments, &block
+
+      if not result.nil?
+        case task.persistence
+        when nil, :string, :tsv
+          Open.write(path, result.to_s)
+        when :marshal
+          Open.write(path, Marshal.dump(result))
+        when :yaml
+          Open.write(path, YAML.dump(result))
+        end
+      end
     end
 
     def fork
       @pid = Process.fork do
         step(:started)
         set_info(:options, options)
-        result = start
-        Open.write(path, result.to_s) unless result.nil?
+        start
         step(:done)
         exit
       end
@@ -72,8 +109,25 @@ class Task
       self
     end
 
+    def open
+      File.open(path)
+    end
+
     def read
       File.open(path) do |f| f.read end
+    end
+
+    def load
+      case task.persistence
+      when :string
+        Open.read(path)
+      when :tsv
+        TSV.new(path)
+      when :marshal
+        Marshal.load(Open.read(path))
+      when :yaml
+        YAML.load(Open.read(path))
+      end
     end
   end
 
@@ -96,25 +150,45 @@ class Task
     end
   end
 
-  attr_reader :name, :basedir, :options, :option_defaults, :option_descriptions,  :block
-  def initialize(name, basedir = nil, options = nil, option_defaults = nil, option_descriptions = nil, &block)
+  attr_accessor :name, :basedir, :persistence, :options, :option_defaults, :option_descriptions, :dependencies, :block
+  def initialize(name, basedir = nil, persistence = nil, options = nil, option_defaults = nil, option_descriptions = nil, dependencis = nil, &block)
     @name = name.to_s
     @basedir = basedir || File.join(Task.basedir, name.to_s)
 
+    @persistence = persistence || :string
+
     @options = Array === options ? options : [options] unless options.nil? 
 
-    @option_defaults = option_defaults unless option_defaults.nil? 
-    @option_descriptions = option_descriptions unless option_descriptions.nil? 
+    @option_defaults = option_defaults 
+    @option_descriptions = option_descriptions 
+    @dependencies = dependencies || []
     @block = block unless not block_given?
+
+    self.class.tasks[name] = self
   end
-  
+
+  def job_dependencies(jobname, run_options = {})
+    jobs = []
+    files = []
+    dependencies.each do |dependency|
+      if Symbol === dependency
+        jobs << self.class.tasks[dependency].job(jobname, run_options)
+      else
+        files << dependency
+      end
+    end
+    [jobs, files]
+  end
+
   def job(jobname, run_options = {})
 
     job_id = self.job_id jobname, run_options
 
     job_options = self.job_options run_options
 
-    Job.new(self, job_id, jobname, job_options)
+    dependencies = self.job_dependencies(jobname, run_options)
+
+    Job.new(self, job_id, jobname, job_options, dependencies)
   end
 
   def run(*args)
