@@ -8,12 +8,10 @@ module Resource
         options, type = type, nil
       end
 
-      produce
       TSV.new self.find, type, options
     end
 
     def index(options = {})
-      produce
       TSV.index self.find, options
     end
 

@@ -13,9 +13,13 @@ module Log
     @@severity
   end
 
+  SEVERITY_COLOR = ["0;37m", "32m", "33m", "31m", "1;0m" ].collect{|e| "\033[#{e}"}
+
   def self.log(message, severity = MEDIUM)
+    severity_color = SEVERITY_COLOR[severity]
     STDERR.puts caller.select{|l| l =~ /rbbt/} * "\n" if @@severity == -1 and not message.empty?
-    STDERR.puts "#{Time.now}[#{severity.to_s}]: " +  message if severity >= @@severity
+    #STDERR.puts "#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}[#{severity.to_s}]: " +  message if severity >= @@severity
+    STDERR.puts "\033[0;37m#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}#{severity_color}[#{severity.to_s}]\033[0m: " +  message if severity >= @@severity
   end
 
   def self.debug(message)

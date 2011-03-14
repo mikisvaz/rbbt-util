@@ -13,6 +13,7 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   util=rbbt/util {
    resource.rb
    task.rb
+   workflow.rb
 
    simpleDSL.rb
    simpleopt.rb

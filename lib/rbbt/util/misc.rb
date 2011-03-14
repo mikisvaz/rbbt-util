@@ -253,13 +253,12 @@ module Misc
     chunks
   end
 
-
   IUPAC2BASE = {
-    "A" => "A",
-    "C" => "C",
-    "G" => "G",
-    "T" => "T",
-    "U" => "U",
+    "A" => ["A"],
+    "C" => ["C"],
+    "G" => ["G"],
+    "T" => ["T"],
+    "U" => ["U"],
     "R" => "A or G".split(" or "),
     "Y" => "C or T".split(" or "),
     "S" => "G or C".split(" or "),

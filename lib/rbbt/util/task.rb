@@ -2,12 +2,10 @@ require 'rbbt/util/open'
 
 class Task
   class << self
-    attr_accessor :tasks, :basedir
+    attr_accessor :basedir
   end
 
-  Task.tasks = {}
-
-  Task.basedir = "."
+  @basedir = "."
 
   class Job
     attr_accessor :task, :id, :name, :options, :dependencies, :pid, :path, :previous_jobs
@@ -22,7 +20,8 @@ class Task
       @previous_jobs = Hash[*dependencies.first.collect{|job| job.task.name}.zip(dependencies.first).flatten]
       dependencies.first.collect{|job| @previous_jobs.merge! job.previous_jobs }
 
-      @path = File.join(task.basedir, id)
+      basedir = task.workflow.basedir unless task.workflow.nil?
+      @path = File.join(basedir || Task.basedir, task.name, id)
     end
 
     def info_file
@@ -76,7 +75,7 @@ class Task
 
       if not result.nil?
         case task.persistence
-        when nil, :string, :tsv
+        when nil, :string, :tsv, :integer
           Open.write(path, result.to_s)
         when :marshal
           Open.write(path, Marshal.dump(result))
@@ -119,6 +118,10 @@ class Task
 
     def load
       case task.persistence
+      when :float
+        Open.read(path).to_f
+      when :integer
+        Open.read(path).to_i
       when :string
         Open.read(path)
       when :tsv
@@ -150,10 +153,10 @@ class Task
     end
   end
 
-  attr_accessor :name, :basedir, :persistence, :options, :option_defaults, :option_descriptions, :dependencies, :block
-  def initialize(name, basedir = nil, persistence = nil, options = nil, option_defaults = nil, option_descriptions = nil, dependencis = nil, &block)
+  attr_accessor :name, :persistence, :options, :option_descriptions, :option_types, :option_defaults, :workflow, :dependencies, :block
+  def initialize(name, persistence = nil, options = nil, option_descriptions = nil, option_types = nil, option_defaults = nil, workflow = nil, dependencies = nil, &block)
+    dependencies = [dependencies] unless dependencies.nil? or Array === dependencies
     @name = name.to_s
-    @basedir = basedir || File.join(Task.basedir, name.to_s)
 
     @persistence = persistence || :string
 
@@ -161,18 +164,23 @@ class Task
 
     @option_defaults = option_defaults 
     @option_descriptions = option_descriptions 
+    @option_types = option_types 
+    @workflow = workflow
     @dependencies = dependencies || []
-    @block = block unless not block_given?
 
-    self.class.tasks[name] = self
+    @block = block unless not block_given?
   end
 
   def job_dependencies(jobname, run_options = {})
     jobs = []
     files = []
     dependencies.each do |dependency|
-      if Symbol === dependency
-        jobs << self.class.tasks[dependency].job(jobname, run_options)
+      case
+      when Task === dependency
+        jobs << dependency.job(jobname, run_options)
+      when Symbol === dependency
+        raise "No workflow defined, yet dependencies include Symbols (other tasks)" if workflow.nil?
+        jobs << workflow.tasks[dependency].job(jobname, run_options)
       else
         files << dependency
       end
@@ -186,7 +194,7 @@ class Task
 
     job_options = self.job_options run_options
 
-    dependencies = self.job_dependencies(jobname, run_options)
+    dependencies = self.job_dependencies(jobname, run_options) 
 
     Job.new(self, job_id, jobname, job_options, dependencies)
   end
