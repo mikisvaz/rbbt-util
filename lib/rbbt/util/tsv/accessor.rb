@@ -177,7 +177,10 @@ class TSV
     if String === value && value =~ /__Ref:(.*)/
       return self[$1]
     else
-      value = NamedArray.name value, fields if Array === value and fields 
+
+      if Array === value and fields 
+        value = NamedArray.name value, fields 
+      end
       value
     end
   end
@@ -246,7 +249,7 @@ class TSV
   end
 
   def include?(key)
-    data.include? key
+    @data.include? key
   end
 
   def to_s(keys = nil, no_options = false)

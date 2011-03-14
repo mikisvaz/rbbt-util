@@ -71,8 +71,13 @@ This is an example file. Entries are separated by Entry
     hash = {:a => /test/}
     assert_equal({}, Misc.string2hash(Misc.hash2string(hash)))
  
-
-
  end
+
+  def test_merge
+    a = [[1],[2]]
+    a = NamedArray.name a, %w(1 2)
+    a.merge [3,4]
+    assert_equal [1,3], a[0]
+  end
 
 end

@@ -96,6 +96,7 @@ class TSV
       end if not extra.nil?
  
     else
+
       case
       when Array === file
         @data = Hash[file.collect{|v| 

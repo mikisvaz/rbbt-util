@@ -175,8 +175,8 @@ class TSV
 
         extra.collect! do |elem| 
           case
-            when String === cast
-              elem.send(cast)
+            when (String === cast or Symbol === cast)
+              elem.send(cast.to_s)
             when Proc === cast
               cast.call elem
             end
@@ -228,8 +228,8 @@ class TSV
         extra = parts.values_at(*other_pos).collect{|f| parse_fields(f, sep2)}
         extra.collect! do |list| 
           case
-          when String === cast
-            list.collect{|elem| elem.send(cast)}
+          when (String === cast or Symbol === cast)
+            list.collect{|elem| elem.send(cast.to_s)}
           when Proc === cast
             list.collect{|elem| cast.call elem}
           end
@@ -278,7 +278,7 @@ class TSV
 
     fields = nil if Fixnum === fields or (Array === fields and fields.select{|f| Fixnum === f}.any?)
     fields ||= other_fields
-    [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive, :namespace => namespace, :datadir => options[:datadir], :identifiers => options[:identifiers], :cast => !!cast}]
+    [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive, :namespace => namespace, :datadir => options[:datadir], :identifiers => options[:identifiers], :cast => (cast.nil? ? false : cast)}]
   end
 
 end

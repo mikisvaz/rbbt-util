@@ -117,5 +117,31 @@ row2    A    B    Id3
     end
   end
 
+  def test_integer
+    content =<<-EOF
+#Id    ValueA
+row1   1
+row2   2 
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(filename, :single, :sep => /\s+/, :cast => :to_i, :persistence => true)
+      assert_equal 1, tsv["row1"]
+    end
+  end
+
+  def test_integer
+    content =<<-EOF
+row1   1 2 3 4 5
+row2   2 4 6 8
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(filename, :flat, :sep => /\s+/, :cast => :to_i, :persistence => true)
+      assert_equal [1,2,3,4,5], tsv["row1"]
+    end
+  end
+
+
 end
 

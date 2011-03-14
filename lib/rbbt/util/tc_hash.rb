@@ -6,9 +6,15 @@ class TCHash < TokyoCabinet::HDB
   class KeyFormatError < StandardError;end
 
   class IntegerSerializer
-    def self.dump(i); [i].pack("L"); end
-    def self.load(str); str.unpack("L"); end
+    def self.dump(i); [i].pack("l"); end
+    def self.load(str); str.unpack("l").first; end
   end
+
+  class IntegerArraySerializer
+    def self.dump(a); a.pack("l*"); end
+    def self.load(str); str.unpack("l*"); end
+  end
+
 
   class StringSerializer
     def self.dump(str); str.to_s; end
@@ -36,7 +42,7 @@ class TCHash < TokyoCabinet::HDB
   end
 
 
-  ALIAS = {:integer => IntegerSerializer, :marshal => Marshal, nil => Marshal, :single => StringSerializer, :list => StringArraySerializer, :double => StringDoubleArraySerializer}
+  ALIAS = {:integer => IntegerSerializer, :integer_array => IntegerArraySerializer, :marshal => Marshal, nil => Marshal, :single => StringSerializer, :list => StringArraySerializer, :double => StringDoubleArraySerializer}
 
   CONNECTIONS = {}
 

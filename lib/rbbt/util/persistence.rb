@@ -128,19 +128,37 @@ module Persistence
     end
   end
 
-  def self.tsv_serializer(data)
-    return :marshal if not Object::TSV === data or data.cast
-    return :integer if (data.cast == "to_i" or data.cast == :to_i) and data.type == :single
+  def self.tsv_serializer(data, extra = nil)
+    if Object::TSV === data
+      return :integer if (data.cast == "to_i" or data.cast == :to_i) and data.type == :single
+      return :integer_array if (data.cast == "to_i" or data.cast == :to_i) and (data.type == :list or data.type == :flat)
 
-    case
-    when data.type == :double
-      :double
-    when data.type == :list
-      :list
-    when data.type == :single
-      :single
+      case
+      when data.type == :double
+        :double
+      when data.type == :list
+        :list
+      when data.type == :single
+        :single
+      else
+        :marshal
+      end
     else
-      :marshal
+      return :integer if (extra[:cast] == "to_i" or extra[:cast] == :to_i) and extra[:type] == :single
+      return :integer_array if (extra[:cast] == "to_i" or extra[:cast] == :to_i) and (extra[:type] == :list or extra[:type] == :flat)
+
+      case
+      when extra[:type] == :double
+        :double
+      when extra[:type] == :list
+        :list
+      when extra[:type] == :single
+        :single
+      else
+        :marshal
+      end
+ 
+      return :marshal if not Object::TSV === data 
     end
   end
 
@@ -207,7 +225,8 @@ module Persistence
     if persistence_update or not File.exists? persistence_file
       Log.debug "Creating #{ persistence_file }. Prefix = #{prefix}"
       res, extra = yield file, options, filename, persistence_file
-      serializer = tsv_serializer res
+
+      serializer = tsv_serializer res, extra
 
       per = Persistence::TSV.get persistence_file, true, serializer
 

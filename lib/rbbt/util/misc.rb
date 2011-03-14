@@ -253,6 +253,28 @@ module Misc
     chunks
   end
 
+
+  IUPAC2BASE = {
+    "A" => "A",
+    "C" => "C",
+    "G" => "G",
+    "T" => "T",
+    "U" => "U",
+    "R" => "A or G".split(" or "),
+    "Y" => "C or T".split(" or "),
+    "S" => "G or C".split(" or "),
+    "W" => "A or T".split(" or "),
+    "K" => "G or T".split(" or "),
+    "M" => "A or C".split(" or "),
+    "B" => "C or G or T".split(" or "),
+    "D" => "A or G or T".split(" or "),
+    "H" => "A or C or T".split(" or "),
+    "V" => "A or C or G".split(" or "),
+    "N" => %w(A C T G),
+  }
+  def self.IUPAC_to_base(iupac)
+    IUPAC2BASE[iupac]
+  end
 end
 
 module PDF2Text
@@ -273,6 +295,19 @@ class NamedArray < Array
     a = self.new(array)
     a.fields = fields
     a
+  end
+
+  def merge(array)
+    double = Array === array.first 
+    new = self.dup
+    (0..length - 1).each do |i|
+      if double
+        new[i] = new[i] + array[i]
+      else
+        new[i] << array[i]
+      end
+    end
+    new
   end
 
   def positions(fields)
