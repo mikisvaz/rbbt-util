@@ -203,12 +203,22 @@ module Open
   def self.write(file, content)
     FileUtils.mkdir_p File.dirname(file)
     if String === content
-      File.open(file, 'w') do |f| f.write content end
+      File.open(file, 'w') do |f|
+        f.flock(File::LOCK_EX)
+        f.write content 
+        f.flock(File::LOCK_UN)
+      end
     else
-      File.open(file, 'w') do |f| 
-        while l = content.gets
-          f.write l
+      begin
+        File.open(file, 'w') do |f| 
+          f.flock(File::LOCK_EX)
+          while l = content.gets
+            f.write l
+          end
+          f.flock(File::LOCK_UN)
         end
+      rescue
+        FileUtils.rm file if File.exists? file
       end
       content.close
     end
