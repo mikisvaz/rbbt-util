@@ -119,8 +119,6 @@ module Resource
     CMD.cmd(File.join(opt_dir, '.post_install'))
   end
 
-
-
   def self.produce(resource)
     resource = resource.find if Path === resource
     return resource if File.exists? resource

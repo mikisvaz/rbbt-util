@@ -31,13 +31,6 @@ class TestBed < Test::Unit::TestCase
       SNPsandGO.predict(values["Unirprot ID"], values["Mutation"])
     end
     
-
-    #i = Organism::Hsa.identifiers.index :fields => "Associated Gene Name", :target => "Ensembl Gene ID"
-    #i = KEGG.identifiers.index :target => "KEGG Gene ID"
-    #i = KEGG.identifiers.index :target => "KEGG Gene ID"
-
-    #ddd i.keys.length
-
     puts data.to_s
 
   end
