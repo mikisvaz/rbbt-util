@@ -29,16 +29,35 @@ class Task
     end
 
     def info
-      return {} if not File.exists? info_file
+      return {} if not File.exists?(info_file)
       YAML.load(File.open(info_file))
     end
 
     def set_info(key, value)
-      Open.write info_file, YAML.dump(info.merge(key => value))
+      i = self.info
+      new_info = i.merge(key => value)
+      Open.write(info_file, new_info.to_yaml)
     end
 
-    def step(name)
-      set_info(:step, name)
+    def step(name = nil, message = nil)
+      if name.nil?
+        info[:step]
+      else
+        set_info(:step, name)
+        set_info(:messages, info[:messages] || [] << message) if not message.nil?
+      end
+    end
+    
+    def messages
+      info[:messages] || []
+    end
+
+    def done?
+      [:done, :error, :aborted].include? info[:step]
+    end
+
+    def error?
+      step == :error or step == :aborted
     end
 
     def arguments
@@ -65,7 +84,7 @@ class Task
     end
 
     def start
-      Log.medium("Starting Job '#{ name }'. Path: '#{ path }'. Options #{options.inspect}")
+      Log.medium("Starting Job '#{ name }'. Path: '#{ path }'")
 
       if dependencies.flatten.any?
         run_dependencies
@@ -85,14 +104,34 @@ class Task
       end
     end
 
+    def save_options(options)
+      new_options = {}
+      options.each do |key, value|
+        case 
+        when TSV === value
+         new_options[key] = value.to_s
+        else
+          new_options[key] = value
+        end
+      end
+      set_info(:options, new_options)
+    end
+
     def fork
       @pid = Process.fork do
-        step(:started)
-        set_info(:options, options)
-        start
-        step(:done)
+        begin
+          step(:started)
+          save_options(options)
+          start
+          step(:done)
+        rescue Exception
+          Log.debug $!.message
+          Log.debug $!.backtrace * "\n"
+          step(:error, "#{$!.class}: #{$!.message}")
+        end
         exit
       end
+
       self
     end
 
@@ -158,7 +197,7 @@ class Task
     dependencies = [dependencies] unless dependencies.nil? or Array === dependencies
     @name = name.to_s
 
-    @persistence = persistence || :string
+    @persistence = persistence || :marshal
 
     @options = Array === options ? options : [options] unless options.nil? 
 
@@ -169,6 +208,38 @@ class Task
     @dependencies = dependencies || []
 
     @block = block unless not block_given?
+  end
+
+  def recursive_options
+    all_options         = []
+    option_descriptions = {}
+    option_types        = {}
+    option_defaults     = {}
+
+		all_options.concat           self.options               if   self.options
+		option_descriptions.merge!   self.option_descriptions   if   self.option_descriptions
+		option_types.merge!          self.option_types          if   self.option_types
+		option_defaults.merge!       self.option_defaults       if   self.option_defaults
+
+    self.dependencies.each do |task|
+      task = case
+             when Symbol === task
+               workflow.tasks[task]
+             when Task === task
+               task
+             else
+               next
+             end
+
+      n_all_options, n_option_descriptions, n_option_types, n_option_defaults = task.recursive_options
+
+			all_options.concat           n_all_options           if   n_all_options
+			option_descriptions.merge!   n_option_descriptions   if   n_option_descriptions
+			option_types.merge!          n_option_types          if   n_option_types
+			option_defaults.merge!       n_option_defaults       if   n_option_defaults
+		end
+
+    [all_options, option_descriptions, option_types, option_defaults]
   end
 
   def job_dependencies(jobname, run_options = {})

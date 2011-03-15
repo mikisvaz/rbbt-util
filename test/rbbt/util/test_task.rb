@@ -40,7 +40,7 @@ class TestTask < Test::Unit::TestCase
   def test_task_result
     task = Task.new(:test_task, nil, :name) do |name| name end
     job = task.job(:job1, :name => "TestName")
-    assert_equal "TestName", job.fork.join.read
+    assert_equal "TestName", job.fork.join.load
   end
 
   def test_task_info

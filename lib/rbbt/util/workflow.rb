@@ -35,9 +35,9 @@ module WorkFlow
   def process_dangling
     res = [ 
       @dangling_options, 
-      @dangling_option_descriptions.values_at(*@dangling_options),
-      @dangling_option_types.values_at(*@dangling_options),
-      @dangling_option_defaults.values_at(*@dangling_options),
+      Hash[*@dangling_options.zip(@dangling_option_descriptions.values_at(*@dangling_options)).flatten],
+      Hash[*@dangling_options.zip(@dangling_option_types.values_at(*@dangling_options)).flatten],
+      Hash[*@dangling_options.zip(@dangling_option_defaults.values_at(*@dangling_options)).flatten],
       @dangling_dependencies || @last_task,
     ]
 
@@ -54,9 +54,36 @@ module WorkFlow
     end
 
     options, option_descriptions, option_types, option_defaults, dependencies = process_dangling
+    option_descriptions.delete_if do |k,v| v.nil? end
+    option_types.delete_if do |k,v| v.nil? end
+    option_defaults.delete_if do |k,v| v.nil? end
     task = Task.new name, persistence, options, option_descriptions, option_types, option_defaults, self, dependencies, &block
     tasks[name] = task
     @last_task = task
+  end
+
+  def job(task, jobname, *args)
+    task = tasks[task]
+    raise "Task #{ task } not found" if task.nil?
+
+    all_options, option_descriptions, option_types, option_defaults = task.recursive_options
+
+    non_optional_arguments = all_options.reject{|option| option_defaults.include? option}
+    run_options = nil
+
+    case
+    when args.length == non_optional_arguments.length
+      run_options = Hash[*non_optional_arguments.zip(args).flatten].merge option_defaults
+    when args.length == non_optional_arguments.length + 1
+      optional_args = args.pop
+      run_options = option_defaults.
+        merge(optional_args).
+        merge(Hash[*non_optional_arguments.zip(args).flatten])
+    else
+      raise "Number of non optional arguments (#{non_optional_arguments * ', '}) does not match given (#{args.flatten * ", "})"
+    end
+
+    task.job(jobname,  run_options)
   end
 
 end
