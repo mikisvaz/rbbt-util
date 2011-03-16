@@ -1,5 +1,108 @@
 class TSV
+  def self.paste(file1, file2, output, sep = "\t")
+    case
+    when (String === file1 and not file1.index("\n") and file1.length < 250 and File.exists?(file1))
+      file1 = CMD.cmd("sort -k1,1 -t'#{sep}' #{ file1 } ", :pipe => true)
+    when String === file1
+      file1 = CMD.cmd("sort -k1,1 -t'#{sep}'", :in => file1, :pipe => true)
+    end
 
+    case
+    when (String === file2 and not file2.index("\n") and file2.length < 250 and File.exists?(file2))
+      file2 = CMD.cmd("sort -k1,1 -t'#{sep}' #{ file2 } ", :pipe => true)
+    when String === file2
+      file2 = CMD.cmd("sort -k1,1 -t'#{sep}'", :in => file2, :pipe => true)
+    end
+
+    output = File.open(output, 'w') if String === output
+
+    cols1 = nil
+    cols2 = nil
+
+    done1 = false
+    done2 = false
+
+    while (line1 = file1.gets) =~ /#/; end
+    line1.strip!
+    parts1 = line1.split(sep)
+    key1 = parts1.shift
+    cols1 = parts1.length
+
+    while (line2 = file2.gets) =~ /#/; end
+    line2.strip!
+    parts2 = line2.split(sep)
+    key2 = parts2.shift
+    cols2 = parts2.length
+    while not (done1 or done2)
+      case
+      when key1 < key2
+        output.puts [key1, parts1,  [""] * cols2] * sep
+        if file1.eof?
+          done1 = true
+        else
+          line1 = file1.gets
+          line1.strip!
+          parts1 = line1.split(sep)
+          key1 = parts1.shift
+        end
+      when key2 < key1
+        output.puts [key2,  [""] * cols1, parts2] * sep
+        if file2.eof?
+          done2 = true
+        else
+          line2 = file2.gets
+          line2.strip!
+          parts2 = line2.split(sep)
+          key2 = parts2.shift
+        end
+      when key1 == key2
+        output.puts [key1, parts1,  parts2] * sep
+        if file1.eof?
+          done1 = true
+        else
+          line1 = file1.gets
+          line1.strip!
+          parts1 = line1.split(sep)
+          key1 = parts1.shift
+        end
+        if file2.eof?
+          done2 = true
+        else
+          line2 = file2.gets
+          line2.strip!
+          parts2 = line2.split(sep)
+          key2 = parts2.shift
+        end
+ 
+      end
+    end
+
+    while not done1
+      output.puts [key1, parts1,  [""] * cols2] * sep
+      if file1.eof?
+        done1 = true
+      else
+        line1 = file1.gets
+        line1.strip!
+        parts1 = line1.split(sep)
+        key1 = parts1.shift
+      end
+    end
+
+    while not done2
+      output.puts [key2,  [""] * cols1, parts2] * sep
+      if file2.eof?
+        done2 = true
+      else
+        line2 = file2.gets
+        line2.strip!
+        parts2 = line2.split(sep)
+        key2 = parts2.shift
+      end
+    end
+
+    output.close
+  end
   #{{{ Attach Methods
   
   def attach_same_key(other, fields = nil)
@@ -233,6 +336,22 @@ class TSV
     detached_fields = []
     self.fields.each_with_index{|field,i| detached_fields << i if file_fields.include? field.fullname}
     reorder :key, detached_fields
+  end
+
+  def paste(other, options = {})
+    tmpfile = TmpFile.tmp_file
+    TSV.paste(self.to_s, other.to_s, tmpfile)
+
+    new = TSV.new(tmpfile, options)
+
+    new.key_field = self.key_field unless self.key_field.nil?
+    if self.fields and other.fields
+      new.fields = self.fields + other.fields
+    end
+    
+    FileUtils.rm tmpfile if File.exists? tmpfile
+
+    new
   end
 
 end

@@ -263,5 +263,63 @@ row2    E
  
     assert_equal %w(ValueA ValueB ValueE), tsv1.fields
   end
+
+  def test_paste
+    file1 =<<-EOF
+row6 dd dd ee
+row1 a b c
+row2 A B C
+row3 1 2 3
+   EOF
+    file2 =<<-EOF
+row20 rr rr
+row1 d e
+row2 D E
+row4 x y z
+    EOF
+    result =<<-EOF
+row1 a b c d e
+row2 A B C D E
+row20    rr rr
+row3 1 2 3  
+row4    x y z
+row6 dd dd ee  
+    EOF
+
+    TmpFile.with_file do |f|
+      TSV.paste(StringIO.new(file1), StringIO.new(file2), f, " ")
+      assert_equal result, Open.read(f)
+    end
+  end
+
+  def test_paste
+    file1 =<<-EOF
+row6 dd dd ee
+row1 a b c
+row2 A B C
+row3 1 2 3
+   EOF
+    file2 =<<-EOF
+row20 rr rr
+row1 d e
+row2 D E
+row4 x y
+    EOF
+    result =<<-EOF
+row1 a b c d e
+row2 A B C D E
+row20    rr rr
+row3 1 2 3  
+row4    x y
+row6 dd dd ee  
+    EOF
+
+    TmpFile.with_file do |f|
+      tsv1 = TSV.new StringIO.new(file1), :sep => " "
+      tsv2 = TSV.new StringIO.new(file2), :sep => " "
+      tsv_r = tsv1.paste tsv2
+      assert_equal result, tsv_r.to_s(tsv_r.keys.sort, true).gsub(/\t/,' ')
+    end
+  end
 end
 

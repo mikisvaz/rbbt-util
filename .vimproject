@@ -14,6 +14,9 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
    resource.rb
    task.rb
    workflow.rb
+   workflow=workflow{
+    soap.rb
+   }
 
    simpleDSL.rb
    simpleopt.rb

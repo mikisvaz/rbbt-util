@@ -85,6 +85,7 @@ class Task
 
     def start
       Log.medium("Starting Job '#{ name }'. Path: '#{ path }'")
+      set_info(:start_time, Time.now)
 
       if dependencies.flatten.any?
         run_dependencies
@@ -102,6 +103,9 @@ class Task
           Open.write(path, YAML.dump(result))
         end
       end
+
+      set_info(:end_time, Time.now)
+      Log.medium("Finished Job '#{ name }'. Path: '#{ path }'")
     end
 
     def save_options(options)
@@ -115,6 +119,18 @@ class Task
         end
       end
       set_info(:options, new_options)
+    end
+
+    def run
+      begin
+        step(:started)
+        start
+        step(:done)
+      rescue Exception
+        Log.debug $!.message
+        Log.debug $!.backtrace * "\n"
+        step(:error, "#{$!.class}: #{$!.message}")
+      end
     end
 
     def fork
@@ -171,7 +187,17 @@ class Task
         YAML.load(Open.read(path))
       end
     end
-  end
+
+    def clean
+      FileUtils.rm path if File.exists? path
+      FileUtils.rm info_file if File.exists? info_file
+    end
+
+    def recursive_clean
+      dependencies.first.each do |job| job.recursive_clean end
+      clean
+    end
+  end # END Job
 
   def job_options(run_options = nil)
     return {} if options.nil?
@@ -273,4 +299,5 @@ class Task
   def run(*args)
     job(*args).start
   end
+
 end

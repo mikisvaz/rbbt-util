@@ -271,6 +271,15 @@ module Misc
     "V" => "A or C or G".split(" or "),
     "N" => %w(A C T G),
   }
+
+  BASE2COMPLEMENT = {
+    "A" => "T",
+    "C" => "G",
+    "G" => "C",
+    "T" => "A",
+    "U" => "A",
+  }
+
   def self.IUPAC_to_base(iupac)
     IUPAC2BASE[iupac]
   end

@@ -10,7 +10,7 @@ class TestPersistence < Test::Unit::TestCase
       assert File.exists? f
       assert_equal string, Open.read(f)
 
-      rm f
+      FileUtils.rm f
     end
   end
 
@@ -22,7 +22,7 @@ class TestPersistence < Test::Unit::TestCase
       assert_equal object, YAML.load(File.open(f))
       assert_equal YAML.dump(object), Open.read(f)
       
-      rm f
+      FileUtils.rm f
     end
   end
 
@@ -34,7 +34,7 @@ class TestPersistence < Test::Unit::TestCase
       assert_equal object, Marshal.load(File.open(f))
       assert_equal Marshal.dump(object), Open.read(f)
       
-      rm f
+      FileUtils.rm f
     end
   end
 
@@ -42,7 +42,7 @@ class TestPersistence < Test::Unit::TestCase
     object = {:a => 1, :b => 2}
     TmpFile.with_file do |f|
       Persistence.persist("token_file", :Test, :tsv_extra, :persistence_file => f) do 
-        [object, {:fields => ["Number"], :key_field => "Letter", :type => :list, :filename => "foo"}]
+        [object, {:fields => ["Number"], :key_field => "Letter", :type => :single, :cast => :to_i, :filename => "foo"}]
       end
 
       assert File.exists? f
@@ -51,7 +51,7 @@ class TestPersistence < Test::Unit::TestCase
       assert_equal 1, new["a"]
       assert_equal "Letter", new.key_field
       
-      rm f
+      FileUtils.rm f
     end
   end
   

@@ -1,4 +1,3 @@
-
 class TSV
 
   def through(new_key_field = :key, new_fields = nil, &block)

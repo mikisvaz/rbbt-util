@@ -1,9 +1,12 @@
 module Log
 
-  DEBUG  = 0
-  LOW    = 1
-  MEDIUM = 2
-  HIGH   = 3
+  DEBUG    = 0
+  LOW      = 1
+  MEDIUM   = 2
+  HIGH     = 3
+  INFO     = 4
+  WARN     = 5
+  ERROR    = 6
 
   def self.severity=(severity)
     @@severity = severity
@@ -48,7 +51,7 @@ module Log
   when 'HIGH' 
     @@severity = HIGH
   when nil
-    @@severity = HIGH
+    @@severity = INFO
   else
     @@severity = ENV['RBBT_LOG'].to_i
   end

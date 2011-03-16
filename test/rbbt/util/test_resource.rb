@@ -79,8 +79,6 @@ class TestResource < Test::Unit::TestCase
     begin
       assert_equal "Test String", Rbbt.tmp.test_string.read
       assert_equal "Test String", Rbbt.tmp.work.foo.read
-      # puts Rbbt.tmp.url.read
-      # assert Rbbt.tmp.url.read.downcase =~ /ruby/i
     ensure
       FileUtils.rm Rbbt.tmp.test_string.find if File.exists? Rbbt.tmp.test_string.find
       FileUtils.rm Rbbt.tmp.url.find if File.exists? Rbbt.tmp.url.find

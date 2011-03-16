@@ -122,7 +122,7 @@ module CMD
     when String === in_content
       sin.last.write in_content
       sin.last.close
-    when IO === in_content
+    when in_content.respond_to?(:gets)
       Thread.new do
         while not in_content.eof?
           sin.last.write in_content.gets

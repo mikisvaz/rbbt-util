@@ -70,5 +70,16 @@ class TestWorkFlow < Test::Unit::TestCase
     assert_equal 40, job.load
   end
 
+  def test_recursive_clean
+    job = MathWF2.job(:times, :job1, 1, :times => 20)
+    job.fork.join
+    assert File.exists?(job.path)
+    job.clean
+    assert (not File.exists?(job.path))
+    assert File.exists?(job.dependencies.first.first.path)
+    job.recursive_clean
+    assert (not File.exists?(job.dependencies.first.first.path))
+  end
+
 end
 

@@ -144,6 +144,7 @@ module Persistence
         :marshal
       end
     else
+      return :marshal if extra.nil?
       return :integer if (extra[:cast] == "to_i" or extra[:cast] == :to_i) and extra[:type] == :single
       return :integer_array if (extra[:cast] == "to_i" or extra[:cast] == :to_i) and (extra[:type] == :list or extra[:type] == :flat)
 
@@ -157,8 +158,6 @@ module Persistence
       else
         :marshal
       end
- 
-      return :marshal if not Object::TSV === data 
     end
   end
 

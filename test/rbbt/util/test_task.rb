@@ -98,5 +98,22 @@ class TestTask < Test::Unit::TestCase
     assert TSV === job.load
     assert_equal "b", job.load["a"]["B"]
   end
+
+  def test_clean
+    task = Task.new(:test_task, :tsv) do 
+      tsv = TSV.new({})
+      tsv.key_field = "A"
+      tsv.fields = ["B"]
+      tsv.type = :list
+      tsv["a"] = ["b"]
+      tsv
+    end
+    job = task.job(:job1).fork.join
+
+    assert File.exists?(job.path)
+    job.clean
+    assert (not File.exists?(job.path))
+ 
+  end
 end
 

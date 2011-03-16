@@ -248,7 +248,7 @@ class TSV
     if tsv.type == :double
       tsv.through do |key,entry_values|
         fields.zip(entry_values).each do |field,entry_field_values|
-          field_values[field].concat entry_field_values
+          field_values[field].concat entry_field_values unless entry_field_values.nil?
         end
       end
     else
