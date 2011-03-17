@@ -2,13 +2,18 @@ require 'rbbt/util/resource'
 
 module Resource
   module Path
-
     def tsv(type = nil, options = {})
       if options.empty? and Hash === type
         options, type = type, nil
       end
 
-      TSV.new self, type, options
+      tsv = TSV.new self, type, options
+      tsv.namespace ||= namespace
+      tsv
+    end
+
+    def namespace_or_dirname
+      namespace || File.basename(File.dirname(self))
     end
 
     def index(options = {})
@@ -27,12 +32,16 @@ module Resource
 
     def fields(sep = nil, header_hash = nil)
       produce
-      TSV.parse_header(self.open, sep, header_hash)[1].collect{|f| f.extend TSV::Field; f.namespace = namespace ;f}
+      key, fields, options, line = TSV.parse_header(self.open, sep, header_hash)
+      namespace = options[:namespace] if options.include? namespace
+      fields.collect{|f| f.extend TSV::Field; f.namespace = namespace || namespace_or_dirname ;f}
     end
 
     def all_fields(sep = nil, header_hash = nil)
       produce
-      key_field, fields = TSV.parse_header(self.open, sep, header_hash).values_at(0, 1).flatten.collect{|f| f.extend TSV::Field; f.namespace = namespace; f}
+      key, fields, options, line = TSV.parse_header(self.open, sep, header_hash)
+      namespace = options[:namespace] if options.include? namespace
+      [key,fields].flatten.collect{|f| f.extend TSV::Field; f.namespace = namespace || namespace_or_dirname ;f}
     end
 
     def fields_in_namespace(sep = nil, header_hash = nil)

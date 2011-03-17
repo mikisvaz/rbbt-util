@@ -113,7 +113,6 @@ class TestTask < Test::Unit::TestCase
     assert File.exists?(job.path)
     job.clean
     assert (not File.exists?(job.path))
- 
   end
 end
 

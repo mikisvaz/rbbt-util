@@ -70,7 +70,7 @@ class Task
 
     def run_dependencies
       jobs, files = dependencies
-      jobs.each do |job| job.start unless File.exists? job.path end
+      jobs.each do |job| job.start unless File.exists? job.path; job.step(:done) end
       files.each do |file| file.produce end
     end
 
@@ -86,6 +86,8 @@ class Task
     def start
       Log.medium("Starting Job '#{ name }'. Path: '#{ path }'")
       set_info(:start_time, Time.now)
+
+      extend task.scope unless task.scope.nil?
 
       if dependencies.flatten.any?
         run_dependencies
@@ -121,7 +123,12 @@ class Task
       set_info(:options, new_options)
     end
 
+    def recursive_done?
+      previous_jobs.values.inject(true){|acc,j| acc and j.recursive_done?} and done?
+    end
+
     def run
+      return self if recursive_done?
       begin
         step(:started)
         start
@@ -131,9 +138,11 @@ class Task
         Log.debug $!.backtrace * "\n"
         step(:error, "#{$!.class}: #{$!.message}")
       end
+      self
     end
 
     def fork
+      return self if recursive_done?
       @pid = Process.fork do
         begin
           step(:started)
@@ -218,8 +227,8 @@ class Task
     end
   end
 
-  attr_accessor :name, :persistence, :options, :option_descriptions, :option_types, :option_defaults, :workflow, :dependencies, :block
-  def initialize(name, persistence = nil, options = nil, option_descriptions = nil, option_types = nil, option_defaults = nil, workflow = nil, dependencies = nil, &block)
+  attr_accessor :name, :persistence, :options, :option_descriptions, :option_types, :option_defaults, :workflow, :dependencies, :scope, :block
+  def initialize(name, persistence = nil, options = nil, option_descriptions = nil, option_types = nil, option_defaults = nil, workflow = nil, dependencies = nil, scope = nil, &block)
     dependencies = [dependencies] unless dependencies.nil? or Array === dependencies
     @name = name.to_s
 
@@ -232,6 +241,7 @@ class Task
     @option_types = option_types 
     @workflow = workflow
     @dependencies = dependencies || []
+    @scope = scope
 
     @block = block unless not block_given?
   end

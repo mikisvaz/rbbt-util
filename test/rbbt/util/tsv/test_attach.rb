@@ -321,5 +321,36 @@ row6 dd dd ee
       assert_equal result, tsv_r.to_s(tsv_r.keys.sort, true).gsub(/\t/,' ')
     end
   end
+
+  def test_paste_merge
+    file1 =<<-EOF
+row6,dd,dd,ee
+row1,a,b,c
+row1,aa,bb,cc
+row2,A,B,C
+row3,1,2,3
+   EOF
+    file2 =<<-EOF
+row20,rr,rr
+row1,d,e
+row2,D,E
+row4,x,y
+    EOF
+    result =<<-EOF
+row1,aa|a,bb|b,cc|c,d,e
+row2,A,B,C,D,E
+row20,,,,rr,rr
+row3,1,2,3,,
+row4,,,,x,y
+row6,dd,dd,ee,,
+    EOF
+
+    TmpFile.with_file do |f|
+      TSV.paste_merge StringIO.new(file1), StringIO.new(file2), f, ','
+
+      assert_equal result, Open.read(f)
+    end
+ 
+  end
 end
 

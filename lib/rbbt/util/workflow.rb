@@ -2,10 +2,11 @@ require 'rbbt/util/task'
 module WorkFlow
   def self.extended(base)
     class << base
-      attr_accessor :tasks, :basedir, :dangling_options, :dangling_option_descriptions,
+      attr_accessor :tasks, :basedir, :base, :dangling_options, :dangling_option_descriptions,
         :dangling_option_types, :dangling_option_defaults, :dangling_dependencies, :last_task
     end
 
+    base.base = base
     base.tasks = {}
     base.basedir = '.'
     base.clear_dangling
@@ -57,7 +58,7 @@ module WorkFlow
     option_descriptions.delete_if do |k,v| v.nil? end
     option_types.delete_if do |k,v| v.nil? end
     option_defaults.delete_if do |k,v| v.nil? end
-    task = Task.new name, persistence, options, option_descriptions, option_types, option_defaults, self, dependencies, &block
+    task = Task.new name, persistence, options, option_descriptions, option_types, option_defaults, self, dependencies, self, &block
     tasks[name] = task
     @last_task = task
   end

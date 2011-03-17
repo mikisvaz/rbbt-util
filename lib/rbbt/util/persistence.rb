@@ -318,11 +318,11 @@ module Persistence
       o = options.dup
       options = 
         Misc.add_defaults options, :persistence_update => false, :persistence_file => nil, :filename => nil
-      persistence_update, persistence_file, filename =
-        Misc.process_options options, :persistence_update, :persistence_file, :filename
+      persistence_update, persistence_dir, persistence_file, filename =
+        Misc.process_options options, :persistence_update, :persistence_dir, :persistence_file, :filename
 
       filename         ||= get_filename(file)
-      persistence_file ||= get_persistence_file(filename, prefix, options)
+      persistence_file ||= get_persistence_file(filename, prefix, options.merge(:persistence_dir => persistence_dir))
 
       persistence = false if not File.exists? persistence_file
     end
@@ -351,4 +351,6 @@ module Persistence
       end
     end
   end
+
+
 end

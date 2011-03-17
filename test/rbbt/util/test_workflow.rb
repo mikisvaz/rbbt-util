@@ -16,6 +16,10 @@ end
 MathWF.basedir  = Rbbt.tmp.test.jobs.mathwf.find :user
 
 module MathWF2
+  def times(num, t)
+    num * t
+  end
+
   extend WorkFlow
   task_option :value
   task :input => :integer do |value| value end
@@ -29,7 +33,7 @@ module MathWF2
   
   task_option :times, "Times to multiply by", :integer, 10
   task_dependencies :add_1
-  task :times => :integer do |times| input * times end
+  task :times => :integer do |times| times(input, times) end
 end
 
 MathWF2.basedir = Rbbt.tmp.test.jobs.mathwf.find :user

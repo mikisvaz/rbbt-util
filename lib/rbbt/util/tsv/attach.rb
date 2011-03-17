@@ -1,4 +1,79 @@
 class TSV
+  def self.paste_merge(file1, file2, output, sep = "\t")
+    case
+    when (String === file1 and not file1.index("\n") and file1.length < 250 and File.exists?(file1))
+      file1 = CMD.cmd("sort -k1,1 -t'#{sep}' #{ file1 } | grep -v '^#{sep}' ", :pipe => true)
+    when (String === file1 or StringIO === file1)
+      file1 = CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file1, :pipe => true)
+    end
+
+    case
+    when (String === file2 and not file2.index("\n") and file2.length < 250 and File.exists?(file2))
+      file2 = CMD.cmd("sort -k1,1 -t'#{sep}' #{ file2 } | grep -v '^#{sep}' ", :pipe => true)
+    when (String === file2 or StringIO === file2)
+      file2 = CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file2, :pipe => true)
+    end
+
+    output = File.open(output, 'w') if String === output
+
+    cols1 = nil
+    cols2 = nil
+
+    done1 = false
+    done2 = false
+
+    key1 = key2 = nil
+    while key1.nil?
+      while (line1 = file1.gets) =~ /#/; end
+      key1, *parts1 = line1.sub("\n",'').split(sep, -1)
+      cols1 = parts1.length
+    end
+
+    while key2.nil?
+      while (line2 = file2.gets) =~ /#/; end
+      key2, *parts2 = line2.sub("\n",'').split(sep, -1)
+      cols2 = parts2.length
+    end
+
+    key = key1 < key2 ? key1 : key2
+    parts = [""] * (cols1 + cols2)
+    while not (done1 and done2)
+      while (not done1 and key1 == key)
+        parts1.each_with_index do |part, i|
+          parts[i] = (parts[i].nil? or parts[i].empty?) ? part : parts[i] << "|" << part
+        end
+        key1 = nil
+        while key1.nil? and not done1
+          if file1.eof?; done1 = true; else key1, *parts1 = file1.gets.sub("\n",'').split(sep, -1) end
+        end
+      end
+      while (not done2 and key2 == key)
+        parts2.each_with_index do |part, i|
+          i += cols1
+          parts[i] = (parts[i].nil? or parts[i].empty?) ? part : parts[i] << "|" << part
+        end
+        key2 = nil
+        while key2.nil? and not done2
+          if file2.eof?; done2 = true; else key2, *parts2 = file2.gets.sub("\n",'').split(sep, -1) end
+        end
+      end
+
+      output.puts [key, parts].flatten * sep
+      parts = [""] * (cols1 + cols2)
+
+      case
+      when done1
+        key = key2
+      when done2
+        key = key1
+      else
+        key = key1 < key2 ? key1 : key2
+      end
+    end
+
+    output.close
+  end
+
   def self.paste(file1, file2, output, sep = "\t")
     case
     when (String === file1 and not file1.index("\n") and file1.length < 250 and File.exists?(file1))
@@ -73,7 +148,6 @@ class TSV
           parts2 = line2.split(sep)
           key2 = parts2.shift
         end
- 
       end
     end
 

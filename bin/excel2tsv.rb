@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require 'spreadsheet'
-require 'simpleopt'
+require 'rbbt/util/simpleopt'
 
 options = SOPT.get("-h--header:-o--outfile*:-i--infile*:-p--page*")
 

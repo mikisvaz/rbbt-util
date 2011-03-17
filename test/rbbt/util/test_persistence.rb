@@ -142,6 +142,15 @@ row2   2 4 6 8
     end
   end
 
+  def test_persist_dir
+    string = Persistence.persist("Test", :Test, :string, :persistence_dir => Rbbt.tmp.test.persistence) do
+      "Test"
+    end
+
+    assert Dir.glob(Rbbt.tmp.test.persistence.find + '*').length == 1
+
+    assert_equal "Test", string
+  end
 
 end
 
