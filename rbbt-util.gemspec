@@ -5,14 +5,14 @@
 
 Gem::Specification.new do |s|
   s.name = %q{rbbt-util}
-  s.version = "2.1.0"
+  s.version = "3.0.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
-  s.date = %q{2011-02-10}
+  s.date = %q{2011-03-19}
   s.description = %q{Utilities for handling tsv files, caches, etc}
   s.email = %q{miguel.vazquez@fdi.ucm.es}
-  s.executables = ["tsv.rb", "tchash.rb", "workflow.rb"]
+  s.executables = ["tsv.rb", "tchash.rb", "workflow.rb", "rbbt_query.rb"]
   s.extra_rdoc_files = [
     "LICENSE"
   ]
@@ -24,21 +24,18 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/bed.rb",
     "lib/rbbt/util/cachehelper.rb",
     "lib/rbbt/util/cmd.rb",
-    "lib/rbbt/util/data_module.rb",
     "lib/rbbt/util/excel2tsv.rb",
     "lib/rbbt/util/filecache.rb",
     "lib/rbbt/util/fix_width_table.rb",
     "lib/rbbt/util/log.rb",
     "lib/rbbt/util/misc.rb",
     "lib/rbbt/util/open.rb",
-    "lib/rbbt/util/path.rb",
     "lib/rbbt/util/persistence.rb",
-    "lib/rbbt/util/pkg_config.rb",
-    "lib/rbbt/util/pkg_data.rb",
-    "lib/rbbt/util/pkg_software.rb",
     "lib/rbbt/util/rake.rb",
+    "lib/rbbt/util/resource.rb",
     "lib/rbbt/util/simpleDSL.rb",
     "lib/rbbt/util/simpleopt.rb",
+    "lib/rbbt/util/task.rb",
     "lib/rbbt/util/tc_hash.rb",
     "lib/rbbt/util/tmpfile.rb",
     "lib/rbbt/util/tsv.rb",
@@ -47,6 +44,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/tsv/index.rb",
     "lib/rbbt/util/tsv/manipulate.rb",
     "lib/rbbt/util/tsv/parse.rb",
+    "lib/rbbt/util/tsv/resource.rb",
     "lib/rbbt/util/workflow.rb",
     "share/install/software/lib/install_helpers",
     "share/lib/R/util.R"
@@ -59,18 +57,17 @@ Gem::Specification.new do |s|
     "test/rbbt/util/test_R.rb",
     "test/rbbt/util/test_bed.rb",
     "test/rbbt/util/test_cmd.rb",
-    "test/rbbt/util/test_data_module.rb",
     "test/rbbt/util/test_excel2tsv.rb",
     "test/rbbt/util/test_filecache.rb",
     "test/rbbt/util/test_fix_width_table.rb",
     "test/rbbt/util/test_misc.rb",
     "test/rbbt/util/test_open.rb",
-    "test/rbbt/util/test_path.rb",
     "test/rbbt/util/test_persistence.rb",
-    "test/rbbt/util/test_pkg_data.rb",
     "test/rbbt/util/test_rake.rb",
+    "test/rbbt/util/test_resource.rb",
     "test/rbbt/util/test_simpleDSL.rb",
     "test/rbbt/util/test_simpleopt.rb",
+    "test/rbbt/util/test_task.rb",
     "test/rbbt/util/test_tc_hash.rb",
     "test/rbbt/util/test_tmpfile.rb",
     "test/rbbt/util/test_tsv.rb",
@@ -80,8 +77,8 @@ Gem::Specification.new do |s|
     "test/rbbt/util/tsv/test_index.rb",
     "test/rbbt/util/tsv/test_manipulate.rb",
     "test/rbbt/util/tsv/test_parse.rb",
+    "test/rbbt/util/tsv/test_resource.rb",
     "test/test_helper.rb",
-    "test/test_pkg.rb",
     "test/test_rbbt.rb"
   ]
 
