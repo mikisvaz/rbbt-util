@@ -1,15 +1,31 @@
+require 'rbbt/util/resource'
 require 'rbbt/util/task'
+require 'rbbt/util/persistence'
 module WorkFlow
   def self.extended(base)
     class << base
-      attr_accessor :tasks, :basedir, :base, :dangling_options, :dangling_option_descriptions,
+      attr_accessor :tasks, :jobdir, :dangling_options, :dangling_option_descriptions,
         :dangling_option_types, :dangling_option_defaults, :dangling_dependencies, :last_task
     end
 
-    base.base = base
+    base.extend Resource
+    base.lib_dir = Resource.caller_base_dir if base.class == Object
     base.tasks = {}
-    base.basedir = '.'
+    base.jobdir = (File.exists?(base.var.find(:lib)) ? base.var.find(:lib) : base.var.find)
     base.clear_dangling
+  end
+
+  def local_persist(*args, &block)
+    argsv = *args
+    options = argsv.pop
+    if Hash === options
+      options.merge!(:persistence_dir => cache.find(:lib))
+      argsv.push options
+    else
+      argsv.push options
+      argsv.push({:persistence_dir => cache.find(:lib)})
+    end
+    Persistence.persist(*argsv, &block)
   end
 
   def clear_dangling
@@ -85,6 +101,14 @@ module WorkFlow
     end
 
     task.job(jobname,  run_options)
+  end
+
+  def run(*args)
+    job(*args).run
+  end
+
+  def load_job(taskname, job_id)
+    tasks[taskname].load(job_id)
   end
 
 end

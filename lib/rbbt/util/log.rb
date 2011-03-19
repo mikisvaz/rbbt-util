@@ -41,6 +41,15 @@ module Log
     log(message, HIGH)
   end
 
+  def self.warn(message)
+    log(message, WARN)
+  end
+
+  def self.error(message)
+    log(message, ERROR)
+  end
+
+
   case ENV['RBBT_LOG']
   when 'DEBUG' 
     @@severity = DEBUG

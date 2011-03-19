@@ -6,7 +6,7 @@ class RBBTError < StandardError
 
   alias old_to_s to_s
   def to_s
-    str = old_to_s
+    str = old_to_s.dup
     if info
       str << "\n" << "Additional Info:\n---\n" << info << "---"
     end

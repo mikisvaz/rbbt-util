@@ -16,11 +16,12 @@ end
 MathWF.basedir  = Rbbt.tmp.test.jobs.mathwf.find :user
 
 module MathWF2
-  def times(num, t)
+  def mult(num, t)
     num * t
   end
 
   extend WorkFlow
+
   task_option :value
   task :input => :integer do |value| value end
 
@@ -33,10 +34,10 @@ module MathWF2
   
   task_option :times, "Times to multiply by", :integer, 10
   task_dependencies :add_1
-  task :times => :integer do |times| times(input, times) end
+  task :times => :integer do |times| mult(input, times) end
 end
 
-MathWF2.basedir = Rbbt.tmp.test.jobs.mathwf.find :user
+MathWF2.jobdir = Rbbt.tmp.test.jobs.mathwf.find :user
 
 class TestWorkFlow < Test::Unit::TestCase
  
@@ -66,6 +67,9 @@ class TestWorkFlow < Test::Unit::TestCase
 
     job = MathWF2.job(:times, :job1, 1)
     job.fork.join
+    assert job.done?
+    puts job.messages
+    assert File.exists? job.path
     assert_equal 20, job.load
 
 

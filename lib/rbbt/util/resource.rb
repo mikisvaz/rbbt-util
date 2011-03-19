@@ -12,11 +12,16 @@ module Resource
     end
     base.base = base
     base.lib_dir = caller_lib_dir
-    base.pkgdir = base.to_s.downcase unless base == Rbbt
+    base.pkgdir = base.to_s.downcase unless base.to_s == "Rbbt"
+  end
+
+  def self.caller_base_dir(file = nil)
+    file = caller.reject{|l| l =~ /\/util\/(?:resource\.rb|progress-monitor\.rb|workflow\.rb)/ }.first.sub(/\.rb.*/,'.rb') if file.nil?
+    File.dirname(File.expand_path(file))
   end
 
   def self.caller_lib_dir(file = nil)
-    file = caller.reject{|l| l =~ /\/resource\.rb|progress-monitor\.rb/ }.first.sub(/\.rb.*/,'.rb') if file.nil?
+    file = caller.reject{|l| l =~ /\/util\/(?:resource\.rb|progress-monitor\.rb|workflow\.rb)/ }.first.sub(/\.rb.*/,'.rb') if file.nil?
 
     file = File.expand_path file
     while file != '/'
@@ -43,7 +48,7 @@ module Resource
     when :global
       File.join('/', location, pkgdir, subpath)
     when :lib
-      if not caller_lib_dir.nil?
+      if not caller_lib_dir.nil? and not caller_lib_dir == "/"
         path = File.join(caller_lib_dir, location, subpath)
         return path if File.exists?(path) or lib_dir.nil?
       end
@@ -326,8 +331,6 @@ source "$INSTALL_HELPER_FILE"
       self[name]
     end
   end
-
-
 end
 
 def resource_path(path)

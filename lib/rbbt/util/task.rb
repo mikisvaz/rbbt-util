@@ -10,6 +10,17 @@ class Task
   class Job
     attr_accessor :task, :id, :name, :options, :dependencies, :pid, :path, :previous_jobs
 
+    IDSEP = "_"
+
+    def self.id2name(job_id)
+      job_id.split(IDSEP)
+    end
+    
+    def self.load(task, id)
+      name, hash = id2name(id)
+      self.new task, id, name, nil, nil
+    end
+
     def initialize(task, id, name, options, dependencies)
       @task = task  
       @id =id
@@ -17,10 +28,14 @@ class Task
       @options = options
       @dependencies = dependencies
 
-      @previous_jobs = Hash[*dependencies.first.collect{|job| job.task.name}.zip(dependencies.first).flatten]
-      dependencies.first.collect{|job| @previous_jobs.merge! job.previous_jobs }
+      if @dependencies
+        @previous_jobs = Hash[*dependencies.first.collect{|job| job.task.name}.zip(dependencies.first).flatten]
+        dependencies.first.collect{|job| @previous_jobs.merge! job.previous_jobs }
+      else
+        @previous_jobs = []
+      end
 
-      basedir = task.workflow.basedir unless task.workflow.nil?
+      basedir = task.workflow.jobdir unless task.workflow.nil?
       @path = File.join(basedir || Task.basedir, task.name, id)
     end
 
@@ -86,28 +101,36 @@ class Task
     def start
       Log.medium("Starting Job '#{ name }'. Path: '#{ path }'")
       set_info(:start_time, Time.now)
+      save_options(options)
 
-      extend task.scope unless task.scope.nil?
+      extend task.scope unless task.scope.nil? or Object == task.scope.class
 
-      if dependencies.flatten.any?
-        run_dependencies
-      end
+      begin
 
-      result = instance_exec *arguments, &block
-
-      if not result.nil?
-        case task.persistence
-        when nil, :string, :tsv, :integer
-          Open.write(path, result.to_s)
-        when :marshal
-          Open.write(path, Marshal.dump(result))
-        when :yaml
-          Open.write(path, YAML.dump(result))
+        if dependencies.flatten.any?
+          run_dependencies
         end
-      end
 
-      set_info(:end_time, Time.now)
-      Log.medium("Finished Job '#{ name }'. Path: '#{ path }'")
+        result = instance_exec *arguments, &block
+        
+
+        if not result.nil?
+          case task.persistence
+          when nil, :string, :tsv, :integer
+            Open.write(path, result.to_s)
+          when :marshal
+            Open.write(path, Marshal.dump(result))
+          when :yaml
+            Open.write(path, YAML.dump(result))
+          end
+        end
+
+        set_info(:end_time, Time.now)
+        Log.medium("Finished Job '#{ name }'. Path: '#{ path }'")
+      rescue Exception
+        step(:error, "#{$!.class}: #{$!.message}")
+        raise $!
+      end
     end
 
     def save_options(options)
@@ -115,7 +138,7 @@ class Task
       options.each do |key, value|
         case 
         when TSV === value
-         new_options[key] = value.to_s
+          new_options[key] = value.to_s
         else
           new_options[key] = value
         end
@@ -146,7 +169,6 @@ class Task
       @pid = Process.fork do
         begin
           step(:started)
-          save_options(options)
           start
           step(:done)
         rescue Exception
@@ -162,7 +184,8 @@ class Task
 
     def join
       if @pid.nil?
-        while info[:step] != :done do
+        while not done? do
+          Log.debug "Waiting: #{info[:step]}"
           sleep 5
         end
       else
@@ -207,6 +230,10 @@ class Task
       clean
     end
   end # END Job
+
+  def load(job_id)
+    Job.load(self, job_id)
+  end
 
   def job_options(run_options = nil)
     return {} if options.nil?

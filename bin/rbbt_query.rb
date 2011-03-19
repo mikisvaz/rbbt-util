@@ -4,7 +4,7 @@ require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 require 'rbbt/sources/organism'
 
-options = SOPT.get("-i--identifiers*:-f--format*:-o--organism*:-p--persistence:-l--log*:-r--report")
+options = SOPT.get("-i--identifiers*:-f--format*:-o--organism*:-p--persistence:-l--log*:-r--report:-h--hash")
 
 file   = ARGV[0]
 
@@ -15,7 +15,7 @@ if not File.exists? file
   file = klass[path].find
 end
 
-entities = ARGV[1].dup
+entities = ARGV[1].nil? ? '-' : ARGV[1].dup
 persistence = options[:persistence]
 log = (options[:log] || 4).to_i
 Log.severity = log
