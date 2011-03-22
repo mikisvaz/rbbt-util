@@ -61,9 +61,27 @@ class TestTCHash < Test::Unit::TestCase
       t["2"] = [[3],[4,5]]
 
       t = TCHash.get f
-      t.collect do |k,v| 
-       assert_equal [["3"],["4","5"]], t["2"]
+      assert_equal [["3"],["4","5"]], t["2"]
+    end
+  end
+
+  def test_non_blocking
+    TmpFile.with_file do |f|
+      t = TCHash.get f, true, :double
+      t["1"] = [[1],[2]]
+      t["2"] = [[3],[4,5]]
+      t.close
+
+      pid = Process.fork do
+        t2 = TCHash.get f, true, :double
+        assert_equal [["3"],["4","5"]], t2["2"]
+
       end
+
+      t2 = TCHash.get f, true, :double
+      assert_equal [["3"],["4","5"]], t2["2"]
+
+      Process.wait pid
     end
   end
 end

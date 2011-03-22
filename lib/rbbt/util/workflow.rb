@@ -1,6 +1,8 @@
 require 'rbbt/util/resource'
 require 'rbbt/util/task'
 require 'rbbt/util/persistence'
+require 'rbbt/util/misc'
+
 module WorkFlow
   def self.extended(base)
     class << base
@@ -11,8 +13,14 @@ module WorkFlow
     base.extend Resource
     base.lib_dir = Resource.caller_base_dir if base.class == Object
     base.tasks = {}
+    base.tasks.extend IndiferentHash
     base.jobdir = (File.exists?(base.var.find(:lib)) ? base.var.find(:lib) : base.var.find)
     base.clear_dangling
+  end
+
+  def tasks=(tasks)
+    tasks.extend IndiferentHash
+    @tasks = tasks
   end
 
   def local_persist(*args, &block)
@@ -34,6 +42,7 @@ module WorkFlow
     @dangling_option_types = {} 
     @dangling_option_defaults = {}
     @dangling_dependencies = nil
+    @dangling_description = nil
   end
 
   def task_option(*args)
@@ -49,13 +58,18 @@ module WorkFlow
     @dangling_dependencies = dependencies
   end
 
+  def task_description(description)
+    @dangling_description = description
+  end
+
   def process_dangling
     res = [ 
       @dangling_options, 
       Hash[*@dangling_options.zip(@dangling_option_descriptions.values_at(*@dangling_options)).flatten],
       Hash[*@dangling_options.zip(@dangling_option_types.values_at(*@dangling_options)).flatten],
       Hash[*@dangling_options.zip(@dangling_option_defaults.values_at(*@dangling_options)).flatten],
-      @dangling_dependencies || @last_task,
+      (@dangling_dependencies || [@last_task]).compact,
+      @dangling_description,
     ]
 
     clear_dangling
@@ -70,37 +84,17 @@ module WorkFlow
       persistence = :marshal
     end
 
-    options, option_descriptions, option_types, option_defaults, dependencies = process_dangling
+    options, option_descriptions, option_types, option_defaults, dependencies, description = process_dangling
     option_descriptions.delete_if do |k,v| v.nil? end
     option_types.delete_if do |k,v| v.nil? end
     option_defaults.delete_if do |k,v| v.nil? end
-    task = Task.new name, persistence, options, option_descriptions, option_types, option_defaults, self, dependencies, self, &block
+    task = Task.new name, persistence, options, option_descriptions, option_types, option_defaults, self, dependencies, self, description, &block
     tasks[name] = task
     @last_task = task
   end
 
   def job(task, jobname, *args)
-    task = tasks[task]
-    raise "Task #{ task } not found" if task.nil?
-
-    all_options, option_descriptions, option_types, option_defaults = task.recursive_options
-
-    non_optional_arguments = all_options.reject{|option| option_defaults.include? option}
-    run_options = nil
-
-    case
-    when args.length == non_optional_arguments.length
-      run_options = Hash[*non_optional_arguments.zip(args).flatten].merge option_defaults
-    when args.length == non_optional_arguments.length + 1
-      optional_args = args.pop
-      run_options = option_defaults.
-        merge(optional_args).
-        merge(Hash[*non_optional_arguments.zip(args).flatten])
-    else
-      raise "Number of non optional arguments (#{non_optional_arguments * ', '}) does not match given (#{args.flatten * ", "})"
-    end
-
-    task.job(jobname,  run_options)
+    tasks[task].job(jobname, *args)
   end
 
   def run(*args)

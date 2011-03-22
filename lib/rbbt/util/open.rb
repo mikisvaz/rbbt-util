@@ -200,9 +200,21 @@ module Open
     end
   end
 
-  def self.write(file, content)
+  def self.write(file, content = nil)
     FileUtils.mkdir_p File.dirname(file)
-    if String === content
+    case
+    when content.nil?
+      begin
+        File.open(file, 'w') do |f| 
+          f.flock(File::LOCK_EX)
+          yield f
+          f.flock(File::LOCK_UN)
+        end
+      rescue Exception
+        FileUtils.rm file if File.exists? file
+        raise $!
+      end
+    when String === content
       File.open(file, 'w') do |f|
         f.flock(File::LOCK_EX)
         f.write content 
@@ -217,8 +229,9 @@ module Open
           end
           f.flock(File::LOCK_UN)
         end
-      rescue
+      rescue Exception
         FileUtils.rm file if File.exists? file
+        raise $!
       end
       content.close
     end

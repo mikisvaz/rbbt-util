@@ -181,6 +181,7 @@ module Persistence
         FileUtils.rm persistence_file
       end
 
+      Log.debug "Dump data into '#{persistence_file}'"
       per = Persistence::TSV.get persistence_file, true, serializer
 
       per.write
@@ -227,30 +228,41 @@ module Persistence
 
       serializer = tsv_serializer res, extra
 
-      per = Persistence::TSV.get persistence_file, true, serializer
+      begin
+        per = Persistence::TSV.get persistence_file, true, serializer
 
-      per.write
-      per.merge! res
-      Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
-        if extra.include?(key.to_sym)  and per.respond_to?(key.to_sym)
-          per.send "#{key}=".to_sym, extra[key.to_sym]
+        per.write
+        per.merge! res
+        Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
+          if extra.include?(key.to_sym)  and per.respond_to?(key.to_sym)
+            per.send "#{key}=".to_sym, extra[key.to_sym]
+          end
         end
+      rescue Exception
+        per.close
+        raise $!
       end
+
       per.read
 
      [ per, extra ]
     else
       Log.debug "Loading #{ persistence_file }. Prefix = #{prefix}"
-      per = Persistence::TSV.get persistence_file, true, serializer
+      begin
+        per = Persistence::TSV.get persistence_file, true, serializer
 
-      extra = {}
-      Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
-        if per.respond_to?(key.to_sym)
-          extra[key] = per.send(key.to_sym)
+        extra = {}
+        Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
+          if per.respond_to?(key.to_sym)
+            extra[key] = per.send(key.to_sym)
+          end
         end
-      end
 
-     [ per, extra ]
+      rescue Exception
+        per.close
+        raise $!
+      end
+      [ per, extra ]
     end
   end
 
@@ -314,16 +326,16 @@ module Persistence
 
     filename = get_filename(file)
 
+    o = options.dup
+    o = 
+      Misc.add_defaults o, :persistence_update => false, :persistence_file => nil, :filename => nil
+    persistence_update, persistence_dir, persistence_file, filename =
+      Misc.process_options o, :persistence_update, :persistence_dir, :persistence_file, :filename
+
+    filename         ||= get_filename(file)
+    persistence_file ||= get_persistence_file(filename, prefix, o.merge(:persistence_dir => persistence_dir))
+
     if persistence == :no_create
-      o = options.dup
-      options = 
-        Misc.add_defaults options, :persistence_update => false, :persistence_file => nil, :filename => nil
-      persistence_update, persistence_dir, persistence_file, filename =
-        Misc.process_options options, :persistence_update, :persistence_dir, :persistence_file, :filename
-
-      filename         ||= get_filename(file)
-      persistence_file ||= get_persistence_file(filename, prefix, options.merge(:persistence_dir => persistence_dir))
-
       persistence = false if not File.exists? persistence_file
     end
 
@@ -333,21 +345,24 @@ module Persistence
     else
       Log.low "Persistent Loading for #{filename}. Prefix: #{prefix}. Type #{persistence_type.to_s}"
 
-      case persistence_type.to_sym
-      when :string
-        persist_string(file, prefix, options, &block)
-      when :marshal
-        persist_marshal(file, prefix, options, &block)
-      when :yaml
-        persist_yaml(file, prefix, options, &block)
-      when :tsv
-        persist_tsv(file, prefix, options, &block)
-      when :tsv_string
-        persist_tsv_string(file, prefix, options, &block)
-      when :tsv_extra
-        persist_tsv_extra(file, prefix, options, &block)
-      when :fwt
-        persist_fwt(file, prefix, options, &block)
+      Misc.lock(persistence_file, file, prefix, options, block) do |persistence_file,file,prefix,options,block|
+
+        case persistence_type.to_sym
+        when :string
+          persist_string(file, prefix, options, &block)
+        when :marshal
+          persist_marshal(file, prefix, options, &block)
+        when :yaml
+          persist_yaml(file, prefix, options, &block)
+        when :tsv
+          persist_tsv(file, prefix, options, &block)
+        when :tsv_string
+          persist_tsv_string(file, prefix, options, &block)
+        when :tsv_extra
+          persist_tsv_extra(file, prefix, options, &block)
+        when :fwt
+          persist_fwt(file, prefix, options, &block)
+        end
       end
     end
   end

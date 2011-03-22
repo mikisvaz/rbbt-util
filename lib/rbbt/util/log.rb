@@ -16,13 +16,15 @@ module Log
     @@severity
   end
 
-  SEVERITY_COLOR = ["0;37m", "32m", "33m", "31m", "1;0m" ].collect{|e| "\033[#{e}"}
+  SEVERITY_COLOR = ["0;37m", "0;32m", "0;33m", "0;31m", "1;0m" ].collect{|e| "\033[#{e}"}
 
   def self.log(message, severity = MEDIUM)
     severity_color = SEVERITY_COLOR[severity]
+    font_color = {false => "\033[0;37m", true => "\033[0m"}[severity >= INFO]
+
     STDERR.puts caller.select{|l| l =~ /rbbt/} * "\n" if @@severity == -1 and not message.empty?
     #STDERR.puts "#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}[#{severity.to_s}]: " +  message if severity >= @@severity
-    STDERR.puts "\033[0;37m#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}#{severity_color}[#{severity.to_s}]\033[0m: " +  message if severity >= @@severity
+    STDERR.puts "\033[0;37m#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}#{severity_color}[#{severity.to_s}]#{font_color}: " <<  message.strip  << "\033[0m" if severity >= @@severity
   end
 
   def self.debug(message)
@@ -39,6 +41,10 @@ module Log
 
   def self.high(message)
     log(message, HIGH)
+  end
+
+  def self.info(message)
+    log(message, INFO)
   end
 
   def self.warn(message)

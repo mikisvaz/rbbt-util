@@ -27,7 +27,7 @@ class TestTask < Test::Unit::TestCase
   def test_task_options
     TmpFile.with_file do |f|
       task = Task.new(:test_task, nil, :name) do |name| Open.write(f, name) end
-      job = task.job(:job1, :name => "TestName")
+      job = task.job(:job1, "TestName")
       assert_equal "job1" << "_" << Misc.hash2md5(:name => "TestName"), job.id
       job.fork
       job.join
@@ -39,13 +39,13 @@ class TestTask < Test::Unit::TestCase
 
   def test_task_result
     task = Task.new(:test_task, nil, :name) do |name| name end
-    job = task.job(:job1, :name => "TestName")
+    job = task.job(:job1, "TestName")
     assert_equal "TestName", job.fork.join.load
   end
 
   def test_task_info
     task = Task.new(:test_task, nil, :name) do |name| name end
-    job = task.job(:job1, :name => "TestName")
+    job = task.job(:job1, "TestName")
     assert_equal "TestName", job.fork.join.info[:options][:name]
   end
 
@@ -54,15 +54,15 @@ class TestTask < Test::Unit::TestCase
       step :one
       name 
     end
-    job = task.job(:job1, :name => "TestName")
+    job = task.job(:job1, "TestName")
     assert_equal "TestName", job.fork.join.info[:options][:name]
   end
 
   def test_task_reopen
     task = Task.new(:test_task, nil, :name) do |name| name end
-    job = task.job(:job1, :name => "TestName")
+    job = task.job(:job1, "TestName")
     assert_equal "TestName", job.fork.join.info[:options][:name]
-    job = task.job(:job1, :name => "TestName")
+    job = task.job(:job1, "TestName")
     assert_equal "TestName", job.join.info[:options][:name]
   end
 
@@ -114,5 +114,6 @@ class TestTask < Test::Unit::TestCase
     job.clean
     assert (not File.exists?(job.path))
   end
+
 end
 

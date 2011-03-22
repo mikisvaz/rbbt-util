@@ -1,4 +1,5 @@
 require 'rbbt/util/open'
+require 'rbbt/util/task/job'
 
 class Task
   class << self
@@ -7,246 +8,12 @@ class Task
 
   @basedir = "."
 
-  class Job
-    attr_accessor :task, :id, :name, :options, :dependencies, :pid, :path, :previous_jobs
-
-    IDSEP = "_"
-
-    def self.id2name(job_id)
-      job_id.split(IDSEP)
-    end
-    
-    def self.load(task, id)
-      name, hash = id2name(id)
-      self.new task, id, name, nil, nil
-    end
-
-    def initialize(task, id, name, options, dependencies)
-      @task = task  
-      @id =id
-      @name = name
-      @options = options
-      @dependencies = dependencies
-
-      if @dependencies
-        @previous_jobs = Hash[*dependencies.first.collect{|job| job.task.name}.zip(dependencies.first).flatten]
-        dependencies.first.collect{|job| @previous_jobs.merge! job.previous_jobs }
-      else
-        @previous_jobs = []
-      end
-
-      basedir = task.workflow.jobdir unless task.workflow.nil?
-      @path = File.join(basedir || Task.basedir, task.name, id)
-    end
-
-    def info_file
-      path + '.info'
-    end
-
-    def info
-      return {} if not File.exists?(info_file)
-      YAML.load(File.open(info_file))
-    end
-
-    def set_info(key, value)
-      i = self.info
-      new_info = i.merge(key => value)
-      Open.write(info_file, new_info.to_yaml)
-    end
-
-    def step(name = nil, message = nil)
-      if name.nil?
-        info[:step]
-      else
-        set_info(:step, name)
-        set_info(:messages, info[:messages] || [] << message) if not message.nil?
-      end
-    end
-    
-    def messages
-      info[:messages] || []
-    end
-
-    def done?
-      [:done, :error, :aborted].include? info[:step]
-    end
-
-    def error?
-      step == :error or step == :aborted
-    end
-
-    def arguments
-      options.values_at *task.options
-    end
-
-    def block
-      task.block
-    end
-
-    def run_dependencies
-      jobs, files = dependencies
-      jobs.each do |job| job.start unless File.exists? job.path; job.step(:done) end
-      files.each do |file| file.produce end
-    end
-
-    def input
-      dep = dependencies.flatten.first
-      if Job === dep
-        dep.load
-      else
-        dep.read
-      end
-    end
-
-    def start
-      Log.medium("Starting Job '#{ name }'. Path: '#{ path }'")
-      set_info(:start_time, Time.now)
-      save_options(options)
-
-      extend task.scope unless task.scope.nil? or Object == task.scope.class
-
-      begin
-
-        if dependencies.flatten.any?
-          run_dependencies
-        end
-
-        result = instance_exec *arguments, &block
-        
-
-        if not result.nil?
-          case task.persistence
-          when nil, :string, :tsv, :integer
-            Open.write(path, result.to_s)
-          when :marshal
-            Open.write(path, Marshal.dump(result))
-          when :yaml
-            Open.write(path, YAML.dump(result))
-          end
-        end
-
-        set_info(:end_time, Time.now)
-        Log.medium("Finished Job '#{ name }'. Path: '#{ path }'")
-      rescue Exception
-        step(:error, "#{$!.class}: #{$!.message}")
-        raise $!
-      end
-    end
-
-    def save_options(options)
-      new_options = {}
-      options.each do |key, value|
-        case 
-        when TSV === value
-          new_options[key] = value.to_s
-        else
-          new_options[key] = value
-        end
-      end
-      set_info(:options, new_options)
-    end
-
-    def recursive_done?
-      previous_jobs.values.inject(true){|acc,j| acc and j.recursive_done?} and done?
-    end
-
-    def run
-      return self if recursive_done?
-      begin
-        step(:started)
-        start
-        step(:done)
-      rescue Exception
-        Log.debug $!.message
-        Log.debug $!.backtrace * "\n"
-        step(:error, "#{$!.class}: #{$!.message}")
-      end
-      self
-    end
-
-    def fork
-      return self if recursive_done?
-      @pid = Process.fork do
-        begin
-          step(:started)
-          start
-          step(:done)
-        rescue Exception
-          Log.debug $!.message
-          Log.debug $!.backtrace * "\n"
-          step(:error, "#{$!.class}: #{$!.message}")
-        end
-        exit
-      end
-
-      self
-    end
-
-    def join
-      if @pid.nil?
-        while not done? do
-          Log.debug "Waiting: #{info[:step]}"
-          sleep 5
-        end
-      else
-        Process.waitpid @pid
-      end
-
-      self
-    end
-
-    def open
-      File.open(path)
-    end
-
-    def read
-      File.open(path) do |f| f.read end
-    end
-
-    def load
-      case task.persistence
-      when :float
-        Open.read(path).to_f
-      when :integer
-        Open.read(path).to_i
-      when :string
-        Open.read(path)
-      when :tsv
-        TSV.new(path)
-      when :marshal
-        Marshal.load(Open.read(path))
-      when :yaml
-        YAML.load(Open.read(path))
-      end
-    end
-
-    def clean
-      FileUtils.rm path if File.exists? path
-      FileUtils.rm info_file if File.exists? info_file
-    end
-
-    def recursive_clean
-      dependencies.first.each do |job| job.recursive_clean end
-      clean
-    end
-  end # END Job
-
   def load(job_id)
     Job.load(self, job_id)
   end
 
-  def job_options(run_options = nil)
-    return {} if options.nil?
-
-    job_options = {}
-    options.each do |option|
-      job_options[option] = Misc.process_options run_options, option
-    end
-
-    job_options
-  end
-
-  def job_id(name, job_options)
+  def job_id(name, job_options, previous_jobs)
+    job_options = job_options.merge :previous_jobs => previous_jobs.collect{|job| job.id} if previous_jobs.any?
     if job_options.any?
       name.to_s + "_" + Misc.hash2md5(job_options)
     else
@@ -254,8 +21,8 @@ class Task
     end
   end
 
-  attr_accessor :name, :persistence, :options, :option_descriptions, :option_types, :option_defaults, :workflow, :dependencies, :scope, :block
-  def initialize(name, persistence = nil, options = nil, option_descriptions = nil, option_types = nil, option_defaults = nil, workflow = nil, dependencies = nil, scope = nil, &block)
+  attr_accessor :name, :persistence, :options, :option_descriptions, :option_types, :option_defaults, :workflow, :dependencies, :scope, :description, :block
+  def initialize(name, persistence = nil, options = nil, option_descriptions = nil, option_types = nil, option_defaults = nil, workflow = nil, dependencies = nil, scope = nil, description = nil, &block)
     dependencies = [dependencies] unless dependencies.nil? or Array === dependencies
     @name = name.to_s
 
@@ -269,68 +36,61 @@ class Task
     @workflow = workflow
     @dependencies = dependencies || []
     @scope = scope
+    @description = description
 
     @block = block unless not block_given?
   end
 
-  def recursive_options
-    all_options         = []
-    option_descriptions = {}
-    option_types        = {}
-    option_defaults     = {}
+  def process_options(args, optional_args)
+    run_options = {}
 
-		all_options.concat           self.options               if   self.options
-		option_descriptions.merge!   self.option_descriptions   if   self.option_descriptions
-		option_types.merge!          self.option_types          if   self.option_types
-		option_defaults.merge!       self.option_defaults       if   self.option_defaults
-
-    self.dependencies.each do |task|
-      task = case
-             when Symbol === task
-               workflow.tasks[task]
-             when Task === task
-               task
-             else
-               next
-             end
-
-      n_all_options, n_option_descriptions, n_option_types, n_option_defaults = task.recursive_options
-
-			all_options.concat           n_all_options           if   n_all_options
-			option_descriptions.merge!   n_option_descriptions   if   n_option_descriptions
-			option_types.merge!          n_option_types          if   n_option_types
-			option_defaults.merge!       n_option_defaults       if   n_option_defaults
-		end
-
-    [all_options, option_descriptions, option_types, option_defaults]
+    options.each do |option|
+      if option_defaults and option_defaults.include? option
+        run_options[option] = Misc.process_options(optional_args, option) || option_defaults[option]
+      else
+        run_options[option] = args.shift
+      end
+    end unless options.nil?
+ 
+    [run_options, args, optional_args]
   end
 
-  def job_dependencies(jobname, run_options = {})
-    jobs = []
-    files = []
+  def setup(jobname, args, optional_args, dependencies)
+    previous_jobs = []
+    required_files = []
+  
+    run_options, args, optional_args = process_options args, optional_args
+
     dependencies.each do |dependency|
       case
+      when Proc === dependency
+        previous_jobs << dependency.call(jobname, run_options)
       when Task === dependency
-        jobs << dependency.job(jobname, run_options)
+        previous_jobs << dependency.job(jobname, *(args + [optional_args]))
+      when Task::Job === dependency
+        previous_jobs << dependency
       when Symbol === dependency
-        raise "No workflow defined, yet dependencies include Symbols (other tasks)" if workflow.nil?
-        jobs << workflow.tasks[dependency].job(jobname, run_options)
+        previous_jobs << workflow.tasks[dependency].job(jobname, *(args + [optional_args]))
       else
-        files << dependency
+        required_files << dependency
       end
     end
-    [jobs, files]
+
+    [previous_jobs, required_files, run_options]
   end
 
-  def job(jobname, run_options = {})
+  def job(jobname, *args)
+    if Hash === args.last
+      optional_args = args.pop
+    else
+      optional_args = {}
+    end
 
-    job_id = self.job_id jobname, run_options
+    previous_jobs, required_files, run_options = setup(jobname, args, optional_args, dependencies)
 
-    job_options = self.job_options run_options
+    job_id = self.job_id jobname, run_options, previous_jobs
 
-    dependencies = self.job_dependencies(jobname, run_options) 
-
-    Job.new(self, job_id, jobname, job_options, dependencies)
+    Job.new(self, job_id, jobname, run_options, previous_jobs, required_files, previous_jobs.first)
   end
 
   def run(*args)

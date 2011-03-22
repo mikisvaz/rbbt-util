@@ -352,5 +352,22 @@ row6,dd,dd,ee,,
     end
  
   end
+
+  def test_merge_rows
+    file1 =<<-EOF
+row1,a,b,c
+row1,aa,bb,cc
+row2,A,B,C
+row3,1,2,3
+    EOF
+    TmpFile.with_file(file1) do |input|
+      TmpFile.with_file() do |output|
+        TSV.merge_rows Open.open(input), output
+        assert Open.read(output) =~ /a|aa/
+      end
+    end
+
+
+  end
 end
 

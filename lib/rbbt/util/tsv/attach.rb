@@ -1,4 +1,46 @@
 class TSV
+  def self.merge_rows(input, output, sep = "\t")
+    is = case
+         when (String === input and not input.index("\n") and input.length < 250 and File.exists?(input))
+           CMD.cmd("sort -k1,1 -t'#{sep}' #{ input } | grep -v '^#{sep}' ", :pipe => true)
+         when (String === input or StringIO === input)
+           CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => input, :pipe => true)
+         else
+           input
+         end
+ 
+    current_key  = nil
+    current_parts = []
+
+    done = false
+    Open.write(output) do |os|
+
+      done = is.eof?
+      while not done
+        key, *parts = is.gets.sub("\n",'').split(sep, -1)
+        current_key ||= key
+        case
+        when key.nil?
+        when current_key == key
+          parts.each_with_index do |part,i|
+            if current_parts[i].nil?
+              current_parts[i] = part
+            else
+              current_parts[i] = current_parts[i] << "|" << part
+            end
+          end
+        when current_key != key
+          os.puts [current_key, current_parts].flatten * sep
+          current_key = key
+          current_parts = parts
+        end
+
+        done = is.eof?
+      end
+
+    end
+  end
+
   def self.paste_merge(file1, file2, output, sep = "\t")
     case
     when (String === file1 and not file1.index("\n") and file1.length < 250 and File.exists?(file1))
@@ -186,7 +228,7 @@ class TSV
       if other.include? key
         new_values = other[key].values_at *fields
         new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
-        new_values.collect!{|v| v.first} if not type == :double and     other.type == :double
+        new_values.collect!{|v| v.nil? ? nil : v.first} if not type == :double and     other.type == :double
         self[key] = self[key].concat new_values
       else
         if type == :double
@@ -223,8 +265,8 @@ class TSV
             end
           end
 
-          new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
-          new_values.collect!{|v| v.first} if not type == :double and     other.type == :double
+          new_values.collect!{|v| [v]}                    if     type == :double and not other.type == :double
+          new_values.collect!{|v| v.nil? ? nil : v.first} if not type == :double and     other.type == :double
           all_new_values << new_values
         end
       end
@@ -274,7 +316,7 @@ class TSV
             end
           end
           new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
-          new_values.collect!{|v| v.first} if not type == :double and     other.type == :double
+          new_values.collect!{|v| v.nil? ? nil : v.first} if not type == :double and     other.type == :double
           all_new_values << new_values
         end
       end
@@ -388,8 +430,15 @@ class TSV
     in_namespace = options[:in_namespace]
 
     fields = other.fields - [key_field].concat(self.fields) if fields == :all
-    fields = other.fields_in_namespace - [key_field].concat(self.fields) if fields.nil?
+    if in_namespace
+      fields = other.fields_in_namespace - [key_field].concat(self.fields) if fields.nil?
+    else
+      fields = other.fields - [key_field].concat(self.fields) if fields.nil?
+    end
+
     Log.high("Attaching fields:#{fields.inspect} from #{other.filename.inspect}.")
+
+    other = other.tsv(:persistence => options[:persist_input] == true) unless TSV === other 
     case
     when key_field == other.key_field
       attach_same_key other, fields

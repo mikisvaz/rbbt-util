@@ -240,6 +240,14 @@ source "$INSTALL_HELPER_FILE"
       Open.read self.find, *args
     end
 
+    def yaml(*args)
+      YAML.load(open)
+    end
+
+    def marshal(*args)
+      Marshal.load(open)
+    end
+
     def write(content, *args)
       FileUtils.mkdir_p File.dirname(self.find) unless File.exists? self.find
       Open.write(self.find, content, *args)

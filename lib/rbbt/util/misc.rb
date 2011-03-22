@@ -1,4 +1,5 @@
 require 'iconv'
+require 'lockfile'
 require 'digest/md5'
 
 class RBBTError < StandardError
@@ -14,8 +15,31 @@ class RBBTError < StandardError
   end
 end
 
+module IndiferentHash
+  def indiferent_get(key)
+    old_get(key) || 
+    old_get(key.to_s) || 
+    old_get(key.to_sym) 
+  end
+
+  def self.extended(base)
+    class << base
+      alias_method :old_get, :[]
+      alias_method :[], :indiferent_get
+    end
+  end
+end
+
 module Misc
   class FieldNotFoundError < StandardError;end
+
+  def self.lock(file, *args)
+    FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
+    lockfile = Lockfile.new file + '.lock'
+    lockfile.lock do
+      yield file, *args
+    end
+  end
 
   def self.string2const(string)
     return nil if string.nil?
@@ -137,15 +161,19 @@ module Misc
 
   def self.hash2md5(hash)
     o = {}
-    hash.each do |k,v|
-      if v.inspect =~ /:0x0/
+    hash.keys.sort_by{|k| k.to_s}.each do |k|
+      v = hash[k]
+      case
+      when v.inspect =~ /:0x0/
         o[k] = v.inspect.sub(/:0x[a-f0-9]+@/,'')
+      when Resource::Path === v
+        "" << String.new(v.to_s)
       else
         o[k] = v
       end
     end
 
-    Digest::MD5.hexdigest(o.inspect)
+    Digest::MD5.hexdigest(o.sort_by{|k| k.to_s}.inspect)
   end
 
   def self.string2hash(string)
