@@ -20,6 +20,7 @@ begin
     gem.add_dependency('ruby-prof')
     gem.add_dependency('tokyocabinet')
     gem.add_dependency('progress-monitor')
+    gem.add_dependency('lockfile')
 
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end

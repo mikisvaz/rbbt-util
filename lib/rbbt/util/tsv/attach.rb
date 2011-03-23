@@ -372,8 +372,8 @@ class TSV
   end
 
   def self.build_traverse_index(files, options = {})
-    options      = Misc.add_defaults options, :in_namespace => false, :persist_input => false
-    in_namespace = options[:in_namespace]
+    options       = Misc.add_defaults options, :in_namespace => false, :persist_input => false
+    in_namespace  = options[:in_namespace]
     persist_input = options[:persist_input]
 
     path = find_path(files, options)
@@ -381,25 +381,41 @@ class TSV
     return nil if path.nil?
     
     traversal_ids = path.collect{|p| p.first}
-    
+
     Log.medium "Found Traversal: #{traversal_ids * " => "}"
-
-    current_id, current_file = path.shift
-    current_key = current_file.all_fields.first
-
-    index   = current_file.index :target => current_id, :fields =>  current_key, :persistence => persist_input
-
-    while not path.empty?
-      current_id, current_file = path.shift
-      current_index   = current_file.index :target => current_id, :fields => index.fields.first, :persistence => true
-      index.process 0 do |value|
-        current_index.values_at(*value).flatten.uniq
-      end
-      index.fields = current_index.fields
+    
+    data_key, data_file = path.shift
+    if data_key == data_file.key_field
+      Log.debug "Data index not required '#{data_file.key_field}' => '#{data_key}'"
+      data_index = nil
+    else
+      Log.debug "Data index required"
+      data_index = data_file.index :target => data_key, :fields => data_file.key_field, :persistence => false
     end
 
-    index
+    current_index = data_index
+    current_key   = data_key
+    while not path.empty?
+      next_key, next_file = path.shift
+
+      if current_index.nil?
+        current_index = next_file.index :target => next_key, :fields => current_key, :persistence => persist_input
+      else
+        next_index = next_file.index :target => next_key, :fields => current_key, :persistence => persist_input
+        current_index.process current_index.fields.first do |key, values, values|
+          if values.nil?
+            nil
+          else
+            next_index.values_at(*values).flatten.collect
+          end
+        end
+        current_index.fields = [next_key]
+      end
+    end
+
+    current_index
   end
+
 
   def self.find_traversal(tsv1, tsv2, options = {})
     options      = Misc.add_defaults options, :in_namespace => false
@@ -443,8 +459,10 @@ class TSV
     when key_field == other.key_field
       attach_same_key other, fields
     when (not in_namespace and self.fields.include?(other.key_field))
+      Log.medium "Found other's key field: #{other.key_field}"
       attach_source_key other, other.key_field, fields
     when (in_namespace and self.fields_in_namespace.include?(other.key_field))
+      Log.medium "Found other's key field in #{in_namespace}: #{other.key_field}"
       attach_source_key other, other.key_field, fields
     else
       index = TSV.find_traversal(self, other, options)

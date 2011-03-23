@@ -24,7 +24,7 @@ module Log
 
     STDERR.puts caller.select{|l| l =~ /rbbt/} * "\n" if @@severity == -1 and not message.empty?
     #STDERR.puts "#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}[#{severity.to_s}]: " +  message if severity >= @@severity
-    STDERR.puts "\033[0;37m#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}#{severity_color}[#{severity.to_s}]#{font_color}: " <<  message.strip  << "\033[0m" if severity >= @@severity
+    STDERR.puts "\033[0;37m#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}#{severity_color}[#{severity.to_s}]\033[0m:#{font_color} " <<  message.strip  << "\033[0m" if severity >= @@severity
   end
 
   def self.debug(message)
