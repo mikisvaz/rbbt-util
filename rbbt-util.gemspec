@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{rbbt-util}
-  s.version = "3.0.2"
+  s.version = "3.0.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
-  s.date = %q{2011-03-19}
+  s.date = %q{2011-03-23}
   s.description = %q{Utilities for handling tsv files, caches, etc}
   s.email = %q{miguel.vazquez@fdi.ucm.es}
   s.executables = ["tsv.rb", "tchash.rb", "workflow.rb", "rbbt_query.rb"]
@@ -36,6 +36,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/simpleDSL.rb",
     "lib/rbbt/util/simpleopt.rb",
     "lib/rbbt/util/task.rb",
+    "lib/rbbt/util/task/job.rb",
     "lib/rbbt/util/tc_hash.rb",
     "lib/rbbt/util/tmpfile.rb",
     "lib/rbbt/util/tsv.rb",
@@ -91,12 +92,14 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<ruby-prof>, [">= 0"])
       s.add_runtime_dependency(%q<tokyocabinet>, [">= 0"])
       s.add_runtime_dependency(%q<progress-monitor>, [">= 0"])
+      s.add_runtime_dependency(%q<lockfile>, [">= 0"])
     else
       s.add_dependency(%q<rake>, [">= 0"])
       s.add_dependency(%q<spreadsheet>, [">= 0"])
       s.add_dependency(%q<ruby-prof>, [">= 0"])
       s.add_dependency(%q<tokyocabinet>, [">= 0"])
       s.add_dependency(%q<progress-monitor>, [">= 0"])
+      s.add_dependency(%q<lockfile>, [">= 0"])
     end
   else
     s.add_dependency(%q<rake>, [">= 0"])
@@ -104,6 +107,7 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<ruby-prof>, [">= 0"])
     s.add_dependency(%q<tokyocabinet>, [">= 0"])
     s.add_dependency(%q<progress-monitor>, [">= 0"])
+    s.add_dependency(%q<lockfile>, [">= 0"])
   end
 end
 
