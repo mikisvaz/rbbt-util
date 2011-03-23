@@ -75,7 +75,7 @@ class TestTCHash < Test::Unit::TestCase
       pid = Process.fork do
         t2 = TCHash.get f, true, :double
         assert_equal [["3"],["4","5"]], t2["2"]
-
+        exit
       end
 
       t2 = TCHash.get f, true, :double
