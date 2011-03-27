@@ -16,6 +16,12 @@ module Resource
       namespace || File.basename(File.dirname(self))
     end
 
+    def to_yaml(opts = {})
+      YAML.quick_emit( nil, opts ) { |out|
+        out.scalar( taguri, self, :plain )
+      }
+    end
+
     def index(options = {})
       TSV.index self, options
     end

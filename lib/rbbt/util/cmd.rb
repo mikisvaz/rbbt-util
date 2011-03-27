@@ -29,16 +29,28 @@ module CMD
           original_close
         end
 
+        def force_close
+          if @pid
+            Log.debug "Forcing close by killing '#{@pid}'"
+            Process.kill("KILL", @pid)
+            Process.waitpid(@pid)
+          end
+          @post.call if @post
+          original_close
+        end
+ 
         alias original_read read
         def read
           data = Misc.fixutf8(original_read)
           self.close unless self.closed?
           data
         end
+
       }
       io
     end
-  end
+
+ end
 
   def self.process_cmd_options(options = {})
     string = ""
@@ -109,7 +121,6 @@ module CMD
       rescue Exception
         raise CMDError, $!.message
       end
-
     }
     sin.first.close
     sout.last.close

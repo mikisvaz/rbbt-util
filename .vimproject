@@ -43,6 +43,7 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
     index.rb
     attach.rb
     resource.rb
+    misc.rb
    }
    excel2tsv.rb
    bed.rb

@@ -108,6 +108,15 @@ class Task
       info[:messages] || []
     end
 
+    def files(file, data = nil)
+      filename = Resource::Path.path(File.join(path + '.files', file.to_s))
+      if data.nil?
+        filename
+      else
+        Open.write(filename, data)
+      end
+    end
+
     def done?
       [:done, :error, :aborted].include? info[:step]
     end
@@ -244,7 +253,7 @@ class Task
       File.open(path) do |f| f.read end
     end
 
-    def load
+    def load(*args)
       case task.persistence
       when :float
         Open.read(path).to_f
@@ -253,7 +262,7 @@ class Task
       when :string
         Open.read(path)
       when :tsv
-        TSV.new(path)
+        TSV.new(path, *args)
       when :marshal
         Marshal.load(Open.read(path))
       when :yaml

@@ -180,7 +180,7 @@ source "$INSTALL_HELPER_FILE"
   end
 
   def data_module(klass)
-    relative_to klass, "share/#{self.to_s.downcase}"
+    relative_to klass, "share/#{self.to_s.downcase}" unless klass == base
     rakefile = klass.share.install[self.to_s].Rakefile
     rakefile.lib_dir = Resource.caller_lib_dir
 

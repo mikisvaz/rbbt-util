@@ -167,7 +167,7 @@ module Misc
       when v.inspect =~ /:0x0/
         o[k] = v.inspect.sub(/:0x[a-f0-9]+@/,'')
       when Resource::Path === v
-        "" << String.new(v.to_s)
+        o[k] = "" << String.new(v.to_s)
       else
         o[k] = v
       end
@@ -230,6 +230,7 @@ module Misc
         File.open(path, 'w') do |f|  end
       end
     rescue Interrupt
+      FileUtils.rm_f path
       raise "Interrupted (Ctrl-c)"
     rescue Exception
       FileUtils.rm_f path

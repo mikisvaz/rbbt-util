@@ -85,6 +85,13 @@ class TSV
     fields.select{|f| f.namespace.nil? or f.namespace == namespace}
   end
 
+  def key_field
+    return nil if @key_field.nil?
+    k = @key_field.dup
+    k.extend Field
+    k
+  end
+
   def fields
     return nil if @fields.nil?
     fds = @fields
@@ -113,7 +120,11 @@ class TSV
 
   def self.identify_field(key, fields, field)
     return field if Integer === field
-    return :key if field.nil? or field == 0 or field.to_sym == :key or key == field 
+    if String === field
+      field = field.dup
+      field.extend Field
+    end
+    return :key if field.nil? or field == 0 or field.to_sym == :key or field == key
     return nil if fields.nil?
     return fields.collect{|f| f.to_s}.index field if fields.collect{|f| f.to_s}.index field
     return fields.index field 
@@ -258,6 +269,10 @@ class TSV
       keys = nil
     end
 
+    if keys == :sort
+      keys = self.keys.sort
+    end
+
     str = ""
 
     str << "#: " << Misc.hash2string(EXTRA_ACCESSORS.collect{|key| [key, self.send(key)]}) << "\n" unless no_options
@@ -278,5 +293,11 @@ class TSV
     end
 
     str
+  end
+
+  def value_peek
+    peek = {}
+    keys[0..10].zip(values[0..10]).each do |k,v| peek[k] = v end
+    peek
   end
 end

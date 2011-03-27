@@ -276,7 +276,7 @@ module Persistence
     persistence_file ||= get_persistence_file(filename, prefix, options)
 
     if persistence_update or not File.exists? persistence_file
-      Log.debug "Creating #{ persistence_file }. Prefix = #{prefix}"
+      Log.debug "Creating FWT #{ persistence_file }. Prefix = #{prefix}"
 
       range = options[:range]
 

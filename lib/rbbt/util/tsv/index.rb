@@ -233,6 +233,8 @@ class TSV
 
   def self.field_matches(tsv, values)
     values = [values] if not Array === values
+    Log.debug "Matcing #{values.length} values to #{tsv.filename}"
+
     if values.flatten.sort[0..9].compact.collect{|n| n.to_i} == (1..10).to_a
       return {}
     end

@@ -104,7 +104,7 @@ module Open
         CMD.cmd("grep", "-E" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
       end
     else
-      CMD.cmd("grep '#{grep}' -", :in => stream, :pipe => true)
+      CMD.cmd("grep '#{grep}' -", :in => stream, :pipe => true, :post => proc{stream.force_close if stream.respond_to? :force_close})
     end
   end
   
@@ -122,7 +122,7 @@ module Open
     if String === stream
       Zlib::Inflate.inflate(stream)
     else
-      CMD.cmd("gunzip", :pipe => true, :in => stream)
+      CMD.cmd("gunzip", :pipe => true, :in => stream, :post => proc{stream.force_close if stream.respond_to? :force_close})
     end
   end
 

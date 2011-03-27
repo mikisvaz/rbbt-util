@@ -296,6 +296,7 @@ class TSV
     field_positions = fields.collect{|field| other.identify_field field}
     field_names     = field_positions.collect{|pos| pos == :key ? other.key_field : other.fields[pos] }
 
+     
     through do |key, values|
       source_keys = index[key]
       if source_keys.nil? or source_keys.empty?
@@ -385,13 +386,13 @@ class TSV
     Log.medium "Found Traversal: #{traversal_ids * " => "}"
     
     data_key, data_file = path.shift
-    if data_key == data_file.key_field
-      Log.debug "Data index not required '#{data_file.key_field}' => '#{data_key}'"
-      data_index = nil
-    else
-      Log.debug "Data index required"
-      data_index = data_file.index :target => data_key, :fields => data_file.key_field, :persistence => false
-    end
+    data_index = if data_key == data_file.key_field
+                   Log.debug "Data index not required '#{data_file.key_field}' => '#{data_key}'"
+                   nil
+                 else
+                   Log.debug "Data index required"
+                   data_file.index :target => data_key, :fields => data_file.key_field, :persistence => false
+                 end
 
     current_index = data_index
     current_key   = data_key
@@ -402,7 +403,7 @@ class TSV
         current_index = next_file.index :target => next_key, :fields => current_key, :persistence => persist_input
       else
         next_index = next_file.index :target => next_key, :fields => current_key, :persistence => persist_input
-        current_index.process current_index.fields.first do |key, values, values|
+        current_index.process current_index.fields.first do |values|
           if values.nil?
             nil
           else
