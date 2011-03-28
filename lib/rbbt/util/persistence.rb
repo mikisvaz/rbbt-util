@@ -193,9 +193,9 @@ module Persistence
         end
       end
 
-      per.read
-
       tsv = Object::TSV.new per
+
+      per.read
 
       tsv
     else
@@ -208,6 +208,8 @@ module Persistence
           tsv.send "#{key}=".to_sym, per.send(key.to_sym) 
         end
       end
+      
+      per.read
 
       tsv
     end
@@ -238,18 +240,17 @@ module Persistence
             per.send "#{key}=".to_sym, extra[key.to_sym]
           end
         end
+
       rescue Exception
         per.close
         raise $!
       end
 
-      per.read
-
      [ per, extra ]
     else
       Log.debug "Loading #{ persistence_file }. Prefix = #{prefix}"
       begin
-        per = Persistence::TSV.get persistence_file, true, serializer
+        per = Persistence::TSV.get persistence_file, false, serializer
 
         extra = {}
         Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
@@ -258,10 +259,13 @@ module Persistence
           end
         end
 
+      rescue Interrupt
+        raise "Interrupted"
       rescue Exception
         per.close
         raise $!
       end
+
       [ per, extra ]
     end
   end

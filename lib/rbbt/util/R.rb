@@ -25,7 +25,7 @@ module R
 end
 
 class TSV
-  def R(script)
+  def R(script, open_options = {})
     TmpFile.with_file do |f|
       Open.write(f, self.to_s)
       Log.debug(R.run(
@@ -35,7 +35,8 @@ data = rbbt.tsv('#{f}');
 rbbt.tsv.write('#{f}', data);
       EOF
       ).read)
-      TSV.new(f, :type => :list)
+      open_options = Misc.add_defaults open_options, :type => :list
+      TSV.new(f, open_options)
     end
   end
 end

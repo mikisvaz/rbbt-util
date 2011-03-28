@@ -50,7 +50,7 @@ row3    A    a|B    Id4
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.new(File.open(filename), :sep => /\s+/, :key => "OtherID", :persistence => true)
-      index = tsv.index(:case_insensitive => false, :order => true)
+      index = tsv.index(:case_insensitive => false, :order => true, :persistence => true)
       assert_equal "Id1", index['a'].first
       assert_equal "Id3", index['A'].first
       assert_equal "OtherID", index.fields.first
@@ -123,9 +123,7 @@ row2    A    B
       values["Range"].last
     end
 
-    ddd tsv.fields
     tsv = tsv.slice ["Start", "End"]
-    ddd tsv.fields
  
     tsv
   end

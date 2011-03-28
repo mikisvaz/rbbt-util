@@ -41,9 +41,6 @@ class TSV
     end
   end
 
-  def self.encapsulate_persistence(file, options)
-  end
-
   def initialize(file = {}, type = nil, options = {})
     # Process Options
     
@@ -149,15 +146,16 @@ class TSV
       end
     end
 
-    if not extra.nil?
+    if not extra.nil? 
       %w(case_insensitive namespace identifiers datadir fields key_field type filename cast).each do |key| 
         if extra.include? key.to_sym
           self.send("#{key}=".to_sym, extra[key.to_sym])
-          if @data.respond_to? "#{key}=".to_sym
-            @data.send("#{key}=".to_sym, extra[key.to_sym])
-          end
+          #if @data.respond_to? "#{key}=".to_sym
+          #  @data.send("#{key}=".to_sym, extra[key.to_sym])
+          #end
         end
       end 
+      @data.read if Persistence::TSV === @data
     end
   end
 

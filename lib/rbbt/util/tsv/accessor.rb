@@ -147,7 +147,7 @@ class TSV
       end
     end if Array === new_fields
     @fields = new_fields
-    @data.fields = new_fields if @data.respond_to? :fields=
+    @data.fields = new_fields if @data.respond_to? :fields= and @data.write?
   end
 
   def old_fields=(new_fields)
@@ -205,6 +205,10 @@ class TSV
 
     key = key.downcase if @case_insensitive and key !~ /^__Ref:/
     follow @data[key]
+  end
+
+  def delete(key)
+    @data.delete(key)
   end
 
   def values_at(*keys)

@@ -30,6 +30,13 @@ rbbt.tsv <- function(filename, sep = "\t", comment.char ="#",  ...){
   return(data);
 }
 
+rbbt.tsv2matrix <- function(data){
+  new = data.matrix(data);
+  colnames(new) <- colnames(data);
+  rownames(new) <- rownames(data);
+  new
+}
+
 rbbt.tsv.write <- function(filename, data, key.field = NULL){
   if (is.null(key.field)){ key.field = "ID";}
 

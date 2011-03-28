@@ -152,5 +152,18 @@ row2   2 4 6 8
     assert_equal "Test", string
   end
 
+  def test_non_blocking
+    $a = TSV.new test_datafile('test.tsv'), :persistence => true, :persistence_dir => Rbbt.tmp.test.persistence
+    $a.data.read
+
+    pid = Process.fork do
+      $b = TSV.new test_datafile('test.tsv'), :persistence => true, :persistence_dir => Rbbt.tmp.test.persistence
+      $b.data.close
+    end
+
+    Process.wait pid
+  end
+
+
 end
 
