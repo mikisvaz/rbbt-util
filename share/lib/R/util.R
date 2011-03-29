@@ -31,10 +31,10 @@ rbbt.tsv <- function(filename, sep = "\t", comment.char ="#",  ...){
 }
 
 rbbt.tsv2matrix <- function(data){
-  new = data.matrix(data);
+  new <- data.matrix(data);
   colnames(new) <- colnames(data);
   rownames(new) <- rownames(data);
-  new
+  return(new);
 }
 
 rbbt.tsv.write <- function(filename, data, key.field = NULL){
