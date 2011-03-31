@@ -1,3 +1,14 @@
+rbbt.ruby <- function(code, load = TRUE){
+  file = system('rbbt_exec.rb - file', input = code, intern=TRUE);
+  if (load){
+    data = rbbt.tsv(file);
+    rm(file);
+    return(data);
+  }else{
+    return(file);
+  }
+}
+
 rbbt.glob <- function(d, pattern){
     d=sub("/$", '', d);
     sapply(dir(d, pattern), function(file){paste(d,file,sep="/")});
@@ -62,6 +73,10 @@ rbbt.percent <- function(values){
     values=values/sum(values);
 }
 
+rbbt.split <- function(string){
+  return(strstring(string, "\\|"));
+}
+
 rbbt.sort_by_field <- function(data, field, is.numeric=TRUE){
     if (is.numeric){
         field.data=as.numeric(data[,field]);
@@ -95,4 +110,29 @@ rbbt.init <- function(data, new){
         return(data);
     }
 }
+
+rbbt.libdir = '~/config/lib/R/lib'
+rbbt.this.script = paste(rbbt.libdir, 'util.R',sep="/")
+
+rbbt.reload <- function (){
+    source(rbbt.this.script)
+}
+
+rbbt.parse <- function(filename){
+    f <- file(filename, open='r');
+    lines <- readLines(f);
+    close(f);
+
+    from = match(1,as.vector(sapply(lines, function(x){grep('#[[:space:]]*START',x,ignore.case=TRUE)})));
+    to   = match(1,as.vector(sapply(lines, function(x){grep('#[[:space:]]*END',x,ignore.case=TRUE)})));
+    if (is.na(from)){from = 1}
+    if (is.na(to)){to = length(lines)}
+    return(parse(text=paste(lines[from:to],sep="\n")));
+}
+
+rbbt.run <- function(filename){
+    rbbt.reload();
+    eval(rbbt.parse(filename), envir=globalenv());
+}
+
 

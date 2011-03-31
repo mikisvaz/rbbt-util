@@ -33,6 +33,10 @@ end
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.filename?(filename)
+    String === filename and filename.length < 1024 and filename.index("\n").nil? and File.exists? filename
+  end
+
   def self.lock(file, *args)
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
     lockfile = Lockfile.new file + '.lock'

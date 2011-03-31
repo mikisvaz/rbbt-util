@@ -4,19 +4,19 @@ require 'test/unit'
 
 class TestMisc < Test::Unit::TestCase
 
-  def _test_pdf2text_example
+  def test_pdf2text_example
     assert PDF2Text.pdf2text(test_datafile('example.pdf')).read =~ /An Example Paper/i
   end
 
-  def _test_pdf2text_EPAR
+  def test_pdf2text_EPAR
     assert PDF2Text.pdf2text("http://www.ema.europa.eu/docs/en_GB/document_library/EPAR_-_Scientific_Discussion/human/000402/WC500033103.pdf").read =~ /Tamiflu/i
   end
 
-  def _test_pdf2text_wrong
+  def test_pdf2text_wrong
     assert_raise CMD::CMDError do PDF2Text.pdf2text("http://www.ema.europa.eu/docs/en_GB#") end
   end
 
-  def _test_string2hash
+  def test_string2hash
     assert(Misc.string2hash("--user-agent=firefox").include? "--user-agent")
     assert(Misc.string2hash(":true")[:true] == true)
     assert(Misc.string2hash("true")["true"] == true)
@@ -27,17 +27,17 @@ class TestMisc < Test::Unit::TestCase
     assert(Misc.string2hash("a=b#c=d#:h=:j")[:h] == :j)
   end
   
-  def _test_named_array
+  def test_named_array
     a = NamedArray.name([1,2,3,4], %w(a b c d))
     assert_equal(1, a['a'])
   end
 
-  def _test_path_relative_to
+  def test_path_relative_to
     assert_equal "test/foo", Misc.path_relative_to('test/test/foo', 'test')
   end
 
-  def _test_chunk
-    _test =<<-EOF
+  def test_chunk
+    test =<<-EOF
 This is an example file. Entries are separated by Entry
 -- Entry
 1
@@ -52,7 +52,7 @@ This is an example file. Entries are separated by Entry
     assert_equal "1\n2\n3", Misc.chunk(test, /^-- Entry/).first.strip
   end
 
-  def _test_hash2string
+  def test_hash2string
     hash = {}
     assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
 
@@ -73,14 +73,14 @@ This is an example file. Entries are separated by Entry
  
  end
 
-  def _test_merge
+  def test_merge
     a = [[1],[2]]
     a = NamedArray.name a, %w(1 2)
     a.merge [3,4]
     assert_equal [1,3], a[0]
   end
 
-  def _test_indiferent_hash
+  def test_indiferent_hash
     a = {:a => 1, "b" => 2}
     a.extend IndiferentHash
 

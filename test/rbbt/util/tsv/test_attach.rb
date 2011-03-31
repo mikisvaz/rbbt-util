@@ -350,7 +350,41 @@ row6,dd,dd,ee,,
 
       assert_equal result, Open.read(f)
     end
- 
+  end
+
+  def test_paste
+    file1 =<<-EOF
+row6,dd,dd,ee
+row1,a,b,c
+row1,aa,bb,cc
+row2,A,B,C
+row3,1,2,3
+   EOF
+    file2 =<<-EOF
+row20,rr,rr
+row1,d,e
+row2,D,E
+row4,x,y
+    EOF
+    result =<<-EOF
+row1,aa|a,bb|b,cc|c,d,e
+row2,A,B,C,D,E
+row20,,,,rr,rr
+row3,1,2,3,,
+row4,,,,x,y
+row6,dd,dd,ee,,
+    EOF
+
+    TmpFile.with_file do |f|
+      data1 = TSV.new StringIO.new(file1), :sep => ',', :merge => true
+      data2 = TSV.new StringIO.new(file2), :sep => ',', :merge => true
+      data3 = data1.paste(data2)
+      data3.each do |key, list|
+        list.each do |l| l.replace l.sort_by{|v| v.length}.reverse end
+      end
+
+      assert_equal result, data3.to_s(:sort, true).gsub(/\t/,',')
+    end
   end
 
   def test_merge_rows

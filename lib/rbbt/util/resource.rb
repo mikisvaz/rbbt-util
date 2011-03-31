@@ -184,9 +184,10 @@ source "$INSTALL_HELPER_FILE"
     rakefile = klass.share.install[self.to_s].Rakefile
     rakefile.lib_dir = Resource.caller_lib_dir
 
+
     self[''].define_as_rake rakefile
     self.namespace = base.to_s
-    self.lib_dir = caller_lib_dir
+    self.lib_dir = Resource.caller_lib_dir
   end
 
   module Path
