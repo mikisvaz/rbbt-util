@@ -74,7 +74,11 @@ rbbt.percent <- function(values){
 }
 
 rbbt.split <- function(string){
-  return(strstring(string, "\\|"));
+  return(unlist(strsplit(string, "\\|")));
+}
+
+rbbt.last <-function(data){
+  data[length(data)];
 }
 
 rbbt.sort_by_field <- function(data, field, is.numeric=TRUE){
@@ -111,8 +115,7 @@ rbbt.init <- function(data, new){
     }
 }
 
-rbbt.libdir = '~/config/lib/R/lib'
-rbbt.this.script = paste(rbbt.libdir, 'util.R',sep="/")
+rbbt.this.script = system("rbbt_Rutil.rb", intern =T)
 
 rbbt.reload <- function (){
     source(rbbt.this.script)

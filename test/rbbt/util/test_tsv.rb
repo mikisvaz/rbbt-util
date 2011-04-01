@@ -178,11 +178,38 @@ row2    A    B
       assert !tsv1.case_insensitive
       assert tsv1.include? "A"
     end
-    def test_create_array
-      tsv = TSV.new(%w(a b c))
-      assert_equal %w(a b c).sort, tsv.keys.sort
-      assert_equal [[]] * tsv.keys.length, tsv.values
+  end
+
+  def test_create_array
+    tsv = TSV.new(%w(a b c))
+    assert_equal %w(a b c).sort, tsv.keys.sort
+    assert_equal [[]] * tsv.keys.length, tsv.values
+  end
+
+  def test_persistence_data
+     content1 =<<-EOF
+#: :sep=/\\s+/#:case_insensitive=false
+#Id    ValueA    ValueB
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+   tsv1 = tsv2 = identifiers = nil
+    TmpFile.with_file(content1) do |filename|
+      TmpFile.with_file do |tchashfile|
+        tchash = TCHash.get(tchashfile, true)
+        tsv1 = TSV.new(File.open(filename), :key => "ValueA", :persistence_data => tchash)
+        assert TCHash === tsv1.data
+        assert !tsv1.case_insensitive
+        assert tsv1.include? "A"
+
+        tsv1 = TSV.new(tchash, :key => "ValueA")
+        assert TCHash === tsv1.data
+        assert !tsv1.case_insensitive
+        assert tsv1.include? "A"
+      end
     end
+ 
   end
 end
 

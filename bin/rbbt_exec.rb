@@ -18,7 +18,7 @@ data = data.to_s(:sort, true) if TSV === data
 
 case
 when (output.nil? or output == '-')
-  puts data.to_s(:sort,true)
+  puts data
 when output == "file"
   if Misc.filename? data
     tmpfile = data

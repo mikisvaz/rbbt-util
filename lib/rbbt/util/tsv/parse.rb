@@ -120,7 +120,7 @@ class TSV
     exclude ||= Misc.process_options options, :reject if options.include? :reject
 
     #{{{ Process rest
-    data = {}
+    data = options[:persistence_data] || {}
     single = type.to_sym != :double
     max_cols = 0
     while line do
