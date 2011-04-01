@@ -197,6 +197,7 @@ class TSV
     field_names     = field_positions.collect{|pos| pos == :key ? other.key_field : other.fields[pos] }
 
      
+    length = self.fields.length
     through do |key, values|
       source_keys = index[key]
       if source_keys.nil? or source_keys.empty?
@@ -216,7 +217,7 @@ class TSV
               other[source_key][pos]
             end
           end
-          new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
+          new_values.collect!{|v| v.nil? ? [[]] : [v]}    if     type == :double and not other.type == :double
           new_values.collect!{|v| v.nil? ? nil : v.first} if not type == :double and     other.type == :double
           all_new_values << new_values
         end
@@ -224,17 +225,28 @@ class TSV
 
       if all_new_values.empty?
         if type == :double
-          self[key] = self[key].concat [[]] * field_positions.length
+          all_new_values = [[[]] * field_positions.length]
         else
-          self[key] = self[key].concat [""] * field_positions.length
-        end
-      else
-        if type == :double
-          self[key] = self[key].concat TSV.zip_fields(all_new_values).collect{|l| l.flatten}
-        else
-          self[key] = self[key].concat all_new_values.first
+          all_new_values =  [[""] * field_positions.length]
         end
       end
+
+      current = self[key]
+
+      if current.length > length
+        all_new_values << current.slice!(length..current.length - 1)
+      end
+
+      if type == :double
+        all_new_values = TSV.zip_fields(all_new_values).collect{|l| l.flatten}
+      else
+        all_new_values = all_new_values.first
+      end
+     
+      current += all_new_values
+
+      self[key] = current
+
     end
 
     self.fields = self.fields.concat field_names
@@ -312,6 +324,7 @@ class TSV
         end
         current_index.fields = [next_key]
       end
+      current_key = next_key
     end
 
     current_index
