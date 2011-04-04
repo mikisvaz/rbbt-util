@@ -190,6 +190,8 @@ class FixWidthTable
 
     idx += 1 unless pos(idx) >= r_start
 
+    return [] if idx >= size
+
     values = []
     l_start = pos(idx)
     l_end   = pos_end(idx)
