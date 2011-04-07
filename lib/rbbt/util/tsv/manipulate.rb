@@ -190,8 +190,14 @@ class TSV
         new[key] = values if [key,values].flatten.select{|v| v =~ method}.any?
       end
     when String === method
-      through do |key, values|
-        new[key] = values if [key,values].flatten.select{|v| v == method}.any?
+      if block_given?
+        through do |key, values|
+          new[key] = values if yield((method == key_field or method == :key)? key : values[method])
+        end
+      else
+        through do |key, values|
+          new[key] = values if [key,values].flatten.select{|v| v == method}.any?
+        end
       end
     when Hash === method
       key  = method.keys.first
