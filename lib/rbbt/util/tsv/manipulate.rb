@@ -1,5 +1,7 @@
 class TSV
 
+  attr_accessor :monitor
+ 
   def through(new_key_field = :key, new_fields = nil, &block)
 
     # Get positions
@@ -43,11 +45,23 @@ class TSV
                       end if fields
 
     # Cycle through
+    if monitor
+      desc = "Parsing Stream"
+      step = 100
+      if Hash === monitor
+        desc = monitor[:desc] if monitor.include? :desc 
+        step = monitor[:step] if monitor.include? :step 
+      end
+      progress_monitor = Progress::Bar.new(size, 0, step, desc)
+    else
+      progress_monitor = nil
+    end
                       
     if new_key_position == :key and ( new_fields.nil? or new_fields == fields)
-      each do |key, fields| yield key, fields end
+      each do |key, fields| progress_monitor.tick if progress_monitor; yield key, fields end
     else
       each do |key, fields|
+        progress_monitor.tick if progress_monitor;
         new_key_value = case
                         when (new_key_position.nil? or new_key_position == :key)
                           key

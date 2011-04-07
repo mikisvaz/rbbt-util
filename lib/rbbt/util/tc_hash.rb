@@ -93,7 +93,7 @@ class TCHash < TokyoCabinet::HDB
         @serializer = Marshal
       else
         mod = Misc.string2const serializer_str
-       @serializer = mod
+        @serializer = mod
       end
     end
   end

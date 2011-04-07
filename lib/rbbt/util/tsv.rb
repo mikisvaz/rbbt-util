@@ -115,7 +115,26 @@ class TSV
         @data, extra = Persistence.persist(file, :TSV, :tsv_extra, options) do |file, options, filename, persistence_file|
           data, extra = nil
 
-          data = Persistence::TSV.get persistence_file, true if in_situ_persistence and persistence_file
+          if in_situ_persistence and persistence_file
+
+            serializer = case
+                         when ((cast == "to_i" or cast == :to_i) and type == :single)
+                           :integer 
+                         when ((cast == "to_i" or cast == :to_i) and type == :flat)
+                           :integer_array 
+                         when type == :double
+                           :double
+                         when type == :list
+                           :list
+                         when type == :single
+                           :single
+                         else
+                           :marshal
+                         end
+
+            options.merge! :persistence_data => Persistence::TSV.get(persistence_file, true, serializer)
+          end
+
           begin
             case
               ## Parse source

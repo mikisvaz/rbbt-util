@@ -1,4 +1,5 @@
 require 'rbbt/util/misc'
+require 'progress-bar'
 class TSV
  
   def self.parse_fields(io, delimiter = "\t")
@@ -58,6 +59,7 @@ class TSV
     options = Misc.add_defaults options, more_options
 
     options = Misc.add_defaults options, 
+      :monitor          => false,
       :case_insensitive => false,
       :type             => :double,
       :namespace        => nil,
@@ -78,6 +80,8 @@ class TSV
       :exclude          => nil,
       :select           => nil,
       :grep             => nil
+
+    monitor = Misc.process_options options, :monitor
     
     header_hash, sep, sep2 =
       Misc.process_options options, :header_hash, :sep, :sep2
@@ -119,12 +123,33 @@ class TSV
 
     exclude ||= Misc.process_options options, :reject if options.include? :reject
 
+    if monitor and (stream.respond_to?(:size) or (stream.respond_to?(:stat) and stream.stat.respond_to? :size)) and stream.respond_to?(:pos)
+      size = case
+             when stream.respond_to?(:size)
+               stream.size
+             else
+               stream.stat.size
+             end
+      desc = "Parsing Stream"
+      step = 100
+      if Hash === monitor
+        desc = monitor[:desc] if monitor.include? :desc 
+        step = monitor[:step] if monitor.include? :step 
+      end
+      progress_monitor = Progress::Bar.new(size, 0, step, desc)
+    else
+      progress_monitor = nil
+    end
+
+    ddd options[:persistence_data]
     #{{{ Process rest
     data = options[:persistence_data] || {}
     single = type.to_sym != :double
     max_cols = 0
     while line do
       line.chomp!
+
+      progress_monitor.tick(stream.pos) if progress_monitor
 
       if line.empty?                           or
          (exclude and     exclude.call(line))  or
