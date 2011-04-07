@@ -55,7 +55,7 @@ class TSV
       file = $1
     end
 
-    options = Misc.add_defaults options, :persistence => false, :type => type
+    options = Misc.add_defaults options, :persistence => false, :type => type, :in_situ_persistence => true
 
     # Extract Filename
 
@@ -111,35 +111,42 @@ class TSV
           end
         end
       else
-        @data, extra = Persistence.persist(file, :TSV, :tsv_extra, options) do |file, options, filename|
+        in_situ_persistence = Misc.process_options(options, :in_situ_persistence)
+        @data, extra = Persistence.persist(file, :TSV, :tsv_extra, options) do |file, options, filename, persistence_file|
           data, extra = nil
 
-          case
-            ## Parse source
-          when Resource::Path === file #(String === file and file.respond_to? :open)
-            data, extra = TSV.parse(file.open(:grep => options[:grep]) , options)
-            extra[:namespace] ||= file.namespace
-            extra[:datadir]   ||= file.datadir
-          when StringIO === file
-            data, extra = TSV.parse(file, options)
-          when Open.can_open?(file)
-            Open.open(file, :grep => options[:grep]) do |f|
-              data, extra = TSV.parse(f, options)
+          data = Persistence::TSV.get persistence_file, true if in_situ_persistence and persistence_file
+          begin
+            case
+              ## Parse source
+            when Resource::Path === file #(String === file and file.respond_to? :open)
+              data, extra = TSV.parse(file.open(:grep => options[:grep]) , options)
+              extra[:namespace] ||= file.namespace
+              extra[:datadir]   ||= file.datadir
+            when StringIO === file
+              data, extra = TSV.parse(file, options)
+            when Open.can_open?(file)
+              Open.open(file, :grep => options[:grep]) do |f|
+                data, extra = TSV.parse(f, options)
+              end
+            when File === file
+              path = file.path
+              file = Open.grep(file, options[:grep]) if options[:grep]
+              data, extra = TSV.parse(file, options)
+            when IO === file
+              file = Open.grep(file, options[:grep]) if options[:grep]
+              data, extra = TSV.parse(file, options)
+            when block_given?
+              data 
+            else
+              raise "Unknown input in TSV.new #{file.inspect}"
             end
-          when File === file
-            path = file.path
-            file = Open.grep(file, options[:grep]) if options[:grep]
-            data, extra = TSV.parse(file, options)
-          when IO === file
-            file = Open.grep(file, options[:grep]) if options[:grep]
-            data, extra = TSV.parse(file, options)
-          when block_given?
-            data 
-          else
-            raise "Unknown input in TSV.new #{file.inspect}"
-          end
 
-          extra[:filename] = filename
+            extra[:filename] = filename
+          rescue Exception
+            FileUtils.rm persistence_file if persistence_file and File.exists?(persistence_file)
+            raise $!
+          end
 
           [data, extra]
         end

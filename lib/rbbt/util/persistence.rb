@@ -230,20 +230,25 @@ module Persistence
 
       serializer = tsv_serializer res, extra
 
-      begin
-        per = Persistence::TSV.get persistence_file, true, serializer
+      per = nil
+      if not Persistence::TSV === res
+        begin
+          per = Persistence::TSV.get persistence_file, true, serializer
 
-        per.write
-        per.merge! res
-        Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
-          if extra.include?(key.to_sym)  and per.respond_to?(key.to_sym)
-            per.send "#{key}=".to_sym, extra[key.to_sym]
+          per.write
+          per.merge! res
+          Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
+            if extra.include?(key.to_sym)  and per.respond_to?(key.to_sym)
+              per.send "#{key}=".to_sym, extra[key.to_sym]
+            end
           end
-        end
 
-      rescue Exception
-        per.close
-        raise $!
+        rescue Exception
+          per.close
+          raise $!
+        end
+      else
+        per = res
       end
 
      [ per, extra ]
