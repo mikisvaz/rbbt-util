@@ -384,6 +384,8 @@ class TSV
       attach_index other, index, fields
     end
     Log.medium("Attachment of fields:#{fields.inspect} from #{other.filename.inspect} finished.")
+
+    self
   end
 
   def detach(file)

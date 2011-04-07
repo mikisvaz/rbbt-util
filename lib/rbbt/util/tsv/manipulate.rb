@@ -261,6 +261,8 @@ class TSV
     end
 
     self.fields = self.fields + [name] if fields != nil and name != nil
+
+    self
   end
 
   def add_fields(names = nil)
