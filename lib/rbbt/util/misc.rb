@@ -166,7 +166,7 @@ module Misc
   def self.hash2md5(hash)
     o = {}
     hash.keys.sort_by{|k| k.to_s}.each do |k|
-      next if k == :monitor or k == "monitor" or k == :in_situ_persistence k == "in_situ_persistence"
+      next if k == :monitor or k == "monitor" or k == :in_situ_persistence or k == "in_situ_persistence"
       v = hash[k]
       case
       when v.inspect =~ /:0x0/

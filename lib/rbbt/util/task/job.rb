@@ -82,8 +82,7 @@ class Task
     end
 
     def set_info(key, value)
-      Misc.lock(info_file, key, value) do |info_file, key, value|
-        i = self.info
+      Misc.lock(info_file, key, value) do |info_file, key, value| i = self.info
         new_info = i.merge(key => value)
         Open.write(info_file, new_info.to_yaml)
       end
@@ -108,12 +107,20 @@ class Task
       info[:messages] || []
     end
 
-    def files(file, data = nil)
+    def files(file = nil, data = nil)
+      return Dir.glob(File.join(path + '.files/*')).collect{|f| File.basename(f)} if file.nil?
+
       filename = Resource::Path.path(File.join(path + '.files', file.to_s))
       if data.nil?
         filename
       else
         Open.write(filename, data)
+      end
+    end
+
+    def abort
+      if @pid
+        Process.kill("INT", @pid)
       end
     end
 

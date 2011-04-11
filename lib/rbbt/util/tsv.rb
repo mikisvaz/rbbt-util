@@ -117,10 +117,12 @@ class TSV
 
           if in_situ_persistence and persistence_file
 
+            cast = options[:cast]
+            type = options[:type]
             serializer = case
                          when ((cast == "to_i" or cast == :to_i) and type == :single)
                            :integer 
-                         when ((cast == "to_i" or cast == :to_i) and type == :flat)
+                         when ((cast == "to_i" or cast == :to_i) and (type == :flat or type == :list))
                            :integer_array 
                          when type == :double
                            :double

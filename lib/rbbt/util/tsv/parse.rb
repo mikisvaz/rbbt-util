@@ -8,7 +8,6 @@ class TSV
     ## split with delimiter, do not remove empty
     fields = io.split(delimiter, -1)
 
-
     fields
   end
 
@@ -141,7 +140,6 @@ class TSV
       progress_monitor = nil
     end
 
-    ddd options[:persistence_data]
     #{{{ Process rest
     data = options[:persistence_data] || {}
     single = type.to_sym != :double
@@ -212,7 +210,7 @@ class TSV
             data[id] = extra.first
         when type == :flat
           if data.include? id
-            data[id].concat extra
+            data[id] = data[id] + extra
           else
             data[id] = extra 
           end
@@ -286,7 +284,7 @@ class TSV
       end
     end
 
-    if keep_empty and max_cols > 0
+    if keep_empty and max_cols > 0 and not Persistence::TSV === data
       data.each do |key, values| 
         next if values =~ /__Ref:/
         new_values = values

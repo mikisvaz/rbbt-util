@@ -64,13 +64,16 @@ class Task
     dependencies.each do |dependency|
       case
       when Proc === dependency
-        previous_jobs << dependency.call(jobname, run_options)
-      when Task === dependency
-        previous_jobs << dependency.job(jobname, *(args + [optional_args]))
+        deps = dependency.call(jobname, run_options)
+        if Array === deps
+          previous_jobs.concat deps
+        else
+          previous_jobs << deps
+        end
       when Task::Job === dependency
         previous_jobs << dependency
-      when Symbol === dependency
-        previous_jobs << workflow.tasks[dependency].job(jobname, *(args + [optional_args]))
+      when Task === dependency
+        previous_jobs << dependency.job(jobname, *(args + [optional_args]))
       else
         required_files << dependency
       end
@@ -95,6 +98,75 @@ class Task
 
   def run(*args)
     job(*args).start
+  end
+
+  def option_info(option)
+    info = {}
+    info[:name] = option
+    info[:source] = name
+    info[:description] = option_descriptions[option] if option_descriptions and option_descriptions.include? option
+    info[:type] = option_types[option] if option_types and option_types.include? option
+    info[:default] = option_defaults[option] if option_defaults and option_defaults.include? option
+
+    info
+  end
+
+  def option_summary
+    options = []
+    optional_options = []
+
+    if self.options
+      self.options.collect{|option|
+        info = option_info(option)
+        if info[:default].nil?
+          options << info
+        else
+          optional_options << info
+        end
+      }
+    end
+
+    dependencies.select{|dep| Task === dep}.each do |task|
+      more_options, more_optional_options = task.option_summary
+      options.concat more_options
+      optional_options.concat more_optional_options
+    end
+
+    [options, optional_options]
+  end
+
+  def usage
+    usage = ""
+    usage << "Task: #{name}\n"
+    usage << "\nDescription: #{description.chomp}\n" if description
+    options, optional_options = option_summary
+
+    if options.any?
+      usage << "\nMandatory options:\n"
+      usage << "\tTask\tName\tType   \tDescription\n"
+      usage << "\t----\t----\t----   \t-----------\n"
+      options.each do |option|
+        option_line = "\t[#{option[:source]}]\t#{option[:name]}"
+        option_line << "\t#{option[:type] ? option[:type] : "Unspec."}"
+        option_line << "\t#{option[:description]}" if option[:description]
+        usage << option_line << "\n"
+      end
+    end
+
+    if optional_options.any?
+      usage << "\nOptional options:"
+      usage << "Mandatory options:\n"
+      usage << "\tTask\tName\tDefault  \tType   \tDescription\n"
+      usage << "\t----\t----\t-------  \t----   \t-----------\n"
+      optional_options.each do |option|
+        option_line = "\t[#{option[:source]}]\t#{option[:name]}\t#{option[:default]}"
+        option_line << "\t#{option[:type] ? option[:type] : "Unspec."}"
+        option_line << "\t#{option[:description]}" if option[:description]
+        usage << option_line << "\n"
+      end
+    end
+
+    usage
   end
 
 end

@@ -5,11 +5,11 @@ module MathWF
   extend WorkFlow
   self.tasks[:input] = Task.new(:input, :marshal, :value) do |value| value end
   self.tasks[:add_1] = Task.new(:add_1, :marshal) do input + 1 end
-  self.tasks[:add_1].dependencies << :input
+  self.tasks[:add_1].dependencies << tasks[:input]
   self.tasks[:times_2] = Task.new(:times_2, :marshal) do input * 2 end
-  self.tasks[:times_2].dependencies << :add_1
+  self.tasks[:times_2].dependencies << tasks[:add_1]
   self.tasks[:times_4] = Task.new(:times_4, :marshal) do input * 4 end
-  self.tasks[:times_4].dependencies << :add_1
+  self.tasks[:times_4].dependencies << tasks[:add_1]
   self.tasks.each do |name, task| task.workflow = self end
 end
 
@@ -118,6 +118,14 @@ class TestWorkFlow < Test::Unit::TestCase
   def test_conditional
     assert 2, ConWF.run(:times_2, "Test", "one").load
     assert 4, ConWF.run(:times_2, "Test", "two").load
+  end
+
+  def test_option_summary
+   assert MathWF.tasks[:times_2].option_summary.first.first[:name] == :value
+  end
+
+  def test_usage
+    assert  MathWF.tasks[:times_2].usage =~ /^Task:/
   end
 end
 

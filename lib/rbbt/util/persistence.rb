@@ -23,7 +23,7 @@ module Persistence
   def self.get_persistence_file(file, prefix, options = {})
     persistence_dir = Misc.process_options options, :persistence_dir
     persistence_dir ||= CACHEDIR
-    name = prefix.to_s << ":" << file.to_s << ":"
+    name = prefix.to_s.dup << ":" << file.to_s << ":"
 
     options_md5 = Misc.hash2md5 options
     File.join(persistence_dir, name.to_s.gsub(/\s/,'_').gsub(/\//,'>') + options_md5)

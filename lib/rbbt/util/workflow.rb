@@ -55,7 +55,7 @@ module WorkFlow
 
   def task_dependencies(dependencies)
     dependencies = [dependencies] unless Array === dependencies
-    @dangling_dependencies = dependencies
+    @dangling_dependencies = dependencies.collect{|dep| Symbol === dep ? tasks[dep] : dep }
   end
 
   def task_description(description)

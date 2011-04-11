@@ -121,6 +121,7 @@ class TCHash < TokyoCabinet::HDB
     @serializer = serializer
 
     if write || ! File.exists?(@path_to_db)
+      self.setcache(100000) or raise "Error setting cache"
       self.open(true)
     else
       self.open(false)
