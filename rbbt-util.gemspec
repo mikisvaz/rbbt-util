@@ -5,14 +5,14 @@
 
 Gem::Specification.new do |s|
   s.name = %q{rbbt-util}
-  s.version = "3.0.3"
+  s.version = "3.1.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
-  s.date = %q{2011-03-23}
+  s.date = %q{2011-04-11}
   s.description = %q{Utilities for handling tsv files, caches, etc}
   s.email = %q{miguel.vazquez@fdi.ucm.es}
-  s.executables = ["tsv.rb", "tchash.rb", "workflow.rb", "rbbt_query.rb"]
+  s.executables = ["tsv.rb", "tchash.rb", "workflow.rb", "rbbt_query.rb", "rbbt_exec.rb", "rbbt_Rutil.rb"]
   s.extra_rdoc_files = [
     "LICENSE"
   ]
@@ -44,15 +44,17 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/tsv/attach.rb",
     "lib/rbbt/util/tsv/index.rb",
     "lib/rbbt/util/tsv/manipulate.rb",
+    "lib/rbbt/util/tsv/misc.rb",
     "lib/rbbt/util/tsv/parse.rb",
     "lib/rbbt/util/tsv/resource.rb",
     "lib/rbbt/util/workflow.rb",
+    "lib/rbbt/util/workflow/soap.rb",
     "share/install/software/lib/install_helpers",
     "share/lib/R/util.R"
   ]
   s.homepage = %q{http://github.com/mikisvaz/rbbt-util}
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.4.2}
+  s.rubygems_version = %q{1.3.7}
   s.summary = %q{Utilities for the Ruby Bioinformatics Toolkit (rbbt)}
   s.test_files = [
     "test/rbbt/util/test_R.rb",
@@ -84,6 +86,7 @@ Gem::Specification.new do |s|
   ]
 
   if s.respond_to? :specification_version then
+    current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
