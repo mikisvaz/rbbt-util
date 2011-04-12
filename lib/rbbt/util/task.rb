@@ -145,6 +145,7 @@ class Task
       usage << "\nMandatory options:\n"
       usage << "\tTask\tName\tType   \tDescription\n"
       usage << "\t----\t----\t----   \t-----------\n"
+
       options.each do |option|
         option_line = "\t[#{option[:source]}]\t#{option[:name]}"
         option_line << "\t#{option[:type] ? option[:type] : "Unspec."}"
@@ -154,8 +155,7 @@ class Task
     end
 
     if optional_options.any?
-      usage << "\nOptional options:"
-      usage << "Mandatory options:\n"
+      usage << "\nOptional options:\n"
       usage << "\tTask\tName\tDefault  \tType   \tDescription\n"
       usage << "\t----\t----\t-------  \t----   \t-----------\n"
       optional_options.each do |option|

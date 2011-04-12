@@ -4,6 +4,15 @@ require 'rbbt/util/persistence'
 require 'rbbt/util/misc'
 
 module WorkFlow
+
+  def self.require_workflow(path)
+    if Rbbt.etc.workflow_dir.exists?
+      require Dir.glob(File.join(Rbbt.etc.workflow_dir.read.strip, '*', path + '.rb')).first
+    else
+      require Dir.glob(File.join(Rbbt.share.workflows.find, '*', path + '.rb')).first
+    end
+  end
+
   def self.extended(base)
     class << base
       attr_accessor :tasks, :jobdir, :dangling_options, :dangling_option_descriptions,

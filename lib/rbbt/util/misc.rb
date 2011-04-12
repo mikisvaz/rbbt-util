@@ -279,7 +279,8 @@ module Misc
   # Divides the array into +num+ chunks of the same size by placing one
   # element in each chunk iteratively.
   def self.divide(array, num)
-    chunks = [[]] * num
+    chunks = []
+    num.times do chunks << [] end
     array.each_with_index{|e, i|
       c = i % num
       chunks[c] << e

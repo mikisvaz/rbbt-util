@@ -112,4 +112,8 @@ This is an example file. Entries are separated by Entry
 
   end
 
+  def test_divide
+    assert 2, Misc.divide(%w(1 2 3 4 5 6 7 8 9),2).length
+  end
+
 end

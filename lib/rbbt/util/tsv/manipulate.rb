@@ -46,7 +46,7 @@ class TSV
 
     # Cycle through
     if monitor
-      desc = "Parsing Stream"
+      desc = "Iterating TSV"
       step = 100
       if Hash === monitor
         desc = monitor[:desc] if monitor.include? :desc 
@@ -267,7 +267,7 @@ class TSV
   end
 
   def add_field(name = nil)
-    each do |key, values|
+    through do |key, values|
       new_values = yield(key, values)
       new_values = [new_values] if type == :double and not Array === new_values
 
@@ -280,7 +280,7 @@ class TSV
   end
 
   def add_fields(names = nil)
-    each do |key, values|
+    through do |key, values|
       new_values = yield(key, values)
       new_values = [new_values] if type == :double and not Array == new_values
 

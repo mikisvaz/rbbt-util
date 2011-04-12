@@ -142,7 +142,12 @@ class Task
 
     def run_dependencies
       required_files.each do |file| file.produce unless File.exists? file end unless required_files.nil?
-      previous_jobs.each do |job| job.start unless File.exists? job.path; job.set_info(:step, :done) end unless previous_jobs.nil?
+      previous_jobs.each do |job| 
+        if not job.recursive_done? 
+          job.start
+          job.step :done unless job.step == :error or job.step == :aborted
+        end
+      end unless previous_jobs.nil?
     end
 
     def save_dependencies
@@ -204,7 +209,7 @@ class Task
     end
 
     def recursive_done?
-      previous_jobs.inject(true){|acc,j| acc and j.recursive_done?} and done?
+      (previous_jobs || []).inject(true){|acc,j| acc and j.recursive_done?} and done?
     end
 
     def run
@@ -280,6 +285,7 @@ class Task
     def clean
       FileUtils.rm path if File.exists? path
       FileUtils.rm info_file if File.exists? info_file
+      FileUtils.rm_rf path + '.files' if File.exists? path + '.files'
     end
 
     def recursive_clean
