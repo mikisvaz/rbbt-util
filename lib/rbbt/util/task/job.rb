@@ -132,6 +132,10 @@ class Task
       step == :error or step == :aborted
     end
 
+    def aborted?
+      step == :aborted 
+    end
+
     def arguments
       options.values_at *task.options
     end
@@ -209,7 +213,7 @@ class Task
     end
 
     def recursive_done?
-      (previous_jobs || []).inject(true){|acc,j| acc and j.recursive_done?} and done?
+      (previous_jobs || []).inject(true){|acc,j| acc and j.recursive_done?} and done? and not error? 
     end
 
     def run
