@@ -29,3 +29,13 @@ class TSV
     counts
   end
 end
+
+module Open
+  def self.tsv(file, *args)
+    TSV.new file, *args
+  end
+
+  def self.index(file, *args)
+    TSV.index file, *args
+  end
+end
