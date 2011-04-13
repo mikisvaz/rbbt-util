@@ -12,7 +12,7 @@ class TSV
                           when Integer === new_fields
                             [new_fields]
                           when String === new_fields
-                            [identify_field new_fields]
+                            [identify_field(new_fields)]
                           when Array === new_fields
                             new_fields.collect{|new_field| identify_field new_field}
                           when new_fields == :key
