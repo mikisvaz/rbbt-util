@@ -293,7 +293,7 @@ class TSV
 
     range = ! pos_end.nil?
 
-    index = Persistence.persist(filename, "SortedIndex[#{range ? pos_start + ":" + pos_end: pos_start}]", :fwt, :start => pos_start, :end => pos_end, :range => range) do |filename, options|
+    index = Persistence.persist(filename, "SortedIndex[#{range ? pos_start + ":" + pos_end : pos_start}]", :fwt, :start => pos_start, :end => pos_end, :range => range) do |filename, options|
       pos_start, pos_end, range = Misc.process_options options, :start, :end, :range
       data = case
              when (type == :double and range)
