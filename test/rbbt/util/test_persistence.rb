@@ -153,11 +153,11 @@ row2   2 4 6 8
   end
 
   def test_non_blocking
-    $a = TSV.new test_datafile('test.tsv'), :persistence => true, :persistence_dir => Rbbt.tmp.test.persistence
+    $a = TSV.new datafile_test('test.tsv'), :persistence => true, :persistence_dir => Rbbt.tmp.test.persistence
     $a.data.read
 
     pid = Process.fork do
-      $b = TSV.new test_datafile('test.tsv'), :persistence => true, :persistence_dir => Rbbt.tmp.test.persistence
+      $b = TSV.new datafile_test('test.tsv'), :persistence => true, :persistence_dir => Rbbt.tmp.test.persistence
       $b.data.close
     end
 

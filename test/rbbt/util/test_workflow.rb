@@ -37,7 +37,10 @@ module MathWF2
   task :times => :integer do |times| mult(input, times) end
 
   task_dependencies []
-  task :persist do  task.workflow.methods.include? "local_persist" end
+  task :persist do  
+    task.workflow.methods.include?(:local_persist) or
+    task.workflow.methods.include?("local_persist") 
+  end
 end
 
 
@@ -65,22 +68,22 @@ class TestWorkFlow < Test::Unit::TestCase
  
   def test_math_wf
     job = MathWF.tasks[:times_2].job(:job1, 1)
-    assert_equal 4, job.fork.join.load
+    assert_equal 4, job.recursive_clean.fork.join.load
     job = MathWF.tasks[:times_4].job(:job1, 1)
-    assert_equal 8, job.fork.join.load
+    assert_equal 8, job.recursive_clean.fork.join.load
   end
 
   def test_math_wf2
     job = MathWF2.tasks[:times_2].job(:job1, 1)
-    job.fork.join
+    job.recursive_clean.fork.join
     assert_equal 4, job.load
     job = MathWF2.tasks[:times_4].job(:job1, 1)
-    assert_equal 8, job.fork.join.load
+    assert_equal 8, job.recursive_clean.fork.join.load
   end
 
   def test_math_run
     job = MathWF2.job(:times_2, :job1, 1)
-    job.fork.join
+    job.recursive_clean.fork.join
     assert_equal 4, job.load
   end
 
@@ -88,7 +91,7 @@ class TestWorkFlow < Test::Unit::TestCase
     assert MathWF2.tasks[:times].option_defaults.include? :times
 
     job = MathWF2.job(:times, :job1, 1)
-    job.fork.join
+    job.recursive_clean.fork.join
     assert job.done?
     puts job.messages
     assert File.exists? job.path
@@ -96,7 +99,7 @@ class TestWorkFlow < Test::Unit::TestCase
 
 
     job = MathWF2.job(:times, :job1, 1, :times => 20)
-    job.fork.join
+    job.recursive_clean.fork.join
     assert_equal 40, job.load
   end
 
@@ -112,12 +115,13 @@ class TestWorkFlow < Test::Unit::TestCase
   end
 
   def test_local_persist
+    MathWF2.job(:persist, :persist).clean
     assert MathWF2.run(:persist, :persist).load
   end
 
   def test_conditional
-    assert 2, ConWF.run(:times_2, "Test", "one").load
-    assert 4, ConWF.run(:times_2, "Test", "two").load
+    assert_equal 2, ConWF.run(:times_2, "Test", "one").load
+    assert_equal 4, ConWF.run(:times_2, "Test", "two").load
   end
 
   def test_option_summary

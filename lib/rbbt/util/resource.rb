@@ -226,7 +226,9 @@ source "$INSTALL_HELPER_FILE"
       join name
     end
     
-    def method_missing(name, prev = nil)
+    alias :old_method_missing :method_missing
+    def method_missing(name, prev = nil, *args)
+      old_method_missing(name, prev, *args) if name.to_s =~ /^to_/
       join prev unless prev.nil?
       join name
     end
@@ -307,7 +309,9 @@ source "$INSTALL_HELPER_FILE"
       end
     end
 
+    alias :old_method_missing :method_missing
     def method_missing(name, *args)
+      return old_method_missing(name, *args) if name.to_s =~ /^to_/
       if key
         klass.send(name, key, *args)
       else
@@ -333,7 +337,9 @@ source "$INSTALL_HELPER_FILE"
     Path.path(name, pkgdir, namespace, lib_dir)
   end
 
-  def method_missing(name, prev = nil)
+  alias :old_method_missing :method_missing
+  def method_missing(name, prev = nil, *args)
+    return old_method_missing(name, prev, *args) if name.to_s =~ /^to_/
     if prev
       self[prev][name]
     else

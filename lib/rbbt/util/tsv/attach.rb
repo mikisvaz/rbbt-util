@@ -151,6 +151,7 @@ class TSV
 
     through do |key, values|
       source_keys = values[source]
+      source_keys = [source_keys] unless Array === source_keys
       if source_keys.nil? or source_keys.empty?
         all_new_values = []
       else
@@ -191,6 +192,7 @@ class TSV
 
   def attach_index(other, index, fields = nil)
     fields = other.fields - [key_field].concat(self.fields) if fields.nil?
+    fields = [fields] unless Array === fields
 
     other = other.tsv unless TSV === other
     field_positions = fields.collect{|field| other.identify_field field}
@@ -276,7 +278,7 @@ class TSV
       id_list << match.first
     end
     
-    if id_list.last.first != files.last.all_fields.first
+    if id_list.last != files.last.all_fields.first
       id_list << files.last.all_fields.first
       id_list.zip(files)
     else
@@ -319,7 +321,7 @@ class TSV
           if values.nil?
             nil
           else
-            next_index.values_at(*values).flatten.collect
+            next_index.values_at(*values).flatten.collect.to_a
           end
         end
         current_index.fields = [next_key]

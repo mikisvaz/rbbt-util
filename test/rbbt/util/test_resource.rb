@@ -15,16 +15,16 @@ end
 
   tmp.work.define_as_rake tmp.Rakefile.find.produce
 
-  tmp.test.install.xclip.define_as_string <<-EOF
-name="xclip:0.12"
-url="http://downloads.sourceforge.net/project/xclip/xclip/0.12/xclip-0.12.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fxclip%2F&ts=1286472387&use_mirror=sunet"
+#  tmp.test.install.xclip.define_as_string <<-EOF
+#name="xclip:0.12"
+#url="http://downloads.sourceforge.net/project/xclip/xclip/0.12/xclip-0.12.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fxclip%2F&ts=1286472387&use_mirror=sunet"
+#
+#install_src "$name" "$url"
+#  EOF
 
-install_src "$name" "$url"
-  EOF
+#  FileUtils.chmod 0770, tmp.test.install.xclip.produce
 
-  FileUtils.chmod 0770, tmp.test.install.xclip.produce
-
-  software.opt.xclip.define_as_install tmp.test.install.xclip.find
+#  software.opt.xclip.define_as_install tmp.test.install.xclip.find
 end
 
 Open.cachedir = Rbbt.tmp.cache.find :user
@@ -36,10 +36,10 @@ end
 
 class TestResource < Test::Unit::TestCase
   def test_methods
-    assert Resource.methods.include?("resources")
-    assert ! Resource.methods.include?("pkgdir")
-    assert ! Phgx.methods.include?("resources")
-    assert Phgx.methods.include?("pkgdir")
+    assert Resource.methods.collect{|m| m.to_s}.include?("resources") 
+    assert ! Resource.methods.collect{|m| m.to_s}.include?("pkgdir")
+    assert ! Phgx.methods.collect{|m| m.to_s}.include?("resources")
+    assert Phgx.methods.collect{|m| m.to_s}.include?("pkgdir")
 
   end
   def test_resolve

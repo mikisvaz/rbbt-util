@@ -101,7 +101,7 @@ module Open
     case 
     when Array === grep
       TmpFile.with_file(grep * "\n", false) do |f|
-        CMD.cmd("grep", "-E" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
+        CMD.cmd("grep", "-w" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
       end
     else
       CMD.cmd("grep '#{grep}' -", :in => stream, :pipe => true, :post => proc{stream.force_close if stream.respond_to? :force_close})
@@ -206,9 +206,7 @@ module Open
     when content.nil?
       begin
         File.open(file, 'w') do |f| 
-          f.flock(File::LOCK_EX)
           yield f
-          f.flock(File::LOCK_UN)
         end
       rescue Exception
         FileUtils.rm file if File.exists? file

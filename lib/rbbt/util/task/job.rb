@@ -148,6 +148,7 @@ class Task
       required_files.each do |file| file.produce unless File.exists? file end unless required_files.nil?
       previous_jobs.each do |job| 
         if not job.recursive_done? 
+          job.clean if job.error?
           job.start
           job.step :done unless job.step == :error or job.step == :aborted
         end
@@ -290,6 +291,7 @@ class Task
       FileUtils.rm path if File.exists? path
       FileUtils.rm info_file if File.exists? info_file
       FileUtils.rm_rf path + '.files' if File.exists? path + '.files'
+      self
     end
 
     def recursive_clean

@@ -39,7 +39,7 @@ module Misc
 
   def self.lock(file, *args)
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
-    lockfile = Lockfile.new file + '.lock'
+    lockfile = Lockfile.new(file + '.lock')
     lockfile.lock do
       yield file, *args
     end
@@ -325,9 +325,9 @@ module PDF2Text
     require 'rbbt/util/cmd'
     require 'rbbt/util/tmpfile'
     require 'rbbt/util/open'
-    TmpFile.with_file(Open.read(filename)) do |pdf|
-      CMD.cmd("pdftotext #{pdf} -", :pipe => false, :stderr => true)
-    end
+
+
+    CMD.cmd("pdftotext - -", :in => Open.open(filename, :nocache => true), :pipe => true, :stderr => true)
   end
 end
 

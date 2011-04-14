@@ -5,7 +5,7 @@ require 'test/unit'
 class TestMisc < Test::Unit::TestCase
 
   def test_pdf2text_example
-    assert PDF2Text.pdf2text(test_datafile('example.pdf')).read =~ /An Example Paper/i
+    assert PDF2Text.pdf2text(datafile_test('example.pdf')).read =~ /An Example Paper/i
   end
 
   def test_pdf2text_EPAR
@@ -13,7 +13,7 @@ class TestMisc < Test::Unit::TestCase
   end
 
   def test_pdf2text_wrong
-    assert_raise CMD::CMDError do PDF2Text.pdf2text("http://www.ema.europa.eu/docs/en_GB#") end
+    assert_raise CMD::CMDError do PDF2Text.pdf2text("http://www.ema.europa.eu/docs/en_GB#").read end
   end
 
   def test_string2hash
@@ -84,28 +84,31 @@ This is an example file. Entries are separated by Entry
     a = {:a => 1, "b" => 2}
     a.extend IndiferentHash
 
-    assert 1, a["a"]
-    assert 1, a[:a]
-    assert 2, a["b"]
-    assert 2, a[:b]
+    assert_equal 1, a["a"]
+    assert_equal 1, a[:a]
+    assert_equal 2, a["b"]
+    assert_equal 2, a[:b]
   end
 
   def test_lockfile
+
     TmpFile.with_file do |tmpfile|
       pids = []
-      3.times do |i|
+      4.times do |i|
         pids << Process.fork do 
-          pid = pid.to_s
-          Misc.lock(tmpfile, pid) do |f, val|
+          pid = Process.pid().to_s
+          status = Misc.lock(tmpfile, pid) do |f, val|
             Open.write(f, val)
             sleep rand * 2
             if pid == Open.read(tmpfile)
-              exit(0)
+              0
             else
-              exit(1)
+              1
             end
           end
+          exit(status)
         end
+
       end
       pids.each do |pid| Process.waitpid pid; assert $?.success? end
     end
@@ -113,7 +116,7 @@ This is an example file. Entries are separated by Entry
   end
 
   def test_divide
-    assert 2, Misc.divide(%w(1 2 3 4 5 6 7 8 9),2).length
+    assert_equal 2, Misc.divide(%w(1 2 3 4 5 6 7 8 9),2).length
   end
 
 end

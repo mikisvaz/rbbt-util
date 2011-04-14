@@ -202,11 +202,13 @@ row2    A    B
         assert TCHash === tsv1.data
         assert !tsv1.case_insensitive
         assert tsv1.include? "A"
+        ddd tsv1.filename
 
         tsv1 = TSV.new(tchash, :key => "ValueA")
         assert TCHash === tsv1.data
         assert !tsv1.case_insensitive
         assert tsv1.include? "A"
+        ddd tsv1.filename
       end
     end
  

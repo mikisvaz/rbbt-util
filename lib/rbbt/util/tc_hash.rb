@@ -15,7 +15,6 @@ class TCHash < TokyoCabinet::HDB
     def self.load(str); str.unpack("l*"); end
   end
 
-
   class StringSerializer
     def self.dump(str); str.to_s; end
     def self.load(str); str; end
@@ -142,14 +141,18 @@ class TCHash < TokyoCabinet::HDB
   def [](key)
     return nil unless String === key
     result = self.original_get_brackets(key)
-    result ? @serializer.load(result) : nil
+    result.nil? or (String === result and result =~ /__Ref:/) ? result : @serializer.load(result)
   end
 
   alias original_set_brackets []=
   def []=(key,value)
     raise KeyFormatError, "Key must be a String, its #{key.class.to_s}" unless String === key
     raise "Closed TCHash connection" unless write?
-    self.original_set_brackets(key, serializer.dump(value))
+    if String === value and value =~ /^__Ref/
+      self.original_set_brackets(key, value)
+    else
+      self.original_set_brackets(key, serializer.dump(value))
+    end
   end
 
   def values_at(*args)
@@ -204,7 +207,7 @@ class TCHash < TokyoCabinet::HDB
   def merge!(data)
     raise "Closed TCHash connection" unless write?
     serialized = 
-      data.collect{|key, values| [key.to_s, serializer.dump(values)]}
+      data.collect{|key, values| [key.to_s, serializer.dump(values)] }
     if tranbegin
       serialized.each do |key, values|
         self.putasync(key, values)

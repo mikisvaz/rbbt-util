@@ -22,6 +22,7 @@ module CMD
           if $? and not $?.success?
             Log.debug "Raising exception"
             exception      = CMDError.new "Command [#{@pid}] #{@cmd} failed with error status #{$?.exitstatus}"
+            original_close
             raise exception
           end
 
@@ -139,6 +140,12 @@ module CMD
           sin.last.write in_content.gets
         end
         sin.last.close
+        begin
+          in_content.close
+        rescue
+          Process.kill "INT", pid
+          raise $!
+        end
       end
     end
 
@@ -152,7 +159,6 @@ module CMD
 
       SmartIO.tie sout.first, pid, cmd, post
       sout.first
-
     else
       err = ""
       Thread.new do

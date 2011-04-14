@@ -49,7 +49,7 @@ class TestOpen < Test::Unit::TestCase
     end
   end
 
-   def test_read_grep
+  def test_read_grep
     content =<<-EOF
 1
 2
@@ -67,7 +67,7 @@ class TestOpen < Test::Unit::TestCase
       Open.read(file, :grep => ["1","3"]) do |line| sum += line.to_i end
       assert_equal(1 + 3, sum)
     end
- 
+
   end
 
   def test_gzip

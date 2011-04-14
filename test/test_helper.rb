@@ -18,7 +18,7 @@ class Test::Unit::TestCase
     FileUtils.rm_rf Rbbt.tmp.test.find :user
   end
 
-  def test_datafile(file)
+  def datafile_test(file)
     File.join(File.dirname(__FILE__), 'data', file)
   end
 end

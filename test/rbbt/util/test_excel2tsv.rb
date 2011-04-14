@@ -3,7 +3,7 @@ require 'rbbt/util/excel2tsv'
 
 class TestTSV < Test::Unit::TestCase
   def test_tsv2excel
-    tsv = TSV.excel2tsv(test_datafile('Test.xls'), :header => true)
+    tsv = TSV.excel2tsv(datafile_test('Test.xls'), :header => true)
     assert_equal 'Id', tsv.key_field
   end
 end
