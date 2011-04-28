@@ -128,7 +128,7 @@ class TSV
       if other.include? key
         new_values = other[key].values_at *fields
         new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
-        new_values.collect!{|v| v.nil? ? nil : v.first} if not type == :double and     other.type == :double
+        new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
         self[key] = self[key].concat new_values
       else
         if type == :double
@@ -167,7 +167,7 @@ class TSV
           end
 
           new_values.collect!{|v| [v]}                    if     type == :double and not other.type == :double
-          new_values.collect!{|v| v.nil? ? nil : v.first} if not type == :double and     other.type == :double
+          new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
           all_new_values << new_values
         end
       end
@@ -220,7 +220,7 @@ class TSV
             end
           end
           new_values.collect!{|v| v.nil? ? [[]] : [v]}    if     type == :double and not other.type == :double
-          new_values.collect!{|v| v.nil? ? nil : v.first} if not type == :double and     other.type == :double
+          new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
           all_new_values << new_values
         end
       end
@@ -229,7 +229,7 @@ class TSV
         if type == :double
           all_new_values = [[[]] * field_positions.length]
         else
-          all_new_values =  [[""] * field_positions.length]
+          all_new_values = [[""] * field_positions.length]
         end
       end
 
@@ -262,7 +262,11 @@ class TSV
     in_namespace = options[:in_namespace]
 
     if in_namespace
-      ids = [files.first.all_namespace_fields(in_namespace)]
+      if files.first.all_fields.include? in_namespace
+        ids = [[in_namespace]]
+      else
+        ids = [files.first.all_namespace_fields(in_namespace)]
+      end
       ids += files[1..-1].collect{|f| f.all_fields}
     else
       ids = files.collect{|f| f.all_fields}

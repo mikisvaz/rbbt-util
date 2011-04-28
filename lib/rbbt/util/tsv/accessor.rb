@@ -189,7 +189,7 @@ class TSV
       return self[$1]
     else
 
-      if Array === value and fields 
+      if Array === value
         value = NamedArray.name value, fields 
       end
       value

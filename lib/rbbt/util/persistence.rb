@@ -129,19 +129,18 @@ module Persistence
   end
 
   def self.tsv_serializer(data, extra = nil)
-    if Object::TSV === data
+    return data.serializer if Persistence::TSV === data
+    if Object::TSV === data 
       return :integer if (data.cast == "to_i" or data.cast == :to_i) and data.type == :single
       return :integer_array if (data.cast == "to_i" or data.cast == :to_i) and (data.type == :list or data.type == :flat)
 
       case
-      when data.type == :double
-        :double
-      when data.type == :list
+      when (data.type == :list or data.type == :flat)
         :list
       when data.type == :single
         :single
       else
-        :marshal
+        :double
       end
     else
       return :marshal if extra.nil?
@@ -149,14 +148,12 @@ module Persistence
       return :integer_array if (extra[:cast] == "to_i" or extra[:cast] == :to_i) and (extra[:type] == :list or extra[:type] == :flat)
 
       case
-      when extra[:type] == :double
-        :double
-      when extra[:type] == :list
+      when (extra[:type] == :list or extra[:type] == :flat)
         :list
       when extra[:type] == :single
         :single
       else
-        :marshal
+        :double
       end
     end
   end
@@ -375,6 +372,5 @@ module Persistence
       end
     end
   end
-
-
 end
+

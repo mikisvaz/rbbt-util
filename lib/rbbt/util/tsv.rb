@@ -125,19 +125,18 @@ class TSV
 
             cast = options[:cast]
             type = options[:type]
+            
             serializer = case
                          when ((cast == "to_i" or cast == :to_i) and type == :single)
                            :integer 
                          when ((cast == "to_i" or cast == :to_i) and (type == :flat or type == :list))
                            :integer_array 
-                         when type == :double
-                           :double
-                         when type == :list
+                         when (type == :list or type == :flat)
                            :list
                          when type == :single
                            :single
                          else
-                           :marshal
+                           :double
                          end
 
             options.merge! :persistence_data => Persistence::TSV.get(persistence_file, true, serializer)

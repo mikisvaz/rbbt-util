@@ -13,7 +13,7 @@ class TSV
                "Index[:key]"
              end
 
-    new = Persistence.persist(self, prefix, :tsv, options) do |tsv, options, filename|
+    Persistence.persist(self, prefix, :tsv, options) do |tsv, options, filename|
       order, target, fields, case_insensitive = Misc.process_options options, :order, :target, :fields, :case_insensitive
 
       new = {}
@@ -56,10 +56,9 @@ class TSV
         # flatten
 
         new.each do |key, values| 
-          values.flatten!
-          values.compact!
+          new[key] = values.flatten.compact
         end
-      
+
       ## Not ordered
       else
         double_keys = true unless type != :double or identify_field(target) == :key
@@ -103,7 +102,9 @@ class TSV
                    else
                      [new_key_field]
                    end
+
       new = TSV.new([new, {:namespace => namespace, :key_field => key_field, :fields => fields, :type => :flat, :filename => (filename.nil? ? nil : "Index:" + filename), :case_insensitive => case_insensitive}])
+
       new
     end
   end

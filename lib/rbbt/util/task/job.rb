@@ -77,7 +77,7 @@ class Task
 
     def info
       return {} if not File.exists?(info_file)
-      info = YAML.load(File.open(info_file))
+      info = YAML.load(File.open(info_file)) || {}
       info.extend IndiferentHash
     end
 
@@ -195,6 +195,7 @@ class Task
         set_info(:end_time, Time.now)
         Log.medium("[#{task.name}] Finished Job '#{ name }'. Path: '#{ path }'")
       rescue Exception
+        set_info(:exception_backtrace, $!.backtrace)
         step(:error, "#{$!.class}: #{$!.message}")
         raise $!
       end

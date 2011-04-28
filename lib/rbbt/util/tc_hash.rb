@@ -84,12 +84,12 @@ class TCHash < TokyoCabinet::HDB
     @write = write
 
     if write
-      self.original_set_brackets(FIELD_INFO_ENTRIES[:serializer], @serializer.to_s) unless @serializer.nil?
+      self.original_set_brackets(FIELD_INFO_ENTRIES[:serializer], @serializer.to_s)
     else
       serializer_str = self.original_get_brackets(FIELD_INFO_ENTRIES[:serializer])
 
       if serializer_str.nil? or serializer_str.empty? 
-        @serializer = Marshal
+        raise "No serializer Specified"
       else
         mod = Misc.string2const serializer_str
         @serializer = mod
@@ -128,8 +128,12 @@ class TCHash < TokyoCabinet::HDB
   end
 
   def self.get(path, write = false, serializer = Marshal)
-    serializer = ALIAS[serializer] if ALIAS.include? serializer
-    @serializer = serializer
+    if ALIAS.include? serializer
+      @serializer = ALIAS[serializer] 
+    else
+      @serializer = serializer
+    end
+
     d = CONNECTIONS[path] ||= self.new(path, false, @serializer)
     write ? d.write : d.read
     d
@@ -141,7 +145,11 @@ class TCHash < TokyoCabinet::HDB
   def [](key)
     return nil unless String === key
     result = self.original_get_brackets(key)
-    result.nil? or (String === result and result =~ /__Ref:/) ? result : @serializer.load(result)
+    if result.nil? or (String === result and result =~ /__Ref:/) 
+      result 
+    else
+      @serializer.load(result)
+    end
   end
 
   alias original_set_brackets []=

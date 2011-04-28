@@ -382,7 +382,7 @@ class NamedArray < Array
   def zip_fields
     return [] if self.empty?
     zipped = self[0].zip(*self[1..-1])
-    zipped = zipped.collect{|v| NamedArray.name(v, fields)} if fields 
+    zipped = zipped.collect{|v| NamedArray.name(v, fields)}
     zipped 
   end
 
