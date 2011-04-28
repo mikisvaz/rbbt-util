@@ -34,7 +34,7 @@ class TSV
             list = [list] unless Array === list
             i += 1 if fields.nil?
             list.each do |elem|
-              next if elem.empty?
+              next if elem.nil? or elem.empty?
               elem.downcase if case_insensitive
               new[elem] ||= []
               new[elem][i] ||= []
@@ -73,7 +73,7 @@ class TSV
           end
           list.collect!{|e| e.downcase} if case_insensitive
           list.each do |elem|
-            next if elem.empty?
+            next if elem.nil? or elem.empty?
             new[elem] ||= []
             if double_keys
               new[elem].concat key 
