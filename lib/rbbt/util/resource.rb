@@ -269,7 +269,7 @@ source "$INSTALL_HELPER_FILE"
     end
     
     def define_as_proc(&block)
-      Resource.define_resource(self, :proc, &block)
+      Resource.define_resource(self, :proc, block)
     end
  
  

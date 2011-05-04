@@ -198,7 +198,7 @@ module Persistence
     else
       Log.debug "Loading #{ persistence_file }. Prefix = #{prefix}"
 
-      per = Persistence::TSV.get persistence_file, true, serializer
+      per = Persistence::TSV.get persistence_file, false, serializer
       tsv = Object::TSV.new per
       Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
         if tsv.respond_to?(key.to_sym)  and per.respond_to?(key.to_sym)
