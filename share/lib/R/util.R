@@ -26,7 +26,7 @@ rbbt.load.data <- function(filename, sep = "\t",  ...){
 }
 
 rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1,  ...){
-  data=read.table(file=filename, sep=sep, fill=TRUE,  as.is=TRUE, row.names=row.names, comment.char = comment.char, ...);
+  data=read.table(file=filename, sep=sep, fill=TRUE,  as.is=TRUE, row.names= row.names, comment.char = comment.char, ...);
   f = file(filename, 'r');
   headers = readLines(f, 1);
   if (length(grep("^#: ", headers)) > 0){ 

@@ -288,6 +288,14 @@ module Misc
     chunks
   end
 
+
+  def self.process_to_hash(list)
+    result = yield list
+    hash = {}
+    list.zip(result).each do |k,v| hash[k] = v end
+    hash
+  end
+
   IUPAC2BASE = {
     "A" => ["A"],
     "C" => ["C"],
@@ -401,6 +409,7 @@ class NamedArray < Array
       "* #{ field }: #{ Array === value ? value * "|" : value }"
     end * "\n"
   end
+
 end
 
 def benchmark(bench = true)

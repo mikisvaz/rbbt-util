@@ -119,4 +119,9 @@ This is an example file. Entries are separated by Entry
     assert_equal 2, Misc.divide(%w(1 2 3 4 5 6 7 8 9),2).length
   end
 
+  def test_process_to_hash
+    list = [1,2,3,4]
+    assert_equal 4, Misc.process_to_hash(list){|l| l.collect{|e| e * 2}}[2]
+  end
+
 end
