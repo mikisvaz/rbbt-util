@@ -22,6 +22,7 @@ class TestCmd < Test::Unit::TestCase
   end
 
   def test_pipe
+    assert_equal("test\n", CMD.cmd("echo test", :pipe => true).read)
     assert_equal("test\n", CMD.cmd("echo '{opt}' test", :pipe => true).read)
     assert_equal("test", CMD.cmd("echo '{opt}' test", "-n" => true, :pipe => true).read)
     assert_equal("test2\n", CMD.cmd("cut", "-f" => 2, "-d" => '" "', :in => "test1 test2", :pipe => true).read)
@@ -39,6 +40,28 @@ class TestCmd < Test::Unit::TestCase
  
     assert_raise CMD::CMDError do CMD.cmd('fake-command', :stderr => true, :pipe => true).read end
     assert_raise CMD::CMDError do CMD.cmd('ls -fake_option', :stderr => true, :pipe => true).read end
+  end
+
+  def test_pipes
+    text = <<-EOF
+line1
+line2
+line3
+line11
+line22
+line33
+    EOF
+
+    TmpFile.with_file(text * 100) do |file|
+      CMD.cmd("gzip #{ file }")
+
+      gz = CMD.cmd("gunzip", :in => File.open(file + '.gz'), :pipe => true)
+      io = CMD.cmd('tail -n 10', :in => gz, :pipe => true)
+      assert_equal 10, io.read.split(/\n/).length
+
+
+    end
+
   end
 
 end

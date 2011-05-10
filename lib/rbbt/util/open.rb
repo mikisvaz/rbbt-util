@@ -191,7 +191,8 @@ module Open
     f = open(file, options)
 
     if block_given?
-      while l = Misc.fixutf8(f.gets)
+      while not f.eof?
+        l = f.gets
         l = fixutf8(l) if l.respond_to?(:valid_encoding?) && ! l.valid_encoding?
         yield l
       end
@@ -222,8 +223,8 @@ module Open
       begin
         File.open(file, 'w') do |f| 
           f.flock(File::LOCK_EX)
-          while l = content.gets
-            f.write l
+          while not content.eof?
+            f.write content.gets
           end
           f.flock(File::LOCK_UN)
         end

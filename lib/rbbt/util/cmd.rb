@@ -3,55 +3,74 @@ require 'rbbt/util/log'
 require 'stringio'
 
 module CMD
+
   class CMDError < RBBTError; end
-
   module SmartIO 
-    def self.tie(io, pid = nil, cmd = "",  post = nil)
-      io.instance_eval{
-        @pid  = pid
-        @cmd  = cmd
-        @post = post
-        alias original_close close
-        def close
-          begin
-            self.original_read unless self.closed? or self.eof?
-            Process.waitpid(@pid) if @pid
-          rescue
-          end
+    attr_accessor :pid, :cmd, :post, :in, :out, :err
+    def self.tie(io, pid = nil, cmd = "",  post = nil, sin = nil, out = nil, err = nil)
+      io.extend SmartIO
+      io.pid = pid
+      io.cmd = cmd
+      io.in  = sin 
+      io.out  = out 
+      io.err  = err 
+      io.post = post
 
-          if $? and not $?.success?
-            Log.debug "Raising exception"
-            exception      = CMDError.new "Command [#{@pid}] #{@cmd} failed with error status #{$?.exitstatus}"
-            original_close
-            raise exception
-          end
-
-          @post.call if @post
-          original_close
-        end
-
-        def force_close
-          if @pid
-            Log.debug "Forcing close by killing '#{@pid}'"
-            Process.kill("KILL", @pid)
-            Process.waitpid(@pid)
-          end
-          @post.call if @post
-          original_close
-        end
- 
-        alias original_read read
-        def read
-          data = Misc.fixutf8(original_read)
-          self.close unless self.closed?
-          data
-        end
-
-      }
+      io.class.send(:alias_method, :original_close, :close)
+      io.class.send(:alias_method, :original_read, :read)
       io
     end
 
- end
+    def wait_and_status
+      if @pid
+        begin
+          Process.waitpid(@pid)
+        rescue
+        end
+
+        Log.debug "Process #{ cmd } succeded" if $? and $?.success?
+
+        if $? and not $?.success?
+          Log.debug "Raising exception"
+          exception = CMDError.new "Command [#{@pid}] #{@cmd} failed with error status #{$?.exitstatus}"
+          original_close
+          raise exception
+        end
+      end
+    end
+
+    def close
+      self.original_read unless self.eof?
+
+      wait_and_status
+
+      @post.call if @post
+
+      original_close unless self.closed?
+    end
+
+    def force_close
+      if @pid
+        Log.debug "Forcing close by killing '#{@pid}'"
+        Process.kill("KILL", @pid)
+        Process.waitpid(@pid)
+      end
+
+      @post.call if @post
+
+      original_close
+    end
+
+    def read(*args)
+      data = original_read(*args)
+
+      self.close if self.eof?
+
+      data
+    end
+
+  end
+
 
   def self.process_cmd_options(options = {})
     string = ""
@@ -92,84 +111,105 @@ module CMD
       cmd << " " << cmd_options
     end
 
-    sout, serr = IO.pipe, IO.pipe
+    in_content = StringIO.new in_content if String === in_content
 
-    case 
-    when (false and (IO === in_content and not StringIO === in_content))
-      sin = [in_content, nil]
-    else 
-      sin = IO.pipe
-    end
-
+    sout, serr, sin = IO.pipe, IO.pipe, IO.pipe
 
     pid = fork {
       begin
+        sin.last.close
+        sout.first.close
+        serr.first.close
 
-        sin.last.close if sin.last
+        io = in_content
+        while IO === io
+          if SmartIO === io
+            io.original_close unless io.closed?
+            io.out.close unless io.out.nil? or io.out.closed?
+            io.err.close unless io.err.nil? or io.err.closed?
+            io = io.in
+          else
+            io.close unless io.closed?
+            io = nil
+          end
+        end
+
         STDIN.reopen sin.first
         sin.first.close
 
-        serr.first.close
         STDERR.reopen serr.last
         serr.last.close
 
-        sout.first.close
         STDOUT.reopen sout.last
         sout.last.close
 
         STDOUT.sync = STDERR.sync = true
+        
         exec(cmd)
+
+        exit(-1)
       rescue Exception
+        Log.debug("CMDError: #{$!.message}")
+        ddd $!.backtrace
         raise CMDError, $!.message
       end
     }
+
     sin.first.close
     sout.last.close
     serr.last.close
 
+    sin = sin.last
+    sout = sout.first
+    serr = serr.first
+    
 
     Log.debug "CMD: [#{pid}] #{cmd}"
 
-    case 
-    when String === in_content
-      sin.last.write in_content
-      sin.last.close
-    when in_content.respond_to?(:gets)
+    if in_content.respond_to?(:gets)
       Thread.new do
-        while not in_content.eof?
-          sin.last.write in_content.gets
-        end
-        sin.last.close
         begin
-          in_content.close
+          loop do
+            block = in_content.gets
+            break if block.nil?
+            sin.write block
+          end
+
+          sin.close
+          in_content.close 
         rescue
           Process.kill "INT", pid
           raise $!
         end
       end
+    else
+      sin.close
     end
 
     if pipe
       Thread.new do
-        while l = serr.first.gets
-          Log.log l, stderr if Integer === stderr
+        while line = serr.gets
+          Log.log line, stderr if Integer === stderr
         end
-        serr.first.close
+        serr.close
+        Thread.exit
       end
 
-      SmartIO.tie sout.first, pid, cmd, post
-      sout.first
+      SmartIO.tie sout, pid, cmd, post, in_content, sin, serr
+
+      sout
     else
       err = ""
       Thread.new do
-        while l = serr.first.gets
-          err << l if Integer === stderr
+        while not serr.eof?
+          err << serr.gets if Integer === stderr
         end
-        serr.first.close
+        serr.close
+        Thread.exit
       end
 
-      out = StringIO.new sout.first.read
-      SmartIO.tie out, pid, cmd, post
+      out = StringIO.new sout.read
+      SmartIO.tie out, pid, cmd, post, in_content, sin, serr
 
       Process.waitpid pid
 

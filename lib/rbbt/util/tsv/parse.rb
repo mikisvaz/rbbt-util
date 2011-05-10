@@ -147,7 +147,7 @@ class TSV
     while line do
       line.chomp!
 
-      progress_monitor.tick(stream.pos) if progress_monitor
+      progress_monitor.tick(stream.pos) if progress_monitor 
 
       if line.empty?                           or
          (exclude and     exclude.call(line))  or
