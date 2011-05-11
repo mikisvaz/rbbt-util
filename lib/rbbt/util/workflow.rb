@@ -62,8 +62,8 @@ module WorkFlow
     @dangling_option_defaults[name] = default if default
   end
 
-  def task_dependencies(dependencies)
-    dependencies = [dependencies] unless Array === dependencies
+  def task_dependencies(*dependencies)
+    dependencies = dependencies.flatten
     @dangling_dependencies = dependencies.collect{|dep| Symbol === dep ? tasks[dep] : dep }
   end
 

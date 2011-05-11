@@ -166,7 +166,7 @@ class TSV
             end
           end
 
-          new_values.collect!{|v| [v]}                    if     type == :double and not other.type == :double
+          new_values.collect!{|v| [v]}                                                  if     type == :double and not other.type == :double
           new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
           all_new_values << new_values
         end
@@ -198,7 +198,6 @@ class TSV
     field_positions = fields.collect{|field| other.identify_field field}
     field_names     = field_positions.collect{|pos| pos == :key ? other.key_field : other.fields[pos] }
 
-     
     length = self.fields.length
     through do |key, values|
       source_keys = index[key]
@@ -309,7 +308,7 @@ class TSV
                    nil
                  else
                    Log.debug "Data index required"
-                   data_file.index :target => data_key, :fields => data_file.key_field, :persistence => false
+                   data_file.index :target => data_key, :fields => data_file.key_field, :persistence => persist_input
                  end
 
     current_index = data_index
@@ -318,9 +317,9 @@ class TSV
       next_key, next_file = path.shift
 
       if current_index.nil?
-        current_index = next_file.index :target => next_key, :fields => current_key, :persistence => persist_input
+        current_index = next_file.index :target => next_key, :fields => current_key, :persistence => true
       else
-        next_index = next_file.index :target => next_key, :fields => current_key, :persistence => persist_input
+        next_index = next_file.index :target => next_key, :fields => current_key, :persistence => true
         current_index.process current_index.fields.first do |values|
           if values.nil?
             nil
