@@ -317,9 +317,9 @@ class TSV
       next_key, next_file = path.shift
 
       if current_index.nil?
-        current_index = next_file.index :target => next_key, :fields => current_key, :persistence => true
+        current_index = next_file.index :target => next_key, :fields => current_key, :persistence => false
       else
-        next_index = next_file.index :target => next_key, :fields => current_key, :persistence => true
+        next_index = next_file.index :target => next_key, :fields => current_key, :persistence => false
         current_index.process current_index.fields.first do |values|
           if values.nil?
             nil
@@ -401,26 +401,12 @@ class TSV
   end
 
   def paste(other, options = {})
-    tmpfile = TmpFile.tmp_file
-    TSV.paste(self.to_s, other.to_s, tmpfile)
-
-    new = TSV.new(tmpfile, options)
-
-    new.key_field = self.key_field unless self.key_field.nil?
-    if self.fields and other.fields
-      new.fields = self.fields + other.fields
-    end
-
-    FileUtils.rm tmpfile if File.exists? tmpfile
-
-    new
-  end
-
-
-  def paste(other, options = {})
     TmpFile.with_file do |output|
       TSV.paste_merge(self, other, output, options[:sep] || "\t")
-      TSV.new output, options
+      tsv = TSV.new output, options
+      tsv.key_field = self.key_field unless self.key_field.nil?
+      tsv.fields = self.fields + other.fields unless self.fields.nil? or other.fields.nil?
+      tsv
     end
   end
 

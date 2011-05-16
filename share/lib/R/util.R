@@ -93,7 +93,7 @@ rbbt.sort_by_field <- function(data, field, is.numeric=TRUE){
 
 rbbt.add <- function(data, new){
     if (is.null(data)){
-        return(new);
+        return(c(new));
     }else{
         return(c(data, new));
     }
@@ -101,7 +101,7 @@ rbbt.add <- function(data, new){
 
 rbbt.acc <- function(data, new){
     if (is.null(data)){
-        return(new);
+        return(c(new));
     }else{
         return(unique(c(data, new)));
     }

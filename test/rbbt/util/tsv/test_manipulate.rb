@@ -242,5 +242,23 @@ row3    a    C    Id4
  
   end
 
+  def test_through_single
+     content =<<-EOF
+#Id    LetterValue
+row1    a1
+row2    A1
+row3    a2
+    EOF
+ 
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(filename + '#:sep=/\s+/#:type=:single')
+
+      #TODO: WTF!!!
+      assert_equal "row1", tsv.reorder("LetterValue", :key)[97]
+    end
+ 
+  end
+
+
 end
 

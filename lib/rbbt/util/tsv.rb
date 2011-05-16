@@ -16,6 +16,26 @@ require 'rbbt/util/tsv/attach'
 require 'rbbt/util/tsv/resource'
 class TSV
 
+
+  ESCAPES = {
+    "\n" => "[[NL]]",
+    "\t" => "[[TAB]]",
+  }
+
+  def self.escape(text)
+    ESCAPES.each do |char,replacement|
+      text = text.gsub(char, replacement)
+    end
+    text
+  end
+
+  def self.unescape(text)
+    ESCAPES.each do |char,replacement|
+      text = text.gsub(replacement, char)
+    end
+    text
+  end
+
   def self.headers(file, options = {})
 
     ## Remove options from filename

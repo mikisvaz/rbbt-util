@@ -84,14 +84,22 @@ class TSV
                              f
                            else
                              f = fields.dup
-                             if type == :double
+                             case
+                             when type == :single
+                               f = [f,key]
+                             when type == :double
                                f.push [key]
                              else
                                f.push key
                              end
                              f.values_at *new_field_positions.collect{|pos| pos == :key ? -1 : pos }
                            end
-        new_field_values = NamedArray.name new_field_values, new_field_names
+        
+        if type == :single
+          new_field_values = new_field_values.first
+        else
+          new_field_values = NamedArray.name new_field_values, new_field_names
+        end
 
         next if new_key_value.nil? or (String === new_key_value and new_key_value.empty?)
         yield new_key_value, new_field_values
@@ -221,14 +229,17 @@ class TSV
         method.each{|item| new[item] = self[item] if self.include? item}
       when Array === method
         through :key, key do |key, values|
+          values = [values] if type == :single
           new[key] = self[key] if (values.flatten & method).any?
         end
       when Regexp === method
         through :key, key do |key, values|
+          values = [values] if type == :single
           new[key] = self[key] if values.flatten.select{|v| v =~ method}.any?
         end
       when String === method
         through :key, key do |key, values|
+          values = [values] if type == :single
           new[key] = self[key] if values.flatten.select{|v| v == method}.any?
         end
       end

@@ -102,7 +102,7 @@ module WorkFlow
     @last_task = task
   end
 
-  def job(task, jobname, *args)
+  def job(task, jobname = "Default", *args)
     tasks[task].job(jobname, *args)
   end
 
