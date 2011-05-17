@@ -302,37 +302,39 @@ class TSV
 
     Log.medium "Found Traversal: #{traversal_ids * " => "}"
     
-    data_key, data_file = path.shift
-    data_index = if data_key == data_file.key_field
-                   Log.debug "Data index not required '#{data_file.key_field}' => '#{data_key}'"
-                   nil
-                 else
-                   Log.debug "Data index required"
-                   data_file.index :target => data_key, :fields => data_file.key_field, :persistence => persist_input
-                 end
+    Persistence.persist(traversal_ids * "->", "Traversal", :tsv, :persistence => persist_input and (data_key == data_file.key_field)) do
+      data_key, data_file = path.shift
+      data_index = if data_key == data_file.key_field
+                     Log.debug "Data index not required '#{data_file.key_field}' => '#{data_key}'"
+                     nil
+                   else
+                     Log.debug "Data index required"
+                     data_file.index :target => data_key, :fields => data_file.key_field, :persistence => false
+                   end
 
-    current_index = data_index
-    current_key   = data_key
-    while not path.empty?
-      next_key, next_file = path.shift
+      current_index = data_index
+      current_key   = data_key
+      while not path.empty?
+        next_key, next_file = path.shift
 
-      if current_index.nil?
-        current_index = next_file.index :target => next_key, :fields => current_key, :persistence => false
-      else
-        next_index = next_file.index :target => next_key, :fields => current_key, :persistence => false
-        current_index.process current_index.fields.first do |values|
-          if values.nil?
-            nil
-          else
-            next_index.values_at(*values).flatten.collect.to_a
+        if current_index.nil?
+          current_index = next_file.index :target => next_key, :fields => current_key, :persistence => false
+        else
+          next_index = next_file.index :target => next_key, :fields => current_key, :persistence => false
+          current_index.process current_index.fields.first do |values|
+            if values.nil?
+              nil
+            else
+              next_index.values_at(*values).flatten.collect.to_a
+            end
           end
+          current_index.fields = [next_key]
         end
-        current_index.fields = [next_key]
+        current_key = next_key
       end
-      current_key = next_key
-    end
 
-    current_index
+      current_index
+    end
   end
 
 
