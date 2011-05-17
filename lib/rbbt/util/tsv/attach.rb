@@ -302,8 +302,8 @@ class TSV
 
     Log.medium "Found Traversal: #{traversal_ids * " => "}"
     
+    data_key, data_file = path.shift
     Persistence.persist(traversal_ids * "->", "Traversal", :tsv, :persistence => (persist_input and (data_key == data_file.key_field))) do
-      data_key, data_file = path.shift
       data_index = if data_key == data_file.key_field
                      Log.debug "Data index not required '#{data_file.key_field}' => '#{data_key}'"
                      nil
