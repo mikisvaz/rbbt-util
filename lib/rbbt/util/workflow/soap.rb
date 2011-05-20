@@ -105,7 +105,6 @@ if __FILE__ == $0
   class SequenceWF < WorkFlowWS
     self.klass = Organism
   end
-
   
   wf = SequenceWF.new
   wf.export :genomic_mutations_to_genes
