@@ -69,8 +69,14 @@ class TCHash < TokyoCabinet::HDB
     @serializer
   end
 
-  def serializer=(value)
-    self.original_set_brackets(FIELD_INFO_ENTRIES[:serializer],value) unless value.nil?
+  def serializer=(serializer)
+    
+    if ALIAS.include? serializer.to_sym
+      @serializer = ALIAS[serializer.to_sym]
+    else
+      @serializer = serializer
+    end
+    self.original_set_brackets(FIELD_INFO_ENTRIES[:serializer], @serializer.to_s)
   end
 
   alias original_open open

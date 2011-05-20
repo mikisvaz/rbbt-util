@@ -142,6 +142,23 @@ class TSV
 
     #{{{ Process rest
     data = options[:persistence_data] || {}
+    if Persistence::TSV === data
+      serializer = case
+                   when ((cast == "to_i" or cast == :to_i) and type == :single)
+                     :integer 
+                   when ((cast == "to_i" or cast == :to_i) and (type == :flat or type == :list))
+                     :integer_array 
+                   when (type == :list or type == :flat)
+                     :list
+                   when type == :single
+                     :single
+                   else
+                     :double
+                   end
+      data.serializer = serializer
+    end
+
+
     single = type.to_sym != :double
     max_cols = 0
     while line do

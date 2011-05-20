@@ -143,23 +143,7 @@ class TSV
 
           if in_situ_persistence and persistence_file
 
-            cast = options[:cast]
-            type = options[:type]
-            
-            serializer = case
-                         when ((cast == "to_i" or cast == :to_i) and type == :single)
-                           :integer 
-                         when ((cast == "to_i" or cast == :to_i) and (type == :flat or type == :list))
-                           :integer_array 
-                         when (type == :list or type == :flat)
-                           :list
-                         when type == :single
-                           :single
-                         else
-                           :double
-                         end
-
-            options.merge! :persistence_data => Persistence::TSV.get(persistence_file, true, serializer)
+            options.merge! :persistence_data => Persistence::TSV.get(persistence_file, true, :double)
           end
 
           begin
