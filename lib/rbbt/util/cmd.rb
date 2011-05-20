@@ -166,17 +166,18 @@ module CMD
 
     Log.debug "CMD: [#{pid}] #{cmd}"
 
-    if in_content.respond_to?(:gets)
+    if in_content.respond_to?(:read)
       Thread.new do
         begin
           loop do
-            block = in_content.gets
-            break if block.nil?
+            break if in_content.closed?
+            block = in_content.read 1024
+            break if block.nil? or block.empty?
             sin.write block
           end
 
-          sin.close
-          in_content.close 
+          sin.close unless sin.closed?
+          in_content.close unless in_content.closed?
         rescue
           Process.kill "INT", pid
           raise $!
