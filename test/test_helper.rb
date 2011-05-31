@@ -16,6 +16,8 @@ class Test::Unit::TestCase
 
   def teardown
     FileUtils.rm_rf Rbbt.tmp.test.find :user
+    TCHash::CONNECTIONS.values.each do |c| c.close end
+    TCHash::CONNECTIONS.clear
   end
 
   def datafile_test(file)

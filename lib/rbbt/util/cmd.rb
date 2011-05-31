@@ -210,6 +210,7 @@ module CMD
       end
 
       out = StringIO.new sout.read
+      sout.close unless sout.closed?
       SmartIO.tie out, pid, cmd, post, in_content, sin, serr
 
       Process.waitpid pid

@@ -196,8 +196,11 @@ module Open
         l = fixutf8(l) if l.respond_to?(:valid_encoding?) && ! l.valid_encoding?
         yield l
       end
+      f.close
     else
-      Misc.fixutf8(f.read)
+      text = Misc.fixutf8(f.read)
+      f.close unless f.closed?
+      text 
     end
   end
 

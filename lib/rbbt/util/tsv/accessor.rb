@@ -134,6 +134,11 @@ class TSV
     TSV.identify_field(key_field, fields, field)
   end
 
+  def key_field=(new_key_field)
+    @key_field = new_key_field
+    @data.key_field = new_key_field if @data.respond_to? :key_field= and @data.write?
+  end
+
   def fields=(new_fields)
     new_fields.collect! do |field| 
       if Field === field
@@ -148,11 +153,6 @@ class TSV
     end if Array === new_fields
     @fields = new_fields
     @data.fields = new_fields if @data.respond_to? :fields= and @data.write?
-  end
-
-  def old_fields=(new_fields)
-    @fields = new_fields
-    @data.fields = new_fields if @data.respond_to? :fields=
   end
 
   def keys

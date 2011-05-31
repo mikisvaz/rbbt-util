@@ -13,18 +13,6 @@ file 'foo' do |t|
 end
   EOF
 
-  tmp.work.define_as_rake tmp.Rakefile.find.produce
-
-#  tmp.test.install.xclip.define_as_string <<-EOF
-#name="xclip:0.12"
-#url="http://downloads.sourceforge.net/project/xclip/xclip/0.12/xclip-0.12.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fxclip%2F&ts=1286472387&use_mirror=sunet"
-#
-#install_src "$name" "$url"
-#  EOF
-
-#  FileUtils.chmod 0770, tmp.test.install.xclip.produce
-
-#  software.opt.xclip.define_as_install tmp.test.install.xclip.find
 end
 
 Open.cachedir = Rbbt.tmp.cache.find :user
@@ -83,10 +71,6 @@ class TestResource < Test::Unit::TestCase
       FileUtils.rm Rbbt.tmp.test_string.find if File.exists? Rbbt.tmp.test_string.find
       FileUtils.rm Rbbt.tmp.url.find if File.exists? Rbbt.tmp.url.find
     end
-  end
-
-  def test_install
-    assert File.exists?(Rbbt.software.opt.xclip.produce)
   end
 end
 

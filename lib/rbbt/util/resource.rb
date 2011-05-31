@@ -168,6 +168,7 @@ source "$INSTALL_HELPER_FILE"
       RakeHelper.run(rakefile, file, dir)
       resource
     end
+    resource
   end
 
   def relative_to(klass, path)

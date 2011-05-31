@@ -81,7 +81,9 @@ class TCHash < TokyoCabinet::HDB
 
   alias original_open open
   def open(write = false)
-    flags = write ? TokyoCabinet::HDB::OWRITER | TokyoCabinet::HDB::OCREAT : TokyoCabinet::BDB::OREADER
+    flags = (write ? TokyoCabinet::HDB::OWRITER | TokyoCabinet::HDB::OCREAT : TokyoCabinet::BDB::OREADER)
+
+    FileUtils.mkdir_p File.dirname(@path_to_db) unless File.exists?(File.dirname(@path_to_db))
     if !self.original_open(@path_to_db, flags)
       ecode = self.ecode
       raise OpenError, "Open error: #{self.errmsg(ecode)}. Trying to open file #{@path_to_db}"
@@ -140,8 +142,18 @@ class TCHash < TokyoCabinet::HDB
       @serializer = serializer
     end
 
-    d = CONNECTIONS[path] ||= self.new(path, false, @serializer)
-    write ? d.write : d.read
+    if !File.exists?(path) or not CONNECTIONS.include? path
+      CONNECTIONS[path] = self.new(path, true, @serializer)
+    end
+
+    d = CONNECTIONS[path] 
+    
+    if write 
+      d.write unless d.write?
+    else
+      d.read if d.write?
+    end
+
     d
   end
 
