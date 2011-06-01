@@ -65,10 +65,7 @@ class TCHash < TokyoCabinet::HDB
     end
   end
 
-  def serializer
-    @serializer
-  end
-
+  attr_accessor :serializer
   def serializer=(serializer)
     
     if ALIAS.include? serializer.to_sym
@@ -80,7 +77,7 @@ class TCHash < TokyoCabinet::HDB
   end
 
   alias original_open open
-  def open(write = false)
+  def open(write = false, serializer = nil)
     flags = (write ? TokyoCabinet::HDB::OWRITER | TokyoCabinet::HDB::OCREAT : TokyoCabinet::BDB::OREADER)
 
     FileUtils.mkdir_p File.dirname(@path_to_db) unless File.exists?(File.dirname(@path_to_db))
@@ -91,17 +88,17 @@ class TCHash < TokyoCabinet::HDB
 
     @write = write
 
-    if write
-      self.original_set_brackets(FIELD_INFO_ENTRIES[:serializer], @serializer.to_s)
-    else
+    if self.include? FIELD_INFO_ENTRIES[:serializer]
       serializer_str = self.original_get_brackets(FIELD_INFO_ENTRIES[:serializer])
 
-      if serializer_str.nil? or serializer_str.empty? 
-        raise "No serializer Specified"
-      else
-        mod = Misc.string2const serializer_str
-        @serializer = mod
-      end
+      mod = Misc.string2const serializer_str
+      @serializer = mod
+
+    else
+      raise "No serializer specified" if serializer.nil?
+
+      self.original_set_brackets(FIELD_INFO_ENTRIES[:serializer], serializer.to_s) unless self.include? FIELD_INFO_ENTRIES[:serializer]
+      @serializer = serializer
     end
   end
 
@@ -125,11 +122,10 @@ class TCHash < TokyoCabinet::HDB
     serializer = ALIAS[serializer] if ALIAS.include? serializer
 
     @path_to_db = path
-    @serializer = serializer
 
     if write || ! File.exists?(@path_to_db)
       self.setcache(100000) or raise "Error setting cache"
-      self.open(true)
+      self.open(true, serializer)
     else
       self.open(false)
     end
@@ -137,13 +133,13 @@ class TCHash < TokyoCabinet::HDB
 
   def self.get(path, write = false, serializer = Marshal)
     if ALIAS.include? serializer
-      @serializer = ALIAS[serializer] 
+      serializer = ALIAS[serializer] 
     else
-      @serializer = serializer
+      serializer = serializer
     end
 
     if !File.exists?(path) or not CONNECTIONS.include? path
-      CONNECTIONS[path] = self.new(path, true, @serializer)
+      CONNECTIONS[path] = self.new(path, true, serializer)
     end
 
     d = CONNECTIONS[path] 

@@ -86,5 +86,24 @@ class TestTCHash < Test::Unit::TestCase
       Process.wait pid
     end
   end
+
+  def test_serializer_alias
+    TmpFile.with_file do |f|
+      t = TCHash.get f, true, :double
+      t["1"] = [[1],[2]]
+      t["2"] = [[3],[4,5]]
+
+      t = TCHash.get f
+      assert_equal [["3"],["4","5"]], t["2"]
+
+      t.close
+      TCHash::CONNECTIONS.clear
+
+      t = TCHash.get f
+      assert_equal [["3"],["4","5"]], t["2"]
+    end
+  end
+
+
 end
 
