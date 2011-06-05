@@ -183,7 +183,9 @@ class TSV
 
   # Read
 
+  attr_accessor :no_follow
   def follow(value)
+    return value if no_follow
     return nil if value.nil?
     if String === value && value =~ /__Ref:(.*)/
       return self[$1]

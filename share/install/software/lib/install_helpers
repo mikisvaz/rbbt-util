@@ -8,8 +8,6 @@ OPT_SCM_DIR="$SOFTWARE_DIR/scm"; [ -d $OPT_SCM_DIR ] || mkdir -p $OPT_SCM_DIR
 OPT_JAR_DIR="$OPT_DIR/jars"; [ -d $OPT_JAR_DIR ] || mkdir -p $OPT_JAR_DIR
 OPT_BUILD_DIR="$SOFTWARE_DIR/.build"; [ -d $OPT_BUILD_DIR ] || mkdir -p $OPT_BUILD_DIR
 
-#source "$HOME/config/bash/_utility_functions"
-
 function expand_path(){
   name=$(basename $1)
   dir=$(dirname $1)

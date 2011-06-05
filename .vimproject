@@ -23,8 +23,8 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
     soap.rb
    }
 
-   simpleDSL.rb
    simpleopt.rb
+   simpleDSL.rb
    cachehelper.rb
 
    misc.rb

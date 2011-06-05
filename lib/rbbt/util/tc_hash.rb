@@ -26,7 +26,7 @@ class TCHash < TokyoCabinet::HDB
     end
 
     def self.load(string)
-      string.split(/\t/)
+      string.split("\t", -1)
     end
   end
 
@@ -36,7 +36,7 @@ class TCHash < TokyoCabinet::HDB
     end
 
     def self.load(string)
-      string.split(/\t/).collect{|l| l.split("|")}
+      string.split("\t", -1).collect{|l| l.split("|", -1)}
     end
   end
 
