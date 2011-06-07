@@ -105,5 +105,21 @@ row2 A B C
     end
   end
 
+  def test_namespace
+    content =<<-EOF
+#ID ValueA ValueB Comment
+row1 a b c
+row2 A B C
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :double, :sep => /\s/, :namespace => "TEST")
+
+      assert_equal "TEST", tsv.fields.first.namespace
+      assert_equal "TEST", tsv.key_field.namespace
+    end
+ 
+  end
+
 end
 

@@ -33,6 +33,18 @@ end
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.add_method(object, method_name, &block)
+    class << object
+      self
+    end.send :define_method, method_name, block
+  end
+
+  def self.redefine_method(object, old_method, new_method_name, &block)
+    metaclass = class << object; self end
+    metaclass.send :alias_method, new_method_name, old_method
+    metaclass.send :define_method, old_method, &block
+  end
+
   def self.filename?(filename)
     String === filename and filename.length < 1024 and filename.index("\n").nil? and File.exists? filename
   end
@@ -440,3 +452,4 @@ def profile(prof = true)
     yield
   end
 end
+

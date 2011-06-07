@@ -264,7 +264,7 @@ module Persistence
       rescue Interrupt
         raise "Interrupted"
       rescue Exception
-        per.close
+        per.close unless per.nil?
         raise $!
       end
 

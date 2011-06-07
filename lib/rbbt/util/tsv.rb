@@ -14,8 +14,8 @@ require 'rbbt/util/tsv/manipulate'
 require 'rbbt/util/tsv/index'
 require 'rbbt/util/tsv/attach'
 require 'rbbt/util/tsv/resource'
-class TSV
 
+class TSV
 
   ESCAPES = {
     "\n" => "[[NL]]",

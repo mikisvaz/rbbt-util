@@ -89,6 +89,7 @@ class TSV
     return nil if @key_field.nil?
     k = @key_field.dup
     k.extend Field
+    k.namespace = namespace unless namespace.nil?
     k
   end
 

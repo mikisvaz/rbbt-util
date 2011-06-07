@@ -124,4 +124,18 @@ This is an example file. Entries are separated by Entry
     assert_equal 4, Misc.process_to_hash(list){|l| l.collect{|e| e * 2}}[2]
   end
 
+  def test_add_method
+    a = "Test"
+    Misc.add_method a, :invert do self.reverse end
+    assert_equal "Test".reverse, a.invert
+  end
+
+  def test_redefine_method
+    a = "Test"
+    worked = false
+    Misc.redefine_method a, :reverse, :old_reverse do worked = true; self.old_reverse end
+    assert_equal "Test".reverse, a.reverse
+    assert worked
+  end
+
 end

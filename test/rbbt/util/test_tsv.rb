@@ -213,5 +213,9 @@ row2    A    B
     end
  
   end
+
+  def test_with_hash
+    assert TSV === TSV.new {}, :list
+  end
 end
 
