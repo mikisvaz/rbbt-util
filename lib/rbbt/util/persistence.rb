@@ -221,7 +221,7 @@ module Persistence
     filename         ||= get_filename(file)
     persistence_file ||= get_persistence_file(filename, prefix, options)
 
-    if persistence_update or not File.exists? persistence_file
+    if persistence_update or not File.exists?(persistence_file)
       Log.debug "Creating #{ persistence_file }. Prefix = #{prefix}"
       res, extra = yield file, options, filename, persistence_file
 
@@ -350,9 +350,7 @@ module Persistence
       yield file, options, filename
     else
       Log.low "Persistent Loading for #{filename}. Prefix: #{prefix}. Type #{persistence_type.to_s}"
-
       Misc.lock(persistence_file, file, prefix, options, block) do |persistence_file,file,prefix,options,block|
-
         case persistence_type.to_sym
         when :string
           persist_string(file, prefix, options, &block)
@@ -372,5 +370,14 @@ module Persistence
       end
     end
   end
+end
+
+module LocalPersist
+
+  attr_accessor :local_persistence_dir
+  def local_persist(name, prefix, type, options= {}, &block)
+    Persistence.persist(name, prefix, type, options.merge({:persistence_dir => @local_persistence_dir}), &block)
+  end
+
 end
 
