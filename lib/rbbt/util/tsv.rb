@@ -111,7 +111,7 @@ class TSV
       extra.each do |key, values|
         self.send("#{ key }=".to_sym, values) if self.respond_to? "#{ key }=".to_sym 
       end if not extra.nil?
- 
+
     else
 
       case
@@ -142,7 +142,6 @@ class TSV
           data, extra = nil
 
           if in_situ_persistence and persistence_file
-
             options.merge! :persistence_data => Persistence::TSV.get(persistence_file, true, :double)
           end
 
@@ -213,5 +212,10 @@ class TSV
   def read
     @data.read if @data.respond_to? :read
   end
+
+  def write?
+    @data.write? if @data.respond_to? :write
+  end
+
 
 end
