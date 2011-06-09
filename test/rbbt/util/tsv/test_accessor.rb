@@ -118,8 +118,34 @@ row2 A B C
       assert_equal "TEST", tsv.fields.first.namespace
       assert_equal "TEST", tsv.key_field.namespace
     end
- 
   end
+
+  def test_delete
+    content =<<-EOF
+#ID ValueA ValueB Comment
+row1 a b c
+row2 A B C
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :double, :sep => /\s/)
+      tsv.delete "row1"
+      
+      assert_equal 1, tsv.size
+      assert_equal ["row2"], tsv.keys
+
+      tsv = TSV.new(File.open(filename), :double, :sep => /\s/, :persistence => true)
+      assert_equal 2, tsv.size
+      assert_equal ["row1", "row2"], tsv.keys
+      tsv.write
+      tsv.delete "row1"
+      tsv.read
+
+      assert_equal 1, tsv.size
+      assert_equal ["row2"], tsv.keys
+    end
+  end
+
 
 end
 
