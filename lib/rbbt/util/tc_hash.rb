@@ -65,6 +65,15 @@ class TCHash < TokyoCabinet::HDB
     end
   end
 
+  def size
+    keys.length
+  end
+
+  def delete(key)
+    raise "Cannot deleted key: closed connection" if not write?
+    out(key) or raise "Not deleted"
+  end
+
   attr_accessor :serializer
   def serializer=(serializer)
     
@@ -138,8 +147,11 @@ class TCHash < TokyoCabinet::HDB
       serializer = serializer
     end
 
-    if !File.exists?(path) or not CONNECTIONS.include? path
+    case
+    when !File.exists?(path)
       CONNECTIONS[path] = self.new(path, true, serializer)
+    when (not CONNECTIONS.include?(path))
+      CONNECTIONS[path] = self.new(path, false, serializer)
     end
 
     d = CONNECTIONS[path] 
