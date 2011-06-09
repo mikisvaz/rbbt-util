@@ -191,7 +191,7 @@ class TSV
       return self[$1]
     else
 
-      if Array === value and not fields.nil? and not unnamed
+      if Array === value and not unnamed
         value = NamedArray.name value, fields 
       end
       value
