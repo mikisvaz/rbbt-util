@@ -184,15 +184,14 @@ class TSV
 
   # Read
 
-  attr_accessor :no_follow
+  attr_accessor :unnamed
   def follow(value)
-    return value if no_follow
     return nil if value.nil?
     if String === value && value =~ /__Ref:(.*)/
       return self[$1]
     else
 
-      if Array === value
+      if Array === value and not fields.nil? and not unnamed
         value = NamedArray.name value, fields 
       end
       value
