@@ -33,6 +33,59 @@ end
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.intersect_sorted_arrays(a1, a2)
+    e1, e2 = a1.shift, a2.shift
+    intersect = []
+    while true
+      case
+      when (e1 and e2)
+        case e1 <=> e2
+        when 0
+          intersect << e1 << e2
+          e1, e2 = a1.shift, a2.shift
+        when -1
+          e1 = a1.shift
+        when 1
+          e2 = a2.shift
+        end
+      else
+        break
+      end
+    end
+    intersect
+  end
+
+  def self.merge_sorted_arrays(a1, a2)
+    e1, e2 = a1.shift, a2.shift
+    new = []
+    while true
+      case
+      when (e1 and e2)
+        case e1 <=> e2
+        when 0
+          new << e1 << e2
+        when -1
+          new << e1
+          e1 = a1.shift
+        when 1
+          new << e2
+          e2 = a2.shift
+        end
+      when e2
+        new << e2
+        new.concat a2
+        break
+      when e1
+        new << e1
+        new.concat a1
+        break
+      else
+        break
+      end
+    end
+    new
+  end
+
   def self.digest(text)
     Digest::MD5.hexdigest(text)
   end

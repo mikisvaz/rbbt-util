@@ -138,4 +138,8 @@ This is an example file. Entries are separated by Entry
     assert worked
   end
 
+  def test_merge_sorted_arrays
+    assert_equal [1,2,3,4], Misc.merge_sorted_arrays([1,3], [2,4])
+  end
+
 end

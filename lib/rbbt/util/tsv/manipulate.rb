@@ -98,7 +98,7 @@ class TSV
         if type == :single
           new_field_values = new_field_values.first
         else
-          new_field_values = NamedArray.name new_field_values, new_field_names
+          new_field_values = NamedArray.name new_field_values, new_field_names unless unnamed
         end
 
         next if new_key_value.nil? or (String === new_key_value and new_key_value.empty?)
