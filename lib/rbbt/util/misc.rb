@@ -33,6 +33,10 @@ end
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.digest(text)
+    Digest::MD5.hexdigest(text)
+  end
+
   def self.add_method(object, method_name, &block)
     class << object
       self
