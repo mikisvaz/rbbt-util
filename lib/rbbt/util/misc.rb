@@ -116,6 +116,24 @@ module Misc
     counts
   end
 
+  def self.benchmark(repeats = 1)
+    require 'benchmark'
+    res = nil
+    begin
+      measure = Benchmark.measure do
+        repeats.times do
+          res = yield
+        end
+      end
+      puts "Benchmark for #{ repeats } repeats"
+      puts measure
+    rescue Exception
+      puts "Benchmark aborted"
+      raise $!
+    end
+    res
+  end
+
   def self.profile
     require 'ruby-prof'
     RubyProf.start
@@ -299,6 +317,7 @@ module Misc
     }
     chunks
   end
+
 
 
   def self.process_to_hash(list)
