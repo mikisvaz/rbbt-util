@@ -153,5 +153,37 @@ g:         ____
     end
   end
 
+  def test_pos_index
+    content =<<-EOF
+#Id	ValueA    ValueB    Pos
+row1    a|aa|aaa    b    0|10
+row2    A    B    30
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :double, :sep => /\s+/)
+      index = tsv.pos_index("Pos", :memory, true)
+      assert_equal ["row1"], index[10]
+    end
+  end
+
+
+  def test_range_index
+    content =<<-EOF
+#Id	ValueA    ValueB    Pos1    Pos2
+row1    a|aa|aaa    b    0|10    10|30
+row2    A    B    30   35
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :double, :sep => /\s+/)
+      index = tsv.pos_index("Pos1", :memory, true)
+      assert_equal ["row1"], index[10]
+
+      index = tsv.range_index("Pos1", "Pos2", :memory, true)
+      assert_equal ["row1"], index[20]
+    end
+  end
+
 end
 

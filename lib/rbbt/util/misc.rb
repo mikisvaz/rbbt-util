@@ -64,6 +64,7 @@ module Misc
         case e1 <=> e2
         when 0
           new << e1 << e2
+          e1, e2 = a1.shift, a2.shift
         when -1
           new << e1
           e1 = a1.shift

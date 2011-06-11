@@ -4,13 +4,13 @@ class FixWidthTable
   def initialize(filename, value_size = nil, range = nil, update = false)
     @filename = filename
 
-    if update or %(memory stringio).include?(filename.to_s.downcase) or not File.exists? filename
+    if update or %w(memory stringio).include?(filename.to_s.downcase) or not File.exists? filename
       Log.debug "Writing FixWidthTable at #{ @filename.inspect }"
       @value_size = value_size
       @range = range
       @record_size = @value_size + (@range ? 12 : 4)
 
-      if %(memory stringio).include? filename.to_s.downcase
+      if %w(memory stringio).include? filename.to_s.downcase
         @file = StringIO.new
       else
         FileUtils.rm @filename if File.exists? @filename
@@ -28,6 +28,20 @@ class FixWidthTable
       @record_size = @value_size + (@range ? 12 : 4)
       @size        = (File.size(@filename) - 5) / (@record_size)
     end
+  end
+
+
+  CONNECTIONS = {} unless defined? CONNECTIONS
+  def self.get(filename, value_size = nil, range = nil, update = false)
+    return self.new(filename, value_size, range, update) if filename == :memory
+    case
+    when (!File.exists?(filename) or update)
+      CONNECTIONS[filename] = self.new(filename, value_size, range, update)
+    when (not CONNECTIONS.include?(filename))
+      CONNECTIONS[filename] = self.new(filename, value_size, range, update)
+    end
+
+    CONNECTIONS[filename] 
   end
 
   def format(pos, value)
@@ -81,6 +95,7 @@ class FixWidthTable
   end
 
   def read
+    return if @filename == :memory
     @file.close unless @file.closed?
     @file = File.open(@filename, 'r')
   end

@@ -320,4 +320,77 @@ class TSV
     index
   end
 
+  def pos_index(pos_field, file = nil, update = false)
+    value_size = 0
+    index_data = []
+
+    file ||= filename + "-PosIndex[#{ pos_field }]" if filename
+    
+    through :key, pos_field do |key, values|
+      value_size = key.length if key.length > value_size
+
+      pos = values.first
+      if Array === pos
+        pos.each do |p|
+          index_data << [key, p.to_i]
+        end
+      else
+        index_data << [key, pos.to_i]
+      end
+    end
+   
+    pos_index = case
+                when file == :memory
+                  index = FixWidthTable.new(file, value_size, false)
+                  index.add_point index_data
+                  index
+                when (update or not File.exists? file)
+                  index = FixWidthTable.new(file, value_size, false, true)
+                  index.add_point index_data
+                  index
+                else
+                  FixWidthTable.new(file, value_size, false)
+                end
+
+    pos_index
+  end
+
+  def range_index(start_field, end_field, file = nil, update = false)
+    value_size = 0
+    index_data = []
+
+    file ||= filename + "-PosIndex[#{ start_field }-#{end_field}]" if filename
+    
+    through :key, [start_field, end_field] do |key, values|
+      value_size = key.length if key.length > value_size
+
+      start_pos, end_pos = values
+    
+      if Array === start_pos
+        start_pos.zip(end_pos).each do |s,e|
+          index_data << [key, [s.to_i, e.to_i]]
+        end
+      else
+        index_data << [key, [start_pos.to_i, end_pos.to_i]]
+      end
+    end
+    
+    pos_index = case
+                when file == :memory
+                  index = FixWidthTable.get(file, value_size, true)
+                  index.add_range index_data
+                  index.read
+                  index
+                when (update or not File.exists?(file))
+                  index = FixWidthTable.get(file, value_size, true, true)
+                  index.add_range index_data
+                  index.read
+                  index
+                else
+                  FixWidthTable.get(file, value_size, true)
+                end
+
+    pos_index
+  end
+
 end

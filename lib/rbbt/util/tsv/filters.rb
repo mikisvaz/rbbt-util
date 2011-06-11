@@ -14,6 +14,7 @@ module Filtered
         @persistence = persistence
       when String === persistence
         @persistence = TSV.new TCHash.get(persistence)
+        @persistence.read
       end
 
       @list = nil
@@ -39,6 +40,7 @@ module Filtered
       if persistence
         persistence.write
         persistence[self.key] = ids
+        persistence.read
       else
         if list.nil?
           @list = ids
@@ -66,23 +68,32 @@ module Filtered
       end
     end
 
+    def add_unsaved
+      save(Misc.merge_sorted_arrays(unsaved.sort, saved || [])) if unsaved.any?
+      unsaved.clear
+    end
+
     def ids
+      add_unsaved
+
       list = saved
       if list.nil?
         update
-        list = saved
-      end
-
-      if unsaved.any?
-        save(Misc.merge_sorted_arrays(unsaved.sort, list))
-        unsaved.clear
         list = saved
       end
       list
     end
 
     def add(id)
-      unsaved << id
+      unsaved.push id
+    end
+
+    def reset
+      if persistence
+        persistence.clear
+      else
+        @list = nil
+      end
     end
   end
 
@@ -102,6 +113,22 @@ module Filtered
       end
     end
 
+    Misc.redefine_method base, :keys, :unfiltered_keys do 
+    if filters.empty?
+      self.send(:unfiltered_keys)
+    else
+      filters.inject(nil){|list,filter| list.nil? ? filter.ids : Misc.intersect_sorted_arrays(list, filter.ids.dup)}
+    end
+    end
+
+    Misc.redefine_method base, :values, :unfiltered_values do
+      if filters.empty?
+        self.send(:unfiltered_values)
+      else
+        ids = filters.inject(nil){|list,filter| list.nil? ? filter.ids : Misc.intersect_sorted_arrays(list, filter.ids.dup)}
+        self.send :values_at, *ids
+    end
+    end
 
     Misc.redefine_method base, :each, :unfiltered_each do |&block|
     if filters.empty?
@@ -134,8 +161,23 @@ module Filtered
     end
   end
 
+  def filter_name(match, value)
+    @filename + "&F[#{match}=#{value}]"
+  end
+
   def add_filter(match, value, persistence = nil)
+    if persistence.nil? and filter_dir
+      persistence = File.join(filter_dir, match.to_s)
+    end
+
+    @filename = filter_name(match, value)  if @filename
+
     filters.push Filter.new self, match, value, persistence
+  end
+
+  def pop_filter
+    @filename = @filename.sub(/&F\[[^\]]*\]$/, '') if @filename
+    filters.pop
   end
 
 end
