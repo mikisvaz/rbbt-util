@@ -41,7 +41,7 @@ module Misc
       when (e1 and e2)
         case e1 <=> e2
         when 0
-          intersect << e1 << e2
+          intersect << e1
           e1, e2 = a1.shift, a2.shift
         when -1
           e1 = a1.shift
@@ -63,7 +63,7 @@ module Misc
       when (e1 and e2)
         case e1 <=> e2
         when 0
-          new << e1 << e2
+          new << e1 
           e1, e2 = a1.shift, a2.shift
         when -1
           new << e1
