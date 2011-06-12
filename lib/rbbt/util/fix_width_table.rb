@@ -221,6 +221,7 @@ class FixWidthTable
   end
 
   def [](pos)
+    return [] if size == 0
     if range
       get_range(pos)
     else
