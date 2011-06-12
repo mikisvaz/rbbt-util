@@ -119,16 +119,16 @@ class TSV
         @data = Hash[file.collect{|v| 
           [v,[]]
         }]
-        @data.key_field = key_field if key_field
-        @data.fields = fields if fields
+        self.key_field = options[:key_field]
+        self.fields = options[:fields]
       when Hash === file 
         @data = file
-        @data.key_field = key_field if key_field
-        @data.fields = fields if fields
+        self.key_field = options[:key_field]
+        self.fields = options[:fields]
       when TSV === file
         @data = file.data
-        @data.key_field = key_field if key_field
-        @data.fields = fields if fields
+        self.key_field = file.key_field || options[:key_field]
+        self.fields = file.fields || options[:key_field]
       when Persistence::TSV === file
         @data = file
         %w(case_insensitive namespace identifiers datadir fields key_field type filename cast).each do |key|
