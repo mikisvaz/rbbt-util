@@ -142,4 +142,16 @@ This is an example file. Entries are separated by Entry
     assert_equal [1,2,3,4], Misc.merge_sorted_arrays([1,3], [2,4])
   end
 
+  def test_in_dir
+    TmpFile.with_file do |dir|
+      FileUtils.mkdir_p dir
+      Open.write(File.join(dir, 'test_file_in_dir'), 'test_file_in_dir')
+      Misc.in_dir(dir) do
+        assert Dir.glob("*").include? 'test_file_in_dir'
+      end
+      assert Dir.glob(File.join(dir, "*")).include?(File.join(dir, 'test_file_in_dir'))
+      assert(! Dir.glob("*").include?('test_file_in_dir'))
+    end
+  end
+
 end

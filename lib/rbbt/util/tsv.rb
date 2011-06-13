@@ -119,15 +119,15 @@ class TSV
         @data = Hash[file.collect{|v| 
           [v,[]]
         }]
-        self.key_field = options[:key_field]
+        self.key_field = options[:key]
         self.fields = options[:fields]
       when Hash === file 
         @data = file
-        self.key_field = options[:key_field]
+        self.key_field = options[:key]
         self.fields = options[:fields]
       when TSV === file
         @data = file.data
-        self.key_field = file.key_field || options[:key_field]
+        self.key_field = file.key_field || options[:key]
         self.fields = file.fields || options[:key_field]
       when Persistence::TSV === file
         @data = file

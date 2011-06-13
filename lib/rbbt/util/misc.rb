@@ -33,6 +33,16 @@ end
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.in_dir(dir)
+    old_pwd = FileUtils.pwd
+    begin
+      FileUtils.cd dir
+      yield
+    ensure
+      FileUtils.cd old_pwd
+    end
+  end
+
   def self.intersect_sorted_arrays(a1, a2)
     e1, e2 = a1.shift, a2.shift
     intersect = []
@@ -424,7 +434,9 @@ module PDF2Text
     require 'rbbt/util/open'
 
 
-    CMD.cmd("pdftotext - -", :in => Open.open(filename, :nocache => true), :pipe => true, :stderr => true)
+    TmpFile.with_file(Open.open(filename, :nocache => true).read) do |pdf_file|
+      CMD.cmd("pdftotext #{pdf_file} -", :pipe => false, :stderr => true)
+    end
   end
 end
 
