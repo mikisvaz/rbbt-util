@@ -107,6 +107,7 @@ module WorkFlow
   end
 
   def job(task, jobname = "Default", *args)
+    raise "Task '#{ task }' unkown" if tasks[task].nil?
     tasks[task].job(jobname, *args)
   end
 
