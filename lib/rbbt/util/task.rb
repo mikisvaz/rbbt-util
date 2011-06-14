@@ -55,10 +55,20 @@ class Task
     [run_options, args, optional_args]
   end
 
+  def pull_from_hash(args, optional_args)
+    option_summary.first.each do |info|
+      name = info[:name]
+      if optional_args.include? name
+        args.push optional_args.delete name
+      end
+    end
+  end
+
   def setup(jobname, args, optional_args, dependencies)
     previous_jobs = []
     required_files = []
   
+    pull_from_hash(args, optional_args)
     run_options, args, optional_args = process_options args, optional_args
 
     dependencies.each do |dependency|
@@ -88,6 +98,7 @@ class Task
     else
       optional_args = {}
     end
+
 
     previous_jobs, required_files, run_options = setup(jobname, args, optional_args, dependencies)
 

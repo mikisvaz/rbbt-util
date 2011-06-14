@@ -6,10 +6,14 @@ require 'rbbt/util/misc'
 module WorkFlow
 
   def self.require_workflow(path)
-    if Rbbt.etc.workflow_dir.exists?
-      require Dir.glob(File.join(Rbbt.etc.workflow_dir.read.strip, '*', path + '.rb')).first
-    else
-      require Dir.glob(File.join(Rbbt.share.workflows.find, '*', path + '.rb')).first
+    begin
+      if Rbbt.etc.workflow_dir.exists?
+        require Dir.glob(File.join(Rbbt.etc.workflow_dir.read.strip, '*', path + '.rb')).first
+      else
+        require Dir.glob(File.join(Rbbt.share.workflows.find, '*', path + '.rb')).first
+      end
+    rescue
+      require File.join('.', path)
     end
   end
 

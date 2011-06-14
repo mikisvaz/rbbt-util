@@ -4,7 +4,7 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   excel2tsv.rb
   tsv.rb
   tchash.rb
-  workflow.rb
+  run_workflow.rb
   rbbt_query.rb
   rbbt_exec.rb
   rbbt_Rutil.rb

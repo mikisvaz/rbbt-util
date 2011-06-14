@@ -37,6 +37,20 @@ class TestTask < Test::Unit::TestCase
     end
   end
 
+  def test_task_options_from_hash
+    TmpFile.with_file do |f|
+      task = Task.new(:test_task, nil, :name) do |name| Open.write(f, name) end
+      job = task.job(:job1, :name => "TestName")
+      assert_equal "job1" << "_" << Misc.hash2md5(:name => "TestName"), job.id
+      job.fork
+      job.join
+
+      assert File.exists? f
+      assert_equal "TestName", File.open(f).read
+    end
+  end
+
+
   def test_task_result
     task = Task.new(:test_task, nil, :name) do |name| name end
     job = task.job(:job1, "TestName")

@@ -3,108 +3,110 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 require 'rbbt/util/workflow'
-
-options = SOPT.get "-h--help:-t--target*:-n--name*:-l--log*:-f--fork:-cl--clean:-rcl--recursive_clean"
-
-raise "No target" unless options[:target]
-
-if options[:target] =~ /\./
-  namespace, target = options[:target].split('.')
-  namespace = Misc.string2const(namespace)
-else
-  target = options[:target]
-end
-
-
-workflow    = ARGV.shift
-
-load workflow
-
-task = if namespace
-         namespace.tasks[target]
-       else
-         tasks[target]
-       end
+require 'pp'
 
 def usage(task)
   puts task.usage
   exit -1
 end
 
-usage(task) if options[:help]
+def SOPT_options(task)
+  sopt_options = []
+  task.option_summary.flatten.each do |info|
+    name = info[:name]
+    short = name.to_s.chars.first
+    boolean = info[:type] == :boolean
+    
+    sopt_options << "-#{short}--#{name}#{boolean ? '' : '*'}"
+  end
 
+  sopt_options * ":"
+end
+
+def fix_options(task, job_options)
+  option_types = task.option_summary.flatten.inject({}){|types, new| types[new[:name]] = new[:type]; types}
+
+  job_options_cleaned = {}
+
+  job_options.each do |name, value|
+    value = case
+            when option_types[name] == :float
+              value.to_f
+            when option_types[name] == :integer
+              value.to_i
+            when option_types[name] == :tsv
+              if value == '-'
+                TSV.new STDIN
+              else
+                TSV.new value
+              end
+            else
+              value
+            end
+    job_options_cleaned[name] = value
+  end
+
+  job_options_cleaned
+end
+
+options = SOPT.get "-t--task*:-l--log*:-h--help:-n--name:-cl--clean:-rcl-recursive_clean"
+
+# Set log, fork, clean, recursive_clean and help
 Log.severity = options[:log].to_i if options.include? :log
+help = !!options.delete(:help)
+do_fork = !!options.delete(:fork)
+clean = !!options.delete(:clean)
+recursive_clean = !!options.delete(:recursive_clean)
 
-args = []
-optional_args = []
-arg_types = {}
+# Get workflow
+workflow = ARGV.first
+WorkFlow.require_workflow workflow
 
-task.option_summary.first.each do |arg_info|
-  name = arg_info[:name]
-  arg_types[name] = arg_info[:type]
-  args << name
+# Set task
+namespace, task = nil, nil
+
+case 
+when (not options[:task])
+  workflow_usage if help
+  task = self.last_task
+  namespace = self
+when (options[:task] =~ /\./)
+  namespace, task = options.delete(:task).split('.')
+  namespace = Misc.string2const(namespace)
+else
+  task_name = options.delete(:task)
+  self.tasks[task_name]
 end
 
-task.option_summary.last.each do |arg_info|
-  name = args_info[:name]
-  arg_types[name] = arg_info[:type]
-  optional_args << name
-end
+usage(task) if help
 
-job_options_str = (args + optional_args).collect{|a| 
-  name = a.to_s
-  str = "-#{name.chars.first}--#{name}"
-  str += "*" unless arg_types[a] == :boolean
-  str
-} * ":"
+name = options.delete(:name) || "Default"
 
-job_options = SOPT.get(job_options_str)
+# get job args
+sopt_option_string = SOPT_options(task)
+job_options = SOPT.get sopt_option_string
+job_options = fix_options(task, job_options)
 
-job_options_cleaned = {}
+#- get job
+job = task.job(name, job_options)
 
-job_options.each do |name, value|
-  value = case
-          when arg_types[name] == :float
-            value.to_f
-          when arg_types[name] == :integer
-            value.to_i
-          else
-            value
-          end
-  job_options_cleaned[name] = value
-end
+# clean job
+job.clean if clean
+job.recursive_clean if recursive_clean
 
-job_options = job_options_cleaned
-
-
-job_args = args.collect{|arg| job_options[arg]}.collect{|v|
-  v == '-' ? STDIN.read : v
-}
-
-job_optional_args = Hash[*optional_args.zip(job_options.values_at(optional_args).collect{|v| v == '-' ? STDIN.read : v}).flatten]
-job_optional_args.delete_if{|k,v| v.nil?}
-
-job_args << job_optional_args
-
-if options[:fork]
-  job = task.job((options[:name] || "Default"), *job_args)
-  job.clean if options[:clean]
-  job.recursive_clean if options[:recursive_clean]
+# run
+if do_fork
   job.fork
-
   while not job.done?
     puts "#{job.step}: #{job.messages.last}"
     sleep 2
   end
-
-  raise job.messages.last if job.error?
-
-  puts job.load
 else
-  job = task.job((options[:name] || "Default"), *job_args)
-  job.clean if options[:clean]
-  job.recursive_clean if options[:recursive_clean]
   job.run
-  raise job.messages.last if job.error?
-  puts job.load
 end
+
+#- error
+raise job.messages.last if job.error?
+
+#print
+pp job.load
