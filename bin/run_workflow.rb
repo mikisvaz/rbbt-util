@@ -35,10 +35,14 @@ def fix_options(task, job_options)
             when option_types[name] == :integer
               value.to_i
             when option_types[name] == :tsv
-              if value == '-'
-                TSV.new STDIN
-              else
-                TSV.new value
+              begin
+                if value == '-'
+                  TSV.new(STDIN).to_s :sort
+                else
+                  TSV.new(value).to_s :sort
+                end
+              rescue
+                value
               end
             else
               value
