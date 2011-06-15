@@ -34,6 +34,8 @@ def fix_options(task, job_options)
               value.to_f
             when option_types[name] == :integer
               value.to_i
+            when option_types[name] == :array
+              value.split(/[,|]/)
             when option_types[name] == :tsv
               begin
                 if value == '-'
@@ -79,7 +81,7 @@ when (options[:task] =~ /\./)
   namespace = Misc.string2const(namespace)
 else
   task_name = options.delete(:task)
-  self.tasks[task_name]
+  task = self.tasks[task_name]
 end
 
 usage(task) if help

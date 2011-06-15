@@ -386,13 +386,16 @@ module Misc
     chunks
   end
 
+  def self.merge2hash(list1, list2)
+    hash = {}
+    list1.zip(list2).each do |k,v| hash[k] = v end
+    hash
+  end
 
 
   def self.process_to_hash(list)
     result = yield list
-    hash = {}
-    list.zip(result).each do |k,v| hash[k] = v end
-    hash
+    merge2hash(list, results)
   end
 
   IUPAC2BASE = {

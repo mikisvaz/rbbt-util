@@ -286,6 +286,8 @@ class TSV
       str << "#" << key_field << "\t" << fields * "\t" << "\n"
     end
 
+    saved_unnamed = unnamed
+    unnamed = false
     if keys.nil?
       each do |key, values|
         key = key.to_s if Symbol === key
@@ -298,6 +300,7 @@ class TSV
       end
     end
 
+    unnamed = saved_unnamed
     str
   end
 

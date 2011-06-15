@@ -5,16 +5,29 @@ require 'rbbt/util/misc'
 
 module WorkFlow
 
-  def self.require_workflow(path)
-    begin
-      if Rbbt.etc.workflow_dir.exists?
-        require Dir.glob(File.join(Rbbt.etc.workflow_dir.read.strip, '*', path + '.rb')).first
-      else
-        require Dir.glob(File.join(Rbbt.share.workflows.find, '*', path + '.rb')).first
-      end
-    rescue
-      require File.join('.', path)
+  def self.require_workflow(wf_name, wf_dir = nil)
+
+    if File.exists? wf_name
+      require "./workflow.rb"
+      return
     end
+
+    wf_dir ||= case
+               when File.exists?(File.join(File.dirname(Resource.caller_lib_dir), wf_name))
+                 File.join(File.dirname(Resource.caller_lib_dir), wf_name)
+               when defined? Rbbt
+                 if Rbbt.pkg.etc.workflow_dir.exists?
+                   File.join(pkg.etc.workflow_dir.read.strip, wf_name)
+                 else
+                   Rbbt.workflows[wf_name]
+                 end
+               else
+                 File.join(ENV["HOME"], '.workflows')
+               end
+
+    wf_dir = Resource::Path.path(wf_dir)
+    $LOAD_PATH.unshift(File.join(File.dirname(wf_dir["workflow.rb"].find), 'lib'))
+    require wf_dir["workflow.rb"].find
   end
 
   def self.extended(base)
@@ -78,9 +91,9 @@ module WorkFlow
   def process_dangling
     res = [ 
       @dangling_options, 
-      Hash[*@dangling_options.zip(@dangling_option_descriptions.values_at(*@dangling_options)).flatten],
-      Hash[*@dangling_options.zip(@dangling_option_types.values_at(*@dangling_options)).flatten],
-      Hash[*@dangling_options.zip(@dangling_option_defaults.values_at(*@dangling_options)).flatten],
+      Misc.merge2hash(@dangling_options, @dangling_option_descriptions.values_at(*@dangling_options)),
+      Misc.merge2hash(@dangling_options, @dangling_option_types.values_at(*@dangling_options)),
+      Misc.merge2hash(@dangling_options, @dangling_option_defaults.values_at(*@dangling_options)),
       (@dangling_dependencies || [@last_task]).compact,
       @dangling_description,
     ]

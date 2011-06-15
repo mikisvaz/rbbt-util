@@ -142,6 +142,11 @@ This is an example file. Entries are separated by Entry
     assert_equal [1,2,3,4], Misc.merge_sorted_arrays([1,3], [2,4])
   end
 
+  def test_intersect_sorted_arrays
+    assert_equal [2,4], Misc.intersect_sorted_arrays([1,2,3,4], [2,4])
+  end
+
+
   def test_in_dir
     TmpFile.with_file do |dir|
       FileUtils.mkdir_p dir

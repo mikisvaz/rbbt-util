@@ -285,6 +285,8 @@ class Task
         Marshal.load(Open.read(path))
       when :yaml
         YAML.load(Open.read(path))
+      when nil
+        nil
       end
     end
 

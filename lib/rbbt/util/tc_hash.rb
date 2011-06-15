@@ -251,5 +251,16 @@ class TCHash < TokyoCabinet::HDB
       raise "Transaction cannot initiate"
     end
   end
+  
+  def clear
+    special_values = FIELD_INFO_ENTRIES.values.sort.collect{|k|  self.original_get_brackets(k)}
+    restore = ! write?
+    write if restore
+    vanish
+    FIELD_INFO_ENTRIES.values.sort.zip(special_values).each{|k,v|
+      self.original_set_brackets(k,v) unless v.nil?
+    }
+    read if restore
+  end
 
 end

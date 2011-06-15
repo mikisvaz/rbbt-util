@@ -217,5 +217,9 @@ class TSV
     @data.write? if @data.respond_to? :write
   end
 
+  def clear
+    @data.clear
+  end
+
 
 end

@@ -29,6 +29,7 @@ module Resource
       return dir if File.exists? File.join(dir, 'lib')
       file = File.dirname file
     end
+
     return nil
   end
 
