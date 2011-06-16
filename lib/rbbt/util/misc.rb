@@ -395,7 +395,7 @@ module Misc
 
   def self.process_to_hash(list)
     result = yield list
-    merge2hash(list, results)
+    merge2hash(list, result)
   end
 
   IUPAC2BASE = {

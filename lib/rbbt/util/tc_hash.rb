@@ -41,7 +41,14 @@ class TCHash < TokyoCabinet::HDB
   end
 
 
-  ALIAS = {:integer => IntegerSerializer, :integer_array => IntegerArraySerializer, :marshal => Marshal, nil => Marshal, :single => StringSerializer, :list => StringArraySerializer, :double => StringDoubleArraySerializer}
+  ALIAS = {:integer => IntegerSerializer, 
+    :integer_array => IntegerArraySerializer,
+    :marshal => Marshal,
+    nil => Marshal,
+    :single => StringSerializer,
+    :string => StringSerializer,
+    :list => StringArraySerializer,
+    :double => StringDoubleArraySerializer}
 
   CONNECTIONS = {}
 
