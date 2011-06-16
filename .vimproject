@@ -13,29 +13,20 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   rbbt.rb
   rbbt-util.rb
   util=rbbt/util {
-   resource.rb
-   task.rb
-   task=task{
-    job.rb
-   }
-   workflow.rb
-   workflow=workflow{
-    soap.rb
-   }
-
-   simpleopt.rb
-   simpleDSL.rb
-   cachehelper.rb
+   cmd.rb
+   open.rb
+   log.rb
 
    misc.rb
-   log.rb
+   simpleopt.rb
+   simpleDSL.rb
+
    tmpfile.rb
-   cmd.rb
    filecache.rb
-   tc_hash.rb
-   open.rb
-   fix_width_table.rb
+   
    persistence.rb
+   tc_hash.rb
+   fix_width_table.rb
 
    tsv.rb
    tsv=tsv{
@@ -48,12 +39,21 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
     misc.rb
     filters.rb
    }
-   excel2tsv.rb
-   bed.rb
 
+   excel2tsv.rb
    R.rb
 
    rake.rb
+   resource.rb
+
+   workflow.rb
+   workflow=workflow{
+    soap.rb
+   }
+   task.rb
+   task=task{
+    job.rb
+   }
   }
  }
  test=test {
@@ -62,7 +62,6 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
   test_pkg.rb
   util=rbbt/util{
    test_R.rb
-   test_bed.rb
    test_cmd.rb
    test_excel2tsv.rb
    test_filecache.rb
