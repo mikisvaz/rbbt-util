@@ -3,8 +3,8 @@ require 'rbbt/util/misc'
 
 class TSV
   ## Make sure we overwrite the methods declared by attr_accessor
-  MAIN_ACCESSORS = :data,  :key_field, :fields, :cast
-  EXTRA_ACCESSORS = :filename, :identifiers, :namespace, :datadir, :type, :case_insensitive
+  MAIN_ACCESSORS = :data, :key_field, :fields, :cast
+  EXTRA_ACCESSORS = :filename, :identifiers, :namespace, :type, :case_insensitive
   attr_accessor *(MAIN_ACCESSORS + EXTRA_ACCESSORS)
 
   def self.zip_fields(list, fields = nil)

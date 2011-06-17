@@ -164,6 +164,38 @@ row2   2 4 6 8
     Process.wait pid
   end
 
+  def test_persist_fwt
+    content =<<-EOF
+#: :sep=/\\s+/
+#Id    Start    End
+row1   1        10
+row2   20       30
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      fwt = Persistence.persist(filename, :Range, :fwt, :persistence_dir => Rbbt.tmp.test.persistence) do
+        fwt = TSV.new(filename).range_index("Start", "End", :persistence => false)
+        assert fwt[15].empty?
+        assert fwt[25].include? "row2"
+        fwt
+      end
+
+      assert fwt[5].include? "row1"
+      assert fwt[(5..25)].include? "row1"
+      assert fwt[(5..25)].include? "row2"
+
+      fwt = Persistence.persist(filename, :Range, :fwt, :persistence_dir => Rbbt.tmp.test.persistence) do
+        assert false
+      end
+
+      assert fwt[5].include? "row1"
+      assert fwt[(5..25)].include? "row1"
+      assert fwt[(5..25)].include? "row2"
+ 
+    end
+
+  end
+
 
 end
 

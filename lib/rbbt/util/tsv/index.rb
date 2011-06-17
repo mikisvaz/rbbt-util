@@ -1,4 +1,5 @@
 require 'rbbt/util/tsv/manipulate'
+require 'rbbt/util/tsv/filters'
 require 'rbbt/util/fix_width_table'
 
 class TSV
@@ -281,116 +282,130 @@ class TSV
     field_matches(values).sort_by{|field, matches| matches.uniq.length}.last
   end
 
-  def sorted_index(pos_start = nil, pos_end = nil)
-    raise "Please specify indexing fields" if (pos_start.nil? and fields.length > 2)
+  def pos_index(pos_field = nil, options = {})
+    pos_field ||= "Position"
 
-    case
-    when (pos_start.nil? and pos_end.nil? and fields.length == 2)
-      pos_start = fields.first
-      pos_end   = fields.last
-    when (pos_start.nil? and pos_end.nil? and fields.length == 1)
-      pos_start = fields.first
+    options = Misc.add_defaults options,
+      :persistence => true, :persistence_file => nil, :persistence_update => false 
+
+    prefix = "Pos[#{pos_field}]"
+
+    Persistence.persist(filename, prefix, :fwt, options.merge(:pos_field => pos_field)) do |file, options, filename|
+      pos_field = options[:pos_field]
+      value_size = 0
+      index_data = []
+
+      through :key, pos_field do |key, values|
+        value_size = key.length if key.length > value_size
+
+        pos = values.first
+        if Array === pos
+          pos.each do |p|
+            index_data << [key, p.to_i]
+          end
+        else
+          index_data << [key, pos.to_i]
+        end
+      end
+
+      index = FixWidthTable.get(:memory, value_size, false)
+      index.add_point index_data
+      index.read
+      index
     end
-
-    range = ! pos_end.nil?
-
-    index = Persistence.persist(filename, "SortedIndex[#{range ? pos_start + ":" + pos_end : pos_start}]", :fwt, :start => pos_start, :end => pos_end, :range => range) do |filename, options|
-      pos_start, pos_end, range = Misc.process_options options, :start, :end, :range
-      data = case
-             when (type == :double and range)
-               collect do |key, values|
-                 p_start, p_end = values.values_at pos_start, pos_end
-                 next if p_start.nil? or p_end.nil? or p_start.empty? or p_end.empty?
-                 [[p_start.first, p_end.first], key]
-               end
-             when (type == :double and not range)
-               collect do |key, values|
-                 p_start = values.values_at pos_start
-                 next if p_start.nil? or p_start.empty? 
-                 [p_start.first, key]
-               end
-             when range
-               slice [pos_start, pos_end]
-             else
-               slice pos_start
-             end
-      data
-    end
-
-    index
   end
 
-  def pos_index(pos_field, file = nil, update = false)
-    value_size = 0
-    index_data = []
+  def self.pos_index(file, pos_field = nil, options = {})
+    options = Misc.add_defaults options,
+      :persistence => true, :persistence_file => nil, :persistence_update => false, :persistence_source => file, :tsv_serializer => :list,
+      :data_persistence => false, :data_persistence_file => nil, :data_persistence_update => false, :data_persistence_source => file
 
-    file ||= filename + "-PosIndex[#{ pos_field }]" if filename
-    
-    through :key, pos_field do |key, values|
-      value_size = key.length if key.length > value_size
+    options_data = {
+      :persistence        => Misc.process_options(options, :data_persistence),
+      :persistence_file   => Misc.process_options(options, :data_persistence_file),
+      :persistence_update => Misc.process_options(options, :data_persistence_update),
+      :persistence_source => Misc.process_options(options, :data_persistence_source),
+    }
 
-      pos = values.first
-      if Array === pos
-        pos.each do |p|
-          index_data << [key, p.to_i]
+
+    prefix = "Pos[#{pos_field}]"
+
+    new = Persistence.persist(file, prefix, :fwt, options.merge({:pos_field => pos_field})) do |file, options, filename|
+      tsv = TSV.new(file, :list, options_data)
+
+      if options.include?(:filters) and Array === options[:filters] and not options[:filters].empty?
+        tsv.filter
+        options[:filters].each do |match, value, persistence|
+          tsv.add_filter(match, value, persistence)
         end
-      else
-        index_data << [key, pos.to_i]
       end
-    end
-   
-    pos_index = case
-                when file == :memory
-                  index = FixWidthTable.new(file, value_size, false)
-                  index.add_point index_data
-                  index
-                when (update or not File.exists? file)
-                  index = FixWidthTable.new(file, value_size, false, true)
-                  index.add_point index_data
-                  index
-                else
-                  FixWidthTable.new(file, value_size, false)
-                end
 
-    pos_index
+      tsv.pos_index options[:pos_field], options.merge(:persistence => false, :persistence_file => nil)
+    end
   end
 
-  def range_index(start_field, end_field, file = nil, update = false)
-    value_size = 0
-    index_data = []
+  def range_index(start_field = nil, end_field = nil, options = {})
+    start_field ||= "Start"
+    end_field ||= "End"
+    options = Misc.add_defaults options,
+      :persistence => true, :persistence_file => nil, :persistence_update => false 
 
-    file ||= filename + "-PosIndex[#{ start_field }-#{end_field}]" if filename
-    
-    through :key, [start_field, end_field] do |key, values|
-      value_size = key.length if key.length > value_size
+    prefix = "Range[#{start_field}-#{end_field}]"
 
-      start_pos, end_pos = values
-    
-      if Array === start_pos
-        start_pos.zip(end_pos).each do |s,e|
-          index_data << [key, [s.to_i, e.to_i]]
+    Persistence.persist(filename, prefix, :fwt, options.merge(:start_field => start_field, :end_field => end_field)) do |file, options, filename|
+      start_field, end_field = options.values_at :start_field, :end_field
+
+      value_size = 0
+      index_data = []
+
+      through :key, [start_field, end_field] do |key, values|
+        value_size = key.length if key.length > value_size
+
+        start_pos, end_pos = values
+
+        if Array === start_pos
+          start_pos.zip(end_pos).each do |s,e|
+            index_data << [key, [s.to_i, e.to_i]]
+          end
+        else
+          index_data << [key, [start_pos.to_i, end_pos.to_i]]
         end
-      else
-        index_data << [key, [start_pos.to_i, end_pos.to_i]]
       end
-    end
-    
-    pos_index = case
-                when file == :memory
-                  index = FixWidthTable.get(file, value_size, true)
-                  index.add_range index_data
-                  index.read
-                  index
-                when (update or not File.exists?(file))
-                  index = FixWidthTable.get(file, value_size, true, true)
-                  index.add_range index_data
-                  index.read
-                  index
-                else
-                  FixWidthTable.get(file, value_size, true)
-                end
 
-    pos_index
+      index = FixWidthTable.get(:memory, value_size, true)
+      index.add_range index_data
+      index.read
+      index
+    end
+  end
+
+  def self.range_index(file, start_field = nil, end_field = nil, options = {})
+    options = Misc.add_defaults options,
+      :persistence => true, :persistence_file => nil, :persistence_update => false, :persistence_source => file, :tsv_serializer => :list,
+      :data_persistence => false, :data_persistence_file => nil, :data_persistence_update => false, :data_persistence_source => file
+
+    options_data = {
+      :persistence        => Misc.process_options(options, :data_persistence),
+      :persistence_file   => Misc.process_options(options, :data_persistence_file),
+      :persistence_update => Misc.process_options(options, :data_persistence_update),
+      :persistence_source => Misc.process_options(options, :data_persistence_source),
+    }
+
+    prefix = "Range[#{start_field}-#{end_field}]"
+
+    options_data[:type] = :flat if options[:order] == false
+
+    Persistence.persist(file, prefix, :fwt, options.merge({:start_field => start_field, :end_field => end_field})) do |file, options, filename|
+      tsv = TSV.new(file, :list, options_data)
+      if options.include?(:filters) and Array === options[:filters] and not options[:filters].empty?
+        tsv.filter
+        options[:filters].each do |match, value, persistence|
+          tsv.add_filter(match, value)
+        end
+      end
+      tsv.range_index options[:start_field], options[:end_field], options.merge(:persistence => false, :persistence_file => nil)
+    end
   end
 
 end
+

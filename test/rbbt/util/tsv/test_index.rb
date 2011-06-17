@@ -128,31 +128,6 @@ row2    A    B
     tsv
   end
 
-  def test_sorted_index
-    data =<<-EOF
-#ID:Range
-#:012345678901234567890
-a:   ______
-b: ______
-c:    _______
-d:  ____
-e:    ______
-f:             ___
-g:         ____
-    EOF
-    TmpFile.with_file(data) do |datafile|
-      tsv = load_data(datafile)
-      f   = tsv.sorted_index
-
-      assert_equal %w(), f[0].sort
-      assert_equal %w(b), f[1].sort
-      assert_equal %w(), f[20].sort
-      assert_equal %w(), f[(20..100)].sort
-      assert_equal %w(a b d), f[3].sort
-      assert_equal %w(a b c d e), f[(3..4)].sort
-    end
-  end
-
   def test_pos_index
     content =<<-EOF
 #Id	ValueA    ValueB    Pos
@@ -162,7 +137,7 @@ row2    A    B    30
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.new(File.open(filename), :double, :sep => /\s+/)
-      index = tsv.pos_index("Pos", :memory, true)
+      index = tsv.pos_index("Pos")
       assert_equal ["row1"], index[10]
     end
   end
@@ -177,13 +152,91 @@ row2    A    B    30   35
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.new(File.open(filename), :double, :sep => /\s+/)
-      index = tsv.pos_index("Pos1", :memory, true)
+      index = tsv.pos_index("Pos1")
       assert_equal ["row1"], index[10]
 
-      index = tsv.range_index("Pos1", "Pos2", :memory, true)
+      index = tsv.range_index("Pos1", "Pos2")
       assert_equal ["row1"], index[20]
     end
   end
+
+  def test_range_index2
+    data =<<-EOF
+#ID:Range
+#:012345678901234567890
+a:   ______
+b: ______
+c:    _______
+d:  ____
+e:    ______
+f:             ___
+g:         ____
+    EOF
+    TmpFile.with_file(data) do |datafile|
+      tsv = load_data(datafile)
+      f   = tsv.range_index("Start", "End")
+
+      assert_equal %w(), f[0].sort
+      assert_equal %w(b), f[1].sort
+      assert_equal %w(), f[20].sort
+      assert_equal %w(), f[(20..100)].sort
+      assert_equal %w(a b d), f[3].sort
+      assert_equal %w(a b c d e), f[(3..4)].sort
+    end
+  end
+
+  def test_range_index_persistent
+    data =<<-EOF
+#ID:Range
+#:012345678901234567890
+a:   ______
+b: ______
+c:    _______
+d:  ____
+e:    ______
+f:             ___
+g:         ____
+    EOF
+    TmpFile.with_file(data) do |datafile|
+      TmpFile.with_file(load_data(datafile)) do |tsvfile|
+        f = TSV.range_index(tsvfile, "Start", "End", :persistence => true)
+
+        assert_equal %w(), f[0].sort
+        assert_equal %w(b), f[1].sort
+        assert_equal %w(), f[20].sort
+        assert_equal %w(), f[(20..100)].sort
+        assert_equal %w(a b d), f[3].sort
+        assert_equal %w(a b c d e), f[(3..4)].sort
+      end
+    end
+  end
+
+  def test_range_index_persistent_with_filter
+    data =<<-EOF
+#ID:Range
+#:012345678901234567890
+a:   ______
+b: ______
+c:    _______
+d:  ____
+e:    ______
+f:             ___
+g:         ____
+    EOF
+    TmpFile.with_file(data) do |datafile|
+      TmpFile.with_file(load_data(datafile)) do |tsvfile|
+        f = TSV.range_index(tsvfile, "Start", "End", :filters => [["field:Start", "3"]])
+
+        assert_equal %w(), f[0].sort
+        assert_equal %w(), f[1].sort
+        assert_equal %w(), f[20].sort
+        assert_equal %w(), f[(20..100)].sort
+        assert_equal %w(a), f[3].sort
+        assert_equal %w(a), f[(3..4)].sort
+      end
+    end
+  end
+
 
 end
 

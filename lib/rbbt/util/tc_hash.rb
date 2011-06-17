@@ -56,7 +56,6 @@ class TCHash < TokyoCabinet::HDB
     :type             => '__tokyocabinet_hash_type',
     :serializer       => '__tokyocabinet_hash_serializer',
     :identifiers      => '__tokyocabinet_hash_identifiers',
-    :datadir          => '__tokyocabinet_hash_datadir',
     :fields           => '__tokyocabinet_hash_fields',
     :key_field        => '__tokyocabinet_hash_key_field',
     :filename         => '__tokyocabinet_hash_filename',

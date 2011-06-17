@@ -318,7 +318,7 @@ class TSV
 
     fields = nil if Fixnum === fields or (Array === fields and fields.select{|f| Fixnum === f}.any?)
     fields ||= other_fields
-    [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive, :namespace => namespace, :datadir => options[:datadir], :identifiers => options[:identifiers], :cast => (cast.nil? ? false : cast)}]
+    [data, {:key_field => key_field, :fields => fields, :type => type, :case_insensitive => case_insensitive, :namespace => namespace, :identifiers => options[:identifiers], :cast => (cast.nil? ? false : cast)}]
   end
 
 end

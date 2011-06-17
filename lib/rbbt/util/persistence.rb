@@ -293,27 +293,34 @@ module Persistence
         FileUtils.rm persistence_file
       end
 
-      max_length = res.collect{|k,v| k.length}.max
 
-      if range
-        begin
-          fwt = FixWidthTable.new persistence_file, max_length, true
-          fwt.add_range res
-        rescue
-          FileUtils.rm persistence_file if File.exists? persistence_file
-          raise $!
-        end
+      if FixWidthTable === res and res.filename == :memory
+        Open.write(persistence_file, res.dump)
+        fwt = FixWidthTable.get persistence_file
       else
-        begin
-          fwt = FixWidthTable.new persistence_file, max_length, false
-          fwt.add_point res
-        rescue
-          FileUtils.rm persistence_file
-          raise $!
-        end
-      end
 
-      fwt.read
+        max_length = res.collect{|k,v| k.length}.max
+
+        if range
+          begin
+            fwt = FixWidthTable.new persistence_file, max_length, true
+            fwt.add_range res
+          rescue
+            FileUtils.rm persistence_file if File.exists? persistence_file
+            raise $!
+          end
+        else
+          begin
+            fwt = FixWidthTable.new persistence_file, max_length, false
+            fwt.add_point res
+          rescue
+            FileUtils.rm persistence_file
+            raise $!
+          end
+        end
+
+        fwt.read
+      end
 
       fwt
     else

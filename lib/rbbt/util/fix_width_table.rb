@@ -11,6 +11,7 @@ class FixWidthTable
       @record_size = @value_size + (@range ? 12 : 4)
 
       if %w(memory stringio).include? filename.to_s.downcase
+        @filename = :memory
         @file = StringIO.new
       else
         FileUtils.rm @filename if File.exists? @filename
@@ -102,6 +103,12 @@ class FixWidthTable
 
   def close
     @file.close
+  end
+
+  def dump
+    read
+    @file.rewind
+    @file.read
   end
 
   #{{{ Adding data
