@@ -23,6 +23,13 @@ module Persistence
   def self.get_persistence_file(file, prefix, options = {})
     persistence_dir = Misc.process_options options, :persistence_dir
     persistence_dir ||= CACHEDIR
+
+    if options.include? :filters
+      options[:filters].each do |match,value|
+        file = file + "&F[#{match}=#{Misc.digest(value.inspect)}]"
+      end
+    end
+
     name = prefix.to_s.dup << ":" << file.to_s << ":"
 
     options_md5 = Misc.hash2md5 options
@@ -295,6 +302,7 @@ module Persistence
 
 
       if FixWidthTable === res and res.filename == :memory
+        Log.debug "Dumping memory FWT into #{ persistence_file }. Prefix = #{prefix}"
         Open.write(persistence_file, res.dump)
         fwt = FixWidthTable.get persistence_file
       else

@@ -1,11 +1,27 @@
 require 'rbbt/util/misc'
 module Filtered
 
+  class FilterArray
+    attr_accessor :filters
+
+    def ids
+      ids = filters.inject(nil){|list,filter| list.nil? ? filter.ids : Misc.merge_sorted_arrays(list, filter.ids.dup)}
+    end
+
+    def method_missing(name, *args)
+      filters.each do |filter|
+        filter.send(name, *args)
+      end
+    end
+  end
+
   class Filter
     attr_accessor :data, :match, :fieldnum, :value, :list, :unsaved
     attr_accessor :persistence
+
     def initialize(data, match, value, persistence = nil)
       @data = data
+      @match = match
       @value = value
       @unsaved = []
 
@@ -19,10 +35,10 @@ module Filtered
 
       @list = nil
       case
-      when match.match(/field:(.*)/)
-        field_num = data.identify_field $1
-        Misc.add_method(self, :match) do |entry|
-          entry[field_num] == value
+      when @match.match(/field:(.*)/)
+        @fieldnum = data.identify_field $1
+        Misc.add_method(self, :match_entry) do |entry|
+          entry[fieldnum] == value
         end
       end
     end
@@ -53,7 +69,7 @@ module Filtered
     def update
       ids = []
       data.unfiltered_each do |key, entry|
-        ids << key if match(entry)
+        ids << key if match_entry(entry)
       end
       save(ids.sort)
     end
@@ -88,7 +104,20 @@ module Filtered
       unsaved.push id
     end
 
+    def clean
+      add_unsaved
+      if persistence and persistence.include? self.key
+        restore = ! persistence.write?
+        persistence.write unless persistence.write?
+        persistence.delete self.key
+        persistence.read if restore
+      else
+        @list = nil
+      end
+    end
+
     def reset
+      add_unsaved
       if persistence
         persistence.clear
       else
@@ -107,7 +136,7 @@ module Filtered
         self.send(:unfiltered_set, key, value)
       else
         filters.each do |filter| 
-          filter.add key if filter.match value
+          filter.add key if filter.match_entry value
         end
         self.send(:unfiltered_set, key, value)
       end
@@ -159,24 +188,27 @@ module Filtered
       new.send :collect, &block
     end
     end
-  end
 
-  def filter_name(match, value)
-    @filename + "&F[#{match}=#{value}]"
+    Misc.redefine_method base, :delete, :unfiltered_delete do |key|
+    if filters.empty?
+      self.send(:unfiltered_delete, key)
+    else
+      reset_filters
+      self.send :unfiltered_delete, key
+    end
+    end
   end
 
   def add_filter(match, value, persistence = nil)
     if persistence.nil? and filter_dir
-      persistence = File.join(filter_dir, match.to_s)
+      persistence = File.join(filter_dir, match.to_s + '.filter')
     end
 
-    @filename = filter_name(match, value)  if @filename
-
-    filters.push Filter.new self, match, value, persistence
+    filter = Filter.new self, match, value, persistence
+    filters.push filter
   end
 
   def pop_filter
-    @filename = @filename.sub(/&F\[[^\]]*\]$/, '') if @filename
     filters.pop
   end
 
@@ -188,6 +220,17 @@ class TSV
     self.filter_dir = filter_dir
     self.filters = []
     self
+  end
+
+  def reset_filters
+    if filter_dir.nil? or filter_dir.empty?
+      filters.each do |filter| filter.reset end
+      return
+    end
+
+    Dir.glob(File.join(filter_dir, '*.filter')).each do |f|
+      FileUtils.rm f
+    end
   end
 end
 

@@ -290,7 +290,10 @@ class TSV
 
     prefix = "Pos[#{pos_field}]"
 
-    Persistence.persist(filename, prefix, :fwt, options.merge(:pos_field => pos_field)) do |file, options, filename|
+    Persistence.persist(filename, prefix, :fwt, options.merge({
+      :pos_field => pos_field,
+      :filters => (self.respond_to?(:filters)? filters.collect{|f| [f.match, f.value]} : [])
+    })) do |file, options, filename|
       pos_field = options[:pos_field]
       value_size = 0
       index_data = []
@@ -352,7 +355,10 @@ class TSV
 
     prefix = "Range[#{start_field}-#{end_field}]"
 
-    Persistence.persist(filename, prefix, :fwt, options.merge(:start_field => start_field, :end_field => end_field)) do |file, options, filename|
+    Persistence.persist(filename, prefix, :fwt, options.merge({
+      :start_field => start_field, :end_field => end_field,
+      :filters => (self.respond_to?(:filters)? filters.collect{|f| [f.match, f.value]} : [])
+    })) do |file, options, filename|
       start_field, end_field = options.values_at :start_field, :end_field
 
       value_size = 0
@@ -397,12 +403,14 @@ class TSV
 
     Persistence.persist(file, prefix, :fwt, options.merge({:start_field => start_field, :end_field => end_field})) do |file, options, filename|
       tsv = TSV.new(file, :list, options_data)
+
       if options.include?(:filters) and Array === options[:filters] and not options[:filters].empty?
         tsv.filter
         options[:filters].each do |match, value, persistence|
-          tsv.add_filter(match, value)
+          tsv.add_filter(match, value, persistence)
         end
       end
+
       tsv.range_index options[:start_field], options[:end_field], options.merge(:persistence => false, :persistence_file => nil)
     end
   end

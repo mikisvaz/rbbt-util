@@ -122,11 +122,13 @@ class TCHash < TokyoCabinet::HDB
   end
 
   def write
+    self.sync
     self.close
     self.open(true)
   end
 
   def read
+    self.sync
     self.close
     self.open(false)
   end

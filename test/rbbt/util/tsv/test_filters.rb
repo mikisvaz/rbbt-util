@@ -135,7 +135,33 @@ row2    A    B
     end
   end
 
+  def test_delete
+    content =<<-EOF
+#ID ValueA ValueB Comment
+row1 a b c
+row2 A B C
+    EOF
 
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.new(File.open(filename), :double, :sep => /\s/)
+      assert_equal 2, tsv.keys.length
+      tsv.delete "row2"
+      assert_equal 1, tsv.keys.length
+
+      tsv = TSV.new(File.open(filename), :double, :sep => /\s/)
+      tsv.filter
+      tsv.add_filter "field:ValueA", ["A"]
+
+      assert_equal 1, tsv.keys.length
+      assert_equal ["row2"], tsv.keys
+
+      tsv.delete "row2"
+      assert_equal 0, tsv.keys.length
+
+      tsv.pop_filter
+      assert_equal ["row1"], tsv.keys
+    end
+  end
 
 end
 

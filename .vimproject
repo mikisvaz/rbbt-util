@@ -35,9 +35,9 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
     manipulate.rb
     index.rb
     attach.rb
+    filters.rb
     resource.rb
     misc.rb
-    filters.rb
    }
 
    excel2tsv.rb

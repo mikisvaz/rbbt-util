@@ -26,6 +26,14 @@ module Resource
       TSV.index self, options
     end
 
+    def pos_index(pos_field, options = {})
+      TSV.pos_index self, pos_field, options
+    end
+
+    def range_index(start_field, end_field, options = {})
+      TSV.range_index self, start_field, end_field, options
+    end
+
     def open(options = {})
       produce
       Open.open(self.find, options)
