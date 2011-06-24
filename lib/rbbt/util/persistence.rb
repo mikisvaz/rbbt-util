@@ -301,8 +301,9 @@ module Persistence
       end
 
 
-      if FixWidthTable === res and res.filename == :memory
+      if FixWidthTable === res and res.filename == :memory 
         Log.debug "Dumping memory FWT into #{ persistence_file }. Prefix = #{prefix}"
+        FileUtils.mkdir_p File.dirname(persistence_file) unless File.exists? File.dirname(persistence_file)
         Open.write(persistence_file, res.dump)
         fwt = FixWidthTable.get persistence_file
       else
@@ -311,7 +312,7 @@ module Persistence
 
         if range
           begin
-            fwt = FixWidthTable.new persistence_file, max_length, true
+            fwt = FixWidthTable.get persistence_file, max_length, true
             fwt.add_range res
           rescue
             FileUtils.rm persistence_file if File.exists? persistence_file
@@ -319,7 +320,7 @@ module Persistence
           end
         else
           begin
-            fwt = FixWidthTable.new persistence_file, max_length, false
+            fwt = FixWidthTable.get persistence_file, max_length, false
             fwt.add_point res
           rescue
             FileUtils.rm persistence_file
@@ -342,6 +343,7 @@ module Persistence
 
   def self.persist(file, prefix = "", persistence_type = :string, options = {}, &block)
     options = Misc.add_defaults options, :persistence => true
+
     persistence =
       Misc.process_options options, :persistence
 

@@ -121,14 +121,17 @@ class TSV
         }]
         self.key_field = options[:key]
         self.fields = options[:fields]
+        self.type = options[:type] || :double
       when Hash === file 
         @data = file
         self.key_field = options[:key]
         self.fields = options[:fields]
+        self.type = options[:type] || :double
       when TSV === file
         @data = file.data
-        self.key_field = file.key_field || options[:key]
-        self.fields = file.fields || options[:key_field]
+        self.key_field = options[:key] || file.key_field
+        self.fields = options[:fields] || file.fields
+        self.type = options[:type] || file.type
       when Persistence::TSV === file
         @data = file
         %w(case_insensitive namespace identifiers datadir fields key_field type filename cast).each do |key|
@@ -136,6 +139,13 @@ class TSV
             self.send "#{key}=".to_sym, @data.send(key.to_sym) 
           end
         end
+        self.key_field = options[:key] || file.key_field
+        self.fields    = options[:fields] || file.fields
+        self.type      = options[:type] || file.type
+
+        file.key_field = self.key_field
+        file.fields    = self.fields
+        file.type      = self.type
       else
         in_situ_persistence = Misc.process_options(options, :in_situ_persistence)
         @data, extra = Persistence.persist(file, :TSV, :tsv_extra, options) do |file, options, filename, persistence_file|

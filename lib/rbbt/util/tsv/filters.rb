@@ -37,9 +37,13 @@ module Filtered
       case
       when @match.match(/field:(.*)/)
         @fieldnum = data.identify_field $1
-        Misc.add_method(self, :match_entry) do |entry|
-          entry[fieldnum] == value
-        end
+        class << self
+          self
+        end.class_eval <<-EOC
+          def match_entry(entry)
+            entry[@fieldnum] == @value
+          end
+        EOC
       end
     end
 

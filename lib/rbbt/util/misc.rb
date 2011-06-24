@@ -108,6 +108,7 @@ module Misc
   end
 
   def self.redefine_method(object, old_method, new_method_name, &block)
+    return if object.respond_to? new_method_name
     metaclass = class << object; self end
     metaclass.send :alias_method, new_method_name, old_method
     metaclass.send :define_method, old_method, &block

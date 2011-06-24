@@ -40,6 +40,17 @@ class TCHash < TokyoCabinet::HDB
     end
   end
 
+  class TSVSerializer
+    def self.dump(tsv)
+      tsv.to_s
+    end
+
+    def self.load(string)
+      TSV.new StringIO.new(string)
+    end
+  end
+
+
 
   ALIAS = {:integer => IntegerSerializer, 
     :integer_array => IntegerArraySerializer,
@@ -48,7 +59,9 @@ class TCHash < TokyoCabinet::HDB
     :single => StringSerializer,
     :string => StringSerializer,
     :list => StringArraySerializer,
-    :double => StringDoubleArraySerializer}
+    :double => StringDoubleArraySerializer,
+    :tsv => TSVSerializer
+  }
 
   CONNECTIONS = {}
 

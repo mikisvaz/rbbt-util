@@ -54,6 +54,22 @@ class TestTCHash < Test::Unit::TestCase
     end
   end
 
+  def test_stringDoubleArraySerializer
+    TmpFile.with_file do |f|
+      t = TCHash.get f, true, TCHash::TSVSerializer
+      tsv = TSV.new({})
+      tsv["1"] = [[1],[2]]
+      tsv["2"] = [[3],[4,5]]
+      t["TSV"] = tsv
+
+      t = TCHash.get f
+      t.collect do |k,v| 
+       assert_equal [["3"],["4","5"]], t["TSV"]["2"]
+      end
+    end
+  end
+
+ 
   def test_serializer_alias
     TmpFile.with_file do |f|
       t = TCHash.get f, true, :double
