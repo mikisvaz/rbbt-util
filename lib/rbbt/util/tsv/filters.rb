@@ -5,7 +5,7 @@ module Filtered
     attr_accessor :filters
 
     def ids
-      ids = filters.inject(nil){|list,filter| list.nil? ? filter.ids : Misc.merge_sorted_arrays(list, filter.ids.dup)}
+      ids = filters.inject(nil){|list,filter| list.nil? ? filter.ids.dup : Misc.merge_sorted_arrays(list, filter.ids.dup)}
     end
 
     def method_missing(name, *args)
@@ -150,7 +150,7 @@ module Filtered
     if filters.empty?
       self.send(:unfiltered_keys)
     else
-      filters.inject(nil){|list,filter| list.nil? ? filter.ids : Misc.intersect_sorted_arrays(list, filter.ids.dup)}
+      filters.inject(nil){|list,filter| list.nil? ? filter.ids.dup : Misc.intersect_sorted_arrays(list, filter.ids.dup)}
     end
     end
 
@@ -158,7 +158,7 @@ module Filtered
       if filters.empty?
         self.send(:unfiltered_values)
       else
-        ids = filters.inject(nil){|list,filter| list.nil? ? filter.ids : Misc.intersect_sorted_arrays(list, filter.ids.dup)}
+        ids = filters.inject(nil){|list,filter| list.nil? ? filter.ids.dup : Misc.intersect_sorted_arrays(list, filter.ids.dup)}
         self.send :values_at, *ids
     end
     end
@@ -167,7 +167,7 @@ module Filtered
     if filters.empty?
       self.send(:unfiltered_each, &block)
     else
-      ids = filters.inject(nil){|list,filter| list.nil? ? filter.ids : Misc.intersect_sorted_arrays(list, filter.ids.dup)}
+      ids = filters.inject(nil){|list,filter| list.nil? ? filter.ids.dup : Misc.intersect_sorted_arrays(list, filter.ids.dup)}
       new = self.dup
       new.data = {}
 
@@ -183,7 +183,8 @@ module Filtered
     if filters.empty?
       self.send(:unfiltered_collect, &block)
     else
-      ids = filters.inject(nil){|list,filter| list = (list.nil? ? filter.ids : Misc.intersect_sorted_arrays(list, filter.ids))}
+      ids = filters.inject(nil){|list,filter| list = (list.nil? ? filter.ids.dup : Misc.intersect_sorted_arrays(list, filter.ids.dup))}
+
       new = self.dup
       new.data = {}
       ids.zip(self.send(:values_at, *ids)).each do |id, values|
@@ -213,7 +214,7 @@ module Filtered
   end
 
   def pop_filter
-    filters.pop
+    filters.pop.add_unsaved
   end
 
 end

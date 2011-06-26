@@ -55,7 +55,6 @@ class TCHash < TokyoCabinet::HDB
   ALIAS = {:integer => IntegerSerializer, 
     :integer_array => IntegerArraySerializer,
     :marshal => Marshal,
-    nil => Marshal,
     :single => StringSerializer,
     :string => StringSerializer,
     :list => StringArraySerializer,
@@ -116,17 +115,20 @@ class TCHash < TokyoCabinet::HDB
 
     @write = write
 
-    if self.include? FIELD_INFO_ENTRIES[:serializer]
-      serializer_str = self.original_get_brackets(FIELD_INFO_ENTRIES[:serializer])
+    if @serializer.nil?
 
-      mod = Misc.string2const serializer_str
-      @serializer = mod
+      if self.include? FIELD_INFO_ENTRIES[:serializer]
+        serializer_str = self.original_get_brackets(FIELD_INFO_ENTRIES[:serializer])
 
-    else
-      raise "No serializer specified" if serializer.nil?
+        mod = Misc.string2const serializer_str
+        @serializer = mod
 
-      self.original_set_brackets(FIELD_INFO_ENTRIES[:serializer], serializer.to_s) unless self.include? FIELD_INFO_ENTRIES[:serializer]
-      @serializer = serializer
+      else
+        raise "No serializer specified" if (serializer || @serializer).nil?
+
+        self.original_set_brackets(FIELD_INFO_ENTRIES[:serializer], serializer.to_s) unless self.include? FIELD_INFO_ENTRIES[:serializer]
+        @serializer = serializer
+      end
     end
   end
 
@@ -146,22 +148,33 @@ class TCHash < TokyoCabinet::HDB
     self.open(false)
   end
 
-  def initialize(path, write = false, serializer = Marshal)
+  def initialize(path, write = false, serializer = nil)
     super()
 
-    serializer = ALIAS[serializer] if ALIAS.include? serializer
+    if ALIAS.include? serializer
+      @serializer = ALIAS[serializer]
+    else
+      @serializer = serializer
+    end
 
     @path_to_db = path
 
     if write || ! File.exists?(@path_to_db)
+      @serializer = Marshal if @serializer.nil?
       self.setcache(100000) or raise "Error setting cache"
-      self.open(true, serializer)
+      self.open(true, @serializer)
+      self.original_set_brackets(FIELD_INFO_ENTRIES[:serializer], @serializer.to_s)
     else
       self.open(false)
     end
   end
 
-  def self.get(path, write = false, serializer = Marshal)
+  def self.get(path, write = false, serializer = nil)
+    if not (TrueClass === write or FalseClass === write) and serializer.nil?
+      serializer = write
+      write = false
+    end
+
     if ALIAS.include? serializer
       serializer = ALIAS[serializer] 
     else
