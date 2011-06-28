@@ -178,22 +178,28 @@ module Persistence
       Log.debug "Creating #{ persistence_file }. Prefix = #{prefix}"
 
       res = yield file, options, filename, persistence_file
+
       serializer = tsv_serializer res
 
-      if File.exists? persistence_file
-        Log.debug "Erasing old #{ persistence_file }. Prefix = #{prefix}"
-        FileUtils.rm persistence_file
-      end
+      if TCHash === res
+        per = res
+      else
 
-      Log.debug "Dump data into '#{persistence_file}'"
-      per = Persistence::TSV.get persistence_file, true, serializer
+        if File.exists? persistence_file
+          Log.debug "Erasing old #{ persistence_file }. Prefix = #{prefix}"
+          FileUtils.rm persistence_file
+        end
 
-      per.write
-      per.merge! res
+        Log.debug "Dump data into '#{persistence_file}'"
+        per = Persistence::TSV.get persistence_file, true, serializer
 
-      Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
-        if res.respond_to?(key.to_sym) and per.respond_to?("#{key}=".to_sym)
-          per.send "#{key}=".to_sym, res.send(key.to_sym) 
+        per.write
+        per.merge! res
+
+        Persistence::TSV::FIELD_INFO_ENTRIES.keys.each do |key| 
+          if res.respond_to?(key.to_sym) and per.respond_to?("#{key}=".to_sym)
+            per.send "#{key}=".to_sym, res.send(key.to_sym) 
+          end
         end
       end
 

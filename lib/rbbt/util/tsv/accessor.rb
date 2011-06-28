@@ -33,7 +33,7 @@ class TSV
 
     def fullname
       return self if self =~ /:/ or namespace.nil?
-      namespace + ":" << self
+      namespace.to_s + ":" << self
     end
 
     def ==(string)
@@ -143,8 +143,8 @@ class TSV
   def fields=(new_fields)
     new_fields.collect! do |field| 
       if Field === field
-        if field !~ /:/ and field.namespace != nil and field.namespace != namespace
-          field.namespace + ":" + field.to_s
+        if field !~ /:/ and field.namespace != nil and field.namespace.to_s != namespace.to_s
+          field.namespace.to_s + ":" + field.to_s
         else
           field
         end

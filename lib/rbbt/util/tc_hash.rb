@@ -92,6 +92,12 @@ class TCHash < TokyoCabinet::HDB
     out(key) or raise "Not deleted"
   end
 
+  alias original_include? include?
+  def include?(key)
+    return nil unless String === key
+    original_include? key
+  end
+
   attr_accessor :serializer
   def serializer=(serializer)
     
