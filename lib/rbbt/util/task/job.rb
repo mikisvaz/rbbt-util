@@ -2,7 +2,7 @@ require 'rbbt/util/misc'
 
 class Task
   class Job
-    attr_accessor :task, :id, :name, :options, :previsous_jobs, :required_files, :pid, :path, :previous_jobs, :input
+    attr_accessor :task, :id, :name, :options, :previous_jobs, :required_files, :pid, :path, :previous_jobs, :input
 
     IDSEP = "_"
 

@@ -98,7 +98,7 @@ class TCHash < TokyoCabinet::HDB
     original_include? key
   end
 
-  attr_accessor :serializer
+  attr_accessor :serializer, :path_to_db
   def serializer=(serializer)
     
     if ALIAS.include? serializer.to_sym
