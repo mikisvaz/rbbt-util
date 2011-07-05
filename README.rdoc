@@ -1,0 +1,65 @@
+= Install
+
+1 - install rvm: https://rvm.beginrescueend.com/ (will need git and curl installed)
+
+    :script
+
+    bash < <(curl -s https://rvm.beginrescueend.com/install/rvm)
+    cd
+    cat .bashrc > tmp.bashrc
+    echo '[[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"' >> tmp.bashrc
+    cp .bashrc .bashrc.save
+    mv tmp.bashrc .bashrc
+    . .bashrc
+    rvm install 1.8.7
+    
+2 - install tokyocabinet (Intructions for user install follow. For system level, make sure we have dev package)
+    1 - download source from http://fallabs.com/tokyocabinet/tokyocabinet-1.4.47.tar.gz
+    2 - unpack and compile using a user-level prefix
+    3 - set LD_RUN_PATH and LD_LIBRARY_PATH to point there
+    
+    :script
+
+    cd
+    mkdir -p tmp/tokyocabinet   
+    cd tmp/tokyocabinet
+    wget "http://fallabs.com/tokyocabinet/tokyocabinet-1.4.47.tar.gz"
+    tar xvfz tokyocabinet-1.4.47.tar.gz
+    cd tokyocabinet-1.4.47
+        ./configure --prefix="$HOME/software/opt/tokyocabinet"
+        make
+        make install
+    cd
+    cat .profile > tmp.profile
+    echo "export LD_RUN_PATH='$LD_RUN_PATH:$HOME/software/opt/tokyocabinet/lib'" >> tmp.profile
+    echo "export LD_LIBRARY_PATH='$LD_LIBRARY_PATH:$HOME/software/opt/tokyocabinet/lib'" >> tmp.profile
+    echo "export PATH='$PATH:$HOME/software/opt/tokyocabinet/bin'" >> tmp.profile
+    cp .profile .profile.save
+    mv tmp.profile .profile
+    . .profile
+    
+3 - install gems rbbt-util rbbt-sources rbbt-text rbbt-phgx
+
+    :script
+    
+    gem install rbbt-util rbbt-sources rbbt-text rbbt-phgx
+
+3.bis - Or install github repos and make ruby use them
+
+    :script
+
+    cd
+    cd git/
+    git clone git://github.com/mikisvaz/rbbt-util.git
+    git clone git://github.com/mikisvaz/rbbt-sources.git
+    git clone git://github.com/mikisvaz/rbbt-text.git
+    git clone git://github.com/mikisvaz/rbbt-phgx.git
+    alias druby="env RBBT_LOG=0 ruby $(for d in $HOME/git/rbbt-*;do echo -n "-I$d/lib ";done)"
+    alias drake="env RBBT_LOG=0 rake $(for d in $HOME/git/rbbt-*;do echo -n "-I$d/lib ";done)"
+
+4 - Set up R to find the helper lib
+
+    :script
+
+    echo "source(system('rbbt_Rutil.rb', intern =T));" >> $HOME/.Rprofile
+

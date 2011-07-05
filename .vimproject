@@ -1,5 +1,6 @@
 rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf" {
  Rakefile
+ README.rdoc
  bin=bin {
   excel2tsv.rb
   tsv.rb
