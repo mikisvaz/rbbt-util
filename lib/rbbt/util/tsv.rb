@@ -133,6 +133,7 @@ class TSV
         self.fields = options[:fields] || file.fields
         self.type = options[:type] || file.type
       when Persistence::TSV === file
+        Log.debug("Reopening persistence file #{ file.path_to_db }")
         @data = file
         %w(case_insensitive namespace identifiers datadir fields key_field type filename cast).each do |key|
           if @data.respond_to?(key.to_sym)  and self.respond_to?("#{key}=".to_sym)

@@ -254,7 +254,7 @@ row3    a2
       tsv = TSV.new(filename + '#:sep=/\s+/#:type=:single')
 
       #TODO: WTF!!!
-      assert_equal "row1", tsv.reorder("LetterValue", :key)[97]
+      assert_equal "row3", tsv.reorder("LetterValue", :key)[97]
     end
  
   end

@@ -119,22 +119,19 @@ class TSV
       new_fields    = options[:new_fields]
 
       new = {}
-      new_key_field, new_fields = through new_key_field, new_fields do |key, values|
-        if Array === key
-          keys = key
-        else
-          keys = [key]
-        end
-
-        new_values = keys.each do |key|
-          if new[key].nil?
-            new[key] = values
-          else
-            if type == :double
-              new[key] = new[key].zip(values).collect{|v| v.flatten}
+      new_key_field, new_fields = through new_key_field, new_fields do |keys, values|
+        if Array === keys
+          keys.each do |key|
+            if new[key].nil? or not type == :double
+              new[key] = values.collect{|l| l.dup}
+            else
+              new[key] = new[key].zip(values).collect{|old_list, new_list| old_list.concat new_list}
             end
           end
+        else
+          new[keys] = values
         end
+        nil
       end
 
       new = TSV.new new

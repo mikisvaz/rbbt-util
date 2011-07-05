@@ -1,5 +1,6 @@
 require 'rbbt/util/misc'
 require 'tokyocabinet'
+require 'set'
 
 class TCHash < TokyoCabinet::HDB
   class OpenError < StandardError;end
@@ -8,6 +9,11 @@ class TCHash < TokyoCabinet::HDB
   class IntegerSerializer
     def self.dump(i); [i].pack("l"); end
     def self.load(str); str.unpack("l").first; end
+  end
+
+  class FloatSerializer
+    def self.dump(i); [i].pack("d"); end
+    def self.load(str); str.unpack("d").first; end
   end
 
   class IntegerArraySerializer
@@ -52,7 +58,9 @@ class TCHash < TokyoCabinet::HDB
 
 
 
-  ALIAS = {:integer => IntegerSerializer, 
+  ALIAS = {
+    :integer => IntegerSerializer, 
+    :float => FloatSerializer, 
     :integer_array => IntegerArraySerializer,
     :marshal => Marshal,
     :single => StringSerializer,
@@ -253,6 +261,7 @@ class TCHash < TokyoCabinet::HDB
     values.collect{|v| serializer.load(v)}
   end
 
+  alias real_original_each each
   # This version of each fixes a problem in ruby 1.9. It also
   # removes the special entries
   def each(&block)
@@ -264,17 +273,26 @@ class TCHash < TokyoCabinet::HDB
     keys.zip(values.collect{|v| serializer.load v}).each &block
   end
 
+  def each(&block)
+    skippable = Set.new(FIELD_INFO_ENTRIES.values)
+    real_original_each do |key, value|
+      block.call(key, serializer.load(value)) unless skippable.include? key
+    end
+  end
+
   alias original_each each
   
-  def collect
+  def collect(&block)
+    skippable = Set.new(FIELD_INFO_ENTRIES.values)
     res = []
-    self.each{|k, v| 
+    real_original_each do |key,value|
+      next if skippable.include? key
       if block_given?
-        res << yield(k,v)
+        block.call(key, serializer.load(value)) 
       else
-        res << [k,v]
+        res << [key, value]
       end
-    }
+    end
     res
   end
 
