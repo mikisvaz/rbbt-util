@@ -6,11 +6,11 @@
 
     bash < <(curl -s https://rvm.beginrescueend.com/install/rvm)
     cd
-    cat .bashrc > tmp.bashrc
-    echo '[[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"' >> tmp.bashrc
-    cp .bashrc .bashrc.save
-    mv tmp.bashrc .bashrc
-    . .bashrc
+    cat .bash_profile > tmp.bash_profile
+    echo '[[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"' >> tmp.bash_profile
+    cp .bash_profile .bash_profile.save
+    mv tmp.bash_profile .bash_profile
+    . .bash_profile
     rvm install 1.8.7
     
 2 - install tokyocabinet (Intructions for user install follow. For system level, make sure we have dev package)
@@ -30,13 +30,13 @@
         make
         make install
     cd
-    cat .profile > tmp.profile
-    echo "export LD_RUN_PATH='$LD_RUN_PATH:$HOME/software/opt/tokyocabinet/lib'" >> tmp.profile
-    echo "export LD_LIBRARY_PATH='$LD_LIBRARY_PATH:$HOME/software/opt/tokyocabinet/lib'" >> tmp.profile
-    echo "export PATH='$PATH:$HOME/software/opt/tokyocabinet/bin'" >> tmp.profile
-    cp .profile .profile.save
-    mv tmp.profile .profile
-    . .profile
+    cat .bash_profile > tmp.bash_profile
+    echo "export LD_RUN_PATH='$LD_RUN_PATH:$HOME/software/opt/tokyocabinet/lib'" >> tmp.bash_profile
+    echo "export LD_LIBRARY_PATH='$LD_LIBRARY_PATH:$HOME/software/opt/tokyocabinet/lib'" >> tmp.bash_profile
+    echo "export PATH='$PATH:$HOME/software/opt/tokyocabinet/bin'" >> tmp.bash_profile
+    cp .bash_profile .bash_profile.save2
+    mv tmp.bash_profile .bash_profile
+    . .bash_profile
     
 3 - install gems rbbt-util rbbt-sources rbbt-text rbbt-phgx
 
