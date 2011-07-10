@@ -202,13 +202,11 @@ row2    A    B
         assert TCHash === tsv1.data
         assert !tsv1.case_insensitive
         assert tsv1.include? "A"
-        ddd tsv1.filename
 
         tsv1 = TSV.new(tchash, :key => "ValueA")
         assert TCHash === tsv1.data
         assert !tsv1.case_insensitive
         assert tsv1.include? "A"
-        ddd tsv1.filename
       end
     end
  
@@ -217,5 +215,22 @@ row2    A    B
   def test_with_hash
     assert TSV === TSV.new {}, :list
   end
+
+  def test_importtsv
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content.gsub(/ +/, "\t")) do |filename|
+      TmpFile.with_file do |db|
+        tsv = TSV.new(filename, :fast_persist => true)
+        assert_equal %w(a aa aaa), tsv["row1"]["ValueA"]
+      end
+    end
+  end
+
+
 end
 

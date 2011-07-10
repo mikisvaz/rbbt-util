@@ -32,7 +32,6 @@ end
 
 module Misc
   class FieldNotFoundError < StandardError;end
-
   def self.in_dir(dir)
     old_pwd = FileUtils.pwd
     begin
@@ -41,6 +40,24 @@ module Misc
     ensure
       FileUtils.cd old_pwd
     end
+  end
+
+  def self.pull_data_keys(hash)
+    new = {}
+    hash.keys.each do |key|
+      case
+      when String === key
+        if key =~ /data_(.*)/
+          new[$1] = hash.delete key
+        end
+      when Symbol === key
+        if key.to_s =~ /data_(.*)/
+          new[$1.to_sym] = hash.delete key
+        end
+      end
+    end
+    
+    new
   end
 
   def self.intersect_sorted_arrays(a1, a2)

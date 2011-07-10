@@ -32,7 +32,8 @@ class Task
 
     def previous_jobs_rec
       return [] if previous_jobs.nil?
-      previous_jobs + previous_jobs.collect{|job| job.previous_jobs_rec}.flatten
+      prev = previous_jobs + previous_jobs.collect{|job| job.previous_jobs_rec}.flatten
+      NamedArray.name prev, prev.collect{|job| job.task.name}
     end
 
     def previous_jobs=(previous_jobs)
@@ -221,6 +222,7 @@ class Task
     def run
       return self if recursive_done?
       begin
+        FileUtils.rm info_file if File.exists? info_file
         step(:started)
         start
         step(:done)

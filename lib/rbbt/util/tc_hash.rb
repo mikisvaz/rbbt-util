@@ -321,4 +321,26 @@ class TCHash < TokyoCabinet::HDB
     read if restore
   end
 
+  def self.importtsv(file, path, options = {})
+    CMD.cmd("tchmgr importtsv '#{ path }' #{ file }")
+    f = Open.open(file)
+    key_field, fields, header_options = TSV.parse_header(f)
+    f.close
+    options = header_options.merge! options
+
+    db = TCHash.get(path, true, options[:type] || :double)
+    db.key_field = key_field
+    db.fields = fields
+    %w(case_insensitive namespace identifiers fields key_field type filename cast).each do |key| 
+      if options.include? key.to_sym
+        if db.respond_to? "#{key}=".to_sym
+          db.send("#{key}=".to_sym, options[key.to_sym])
+        end
+      end
+    end 
+    db.read
+
+    db
+  end
+
 end

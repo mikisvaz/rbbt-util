@@ -323,13 +323,18 @@ class TSV
       :persistence => true, :persistence_file => nil, :persistence_update => false, :persistence_source => file, :tsv_serializer => :list,
       :data_persistence => false, :data_persistence_file => nil, :data_persistence_update => false, :data_persistence_source => file
 
-    options_data = {
-      :persistence        => Misc.process_options(options, :data_persistence),
-      :persistence_file   => Misc.process_options(options, :data_persistence_file),
-      :persistence_update => Misc.process_options(options, :data_persistence_update),
-      :persistence_source => Misc.process_options(options, :data_persistence_source),
-    }
+    #options_data = {
+    #  :cast               => Misc.process_options(options, :data_cast),
+    #  :persistence        => Misc.process_options(options, :data_persistence),
+    #  :monitor            => Misc.process_options(options, :data_monitor),
+    #  :persistence_file   => Misc.process_options(options, :data_persistence_file),
+    #  :persistence_update => Misc.process_options(options, :data_persistence_update),
+    #  :in_situ_persistence => Misc.process_options(options,:data_in_situ_persistence),
+    #  :persistence_source => Misc.process_options(options, :data_persistence_source),
+    #  :importtsv => Misc.process_options(options, :data_importtsv),
+    #}
 
+    options_data = Misc.pull_data_keys(options)
 
     prefix = "Pos[#{pos_field}]"
 

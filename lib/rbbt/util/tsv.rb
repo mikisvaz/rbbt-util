@@ -149,71 +149,94 @@ class TSV
         file.type      = self.type
       else
         in_situ_persistence = Misc.process_options(options, :in_situ_persistence)
-        @data, extra = Persistence.persist(file, :TSV, :tsv_extra, options) do |file, options, filename, persistence_file|
-          data, extra = nil
+        fast_persist = Misc.process_options(options, :fast_persist)
+        options[:persistence] = true if fast_persist
 
-          if in_situ_persistence and persistence_file
-            options.merge! :persistence_data => Persistence::TSV.get(persistence_file, true, :double)
-          end
-
-          begin
-            case
-              ## Parse source
-            when Resource::Path === file #(String === file and file.respond_to? :open)
-              data, extra = TSV.parse(file.open(:grep => options[:grep]) , options)
-              extra[:namespace] ||= file.namespace
-              extra[:datadir]   ||= file.datadir
-            when StringIO === file
-              data, extra = TSV.parse(file, options)
-            when Open.can_open?(file)
-              Open.open(file, :grep => options[:grep]) do |f|
-                data, extra = TSV.parse(f, options)
-              end
-            when File === file
-              path = file.path
-              file = Open.grep(file, options[:grep]) if options[:grep]
-              data, extra = TSV.parse(file, options)
-            when IO === file
-              file = Open.grep(file, options[:grep]) if options[:grep]
-              data, extra = TSV.parse(file, options)
-            when block_given?
-              data 
-            else
-              raise "Unknown input in TSV.new #{file.inspect}"
+        if fast_persist
+          @data = Persistence.persist(file, :TSV, :tsv, options) do |file, options, filename, persistence_file|
+            if Resource::Path === file
+              file = file.find
             end
 
-            extra[:filename] = filename
-          rescue Exception
-            FileUtils.rm persistence_file if persistence_file and File.exists?(persistence_file)
-            raise $!
+            TCHash.importtsv(file, persistence_file)
+          end
+          TCHash::FIELD_INFO_ENTRIES.keys.each do |key| 
+            if @data.respond_to?(key.to_sym) and self.respond_to?("#{key}=".to_sym)
+              self.send "#{key}=".to_sym,  @data.send(key.to_sym) 
+            end
           end
 
-          if Persistence::TSV === data
-            %w(case_insensitive namespace identifiers fields key_field type filename cast).each do |key| 
-              if extra.include? key.to_sym
-                if data.respond_to? "#{key}=".to_sym
-                  data.send("#{key}=".to_sym, extra[key.to_sym])
+        else
+          @data, extra = Persistence.persist(file, :TSV, :tsv_extra, options) do |file, options, filename, persistence_file|
+            data, extra = nil
+
+            if in_situ_persistence and persistence_file
+              options.merge! :persistence_data => Persistence::TSV.get(persistence_file, true, :double)
+            end
+
+            begin
+              case
+                ## Parse source
+              when Resource::Path === file #(String === file and file.respond_to? :open)
+                data, extra = TSV.parse(file.open(:grep => options[:grep]) , options)
+                extra[:namespace] ||= file.namespace
+                extra[:datadir]   ||= file.datadir
+              when StringIO === file
+                data, extra = TSV.parse(file, options)
+              when Open.can_open?(file)
+                Open.open(file, :grep => options[:grep]) do |f|
+                  data, extra = TSV.parse(f, options)
                 end
+              when File === file
+                path = file.path
+                file = Open.grep(file, options[:grep]) if options[:grep]
+                data, extra = TSV.parse(file, options)
+              when IO === file
+                file = Open.grep(file, options[:grep]) if options[:grep]
+                data, extra = TSV.parse(file, options)
+              when block_given?
+                data 
+              else
+                raise "Unknown input in TSV.new #{file.inspect}"
               end
-            end 
-            data.read
+
+              extra[:filename] = filename
+            rescue Exception
+              FileUtils.rm persistence_file if persistence_file and File.exists?(persistence_file)
+              raise $!
+            end
+
+            if Persistence::TSV === data
+              %w(case_insensitive namespace identifiers fields key_field type filename cast).each do |key| 
+                if extra.include? key.to_sym
+                  if data.respond_to? "#{key}=".to_sym
+                    data.send("#{key}=".to_sym, extra[key.to_sym])
+                  end
+                end
+              end 
+              data.read
+            end
+
+            [data, extra]
           end
- 
-          [data, extra]
         end
       end
-    end
 
-    if not extra.nil? 
-      %w(case_insensitive namespace identifiers fields key_field type filename cast).each do |key| 
-        if extra.include? key.to_sym
-          self.send("#{key}=".to_sym, extra[key.to_sym])
-          #if @data.respond_to? "#{key}=".to_sym
-          #  @data.send("#{key}=".to_sym, extra[key.to_sym])
-          #end
-        end
-      end 
+      if not extra.nil? 
+        %w(case_insensitive namespace identifiers fields key_field type filename cast).each do |key| 
+          if extra.include? key.to_sym
+            self.send("#{key}=".to_sym, extra[key.to_sym])
+            #if @data.respond_to? "#{key}=".to_sym
+            #  @data.send("#{key}=".to_sym, extra[key.to_sym])
+            #end
+          end
+        end 
+      end
     end
+  end
+
+  def close
+    @data.close if @data.respond_to? :close
   end
 
   def write

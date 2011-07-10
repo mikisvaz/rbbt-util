@@ -138,7 +138,20 @@ class TestTCHash < Test::Unit::TestCase
     end
   end
 
+  def test_importtsv
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
 
+    TmpFile.with_file(content.gsub(/ +/, "\t")) do |filename|
+      TmpFile.with_file do |db|
+        tsv = TSV.new(TCHash.importtsv(filename, db))
+        assert_equal %w(a aa aaa), tsv["row1"]["ValueA"]
+      end
+    end
+  end
 
 end
 

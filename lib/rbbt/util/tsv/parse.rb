@@ -4,11 +4,7 @@ class TSV
  
   def self.parse_fields(io, delimiter = "\t")
     return [] if io.nil?
-
-    ## split with delimiter, do not remove empty
-    fields = io.split(delimiter, -1)
-
-    fields
+    io.split(delimiter, -1)
   end
 
   def self.parse_header(stream, sep = nil, header_hash = nil)
