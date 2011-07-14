@@ -55,7 +55,7 @@ def fix_options(task, job_options)
   job_options_cleaned
 end
 
-options = SOPT.get "-t--task*:-l--log*:-h--help:-n--name:-cl--clean:-rcl-recursive_clean"
+options = SOPT.get "-t--task*:-l--log*:-h--help:-n--name*:-cl--clean:-rcl-recursive_clean"
 
 # Set log, fork, clean, recursive_clean and help
 Log.severity = options[:log].to_i if options.include? :log
