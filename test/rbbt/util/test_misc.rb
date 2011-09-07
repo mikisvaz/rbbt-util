@@ -4,53 +4,72 @@ require 'test/unit'
 
 class TestMisc < Test::Unit::TestCase
 
-  def test_pdf2text_example
-    assert PDF2Text.pdf2text(datafile_test('example.pdf')).read =~ /An Example Paper/i
+  def test_id_filename?
+    TmpFile.with_file("") do |file|
+      assert Misc.is_filename?(file)
+      assert ! Misc.is_filename?("TEST STRING")
+    end
   end
 
-  def test_pdf2text_EPAR
-    assert PDF2Text.pdf2text("http://www.ema.europa.eu/docs/en_GB/document_library/EPAR_-_Scientific_Discussion/human/000402/WC500033103.pdf").read =~ /Tamiflu/i
+  def test_merge_sorted_arrays
+    assert_equal [1,2,3,4], Misc.merge_sorted_arrays([1,3], [2,4])
   end
 
-  def test_pdf2text_wrong
-    assert_raise CMD::CMDError do PDF2Text.pdf2text("http://www.ema.europa.eu/docs/en_GB#").read end
+  def test_intersect_sorted_arrays
+    assert_equal [2,4], Misc.intersect_sorted_arrays([1,2,3,4], [2,4])
   end
+  def test_process_to_hash
+    list = [1,2,3,4]
+    assert_equal 4, Misc.process_to_hash(list){|l| l.collect{|e| e * 2}}[2]
+  end
+
+#  def test_pdf2text_example
+#    assert PDF2Text.pdf2text(datafile_test('example.pdf')).read =~ /An Example Paper/i
+#  end
+#
+#  def test_pdf2text_EPAR
+#    assert PDF2Text.pdf2text("http://www.ema.europa.eu/docs/en_GB/document_library/EPAR_-_Scientific_Discussion/human/000402/WC500033103.pdf").read =~ /Tamiflu/i
+#  end
+#
+#  def test_pdf2text_wrong
+#    assert_raise CMD::CMDError do PDF2Text.pdf2text("http://www.ema.europa.eu/docs/en_GB#").read end
+#  end
 
   def test_string2hash
     assert(Misc.string2hash("--user-agent=firefox").include? "--user-agent")
-    assert(Misc.string2hash(":true")[:true] == true)
-    assert(Misc.string2hash("true")["true"] == true)
-    assert(Misc.string2hash("a=1")["a"] == 1)
-    assert(Misc.string2hash("a=b")["a"] == 'b')
-    assert(Misc.string2hash("a=b#c=d#:h=j")["c"] == 'd')
-    assert(Misc.string2hash("a=b#c=d#:h=j")[:h] == 'j')
-    assert(Misc.string2hash("a=b#c=d#:h=:j")[:h] == :j)
+    assert_equal(true, Misc.string2hash(":true")[:true])
+    assert_equal(true, Misc.string2hash("true")["true"])
+    assert_equal(1, Misc.string2hash("a=1")["a"])
+    assert_equal('b', Misc.string2hash("a=b")["a"])
+    assert_equal('d', Misc.string2hash("a=b#c=d#:h=j")["c"])
+    assert_equal('j', Misc.string2hash("a=b#c=d#:h=j")[:h])
+    assert_equal(:j, Misc.string2hash("a=b#c=d#:h=:j")[:h])
   end
   
   def test_named_array
-    a = NamedArray.name([1,2,3,4], %w(a b c d))
+    a = NamedArray.setup([1,2,3,4], %w(a b c d))
     assert_equal(1, a['a'])
   end
 
-  def test_path_relative_to
-    assert_equal "test/foo", Misc.path_relative_to('test/test/foo', 'test')
-  end
+#  def test_path_relative_to
+#    assert_equal "test/foo", Misc.path_relative_to('test/test/foo', 'test')
+#  end
 
-  def test_chunk
-    test =<<-EOF
-This is an example file. Entries are separated by Entry
--- Entry
-1
-2
-3
--- Entry
-4
-5
-6
-    EOF
-
-    assert_equal "1\n2\n3", Misc.chunk(test, /^-- Entry/).first.strip
-  end
+#  def test_chunk
+#    test =<<-EOF
+#This is an example file. Entries are separated by Entry
+#-- Entry
+#1
+#2
+#3
+#-- Entry
+#4
+#5
+#6
+#    EOF
+#
+#    assert_equal "1\n2\n3", Misc.chunk(test, /^-- Entry/).first.strip
+#  end
 
   def test_hash2string
     hash = {}
@@ -71,11 +90,11 @@ This is an example file. Entries are separated by Entry
     hash = {:a => /test/}
     assert_equal({}, Misc.string2hash(Misc.hash2string(hash)))
  
- end
+  end
 
   def test_merge
     a = [[1],[2]]
-    a = NamedArray.name a, %w(1 2)
+    a = NamedArray.setup a, %w(1 2)
     a.merge [3,4]
     assert_equal [1,3], a[0]
   end
@@ -112,51 +131,50 @@ This is an example file. Entries are separated by Entry
       end
       pids.each do |pid| Process.waitpid pid; assert $?.success? end
     end
-
   end
 
-  def test_divide
-    assert_equal 2, Misc.divide(%w(1 2 3 4 5 6 7 8 9),2).length
-  end
+#  def test_divide
+#    assert_equal 2, Misc.divide(%w(1 2 3 4 5 6 7 8 9),2).length
+#  end
+#
+#  def test_process_to_hash
+#    list = [1,2,3,4]
+#    assert_equal 4, Misc.process_to_hash(list){|l| l.collect{|e| e * 2}}[2]
+#  end
 
-  def test_process_to_hash
-    list = [1,2,3,4]
-    assert_equal 4, Misc.process_to_hash(list){|l| l.collect{|e| e * 2}}[2]
-  end
-
-  def test_add_method
-    a = "Test"
-    Misc.add_method a, :invert do self.reverse end
-    assert_equal "Test".reverse, a.invert
-  end
-
-  def test_redefine_method
-    a = "Test"
-    worked = false
-    Misc.redefine_method a, :reverse, :old_reverse do worked = true; self.old_reverse end
-    assert_equal "Test".reverse, a.reverse
-    assert worked
-  end
-
-  def test_merge_sorted_arrays
-    assert_equal [1,2,3,4], Misc.merge_sorted_arrays([1,3], [2,4])
-  end
-
-  def test_intersect_sorted_arrays
-    assert_equal [2,4], Misc.intersect_sorted_arrays([1,2,3,4], [2,4])
-  end
-
-
-  def test_in_dir
-    TmpFile.with_file do |dir|
-      FileUtils.mkdir_p dir
-      Open.write(File.join(dir, 'test_file_in_dir'), 'test_file_in_dir')
-      Misc.in_dir(dir) do
-        assert Dir.glob("*").include? 'test_file_in_dir'
-      end
-      assert Dir.glob(File.join(dir, "*")).include?(File.join(dir, 'test_file_in_dir'))
-      assert(! Dir.glob("*").include?('test_file_in_dir'))
-    end
-  end
+#  def test_add_method
+#    a = "Test"
+#    Misc.add_method a, :invert do self.reverse end
+#    assert_equal "Test".reverse, a.invert
+#  end
+#
+#  def test_redefine_method
+#    a = "Test"
+#    worked = false
+#    Misc.redefine_method a, :reverse, :old_reverse do worked = true; self.old_reverse end
+#    assert_equal "Test".reverse, a.reverse
+#    assert worked
+#  end
+#
+#  def test_merge_sorted_arrays
+#    assert_equal [1,2,3,4], Misc.merge_sorted_arrays([1,3], [2,4])
+#  end
+#
+#  def test_intersect_sorted_arrays
+#    assert_equal [2,4], Misc.intersect_sorted_arrays([1,2,3,4], [2,4])
+#  end
+#
+#
+#  def test_in_dir
+#    TmpFile.with_file do |dir|
+#      FileUtils.mkdir_p dir
+#      Open.write(File.join(dir, 'test_file_in_dir'), 'test_file_in_dir')
+#      Misc.in_dir(dir) do
+#        assert Dir.glob("*").include? 'test_file_in_dir'
+#      end
+#      assert Dir.glob(File.join(dir, "*")).include?(File.join(dir, 'test_file_in_dir'))
+#      assert(! Dir.glob("*").include?('test_file_in_dir'))
+#    end
+#  end
 
 end

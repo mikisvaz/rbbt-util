@@ -80,7 +80,7 @@ module Open
   # Cache
 
   def self.in_cache(url, options = {})
-    digest = Digest::MD5.hexdigest([url, options["--post-data"]].inspect)
+    digest = Digest::MD5.hexdigest([url, options["--post-data"], (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
 
     filename = File.join(REMOTE_CACHEDIR, digest)
     if File.exists? filename
@@ -91,7 +91,7 @@ module Open
   end
   
   def self.add_cache(url, data, options = {})
-    digest = Digest::MD5.hexdigest([url, options["--post-data"]].inspect)
+    digest = Digest::MD5.hexdigest([url, options["--post-data"], (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
     Misc.sensiblewrite(File.join(REMOTE_CACHEDIR, digest), data)
   end
 
@@ -181,6 +181,13 @@ module Open
     else
       io
     end
+
+    class << io;
+      attr_accessor :filename
+    end
+
+    io.filename = url.to_s
+    io
   end
 
   def self.can_open?(file)

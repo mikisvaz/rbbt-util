@@ -1,5 +1,6 @@
-rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf" {
+rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf LICENSE" {
  Rakefile
+ LICENSE
  README.rdoc
  bin=bin {
   excel2tsv.rb
@@ -13,70 +14,88 @@ rbbt=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt
  lib=lib{
   rbbt.rb
   rbbt-util.rb
-  util=rbbt/util {
-   cmd.rb
-   open.rb
-   log.rb
+  rbbt=rbbt{
+   util=util{
+    misc.rb
+    cmd.rb
+    log.rb
+    open.rb
 
-   misc.rb
-   simpleopt.rb
-   simpleDSL.rb
+    simpleopt.rb
+    simpleDSL.rb
 
-   tmpfile.rb
-   filecache.rb
-   
-   persistence.rb
-   tc_hash.rb
-   fix_width_table.rb
+    chain_methods.rb
+
+    tmpfile.rb
+    filecache.rb
+
+    R.rb
+
+    excel2tsv.rb
+
+    rake.rb
+   }
+
+   workflow.rb
+   workflow=workflow{
+    accessor.rb
+    annotate.rb
+    step.rb
+    task.rb
+    soap.rb
+    rest.rb
+   }
 
    tsv.rb
    tsv=tsv{
-    parse.rb
+    util.rb
+    serializers.rb
+    parser.rb
     accessor.rb
     manipulate.rb
     index.rb
     attach.rb
-    filters.rb
-    resource.rb
-    misc.rb
+    attach=attach{
+     util.rb
+    }
+    filter.rb
+   }
+   fix_width_table.rb
+
+   persist.rb
+   persist=persist{
+    tsv.rb
    }
 
-   excel2tsv.rb
-   R.rb
-
-   rake.rb
    resource.rb
+   resource=resource{
+    path.rb
+    util.rb
+    with_key.rb
+    rake.rb
+   }
 
-   workflow.rb
-   workflow=workflow{
-    soap.rb
-   }
-   task.rb
-   task=task{
-    job.rb
-   }
+   annotations.rb
   }
  }
  test=test {
   test_helper.rb
   test_rbbt.rb
-  test_pkg.rb
-  util=rbbt/util{
-   test_R.rb
-   test_cmd.rb
-   test_excel2tsv.rb
-   test_filecache.rb
+  rbbt=rbbt{
    test_fix_width_table.rb
-   test_misc.rb
-   test_open.rb
-   test_persistence.rb
-   test_rake.rb
    test_resource.rb
-   test_simpleDSL.rb
-   test_simpleopt.rb
-   test_tc_hash.rb
-   test_tmpfile.rb
    test_tsv.rb
+   util=util{
+    test_R.rb
+    test_cmd.rb
+    test_excel2tsv.rb
+    test_filecache.rb
+    test_misc.rb
+    test_open.rb
+    test_simpleDSL.rb
+    test_simpleopt.rb
+    test_tmpfile.rb
+   }
   }
  }
  integration_test=integration_test{

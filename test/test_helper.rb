@@ -1,23 +1,23 @@
-require 'test/unit'
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'rbbt'
-require 'rbbt/util/persistence'
-require 'rbbt/util/tmpfile'
+require 'test/unit'
 require 'rbbt/util/log'
+require 'rbbt/util/tmpfile'
+require 'rbbt/resource/path'
 require 'fileutils'
 
 class Test::Unit::TestCase
   include FileUtils
 
   def setup
-    Persistence.cachedir = Rbbt.tmp.test.persistence.find :user
+    Persist.cachedir = Rbbt.tmp.test.persistence.find :user
   end
 
   def teardown
-    FileUtils.rm_rf Rbbt.tmp.test.find :user
-    TCHash::CONNECTIONS.values.each do |c| c.close end
-    TCHash::CONNECTIONS.clear
+    FileUtils.rm_rf Path.setup("", 'rbbt').tmp.test.find :user
+    Persist::TC_CONNECTIONS.values.each do |c| c.close end
+    Persist::TC_CONNECTIONS.clear
   end
 
   def datafile_test(file)

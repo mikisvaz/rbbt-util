@@ -70,6 +70,7 @@ class TestOpen < Test::Unit::TestCase
 
   end
 
+
   def test_gzip
     content =<<-EOF
 1

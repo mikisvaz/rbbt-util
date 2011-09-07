@@ -7,7 +7,7 @@ class TestR < Test::Unit::TestCase
   end
 
   def test_tsv_R
-    tsv = TSV.new({:a => 1, :b => 2})
+    tsv = TSV.setup({:a => 1, :b => 2})
     tsv2 = tsv.R <<-EOF
 data = data + 1
     EOF

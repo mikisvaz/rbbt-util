@@ -1,5 +1,5 @@
 require 'rbbt/util/cmd'
-require 'rbbt/util/tsv'
+require 'rbbt/tsv'
 
 module R
 
@@ -24,7 +24,7 @@ module R
 
 end
 
-class TSV
+module TSV
   def R(script, open_options = {})
     TmpFile.with_file do |f|
       Open.write(f, self.to_s)
@@ -36,7 +36,7 @@ rbbt.tsv.write('#{f}', data);
       EOF
       ).read)
       open_options = Misc.add_defaults open_options, :type => :list
-      TSV.new(f, open_options)
+      TSV.open(f, open_options)
     end
   end
 end

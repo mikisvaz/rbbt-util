@@ -19,6 +19,7 @@ module Log
   SEVERITY_COLOR = ["0;37m", "0;32m", "0;33m", "0;31m", "1;0m" ].collect{|e| "\033[#{e}"}
 
   def self.log(message, severity = MEDIUM)
+    message ||= ""
     severity_color = SEVERITY_COLOR[severity]
     font_color = {false => "\033[0;37m", true => "\033[0m"}[severity >= INFO]
 

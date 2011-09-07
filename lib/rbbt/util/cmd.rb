@@ -4,10 +4,11 @@ require 'stringio'
 
 module CMD
 
-  class CMDError < RBBTError; end
+  class CMDError < StandardError; end
+
   module SmartIO 
-    attr_accessor :pid, :cmd, :post, :in, :out, :err
-    def self.tie(io, pid = nil, cmd = "",  post = nil, sin = nil, out = nil, err = nil)
+    attr_accessor :pid, :cmd, :post, :in, :out, :err, :log
+    def self.tie(io, pid = nil, cmd = "",  post = nil, sin = nil, out = nil, err = nil, log = true)
       io.extend SmartIO
       io.pid = pid
       io.cmd = cmd
@@ -15,6 +16,7 @@ module CMD
       io.out  = out 
       io.err  = err 
       io.post = post
+      io.log = log
 
       io.class.send(:alias_method, :original_close, :close)
       io.class.send(:alias_method, :original_read, :read)
@@ -28,10 +30,10 @@ module CMD
         rescue
         end
 
-        Log.debug "Process #{ cmd } succeded" if $? and $?.success?
+        Log.debug "Process #{ cmd } succeded" if $? and $?.success? and log
 
         if $? and not $?.success?
-          Log.debug "Raising exception"
+          Log.debug "Raising exception" if log
           exception = CMDError.new "Command [#{@pid}] #{@cmd} failed with error status #{$?.exitstatus}"
           original_close
           raise exception
@@ -51,7 +53,7 @@ module CMD
 
     def force_close
       if @pid
-        Log.debug "Forcing close by killing '#{@pid}'"
+        Log.debug "Forcing close by killing '#{@pid}'" if log
         Process.kill("KILL", @pid)
         Process.waitpid(@pid)
       end
@@ -98,6 +100,9 @@ module CMD
     stderr     = options.delete(:stderr)
     pipe       = options.delete(:pipe)
     post       = options.delete(:post)
+    log        = options.delete(:log)
+
+    log = true if log.nil?
 
     if stderr == true
       stderr = Log::HIGH
@@ -149,8 +154,8 @@ module CMD
 
         exit(-1)
       rescue Exception
-        Log.debug("CMDError: #{$!.message}")
-        ddd $!.backtrace
+        Log.debug("CMDError: #{$!.message}") if log
+        ddd $!.backtrace if log
         raise CMDError, $!.message
       end
     }
@@ -164,7 +169,7 @@ module CMD
     serr = serr.first
     
 
-    Log.debug "CMD: [#{pid}] #{cmd}"
+    Log.debug "CMD: [#{pid}] #{cmd}" if log
 
     if in_content.respond_to?(:read)
       Thread.new do
@@ -190,7 +195,7 @@ module CMD
     if pipe
       Thread.new do
         while line = serr.gets
-          Log.log line, stderr if Integer === stderr
+          Log.log line, stderr if Integer === stderr and log
         end
         serr.close
         Thread.exit
@@ -216,11 +221,10 @@ module CMD
       Process.waitpid pid
 
       if not $?.success?
-        exception      = CMDError.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}"
-        exception.info = err if Integer === stderr and stderr >= Log.severity
+        exception      = CMDError.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"
         raise exception
       else
-        Log.log err, stderr if Integer === stderr
+        Log.log err, stderr if Integer === stderr and log
       end
 
       out

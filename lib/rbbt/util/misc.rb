@@ -1,63 +1,46 @@
-require 'iconv'
 require 'lockfile'
-require 'digest/md5'
-
-class RBBTError < StandardError
-  attr_accessor :info
-
-  alias old_to_s to_s
-  def to_s
-    str = old_to_s.dup
-    if info
-      str << "\n" << "Additional Info:\n---\n" << info << "---"
-    end
-    str
-  end
-end
-
-module IndiferentHash
-  def indiferent_get(key)
-    old_get(key) || 
-    old_get(key.to_s) || 
-    old_get(key.to_sym) 
-  end
-
-  def self.extended(base)
-    class << base
-      alias_method :old_get, :[]
-      alias_method :[], :indiferent_get
-    end
-  end
-end
+require 'rbbt/util/chain_methods'
+require 'rbbt/resource/path'
 
 module Misc
   class FieldNotFoundError < StandardError;end
-  def self.in_dir(dir)
-    old_pwd = FileUtils.pwd
-    begin
-      FileUtils.cd dir
-      yield
-    ensure
-      FileUtils.cd old_pwd
-    end
+
+  
+  IUPAC2BASE = {
+    "A" => ["A"],
+    "C" => ["C"],
+    "G" => ["G"],
+    "T" => ["T"],
+    "U" => ["U"],
+    "R" => "A or G".split(" or "),
+    "Y" => "C or T".split(" or "),
+    "S" => "G or C".split(" or "),
+    "W" => "A or T".split(" or "),
+    "K" => "G or T".split(" or "),
+    "M" => "A or C".split(" or "),
+    "B" => "C or G or T".split(" or "),
+    "D" => "A or G or T".split(" or "),
+    "H" => "A or C or T".split(" or "),
+    "V" => "A or C or G".split(" or "),
+    "N" => %w(A C T G),
+  }
+
+  BASE2COMPLEMENT = {
+    "A" => "T",
+    "C" => "G",
+    "G" => "C",
+    "T" => "A",
+    "U" => "A",
+  }
+
+  def self.IUPAC_to_base(iupac)
+    IUPAC2BASE[iupac]
   end
 
-  def self.pull_data_keys(hash)
-    new = {}
-    hash.keys.each do |key|
-      case
-      when String === key
-        if key =~ /data_(.*)/
-          new[$1] = hash.delete key
-        end
-      when Symbol === key
-        if key.to_s =~ /data_(.*)/
-          new[$1.to_sym] = hash.delete key
-        end
-      end
-    end
-    
-    new
+  def self.is_filename?(string)
+    return true if Path === string
+    return true if String === string and string.length < 265 and File.exists? string
+    return false
   end
 
   def self.intersect_sorted_arrays(a1, a2)
@@ -114,73 +97,21 @@ module Misc
     new
   end
 
-  def self.digest(text)
-    Digest::MD5.hexdigest(text)
-  end
-
-  def self.add_method(object, method_name, &block)
-    class << object
-      self
-    end.send :define_method, method_name, block
-  end
-
-  def self.redefine_method(object, old_method, new_method_name, &block)
-    return if object.respond_to? new_method_name
-    metaclass = class << object; self end
-    metaclass.send :alias_method, new_method_name, old_method
-    metaclass.send :define_method, old_method, &block
-  end
-
-  def self.filename?(filename)
-    String === filename and filename.length < 1024 and filename.index("\n").nil? and File.exists? filename
-  end
-
-  def self.lock(file, *args)
-    FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
-    lockfile = Lockfile.new(file + '.lock')
-    lockfile.lock do
-      yield file, *args
+  def self.array2hash(array)
+    hash = {}
+    array.each do |key, value|
+      hash[key] = value
     end
+    hash
   end
 
-  def self.string2const(string)
-    return nil if string.nil?
-    mod = Kernel
-
-    string.to_s.split('::').each do |str|
-      mod = mod.const_get str
-    end
-
-    mod
+  def self.zip2hash(list1, list2)
+    array2hash(list1.zip(list2))
   end
 
-  def self.path_relative_to(path, subdir)
-    File.expand_path(path).sub(/^#{Regexp.quote File.expand_path(subdir)}\/?/,'')
-  end
-
-  def self.in_directory?(file, directory)
-    if File.expand_path(file) =~ /^#{Regexp.quote File.expand_path(directory)}/
-      true
-    else
-      false
-    end
-  end
-
-  def self.find_files_back_to(path, target, subdir)
-    return [] if path.nil?
-    files = []
-    while in_directory?(path, subdir)
-      path = path.dirname
-      if path[target].exists?
-        files << path[target]
-      end
-    end
-
-    files
-  end
-
-  def self.this_dir
-    File.expand_path(File.dirname(caller[0]))
+  def self.process_to_hash(list)
+    result = yield list
+    zip2hash(list, result)
   end
 
   def self.env_add(var, value, sep = ":", prepend = true)
@@ -191,15 +122,6 @@ module Misc
       else
         ENV[var] += sep + ENV[var]
       end
-  end
-
-  def self.count(list)
-    counts = Hash.new 0
-    list.each do |item|
-      counts[item] += 1
-    end
-
-    counts
   end
 
   def self.benchmark(repeats = 1)
@@ -237,38 +159,18 @@ module Misc
     res
   end
 
-  def self.fixutf8(string)
-    if string.respond_to?(:valid_encoding?) and ! string.valid_encoding?
-      @@ic ||= Iconv.new('UTF-8//IGNORE', 'UTF-8')
-      @@ic.iconv(string)
-    else
-      string
+  def self.insist(times = 3)
+    try = 0
+    begin
+      yield
+    rescue
+      try += 1
+      retry if try < times
     end
   end
 
-  def self.add_defaults(options, defaults = {})
-    case
-    when Hash === options
-      new_options = options.dup
-    when String === options
-      new_options = string2hash options
-    else
-      raise "Format of '#{options.inspect}' not understood"
-    end
-    defaults.each do |key, value|
-      next unless new_options[key].nil?
-
-      new_options[key] = value 
-    end
-    new_options
-  end
-
-  def self.process_options(hash, *keys)
-    if keys.length == 1
-      hash.delete keys.first.to_sym
-    else
-      keys.collect do |key| hash.delete(key.to_sym) || hash.delete(key.to_s) end
-    end
+  def self.try3times(&block)
+    insist(3, &block)
   end
 
   def self.hash2string(hash)
@@ -279,65 +181,58 @@ module Misc
     }.compact * "#"
   end
 
-  def self.hash2md5(hash)
-    o = {}
-    hash.keys.sort_by{|k| k.to_s}.each do |k|
-      next if k == :monitor or k == "monitor" or k == :in_situ_persistence or k == "in_situ_persistence"
-      v = hash[k]
-      case
-      when v.inspect =~ /:0x0/
-        o[k] = v.inspect.sub(/:0x[a-f0-9]+@/,'')
-      when Resource::Path === v
-        o[k] = "" << String.new(v.to_s)
-      else
-        o[k] = v
-      end
-    end
+  def self.path_relative_to(basedir, path)
+    path = File.expand_path(path)
+    basedir = File.expand_path(basedir)
 
-    Digest::MD5.hexdigest(o.sort_by{|k| k.to_s}.inspect)
+    if path =~ /#{Regexp.quote basedir}\/(.*)/
+      return $1
+    else
+      return nil
+    end
   end
 
-  def self.string2hash(string)
+  def self.lock(file, *args)
+    FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
+    lockfile = Lockfile.new(file + '.lock')
+    lockfile.lock do
+      yield file, *args
+    end
+  end
 
-    options = {}
-    string.split(/#/).each do |str|
-      if str.match(/(.*)=(.*)/)
-        option, value = $1, $2
-      else
-        option, value = str, true
-      end
+  def self.common_path(dir, file)
+    file = File.expand_path file
+    dir = File.expand_path dir
 
-      option = option.sub(":",'').to_sym if option.chars.first == ':'
-      value  = value.sub(":",'').to_sym if String === value and value.chars.first == ':'
-      
-      if value == true
-        options[option] = option.to_s.chars.first != '!' 
-      else
-        options[option] = Thread.start do
-          $SAFE = 0;
-          case 
-          when value =~ /^(?:true|T)$/i
-            true
-          when value =~ /^(?:false|F)$/i
-            false
-          when (String === value and value =~ /^\/(.*)\/$/)
-            Regexp.new /#{$1}/
-          else
-            begin
-              Kernel.const_get value
-            rescue
-              begin  
-                eval(value) 
-              rescue Exception
-                value 
-              end
-            end
-          end
-        end.value
-      end
+    return true if file == dir
+    while File.dirname(file) != file
+      file = File.dirname(file)
+      return true if file == dir
     end
 
-    options
+    return false
+  end
+
+  def self.in_dir(dir)
+    old_pwd = FileUtils.pwd
+    res = nil
+    begin
+      FileUtils.mkdir_p dir unless File.exists? dir
+      FileUtils.cd dir
+      res = yield
+    ensure
+      FileUtils.cd old_pwd
+    end
+    res
+  end
+
+  def self.fixutf8(string)
+    if string.respond_to?(:valid_encoding?) and ! string.valid_encoding?
+      @@ic ||= Iconv.new('UTF-8//IGNORE', 'UTF-8')
+      @@ic.iconv(string)
+    else
+      string
+    end
   end
 
   def self.sensiblewrite(path, content)
@@ -359,6 +254,134 @@ module Misc
     end
   end
 
+  def self.add_defaults(options, defaults = {})
+    case
+    when Hash === options
+      new_options = options.dup
+    when String === options
+      new_options = string2hash options
+    else
+      raise "Format of '#{options.inspect}' not understood"
+    end
+    defaults.each do |key, value|
+      next unless new_options[key].nil?
+
+      new_options[key] = value 
+    end
+    new_options
+  end
+
+  def self.digest(text)
+    Digest::MD5.hexdigest(text)
+  end
+
+  def self.hash2md5(hash)
+    o = {}
+    hash.keys.sort_by{|k| k.to_s}.each do |k|
+      next if k == :monitor or k == "monitor" or k == :in_situ_persistence or k == "in_situ_persistence"
+      v = hash[k]
+      case
+      when v.inspect =~ /:0x0/
+        o[k] = v.inspect.sub(/:0x[a-f0-9]+@/,'')
+        #when Resource::Path === v
+        #  o[k] = "" << String.new(v.to_s)
+      else
+        o[k] = v
+      end
+    end
+
+    if o.empty?
+      ""
+    else
+      Digest::MD5.hexdigest(o.sort_by{|k| k.to_s}.inspect)
+    end
+  end
+
+  def self.process_options(hash, *keys)
+    if keys.length == 1
+      hash.delete keys.first.to_sym
+    else
+      keys.collect do |key| hash.delete(key.to_sym) || hash.delete(key.to_s) end
+    end
+  end
+
+  def self.pull_keys(hash, prefix)
+    new = {}
+    hash.keys.each do |key|
+      if key.to_s =~ /#{ prefix }_(.*)/
+        case
+        when String === key
+          new[$1] = hash.delete key
+        when Symbol === key
+          new[$1.to_sym] = hash.delete key
+        end
+      else
+        if key.to_s == prefix.to_s
+          new[key] = hash.delete key
+        end
+      end
+    end
+
+    new
+  end
+
+  def self.string2const(string)
+    return nil if string.nil?
+    mod = Kernel
+
+    string.to_s.split('::').each do |str|
+      mod = mod.const_get str
+    end
+
+    mod
+  end
+
+  def self.string2hash(string)
+
+    options = {}
+    string.split(/#/).each do |str|
+      if str.match(/(.*)=(.*)/)
+        option, value = $1, $2
+      else
+        option, value = str, true
+      end
+
+    option = option.sub(":",'').to_sym if option.chars.first == ':'
+    value  = value.sub(":",'').to_sym if String === value and value.chars.first == ':'
+
+    if value == true
+      options[option] = option.to_s.chars.first != '!' 
+    else
+      options[option] = Thread.start do
+        $SAFE = 0;
+        case 
+        when value =~ /^(?:true|T)$/i
+          true
+        when value =~ /^(?:false|F)$/i
+          false
+        when Symbol === value
+          value
+        when (String === value and value =~ /^\/(.*)\/$/)
+          Regexp.new /#{$1}/
+        else
+          begin
+            Kernel.const_get value
+          rescue
+            begin  
+              raise if value =~ /[a-z]/ and defined? value
+              eval(value) 
+            rescue Exception
+              value 
+            end
+          end
+        end
+      end.value
+    end
+    end
+
+    options
+  end
+
   def self.field_position(fields, field, quiet = false)
     return field if Integer === field or Range === field
     raise FieldNotFoundError, "Field information missing" if fields.nil? && ! quiet
@@ -367,30 +390,6 @@ module Misc
     fields.each_with_index{|f,i| return i if f =~ field_re}
     raise FieldNotFoundError, "Field #{ field.inspect } was not found" unless quiet
   end
-
-  def self.first(list)
-    return nil if list.nil?
-    return list.first
-  end
-
-  def self.chunk(text, split)
-    text.split(split)[1..-1]
-  end
-
-  def self.insist(times = 3)
-    try = 0
-    begin
-      yield
-    rescue
-      try += 1
-      retry if try < times
-    end
-  end
-
-  def self.try3times(&block)
-    insist(3, &block)
-  end
-
 
   # Divides the array into +num+ chunks of the same size by placing one
   # element in each chunk iteratively.
@@ -404,70 +403,21 @@ module Misc
     chunks
   end
 
-  def self.merge2hash(list1, list2)
-    hash = {}
-    list1.zip(list2).each do |k,v| hash[k] = v end
-    hash
+  def self.zip_fields(array)
+    array[0].zip(*array[1..-1])
   end
 
-
-  def self.process_to_hash(list)
-    result = yield list
-    merge2hash(list, result)
-  end
-
-  IUPAC2BASE = {
-    "A" => ["A"],
-    "C" => ["C"],
-    "G" => ["G"],
-    "T" => ["T"],
-    "U" => ["U"],
-    "R" => "A or G".split(" or "),
-    "Y" => "C or T".split(" or "),
-    "S" => "G or C".split(" or "),
-    "W" => "A or T".split(" or "),
-    "K" => "G or T".split(" or "),
-    "M" => "A or C".split(" or "),
-    "B" => "C or G or T".split(" or "),
-    "D" => "A or G or T".split(" or "),
-    "H" => "A or C or T".split(" or "),
-    "V" => "A or C or G".split(" or "),
-    "N" => %w(A C T G),
-  }
-
-  BASE2COMPLEMENT = {
-    "A" => "T",
-    "C" => "G",
-    "G" => "C",
-    "T" => "A",
-    "U" => "A",
-  }
-
-  def self.IUPAC_to_base(iupac)
-    IUPAC2BASE[iupac]
-  end
 end
 
-module PDF2Text
-  def self.pdf2text(filename)
-    require 'rbbt/util/cmd'
-    require 'rbbt/util/tmpfile'
-    require 'rbbt/util/open'
-
-
-    TmpFile.with_file(Open.open(filename, :nocache => true).read) do |pdf_file|
-      CMD.cmd("pdftotext #{pdf_file} -", :pipe => false, :stderr => true)
-    end
-  end
-end
-
-class NamedArray < Array
+module NamedArray
+  extend ChainMethods
+  self.chain_prefix = :named_array
   attr_accessor :fields
 
-  def self.name(array, fields)
-    a = self.new(array)
-    a.fields = fields
-    a
+  def self.setup(array, fields)
+    array.extend NamedArray
+    array.fields = fields
+    array
   end
 
   def merge(array)
@@ -493,26 +443,23 @@ class NamedArray < Array
     end
   end
 
-  alias original_get_brackets []
-  def [](key)
-    original_get_brackets(Misc.field_position(fields, key))
+  def named_array_get_brackets(key)
+    named_array_clean_get_brackets(Misc.field_position(fields, key))
   end
 
-  alias original_set_brackets []=
-    def []=(key,value)
-      original_set_brackets(Misc.field_position(fields, key), value)
-    end
+  def named_array_set_brackets(key,value)
+    named_array_clean_set_brackets(Misc.field_position(fields, key), value)
+  end
 
-  alias original_values_at values_at
-  def values_at(*keys)
+  def named_array_values_at(*keys)
     keys = keys.collect{|k| Misc.field_position(fields, k) }
-    original_values_at(*keys)
+    named_array_clean_values_at(*keys)
   end
 
   def zip_fields
     return [] if self.empty?
-    zipped = self[0].zip(*self[1..-1])
-    zipped = zipped.collect{|v| NamedArray.name(v, fields)}
+    zipped = Misc.zip_fields(self)
+    zipped = zipped.collect{|v| NamedArray.setup(v, fields)}
     zipped 
   end
 
@@ -528,38 +475,85 @@ class NamedArray < Array
 
   def report
     fields.zip(self).collect do |field,value|
-      "* #{ field }: #{ Array === value ? value * "|" : value }"
+      "\nAttributes:\n* #{ field }: #{ Array === value ? value * "|" : value }"
     end * "\n"
   end
 
 end
 
-def benchmark(bench = true)
-  require 'benchmark'
-  if bench
-    res = nil
-    puts(Benchmark.measure do
-      res = yield
-    end)
-    res
-  else
-    yield
+class RBBTError < StandardError
+  attr_accessor :info
+
+  alias old_to_s to_s
+  def to_s
+    str = old_to_s.dup
+    if info
+      str << "\n" << "Additional Info:\n---\n" << info << "---"
+    end
+    str
   end
 end
 
-def profile(prof = true)
-  require 'ruby-prof'
-  if prof
-    RubyProf.start
-    res = yield
-    result = RubyProf.stop
+module IndiferentHash
+  extend ChainMethods
+  self.chain_prefix = :indiferent
 
-    # Print a flat profile to text
-    printer = RubyProf::FlatPrinter.new(result)
-    printer.print(STDOUT, 0)
+  def indiferent_get_brackets(key)
+    case 
+    when (Symbol === key and indiferent_clean_include? key)
+      indiferent_clean_get_brackets(key)
+    when (Symbol === key and indiferent_clean_include? key.to_s)
+      indiferent_clean_get_brackets(key.to_s)
+    when (String === key and indiferent_clean_include? key)
+      indiferent_clean_get_brackets(key)
+    when (String === key and indiferent_clean_include? key.to_sym)
+      indiferent_clean_get_brackets(key.to_sym)
+    else
+      indiferent_clean_get_brackets(key) 
+    end
+  end
+
+  def indiferent_values_at(*key_list)
+    res = []
+    key_list.each{|key| res << indiferent_get_brackets(key)}
     res
-  else
-    yield
+  end
+
+  def indiferent_include?(key)
+    case
+    when Symbol === key
+      indiferent_clean_include?(key) or indiferent_clean_include?(key.to_s) 
+    when String === key
+      indiferent_clean_include?(key) or indiferent_clean_include?(key.to_sym) 
+    else
+      indiferent_clean_include?(key)
+    end
+  end
+
+  def indiferent_delete(value)
+    if indiferent_clean_include? value.to_s
+      indiferent_clean_delete(value.to_s) 
+    else
+      indiferent_clean_delete(value.to_sym) 
+    end
+  end
+
+  def self.setup(hash)
+    return hash if IndiferentHash === hash
+    hash.extend IndiferentHash
+    hash
   end
 end
 
+module PDF2Text
+  def self.pdftotext(filename)
+    require 'rbbt/util/cmd'
+    require 'rbbt/util/tmpfile'
+    require 'rbbt/util/open'
+
+
+    TmpFile.with_file(Open.open(filename, :nocache => true).read) do |pdf_file|
+      CMD.cmd("pdftotext #{pdf_file} -", :pipe => false, :stderr => true)
+    end
+  end
+end

@@ -21,7 +21,7 @@ module Persistence
   end
  
   def self.get_persistence_file(file, prefix, options = {})
-    persistence_dir = Misc.process_options options, :persistence_dir
+    persistence_dir = Misc.process_options options, :dir
     persistence_dir ||= CACHEDIR
 
     if options.include? :filters

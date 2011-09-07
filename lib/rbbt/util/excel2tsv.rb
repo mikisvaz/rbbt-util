@@ -1,7 +1,8 @@
 require 'spreadsheet'
-require 'rbbt/util/tsv'
+require 'rbbt/tsv'
 require 'rbbt/util/tmpfile'
-class TSV
+
+module TSV
   def self.excel2tsv(file, options = {})
     sheet = options.delete :sheet
     header = options.delete :header
@@ -26,7 +27,7 @@ class TSV
         rows.each do |row| f.puts row * "\t" end
       end
 
-      TSV.new(filename, options)
+      TSV.open(filename, options)
     end
   end
 end

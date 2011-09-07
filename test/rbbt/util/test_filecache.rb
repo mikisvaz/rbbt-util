@@ -1,5 +1,4 @@
 require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
-require 'rbbt-util'
 require 'rbbt/util/filecache'
 require 'test/unit'
 

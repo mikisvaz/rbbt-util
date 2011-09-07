@@ -1,0 +1,215 @@
+require 'rbbt/util/chain_methods'
+require 'json'
+module Annotated
+  attr_accessor :annotation_types
+
+  def self.extended(base)
+    base.annotation_types ||= []
+  end
+
+  def annotations
+    annotation_types.collect do |mod|
+      mod.annotations
+    end.flatten.uniq
+  end
+
+  def info
+    hash = {:annotation_types => annotation_types}
+    annotations.each do |annotation|
+      value = self.send(annotation)
+      hash[annotation] = value unless value.nil?
+    end
+    hash
+  end
+
+  def id
+    Misc.hash2md5 info
+  end
+
+  def self.load(object, info)
+    annotation_types = info[:annotation_types]
+    annotation_types.each do |mod|
+      mod = Misc.string2const(mod) if String === mod
+      mod.setup_info(object, info)
+    end
+
+    object
+  end
+
+  def tsv_values(*fields)
+    fields = fields.flatten
+    info = self.info
+    values = []
+    fields.each do |field|
+      values << case
+      when field == "JSON"
+        info.to_json
+      when field == "literal"
+        self.gsub(/\n|\t/, ' ') 
+      when info.include?(field.to_sym)
+        info.delete(field.to_sym)
+      when self.respond_to?(field)
+        self.send(field)
+      end
+    end
+    values
+  end
+
+  def self.load_tsv_values(id, values, *fields)
+    fields = fields.flatten
+    info = {}
+    literal_pos = fields.index "literal"
+
+    object = if literal_pos.nil?
+               id
+             else
+               v = values[literal_pos]
+               v = v.first if Array === v
+               v
+             end
+
+    fields.each_with_index do |field,i|
+      if field == "JSON"
+        JSON.parse(values[i]).each do |key, value|
+          info[key.to_sym] = value
+        end
+      else
+        info[field.to_sym] = values[i]
+      end
+    end
+
+    self.load(object, info)
+  end
+
+  def self.tsv(annotations, *fields)
+    fields = case
+             when ((fields.compact.empty?) and not annotations.empty?)
+               fields = annotations.first.annotations
+               fields << :annotation_types
+             when (fields == [:literal] and not annotations.empty?)
+               fields = annotations.first.annotations
+               fields << :literal
+             when (fields == [:all] and not annotations.empty?)
+               fields = [:annotation_types] + annotations.first.annotations
+               fields << :literal
+             else
+               fields.flatten
+             end
+    fields = fields.collect{|f| f.to_s}
+
+    tsv = TSV.setup({}, :key_field => "ID", :fields => fields)
+
+    annotations.each do |annotation|
+      tsv[annotation.id] = annotation.tsv_values(fields)
+    end
+
+    tsv
+  end
+
+  def self.load_tsv(tsv)
+    tsv.collect do |id, values|
+      Annotated.load_tsv_values(id, values, tsv.fields)
+    end
+  end
+end
+
+
+module Annotation
+  def self.extended(base)
+    if not base.respond_to? :annotations
+      class << base
+        attr_accessor :annotations, :inheritance, :all_inheritance, :all_annotations
+        self
+      end
+
+      base.annotations = []
+      base.inheritance = []
+      base.all_annotations = []
+      base.all_inheritance = []
+
+      base.module_eval do
+        def self.extended(object)
+          object.extend Annotated
+          if not object.annotation_types.include? self
+            object.annotation_types.concat self.inheritance 
+            object.annotation_types << self
+            object.annotation_types.uniq!
+          end
+        end
+
+        def self.included(base)
+          base.inheritance << self
+          base.all_inheritance.concat self.all_inheritance if self.respond_to? :all_inheritance
+          base.all_inheritance << self
+          base.all_inheritance.uniq!
+          base.update_annotations
+        end
+      end
+
+    end
+  end
+
+  def update_annotations
+    @all_annotations = all_inheritance.inject([]){|acc,mod| acc.concat mod.annotations}.concat(@annotations)
+  end
+
+  def annotation(*values)
+    @annotations.concat values.collect{|v| v.to_sym}
+    update_annotations
+
+    module_eval do
+      attr_accessor *values
+    end
+  end
+
+ def setup_info(object, info)
+    object.extend self
+    all_annotations.each do |annotation|
+      object.send(annotation.to_s + '=', info[annotation])
+    end
+  end
+
+  def setup(object, *values)
+    object.extend self
+
+    all_annotations.zip(values).each do |name, value|
+      object.send(name.to_s + '=', value)
+    end
+
+    object
+  end
+end
+
+module AnnotatedArray
+  extend ChainMethods
+  self.chain_prefix = :annotated_array
+
+  def annotated_array_get_brackets(pos)
+    value = annotated_array_clean_get_brackets(pos)
+    annotation_types.each do |mod|
+      mod.setup(value, *info.values_at(*mod.annotations))
+    end
+    value
+  end
+
+  def annotated_array_each
+    annotation_array_clean_each do |value|
+      annotation_types.each do |mod|
+        mod.setup(value, annotation)
+      end
+      yield value
+    end
+  end
+
+  def annotated_array_collect
+    annotation_array_clean_collect do |value|
+      annotation_types.each do |mod|
+        mod.setup(value, annotation)
+      end
+      yield value
+    end
+  end
+
+end
+
+
