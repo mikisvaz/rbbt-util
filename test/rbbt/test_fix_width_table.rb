@@ -99,6 +99,7 @@ g:         ____
         assert_equal %w(), f[(20..100)].sort
         assert_equal %w(a b d), f[3].sort
         assert_equal %w(a b c d e), f[(3..4)].sort
+        assert_equal %w(a c e), f[7].sort
       end
     end
   end
