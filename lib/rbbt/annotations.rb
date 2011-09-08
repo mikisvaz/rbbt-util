@@ -128,7 +128,12 @@ module Annotation
       base.all_inheritance = []
 
       base.module_eval do
+        class << self
+          alias prev_annotation_extended extended
+        end
+
         def self.extended(object)
+          self.send(:prev_annotation_extended, object)
           object.extend Annotated
           if not object.annotation_types.include? self
             object.annotation_types.concat self.inheritance 
@@ -193,23 +198,59 @@ module AnnotatedArray
   end
 
   def annotated_array_each
-    annotation_array_clean_each do |value|
+    annotated_array_clean_each do |value|
       annotation_types.each do |mod|
-        mod.setup(value, annotation)
+        mod.setup(value, *info.values_at(*mod.annotations))
       end
       yield value
     end
   end
 
   def annotated_array_collect
-    annotation_array_clean_collect do |value|
+    annotated_array_clean_collect do |value|
       annotation_types.each do |mod|
-        mod.setup(value, annotation)
+        mod.setup(value, *info.values_at(*mod.annotations))
       end
       yield value
     end
   end
 
+  def annotated_array_subset(list)
+    value = (self & list)
+    annotation_types.each do |mod|
+      mod.setup(value, *info.values_at(*mod.annotations))
+    end
+    value
+  end
+
 end
 
+module Entity
+  class << self
+    attr_accessor :formats
+  end
+  self.formats = {}
+  
+  def self.extended(base)
+    base.extend Annotation unless Annotation === base
+
+    base.module_eval do
+      class << self
+        alias prev_entity_extended extended
+      end
+
+      def self.extended(data)
+        prev_entity_extended(data)
+        data.extend AnnotatedArray
+      end
+
+      def self.format=(formats)
+        formats = [formats] unless Array === formats
+        formats.each do |format|
+          Entity.formats[format] = self
+        end
+      end
+    end
+  end
+end
 

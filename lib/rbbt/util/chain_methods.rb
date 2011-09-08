@@ -1,7 +1,7 @@
 require 'rbbt/util/log'
 
 module ChainMethods
-  def self.extended(base)
+  def self.chain_methods_extended(base)
     if not base.respond_to? :chain_prefix
       metaclass = class << base
         attr_accessor :chain_prefix, :chained_methods
@@ -52,7 +52,10 @@ module ChainMethods
 
       if not metaclass.respond_to? :extended
         metaclass.module_eval do
+          alias prev_chain_methods_extended extended
+
           def extended(base)
+            prev_chain_methods_extended(base)
             setup_chains(base)
           end
         end
@@ -61,4 +64,11 @@ module ChainMethods
 
     base.chain_prefix = base.to_s.downcase.to_sym
   end
+  
+  def self.extended(base)
+    chain_methods_extended(base)
+  end
+
+
+
 end

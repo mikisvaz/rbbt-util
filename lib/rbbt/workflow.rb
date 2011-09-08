@@ -9,7 +9,7 @@ module Workflow
   end
   self.workflows = []
 
-  def self.require_workflow(wf_name, wf_dir = nil)
+  def self.require_local_workflow2(wf_name, wf_dir = nil)
     require 'rbbt/resource/path'
 
     if File.exists?(wf_name) or File.exists?(wf_name + '.rb')
@@ -46,6 +46,92 @@ module Workflow
     require wf_dir["workflow.rb"].find
   end
 
+  def self.require_remote_workflow(wf_name, url)
+    require 'rbbt/workflow/rest/client'
+    eval "Object::#{wf_name} = RbbtRestClient.new '#{ url }', '#{wf_name}'"
+  end
+
+  def self.require_local_workflow(wf_name)
+    if Path === wf_name
+      case
+
+        # Points to workflow file
+      when ((File.exists?(wf_name.find) and not File.directory?(wf_name.find)) or File.exists?(wf_name.find + '.rb')) 
+        $LOAD_PATH.unshift(File.join(File.expand_path(File.dirname(wf_name.find)), 'lib'))
+        require wf_name.find
+        Log.debug "Workflow loaded from file: #{ wf_name }"
+        return true
+
+        # Points to workflow dir
+      when (File.exists?(wf_name.find) and File.directory?(wf_name.find) and File.exists?(File.join(wf_name.find, 'workflow.rb')))
+        $LOAD_PATH.unshift(File.join(File.expand_path(wf_name.find), 'lib'))
+        require File.join(wf_name.find, 'workflow.rb')
+        Log.debug "Workflow loaded from directory: #{ wf_name }"
+        return true
+
+      else
+        raise "Workflow path was not resolved: #{ wf_name } (#{wf_name.find})"
+      end
+
+    else
+      case
+
+      when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
+        dir = Rbbt.etc.workflow_dir.read.strip
+        dir = File.join(dir, wf_name)
+        $LOAD_PATH.unshift(File.join(File.expand_path(dir), 'lib'))
+        require File.join(dir, 'workflow.rb')
+        Log.debug "Workflow #{wf_name} loaded from workflow_dir: #{ dir }"
+        return true
+
+      when defined?(Rbbt)
+        path = Rbbt.workflows[wf_name].find
+        $LOAD_PATH.unshift(File.join(File.expand_path(path), 'lib'))
+        require File.join(path, 'workflow.rb')
+        Log.debug "Workflow #{wf_name} loaded from Rbbt.workflows: #{ path }"
+        return true
+
+      else
+        path = File.join(ENV['HOME'], '.workflows', wf_name)
+        $LOAD_PATH.unshift(File.join(File.expand_path(path), 'lib'))
+        require File.join(path, 'workflow.rb')
+        Log.debug "Workflow #{wf_name} loaded from .workflows: #{ path }"
+        return true
+      end
+    end
+
+    raise "Workflow not found: #{ wf_name }"
+  end
+
+  def self.require_workflow(wf_name)
+    begin
+      Misc.string2const wf_name
+      Log.debug "Workflow #{ wf_name } already loaded"
+      return true
+    rescue Exception
+    end
+
+    if Rbbt.etc.remote_workflows.exists?
+      remote_workflows = Rbbt.etc.remote_workflows.yaml
+      if remote_workflows.include? wf_name
+        url = remote_workflows[wf_name]
+        require_remote_workflow(wf_name, url)
+        Log.debug "Workflow #{ wf_name } loaded remotely: #{ url }"
+        return
+      end
+    end
+
+    begin
+      require_local_workflow(wf_name) 
+    rescue Exception
+      begin
+        require_local_workflow(wf_name.downcase)
+      rescue Exception
+        raise "Workflow not found: #{ wf_name }"
+      end
+    end
+  end
+
   def self.extended(base)
     if not base.respond_to? :workdir
       base.extend AnnotatedModule
@@ -59,7 +145,7 @@ module Workflow
         def task_dependencies
           IndiferentHash.setup(@task_dependencies || {})
         end
- 
+
         def tasks
           IndiferentHash.setup(@tasks || {})
         end
@@ -83,7 +169,7 @@ module Workflow
   end
 
   # {{{ Task definition helpers
-  
+
   def task(name, &block)
     if Hash === name
       result_type = name.first.last
@@ -125,7 +211,7 @@ module Workflow
   end
 
   # {{{ Job management
-  
+
   def resolve_locals(inputs)
     inputs.each do |name, value|
       if value =~ /^local:(.*?):(.*)/ or 

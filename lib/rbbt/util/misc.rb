@@ -1,6 +1,7 @@
 require 'lockfile'
 require 'rbbt/util/chain_methods'
 require 'rbbt/resource/path'
+require 'rbbt/annotations'
 
 module Misc
   class FieldNotFoundError < StandardError;end
@@ -444,7 +445,16 @@ module NamedArray
   end
 
   def named_array_get_brackets(key)
-    named_array_clean_get_brackets(Misc.field_position(fields, key))
+    entity = Entity.formats[key]
+    if entity
+      if entity.annotations.first == :format
+        entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)), key)
+      else
+        entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)))
+      end
+    else
+      named_array_clean_get_brackets(Misc.field_position(fields, key))
+    end
   end
 
   def named_array_set_brackets(key,value)
