@@ -72,7 +72,10 @@ class Step
   end
 
   def files
-    Dir.glob(File.join(files_dir, '*')).collect do |path| File.basename(path) end
+    files = Dir.glob(File.join(files_dir, '**', '*')).reject{|path| File.directory? path}.collect do |path| 
+      Misc.path_relative_to(files_dir, path) 
+    end
+    files
   end
 
   def file(name)
