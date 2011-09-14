@@ -4,6 +4,7 @@ module TSV
     attr_accessor :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight
 
     class SKIP_LINE < Exception; end
+    class END_PARSING < Exception; end
 
     def all_fields
       all = [key_field] + fields
@@ -49,6 +50,7 @@ module TSV
       l = line.chomp
       raise Parser::SKIP_LINE if Proc === @select and not @select.call l
       l = @fix.call l if Proc === @fix
+      raise Parser::END_PARSING unless l
       l
     end
 
@@ -83,6 +85,22 @@ module TSV
 
     def add_to_data_no_merge_list(data, key, values)
       data[key] = values unless data.include? key
+    end
+
+    def add_to_data_flat(data, keys, values)
+      keys.each do |key|
+        data[key] = values.flatten unless data.include? key
+      end
+    end
+
+    def add_to_data_flat_merge(data, keys, values)
+      keys.each do |key|
+        if data.include? key
+          data[key] = data[key].concat values.flatten 
+        else
+          data[key] = values.flatten
+        end
+      end
     end
 
     def add_to_data_no_merge_double(data, keys, values)
@@ -196,7 +214,8 @@ module TSV
       @fix = Misc.process_options(options, :fix) 
       @select= Misc.process_options options, :select
 
-      if @type == :double
+      case @type
+      when :double 
         self.instance_eval do alias get_values get_values_double end
         self.instance_eval do alias cast_values cast_values_double end
         if merge
@@ -204,15 +223,22 @@ module TSV
         else
           self.instance_eval do alias add_to_data add_to_data_no_merge_double end
         end
-      else
-        if @type == :single
-          self.instance_eval do alias get_values get_values_single end
-          self.instance_eval do alias cast_values cast_values_single end
-        else
-          self.instance_eval do alias get_values get_values_list end
-          self.instance_eval do alias cast_values cast_values_list end
-        end
+      when :single
+        self.instance_eval do alias get_values get_values_single end
+        self.instance_eval do alias cast_values cast_values_single end
         self.instance_eval do alias add_to_data add_to_data_no_merge_list end
+      when :list
+        self.instance_eval do alias get_values get_values_list end
+        self.instance_eval do alias cast_values cast_values_list end
+        self.instance_eval do alias add_to_data add_to_data_no_merge_list end
+      when :flat
+        self.instance_eval do alias get_values get_values_double end
+        self.instance_eval do alias cast_values cast_values_double end
+        if merge
+          self.instance_eval do alias add_to_data add_to_data_flat_merge end
+        else
+          self.instance_eval do alias add_to_data add_to_data_flat end
+        end
       end
 
       fix_fields(options)

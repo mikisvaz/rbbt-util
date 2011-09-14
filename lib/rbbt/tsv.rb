@@ -120,6 +120,8 @@ module TSV
       rescue Parser::SKIP_LINE
         line = stream.gets
         next
+      rescue Parser::END_PARSING
+        break
       rescue IOError
         break
       end

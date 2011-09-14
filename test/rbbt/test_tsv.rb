@@ -329,4 +329,35 @@ b 2
  
   end
 
+  def test_flat_no_merge
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :type => :flat, :fields => ["ValueA"])
+      assert_equal ["a", "aa", "aaa"], tsv["row1"]
+      assert_equal ["ValueA"], tsv.fields
+      assert_equal :flat, tsv.type
+      assert_equal "Id", tsv.key_field
+    end
+  end
+
+  def test_flat_merge
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row1    aaaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :merge => true, :type => :flat, :fields => ["ValueA"])
+      assert_equal ["a", "aa", "aaa", "aaaa"], tsv["row1"]
+    end
+  end
+
+
 end

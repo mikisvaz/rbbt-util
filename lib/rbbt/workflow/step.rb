@@ -86,11 +86,13 @@ class Step
   def clean
     if File.exists?(path) or File.exists?(info_file)
       begin
-        FileUtils.rm info_file
-        FileUtils.rm path 
-        FileUtils.rm_rf files_dir
+        FileUtils.rm info_file if File.exists? info_file
+        FileUtils.rm path if File.exists? path
+        FileUtils.rm path + '.lock' if File.exists? path + '.lock'
+        FileUtils.rm_rf files_dir if File.exists? files_dir
       end
     end
+    self
   end
 
   def rec_dependencies
