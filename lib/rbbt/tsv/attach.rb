@@ -42,6 +42,8 @@ module TSV
         done = is.eof?
       end
 
+      os.puts [current_key, current_parts].flatten * sep unless current_key.nil?
+
     end
   end
 
