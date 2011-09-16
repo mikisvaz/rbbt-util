@@ -58,7 +58,8 @@ class Step
   end
 
   def done?
-    info[:status] == :done or info[:status] == :error
+    status = info[:status]
+    status == :done or status == :error
   end
 
   def error?

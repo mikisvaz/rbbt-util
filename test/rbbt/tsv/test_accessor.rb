@@ -5,7 +5,7 @@ require 'test/unit'
 
 class TestTSV < Test::Unit::TestCase
 
-  def _test_tsv
+  def test_tsv
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -20,7 +20,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_named_values
+  def test_named_values
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -33,7 +33,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_to_s
+  def test_to_s
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -47,7 +47,7 @@ row2    A    B    Id3
     end
   end
   
-  def _test_entries
+  def test_entries
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -61,7 +61,7 @@ row2    A    B    Id3
  
   end
 
-  def _test_marshal
+  def test_marshal
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -74,12 +74,12 @@ row2    A    B    Id3
     end
   end
 
-  def _test_zip_fields
+  def test_zip_fields
     a = [%w(1 2), %w(a b)]
     assert_equal a, TSV.zip_fields(TSV.zip_fields(a))
   end
 
-  def _test_indentify_fields
+  def test_indentify_fields
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a b c
@@ -92,7 +92,7 @@ row2 A B C
     end
   end
 
-  def _test_sort
+  def test_sort
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a B c
@@ -110,7 +110,7 @@ row2 A b C
     end
   end
 
-  def _test_sort_by
+  def test_sort_by
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a B c
@@ -146,7 +146,7 @@ row6 A b a
   end
 
 
-  def _test_sort_by_with_proc
+  def test_sort_by_with_proc
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID    Pos
 row1    a|aa|aaa    b    Id1|Id2    2

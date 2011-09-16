@@ -115,7 +115,7 @@ else
 
   if remote_workflows.include? workflow
     require 'rbbt/workflow/rest/client'
-    workflow = RbbtRestClient.new remote_workflows[workflow]
+    workflow = RbbtRestClient.new remote_workflows[workflow], workflow
   else
     Workflow.require_workflow workflow
     workflow = Workflow.workflows.last
