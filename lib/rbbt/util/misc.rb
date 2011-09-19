@@ -262,7 +262,7 @@ module Misc
     when String === options
       new_options = string2hash options
     else
-      raise "Format of '#{options.inspect}' not understood"
+      raise "Format of '#{options.inspect}' not understood. It should be a hash"
     end
     defaults.each do |key, value|
       next unless new_options[key].nil?
@@ -445,15 +445,40 @@ module NamedArray
   end
 
   def named_array_get_brackets(key)
-    entity = Entity.formats[key]
-    if entity
-      if entity.annotations.first == :format
-        entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)), key)
+    if defined? Entity
+      entity = Entity.formats[key]
+      if entity
+        if entity.annotations.first == :format
+          entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)), key)
+        else
+          entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)))
+        end
       else
-        entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)))
+        named_array_clean_get_brackets(Misc.field_position(fields, key))
       end
     else
       named_array_clean_get_brackets(Misc.field_position(fields, key))
+    end
+  end
+
+  def named_array_each(&block)
+    if defined? Entity
+      fields.zip(self) do |field,elem|
+        entity = Entity.formats[field]
+        if entity
+          elem = elem.dup if elem.frozen?
+          if entity.annotations.first == :format
+            elem = entity.setup(elem, field) 
+          else
+            elem = entity.setup(elem)
+          end
+        else
+        end
+        yield(elem)
+        elem
+      end
+    else
+      named_array_clean_each &block
     end
   end
 

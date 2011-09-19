@@ -186,7 +186,9 @@ module TSV
             when Integer === field
               field
             when String === field
-              @fields.dup.unshift(@key_field).index field
+              pos = @fields.dup.unshift(@key_field).index field
+              raise "Field not identified: #{ field }" if pos.nil?
+              pos
             else
               raise "Format of fields not understood: #{fields.inspect}"
             end

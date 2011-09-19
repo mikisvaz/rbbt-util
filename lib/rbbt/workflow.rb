@@ -76,6 +76,13 @@ module Workflow
     else
       case
 
+        # Points to workflow file
+      when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb')) 
+        $LOAD_PATH.unshift(File.join(File.expand_path(File.dirname(wf_name)), 'lib'))
+        require wf_name
+        Log.debug "Workflow loaded from file: #{ wf_name }"
+        return true
+
       when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
         dir = Rbbt.etc.workflow_dir.read.strip
         dir = File.join(dir, wf_name)
