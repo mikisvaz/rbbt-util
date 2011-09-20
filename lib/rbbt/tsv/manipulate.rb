@@ -1,6 +1,7 @@
 require 'progress-bar'
 require 'rbbt/persist'
 require 'rbbt/tsv/util'
+require 'set'
 
 module TSV
   
@@ -57,27 +58,27 @@ module TSV
 
       raise "Key field #{ new_key_field } not found" if @new_key_field.nil?
       @new_fields = case
-                   when new_fields.nil?
-                     case 
-                     when @new_key_field == :key
-                       :all
-                     when fields.nil?
-                       - @new_key_field
-                     else 
-                       new = (0..fields.length - 1).to_a
-                       new.delete_at(@new_key_field)
-                       new.unshift :key
-                       new
-                     end
-                   else
-                     if Array === new_fields
-                       new_fields.collect do |field|
-                         TSV.identify_field(key_field, fields, field)
-                       end
-                     else
-                       [TSV.identify_field(key_field, fields, new_fields)]
-                     end
-                   end
+                    when new_fields.nil?
+                      case 
+                      when @new_key_field == :key
+                        :all
+                      when fields.nil?
+                        - @new_key_field
+                      else 
+                        new = (0..fields.length - 1).to_a
+                        new.delete_at(@new_key_field)
+                        new.unshift :key
+                        new
+                      end
+                    when Array === new_fields
+                      new_fields.collect do |field|
+                        TSV.identify_field(key_field, fields, field)
+                      end
+                    when String === new_fields
+                      [TSV.identify_field(key_field, fields, new_fields)]
+                    else
+                      raise "Unknown format for new_fields (should be nil, Array or String): #{new_fields.inspect}"
+                    end
 
       @new_key_field_name = case 
                             when @new_key_field == :key
@@ -235,9 +236,21 @@ module TSV
         new[key] = values if yield key, values
       end
     when Array === method
+      method = Set.new method
       with_unnamed do
-        through do |key, values|
-          new[key] = values if ([key,values].flatten & method).any?
+        case type
+        when :single
+          through do |key, value|
+            new[key] = values if method.include? key or method.include? value
+          end
+        when :list, :flat
+          through do |key, values|
+            new[key] = values if method.include? key or (method & values).any?
+          end
+        else
+          through do |key, values|
+            new[key] = values if method.include? key or (method & values.flatten).any?
+          end
         end
       end
     when Regexp === method
@@ -273,9 +286,24 @@ module TSV
         end
       when Array === method
         with_unnamed do
-          through :key, key do |key, values|
-            values = [values] if type == :single
-            new[key] = self[key] if (values.flatten & method).any?
+          method = Set.new method unless Set === method
+          case type
+          when :single
+            through :key, key do |key, value|
+              new[key] = self[key] if method.include? value
+            end
+          when :list
+            through :key, key do |key, values|
+              new[key] = self[key] if method.include? value.first
+            end
+          when :flat #untested
+            through :key, key do |key, values|
+              new[key] = self[key] if (method & values.flatten).any?
+            end
+          else
+            through :key, key do |key, values|
+              new[key] = self[key] if (method & values.first).any?
+            end
           end
         end
       when Regexp === method

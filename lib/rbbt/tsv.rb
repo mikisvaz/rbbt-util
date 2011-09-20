@@ -86,7 +86,18 @@ module TSV
     data.extend TSV unless TSV === data
     data.unnamed = true
 
-    data.serializer = parser.type if data.serializer == :type
+    if data.serializer == :type
+      data.serializer = case
+                        when parser.cast.nil?
+                          data.serializer = parser.type
+                        when (parser.cast == :to_i and parser.type == :list)
+                          data.serializer = :integer_array
+                        when (parser.cast == :to_i and parser.type == :single)
+                          data.serializer = :integer
+                        when (parser.cast == :to_f and parser.type == :single)
+                          data.serializer = :float
+                        end
+    end
 
     if monitor and (stream.respond_to?(:size) or (stream.respond_to?(:stat) and stream.stat.respond_to? :size)) and stream.respond_to?(:pos)
       size = case

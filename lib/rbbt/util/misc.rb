@@ -6,6 +6,13 @@ require 'rbbt/annotations'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.counts(array)
+    counts = Hash.new 0
+    array.each do |e|
+      counts[e] += 1
+    end
+    counts
+  end
   
   IUPAC2BASE = {
     "A" => ["A"],
