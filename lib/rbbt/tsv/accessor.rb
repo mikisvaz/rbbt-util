@@ -145,8 +145,19 @@ module TSV
       elems = collect
     else
       elems = []
-      through :key, field do |key, fields|
-        elems << [key, fields.first]
+      case type
+      when :single
+        through :key, field do |key, field|
+          elems << [key, field]
+        end
+      when :list, :flat
+        through :key, field do |key, fields|
+          elems << [key, fields.first]
+        end
+      when :double
+        through :key, field do |key, fields|
+          elems << [key, fields.first]
+        end
       end
     end
 

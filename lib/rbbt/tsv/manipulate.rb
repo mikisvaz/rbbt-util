@@ -74,7 +74,7 @@ module TSV
                       new_fields.collect do |field|
                         TSV.identify_field(key_field, fields, field)
                       end
-                    when String === new_fields
+                    when (String === new_fields or Symbol === new_fields)
                       [TSV.identify_field(key_field, fields, new_fields)]
                     else
                       raise "Unknown format for new_fields (should be nil, Array or String): #{new_fields.inspect}"
