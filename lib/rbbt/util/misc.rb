@@ -453,7 +453,7 @@ module NamedArray
 
   def named_array_get_brackets(key)
     if defined? Entity
-      entity = Entity.formats[key]
+      entity = (defined?(Entity) and Entity.respond_to?(:formats)) ? Entity.formats[key] : nil
       if entity
         if entity.annotations.first == :format
           entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)), key)
@@ -469,9 +469,9 @@ module NamedArray
   end
 
   def named_array_each(&block)
-    if defined? Entity
+    if defined?(Entity) and not fields.nil? and not fields.empty?
       fields.zip(self) do |field,elem|
-        entity = Entity.formats[field]
+        entity = (defined?(Entity) and Entity.respond_to?(:formats)) ? Entity.formats[field] : nil
         if entity
           elem = elem.dup if elem.frozen?
           if entity.annotations.first == :format

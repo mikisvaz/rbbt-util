@@ -143,6 +143,7 @@ module Workflow
   def task_info(name)
     task = tasks[name]
     description = task.description
+    result_description = task.result_description
     result_type = task.result_type
     inputs = rec_inputs(name)
     input_types = rec_input_types(name)
@@ -169,6 +170,7 @@ module Workflow
       :input_descriptions => input_descriptions,
       :input_defaults => input_defaults,
       :result_type => result_type,
+      :result_description => result_description,
       :dependencies => dependencies
     }
   end

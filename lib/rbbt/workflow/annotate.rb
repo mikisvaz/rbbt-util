@@ -2,7 +2,7 @@ module AnnotatedModule
   def self.extended(base)
     if not base.respond_to? :inputs
       class << base
-        attr_accessor :description, :inputs, :input_types, :input_descriptions, :input_defaults
+        attr_accessor :description, :inputs, :input_types, :input_descriptions, :input_defaults, :result_description
 
         def description
           i = @description; @description = ""; i
@@ -27,6 +27,10 @@ module AnnotatedModule
         def description
           i = @description; @description = ""; i
         end
+
+        def result_description
+          i = @result_description; @result_description = nil; i
+        end
       end
 
       base.description = ""
@@ -36,6 +40,10 @@ module AnnotatedModule
       base.input_defaults = {}
 
     end
+  end
+
+  def returns(text)
+    @result_description = text
   end
 
   def desc(description)

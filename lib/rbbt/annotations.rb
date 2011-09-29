@@ -223,5 +223,4 @@ module AnnotatedArray
     end
     value
   end
-
 end

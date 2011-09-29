@@ -131,9 +131,13 @@ module Workflow
     begin
       require_local_workflow(wf_name) 
     rescue Exception
+      Log.debug $!.message 
+      raise "Workflow not found: #{ wf_name }" if wf_name == wf_name.downcase
+      Log.debug "Trying with downcase: '#{wf_name.downcase}'"
       begin
         require_local_workflow(wf_name.downcase)
       rescue Exception
+        Log.debug $!.message
         raise "Workflow not found: #{ wf_name }"
       end
     end
@@ -197,7 +201,8 @@ module Workflow
       :input_types => input_types,
       :result_type => Array == result_type ? result_type.to_sym : result_type,
       :input_defaults => input_defaults,
-      :input_descriptions => input_descriptions
+      :input_descriptions => input_descriptions,
+      :result_description => result_description
     }, &block)
 
     @last_task = task
@@ -265,7 +270,7 @@ module Workflow
     step = Step.new path, tasks[task]
     if step.info.include? :dependencies
       step.dependencies = step.info[:dependencies].collect do |task, job|
-        Step.new File.join(workdir, task.to_s, job), tasks[task]
+        load_id(File.join(task.to_s, job))
       end
     end
     step

@@ -4,6 +4,7 @@ require 'rbbt/util/misc'
 require 'rbbt/util/open'
 
 require 'rbbt/persist/tsv'
+require 'set'
 
 module Persist
   CACHEDIR="/tmp/tsv_persistent_cache"
@@ -67,10 +68,13 @@ module Persist
     File.join(persistence_dir, filename)
   end
 
+  TRUE_STRINGS = Set.new ["true", "True", "TRUE", "t", "T", "1", "yes", "Yes", "YES", "y", "Y", "ON", "on"]
   def self.load_file(path, type)
     case (type || "nil").to_sym
     when :nil
       nil
+    when :boolean
+      TRUE_STRINGS.include? Open.read(path).chomp.strip
     when :tsv
       TSV.open(path)
     when :marshal_tsv
@@ -105,6 +109,8 @@ module Persist
     case (type || "nil").to_sym
     when :nil
       nil
+    when :boolean
+      Open.write(path, content ? "true" : "false")
     when :fwt
       content.file.seek 0
       Open.write(path, content.file.read)
@@ -113,7 +119,7 @@ module Persist
     when :string, :text
       Open.write(path, content)
     when :array
-      Open.write(path, content * "\n" + "\n")
+      Open.write(path, content * "\n")
     when :marshal_tsv
       Open.write(path, Marshal.dump(content.dup))
     when :marshal
