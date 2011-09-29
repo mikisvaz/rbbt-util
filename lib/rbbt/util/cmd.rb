@@ -83,7 +83,7 @@ module CMD
       when TrueClass === value
         string << "#{option} "
       else
-        if option.chars.to_a.last == "="
+        if option.to_s.chars.to_a.last == "="
           string << "#{option}#{value} "
         else
           string << "#{option} #{value} "
