@@ -80,7 +80,7 @@ def fix_options(workflow, task, job_options)
   job_options_cleaned
 end
 
-options = SOPT.get "-t--task*:-l--log*:-h--help:-n--name*:-cl--clean:-rcl-recursive_clean:-pn--printname:-srv--server"
+options = SOPT.get "-t--task*:-l--log*:-h--help:-n--name*:-cl--clean:-rcl-recursive_clean:-pn--printname:-srv--server:-p--port*"
 
 workflow = ARGV.first
 
@@ -95,6 +95,10 @@ if options[:server]
   WorkflowREST.add_workflows Workflow.workflows.last
 
   WorkflowREST.setup
+
+  Sinatra::Application.port = options[:port] || 4567
+  Sinatra::Application.run = true
+
 else
 
   # Set log, fork, clean, recursive_clean and help
