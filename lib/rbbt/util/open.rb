@@ -78,13 +78,24 @@ module Open
   end
 
   # Cache
-
+  #
   def self.in_cache(url, options = {})
     digest = Digest::MD5.hexdigest([url, options["--post-data"], (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
 
     filename = File.join(REMOTE_CACHEDIR, digest)
     if File.exists? filename
       return filename 
+    else
+      nil
+    end
+  end
+ 
+  def self.remove_from_cache(url, options = {})
+    digest = Digest::MD5.hexdigest([url, options["--post-data"], (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
+
+    filename = File.join(REMOTE_CACHEDIR, digest)
+    if File.exists? filename
+      FileUtils.rm filename 
     else
       nil
     end
