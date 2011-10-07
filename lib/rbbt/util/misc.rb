@@ -2,9 +2,30 @@ require 'lockfile'
 require 'rbbt/util/chain_methods'
 require 'rbbt/resource/path'
 require 'rbbt/annotations'
+require 'net/smtp'
 
 module Misc
   class FieldNotFoundError < StandardError;end
+
+  def self.send_email(from, to, subject, message, options = {})
+    IndiferentHash.setup(options)
+    options = Misc.add_defaults options, :from_alias => nil, :to_alias => nil, :server => 'localhost', :port => 25, :user => nil, :pass => nil, :auth => :login
+    IndiferentHash.setup(options)
+    
+    server, port, user, pass, from_alias, to_alias, auth = Misc.process_options options, :server, :port, :user, :pass, :from_alias, :to_alias, :auth
+
+    msg = <<-END_OF_MESSAGE
+From: #{from_alias} <#{from}>
+To: #{to_alias} <#{to}>
+Subject: #{subject}
+
+#{message}
+    END_OF_MESSAGE
+
+    Net::SMTP.start(server, port, server, user, pass, auth) do |smtp|
+      smtp.send_message msg, from, to
+    end
+  end
 
   def self.counts(array)
     counts = Hash.new 0
@@ -13,7 +34,7 @@ module Misc
     end
     counts
   end
-  
+
   IUPAC2BASE = {
     "A" => ["A"],
     "C" => ["C"],
@@ -272,7 +293,7 @@ module Misc
       raise "Format of '#{options.inspect}' not understood. It should be a hash"
     end
     defaults.each do |key, value|
-      next unless new_options[key].nil?
+      next if options.include? key
 
       new_options[key] = value 
     end
