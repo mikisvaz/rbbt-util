@@ -367,7 +367,7 @@ module TSV
       when type == :flat
         self[key] = new_values
       else
-        values[field].replace new_values
+        values[field_pos].replace new_values
         self[key] = values
       end
     end

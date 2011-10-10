@@ -11,7 +11,7 @@ class WorkflowSOAP < SimpleWS
       workdir_find = workdir
     end
  
-    @workflow.load(File.join(workdir_find, jobid))
+    @workflow.load_step(File.join(workdir_find, jobid))
   end
 
   def initialize(workflow, *args)

@@ -359,5 +359,32 @@ row2    A    B    Id3
     end
   end
 
+  def test_flat
+    content =<<-EOF
+#Id    ValueA 
+row1   a   aa   aaa
+row2   b  bbb bbbb bb
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :merge => true, :type => :flat, :fields => ["ValueA"])
+      assert_equal ["a", "aa", "aaa"], tsv["row1"]
+    end
+  end
+
+  def test_zipped
+    content =<<-EOF
+#Id    ValueA    ValueB
+row1    a|aa|aaa    b|bb|bbb
+row2    a|aa|aaa    c|cc|ccc
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :merge => true, :type => :double, :key_field => "ValueA", :zipped => true)
+      assert_equal [["row1", "row2"], ["b", "c"]], tsv["a"]
+    end
+  end
+
+
 
 end

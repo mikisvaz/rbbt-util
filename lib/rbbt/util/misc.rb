@@ -292,6 +292,7 @@ Subject: #{subject}
     else
       raise "Format of '#{options.inspect}' not understood. It should be a hash"
     end
+
     defaults.each do |key, value|
       next if options.include? key
 

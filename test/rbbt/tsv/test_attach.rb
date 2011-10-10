@@ -170,7 +170,7 @@ B    Id3
       tsv3 = TSV.open(File.open(filename), :double, :sep => /\s+/)
     end
 
-    tsv1.attach tsv2, "OtherID"
+    tsv1.attach tsv2, :fields => "OtherID"
 
     assert_equal %w(ValueA ValueB OtherID), tsv1.fields
     assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]

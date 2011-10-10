@@ -1,7 +1,7 @@
 require 'rbbt/util/cmd'
 module TSV
   class Parser
-    attr_accessor :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight
+    attr_accessor :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped
 
     class SKIP_LINE < Exception; end
     class END_PARSING < Exception; end
@@ -83,6 +83,17 @@ module TSV
       [keys, values]
     end
 
+    def get_values_flat(parts)
+      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if field_positions.nil?
+      keys = parts[key_position].split(@sep2, -1)
+      if @take_all
+        values = parts.collect{|value| value.split(@sep2, -1)}
+      else
+        values = parts.values_at(*field_positions).collect{|value| value.split(@sep2, -1)}
+      end
+      [keys, values]
+    end
+
     def add_to_data_no_merge_list(data, key, values)
       data[key] = values unless data.include? key
     end
@@ -121,6 +132,35 @@ module TSV
         end
       end
     end
+
+    def add_to_data_merge_zipped(data, keys, values)
+      num = keys.length
+      values = values.collect{|v| v.length != num ? [v.first] * num : v}
+      all = values.unshift keys
+      Misc.zip_fields(all).each do |values|
+        key = values.shift
+        if data.include? key
+          data[key] = data[key].zip(values).collect do |old, new|
+            old.push new
+            old
+          end
+        else
+          data[key] = values.collect{|v| [v]}
+        end
+      end
+    end
+
+    def add_to_data_zipped(data, keys, values)
+      num = keys.length
+      values = values.collect{|v| v.length != num ? [v.first] * num : v}
+      all = values.unshift keys
+      Misc.zip_fields(all).each do |values|
+        key = values.shift
+        next if data.include? key
+        data[key] = values.collect{|v| [v]}
+      end
+    end
+
 
     def cast_values_single(value)
       case
@@ -177,8 +217,10 @@ module TSV
         end
 
         if (fields.nil? or fields == @fields or (not @fields.nil? and fields == (1..@fields.length).to_a))
-          @field_positions = (0..@fields.length).to_a
-          @field_positions.delete @key_position
+          if type != :flat
+            @field_positions = (0..@fields.length).to_a
+            @field_positions.delete @key_position
+          end
         else
           fields = [fields] if not Array === fields
           @field_positions = fields.collect{|field|
@@ -196,7 +238,7 @@ module TSV
         end
 
         new_key_field = @fields.dup.unshift(@key_field)[@key_position] if not @fields.nil?
-        @fields = @fields.dup.unshift(@key_field).values_at *@field_positions if not @fields.nil?
+        @fields = @fields.dup.unshift(@key_field).values_at *@field_positions if not @fields.nil? and not @field_positions.nil?
         @key_field = new_key_field
       end
     end
@@ -206,7 +248,7 @@ module TSV
       @sep = Misc.process_options(options, :sep) || "\t"
 
       options = parse_header(stream).merge options
-
+      
       @type = Misc.process_options(options, :type) || :double
       merge = Misc.process_options(options, :merge) || false
 
@@ -215,13 +257,19 @@ module TSV
       @type ||= Misc.process_options options, :type
       @fix = Misc.process_options(options, :fix) 
       @select= Misc.process_options options, :select
+      @zipped = Misc.process_options options, :zipped
 
       case @type
       when :double 
         self.instance_eval do alias get_values get_values_double end
         self.instance_eval do alias cast_values cast_values_double end
-        if merge
-          self.instance_eval do alias add_to_data add_to_data_merge end
+        case
+        when (merge and not zipped)
+            self.instance_eval do alias add_to_data add_to_data_merge end
+        when (merge and zipped)
+            self.instance_eval do alias add_to_data add_to_data_merge_zipped end
+        when zipped
+            self.instance_eval do alias add_to_data add_to_data_zipped end
         else
           self.instance_eval do alias add_to_data add_to_data_no_merge_double end
         end
@@ -234,7 +282,8 @@ module TSV
         self.instance_eval do alias cast_values cast_values_list end
         self.instance_eval do alias add_to_data add_to_data_no_merge_list end
       when :flat
-        self.instance_eval do alias get_values get_values_double end
+        @take_all = true if options[:fields].nil?
+        self.instance_eval do alias get_values get_values_flat end
         self.instance_eval do alias cast_values cast_values_double end
         if merge
           self.instance_eval do alias add_to_data add_to_data_flat_merge end

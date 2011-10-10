@@ -259,7 +259,7 @@ module Workflow
     step
   end
 
-  def load(path)
+  def load_step(path)
     task = task_for path
     Step.new path, tasks[task]
   end
