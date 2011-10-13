@@ -76,8 +76,10 @@ module Filtered
     def update
       ids = []
 
-      data.unfiltered_each do |key, entry|
-        ids << key if match_entry(entry)
+      data.with_unnamed do
+        data.unfiltered_each do |key, entry|
+          ids << key if match_entry(entry)
+        end
       end
 
       save(ids.sort)

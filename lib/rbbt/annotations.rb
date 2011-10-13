@@ -23,7 +23,7 @@ module Annotated
   end
 
   def id
-    Misc.hash2md5 info
+    Misc.hash2md5 info.merge :self => self
   end
 
   def self.load(object, info)

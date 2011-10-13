@@ -100,6 +100,7 @@ module TSV
   end
 
   def tsv_each
+    fields = self.fields
     tsv_clean_each do |key, value|
       next if ENTRY_KEYS.include? key
 
@@ -328,22 +329,21 @@ end
       str << "#" << key_field << "\t" << fields * "\t" << "\n"
     end
 
-    saved_unnamed = @unnamed
-    @unnamed = false
-    if keys.nil?
-      each do |key, values|
-        key = key.to_s if Symbol === key
-        str << key.dup 
-        str << values_to_s(values)
+    with_unnamed do
+      if keys.nil?
+        each do |key, values|
+          key = key.to_s if Symbol === key
+          str << key.dup 
+          str << values_to_s(values)
+        end
+      else
+        keys.zip(values_at(*keys)).each do |key, values|
+          key = key.to_s if Symbol === key
+          str << key.dup << values_to_s(values)
+        end
       end
-    else
-      keys.zip(values_at(*keys)).each do |key, values|
-        key = key.to_s if Symbol === key
-        str << key.dup << values_to_s(values)
-      end
-    end
 
-    @unnamed = saved_unnamed
+    end
     str
   end
 
