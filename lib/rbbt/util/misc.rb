@@ -76,19 +76,16 @@ Subject: #{subject}
     e1, e2 = a1.shift, a2.shift
     intersect = []
     while true
-      case
-      when (e1 and e2)
-        case e1 <=> e2
-        when 0
-          intersect << e1
-          e1, e2 = a1.shift, a2.shift
-        when -1
-          e1 = a1.shift
-        when 1
-          e2 = a2.shift
-        end
-      else
-        break
+      break if e1.nil? or e2.nil?
+      case e1 <=> e2
+      when 0
+        intersect << e1
+        e1, e2 = a1.shift, a2.shift
+      when -1
+        e1 = a1.shift while not e1.nil? and e1 < e2
+      when 1
+        e2 = a2.shift
+        e2 = a2.shift while not e2.nil? and e2 < e1
       end
     end
     intersect
@@ -441,12 +438,15 @@ end
 
 module NamedArray
   extend ChainMethods
+
   self.chain_prefix = :named_array
   attr_accessor :fields
+  attr_accessor :key
 
-  def self.setup(array, fields)
+  def self.setup(array, fields, key = nil)
     array.extend NamedArray
     array.fields = fields
+    array.key = key
     array
   end
 
@@ -477,11 +477,13 @@ module NamedArray
     if defined? Entity
       entity = (defined?(Entity) and Entity.respond_to?(:formats)) ? Entity.formats[key] : nil
       if entity
-        if entity.annotations.first == :format
-          entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)), key)
-        else
-          entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)))
-        end
+        elem = if entity.annotations.first == :format
+                 entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)), key)
+               else
+                 entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)))
+               end
+        elem.context = self
+        elem
       else
         named_array_clean_get_brackets(Misc.field_position(fields, key))
       end
@@ -494,21 +496,32 @@ module NamedArray
     if defined?(Entity) and not fields.nil? and not fields.empty?
       fields.zip(self) do |field,elem|
         entity = (defined?(Entity) and Entity.respond_to?(:formats)) ? Entity.formats[field] : nil
+
         if entity
           elem = elem.dup if elem.frozen?
           if entity.annotations.first == :format
-            elem = entity.setup(elem, field) 
+            entity.setup(elem, field) 
           else
-            elem = entity.setup(elem)
+            entity.setup(elem)
           end
-        else
+          elem.context = self
+          elem
         end
+
         yield(elem)
         elem
       end
     else
       named_array_clean_each &block
     end
+  end
+
+  def named_array_collect(&block)
+    res = []
+    each do |elem|
+      res << yield(elem)
+    end
+    res
   end
 
   def named_array_set_brackets(key,value)

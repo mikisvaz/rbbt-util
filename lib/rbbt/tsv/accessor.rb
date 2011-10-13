@@ -70,6 +70,10 @@ module TSV
   end
 
   #{{{ Chained Methods
+  def tsv_empty?
+    length == 0
+  end
+
   def tsv_get_brackets(key)
     value = if serializer.nil?
             tsv_clean_get_brackets(key)
@@ -77,7 +81,7 @@ module TSV
             serialized_get(key)
           end
 
-    NamedArray.setup value, fields if Array === value and not @unnamed
+    NamedArray.setup value, fields, key if Array === value and not @unnamed
     value
   end
 
@@ -105,7 +109,7 @@ module TSV
       next if ENTRY_KEYS.include? key
 
       value = SERIALIZER_ALIAS[serializer].load(value) unless serializer.nil?
-      NamedArray.setup value, fields if Array === value and not @unnamed
+      NamedArray.setup value, fields, key if Array === value and not @unnamed
       yield key, value if block_given?
       [key, value]
     end
@@ -115,7 +119,7 @@ module TSV
     tsv_clean_collect do |key, value|
       next if ENTRY_KEYS.include? key
       value = SERIALIZER_ALIAS[serializer].load(value) unless serializer.nil? or not String === value 
-      NamedArray.setup value, fields if Array === value and not @unnamed
+      NamedArray.setup value, fields, key if Array === value and not @unnamed
       if block_given?
         yield key, value
       else

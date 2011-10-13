@@ -385,6 +385,20 @@ row2    a|aa|aaa    c|cc|ccc
     end
   end
 
+  def test_named_array_key
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+      assert_equal "row1", tsv["row1"].key
+
+    end
+ 
+  end
 
 
 end

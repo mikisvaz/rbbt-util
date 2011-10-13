@@ -166,7 +166,7 @@ module TSV
       keys, value = traverser.process(key, value)
       next if keys.nil?
       keys.each do |key|
-        NamedArray.setup value, traverser.new_field_names if Array === value and not @unnamed
+        NamedArray.setup value, traverser.new_field_names, key if Array === value and not @unnamed
         yield key, value
       end
     end

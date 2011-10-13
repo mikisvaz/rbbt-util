@@ -2,6 +2,7 @@ require 'rbbt/util/chain_methods'
 require 'json'
 module Annotated
   attr_accessor :annotation_types
+  attr_accessor :context
 
   def self.extended(base)
     base.annotation_types ||= []
@@ -195,6 +196,7 @@ module AnnotatedArray
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
     end
+    value.context = self.context
     value
   end
 
@@ -203,6 +205,7 @@ module AnnotatedArray
       annotation_types.each do |mod|
         mod.setup(value, *info.values_at(*mod.annotations))
       end
+      value.context = self.context
       yield value
     end
   end
@@ -212,6 +215,7 @@ module AnnotatedArray
       annotation_types.each do |mod|
         mod.setup(value, *info.values_at(*mod.annotations))
       end
+      value.context = self.context
       yield value
     end
   end
@@ -221,6 +225,7 @@ module AnnotatedArray
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
     end
+    value.context = self.context
     value
   end
 end
