@@ -211,13 +211,11 @@ module AnnotatedArray
   end
 
   def annotated_array_collect
-    annotated_array_clean_collect do |value|
-      annotation_types.each do |mod|
-        mod.setup(value, *info.values_at(*mod.annotations))
-      end
-      value.context = self.context
-      yield value
+    res = []
+    annotated_array_each do |value|
+      res << yield(value)
     end
+    res
   end
 
   def annotated_array_subset(list)

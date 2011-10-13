@@ -518,7 +518,7 @@ module NamedArray
 
   def named_array_collect(&block)
     res = []
-    each do |elem|
+    named_array_each do |elem|
       res << yield(elem)
     end
     res
