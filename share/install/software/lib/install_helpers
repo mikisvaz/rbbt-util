@@ -15,6 +15,12 @@ function expand_path(){
   echo "$(cd $dir && pwd)/$name"
 }
 
+function add2file(){
+    file=$1
+    line=$2
+
+    grep "$2" "$1" || echo "$2" >> "$1"
+}
 
 #{{{ GET PKG OPT_BUILD_DIR
 
