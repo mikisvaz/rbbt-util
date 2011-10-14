@@ -4,7 +4,7 @@ module TSV
   extend ChainMethods
   self.chain_prefix = :tsv
 
-  attr_accessor :unnamed
+  attr_accessor :unnamed, :serializer_module
 
   def with_unnamed
     saved_unnamed = @unnamed 
@@ -47,6 +47,13 @@ module TSV
         end
       end
     end
+
+    if not data.respond_to? :serialized_get
+      class << data
+        alias serialized_get tsv_clean_get_brackets
+        alias serialized_set tsv_clean_set_brackets
+      end
+    end
   end
 
   KEY_PREFIX = "__tsv_hash_"
@@ -54,20 +61,21 @@ module TSV
   ENTRIES = []
   ENTRY_KEYS = []
 
-  def serialized_get(key)
-    raise "Uninitialized serializer" if serializer == :type
-    serialized_value = tsv_clean_get_brackets(key) 
-    SERIALIZER_ALIAS[serializer.to_sym].load(serialized_value) unless serialized_value.nil?
-  end
+  #def serialized_get(key)
+  #  raise "Uninitialized serializer" if serializer == :type
+  #  serialized_value = tsv_clean_get_brackets(key) 
+  #  SERIALIZER_ALIAS[serializer.to_sym].load(serialized_value) unless serialized_value.nil?
+  #end
 
-  def serialized_set(key, value)
-    raise "Uninitialized serializer" if serializer == :type
-    if value.nil?
-      tsv_clean_set_brackets(key, nil)
-    else
-      tsv_clean_set_brackets(key, SERIALIZER_ALIAS[serializer.to_sym].dump(value))
-    end
-  end
+  #def serialized_set(key, value)
+  #  raise "Uninitialized serializer" if serializer == :type
+  #  if value.nil?
+  #    tsv_clean_set_brackets(key, nil)
+  #  else
+  #    tsv_clean_set_brackets(key, SERIALIZER_ALIAS[serializer.to_sym].dump(value))
+  #  end
+  #end
+
 
   #{{{ Chained Methods
   def tsv_empty?
@@ -75,22 +83,13 @@ module TSV
   end
 
   def tsv_get_brackets(key)
-    value = if serializer.nil?
-            tsv_clean_get_brackets(key)
-          else
-            serialized_get(key)
-          end
-
+    value = serialized_get(key)
     NamedArray.setup value, fields, key if Array === value and not @unnamed
     value
   end
 
   def tsv_set_brackets(key,value)
-    if serializer.nil?
-      tsv_clean_set_brackets(key, value)
-    else
-      serialized_set(key, value)
-    end
+    serialized_set(key, value)
   end
 
   def tsv_keys
@@ -233,10 +232,46 @@ def #{ entry }
   end
   @#{entry}
 end
-
 def #{ entry }=(value)
   @#{entry} = value
   self.tsv_clean_set_brackets '#{key}', value.to_yaml
+end
+ 
+if '#{entry}' == 'serializer'
+
+  def #{ entry }=(value)
+    @#{entry} = value
+    self.tsv_clean_set_brackets '#{key}', value.to_yaml
+
+    return if value.nil?
+
+    self.serializer_module = SERIALIZER_ALIAS[value.to_sym]
+    
+    if serializer_module.nil?
+      class << self
+        alias serialized_get tsv_clean_get_brackets
+        alias serialized_set tsv_clean_set_brackets
+      end
+
+    else
+      class << self
+        
+        define_method :serialized_get do |key|
+          self.serializer_module.load(tsv_clean_get_brackets(key))
+        end
+
+        define_method :serialized_set do |key, value|
+          tsv_clean_set_brackets key, self.serializer_module.dump(value)
+        end
+      end
+    end
+
+  end
+else
+  def #{ entry }=(value)
+    @#{entry} = value
+    self.tsv_clean_set_brackets '#{key}', value.to_yaml
+  end
 end
 "
     end

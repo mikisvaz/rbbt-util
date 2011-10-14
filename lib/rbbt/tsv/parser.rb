@@ -121,12 +121,17 @@ module TSV
     end
 
     def add_to_data_merge(data, keys, values)
-      keys.each do |key|
+      keys.uniq.each do |key|
         if data.include? key
-          data[key] = data[key].zip(values).collect do |old, new|
-            old.concat new
-            old
+          #data[key] = data[key].zip(values).collect do |old, new|
+          #  old.concat new
+          #  old
+          #end
+          new = data[key]
+          new.each_with_index do |old, i|
+            old.concat values[i]
           end
+          data[key] = new
         else
           data[key] = values
         end

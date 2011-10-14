@@ -119,7 +119,6 @@ module TSV
 
     while not line.nil?
       begin
-
         progress_monitor.tick(stream.pos) if progress_monitor 
 
         line = parser.process line

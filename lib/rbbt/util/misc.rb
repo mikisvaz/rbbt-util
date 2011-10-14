@@ -185,6 +185,22 @@ Subject: #{subject}
     res
   end
 
+  def self.memprof
+    require 'memprof'
+    Memprof.start
+    begin
+      res = yield
+    rescue Exception
+      puts "Profiling aborted"
+      raise $!
+    ensure
+      Memprof.stop
+      print Memprof.stats
+    end
+
+    res
+  end
+
   def self.insist(times = 3)
     try = 0
     begin

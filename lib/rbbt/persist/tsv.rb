@@ -83,7 +83,7 @@ module Persist
     database.persistence_path ||= path
 
     TSV.setup database
-    database.serializer = serializer unless serializer.nil?
+    database.serializer = serializer || database.serializer 
 
     database
   end
@@ -109,8 +109,8 @@ module Persist
 
              FileUtils.rm path if File.exists? path
 
-             data = open_tokyocabinet(path, true)
-             data.serializer = :type
+             data = open_tokyocabinet(path, true, persist_options[:serializer])
+             data.serializer = :type unless data.serializer
              data
            else
              data = {}
