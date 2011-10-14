@@ -84,7 +84,7 @@ module TSV
 
   def tsv_get_brackets(key)
     value = serialized_get(key)
-    NamedArray.setup value, fields, key if Array === value and not @unnamed
+    NamedArray.setup value, fields, key if Array === value and not @unnamed and not type == :flat
     value
   end
 
@@ -98,7 +98,7 @@ module TSV
 
   def tsv_values
     values = values_at(*keys)
-    values.each{|value| NamedArray.setup value, fields} if Array === values.first and not @unnamed
+    values.each{|value| NamedArray.setup value, fields} if Array === values.first and not @unnamed and not type == :flat
     values
   end
 
@@ -108,7 +108,7 @@ module TSV
       next if ENTRY_KEYS.include? key
 
       value = SERIALIZER_ALIAS[serializer].load(value) unless serializer.nil?
-      NamedArray.setup value, fields, key if Array === value and not @unnamed
+      NamedArray.setup value, fields, key if Array === value and not @unnamed and not type == :flat
       yield key, value if block_given?
       [key, value]
     end
@@ -118,7 +118,7 @@ module TSV
     tsv_clean_collect do |key, value|
       next if ENTRY_KEYS.include? key
       value = SERIALIZER_ALIAS[serializer].load(value) unless serializer.nil? or not String === value 
-      NamedArray.setup value, fields, key if Array === value and not @unnamed
+      NamedArray.setup value, fields, key if Array === value and not @unnamed and not type == :flat
       if block_given?
         yield key, value
       else
@@ -232,11 +232,8 @@ def #{ entry }
   end
   @#{entry}
 end
-def #{ entry }=(value)
-  @#{entry} = value
-  self.tsv_clean_set_brackets '#{key}', value.to_yaml
-end
- 
+
+
 if '#{entry}' == 'serializer'
 
   def #{ entry }=(value)

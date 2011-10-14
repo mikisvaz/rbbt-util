@@ -510,7 +510,7 @@ module NamedArray
 
   def named_array_each(&block)
     if defined?(Entity) and not fields.nil? and not fields.empty?
-      fields.zip(self) do |field,elem|
+      fields.zip(self).each do |field,elem|
         entity = (defined?(Entity) and Entity.respond_to?(:formats)) ? Entity.formats[field] : nil
 
         if entity
@@ -532,11 +532,17 @@ module NamedArray
     end
   end
 
-  def named_array_collect(&block)
+  def named_array_collect
     res = []
+
     named_array_each do |elem|
-      res << yield(elem)
+      if block_given?
+        res << yield(elem)
+      else
+        res << elem
+      end
     end
+
     res
   end
 
