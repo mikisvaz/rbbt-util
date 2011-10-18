@@ -112,6 +112,17 @@ module Annotated
       Annotated.load_tsv_values(id, values, tsv.fields)
     end
   end
+
+  def make_list
+    new = [self]
+    annotation_types.each do |mod|
+      mod.setup(new, *info.values_at(*mod.annotations))
+    end
+    new.context = self.context
+    new
+  end
+
+
 end
 
 
@@ -184,7 +195,6 @@ module Annotation
 
     object
   end
-
 end
 
 module AnnotatedArray
@@ -214,6 +224,22 @@ module AnnotatedArray
     res = []
     annotated_array_each do |value|
       res << yield(value)
+    end
+    res
+  end
+
+  def annotated_array_select
+    res = []
+    annotated_array_each do |value|
+      res << value if yield(value)
+    end
+    res
+  end
+
+  def annotated_array_reject
+    res = []
+    annotated_array_each do |value|
+      res << value unless yield(value)
     end
     res
   end

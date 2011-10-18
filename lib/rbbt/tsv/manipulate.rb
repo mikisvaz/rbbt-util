@@ -53,6 +53,12 @@ module TSV
       ]
     end
 
+    def process_reorder_flat(key, values)
+      [ values,
+        @new_fields.collect{|field| field == :key ?  
+          [key] : values[field] }.flatten
+      ]
+    end
     def initialize(key_field, fields, new_key_field, new_fields, type, uniq)
       @new_key_field = TSV.identify_field(key_field, fields, new_key_field)
 
@@ -128,12 +134,15 @@ module TSV
           end
         end
       else
-        if type == :double
+        case type 
+        when :double
           if uniq
             self.instance_eval do alias process process_reorder_double_uniq end
           else
             self.instance_eval do alias process process_reorder_double end
           end
+        when :flat
+          self.instance_eval do alias process process_reorder_flat end
         else
           self.instance_eval do alias process process_reorder_list end
         end
@@ -179,10 +188,16 @@ module TSV
 
       with_unnamed do
         new_key_field_name, new_field_names = through new_key_field, new_fields do |key, value|
-          if data.include?(key) and type == :double
-            data[key] = data[key].zip(value).collect do |old_list, new_list| old_list + new_list end
+
+          if data.include?(key) 
+            case type 
+            when :double
+              data[key] = data[key].zip(value).collect do |old_list, new_list| old_list + new_list end
+            when :flat
+              data[key].concat value
+            end
           else
-            data[key] = value
+            data[key] = value.dup
           end
         end
 
