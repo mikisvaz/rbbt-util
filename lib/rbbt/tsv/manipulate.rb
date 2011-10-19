@@ -173,9 +173,26 @@ module TSV
       progress_monitor.tick if progress_monitor
 
       keys, value = traverser.process(key, value)
+
+      # Annotated with Entity and NamedArray
+      if not @unnamed
+        if not traverser.new_field_names.nil? 
+          case type
+          when :double, :list
+            NamedArray.setup value, traverser.new_field_names 
+          when :flat, :single
+            Entity.formats[traverser.new_field_names.first].setup(value) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? traverser.new_field_names
+          end
+        end
+      end
+
       next if keys.nil?
+
       keys.each do |key|
-        NamedArray.setup value, traverser.new_field_names, key if Array === value and not @unnamed
+        if not @unnamed and defined?(Entity) and not traverser.new_key_field_name.nil? and Entity.respond_to?(:formats) and Entity.formats.include? traverser.new_key_field_name
+          key = Entity.formats[traverser.new_key_field_name].setup(key.dup) 
+        end
+        value.key = key if NamedArray === value
         yield key, value
       end
     end

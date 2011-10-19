@@ -509,8 +509,8 @@ module NamedArray
   end
 
   def named_array_each(&block)
-    if defined?(Entity) and not fields.nil? and not fields.empty?
-      fields.zip(self).each do |field,elem|
+    if defined?(Entity) and not @fields.nil? and not @fields.empty?
+      @fields.zip(self).each do |field,elem|
         entity = (defined?(Entity) and Entity.respond_to?(:formats)) ? Entity.formats[field] : nil
 
         if entity

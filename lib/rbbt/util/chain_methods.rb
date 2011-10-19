@@ -1,4 +1,5 @@
 require 'rbbt/util/log'
+require 'set'
 
 module ChainMethods
   def self.chain_methods_extended(base)
@@ -19,18 +20,30 @@ module ChainMethods
 
         def setup_chains(base)
           raise "No prefix specified for #{self.to_s}" if self.chain_prefix.nil? or (String === self.chain_prefix and self.chain_prefix.empty?)
-          #methods = self.instance_methods.select{|method| method =~ /^#{self.chain_prefix}/}
           methods = self.chained_methods
 
           return if methods.empty?
 
           prefix = self.chain_prefix
 
-          new_method = methods.first
-          original = new_method.sub(prefix.to_s + '_', '')
-          first_clean_method = prefix.to_s + '_clean_' + original
+          #do_chain = true
+          #methods.collect{|new_method|
+          #  original = new_method.sub(prefix.to_s + '_', '')
+          #  clean = prefix.to_s + '_clean_' + original
+          #  if base.respond_to? clean
+          #    do_chain = false
+          #    break
+          #  end
+          #}
 
-          if not base.respond_to? first_clean_method
+          if not base.respond_to?(:processed_chains) or not base.processed_chains.include? prefix
+            class << base
+              attr_accessor :processed_chains 
+            end if not base.respond_to? :processed_chains
+
+            base.processed_chains ||= Set.new
+            base.processed_chains << prefix
+
             class << base; self; end.module_eval do
               methods.each do |new_method|
                 original = new_method.sub(prefix.to_s + '_', '')
@@ -68,7 +81,4 @@ module ChainMethods
   def self.extended(base)
     chain_methods_extended(base)
   end
-
-
-
 end

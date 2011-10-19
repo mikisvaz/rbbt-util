@@ -61,22 +61,6 @@ module TSV
   ENTRIES = []
   ENTRY_KEYS = []
 
-  #def serialized_get(key)
-  #  raise "Uninitialized serializer" if serializer == :type
-  #  serialized_value = tsv_clean_get_brackets(key) 
-  #  SERIALIZER_ALIAS[serializer.to_sym].load(serialized_value) unless serialized_value.nil?
-  #end
-
-  #def serialized_set(key, value)
-  #  raise "Uninitialized serializer" if serializer == :type
-  #  if value.nil?
-  #    tsv_clean_set_brackets(key, nil)
-  #  else
-  #    tsv_clean_set_brackets(key, SERIALIZER_ALIAS[serializer.to_sym].dump(value))
-  #  end
-  #end
-
-
   #{{{ Chained Methods
   def tsv_empty?
     length == 0
@@ -84,7 +68,14 @@ module TSV
 
   def tsv_get_brackets(key)
     value = serialized_get(key)
-    NamedArray.setup value, fields, key if Array === value and not @unnamed and not type == :flat
+    return value if @unnamed or fields.nil?
+
+    case type
+    when :double, :list
+      NamedArray.setup value, fields, key 
+    when :flat, :single
+      Entity.formats[fields.first].setup(value) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+    end
     value
   end
 
@@ -93,32 +84,88 @@ module TSV
   end
 
   def tsv_keys
-    tsv_clean_keys - ENTRY_KEYS
+    keys = tsv_clean_keys - ENTRY_KEYS
+    return keys if @unnamed or key_field.nil?
+
+    if defined?(Entity) and  Entity.respond_to?(:formats) and Entity.formats.include? key_field
+      Entity.formats[key_field].setup(keys.collect{|k| k.dup})
+    else
+      keys
+    end
   end
 
   def tsv_values
     values = values_at(*keys)
-    values.each{|value| NamedArray.setup value, fields} if Array === values.first and not @unnamed and not type == :flat
+    return values if @unnamed or fields.nil?
+
+    case type
+    when :double, :list
+      values.each{|value| NamedArray.setup value, fields }
+    when :flat, :single
+      values.each{|value| 
+        Entity.formats[fields.first].setup(value)
+      } if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+    end
+      
     values
   end
 
   def tsv_each
     fields = self.fields
+
+    serializer = self.serializer
+    serializer_module = SERIALIZER_ALIAS[serializer] unless serializer.nil?
     tsv_clean_each do |key, value|
       next if ENTRY_KEYS.include? key
 
-      value = SERIALIZER_ALIAS[serializer].load(value) unless serializer.nil?
-      NamedArray.setup value, fields, key if Array === value and not @unnamed and not type == :flat
+      # TODO Update this to be more efficient
+      value = serializer_module.load(value) unless serializer.nil?
+
+      # Annotated with Entity and NamedArray
+      if not @unnamed
+        if not fields.nil? 
+          case type
+          when :double, :list
+            NamedArray.setup value, fields, key if Array === value 
+          when :flat, :single
+            Entity.formats[fields.first].setup(value) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+          end
+        end
+        if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
+          key = Entity.formats[key_field].setup(key.dup) 
+        end
+      end
+
       yield key, value if block_given?
       [key, value]
     end
   end
 
   def tsv_collect
+    serializer = self.serializer
+    serializer_module = SERIALIZER_ALIAS[serializer] unless serializer.nil?
     tsv_clean_collect do |key, value|
       next if ENTRY_KEYS.include? key
-      value = SERIALIZER_ALIAS[serializer].load(value) unless serializer.nil? or not String === value 
-      NamedArray.setup value, fields, key if Array === value and not @unnamed and not type == :flat
+
+      # TODO Update this to be more efficient
+      value = serializer_module.load(value) unless serializer.nil?
+
+      # Annotated with Entity and NamedArray
+      if not @unnamed
+        if not fields.nil? 
+          case type
+          when :double, :list
+            NamedArray.setup value, fields, key if Array === value 
+          when :flat, :single
+            Entity.formats[fields.first].setup(value) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+          end
+        end
+        if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
+          key = Entity.formats[key_field].setup(key.dup) 
+        end
+      end
+
+
       if block_given?
         yield key, value
       else

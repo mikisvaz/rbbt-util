@@ -36,8 +36,8 @@ module Task
     return [] if @inputs.nil?
     values = []
     @inputs.each do |input|
-      value = input_values[input] ||
-        IndiferentHash.setup(@input_defaults || {})[input]
+      value = input_values[input]
+      value = IndiferentHash.setup(@input_defaults || {})[input] if value.nil?
       values << value
     end
     values

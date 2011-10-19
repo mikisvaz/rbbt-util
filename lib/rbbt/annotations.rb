@@ -98,7 +98,7 @@ module Annotated
              end
     fields = fields.collect{|f| f.to_s}
 
-    tsv = TSV.setup({}, :key_field => "ID", :fields => fields)
+    tsv = TSV.setup({}, :key_field => "ID", :fields => fields, :type => :list )
 
     annotations.each do |annotation|
       tsv[annotation.id] = annotation.tsv_values(fields)

@@ -63,3 +63,10 @@
 
     echo "source(system('rbbt_Rutil.rb', intern =T));" >> $HOME/.Rprofile
 
+5 - If you plan to run workflows you might want to redefine the default directory to place your workflows (~/.workflows)
+    
+    :script
+
+    mkdir -p ~/git/workflows
+    echo "~/git/workflows/" > .rbbt/etc/workflow_dir
+
