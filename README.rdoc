@@ -68,5 +68,5 @@
     :script
 
     mkdir -p ~/git/workflows
-    echo "~/git/workflows/" > .rbbt/etc/workflow_dir
+    echo "~/git/workflows/" > ~/.rbbt/etc/workflow_dir
 
