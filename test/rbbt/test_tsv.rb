@@ -400,5 +400,33 @@ row2    A    B    Id3
  
   end
 
+  def test_unnamed_key
+    content =<<-EOF
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :key_field => 1)
+      assert tsv.keys.include? "a"
+    end
+ 
+  end
+
+  def test_float_array
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1   0.2   0.3 0
+row2    0.1  4.5 0
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :persist => true, :type => :list, :cast => :to_f)
+      assert_equal [0.2, 0.3, 0], tsv["row1"]
+      assert_equal :float_array, tsv.serializer
+    end
+ 
+  end
+
 
 end

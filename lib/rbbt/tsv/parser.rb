@@ -63,23 +63,33 @@ module TSV
     end
 
     def get_values_single(parts)
-      return parts.shift, parts.first if field_positions.nil?
+      return parts.shift, parts.first if field_positions.nil? and key_position.nil?
       key = parts[key_position]
-      value = parts[field_positions.first]
+      value = parts[field_positions.nil? ? 0 : field_positions.first]
       [key, value]
     end
 
     def get_values_list(parts)
-      return parts.shift, parts if field_positions.nil?
+      return parts.shift, parts if field_positions.nil? and key_position.nil?
       key = parts[key_position]
-      values = parts.values_at *field_positions
+
+      values = if field_positions.nil?
+                parts.tap{|o| o.delete_at key_position}
+              else
+                parts.values_at *field_positions
+              end
+
       [key, values]
     end
 
     def get_values_double(parts)
-      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if field_positions.nil?
+      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if field_positions.nil? and key_position.nil?
       keys = parts[key_position].split(@sep2, -1)
-      values = parts.values_at(*field_positions).collect{|value| value.split(@sep2, -1)}
+      values = if field_positions.nil?
+                parts.tap{|o| o.delete_at key_position}
+              else
+                parts.values_at *field_positions
+              end.collect{|value| value.split(@sep2, -1)}
       [keys, values]
     end
 
@@ -89,7 +99,12 @@ module TSV
       if @take_all
         values = parts.collect{|value| value.split(@sep2, -1)}
       else
-        values = parts.values_at(*field_positions).collect{|value| value.split(@sep2, -1)}
+
+        values = if field_positions.nil?
+                   parts.tap{|o| o.delete_at key_position}
+                 else
+                   parts.values_at *field_positions
+                 end.collect{|value| value.split(@sep2, -1)}
       end
       [keys, values]
     end
@@ -222,7 +237,7 @@ module TSV
         end
 
         if (fields.nil? or fields == @fields or (not @fields.nil? and fields == (1..@fields.length).to_a))
-          if type != :flat
+          if not @fields.nil? and type != :flat
             @field_positions = (0..@fields.length).to_a
             @field_positions.delete @key_position
           end

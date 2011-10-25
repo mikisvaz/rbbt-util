@@ -155,7 +155,7 @@ module TSV
 
   def through(new_key_field = nil, new_fields = nil, uniq = false)
 
-    traverser = Traverser.new @key_field, @fields, new_key_field, new_fields, type, uniq
+    traverser = Traverser.new key_field, fields, new_key_field, new_fields, type, uniq
 
     if @monitor
       desc = "Iterating TSV"

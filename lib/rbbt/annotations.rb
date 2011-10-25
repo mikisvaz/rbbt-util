@@ -252,4 +252,32 @@ module AnnotatedArray
     value.context = self.context
     value
   end
+
+  def annotated_array_reverse
+    value = self.annotated_array_clean_reverse
+    annotation_types.each do |mod|
+      mod.setup(value, *info.values_at(*mod.annotations))
+    end
+    value.context = self.context
+    value
+  end
+
+  def annotated_sort_by(&block)
+    value = self.annotated_array_clean_sort_by &block
+    annotation_types.each do |mod|
+      mod.setup(value, *info.values_at(*mod.annotations))
+    end
+    value.context = self.context
+    value
+  end
+
+  def annotated_sort
+    value = self.annotated_array_clean_sort
+    annotation_types.each do |mod|
+      mod.setup(value, *info.values_at(*mod.annotations))
+    end
+    value.context = self.context
+    value
+ 
+  end
 end

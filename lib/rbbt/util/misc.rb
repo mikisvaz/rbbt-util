@@ -262,6 +262,8 @@ Subject: #{subject}
       FileUtils.mkdir_p dir unless File.exists? dir
       FileUtils.cd dir
       res = yield
+    rescue
+      raise $!
     ensure
       FileUtils.cd old_pwd
     end

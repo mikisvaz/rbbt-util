@@ -48,10 +48,15 @@ rbbt.tsv2matrix <- function(data){
   return(new);
 }
 
-rbbt.tsv.write <- function(filename, data, key.field = NULL){
+rbbt.tsv.write <- function(filename, data, key.field = NULL, extra_headers = NULL){
   if (is.null(key.field)){ key.field = "ID";}
 
   f = file(filename, 'w');
+
+  if (!is.null(extra_headers)){
+      extra_headers = paste("#: ", extra_headers, "\n", sep="");
+      cat(extra_headers, file=f);
+  }
 
   header = paste("#", key.field, sep="");
   for (name in colnames(data)){ header = paste(header, name, sep="\t");}

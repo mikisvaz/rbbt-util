@@ -23,6 +23,38 @@ module TSV
 
     counts
   end
+
+  def self.field_match_counts(file, values, options = {})
+    options = Misc.add_defaults options, :persist_prefix => "Field_Matches"
+    persist_options = Misc.pull_keys options, :persist
+
+    filename = TSV === file ? file.filename : file
+    text = Persist.persist filename, :string, persist_options do
+      tsv = TSV === file ? file : TSV.open(file)
+
+      text = ""
+      fields = nil
+      tsv.tap{|e| e.unnamed =  true; fields = e.fields}.through do |gene, names|
+        names.zip(fields).each do |list, format|
+          list.delete_if do |name| name.empty? end
+          next if list.empty?
+          text << list.collect{|name| [name, format] * "\t"} * "\n" << "\n"
+        end
+      end
+      text
+    end
+
+    path = Persist.persistence_path(filename, persist_options)
+    TmpFile.with_file(values * "\n") do |value_file|
+      cmd = "cat '#{ path }' | grep -w -F -f '#{ value_file }' |cut -f 2 |sort|uniq -c|sed 's/^ *//;s/ /\\t/'"
+      begin
+        TSV.open(CMD.cmd(cmd), :key_field => 1, :type => :single, :cast => :to_i)
+      rescue
+        TSV.setup({nil => 0}, :type => :single, :cast => :to_i)
+      end
+    end
+  end
+
   def self.get_filename(file)
     case
     when String === file
