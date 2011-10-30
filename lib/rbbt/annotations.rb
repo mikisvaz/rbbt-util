@@ -3,6 +3,7 @@ require 'json'
 module Annotated
   attr_accessor :annotation_types
   attr_accessor :context
+  attr_accessor :container
 
   def self.extended(base)
     base.annotation_types ||= []
@@ -121,8 +122,6 @@ module Annotated
     new.context = self.context
     new
   end
-
-
 end
 
 
@@ -189,7 +188,8 @@ module Annotation
   def setup(object, *values)
     object.extend self
 
-    all_annotations.zip(values).each do |name, value|
+    inputs = Misc.positional2hash(all_annotations, *values)
+    inputs.each do |name, value|
       object.send(name.to_s + '=', value)
     end
 
@@ -207,15 +207,17 @@ module AnnotatedArray
       mod.setup(value, *info.values_at(*mod.annotations))
     end
     value.context = self.context
+    value.container = self
     value
   end
 
   def annotated_array_each
     annotated_array_clean_each do |value|
       annotation_types.each do |mod|
-        mod.setup(value, *info.values_at(*mod.annotations))
+        mod.setup(value, info)
       end
       value.context = self.context
+      value.container = self
       yield value
     end
   end
@@ -225,6 +227,13 @@ module AnnotatedArray
     annotated_array_each do |value|
       res << yield(value)
     end
+
+    annotation_types.each do |mod|
+      mod.setup(res, *info.values_at(*mod.annotations))
+    end
+    res.context = self.context
+    res.container = self.container
+
     res
   end
 
@@ -233,6 +242,13 @@ module AnnotatedArray
     annotated_array_each do |value|
       res << value if yield(value)
     end
+ 
+    annotation_types.each do |mod|
+      mod.setup(res, *info.values_at(*mod.annotations))
+    end
+    res.context = self.context
+    res.container = self.container
+
     res
   end
 
@@ -241,6 +257,13 @@ module AnnotatedArray
     annotated_array_each do |value|
       res << value unless yield(value)
     end
+ 
+    annotation_types.each do |mod|
+      mod.setup(res, *info.values_at(*mod.annotations))
+    end
+    res.context = self.context
+    res.container = self.container
+
     res
   end
 
@@ -250,6 +273,30 @@ module AnnotatedArray
       mod.setup(value, *info.values_at(*mod.annotations))
     end
     value.context = self.context
+    value.container = self.container
+    value
+  end
+
+  def annotated_array_uniq
+    value = self.annotated_array_clean_uniq
+
+    annotation_types.each do |mod|
+      mod.setup(value, *info.values_at(*mod.annotations))
+    end
+
+    value.context = self.context
+    value.container = self.container
+    value
+  end
+  def annotated_array_flatten
+    value = self.annotated_array_clean_flatten.dup
+
+    annotation_types.each do |mod|
+      mod.setup(value, *info.values_at(*mod.annotations))
+    end
+
+    value.context = self.context
+    value.container = self.container
     value
   end
 
@@ -259,25 +306,53 @@ module AnnotatedArray
       mod.setup(value, *info.values_at(*mod.annotations))
     end
     value.context = self.context
+    value.container = self.container
     value
   end
 
-  def annotated_sort_by(&block)
+
+  def annotated_array_sort_by(&block)
     value = self.annotated_array_clean_sort_by &block
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
     end
     value.context = self.context
+    value.container = self.container
     value
   end
 
-  def annotated_sort
+  def annotated_array_sort
     value = self.annotated_array_clean_sort
+
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
     end
     value.context = self.context
+    value.container = self.container
     value
- 
+  end
+
+  def annotated_array_select_by(method)
+    case
+    when (Symbol === method or String === method)
+      method = self.send(method) 
+    when Array === method
+      method = method.dup
+    else
+      raise "Unknown format of method: of class #{method.class}"
+    end
+
+    value = []
+    
+    self.annotated_array_clean_each do |e|
+      value << e if method.shift
+    end
+
+    #annotation_types.each do |mod|
+    #  mod.setup(value, *info.values_at(*mod.annotations))
+    #end
+    #value.context = self.context
+    #value.container = self.container
+    value
   end
 end

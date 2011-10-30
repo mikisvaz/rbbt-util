@@ -148,6 +148,16 @@ module Workflow
       base.extend AnnotatedModule
       class << base
         attr_accessor :libdir, :workdir, :tasks, :task_dependencies, :task_description, :dependencies, :asynchronous_exports, :synchronous_exports, :exec_exports, :last_task
+ 
+        alias prev_workflow_extended extended
+
+        def extended(object)
+          self.send(:prev_workflow_extended, object)
+          object.extend Workflow unless Workflow === object
+
+          object.tasks.merge! self.tasks
+          object.task_dependencies.merge! self.task_dependencies
+        end
 
         def dependencies
           i = @dependencies; @dependencies = []; i
@@ -242,11 +252,9 @@ module Workflow
     task = tasks[taskname]
     raise "Task not found: #{ taskname }" if task.nil?
 
-
     IndiferentHash.setup(inputs)
 
     resolve_locals(inputs)
-
 
     dependencies = real_dependencies(task, jobname, inputs, task_dependencies[taskname] || [])
 
@@ -255,6 +263,13 @@ module Workflow
     step_path = step_path taskname, jobname, input_values, dependencies
 
     step = Step.new step_path, task, input_values, dependencies
+
+    helpers = @helpers
+    (class << step; self; end).class_eval do
+      helpers.each do |name, block|
+        define_method name, &block
+      end
+    end
 
     step
   end

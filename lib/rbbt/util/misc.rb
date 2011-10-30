@@ -7,6 +7,29 @@ require 'net/smtp'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.consolidate(list)
+    list.inject(nil){|acc,e|
+      if acc.nil?
+        acc = e
+      else
+        acc.concat e
+        acc
+      end
+    }
+  end
+
+  def self.positional2hash(keys, *values)
+    if Hash === values.last
+      extra = values.pop
+      inputs = Misc.zip2hash(keys, values)
+      inputs.delete_if{|k,v| v.nil?}
+      inputs = Misc.add_defaults inputs, extra
+      inputs.delete_if{|k,v| not keys.include? k}
+    else
+      Misc.zip2hash(keys, values)
+    end
+  end
+
   def self.send_email(from, to, subject, message, options = {})
     IndiferentHash.setup(options)
     options = Misc.add_defaults options, :from_alias => nil, :to_alias => nil, :server => 'localhost', :port => 25, :user => nil, :pass => nil, :auth => :login

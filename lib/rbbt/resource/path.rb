@@ -133,6 +133,10 @@ module Path
     TSV.open(self.produce, *args)
   end
 
+  def list
+    Open.read(self.produce).split "\n"
+  end
+
   def yaml
     YAML.load self.open
   end
@@ -148,7 +152,6 @@ module Path
   def pos_index(pos, options = {})
     TSV.pos_index(self.produce.find, pos, options)
   end
-
 
   def to_yaml(*args)
     self.to_s.to_yaml(*args)

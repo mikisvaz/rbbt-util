@@ -74,7 +74,7 @@ module TSV
     when :double, :list
       NamedArray.setup value, fields, key 
     when :flat, :single
-      Entity.formats[fields.first].setup(value) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+      Entity.formats[fields.first].setup(value, :format => fields.first) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
     end
     value
   end
@@ -88,7 +88,7 @@ module TSV
     return keys if @unnamed or key_field.nil?
 
     if defined?(Entity) and  Entity.respond_to?(:formats) and Entity.formats.include? key_field
-      Entity.formats[key_field].setup(keys.collect{|k| k.dup})
+      Entity.formats[key_field].setup(keys.collect{|k| k.dup}, :format => key_field)
     else
       keys
     end
@@ -103,7 +103,7 @@ module TSV
       values.each{|value| NamedArray.setup value, fields }
     when :flat, :single
       values.each{|value| 
-        Entity.formats[fields.first].setup(value)
+        Entity.formats[fields.first].setup(value, :format => fields.first)
       } if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
     end
       
@@ -128,11 +128,11 @@ module TSV
           when :double, :list
             NamedArray.setup value, fields, key if Array === value 
           when :flat, :single
-            Entity.formats[fields.first].setup(value) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+            Entity.formats[fields.first].setup(value, :format => fields.first) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
           end
         end
         if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
-          key = Entity.formats[key_field].setup(key.dup) 
+          key = Entity.formats[key_field].setup(key.dup, :format => key_field) 
         end
       end
 
@@ -157,11 +157,11 @@ module TSV
           when :double, :list
             NamedArray.setup value, fields, key if Array === value 
           when :flat, :single
-            Entity.formats[fields.first].setup(value) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+            Entity.formats[fields.first].setup(value, :format => fields.first) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
           end
         end
         if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
-          key = Entity.formats[key_field].setup(key.dup) 
+          key = Entity.formats[key_field].setup(key.dup, :format => key_field) 
         end
       end
 
