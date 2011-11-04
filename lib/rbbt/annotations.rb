@@ -224,15 +224,10 @@ module AnnotatedArray
 
   def annotated_array_collect
     res = []
+
     annotated_array_each do |value|
       res << yield(value)
     end
-
-    annotation_types.each do |mod|
-      mod.setup(res, *info.values_at(*mod.annotations))
-    end
-    res.context = self.context
-    res.container = self.container
 
     res
   end
