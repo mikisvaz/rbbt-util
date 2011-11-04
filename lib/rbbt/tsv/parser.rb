@@ -217,6 +217,7 @@ module TSV
       key_field = Misc.process_options options, :key_field
       fields    = Misc.process_options options, :fields
 
+
       if (key_field.nil? or key_field == 0 or key_field == :key) and
         (fields.nil? or fields == @fields or (not @fields.nil? and fields == (1..@fields.length).to_a))
 
@@ -226,7 +227,7 @@ module TSV
         @straight = false
 
         case
-        when (key_field.nil? or key_field == @key_field or key_field == 0)
+        when (key_field.nil? or (not Integer === key_field and @key_field.nil?) or key_field == @key_field or key_field == 0)
           @key_position = 0
         when Integer === key_field
           @key_position = key_field
@@ -236,7 +237,7 @@ module TSV
           raise "Format of key_field not understood: #{key_field.inspect}"
         end
 
-        if (fields.nil? or fields == @fields or (not @fields.nil? and fields == (1..@fields.length).to_a))
+        if (fields.nil? or (not (Array === fields and Integer === fields.first) and @fields.nil?) or fields == @fields or (not @fields.nil? and fields == (1..@fields.length).to_a))
           if not @fields.nil? and type != :flat
             @field_positions = (0..@fields.length).to_a
             @field_positions.delete @key_position
@@ -259,7 +260,10 @@ module TSV
 
         new_key_field = @fields.dup.unshift(@key_field)[@key_position] if not @fields.nil?
         @fields = @fields.dup.unshift(@key_field).values_at *@field_positions if not @fields.nil? and not @field_positions.nil?
-        @key_field = new_key_field
+        @fields ||= fields if Array === fields and String === fields.first
+        @key_field = new_key_field 
+        @key_field ||= key_field if String === key_field
+
       end
     end
 

@@ -78,7 +78,7 @@ row2    A    B    Id3
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :sep => /\s+/, :fields => 1)
+      tsv = TSV.open(filename, :sep => /\s+/, :fields => [1])
       assert_equal ["a", "aa", "aaa"], tsv["row1"][0]
       assert_equal :double, tsv.type
       assert_equal [%w(a aa aaa)], tsv["row1"]
