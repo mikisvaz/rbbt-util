@@ -316,9 +316,10 @@ module TSV
         end
       end
 
+      fields = options[:fields]
       fix_fields(options)
 
-      @straight = false if @sep != "\t" or not @cast.nil? or merge
+      @straight = false if @sep != "\t" or not @cast.nil? or merge or (@type == :flat and fields)
     end
 
     def setup(data)
