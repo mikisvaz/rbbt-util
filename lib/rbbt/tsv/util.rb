@@ -87,7 +87,9 @@ module TSV
     when (field.nil? or field == :key or key_field == field)
       :key
     when String === field
-      fields.index field
+      pos = fields.index field
+      Log.medium "Field #{ field } was not found. Options: #{fields * ", "}" if pos.nil?
+      pos
     end
   end
 

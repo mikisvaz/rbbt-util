@@ -70,10 +70,10 @@ module ChainMethods
 
       if not metaclass.respond_to? :extended
         metaclass.module_eval do
-          alias prev_chain_methods_extended extended
+          alias prev_chain_methods_extended extended if methods.include? "extended"
 
           def extended(base)
-            prev_chain_methods_extended(base)
+            prev_chain_methods_extended(base) if methods.include? "prev_chain_methods_extended"
             setup_chains(base)
           end
         end

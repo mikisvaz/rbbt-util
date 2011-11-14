@@ -599,7 +599,7 @@ module NamedArray
 
   def report
     fields.zip(self).collect do |field,value|
-      "\nAttributes:\n* #{ field }: #{ Array === value ? value * "|" : value }"
+      "#{ field }: #{ Array === value ? value * "|" : value }"
     end * "\n"
   end
 

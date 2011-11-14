@@ -272,6 +272,16 @@ module AnnotatedArray
     value
   end
 
+  def annotated_array_remove(list)
+    value = (self - list)
+    annotation_types.each do |mod|
+      mod.setup(value, *info.values_at(*mod.annotations))
+    end
+    value.context = self.context
+    value.container = self.container
+    value
+  end
+
   def annotated_array_uniq
     value = self.annotated_array_clean_uniq
 

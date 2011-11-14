@@ -407,7 +407,7 @@ end
 
     str = ""
 
-    str << "#: " << Misc.hash2string(ENTRIES.collect{|key| [key.to_sym, self.send(key)]}) << "\n" unless no_options
+    str << "#: " << Misc.hash2string((ENTRIES - ["key_field", "fields"]).collect{|key| [key.to_sym, self.send(key)]}) << "\n" unless no_options
     if fields
       str << "#" << key_field << "\t" << fields * "\t" << "\n"
     end
@@ -416,13 +416,13 @@ end
       if keys.nil?
         each do |key, values|
           key = key.to_s if Symbol === key
-          str << key.dup 
+          str << key.to_s
           str << values_to_s(values)
         end
       else
         keys.zip(values_at(*keys)).each do |key, values|
           key = key.to_s if Symbol === key
-          str << key.dup << values_to_s(values)
+          str << key.to_s << values_to_s(values)
         end
       end
 
@@ -434,6 +434,12 @@ end
     peek = {}
     keys[0..10].zip(values[0..10]).each do |k,v| peek[k] = v end
     peek
+  end
+
+  def to_hash
+    new = self.dup
+    ENTRY_KEYS.each{|entry| new.delete entry}
+    new
   end
 end
 

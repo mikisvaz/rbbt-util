@@ -134,7 +134,11 @@ module Path
   end
 
   def list
-    Open.read(self.produce).split "\n"
+    Open.read(self.produce.find).split "\n"
+  end
+
+  def keys(field = 0, sep = "\t")
+    Open.read(self.produce.find).split("\n").collect{|l| next if l =~ /^#/; l.split(sep, -1)[field]}.compact
   end
 
   def yaml

@@ -149,10 +149,10 @@ module Workflow
       class << base
         attr_accessor :libdir, :workdir, :tasks, :task_dependencies, :task_description, :dependencies, :asynchronous_exports, :synchronous_exports, :exec_exports, :last_task
  
-        alias prev_workflow_extended extended
+        alias prev_workflow_extended extended if methods.include? "extended"
 
         def extended(object)
-          self.send(:prev_workflow_extended, object)
+          self.send(:prev_workflow_extended, object) if methods.include? "prev_workflow_extended"
           object.extend Workflow unless Workflow === object
 
           object.tasks.merge! self.tasks

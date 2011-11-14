@@ -100,6 +100,7 @@ module Persist
              filename ||= source.object_id.to_s
 
              path = persistence_path(filename, persist_options, options)
+
              if is_persisted? path
                Log.debug "TSV persistence up-to-date: #{ path }"
                return open_tokyocabinet(path, false) 

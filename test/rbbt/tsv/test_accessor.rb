@@ -5,6 +5,21 @@ require 'test/unit'
 
 class TestTSV < Test::Unit::TestCase
 
+  def test_to_hash
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+      hash = tsv.to_hash
+      assert hash.methods.select{|m| m =~ /#{ TSV::KEY_PREFIX }/}.empty?
+    end
+  end
+
+
   def test_tsv
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID

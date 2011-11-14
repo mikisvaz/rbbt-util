@@ -19,7 +19,7 @@ class TestTSV < Test::Unit::TestCase
 
     assert_equal "1", a["one"]
   end
-   
+  
   def test_tsv
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
@@ -427,6 +427,20 @@ row2    0.1  4.5 0
     end
  
   end
+
+  def test_flat_field_select
+    content =<<-EOF
+#: :type=:flat
+#Id    Value
+row1   a  aa  aaa
+row2    b  bb bbb
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      assert TSV.open(filename, :sep => /\s+/, :key_field => "Value").include? "aa"
+    end
+  end
+
 
 
 end

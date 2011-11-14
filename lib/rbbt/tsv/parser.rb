@@ -93,8 +93,20 @@ module TSV
       [keys, values]
     end
 
+    def get_values_flat_inverse(parts)
+      value = parts.shift
+      keys = parts
+      [keys, [value]]
+    end
+
     def get_values_flat(parts)
-      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if field_positions.nil?
+      if key_position and field_positions.nil?
+        value = parts.shift
+        keys = parts
+        return [keys, [value]]
+      end
+
+      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if field_positions.nil? and key_position.nil?
       keys = parts[key_position].split(@sep2, -1)
       if @take_all
         values = parts.collect{|value| value.split(@sep2, -1)}
@@ -261,6 +273,7 @@ module TSV
         new_key_field = @fields.dup.unshift(@key_field)[@key_position] if not @fields.nil?
         @fields = @fields.dup.unshift(@key_field).values_at *@field_positions if not @fields.nil? and not @field_positions.nil?
         @fields ||= fields if Array === fields and String === fields.first
+        @fields = [@key_field] if new_key_field != @key_field and type == :flat and @field_positions.nil?
         @key_field = new_key_field 
         @key_field ||= key_field if String === key_field
 
@@ -272,7 +285,7 @@ module TSV
       @sep = Misc.process_options(options, :sep) || "\t"
 
       options = parse_header(stream).merge options
-      
+
       @type = Misc.process_options(options, :type) || :double
       merge = Misc.process_options(options, :merge) || false
 
