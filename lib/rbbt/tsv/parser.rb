@@ -100,14 +100,17 @@ module TSV
     end
 
     def get_values_flat(parts)
-      if key_position and field_positions.nil?
+      if key_position and key_position != 0 and field_positions.nil?
         value = parts.shift
         keys = parts
         return [keys, [value]]
       end
 
-      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if field_positions.nil? and key_position.nil?
+      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if 
+        field_positions.nil? and (key_position.nil? or key_position == 0)
+
       keys = parts[key_position].split(@sep2, -1)
+
       if @take_all
         values = parts.collect{|value| value.split(@sep2, -1)}
       else
