@@ -122,6 +122,15 @@ module Annotated
     new.context = self.context
     new
   end
+
+  def annotate(object)
+    annotation_types.each do |mod|
+      mod.setup(object, *info.values_at(*mod.annotations))
+    end
+    object.context = self.context
+    object.container = self.container
+    object
+  end
 end
 
 
@@ -195,6 +204,7 @@ module Annotation
 
     object
   end
+
 end
 
 module AnnotatedArray
@@ -282,6 +292,18 @@ module AnnotatedArray
     value
   end
 
+  def annotated_array_compact
+    value = self.annotated_array_clean_compact
+
+    annotation_types.each do |mod|
+      mod.setup(value, *info.values_at(*mod.annotations))
+    end
+
+    value.context = self.context
+    value.container = self.container
+    value
+  end
+ 
   def annotated_array_uniq
     value = self.annotated_array_clean_uniq
 
