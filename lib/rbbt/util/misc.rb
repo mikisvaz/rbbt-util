@@ -7,6 +7,16 @@ require 'net/smtp'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.mean(list)
+    list.inject(0.0){|acc,e| acc += e} / list.length
+  end
+
+  def self.sd(list)
+    return nil if list.length < 3
+    mean = mean(list)
+    Math.sqrt(list.inject(0.0){|acc,e| d = e - mean; acc += d * d}) / (list.length - 1)
+  end
+
   def self.consolidate(list)
     list.inject(nil){|acc,e|
       if acc.nil?

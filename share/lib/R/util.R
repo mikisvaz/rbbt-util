@@ -25,8 +25,26 @@ rbbt.load.data <- function(filename, sep = "\t",  ...){
   return(data);
 }
 
+rbbt.flat.tsv <- function(filename, sep = "\t", comment.char ="#", ...){
+  f = file(filename, 'r');
+  headers = readLines(f, 1);
+  if (length(grep("^#: ", headers)) > 0){ 
+      headers = readLines(f, 1); 
+  } 
+  result = list();
+  while( TRUE ){
+    line = readLines(f, 1);
+    if (length(line) == 0){ break;}
+    parts = unlist(strsplit(line, sep, fixed = TRUE));
+    id = parts[1];
+    result[[id]] = parts[2:length(parts)];
+  }
+  close(f);
+  return(result);
+}
+
 rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1,  ...){
-  data=read.table(file=filename, sep=sep, fill=TRUE,  as.is=TRUE, quote='', row.names= row.names, comment.char = comment.char, ...);
+  data=read.table(file=filename, sep=sep, fill=TRUE, as.is=TRUE, quote='', row.names= row.names, comment.char = comment.char, ...);
   f = file(filename, 'r');
   headers = readLines(f, 1);
   if (length(grep("^#: ", headers)) > 0){ 

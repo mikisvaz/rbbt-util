@@ -88,7 +88,7 @@ module Persist
     database
   end
 
-  def self.persist_tsv(source, filename, options, persist_options = {})
+  def self.persist_tsv(source, filename, options = {}, persist_options = {})
     persist_options[:prefix] ||= "TSV"
 
     data = case

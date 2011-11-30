@@ -301,6 +301,7 @@ if '#{entry}' == 'serializer'
       class << self
         
         define_method :serialized_get do |key|
+          return nil unless self.include? key
           self.serializer_module.load(tsv_clean_get_brackets(key))
         end
 

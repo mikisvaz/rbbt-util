@@ -141,6 +141,15 @@ class TestMisc < Test::Unit::TestCase
     assert_equal nil, inputs[:four]
   end
 
+  def test_mean
+    assert_equal 2, Misc.mean([1,2,3])
+    assert_equal 3, Misc.mean([1,2,3,4,5])
+  end
+
+  def test_sd
+    assert_equal Math.sqrt(2), Misc.sd([1,3])
+  end
+
 #  def test_divide
 #    assert_equal 2, Misc.divide(%w(1 2 3 4 5 6 7 8 9),2).length
 #  end
