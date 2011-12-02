@@ -31,7 +31,7 @@ module Annotated
     annotation_types = info[:annotation_types]
     annotation_types.each do |mod|
       mod = Misc.string2const(mod) if String === mod
-      mod.setup_info(object, info)
+      mod.setup(object, *info.values_at(*mod.all_annotations))
     end
 
     object
@@ -116,7 +116,7 @@ module Annotated
   def make_list
     new = [self]
     annotation_types.each do |mod|
-      mod.setup(new, *info.values_at(*mod.annotations))
+      mod.setup(new, *info.values_at(*mod.all_annotations))
     end
     new.context = self.context
     new
@@ -167,7 +167,7 @@ module Annotation
   end
 
   def update_annotations
-    @all_annotations = all_inheritance.inject([]){|acc,mod| acc.concat mod.annotations}.concat(@annotations)
+    @all_annotations = all_inheritance.inject([]){|acc,mod| acc.concat mod.all_annotations}.concat(@annotations)
   end
 
   def annotation(*values)
@@ -204,7 +204,7 @@ module AnnotatedArray
   def annotated_array_get_brackets(pos)
     value = annotated_array_clean_get_brackets(pos)
     annotation_types.each do |mod|
-      mod.setup(value, *info.values_at(*mod.annotations))
+      mod.setup(value, *info.values_at(*mod.all_annotations))
     end
     value.context = self.context
     value
@@ -213,7 +213,7 @@ module AnnotatedArray
   def annotated_array_each
     annotated_array_clean_each do |value|
       annotation_types.each do |mod|
-        mod.setup(value, *info.values_at(*mod.annotations))
+        mod.setup(value, *info.values_at(*mod.all_annotations))
       end
       value.context = self.context
       yield value
@@ -247,7 +247,7 @@ module AnnotatedArray
   def annotated_array_subset(list)
     value = (self & list)
     annotation_types.each do |mod|
-      mod.setup(value, *info.values_at(*mod.annotations))
+      mod.setup(value, *info.values_at(*mod.all_annotations))
     end
     value.context = self.context
     value
