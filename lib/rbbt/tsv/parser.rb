@@ -1,7 +1,7 @@
 require 'rbbt/util/cmd'
 module TSV
   class Parser
-    attr_accessor :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped
+    attr_accessor :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace
 
     class SKIP_LINE < Exception; end
     class END_PARSING < Exception; end
@@ -298,6 +298,7 @@ module TSV
       @fix = Misc.process_options(options, :fix) 
       @select= Misc.process_options options, :select
       @zipped = Misc.process_options options, :zipped
+      @namespace = Misc.process_options options, :namespace
 
       case @type
       when :double 
@@ -343,6 +344,7 @@ module TSV
       data.type = @type
       data.key_field = @key_field
       data.fields = @fields
+      data.namespace = @namespace
       data
     end
   end

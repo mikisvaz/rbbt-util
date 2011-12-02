@@ -72,9 +72,9 @@ module TSV
 
     case type
     when :double, :list
-      NamedArray.setup value, fields, key 
+      NamedArray.setup value, fields, key, namespace
     when :flat, :single
-      Entity.formats[fields.first].setup(value, :format => fields.first) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+      Entity.formats[fields.first].setup(value, :format => fields.first, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
     end
     value
   end
@@ -88,7 +88,7 @@ module TSV
     return keys if @unnamed or key_field.nil?
 
     if defined?(Entity) and  Entity.respond_to?(:formats) and Entity.formats.include? key_field
-      Entity.formats[key_field].setup(keys.collect{|k| k.dup}, :format => key_field)
+      Entity.formats[key_field].setup(keys.collect{|k| k.dup}, :format => key_field, :namespace => namespace, :organism => namespace)
     else
       keys
     end
@@ -100,10 +100,10 @@ module TSV
 
     case type
     when :double, :list
-      values.each{|value| NamedArray.setup value, fields }
+      values.each{|value| NamedArray.setup value, fields, nil, namespace }
     when :flat, :single
       values.each{|value| 
-        Entity.formats[fields.first].setup(value, :format => fields.first)
+        Entity.formats[fields.first].setup(value, :format => fields.first, :namespace => namespace, :organism => namespace)
       } if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
     end
       
@@ -126,9 +126,9 @@ module TSV
         if not fields.nil? 
           case type
           when :double, :list
-            NamedArray.setup value, fields, key if Array === value 
+            NamedArray.setup value, fields, key, namespace if Array === value 
           when :flat, :single
-            Entity.formats[fields.first].setup(value, :format => fields.first) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+            Entity.formats[fields.first].setup(value, :format => fields.first, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
           end
         end
         if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
@@ -155,9 +155,9 @@ module TSV
         if not fields.nil? 
           case type
           when :double, :list
-            NamedArray.setup value, fields, key if Array === value 
+            NamedArray.setup value, fields, key, namespace if Array === value 
           when :flat, :single
-            Entity.formats[fields.first].setup(value, :format => fields.first) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+            Entity.formats[fields.first].setup(value, :format => fields.first, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
           end
         end
         if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
@@ -336,7 +336,7 @@ end
     if @fields.nil? or @unnamed
       @fields
     else
-      NamedArray.setup @fields, @fields
+      NamedArray.setup @fields, @fields, nil, namespace
     end
   end
 

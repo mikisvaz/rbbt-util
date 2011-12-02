@@ -23,7 +23,7 @@ class Step
     @inputs = inputs || []
   end
 
-  def prepare_entity(value, description = nil, info = {})
+  def prepare_result(value, description = nil, info = {})
     return value if description.nil?
     Entity.formats[description].setup(value, info.merge(:format => description)) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? description
     value
@@ -31,7 +31,7 @@ class Step
 
   def exec
     result = @task.exec_in self, *@inputs
-    prepare_entity result, @task.result_description
+    prepare_result result, @task.result_description
   end
 
   def join
@@ -59,7 +59,7 @@ class Step
       res
     end
 
-    prepare_entity result, @task.result_description, info
+    prepare_result result, @task.result_description, info
   end
 
   def fork
@@ -90,7 +90,7 @@ class Step
     result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path} do
       exec
     end
-    prepare_entity result, @task.result_description, info
+    prepare_result result, @task.result_description, info
   end
 
   def clean
@@ -108,6 +108,7 @@ class Step
   def rec_dependencies
     @dependencies.collect{|step| step.rec_dependencies}.flatten.concat  @dependencies
   end
+
   def step(name)
     rec_dependencies.select{|step| step.task.name.to_sym == name.to_sym}.first
   end

@@ -181,7 +181,7 @@ module Path
     if identifier_file_path.nil?
       []
     else
-      [identifier_file_path.nil?]
+      [identifier_file_path]
     end
   end
 end

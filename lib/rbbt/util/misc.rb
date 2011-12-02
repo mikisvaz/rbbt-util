@@ -493,11 +493,13 @@ module NamedArray
   self.chain_prefix = :named_array
   attr_accessor :fields
   attr_accessor :key
+  attr_accessor :namespace
 
-  def self.setup(array, fields, key = nil)
+  def self.setup(array, fields, key = nil, namespace = nil)
     array.extend NamedArray
     array.fields = fields
     array.key = key
+    array.namespace = namespace
     array
   end
 
@@ -525,40 +527,20 @@ module NamedArray
   end
 
   def named_array_get_brackets(key)
-    if defined? Entity
-      entity = (defined?(Entity) and Entity.respond_to?(:formats)) ? Entity.formats[key] : nil
-      if entity
-        elem = if entity.annotations.first == :format
-                 entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)), key)
-               else
-                 entity.setup(named_array_clean_get_brackets(Misc.field_position(fields, key)))
-               end
-        elem.context = self
-        elem
-      else
-        named_array_clean_get_brackets(Misc.field_position(fields, key))
-      end
-    else
-      named_array_clean_get_brackets(Misc.field_position(fields, key))
-    end
+    pos = Misc.field_position(fields, key)
+    elem = named_array_clean_get_brackets(pos)
+
+    return elem if @fields.nil? or @fields.empty?
+
+    field = NamedArray === @fields ? @fields.named_array_clean_get_brackets(pos) : @fields[pos]
+    elem = Entity.formats[field].setup((elem.frozen? ? elem.dup : elem), :format => field, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? field
+    elem
   end
 
   def named_array_each(&block)
     if defined?(Entity) and not @fields.nil? and not @fields.empty?
       @fields.zip(self).each do |field,elem|
-        entity = (defined?(Entity) and Entity.respond_to?(:formats)) ? Entity.formats[field] : nil
-
-        if entity
-          elem = elem.dup if elem.frozen?
-          if entity.annotations.first == :format
-            entity.setup(elem, field) 
-          else
-            entity.setup(elem)
-          end
-          elem.context = self
-          elem
-        end
-
+        elem = Entity.formats[field].setup((elem.frozen? ? elem.dup : elem), :format => field, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? field
         yield(elem)
         elem
       end
