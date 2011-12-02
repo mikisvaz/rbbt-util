@@ -63,33 +63,63 @@ module TSV
     end
 
     def get_values_single(parts)
-      return parts.shift, parts.first if field_positions.nil?
+      return parts.shift, parts.first if field_positions.nil? and key_position.nil?
       key = parts[key_position]
-      value = parts[field_positions.first]
+      value = parts[field_positions.nil? ? 0 : field_positions.first]
       [key, value]
     end
 
     def get_values_list(parts)
-      return parts.shift, parts if field_positions.nil?
+      return parts.shift, parts if field_positions.nil? and key_position.nil?
       key = parts[key_position]
-      values = parts.values_at *field_positions
+
+      values = if field_positions.nil?
+                parts.tap{|o| o.delete_at key_position}
+              else
+                parts.values_at *field_positions
+              end
+
       [key, values]
     end
 
     def get_values_double(parts)
-      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if field_positions.nil?
+      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if field_positions.nil? and key_position.nil?
       keys = parts[key_position].split(@sep2, -1)
-      values = parts.values_at(*field_positions).collect{|value| value.split(@sep2, -1)}
+      values = if field_positions.nil?
+                parts.tap{|o| o.delete_at key_position}
+              else
+                parts.values_at *field_positions
+              end.collect{|value| value.split(@sep2, -1)}
       [keys, values]
     end
 
+    def get_values_flat_inverse(parts)
+      value = parts.shift
+      keys = parts
+      [keys, [value]]
+    end
+
     def get_values_flat(parts)
-      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if field_positions.nil?
+      if key_position and key_position != 0 and field_positions.nil?
+        value = parts.shift
+        keys = parts
+        return [keys, [value]]
+      end
+
+      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if 
+        field_positions.nil? and (key_position.nil? or key_position == 0)
+
       keys = parts[key_position].split(@sep2, -1)
+
       if @take_all
         values = parts.collect{|value| value.split(@sep2, -1)}
       else
-        values = parts.values_at(*field_positions).collect{|value| value.split(@sep2, -1)}
+
+        values = if field_positions.nil?
+                   parts.tap{|o| o.delete_at key_position}
+                 else
+                   parts.values_at *field_positions
+                 end.collect{|value| value.split(@sep2, -1)}
       end
       [keys, values]
     end
@@ -202,6 +232,7 @@ module TSV
       key_field = Misc.process_options options, :key_field
       fields    = Misc.process_options options, :fields
 
+
       if (key_field.nil? or key_field == 0 or key_field == :key) and
         (fields.nil? or fields == @fields or (not @fields.nil? and fields == (1..@fields.length).to_a))
 
@@ -211,7 +242,7 @@ module TSV
         @straight = false
 
         case
-        when (key_field.nil? or key_field == @key_field or key_field == 0)
+        when (key_field.nil? or (not Integer === key_field and @key_field.nil?) or key_field == @key_field or key_field == 0)
           @key_position = 0
         when Integer === key_field
           @key_position = key_field
@@ -221,8 +252,8 @@ module TSV
           raise "Format of key_field not understood: #{key_field.inspect}"
         end
 
-        if (fields.nil? or fields == @fields or (not @fields.nil? and fields == (1..@fields.length).to_a))
-          if type != :flat
+        if (fields.nil? or (not (Array === fields and Integer === fields.first) and @fields.nil?) or fields == @fields or (not @fields.nil? and fields == (1..@fields.length).to_a))
+          if not @fields.nil? and type != :flat
             @field_positions = (0..@fields.length).to_a
             @field_positions.delete @key_position
           end
@@ -244,7 +275,11 @@ module TSV
 
         new_key_field = @fields.dup.unshift(@key_field)[@key_position] if not @fields.nil?
         @fields = @fields.dup.unshift(@key_field).values_at *@field_positions if not @fields.nil? and not @field_positions.nil?
-        @key_field = new_key_field
+        @fields ||= fields if Array === fields and String === fields.first
+        @fields = [@key_field] if new_key_field != @key_field and type == :flat and @field_positions.nil?
+        @key_field = new_key_field 
+        @key_field ||= key_field if String === key_field
+
       end
     end
 
@@ -253,7 +288,7 @@ module TSV
       @sep = Misc.process_options(options, :sep) || "\t"
 
       options = parse_header(stream).merge options
-      
+
       @type = Misc.process_options(options, :type) || :double
       merge = Misc.process_options(options, :merge) || false
 
@@ -297,9 +332,10 @@ module TSV
         end
       end
 
+      fields = options[:fields]
       fix_fields(options)
 
-      @straight = false if @sep != "\t" or not @cast.nil? or merge
+      @straight = false if @sep != "\t" or not @cast.nil? or merge or (@type == :flat and fields)
     end
 
     def setup(data)

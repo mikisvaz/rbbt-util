@@ -74,7 +74,7 @@ module TSV
     when :double, :list
       NamedArray.setup value, fields, key 
     when :flat, :single
-      Entity.formats[fields.first].setup(value) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+      Entity.formats[fields.first].setup(value, :format => fields.first) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
     end
     value
   end
@@ -88,7 +88,7 @@ module TSV
     return keys if @unnamed or key_field.nil?
 
     if defined?(Entity) and  Entity.respond_to?(:formats) and Entity.formats.include? key_field
-      Entity.formats[key_field].setup(keys.collect{|k| k.dup})
+      Entity.formats[key_field].setup(keys.collect{|k| k.dup}, :format => key_field)
     else
       keys
     end
@@ -103,7 +103,7 @@ module TSV
       values.each{|value| NamedArray.setup value, fields }
     when :flat, :single
       values.each{|value| 
-        Entity.formats[fields.first].setup(value)
+        Entity.formats[fields.first].setup(value, :format => fields.first)
       } if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
     end
       
@@ -128,11 +128,11 @@ module TSV
           when :double, :list
             NamedArray.setup value, fields, key if Array === value 
           when :flat, :single
-            Entity.formats[fields.first].setup(value) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+            Entity.formats[fields.first].setup(value, :format => fields.first) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
           end
         end
         if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
-          key = Entity.formats[key_field].setup(key.dup) 
+          key = Entity.formats[key_field].setup(key.dup, :format => key_field) 
         end
       end
 
@@ -157,11 +157,11 @@ module TSV
           when :double, :list
             NamedArray.setup value, fields, key if Array === value 
           when :flat, :single
-            Entity.formats[fields.first].setup(value) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+            Entity.formats[fields.first].setup(value, :format => fields.first) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
           end
         end
         if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
-          key = Entity.formats[key_field].setup(key.dup) 
+          key = Entity.formats[key_field].setup(key.dup, :format => key_field) 
         end
       end
 
@@ -301,6 +301,7 @@ if '#{entry}' == 'serializer'
       class << self
         
         define_method :serialized_get do |key|
+          return nil unless self.include? key
           self.serializer_module.load(tsv_clean_get_brackets(key))
         end
 
@@ -407,7 +408,7 @@ end
 
     str = ""
 
-    str << "#: " << Misc.hash2string(ENTRIES.collect{|key| [key.to_sym, self.send(key)]}) << "\n" unless no_options
+    str << "#: " << Misc.hash2string((ENTRIES - ["key_field", "fields"]).collect{|key| [key.to_sym, self.send(key)]}) << "\n" unless no_options
     if fields
       str << "#" << key_field << "\t" << fields * "\t" << "\n"
     end
@@ -416,13 +417,13 @@ end
       if keys.nil?
         each do |key, values|
           key = key.to_s if Symbol === key
-          str << key.dup 
+          str << key.to_s
           str << values_to_s(values)
         end
       else
         keys.zip(values_at(*keys)).each do |key, values|
           key = key.to_s if Symbol === key
-          str << key.dup << values_to_s(values)
+          str << key.to_s << values_to_s(values)
         end
       end
 
@@ -434,6 +435,12 @@ end
     peek = {}
     keys[0..10].zip(values[0..10]).each do |k,v| peek[k] = v end
     peek
+  end
+
+  def to_hash
+    new = self.dup
+    ENTRY_KEYS.each{|entry| new.delete entry}
+    new
   end
 end
 

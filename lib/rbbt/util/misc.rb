@@ -7,6 +7,39 @@ require 'net/smtp'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.mean(list)
+    list.inject(0.0){|acc,e| acc += e} / list.length
+  end
+
+  def self.sd(list)
+    return nil if list.length < 3
+    mean = mean(list)
+    Math.sqrt(list.inject(0.0){|acc,e| d = e - mean; acc += d * d}) / (list.length - 1)
+  end
+
+  def self.consolidate(list)
+    list.inject(nil){|acc,e|
+      if acc.nil?
+        acc = e
+      else
+        acc.concat e
+        acc
+      end
+    }
+  end
+
+  def self.positional2hash(keys, *values)
+    if Hash === values.last
+      extra = values.pop
+      inputs = Misc.zip2hash(keys, values)
+      inputs.delete_if{|k,v| v.nil?}
+      inputs = Misc.add_defaults inputs, extra
+      inputs.delete_if{|k,v| not keys.include? k}
+    else
+      Misc.zip2hash(keys, values)
+    end
+  end
+
   def self.send_email(from, to, subject, message, options = {})
     IndiferentHash.setup(options)
     options = Misc.add_defaults options, :from_alias => nil, :to_alias => nil, :server => 'localhost', :port => 25, :user => nil, :pass => nil, :auth => :login
@@ -262,6 +295,8 @@ Subject: #{subject}
       FileUtils.mkdir_p dir unless File.exists? dir
       FileUtils.cd dir
       res = yield
+    rescue
+      raise $!
     ensure
       FileUtils.cd old_pwd
     end
@@ -574,7 +609,7 @@ module NamedArray
 
   def report
     fields.zip(self).collect do |field,value|
-      "\nAttributes:\n* #{ field }: #{ Array === value ? value * "|" : value }"
+      "#{ field }: #{ Array === value ? value * "|" : value }"
     end * "\n"
   end
 

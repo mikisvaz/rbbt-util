@@ -80,7 +80,7 @@ module Open
   # Cache
   #
   def self.in_cache(url, options = {})
-    digest = Digest::MD5.hexdigest([url, options["--post-data"], (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
+    digest = Digest::MD5.hexdigest([url, options.values_at("--post-data", "--post-data="), (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
 
     filename = File.join(REMOTE_CACHEDIR, digest)
     if File.exists? filename
@@ -91,7 +91,7 @@ module Open
   end
  
   def self.remove_from_cache(url, options = {})
-    digest = Digest::MD5.hexdigest([url, options["--post-data"], (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
+    digest = Digest::MD5.hexdigest([url, options.values_at("--post-data", "--post-data="), (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
 
     filename = File.join(REMOTE_CACHEDIR, digest)
     if File.exists? filename
@@ -102,7 +102,7 @@ module Open
   end
   
   def self.add_cache(url, data, options = {})
-    digest = Digest::MD5.hexdigest([url, options["--post-data"], (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
+    digest = Digest::MD5.hexdigest([url, options.values_at("--post-data", "--post-data="), (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
     Misc.sensiblewrite(File.join(REMOTE_CACHEDIR, digest), data)
   end
 
@@ -167,7 +167,7 @@ module Open
     wget_options[:nice] = options.delete(:nice)
     wget_options[:nice_key] = options.delete(:nice_key)
     wget_options[:quiet] = options.delete(:quiet)
-    wget_options[:post] = options.delete(:post)
+    wget_options["--post-data="] = options.delete(:post) if options.include? :post
     wget_options[:cookies] = options.delete(:cookies)
 
     io = case

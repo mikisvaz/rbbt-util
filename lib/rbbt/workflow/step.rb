@@ -23,8 +23,15 @@ class Step
     @inputs = inputs || []
   end
 
+  def prepare_entity(value, description = nil, info = {})
+    return value if description.nil?
+    Entity.formats[description].setup(value, info.merge(:format => description)) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? description
+    value
+  end
+
   def exec
-    @task.exec_in self, *@inputs
+    result = @task.exec_in self, *@inputs
+    prepare_entity result, @task.result_description
   end
 
   def join
@@ -41,7 +48,7 @@ class Step
   end
 
   def run
-    Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path}.uniq do
+    result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path}.uniq do
       log task.name, "Starting task: #{ name }"
       set_info :dependencies, @dependencies.collect{|dep| [dep.task.name, dep.name]}
       @dependencies.each{|dependency| dependency.run}
@@ -51,6 +58,8 @@ class Step
       set_info :status, :done
       res
     end
+
+    prepare_entity result, @task.result_description, info
   end
 
   def fork
@@ -78,9 +87,10 @@ class Step
 
   def load
     raise "Can not load: Step is waiting for proces #{@pid} to finish" if not done?
-    Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path} do
+    result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path} do
       exec
     end
+    prepare_entity result, @task.result_description, info
   end
 
   def clean

@@ -14,6 +14,11 @@ module TSV
     def self.load(str); str.unpack("l*"); end
   end
 
+  class FloatArraySerializer
+    def self.dump(a); a.pack("d*"); end
+    def self.load(str); str.unpack("d*"); end
+  end
+
   class StringSerializer
     def self.dump(str); str.to_s; end
     def self.load(str); str; end
@@ -66,6 +71,7 @@ module TSV
     :integer => IntegerSerializer, 
     :float => FloatSerializer, 
     :integer_array => IntegerArraySerializer,
+    :float_array => FloatArraySerializer,
     :marshal => Marshal,
     :single => StringSerializer,
     :string => StringSerializer,

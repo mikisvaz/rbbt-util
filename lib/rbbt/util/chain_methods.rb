@@ -36,12 +36,13 @@ module ChainMethods
           #  end
           #}
 
-          if not base.respond_to?(:processed_chains) or not base.processed_chains.include? prefix
+
+          if not base.respond_to?(:processed_chains) or base.processed_chains.nil? or not base.processed_chains.include? prefix
             class << base
               attr_accessor :processed_chains 
             end if not base.respond_to? :processed_chains
 
-            base.processed_chains ||= Set.new
+            base.processed_chains = Set.new if base.processed_chains.nil?
             base.processed_chains << prefix
 
             class << base; self; end.module_eval do
@@ -51,6 +52,10 @@ module ChainMethods
 
                 original = "[]" if original == "get_brackets"
                 original = "[]=" if original == "set_brackets"
+
+                if base.respond_to? clean_method
+                  raise "Method already defined: #{clean_method}. #{ prefix }"
+                end
 
                 begin
                   alias_method clean_method, original 
@@ -65,10 +70,10 @@ module ChainMethods
 
       if not metaclass.respond_to? :extended
         metaclass.module_eval do
-          alias prev_chain_methods_extended extended
+          alias prev_chain_methods_extended extended if methods.include? "extended"
 
           def extended(base)
-            prev_chain_methods_extended(base)
+            prev_chain_methods_extended(base) if methods.include? "prev_chain_methods_extended"
             setup_chains(base)
           end
         end

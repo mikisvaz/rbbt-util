@@ -7,6 +7,14 @@ require 'test/unit'
 module TestWF
   extend Workflow
 
+  helper :user do
+    "User"
+  end 
+
+  task :user => :string do
+    user
+  end
+
   str = "TEST"
   task :str => :string do
     str
@@ -56,6 +64,9 @@ TestWF.workdir = Rbbt.tmp.test.workflow
 
 class TestWorkflow < Test::Unit::TestCase
 
+  def test_helper
+    assert_equal "User", TestWF.job(:user, "Default", :number => 3).run
+  end
   def test_job
     str = "TEST"
     job = TestWF.job(:repeat2, "Default", :number => 3).fork

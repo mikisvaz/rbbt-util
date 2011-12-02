@@ -90,12 +90,14 @@ module TSV
       data.serializer = case
                         when parser.cast.nil?
                           data.serializer = parser.type
-                        when (parser.cast == :to_i and parser.type == :list)
+                        when (parser.cast == :to_i and (parser.type == :list or parser.type == :flat))
                           data.serializer = :integer_array
                         when (parser.cast == :to_i and parser.type == :single)
                           data.serializer = :integer
                         when (parser.cast == :to_f and parser.type == :single)
                           data.serializer = :float
+                        when (parser.cast == :to_f and (parser.type == :list or parser.type == :flat))
+                          data.serializer = :float_array
                         end
     end
 

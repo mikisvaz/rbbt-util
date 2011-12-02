@@ -19,7 +19,7 @@ class TestTSV < Test::Unit::TestCase
 
     assert_equal "1", a["one"]
   end
-   
+  
   def test_tsv
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
@@ -78,7 +78,7 @@ row2    A    B    Id3
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :sep => /\s+/, :fields => 1)
+      tsv = TSV.open(filename, :sep => /\s+/, :fields => [1])
       assert_equal ["a", "aa", "aaa"], tsv["row1"][0]
       assert_equal :double, tsv.type
       assert_equal [%w(a aa aaa)], tsv["row1"]
@@ -396,6 +396,64 @@ row2    A    B    Id3
       tsv = TSV.open(filename, :sep => /\s+/)
       assert_equal "row1", tsv["row1"].key
 
+    end
+ 
+  end
+
+  def test_unnamed_key
+    content =<<-EOF
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :key_field => 1)
+      assert tsv.keys.include? "a"
+    end
+ 
+  end
+
+  def test_float_array
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1   0.2   0.3 0
+row2    0.1  4.5 0
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :persist => true, :type => :list, :cast => :to_f)
+      assert_equal [0.2, 0.3, 0], tsv["row1"]
+      assert_equal :float_array, tsv.serializer
+    end
+ 
+  end
+
+  def test_flat_field_select
+    content =<<-EOF
+#: :type=:flat
+#Id    Value
+row1   a  aa  aaa
+row2    b  bb bbb
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      assert TSV.open(filename, :sep => /\s+/, :key_field => "Value").include? "aa"
+    end
+  end
+
+  def test_flat2
+    content =<<-EOF
+#: :type=:flat
+#Id    Value
+row1    a|aa|aaa
+row2    A|AA|AAA
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      assert TSV.open(filename, :sep => /\s+/, :type => :flat).include? "row1"
+      assert TSV.open(filename, :sep => /\s+/, :type => :flat)["row1"].include? "a"
+      assert TSV.open(filename, :sep => /\s+/, :type => :flat, :key_field => "Id")["row1"].include? "a"
+      assert TSV.open(filename, :sep => /\s+/, :type => :flat, :key_field => "Id", :fields => ["Value"])["row1"].include? "a"
     end
  
   end

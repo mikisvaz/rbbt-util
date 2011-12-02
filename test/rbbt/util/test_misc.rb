@@ -133,6 +133,23 @@ class TestMisc < Test::Unit::TestCase
     end
   end
 
+  def test_positions2hash
+    inputs = Misc.positional2hash([:one, :two, :three], 1, :two => 2, :four => 4)
+    assert_equal 1, inputs[:one]
+    assert_equal 2, inputs[:two]
+    assert_equal nil, inputs[:three]
+    assert_equal nil, inputs[:four]
+  end
+
+  def test_mean
+    assert_equal 2, Misc.mean([1,2,3])
+    assert_equal 3, Misc.mean([1,2,3,4,5])
+  end
+
+  def test_sd
+    assert_equal Math.sqrt(2), Misc.sd([1,3])
+  end
+
 #  def test_divide
 #    assert_equal 2, Misc.divide(%w(1 2 3 4 5 6 7 8 9),2).length
 #  end

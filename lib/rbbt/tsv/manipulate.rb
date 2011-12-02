@@ -153,9 +153,9 @@ module TSV
 
   #{{{ Methods
 
-  def through(new_key_field = nil, new_fields = nil, uniq = false)
+  def through(new_key_field = nil, new_fields = nil, uniq = false, zipped = false)
 
-    traverser = Traverser.new @key_field, @fields, new_key_field, new_fields, type, uniq
+    traverser = Traverser.new key_field, fields, new_key_field, new_fields, type, uniq
 
     if @monitor
       desc = "Iterating TSV"
@@ -181,32 +181,55 @@ module TSV
           when :double, :list
             NamedArray.setup value, traverser.new_field_names 
           when :flat, :single
-            Entity.formats[traverser.new_field_names.first].setup(value) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? traverser.new_field_names
+            Entity.formats[traverser.new_field_names.first].setup(value, :format => traverser.new_field_names.first) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? traverser.new_field_names
           end
         end
       end
 
       next if keys.nil?
 
-      keys.each do |key|
-        if not @unnamed and defined?(Entity) and not traverser.new_key_field_name.nil? and Entity.respond_to?(:formats) and Entity.formats.include? traverser.new_key_field_name
-          key = Entity.formats[traverser.new_key_field_name].setup(key.dup) 
+      if zipped
+
+        keys.each_with_index do |k,i|
+          v = value.collect{|v|
+            r = v[i]
+            r = v[0] if r.nil?
+            r
+          }
+
+          if not @unnamed and defined?(Entity) and not traverser.new_key_field_name.nil? and Entity.respond_to?(:formats) and Entity.formats.include? traverser.new_key_field_name
+            k = Entity.formats[traverser.new_key_field_name].setup(k.dup, :format => traverser.new_key_field_name) 
+          end
+          v.key = k if NamedArray === v
+          yield k, v
+ 
         end
-        value.key = key if NamedArray === value
-        yield key, value
+
+      else
+        keys.each do |key|
+          if not @unnamed and defined?(Entity) and not traverser.new_key_field_name.nil? and Entity.respond_to?(:formats) and Entity.formats.include? traverser.new_key_field_name
+            key = Entity.formats[traverser.new_key_field_name].setup(key.dup, :format => traverser.new_key_field_name) 
+          end
+          value.key = key if NamedArray === value
+          yield key, value
+        end
       end
     end
 
     [traverser.new_key_field_name, traverser.new_field_names]
   end
 
-  def reorder(new_key_field = nil, new_fields = nil, persist = false)
-    Persist.persist_tsv self, self.filename, {:key_field => new_key_field, :fields => new_fields}, {:persist => persist, :persist_prefix => "Reorder:"} do |data|
+  def reorder(new_key_field = nil, new_fields = nil, options = {}) 
+    zipped, uniq = Misc.process_options options, :zipped, :uniq
+
+    persist_options = Misc.pull_keys options, :persist
+    persist_options[:prefix] = "Reorder"
+
+    Persist.persist_tsv self, self.filename, {:key_field => new_key_field, :fields => new_fields}, persist_options do |data|
 
       with_unnamed do
-        new_key_field_name, new_field_names = through new_key_field, new_fields do |key, value|
-
-          if data.include?(key) 
+        new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
+          if data.include?(key) and not zipped
             case type 
             when :double
               data[key] = data[key].zip(value).collect do |old_list, new_list| old_list + new_list end
