@@ -533,14 +533,14 @@ module NamedArray
     return elem if @fields.nil? or @fields.empty?
 
     field = NamedArray === @fields ? @fields.named_array_clean_get_brackets(pos) : @fields[pos]
-    elem = Entity.formats[field].setup((elem.frozen? ? elem.dup : elem), :format => field, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? field
+    elem = Entity.formats[field].setup((elem.frozen? ? elem.dup : elem), :format => field, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include?(field) and not field == elem
     elem
   end
 
   def named_array_each(&block)
     if defined?(Entity) and not @fields.nil? and not @fields.empty?
       @fields.zip(self).each do |field,elem|
-        elem = Entity.formats[field].setup((elem.frozen? ? elem.dup : elem), :format => field, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? field
+        elem = Entity.formats[field].setup((elem.frozen? ? elem.dup : elem), :format => field, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include?(field) and not field == elem
         yield(elem)
         elem
       end
