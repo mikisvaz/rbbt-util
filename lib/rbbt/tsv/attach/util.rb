@@ -235,18 +235,9 @@ module TSV
 
       if current_index.nil?
         current_index = next_file.index(:target => next_key, :fields => [current_key], :persist => persist_input)
+        current_index = current_index.select :key => data_file.keys
       else
         next_index = next_file.index :target => next_key, :fields => [current_key], :persist => persist_input
-
-        if TokyoCabinet::HDB === current_index
-          tmp = TSV.setup({}, :key_field => current_index.key_field, :fields => [current_index.fields], :serializer => current_index.serializer, :type => current_index.type, :filename => current_index.filename)
-          current_index.with_unnamed do
-            current_index.each do |key,value|
-              tmp.tsv_clean_set_brackets(key, current_index.tsv_clean_get_brackets(key))
-            end
-          end
-          current_index = tmp
-        end
 
         next_index.with_unnamed do
           current_index.with_unnamed do

@@ -221,7 +221,7 @@ row2    E
 
     tsv1.attach tsv2, :fields => ["OtherID"], :persist_input => true
     
-    assert_equal tsv1.fields,%w(ValueA ValueB OtherID)
+    assert_equal tsv1.fields, %w(ValueA ValueB OtherID)
     assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
   end
 
