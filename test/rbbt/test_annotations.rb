@@ -35,7 +35,7 @@ class TestAnnotations < Test::Unit::TestCase
   def test_array
     ary = ["string"]
     annotation_str = "Annotation String"
-    AnnotatedArray.setup_chain(ary)
+    ary.extend AnnotatedArray
     AnnotatedString.setup(ary, annotation_str)
     assert_equal [AnnotatedString], ary.annotation_types
     assert_equal annotation_str, ary.annotation_str

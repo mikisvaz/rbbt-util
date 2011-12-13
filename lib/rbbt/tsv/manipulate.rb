@@ -429,6 +429,8 @@ module TSV
   end
 
   def add_field(name = nil)
+    old_monitor = @monitor
+    @monitor = {:desc => "Adding field #{ name }"} if TrueClass === monitor
     through do |key, values|
       new_values = yield(key, values)
       new_values = [new_values] if type == :double and not Array === new_values
@@ -436,6 +438,7 @@ module TSV
       values << new_values
       self[key] = values
     end
+    @monitor = old_monitor
 
     self.fields = self.fields + [name] if fields != nil and name != nil
 

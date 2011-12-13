@@ -154,12 +154,12 @@ module Annotation
 
         def self.extended(object)
           self.send(:prev_annotation_extended, object)
-          object.extend Annotated
-          if not object.annotation_types.include? self
-            object.annotation_types.concat self.inheritance 
-            object.annotation_types << self
-            object.annotation_types.uniq!
-          end
+            object.extend Annotated
+            if not object.annotation_types.include? self
+              object.annotation_types.concat self.inheritance 
+              object.annotation_types << self
+              object.annotation_types.uniq!
+            end
         end
 
         def self.included(base)
@@ -247,7 +247,7 @@ module AnnotatedArray
     annotated_array_each do |value|
       res << value if yield(value)
     end
- 
+
     annotation_types.each do |mod|
       mod.setup(res, *info.values_at(*mod.annotations))
     end
@@ -262,7 +262,7 @@ module AnnotatedArray
     annotated_array_each do |value|
       res << value unless yield(value)
     end
- 
+
     annotation_types.each do |mod|
       mod.setup(res, *info.values_at(*mod.annotations))
     end

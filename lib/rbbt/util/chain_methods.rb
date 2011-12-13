@@ -2,6 +2,7 @@ require 'rbbt/util/log'
 require 'set'
 
 module ChainMethods
+
   def self.chain_methods_extended(base)
     if not base.respond_to? :chain_prefix
       metaclass = class << base
@@ -14,10 +15,6 @@ module ChainMethods
       end
 
       metaclass.module_eval do
-        def setup_chain(object)
-          object.extend self
-        end
-
         def setup_chains(base)
           raise "No prefix specified for #{self.to_s}" if self.chain_prefix.nil? or (String === self.chain_prefix and self.chain_prefix.empty?)
           methods = self.chained_methods
@@ -25,17 +22,6 @@ module ChainMethods
           return if methods.empty?
 
           prefix = self.chain_prefix
-
-          #do_chain = true
-          #methods.collect{|new_method|
-          #  original = new_method.sub(prefix.to_s + '_', '')
-          #  clean = prefix.to_s + '_clean_' + original
-          #  if base.respond_to? clean
-          #    do_chain = false
-          #    break
-          #  end
-          #}
-
 
           if not base.respond_to?(:processed_chains) or base.processed_chains.nil? or not base.processed_chains.include? prefix
             class << base
@@ -61,6 +47,7 @@ module ChainMethods
                   alias_method clean_method, original 
                 rescue
                 end
+
                 alias_method original, new_method
               end
             end
@@ -73,17 +60,19 @@ module ChainMethods
           alias prev_chain_methods_extended extended if methods.include? "extended"
 
           def extended(base)
-            prev_chain_methods_extended(base) if methods.include? "prev_chain_methods_extended"
+            if self.respond_to? :prev_chain_methods_extended 
+              prev_chain_methods_extended(base)
+            end
             setup_chains(base)
           end
         end
       end
-    end
+  end
 
-    base.chain_prefix = base.to_s.downcase.to_sym
-  end
-  
-  def self.extended(base)
-    chain_methods_extended(base)
-  end
+  base.chain_prefix = base.to_s.downcase.to_sym
+end
+
+def self.extended(base)
+  chain_methods_extended(base)
+end
 end

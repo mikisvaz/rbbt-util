@@ -15,7 +15,7 @@ end
 class TestChaimMethods < Test::Unit::TestCase
   def test_chained_reverse_get
     a = ["test", "TEST"]
-    TestChainedModule.setup_chain(a)
+    a.extend TestChainedModule
     assert_equal "test".reverse, a[0]
     assert_equal "TEST".reverse, a[1]
   end
