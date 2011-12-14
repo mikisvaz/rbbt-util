@@ -145,10 +145,10 @@ module Persist
       path = persistence_path(name, persist_options)
       Misc.lock(path) do
         if is_persisted?(path, persist_options)
-          Log.debug "Persist up-to-date: #{ path } - #{persist_options.inspect}"
+          Log.debug "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
           return load_file(path, type) 
         else
-          Log.debug "Persist create: #{ path } - #{persist_options.inspect}"
+          Log.debug "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
         end
         res = yield
         save_file(path, type, res)

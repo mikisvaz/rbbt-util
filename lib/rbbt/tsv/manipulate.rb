@@ -245,6 +245,7 @@ module TSV
         data.key_field = new_key_field_name
         data.fields = new_field_names
         data.filename = filename
+        data.namespace = namespace
         data.type = type
       end
     end
@@ -284,6 +285,7 @@ module TSV
     new.fields    = fields.dup
     new.type      = type
     new.filename  = filename
+    new.namespace = namespace
     
    case
     when (method.nil? and block_given?)
@@ -431,16 +433,24 @@ module TSV
   def add_field(name = nil)
     old_monitor = @monitor
     @monitor = {:desc => "Adding field #{ name }"} if TrueClass === monitor
+
     through do |key, values|
       new_values = yield(key, values)
       new_values = [new_values] if type == :double and not Array === new_values
 
-      values << new_values
+      if NamedArray === values
+        values += [new_values]
+      else
+        values << new_values
+      end
       self[key] = values
     end
     @monitor = old_monitor
 
-    self.fields = self.fields + [name] if fields != nil and name != nil
+    if not fields.nil? and not name.nil?
+      fields = self.fields + [name]
+      self.fields = fields
+    end
 
     self
   end
