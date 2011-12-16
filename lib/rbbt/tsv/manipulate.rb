@@ -438,7 +438,12 @@ module TSV
       new_values = yield(key, values)
       new_values = [new_values] if type == :double and not Array === new_values
 
-      if NamedArray === values
+      case
+      when (values.nil? and (fields.nil? or fields.empty?))
+        values = new_values
+      when values.nil?  
+        values = [nil] * fields.length + [new_values]
+      when NamedArray === values
         values += [new_values]
       else
         values << new_values

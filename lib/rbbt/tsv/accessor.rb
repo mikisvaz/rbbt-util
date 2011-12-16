@@ -132,7 +132,7 @@ module TSV
           end
         end
         if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
-          key = Entity.formats[key_field].setup(key.dup, :format => key_field) 
+          key = Entity.formats[key_field].setup(key.dup, :format => key_field, :namespace => namespace, :organism => namespace) 
         end
       end
 
@@ -161,7 +161,7 @@ module TSV
           end
         end
         if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
-          key = Entity.formats[key_field].setup(key.dup, :format => key_field) 
+          key = Entity.formats[key_field].setup(key.dup, :format => key_field, :namespace => namespace, :organism => namespace) 
         end
       end
 
