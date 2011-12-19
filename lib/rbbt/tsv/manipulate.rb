@@ -440,7 +440,7 @@ module TSV
 
       case
       when (values.nil? and (fields.nil? or fields.empty?))
-        values = new_values
+        values = [new_values]
       when values.nil?  
         values = [nil] * fields.length + [new_values]
       when NamedArray === values
