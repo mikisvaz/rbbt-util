@@ -458,5 +458,17 @@ row2    A|AA|AAA
  
   end
 
+  def test_flat2single
+    content =<<-EOF
+#: :type=:flat
+#Id    Value
+row1    a aa aaa
+row2    A AA AAA
+    EOF
 
+    TmpFile.with_file(content) do |filename|
+      assert TSV.open(filename, :sep => /\s+/, :type => :single, :key_field => "Value").include? "aaa"
+    end
+ 
+  end
 end

@@ -1,7 +1,11 @@
-rbbt.ruby <- function(code, load = TRUE){
+rbbt.ruby <- function(code, load = TRUE, flat = FALSE){
   file = system('rbbt_exec.rb - file', input = code, intern=TRUE);
   if (load){
-    data = rbbt.tsv(file);
+    if(flat){
+        data = rbbt.flat.tsv(file);
+    }else{
+        data = rbbt.tsv(file);
+    }
     rm(file);
     return(data);
   }else{

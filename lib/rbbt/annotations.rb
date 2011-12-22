@@ -4,6 +4,7 @@ module Annotated
   attr_accessor :annotation_types
   attr_accessor :context
   attr_accessor :container
+  attr_accessor :container_index
 
   def self.extended(base)
     base.annotation_types ||= []
@@ -218,16 +219,20 @@ module AnnotatedArray
     end
     value.context = self.context
     value.container = self
+    value.container_index = pos
     value
   end
 
   def annotated_array_each
+    i = 0
     annotated_array_clean_each do |value|
       annotation_types.each do |mod|
         mod.setup(value, info)
       end
       value.context = self.context
       value.container = self
+      value.container_index = i
+      i += 1
       yield value
     end
   end
@@ -375,11 +380,6 @@ module AnnotatedArray
       value << e if method.shift
     end
 
-    #annotation_types.each do |mod|
-    #  mod.setup(value, *info.values_at(*mod.annotations))
-    #end
-    #value.context = self.context
-    #value.container = self.container
     value
   end
 end

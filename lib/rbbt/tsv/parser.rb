@@ -62,6 +62,16 @@ module TSV
       line.split(@sep, -1)
     end
 
+    def get_values_single_from_flat(parts)
+      return parts.shift, parts.first if field_positions.nil? and key_position.nil?
+      if key_position == 0
+        [parts.shift, parts]
+      else
+        key = parts.shift
+        [parts, [key]]
+      end
+    end
+
     def get_values_single(parts)
       return parts.shift, parts.first if field_positions.nil? and key_position.nil?
       key = parts[key_position]
@@ -287,7 +297,8 @@ module TSV
       @header_hash = Misc.process_options(options, :header_hash) || "#"
       @sep = Misc.process_options(options, :sep) || "\t"
 
-      options = parse_header(stream).merge options
+      header_options = parse_header(stream)
+      options = header_options.merge options
 
       @type = Misc.process_options(options, :type) || :double
       merge = Misc.process_options(options, :merge) || false
@@ -315,9 +326,15 @@ module TSV
           self.instance_eval do alias add_to_data add_to_data_no_merge_double end
         end
       when :single
-        self.instance_eval do alias get_values get_values_single end
-        self.instance_eval do alias cast_values cast_values_single end
-        self.instance_eval do alias add_to_data add_to_data_no_merge_list end
+        if header_options[:type] == :flat
+          self.instance_eval do alias get_values get_values_single_from_flat end
+          self.instance_eval do alias cast_values cast_values_single end
+          self.instance_eval do alias add_to_data add_to_data_no_merge_double end
+        else
+          self.instance_eval do alias get_values get_values_single end
+          self.instance_eval do alias cast_values cast_values_single end
+          self.instance_eval do alias add_to_data add_to_data_no_merge_list end
+        end
       when :list
         self.instance_eval do alias get_values get_values_list end
         self.instance_eval do alias cast_values cast_values_list end

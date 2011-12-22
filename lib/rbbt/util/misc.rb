@@ -7,6 +7,10 @@ require 'net/smtp'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.filename?(string)
+    String === string and string.length > 0 and string.length < 250 and File.exists?(string)
+  end
+
   def self.max(list)
     max = nil
     list.each do |v|
@@ -132,83 +136,106 @@ end
     "U" => "A",
   }
 
-  def self.IUPAC_to_base(iupac)
-    IUPAC2BASE[iupac]
-  end
+	THREE_TO_ONE_AA_CODE = {
+		"ala" =>   "A",
+		"arg" =>   "R",
+		"asn" =>   "N",
+		"asp" =>   "D",
+		"cys" =>   "C",
+		"glu" =>   "E",
+		"gln" =>   "Q",
+		"gly" =>   "G",
+		"his" =>   "H",
+		"ile" =>   "I",
+		"leu" =>   "L",
+		"lys" =>   "K",
+		"met" =>   "M",
+		"phe" =>   "F",
+		"pro" =>   "P",
+		"ser" =>   "S",
+		"thr" =>   "T",
+		"trp" =>   "W",
+		"tyr" =>   "Y",
+		"val" =>   "V"
+	}
 
-  def self.is_filename?(string)
-    return true if Path === string
-    return true if String === string and string.length < 265 and File.exists? string
-    return false
-  end
+	def self.IUPAC_to_base(iupac)
+		IUPAC2BASE[iupac]
+	end
 
-  def self.intersect_sorted_arrays(a1, a2)
-    e1, e2 = a1.shift, a2.shift
-    intersect = []
-    while true
-      break if e1.nil? or e2.nil?
-      case e1 <=> e2
-      when 0
-        intersect << e1
-        e1, e2 = a1.shift, a2.shift
-      when -1
-        e1 = a1.shift while not e1.nil? and e1 < e2
-      when 1
-        e2 = a2.shift
-        e2 = a2.shift while not e2.nil? and e2 < e1
-      end
-    end
-    intersect
-  end
+	def self.is_filename?(string)
+		return true if Path === string
+		return true if String === string and string.length < 265 and File.exists? string
+		return false
+	end
 
-  def self.merge_sorted_arrays(a1, a2)
-    e1, e2 = a1.shift, a2.shift
-    new = []
-    while true
-      case
-      when (e1 and e2)
-        case e1 <=> e2
-        when 0
-          new << e1 
-          e1, e2 = a1.shift, a2.shift
-        when -1
-          new << e1
-          e1 = a1.shift
-        when 1
-          new << e2
-          e2 = a2.shift
-        end
-      when e2
-        new << e2
-        new.concat a2
-        break
-      when e1
-        new << e1
-        new.concat a1
-        break
-      else
-        break
-      end
-    end
-    new
-  end
+	def self.intersect_sorted_arrays(a1, a2)
+		e1, e2 = a1.shift, a2.shift
+		intersect = []
+		while true
+			break if e1.nil? or e2.nil?
+			case e1 <=> e2
+			when 0
+				intersect << e1
+				e1, e2 = a1.shift, a2.shift
+			when -1
+				e1 = a1.shift while not e1.nil? and e1 < e2
+			when 1
+				e2 = a2.shift
+				e2 = a2.shift while not e2.nil? and e2 < e1
+			end
+		end
+		intersect
+	end
 
-  def self.array2hash(array)
-    hash = {}
-    array.each do |key, value|
-      hash[key] = value
-    end
-    hash
-  end
+	def self.merge_sorted_arrays(a1, a2)
+		e1, e2 = a1.shift, a2.shift
+		new = []
+		while true
+			case
+			when (e1 and e2)
+				case e1 <=> e2
+				when 0
+					new << e1 
+					e1, e2 = a1.shift, a2.shift
+				when -1
+					new << e1
+					e1 = a1.shift
+				when 1
+					new << e2
+					e2 = a2.shift
+				end
+			when e2
+				new << e2
+				new.concat a2
+				break
+			when e1
+				new << e1
+				new.concat a1
+				break
+			else
+				break
+			end
+		end
+		new
+	end
 
-  def self.zip2hash(list1, list2)
-    array2hash(list1.zip(list2))
-  end
+	def self.array2hash(array)
+		hash = {}
+		array.each do |key, value|
+			hash[key] = value
+		end
+		hash
+	end
 
-  def self.process_to_hash(list)
-    result = yield list
-    zip2hash(list, result)
-  end
+	def self.zip2hash(list1, list2)
+		array2hash(list1.zip(list2))
+	end
+
+	def self.process_to_hash(list)
+		result = yield list
+		zip2hash(list, result)
+	end
 
   def self.env_add(var, value, sep = ":", prepend = true)
     ENV[var] ||= ""

@@ -215,13 +215,15 @@ module TSV
     if not block_given?
       if fields == :all
         if just_keys
-          elems.sort_by{|key, value| key }.collect{|key, values| key}
+          keys = elems.sort_by{|key, value| key }.collect{|key, values| key}
+          Entity.formats[key_field].setup(keys, :format => key_field, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? key_field
         else
           elems.sort_by{|key, value| key }
         end
       else
         if just_keys
-          elems.sort_by{|key, value| value }.collect{|key, value| key}
+          keys = elems.sort_by{|key, value| value }.collect{|key, value| key}
+          Entity.formats[key_field].setup(keys, :format => key_field, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? key_field
         else
           elems.sort_by{|key, value| value }.collect{|key, value| [key, self[key]]}
         end
