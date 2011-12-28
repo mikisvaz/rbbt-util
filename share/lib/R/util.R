@@ -170,8 +170,8 @@ rbbt.run <- function(filename){
 
 # Addapted from http://www.phaget4.org/R/image_matrix.html
 rbbt.plot.matrix <- function(x, ...){
-    min <- min(x);
-    max <- max(x);
+    min <- min(x, na.rm=T);
+    max <- max(x, na.rm=T);
     yLabels <- rownames(x);
     xLabels <- colnames(x);
     title <-c();
@@ -206,7 +206,7 @@ rbbt.plot.matrix <- function(x, ...){
     ColorRamp <- rgb( seq(0,1,length=256),  # Red
                       seq(0,1,length=256),  # Green
                       seq(1,0,length=256))  # Blue
-        ColorLevels <- seq(min, max, length=length(ColorRamp));
+    ColorLevels <- seq(min, max, length=length(ColorRamp));
 
 # Reverse Y axis
     reverse <- nrow(x) : 1;
