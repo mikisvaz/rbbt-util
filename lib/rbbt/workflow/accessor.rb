@@ -140,6 +140,14 @@ class Step
 end
 
 module Workflow
+  def log(status, message = nil)
+    if message
+      Log.low "#{ status }: #{ message }"
+    else
+      Log.low "#{ status }"
+    end
+  end
+
   def task_info(name)
     task = tasks[name]
     description = task.description

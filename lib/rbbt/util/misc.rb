@@ -7,6 +7,15 @@ require 'net/smtp'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.ensembl_server(organism)
+    date = organism.split("/")[1]
+    if date.nil?
+      "www.ensembl.org"
+    else
+      "#{ date }.archive.ensembl.org"
+    end
+  end
+
   def self.filename?(string)
     String === string and string.length > 0 and string.length < 250 and File.exists?(string)
   end
@@ -25,19 +34,18 @@ module Misc
     name2 ||= "list 2"
     name3 ||= "list 3"
 
-    
     sizes = [list1, list2, list3, list1 & list2, list1 & list3, list2 & list3, list1 & list2 & list3].collect{|l| l.length}
 
     total = total.length if Array === total
 
     label = "#{name1}: #{sizes[0]} (#{name2}: #{sizes[3]}, #{name3}: #{sizes[4]})"
     label << "|#{name2}: #{sizes[1]} (#{name1}: #{sizes[3]}, #{name3}: #{sizes[5]})"
-    label << "|#{name3}: #{sizes[2]} (#{name1}: #{sizes[4]}, #{name2}: #{sizes[5]})"
-    if total
-      label << "| INTERSECTION: #{sizes[6]} TOTAL: #{total}"
-    else
-      label << "| INTERSECTION: #{sizes[6]}"
-    end
+      label << "|#{name3}: #{sizes[2]} (#{name1}: #{sizes[4]}, #{name2}: #{sizes[5]})"
+      if total
+        label << "| INTERSECTION: #{sizes[6]} TOTAL: #{total}"
+      else
+        label << "| INTERSECTION: #{sizes[6]}"
+      end
 
     max = total || sizes.max
     sizes = sizes.collect{|v| (v.to_f/max * 100).to_i.to_f / 100}
@@ -106,6 +114,11 @@ end
     array.each do |e|
       counts[e] += 1
     end
+    class << counts; self;end.class_eval do
+      def to_s
+        sort{|a,b| a[1] == b[1] ? a[0] <=> b[0] : a[1] <=> b[1]}.collect{|k,c| "%3d\t%s" % [c, k]} * "\n"
+      end
+    end
     counts
   end
 
@@ -136,106 +149,106 @@ end
     "U" => "A",
   }
 
-	THREE_TO_ONE_AA_CODE = {
-		"ala" =>   "A",
-		"arg" =>   "R",
-		"asn" =>   "N",
-		"asp" =>   "D",
-		"cys" =>   "C",
-		"glu" =>   "E",
-		"gln" =>   "Q",
-		"gly" =>   "G",
-		"his" =>   "H",
-		"ile" =>   "I",
-		"leu" =>   "L",
-		"lys" =>   "K",
-		"met" =>   "M",
-		"phe" =>   "F",
-		"pro" =>   "P",
-		"ser" =>   "S",
-		"thr" =>   "T",
-		"trp" =>   "W",
-		"tyr" =>   "Y",
-		"val" =>   "V"
-	}
+  THREE_TO_ONE_AA_CODE = {
+    "ala" =>   "A",
+    "arg" =>   "R",
+    "asn" =>   "N",
+    "asp" =>   "D",
+    "cys" =>   "C",
+    "glu" =>   "E",
+    "gln" =>   "Q",
+    "gly" =>   "G",
+    "his" =>   "H",
+    "ile" =>   "I",
+    "leu" =>   "L",
+    "lys" =>   "K",
+    "met" =>   "M",
+    "phe" =>   "F",
+    "pro" =>   "P",
+    "ser" =>   "S",
+    "thr" =>   "T",
+    "trp" =>   "W",
+    "tyr" =>   "Y",
+    "val" =>   "V"
+  }
 
-	def self.IUPAC_to_base(iupac)
-		IUPAC2BASE[iupac]
-	end
+  def self.IUPAC_to_base(iupac)
+    IUPAC2BASE[iupac]
+  end
 
-	def self.is_filename?(string)
-		return true if Path === string
-		return true if String === string and string.length < 265 and File.exists? string
-		return false
-	end
+  def self.is_filename?(string)
+    return true if Path === string
+    return true if String === string and string.length < 265 and File.exists? string
+    return false
+  end
 
-	def self.intersect_sorted_arrays(a1, a2)
-		e1, e2 = a1.shift, a2.shift
-		intersect = []
-		while true
-			break if e1.nil? or e2.nil?
-			case e1 <=> e2
-			when 0
-				intersect << e1
-				e1, e2 = a1.shift, a2.shift
-			when -1
-				e1 = a1.shift while not e1.nil? and e1 < e2
-			when 1
-				e2 = a2.shift
-				e2 = a2.shift while not e2.nil? and e2 < e1
-			end
-		end
-		intersect
-	end
+  def self.intersect_sorted_arrays(a1, a2)
+    e1, e2 = a1.shift, a2.shift
+    intersect = []
+    while true
+      break if e1.nil? or e2.nil?
+      case e1 <=> e2
+      when 0
+        intersect << e1
+        e1, e2 = a1.shift, a2.shift
+      when -1
+        e1 = a1.shift while not e1.nil? and e1 < e2
+      when 1
+        e2 = a2.shift
+        e2 = a2.shift while not e2.nil? and e2 < e1
+      end
+    end
+    intersect
+  end
 
-	def self.merge_sorted_arrays(a1, a2)
-		e1, e2 = a1.shift, a2.shift
-		new = []
-		while true
-			case
-			when (e1 and e2)
-				case e1 <=> e2
-				when 0
-					new << e1 
-					e1, e2 = a1.shift, a2.shift
-				when -1
-					new << e1
-					e1 = a1.shift
-				when 1
-					new << e2
-					e2 = a2.shift
-				end
-			when e2
-				new << e2
-				new.concat a2
-				break
-			when e1
-				new << e1
-				new.concat a1
-				break
-			else
-				break
-			end
-		end
-		new
-	end
+  def self.merge_sorted_arrays(a1, a2)
+    e1, e2 = a1.shift, a2.shift
+    new = []
+    while true
+      case
+      when (e1 and e2)
+        case e1 <=> e2
+        when 0
+          new << e1 
+          e1, e2 = a1.shift, a2.shift
+        when -1
+          new << e1
+          e1 = a1.shift
+        when 1
+          new << e2
+          e2 = a2.shift
+        end
+      when e2
+        new << e2
+        new.concat a2
+        break
+      when e1
+        new << e1
+        new.concat a1
+        break
+      else
+        break
+      end
+    end
+    new
+  end
 
-	def self.array2hash(array)
-		hash = {}
-		array.each do |key, value|
-			hash[key] = value
-		end
-		hash
-	end
+  def self.array2hash(array)
+    hash = {}
+    array.each do |key, value|
+      hash[key] = value
+    end
+    hash
+  end
 
-	def self.zip2hash(list1, list2)
-		array2hash(list1.zip(list2))
-	end
+  def self.zip2hash(list1, list2)
+    array2hash(list1.zip(list2))
+  end
 
-	def self.process_to_hash(list)
-		result = yield list
-		zip2hash(list, result)
-	end
+  def self.process_to_hash(list)
+    result = yield list
+    zip2hash(list, result)
+  end
 
   def self.env_add(var, value, sep = ":", prepend = true)
     ENV[var] ||= ""
@@ -529,7 +542,7 @@ end
     raise FieldNotFoundError, "Field information missing" if fields.nil? && ! quiet
     fields.each_with_index{|f,i| return i if f == field}
     field_re = Regexp.new /#{field}/i
-    fields.each_with_index{|f,i| return i if f =~ field_re}
+      fields.each_with_index{|f,i| return i if f =~ field_re}
     raise FieldNotFoundError, "Field #{ field.inspect } was not found" unless quiet
   end
 

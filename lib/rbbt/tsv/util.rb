@@ -46,7 +46,7 @@ module TSV
 
     path = Persist.persistence_path(filename, persist_options)
     TmpFile.with_file(values * "\n") do |value_file|
-      cmd = "cat '#{ path }' | grep -w -F -f '#{ value_file }' |cut -f 2 |sort|uniq -c|sed 's/^ *//;s/ /\\t/'"
+      cmd = "cat '#{ path }' | grep -w -F -f '#{ value_file }' |cut -f 2 |sort|uniq -c|sed 's/^ *//;s/ /\t/'"
       begin
         TSV.open(CMD.cmd(cmd), :key_field => 1, :type => :single, :cast => :to_i)
       rescue

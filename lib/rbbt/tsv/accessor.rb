@@ -68,12 +68,14 @@ module TSV
 
   def tsv_get_brackets(key)
     value = serialized_get(key)
-    return value if @unnamed or fields.nil?
+    return value if value.nil? or @unnamed or fields.nil?
 
     case type
     when :double, :list
       NamedArray.setup value, fields, key, namespace
     when :flat, :single
+      #Entity.formats[fields.first].setup((not value.nil? and value.frozen? ? value.dup : value), :format => fields.first, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+      value = value.dup if value.frozen?
       Entity.formats[fields.first].setup(value, :format => fields.first, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
     end
     value
