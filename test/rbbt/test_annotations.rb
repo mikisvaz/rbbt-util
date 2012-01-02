@@ -104,7 +104,7 @@ class TestAnnotations < Test::Unit::TestCase
     assert_equal str + annotation_str, str.add_annot
   end
 
- def test_annotation_positional2hash
+  def test_annotation_positional2hash
     str = "string"
     annotation_str = "Annotation String"
     AnnotatedString.setup(str, :annotation_str => annotation_str)

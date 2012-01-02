@@ -45,6 +45,8 @@ module Annotated
     values = []
     fields.each do |field|
       values << case
+      when Proc === field
+        field.call(self)
       when field == "JSON"
         info.to_json
       when field == "literal"
@@ -155,7 +157,7 @@ module Annotation
 
         def self.extended(object)
           self.send(:prev_annotation_extended, object)
-            object.extend Annotated
+            object.extend Annotated unless Annotated == object
             if not object.annotation_types.include? self
               object.annotation_types.concat self.inheritance 
               object.annotation_types << self
@@ -189,14 +191,14 @@ module Annotation
   end
 
  def setup_info(object, info)
-    object.extend self
+    object.extend self unless self === object
     all_annotations.each do |annotation|
       object.send(annotation.to_s + '=', info[annotation])
     end
   end
 
   def setup(object, *values)
-    object.extend self
+    object.extend self unless self === object
 
     inputs = Misc.positional2hash(all_annotations, *values)
     inputs.each do |name, value|

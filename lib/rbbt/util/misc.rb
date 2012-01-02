@@ -573,7 +573,7 @@ module NamedArray
   attr_accessor :namespace
 
   def self.setup(array, fields, key = nil, namespace = nil)
-    array.extend NamedArray
+    array.extend NamedArray unless NamedArray === array
     array.fields = fields
     array.key = key
     array.namespace = namespace
@@ -733,7 +733,7 @@ module IndiferentHash
 
   def self.setup(hash)
     return hash if IndiferentHash === hash
-    hash.extend IndiferentHash
+    hash.extend IndiferentHash unless IndiferentHash === hash
     hash
   end
 end
