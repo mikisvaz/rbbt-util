@@ -228,6 +228,7 @@ module AnnotatedArray
   def annotated_array_each
     i = 0
     annotated_array_clean_each do |value|
+      value = value.dup if value.frozen?
       annotation_types.each do |mod|
         mod.setup(value, info)
       end

@@ -38,10 +38,11 @@ module TSV
 
     filename = get_filename source
     serializer = Misc.process_options options, :serializer
+    unnamed = Misc.process_options options, :unnamed
 
     Log.debug "TSV open: #{ filename } - #{options.inspect}"
 
-    Persist.persist_tsv source, filename, options, persist_options do |data|
+    data = Persist.persist_tsv source, filename, options, persist_options do |data|
       if serializer
         data.extend TSV unless TSV === data
         data.serializer = serializer
@@ -57,6 +58,10 @@ module TSV
 
       data
     end
+
+    data.unnamed = unnamed unless unnamed.nil?
+
+    data
   end
 
   def self.parse_header(stream, options = {})

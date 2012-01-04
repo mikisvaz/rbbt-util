@@ -226,6 +226,7 @@ module TSV
         if just_keys
           keys = elems.sort_by{|key, value| value }.collect{|key, value| key}
           Entity.formats[key_field].setup(keys, :format => key_field, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? key_field
+          keys
         else
           elems.sort_by{|key, value| value }.collect{|key, value| [key, self[key]]}
         end
