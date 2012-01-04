@@ -77,12 +77,14 @@ module Open
     end
   end
 
+  def self.digest_url(url, options = {})
+    params = [url, options.values_at("--post-data", "--post-data="), (options.include?("--post-file")? Open.read(options["--post-file"]).split("\n").sort * "\n" : "")]
+    digest = Digest::MD5.hexdigest(params.inspect)
+  end
   # Cache
   #
   def self.in_cache(url, options = {})
-    digest = Digest::MD5.hexdigest([url, options.values_at("--post-data", "--post-data="), (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
-
-    filename = File.join(REMOTE_CACHEDIR, digest)
+    filename = File.join(REMOTE_CACHEDIR, digest_url(url, options))
     if File.exists? filename
       return filename 
     else
@@ -102,8 +104,7 @@ module Open
   end
   
   def self.add_cache(url, data, options = {})
-    digest = Digest::MD5.hexdigest([url, options.values_at("--post-data", "--post-data="), (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
-    Misc.sensiblewrite(File.join(REMOTE_CACHEDIR, digest), data)
+    Misc.sensiblewrite(File.join(REMOTE_CACHEDIR, digest_url(url, options)), data)
   end
 
   # Grep
