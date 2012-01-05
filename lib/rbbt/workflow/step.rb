@@ -47,11 +47,11 @@ class Step
     self
   end
 
-  def run
-    result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path}.uniq do
+  def run(no_load = false)
+    result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path}.uniq, :no_load => no_load do
       log task.name, "Starting task: #{ name }"
       set_info :dependencies, @dependencies.collect{|dep| [dep.task.name, dep.name]}
-      @dependencies.each{|dependency| dependency.run}
+      @dependencies.each{|dependency| dependency.run true}
       set_info :status, :start
       set_info :inputs, Misc.zip2hash(task.inputs, @inputs) unless task.inputs.nil?
       res = exec

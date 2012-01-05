@@ -62,7 +62,11 @@ module Persist
     persistence_dir = Misc.process_options(persist_options, :dir) || CACHEDIR
 
     filename = perfile.gsub(/\s/,'_').gsub(/\//,'>')
-    options_md5 = Misc.hash2md5 options
+    clean_options = options
+    clean_options.delete :unnamed
+    clean_options.delete "unnamed"
+
+    options_md5 = Misc.hash2md5 clean_options
     filename  << ":" << options_md5 unless options_md5.empty?
 
     File.join(persistence_dir, filename)
@@ -146,6 +150,7 @@ module Persist
       Misc.lock(path) do
         if is_persisted?(path, persist_options)
           Log.debug "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
+          return nil if persist_options[:no_load]
           return load_file(path, type) 
         else
           Log.debug "Persist create: #{ path } - #{persist_options.inspect[0..100]}"

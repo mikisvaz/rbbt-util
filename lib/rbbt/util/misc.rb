@@ -122,6 +122,24 @@ end
     counts
   end
 
+  def self.proportions(array)
+    total = array.length
+
+    proportions = Hash.new 0
+
+    array.each do |e|
+      proportions[e] += 1.0 / total
+    end
+
+    class << proportions; self;end.class_eval do
+      def to_s
+        sort{|a,b| a[1] == b[1] ? a[0] <=> b[0] : a[1] <=> b[1]}.collect{|k,c| "%3d\t%s" % [c, k]} * "\n"
+      end
+    end
+
+    proportions
+  end
+
   IUPAC2BASE = {
     "A" => ["A"],
     "C" => ["C"],

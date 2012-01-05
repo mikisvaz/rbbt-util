@@ -169,6 +169,8 @@ module Open
     wget_options[:nice_key] = options.delete(:nice_key)
     wget_options[:quiet] = options.delete(:quiet)
     wget_options["--post-data="] = options.delete(:post) if options.include? :post
+    wget_options["--post-file"] = options.delete("--post-file") if options.include? "--post-file"
+    wget_options["--post-file="] = options.delete("--post-file=") if options.include? "--post-file="
     wget_options[:cookies] = options.delete(:cookies)
 
     io = case
