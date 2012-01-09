@@ -282,7 +282,7 @@ module TSV
     new = TSV.setup({}, :key_field => key_field, :fields => fields, :type => type, :filename => filename, :identifiers => identifiers)
 
     new.key_field = key_field
-    new.fields    = fields.dup
+    new.fields    = fields.dup unless fields.nil?
     new.type      = type
     new.filename  = filename
     new.namespace = namespace
