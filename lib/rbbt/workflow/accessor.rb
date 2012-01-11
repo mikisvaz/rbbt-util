@@ -26,7 +26,7 @@ class Step
     Misc.lock(info_file) do
       i = info
       i[key] = value
-      Open.write(info_file, i.to_yaml)
+      Open.write(info_file, YAML.dump(i))
       value
     end
   end

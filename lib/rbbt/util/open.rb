@@ -104,7 +104,10 @@ module Open
   end
   
   def self.add_cache(url, data, options = {})
-    Misc.sensiblewrite(File.join(REMOTE_CACHEDIR, digest_url(url, options)), data)
+    file = File.join(REMOTE_CACHEDIR, digest_url(url, options))
+    Misc.lock(file) do
+      Misc.sensiblewrite(file, data)
+    end
   end
 
   # Grep
@@ -176,11 +179,13 @@ module Open
     io = case
          when (not remote?(url))
            file_open(url, options[:grep])
-         when options[:nocache]
+         when (options[:nocache] and options[:nocache] != :update)
            # What about grep?
            wget(url, wget_options)
-         when in_cache(url, wget_options)
-           file_open(in_cache(url, wget_options), options[:grep])
+         when (options[:nocache] != :update and in_cache(url, wget_options))
+           Misc.lock(in_cache(url, wget_options)) do
+             file_open(in_cache(url, wget_options), options[:grep])
+           end
          else
            io = wget(url, wget_options)
            add_cache(url, io, wget_options)

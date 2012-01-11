@@ -41,6 +41,7 @@ class Step
         sleep 5
       end
     else
+      Log.debug "Waiting for pid: #{@pid}"
       Process.waitpid @pid
       @pid = nil
     end
