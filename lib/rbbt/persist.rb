@@ -10,6 +10,8 @@ module Persist
   CACHEDIR="/tmp/tsv_persistent_cache"
   FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
 
+  MEMORY = {}
+
   def self.cachedir=(cachedir)
     CACHEDIR.replace cachedir
     FileUtils.mkdir_p CACHEDIR unless File.exist? CACHEDIR
@@ -144,20 +146,27 @@ module Persist
   def self.persist(name, type = nil, persist_options = {})
     type ||= :marshal
     persist_options = Misc.add_defaults persist_options, :persist => true
+    other_options = Misc.process_options persist_options, :other
 
     if persist_options[:persist]
-      path = persistence_path(name, persist_options)
-      Misc.lock(path) do
-        if is_persisted?(path, persist_options)
-          Log.debug "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
-          return nil if persist_options[:no_load]
-          return load_file(path, type) 
-        else
-          Log.debug "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
+      path = persistence_path(name, persist_options, other_options || {})
+
+      case type
+      when :memory
+        Persist::MEMORY[path] ||= yield
+      else
+        Misc.lock(path) do
+          if is_persisted?(path, persist_options)
+            Log.debug "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
+            return nil if persist_options[:no_load]
+            return load_file(path, type) 
+          else
+            Log.debug "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
+          end
+          res = yield
+          save_file(path, type, res)
+          res
         end
-        res = yield
-        save_file(path, type, res)
-        res
       end
     else
       yield

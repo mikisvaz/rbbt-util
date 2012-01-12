@@ -1,4 +1,6 @@
+require 'rbbt/util/misc'
 require 'rbbt/util/chain_methods'
+
 require 'json'
 module Annotated
   attr_accessor :annotation_types
