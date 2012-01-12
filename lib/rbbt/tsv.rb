@@ -1,6 +1,7 @@
 require 'yaml'
 
 require 'rbbt/util/misc'
+require 'rbbt/util/named_array'
 require 'rbbt/util/log'
 
 require 'rbbt/persist'

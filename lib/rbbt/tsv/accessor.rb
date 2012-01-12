@@ -74,9 +74,8 @@ module TSV
     when :double, :list
       NamedArray.setup value, fields, key, namespace
     when :flat, :single
-      #Entity.formats[fields.first].setup((not value.nil? and value.frozen? ? value.dup : value), :format => fields.first, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
       value = value.dup if value.frozen?
-      Entity.formats[fields.first].setup(value, :format => fields.first, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+      Entity.formats[fields.first].setup(value, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => fields.first})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
     end
     value
   end
@@ -90,7 +89,7 @@ module TSV
     return keys if @unnamed or key_field.nil?
 
     if defined?(Entity) and  Entity.respond_to?(:formats) and Entity.formats.include? key_field
-      Entity.formats[key_field].setup(keys.collect{|k| k.dup}, :format => key_field, :namespace => namespace, :organism => namespace)
+      Entity.formats[key_field].setup(keys.collect{|k| k.dup}, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => key_field}) )
     else
       keys
     end
@@ -105,7 +104,7 @@ module TSV
       values.each{|value| NamedArray.setup value, fields, nil, namespace }
     when :flat, :single
       values.each{|value| 
-        Entity.formats[fields.first].setup(value, :format => fields.first, :namespace => namespace, :organism => namespace)
+        Entity.formats[fields.first].setup(value, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => fields.first}))
       } if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
     end
       
@@ -130,11 +129,11 @@ module TSV
           when :double, :list
             NamedArray.setup value, fields, key, namespace if Array === value 
           when :flat, :single
-            Entity.formats[fields.first].setup(value, :format => fields.first, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+            Entity.formats[fields.first].setup(value, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => fields.first})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
           end
         end
         if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
-          key = Entity.formats[key_field].setup(key.dup, :format => key_field, :namespace => namespace, :organism => namespace) 
+          key = Entity.formats[key_field].setup(key.dup, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => key_field})) 
         end
       end
 
@@ -159,11 +158,11 @@ module TSV
           when :double, :list
             NamedArray.setup value, fields, key, namespace if Array === value 
           when :flat, :single
-            Entity.formats[fields.first].setup(value, :format => fields.first, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+            Entity.formats[fields.first].setup(value, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => fields.first})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
           end
         end
         if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
-          key = Entity.formats[key_field].setup(key.dup, :format => key_field, :namespace => namespace, :organism => namespace) 
+          key = Entity.formats[key_field].setup(key.dup, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => key_field})) 
         end
       end
 
@@ -218,14 +217,14 @@ module TSV
       if fields == :all
         if just_keys
           keys = elems.sort_by{|key, value| key }.collect{|key, values| key}
-          Entity.formats[key_field].setup(keys, :format => key_field, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? key_field
+          Entity.formats[key_field].setup(keys, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => key_field})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? key_field
         else
           elems.sort_by{|key, value| key }
         end
       else
         if just_keys
           keys = elems.sort_by{|key, value| value }.collect{|key, value| key}
-          Entity.formats[key_field].setup(keys, :format => key_field, :namespace => namespace, :organism => namespace) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? key_field
+          Entity.formats[key_field].setup(keys, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => fields.first})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? key_field
           keys
         else
           elems.sort_by{|key, value| value }.collect{|key, value| [key, self[key]]}
