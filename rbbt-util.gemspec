@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{rbbt-util}
-  s.version = "4.1.0"
+  s.version = "4.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
-  s.date = %q{2011-11-17}
+  s.date = %q{2012-01-13}
   s.description = %q{Utilities for handling tsv files, caches, etc}
   s.email = %q{miguel.vazquez@cnio.es}
   s.executables = ["tsv.rb", "tchash.rb", "run_workflow.rb", "rbbt_query.rb", "rbbt_exec.rb", "rbbt_Rutil.rb"]
@@ -47,6 +47,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/filecache.rb",
     "lib/rbbt/util/log.rb",
     "lib/rbbt/util/misc.rb",
+    "lib/rbbt/util/named_array.rb",
     "lib/rbbt/util/open.rb",
     "lib/rbbt/util/simpleDSL.rb",
     "lib/rbbt/util/simpleopt.rb",
