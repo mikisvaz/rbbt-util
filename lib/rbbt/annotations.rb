@@ -84,7 +84,7 @@ module Annotated
              when literal_pos
                values[literal_pos]
              when literal_array_pos
-               values[literal_array_pos].split("|")
+               values[literal_array_pos].split("|").extend AnnotatedArray
              else
                id.dup
              end

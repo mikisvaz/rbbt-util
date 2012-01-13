@@ -114,11 +114,13 @@ end
     array.each do |e|
       counts[e] += 1
     end
+
     class << counts; self;end.class_eval do
       def to_s
         sort{|a,b| a[1] == b[1] ? a[0] <=> b[0] : a[1] <=> b[1]}.collect{|k,c| "%3d\t%s" % [c, k]} * "\n"
       end
     end
+
     counts
   end
 
@@ -364,7 +366,7 @@ end
 
   def self.lock(file, *args)
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
-    lockfile = Lockfile.new(file + '.lock')
+    lockfile = Lockfile.new(file + '.lock', :max_age => 1200, :suspend => 240)
     lockfile.lock do
       yield file, *args
     end
@@ -449,24 +451,34 @@ end
   end
 
   def self.hash2md5(hash)
-    o = {}
+    str = ""
     hash.keys.sort_by{|k| k.to_s}.each do |k|
       next if k == :monitor or k == "monitor" or k == :in_situ_persistence or k == "in_situ_persistence"
       v = hash[k]
       case
-      when v.inspect =~ /:0x0/
-        o[k] = v.inspect.sub(/:0x[a-f0-9]+@/,'')
-        #when Resource::Path === v
-        #  o[k] = "" << String.new(v.to_s)
+      when Hash === v
+        str << k.to_s << "=>" << hash2md5(v)
+      when Symbol === v
+        str << k.to_s << "=>" << v.to_s
+      when String === v
+        str << k.to_s << "=>" << v
       else
-        o[k] = v
+        v_ins = v.inspect
+
+        case
+        when v_ins =~ /:0x0/
+          str << k.to_s << "=>" << v_ins.sub(/:0x[a-f0-9]+@/,'')
+        else
+          str << k.to_s << "=>" << v.to_s
+        end
+
       end
     end
 
-    if o.empty?
+    if str.empty?
       ""
     else
-      Digest::MD5.hexdigest(o.sort_by{|k| k.to_s}.inspect)
+      Digest::MD5.hexdigest(str)
     end
   end
 

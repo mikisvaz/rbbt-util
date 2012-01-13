@@ -95,11 +95,9 @@ class TestAnnotations < Test::Unit::TestCase
     AnnotatedString.setup(a, annotation_str)
     a.extend AnnotatedArray
 
-    Annotated.load_tsv(Annotated.tsv(a, :all)).sort[0].annotation_str
 
-    assert_equal annotation_str, Annotated.load_tsv(Annotated.tsv(a, :all)).sort[0].annotation_str
+    assert_equal annotation_str, Annotated.load_tsv(Annotated.tsv(a, :all)).annotation_str
 
-    Annotated.load_tsv(Annotated.tsv(a, :literal, :JSON)).sort.first
     assert_equal str1, Annotated.load_tsv(Annotated.tsv(a, :literal, :JSON)).sort.first
   end
 

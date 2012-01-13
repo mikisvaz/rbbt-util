@@ -3,7 +3,6 @@ require 'rbbt/util/misc'
 require 'rbbt/util/tmpfile'
 
 require 'zlib'
-require 'digest/md5'
 
 module Open
   class OpenURLError < StandardError; end
@@ -79,7 +78,7 @@ module Open
 
   def self.digest_url(url, options = {})
     params = [url, options.values_at("--post-data", "--post-data="), (options.include?("--post-file")? Open.read(options["--post-file"]).split("\n").sort * "\n" : "")]
-    digest = Digest::MD5.hexdigest(params.inspect)
+    digest = Misc.digest(params.inspect)
   end
   # Cache
   #
@@ -93,7 +92,7 @@ module Open
   end
  
   def self.remove_from_cache(url, options = {})
-    digest = Digest::MD5.hexdigest([url, options.values_at("--post-data", "--post-data="), (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
+    digest = Misc.digest([url, options.values_at("--post-data", "--post-data="), (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
 
     filename = File.join(REMOTE_CACHEDIR, digest)
     if File.exists? filename

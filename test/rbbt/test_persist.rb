@@ -33,10 +33,10 @@ class TestPersist < Test::Unit::TestCase
         annotations
       end
 
-      assert_equal "Entity 1", persisted_annotations.first
-      assert_equal "Entity 2", persisted_annotations.last
-      assert_equal "1", persisted_annotations.first.test_annotation
-      assert_equal "2", persisted_annotations.last.test_annotation
+      assert_equal "Entity 1", persisted_annotations.sort.first
+      assert_equal "Entity 2", persisted_annotations.sort.last
+      assert_equal "1", persisted_annotations.sort.first.test_annotation
+      assert_equal "2", persisted_annotations.sort.last.test_annotation
     end
   end
 
