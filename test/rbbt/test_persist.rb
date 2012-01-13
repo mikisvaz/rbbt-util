@@ -3,7 +3,43 @@ require 'rbbt/persist'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
 
+module TestAnnotation
+  extend Annotation
+
+  self.annotation :test_annotation
+end
 class TestPersist < Test::Unit::TestCase
+
+  def test_annotation_persist
+    TmpFile.with_file do |tmp|
+      entity1 = "Entity 1"
+      entity2 = "Entity 2"
+
+      TestAnnotation.setup(entity1, :test_annotation => "1")
+      TestAnnotation.setup(entity2, :test_annotation => "2")
+
+      annotations = [entity1, entity2]
+
+      persisted_annotations = Persist.persist("Test", :annotations, :file => tmp) do
+        annotations
+      end
+
+      assert_equal "Entity 1", persisted_annotations.first
+      assert_equal "Entity 2", persisted_annotations.last
+      assert_equal "1", persisted_annotations.first.test_annotation
+      assert_equal "2", persisted_annotations.last.test_annotation
+
+      persisted_annotations = Persist.persist("Test", :annotations, :file => tmp) do
+        annotations
+      end
+
+      assert_equal "Entity 1", persisted_annotations.first
+      assert_equal "Entity 2", persisted_annotations.last
+      assert_equal "1", persisted_annotations.first.test_annotation
+      assert_equal "2", persisted_annotations.last.test_annotation
+    end
+  end
+
   def test_array_persist
     TmpFile.with_file do |tmp|
       10.times do
@@ -12,7 +48,7 @@ class TestPersist < Test::Unit::TestCase
         end)
       end
     end
-  
+
     TmpFile.with_file do |tmp|
       10.times do
         assert_equal [],(Persist.persist("Test", :array, :file => tmp) do

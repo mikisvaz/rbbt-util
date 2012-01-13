@@ -87,6 +87,22 @@ class TestAnnotations < Test::Unit::TestCase
     assert_equal str1, Annotated.load_tsv(Annotated.tsv([str1, str2], :literal, :JSON)).sort.first
   end
 
+  def test_load_array_tsv
+    str1 = "string1"
+    str2 = "string2"
+    a = [str1, str2]
+    annotation_str = "Annotation String 2"
+    AnnotatedString.setup(a, annotation_str)
+    a.extend AnnotatedArray
+
+    Annotated.load_tsv(Annotated.tsv(a, :all)).sort[0].annotation_str
+
+    assert_equal annotation_str, Annotated.load_tsv(Annotated.tsv(a, :all)).sort[0].annotation_str
+
+    Annotated.load_tsv(Annotated.tsv(a, :literal, :JSON)).sort.first
+    assert_equal str1, Annotated.load_tsv(Annotated.tsv(a, :literal, :JSON)).sort.first
+  end
+
   def test_inheritance
     str = "string1"
     annotation_str1 = "Annotation String 1"

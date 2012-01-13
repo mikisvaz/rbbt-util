@@ -81,6 +81,8 @@ module Persist
       nil
     when :boolean
       TRUE_STRINGS.include? Open.read(path).chomp.strip
+    when :annotations
+      Annotated.load_tsv TSV.open(path)
     when :tsv
       TSV.open(path)
     when :marshal_tsv
@@ -110,7 +112,7 @@ module Persist
 
   def self.save_file(path, type, content)
 
-    return if (content.nil? and File.exists? path)
+    return if content.nil?
     
     case (type || "nil").to_sym
     when :nil
@@ -122,6 +124,8 @@ module Persist
       Open.write(path, content.file.read)
     when :tsv
       Open.write(path, content.to_s)
+    when :annotations
+      Open.write(path, Annotated.tsv(content, :all).to_s)
     when :string, :text
       Open.write(path, content)
     when :array
