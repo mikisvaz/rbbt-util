@@ -103,7 +103,7 @@ module Persist
 
              if is_persisted? path
                Log.debug "TSV persistence up-to-date: #{ path }"
-               return open_tokyocabinet(path, false) 
+               return Misc.lock(path) do open_tokyocabinet(path, false); end
              else
                Log.debug "TSV persistence creating: #{ path }"
              end
@@ -114,11 +114,17 @@ module Persist
              data.serializer = :type unless data.serializer
              data
            else
-             data = {}
+             {}
            end
 
     begin
-      yield data
+      if data.respond_to? :persistence_path and data != persist_options[:data]
+        Misc.lock data.persistence_path do
+          yield data
+        end
+      else
+        yield data
+      end
     rescue Exception
       begin
         data.close if data.respondo_to? :close

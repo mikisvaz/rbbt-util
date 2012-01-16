@@ -87,6 +87,7 @@ module TSV
     when (field.nil? or field == :key or key_field == field)
       :key
     when String === field
+      raise "No fields specified in TSV.identify_field" if fields.nil?
       pos = fields.index field
       Log.medium "Field #{ field } was not found. Options: #{fields * ", "}" if pos.nil?
       pos

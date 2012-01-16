@@ -44,7 +44,7 @@ class Step
   end
 
   def message(message)
-    set_info(:messages, messages << message)
+    set_info(:messages, (messages || []) << message)
   end
 
   def log(status, message = nil)
@@ -55,6 +55,10 @@ class Step
     end
     self.status = status
     message(message) unless message.nil?
+  end
+
+  def started?
+    File.exists? info_file
   end
 
   def done?

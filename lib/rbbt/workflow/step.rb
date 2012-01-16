@@ -4,14 +4,15 @@ require 'rbbt/util/log'
 require 'rbbt/workflow/accessor'
 
 class Step
-  attr_accessor :path, :task, :inputs, :dependencies
+  attr_accessor :path, :task, :inputs, :dependencies, :bindings
   attr_accessor :pid
 
   class Aborted < Exception; end
 
-  def initialize(path, task = nil, inputs = nil, dependencies = nil)
+  def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil)
     @path = path
     @task = task
+    @bindings = bindings
     @dependencies = case
                     when dependencies.nil? 
                       []
@@ -30,7 +31,7 @@ class Step
   end
 
   def exec
-    result = @task.exec_in self, *@inputs
+    result = @task.exec_in((bindings ? bindings : self), *@inputs)
     prepare_result result, @task.result_description
   end
 
@@ -53,7 +54,7 @@ class Step
       log task.name, "Starting task: #{ name }"
       set_info :dependencies, @dependencies.collect{|dep| [dep.task.name, dep.name]}
       @dependencies.each{|dependency| dependency.run true}
-      set_info :status, :start
+      set_info :status, :started
       set_info :inputs, Misc.zip2hash(task.inputs, @inputs) unless task.inputs.nil?
       res = exec
       set_info :status, :done
@@ -70,6 +71,7 @@ class Step
         trap(:INT) { raise Step::Aborted.new "INT signal recieved" }
         run
       rescue Exception
+        set_info :backtrace, $!.backtrace
         log(:error, "#{$!.class}: #{$!.message}")
       end
     end

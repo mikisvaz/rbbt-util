@@ -263,7 +263,7 @@ module AnnotatedArray
   self.chain_prefix = :annotated_array
 
   def double_array
-    AnnotatedArray === self.first
+    AnnotatedArray === self.annotated_array_clean_get_brackets(0)
   end
 
   def annotated_array_first

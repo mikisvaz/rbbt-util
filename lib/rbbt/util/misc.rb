@@ -366,7 +366,7 @@ end
 
   def self.lock(file, *args)
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
-    lockfile = Lockfile.new(file + '.lock', :max_age => 1200, :suspend => 240)
+    lockfile = Lockfile.new(file + '.lock')
     lockfile.lock do
       yield file, *args
     end
@@ -462,6 +462,8 @@ end
         str << k.to_s << "=>" << v.to_s
       when String === v
         str << k.to_s << "=>" << v
+      when Array === v
+        str << k.to_s << "=>[" << v * "," << "]"
       else
         v_ins = v.inspect
 
@@ -469,7 +471,7 @@ end
         when v_ins =~ /:0x0/
           str << k.to_s << "=>" << v_ins.sub(/:0x[a-f0-9]+@/,'')
         else
-          str << k.to_s << "=>" << v.to_s
+          str << k.to_s << "=>" << v_ins
         end
 
       end
