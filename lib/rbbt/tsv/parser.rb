@@ -258,6 +258,7 @@ module TSV
           @key_position = key_field
         when String === key_field
           @key_position = @fields.dup.unshift(@key_field).index key_field
+          raise "Key field #{ key_field } was not found" if @key_position.nil?
         else
           raise "Format of key_field not understood: #{key_field.inspect}"
         end

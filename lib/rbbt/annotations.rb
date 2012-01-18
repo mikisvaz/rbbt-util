@@ -35,6 +35,7 @@ module Annotated
     annotation_types = info[:annotation_types]
     annotation_types = annotation_types.split("+") if String === annotation_types
 
+    return object if annotation_types.nil? or annotation_types.empty?
     annotation_types.each do |mod|
       mod = Misc.string2const(mod) if String === mod
       mod.setup(object, *info.values_at(*mod.all_annotations))

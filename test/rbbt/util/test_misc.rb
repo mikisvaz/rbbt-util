@@ -96,7 +96,6 @@ class TestMisc < Test::Unit::TestCase
     a = [[1],[2]]
     a = NamedArray.setup a, %w(1 2)
     a.merge [3,4]
-    ddd a
     assert_equal [1,3], a[0]
   end
 
@@ -149,6 +148,18 @@ class TestMisc < Test::Unit::TestCase
 
   def __test_sd
     assert_equal Math.sqrt(2), Misc.sd([1,3])
+  end
+
+  def test_align_small
+    reference = "AABCDEBD"
+    sequence  = "ABCD"
+    assert_equal '-ABCD---', Misc.fast_align(reference, sequence).last
+  end
+
+  def test_align_real
+    reference = "SGNECNKAIDGNKDTFWHTFYGANGDPKPPPHTYTIDMKTTQNVNGLSMLPRQDGNQNGWIGRHEVYLSSDGTNW"
+    sequence  = "TYTIDMKTTQNVNGLSML"
+    assert_equal "--------------------------------TYTIDMKTTQNVNGLSML-------------------------", Misc.fast_align(reference, sequence).last
   end
 
 #  def test_divide
