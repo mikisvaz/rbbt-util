@@ -167,9 +167,15 @@ module Persist
           else
             Log.debug "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
           end
-          res = yield
-          save_file(path, type, res)
-          res
+          begin
+            res = yield
+            save_file(path, type, res)
+            res
+          rescue
+            Log.high "Error in persist. Erasing '#{ path }'"
+            FileUtils.rm path
+            raise $!
+          end
         end
       end
     else

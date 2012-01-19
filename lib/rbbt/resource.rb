@@ -66,33 +66,42 @@ module Resource
       raise "Resource #{ path } does not seem to be claimed"
     end
 
-    case type
-    when :string
-      Open.write(path, content)
-    when :url
-      Open.write(path, Open.open(content))
-    when :proc
-      data = content.call
-      Open.write(path, data) unless File.exists? path
-    when :rake
-      run_rake(path, content, rake_dir)
-    when :install
-      Log.debug "Installing software: #{path}"
-      software_dir = path.resource.root.software.find :user
-      preamble = <<-EOF
+    if not File.exists? path
+      Misc.lock path + '.produce' do
+        begin
+          case type
+          when :string
+            Open.write(path, content)
+          when :url
+            Open.write(path, Open.open(content))
+          when :proc
+            data = content.call
+            Open.write(path, data) 
+          when :rake
+            run_rake(path, content, rake_dir)
+          when :install
+            Log.debug "Installing software: #{path}"
+            software_dir = path.resource.root.software.find :user
+            preamble = <<-EOF
 #!/bin/bash
 
 RBBT_SOFTWARE_DIR="#{software_dir}"
 
 INSTALL_HELPER_FILE="#{Rbbt.share.install.software.lib.install_helpers.find :lib, caller_lib_dir(__FILE__)}"
 source "$INSTALL_HELPER_FILE"
-      EOF
+            EOF
 
-      CMD.cmd('bash', :in => preamble + "\n" + Open.read(content))
+            CMD.cmd('bash', :in => preamble + "\n" + Open.read(content))
 
-      set_software_env(software_dir)
-    else
-      raise "Could not produce #{ resource }. (#{ type }, #{ content })"
+            set_software_env(software_dir)
+          else
+            raise "Could not produce #{ resource }. (#{ type }, #{ content })"
+          end
+        rescue
+          FileUtils.rm path if File.exists? path
+          raise $!
+        end
+      end
     end
 
     path

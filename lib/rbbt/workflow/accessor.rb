@@ -19,7 +19,14 @@ class Step
 
   def info
     return {} if not File.exists? info_file
-    YAML.load(Open.open(info_file)) || {}
+    begin
+      File.open(info_file) do |file|
+        YAML.load(file) || {}
+      end
+    rescue
+      Log.debug "Error loading yaml: " + Open.read(info_file)
+      raise $!
+    end
   end
 
   def set_info(key, value)

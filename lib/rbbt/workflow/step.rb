@@ -69,7 +69,11 @@ class Step
     @pid = Process.fork do
       begin
         trap(:INT) { raise Step::Aborted.new "INT signal recieved" }
-        run
+        FileUtils.mkdir_p File.dirname(path)
+        File.open(path + '.log', 'w') do |file|
+          Log.logfile = file
+          run
+        end
       rescue Exception
         set_info :backtrace, $!.backtrace
         log(:error, "#{$!.class}: #{$!.message}")

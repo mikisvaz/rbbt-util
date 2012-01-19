@@ -8,13 +8,22 @@ module Log
   WARN     = 5
   ERROR    = 6
 
-  def self.severity=(severity)
-    @@severity = severity
+  class << self
+    attr_accessor :logfile, :severity
   end
 
-  def self.severity
-    @@severity
+
+  def self.logfile
+    @logfile = nil
   end
+
+  #def self.severity=(severity)
+  #  @severity = severity
+  #end
+
+  #def self.severity
+  #  @severity
+  #end
 
   SEVERITY_COLOR = ["0;37m", "0;32m", "0;33m", "0;31m", "1;0m" ].collect{|e| "\033[#{e}"}
 
@@ -23,9 +32,11 @@ module Log
     severity_color = SEVERITY_COLOR[severity]
     font_color = {false => "\033[0;37m", true => "\033[0m"}[severity >= INFO]
 
-    STDERR.puts caller.select{|l| l =~ /rbbt/} * "\n" if @@severity == -1 and not message.empty?
-    #STDERR.puts "#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}[#{severity.to_s}]: " +  message if severity >= @@severity
-    STDERR.puts "\033[0;37m#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}#{severity_color}[#{severity.to_s}]\033[0m:#{font_color} " <<  message.strip  << "\033[0m" if severity >= @@severity
+    if severity >= self.severity and not message.empty?
+      str = "\033[0;37m#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}#{severity_color}[#{severity.to_s}]\033[0m:#{font_color} " <<  message.strip  << "\033[0m"
+      STDERR.puts str
+      logfile.puts str unless logfile.nil?
+    end
   end
 
   def self.debug(message)
@@ -59,17 +70,17 @@ module Log
 
   case ENV['RBBT_LOG']
   when 'DEBUG' 
-    @@severity = DEBUG
+    self.severity = DEBUG
   when 'LOW' 
-    @@severity = LOW
+    self.severity = LOW
   when 'MEDIUM' 
-    @@severity = MEDIUM
+    self.severity = MEDIUM
   when 'HIGH' 
-    @@severity = HIGH
+    self.severity = HIGH
   when nil
-    @@severity = INFO
+    self.severity = INFO
   else
-    @@severity = ENV['RBBT_LOG'].to_i
+    self.severity = ENV['RBBT_LOG'].to_i
   end
 end
 
