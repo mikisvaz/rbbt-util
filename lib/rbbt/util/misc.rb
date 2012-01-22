@@ -530,6 +530,10 @@ end
       next if k == :monitor or k == "monitor" or k == :in_situ_persistence or k == "in_situ_persistence"
       v = hash[k]
       case
+      when TrueClass === v
+        str << k.to_s << "=>true" 
+      when FalseClass === v
+        str << k.to_s << "=>false" 
       when Hash === v
         str << k.to_s << "=>" << hash2md5(v)
       when Symbol === v

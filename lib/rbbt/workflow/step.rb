@@ -56,7 +56,13 @@ class Step
       @dependencies.each{|dependency| dependency.run true}
       set_info :status, :started
       set_info :inputs, Misc.zip2hash(task.inputs, @inputs) unless task.inputs.nil?
-      res = exec
+      res = begin
+              exec
+            rescue Exception
+              set_info :backtrace, $!.backtrace
+              log(:error, "#{$!.class}: #{$!.message}")
+              raise $!
+            end
       set_info :status, :done
       res
     end
@@ -67,16 +73,11 @@ class Step
   def fork
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil?
     @pid = Process.fork do
-      begin
-        trap(:INT) { raise Step::Aborted.new "INT signal recieved" }
-        FileUtils.mkdir_p File.dirname(path)
-        File.open(path + '.log', 'w') do |file|
-          Log.logfile = file
-          run
-        end
-      rescue Exception
-        set_info :backtrace, $!.backtrace
-        log(:error, "#{$!.class}: #{$!.message}")
+      trap(:INT) { raise Step::Aborted.new "INT signal recieved" }
+      FileUtils.mkdir_p File.dirname(path)
+      File.open(path + '.log', 'w') do |file|
+        Log.logfile = file
+        run
       end
     end
     set_info :pid, @pid

@@ -173,7 +173,7 @@ module Persist
             res
           rescue
             Log.high "Error in persist. Erasing '#{ path }'"
-            FileUtils.rm path
+            FileUtils.rm path if File.exists? path
             raise $!
           end
         end
