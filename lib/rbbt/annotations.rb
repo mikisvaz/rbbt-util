@@ -161,7 +161,7 @@ module Annotated
       if tsv.key_field == "Single"
         annotated_entities.first
       else
-        annotated_entities[0].annotate annotated_entities unless annotated_entities.empty?
+        annotated_entities
       end
     end
   end
