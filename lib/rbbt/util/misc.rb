@@ -439,9 +439,12 @@ end
   def self.lock(file, *args)
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
     lockfile = Lockfile.new(file + '.lock')
-    lockfile.lock do
+    #Log.debug "Locking: #{ file }"
+    res = lockfile.lock do
       yield file, *args
     end
+    #Log.debug "Done Locking: #{ file }"
+    res
   end
 
   def self.common_path(dir, file)

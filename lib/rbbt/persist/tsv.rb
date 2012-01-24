@@ -41,7 +41,7 @@ module Persist
         def write(force = true)
           return if write? and not closed and not force
           self.close
-          if !self.open(@persistence_path, TokyoCabinet::HDB::OWRITER | TokyoCabinet::HDB::OCREAT)
+          if !self.open(@persistence_path, TokyoCabinet::HDB::OWRITER)
             ecode = self.ecode
             raise "Open error: #{self.errmsg(ecode)}. Trying to open file #{@persistence_path}"
           end

@@ -32,10 +32,11 @@ module Annotated
   end
 
   def self.load(object, info)
-    annotation_types = info[:annotation_types]
+    annotation_types = info[:annotation_types] || []
     annotation_types = annotation_types.split("+") if String === annotation_types
 
     return object if annotation_types.nil? or annotation_types.empty?
+
     annotation_types.each do |mod|
       mod = Misc.string2const(mod) if String === mod
       mod.setup(object, *info.values_at(*mod.all_annotations))
@@ -128,6 +129,8 @@ module Annotated
              when (fields == [:all] and not annotations.empty?)
                fields = [:annotation_types] + (Annotated === annotations ? annotations.annotations : annotations.first.annotations)
                fields << :literal
+             when annotations.empty?
+               [:annotation_types, :literal]
              else
                fields.flatten
              end
@@ -158,7 +161,8 @@ module Annotated
         Annotated.load_tsv_values(id, values, tsv.fields)
       end
 
-      if tsv.key_field == "Single"
+      case tsv.key_field 
+      when "Single"
         annotated_entities.first
       else
         annotated_entities
@@ -261,6 +265,7 @@ end
 
 module AnnotatedArray
   extend ChainMethods
+
   self.chain_prefix = :annotated_array
 
   def double_array
@@ -446,4 +451,5 @@ module AnnotatedArray
 
     value
   end
+
 end
