@@ -59,9 +59,12 @@ module Path
     :global => File.join('/', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
     :local => File.join('/usr/local', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
     :lib => File.join('{LIBDIR}', "{TOPLEVEL}", "{SUBPATH}"),
+    :default => :user
   }
 
-  def find(where = nil, caller_lib = nil)
+  def find(where = nil, caller_lib = nil, search_paths = nil)
+    where = search_paths[:default] if where == :default
+    search_paths ||= SEARCH_PATHS
     return self if located?
     if self.match(/(.*?)\/(.*)/)
       toplevel, subpath = self.match(/(.*?)\/(.*)/).values_at 1, 2
@@ -71,15 +74,19 @@ module Path
 
     path = nil
     if where.nil?
-      SEARCH_PATHS.keys.each do |w| 
-        path = find(w, caller_lib)
+      search_paths.keys.each do |w| 
+        path = find(w, caller_lib, search_paths)
         return path if File.exists? path
       end
-      find :user
+      if search_paths.include? :default
+        find((search_paths[:default] || :user), caller_lib, search_paths)
+      else
+        raise "Path '#{ path }' not found, and no default specified in search paths: #{search_paths.inspect}"
+      end
     else
       libdir = where == :lib ? Path.caller_lib_dir(caller_lib) : ""
       libdir ||= ""
-      Path.setup SEARCH_PATHS[where].sub('{PKGDIR}', pkgdir).sub('{TOPLEVEL}', toplevel).sub('{SUBPATH}', subpath).sub('{LIBDIR}', libdir), @pkgdir, @resource
+      Path.setup search_paths[where].sub('{PKGDIR}', pkgdir).sub('{TOPLEVEL}', toplevel).sub('{SUBPATH}', subpath).sub('{LIBDIR}', libdir), @pkgdir, @resource
     end
   end
 

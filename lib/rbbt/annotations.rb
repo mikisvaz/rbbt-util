@@ -282,6 +282,7 @@ module AnnotatedArray
 
   def annotated_array_get_brackets(pos)
     value = annotated_array_clean_get_brackets(pos)
+    value = value.dup if value.frozen?
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.all_annotations))
     end
@@ -309,8 +310,14 @@ module AnnotatedArray
   def annotated_array_collect
     res = []
 
-    annotated_array_each do |value|
-      res << yield(value)
+    if block_given?
+      annotated_array_each do |value|
+        res << yield(value)
+      end
+    else
+      annotated_array_each do |value|
+        res << value
+      end
     end
 
     res
@@ -450,6 +457,10 @@ module AnnotatedArray
     end
 
     value
+  end
+
+  def self.annotate(list)
+    list[0].annotate list unless AnnotatedArray === list or list[0].nil? or (not list[0].respond_to? :annotate)
   end
 
 end

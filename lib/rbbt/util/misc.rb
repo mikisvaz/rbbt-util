@@ -8,6 +8,29 @@ require 'narray'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  ARRAY_MAX_LENGTH = 10000
+  STRING_MAX_LENGTH = ARRAY_MAX_LENGTH * 10
+  def self.remove_long_items(obj)
+    case
+    when (Array === obj and obj.length > ARRAY_MAX_LENGTH)
+      remove_long_items(obj[0..ARRAY_MAX_LENGTH-2] << "TRUNCATED at #{ ARRAY_MAX_LENGTH } (#{obj.length})")
+    when (Hash === obj and obj.length > ARRAY_MAX_LENGTH)
+      remove_long_items(obj.compact[0..ARRAY_MAX_LENGTH-2] << ["TRUNCATED", "at #{ ARRAY_MAX_LENGTH } (#{obj.length})"])
+    when (String === obj and obj.length > STRING_MAX_LENGTH)
+      obj[0..STRING_MAX_LENGTH-1] << " TRUNCATED at #{STRING_MAX_LENGTH} (#{obj.length})"
+    when Hash === obj
+      new = {}
+      obj.each do |k,v|
+        new[k] = remove_long_items(v)
+      end
+      new
+    when Array === obj
+      obj.collect do |e| remove_long_items(e) end
+    else
+      obj
+    end
+  end
+
   def self.ensembl_server(organism)
     date = organism.split("/")[1]
     if date.nil?
@@ -438,7 +461,7 @@ end
 
   def self.lock(file, *args)
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
-    lockfile = Lockfile.new(file + '.lock')
+    lockfile = Lockfile.new(file + '.lock', :max_age => 36000, :refresh => 30)
     #Log.debug "Locking: #{ file }"
     res = lockfile.lock do
       yield file, *args
@@ -542,9 +565,9 @@ end
       when Symbol === v
         str << k.to_s << "=>" << v.to_s
       when String === v
-        str << k.to_s << "=>" << v
+        str << k.to_s << "=>" << v[0..10000]
       when Array === v
-        str << k.to_s << "=>[" << v * "," << "]"
+        str << k.to_s << "=>[" << v[0..1000] * "," << "]"
       else
         v_ins = v.inspect
 

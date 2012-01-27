@@ -38,7 +38,6 @@ class Step
   def join
     if @pid.nil?
       while not done? do
-        Log.debug "Waiting: #{info[:step]}"
         sleep 5
       end
     else
@@ -51,14 +50,15 @@ class Step
 
   def run(no_load = false)
     result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path}.uniq, :no_load => no_load do
-      log (task.name || "unnamed task"), "Starting task: #{ name }"
+      FileUtils.rm info_file if File.exists? info_file
+      log((task.name || "unnamed task"), "Starting task")
       set_info :dependencies, @dependencies.collect{|dep| [dep.task.name, dep.name]}
       @dependencies.each{|dependency| 
         log dependency.task.name || "dependency", "Processing dependency: #{ dependency.path }"
         dependency.run true
       }
       set_info :status, :started
-      set_info :inputs, Misc.zip2hash(task.inputs, @inputs) unless task.inputs.nil?
+      set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
       res = begin
               exec
             rescue Exception
@@ -77,10 +77,11 @@ class Step
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil?
     @pid = Process.fork do
       trap(:INT) { raise Step::Aborted.new "INT signal recieved" }
-      FileUtils.mkdir_p File.dirname(path)
-      File.open(path + '.log', 'w') do |file|
-        Log.logfile = file
+      FileUtils.mkdir_p File.dirname(path) unless File.exists? File.dirname(path)
+      begin
         run
+      rescue
+        exit -1
       end
     end
     set_info :pid, @pid

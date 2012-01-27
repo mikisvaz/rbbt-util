@@ -107,7 +107,7 @@ module Workflow
       end
     end
 
-    raise "Workflow not found: #{ wf_name }"
+    raise "Workflow not found our could not be loaded: #{ wf_name }"
   end
 
   def self.require_workflow(wf_name)

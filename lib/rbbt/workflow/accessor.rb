@@ -56,9 +56,9 @@ class Step
 
   def log(status, message = nil)
     if message
-      Log.low "#{ status }: #{ message }"
+      Log.low "[#{ status }] #{ message }: #{path}"
     else
-      Log.low "#{ status }"
+      Log.low "[#{ status }]: #{path}"
     end
     self.status = status
     message(message) unless message.nil?
