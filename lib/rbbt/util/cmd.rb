@@ -54,13 +54,17 @@ module CMD
     def force_close
       if @pid
         Log.debug "Forcing close by killing '#{@pid}'" if log
-        Process.kill("KILL", @pid)
-        Process.waitpid(@pid)
+        begin
+          Process.kill("KILL", @pid)
+          Process.waitpid(@pid)
+        rescue
+          Log.low "Exception in forcing close of command [#{ @pid }, #{cmd}]: #{$!.message}"
+        end
       end
 
       @post.call if @post
 
-      original_close
+      original_close unless self.closed?
     end
 
     def read(*args)

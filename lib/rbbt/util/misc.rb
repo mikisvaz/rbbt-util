@@ -4,7 +4,6 @@ require 'rbbt/resource/path'
 require 'rbbt/annotations'
 require 'net/smtp'
 require 'narray'
-require 'admit_one'
 
 module Misc
   class FieldNotFoundError < StandardError;end
