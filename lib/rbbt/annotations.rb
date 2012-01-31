@@ -13,6 +13,7 @@ module Annotated
   end
 
   def annotations
+    raise "Annotation types is nil for object: #{self.inspect}" if annotation_types.nil?
     annotation_types.collect do |mod|
       mod.annotations
     end.flatten.uniq
@@ -122,12 +123,12 @@ module Annotated
     return nil if annotations.nil?
     fields = case
              when ((fields.compact.empty?) and not annotations.empty?)
-               fields = AnnotatedArray === annotations ? annotations.annotations : annotations.first.annotations
+               fields = AnnotatedArray === annotations ? annotations.annotations : annotations.compact.first.annotations
                fields << :annotation_types
              when (fields == [:literal] and not annotations.empty?)
                fields << :literal
              when (fields == [:all] and not annotations.empty?)
-               fields = [:annotation_types] + (Annotated === annotations ? annotations.annotations : annotations.first.annotations)
+               fields = [:annotation_types] + (Annotated === annotations ? annotations.annotations : annotations.compact.first.annotations)
                fields << :literal
              when annotations.empty?
                [:annotation_types, :literal]
@@ -365,11 +366,14 @@ module AnnotatedArray
 
   def annotated_array_remove(list)
     value = (self - list)
+
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
     end
+
     value.context = self.context
     value.container = self.container
+
     value
   end
 
@@ -382,6 +386,7 @@ module AnnotatedArray
 
     value.context = self.context
     value.container = self.container
+
     value
   end
  
@@ -394,8 +399,10 @@ module AnnotatedArray
 
     value.context = self.context
     value.container = self.container
+
     value
   end
+
   def annotated_array_flatten
     value = self.annotated_array_clean_flatten.dup
 
@@ -405,27 +412,33 @@ module AnnotatedArray
 
     value.context = self.context
     value.container = self.container
+
     value
   end
 
   def annotated_array_reverse
     value = self.annotated_array_clean_reverse
+
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
     end
+
     value.context = self.context
     value.container = self.container
+
     value
   end
 
-
   def annotated_array_sort_by(&block)
     value = self.annotated_array_clean_sort_by &block
+
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
     end
+
     value.context = self.context
     value.container = self.container
+
     value
   end
 
@@ -435,8 +448,10 @@ module AnnotatedArray
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
     end
+
     value.context = self.context
     value.container = self.container
+
     value
   end
 

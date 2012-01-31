@@ -4,6 +4,7 @@ require 'rbbt/resource/path'
 require 'rbbt/annotations'
 require 'net/smtp'
 require 'narray'
+require 'admit_one'
 
 module Misc
   class FieldNotFoundError < StandardError;end
@@ -461,12 +462,13 @@ end
 
   def self.lock(file, *args)
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
-    lockfile = Lockfile.new(file + '.lock', :max_age => 36000, :refresh => 30)
-    #Log.debug "Locking: #{ file }"
-    res = lockfile.lock do
-      yield file, *args
+
+    res = nil
+
+    Lockfile.new(file + '.lock') do
+      res = yield file, *args
     end
-    #Log.debug "Done Locking: #{ file }"
+
     res
   end
 
