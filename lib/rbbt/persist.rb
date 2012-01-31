@@ -155,9 +155,72 @@ module Persist
     if persist_options[:persist]
       path = persistence_path(name, persist_options, other_options || {})
 
-      case type
-      when :memory
+      case 
+      when type.to_sym === :memory
         Persist::MEMORY[path] ||= yield
+
+      when (type.to_sym == :annotations and persist_options.include? :annotation_repo)
+
+        repo = persist_options[:annotation_repo]
+
+        keys = nil
+        subkey = name + ":"
+
+        if String === repo
+          repo = Persist.open_tokyocabinet(repo, false, :list, "BDB")
+          repo.read_and_close do
+            keys = repo.range subkey + 0.chr, true, subkey + 254.chr, true
+          end
+          repo.close
+        else
+          repo.read_and_close do
+            keys = repo.range subkey + 0.chr, true, subkey + 254.chr, true
+          end
+        end
+
+        case
+        when (keys.length == 1 and keys.first == subkey + 'NIL')
+          nil
+        when (keys.length == 1 and keys.first == subkey + 'EMPTY')
+          []
+        when (keys.length == 1 and keys.first =~ /:SINGLE$/)
+          key = keys.first
+          values = repo.write_and_close do
+            repo[key]
+          end
+          Annotated.load_tsv_values(key, values, "literal", "annotation_types", "JSON")
+        when keys.any?
+          repo.read_and_close do
+            keys.collect{|key|
+              v = repo[key]
+              Annotated.load_tsv_values(key, v, "literal", "annotation_types", "JSON")
+            }
+          end
+        else
+          entities = yield
+
+          Misc.lock(repo.persistence_path) do
+            repo.write_and_close do 
+              case
+              when entities.nil?
+                repo[subkey + "NIL"] = nil
+              when entities.empty?
+                repo[subkey + "EMPTY"] = nil
+              when (not Array === entities or AnnotatedArray === entities)
+                tsv_values = entities.tsv_values("literal", "annotation_types", "JSON") 
+                repo[subkey + entities.id << ":" << "SINGLE"] = tsv_values
+              else
+                entities.each do |e|
+                  tsv_values = e.tsv_values("literal", "annotation_types", "JSON") 
+                  repo[subkey + e.id] = tsv_values
+                end
+              end
+            end
+          end
+
+          entities
+        end
+
       else
         Misc.lock(path) do
           if is_persisted?(path, persist_options)
@@ -178,6 +241,7 @@ module Persist
           end
         end
       end
+
     else
       yield
     end

@@ -2,13 +2,18 @@ require 'tokyocabinet'
 
 module Persist
   TC_CONNECTIONS = {}
-  def self.open_tokyocabinet(path, write, serializer = nil)
+
+  def self.open_tokyocabinet(path, write, serializer = nil, tokyocabinet_class = TokyoCabinet::HDB)
     write = true if not File.exists?(path)
-    flags = (write ? TokyoCabinet::HDB::OWRITER | TokyoCabinet::HDB::OCREAT : TokyoCabinet::HDB::OREADER)
+
+    tokyocabinet_class = TokyoCabinet::HDB if tokyocabinet_class == "HDB"
+    tokyocabinet_class = TokyoCabinet::BDB if tokyocabinet_class == "BDB"
+
+    flags = (write ? tokyocabinet_class::OWRITER | tokyocabinet_class::OCREAT : tokyocabinet_class::OREADER)
 
     FileUtils.mkdir_p File.dirname(path) unless File.exists?(File.dirname(path))
 
-    database = TC_CONNECTIONS[path] ||= TokyoCabinet::HDB.new
+    database = TC_CONNECTIONS[path] ||= tokyocabinet_class.new
     database.close
 
     if !database.open(path, flags)
@@ -18,7 +23,11 @@ module Persist
 
     if not database.respond_to? :old_close
       class << database
-        attr_accessor :writable, :closed, :persistence_path
+        attr_accessor :writable, :closed, :persistence_path, :tokyocabinet_class
+
+        def closed?
+          @closed
+        end
 
         alias old_close close
         def close
@@ -29,7 +38,7 @@ module Persist
         def read(force = false)
           return if not write? and not closed and not force
           self.close
-          if !self.open(@persistence_path, TokyoCabinet::BDB::OREADER)
+          if !self.open(@persistence_path, tokyocabinet_class::OREADER)
             ecode = self.ecode
             raise "Open error: #{self.errmsg(ecode)}. Trying to open file #{@persistence_path}"
           end
@@ -41,10 +50,12 @@ module Persist
         def write(force = true)
           return if write? and not closed and not force
           self.close
-          if !self.open(@persistence_path, TokyoCabinet::HDB::OWRITER)
+
+          if !self.open(@persistence_path, tokyocabinet_class::OWRITER)
             ecode = self.ecode
             raise "Open error: #{self.errmsg(ecode)}. Trying to open file #{@persistence_path}"
           end
+
           @writable = true
           @closed = false
           self
@@ -70,6 +81,19 @@ module Persist
           out(key)
         end
 
+        def write_and_close
+          write if @closed or not write?
+          res = yield
+          close
+          res
+        end
+
+        def read_and_close
+          read if @closed or write?
+          res = yield
+          close
+          res
+        end
 
         def merge!(hash)
           hash.each do |key,values|
@@ -77,10 +101,19 @@ module Persist
           end
         end
 
+        if instance_methods.include? "range"
+          alias old_range range
+
+          def range(*args)
+            keys = old_range(*args)
+            keys - TSV::ENTRY_KEYS
+          end
+        end
       end
     end
 
     database.persistence_path ||= path
+    database.tokyocabinet_class = tokyocabinet_class
 
     TSV.setup database
     database.serializer = serializer || database.serializer 
@@ -112,6 +145,9 @@ module Persist
 
              data = open_tokyocabinet(path, true, persist_options[:serializer])
              data.serializer = :type unless data.serializer
+
+             data.close
+
              data
            else
              {}
@@ -120,7 +156,9 @@ module Persist
     begin
       if data.respond_to? :persistence_path and data != persist_options[:data]
         Misc.lock data.persistence_path do
-          yield data
+          data.write_and_close do
+            yield data
+          end
         end
       else
         yield data
@@ -134,7 +172,7 @@ module Persist
       raise $!
     end
 
-    data.read if data.respond_to? :read and  data.respond_to? :write? and data.write?
+    data.read if data.respond_to? :read and ((data.respond_to?(:write?) and data.write?) or (data.respond_to?(:closed?) and data.closed?))
 
     data
   end

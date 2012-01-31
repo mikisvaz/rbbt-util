@@ -306,11 +306,17 @@ if '#{entry}' == 'serializer'
 
         define_method :serialized_get do |key|
           return nil unless self.include? key
-          self.serializer_module.load(tsv_clean_get_brackets(key))
+          res = tsv_clean_get_brackets(key)
+          return res if res.nil?
+          self.serializer_module.load(res)
         end
 
         define_method :serialized_set do |key, value|
-          tsv_clean_set_brackets key, self.serializer_module.dump(value)
+          if value.nil?
+            tsv_clean_set_brackets key, value
+          else
+            tsv_clean_set_brackets key, self.serializer_module.dump(value)
+          end
         end
       end
     end

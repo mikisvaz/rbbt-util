@@ -103,7 +103,7 @@ row3    A    a|B    Id4
       assert_equal "OtherID", index.fields.first
 
       index = tsv.index(:order => true, :persist => false)
-      assert_equal "Id3", index['a'].first
+      assert_equal "Id1", index['a'].first
     end
   end
 

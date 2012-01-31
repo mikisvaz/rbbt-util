@@ -62,10 +62,8 @@ module Annotated
           info.to_json
         when field == "annotation_types"
           annotation_types.collect{|t| t.to_s} * "+"
-        when field == "literal array"
-          (self * "|").gsub(/\n|\t/, ' ')
         when field == "literal"
-          self.gsub(/\n|\t/, ' ')
+          (Array === self ? "Array:" << self * "|" : self).gsub(/\n|\t/, ' ')
         when info.include?(field.to_sym)
           info.delete(field.to_sym)
         when self.respond_to?(field)
@@ -81,16 +79,15 @@ module Annotated
     fields = fields.flatten
     info = {}
     literal_pos = fields.index "literal"
-    literal_array_pos = fields.index "literal array"
 
     object = case
              when literal_pos
                values[literal_pos]
-             when literal_array_pos
-               values[literal_array_pos].split("|").extend AnnotatedArray
              else
                id.dup
              end
+
+    object = object["Array:".length..-1].split("|") if object =~ /^Array:/
 
     if Array === values
       Misc.zip_fields(values).collect do |list|
@@ -138,10 +135,8 @@ module Annotated
 
     fields = fields.collect{|f| f.to_s}
 
-    fields = fields.collect{|f| ((f == "literal" and AnnotatedArray === annotations) ? "literal array" : f)}
-
     case
-    when (Annotated === annotations and not annotations.double_array)
+    when (Annotated === annotations and not (AnnotatedArray === annotations and annotations.double_array))
       tsv = TSV.setup({}, :key_field => "Single", :fields => fields, :type => :list, :unnamed => true)
       tsv[annotations.id] = annotations.tsv_values(*fields)
     when Array === annotations 
