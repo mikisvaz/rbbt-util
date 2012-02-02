@@ -464,7 +464,9 @@ end
 
     res = nil
 
-    Lockfile.new(file + '.lock') do
+    lockfile = Lockfile.new(File.expand_path(file + '.lock'))
+
+    lockfile.lock do
       res = yield file, *args
     end
 
@@ -509,7 +511,7 @@ end
   end
 
   def self.sensiblewrite(path, content)
-    Misc.lock path do
+    Misc.lock path + '.sensible_write' do
       begin
         case
         when String === content
@@ -520,10 +522,10 @@ end
           File.open(path, 'w') do |f|  end
         end
       rescue Interrupt
-        FileUtils.rm_f path
+        FileUtils.rm_f path if File.exists? path
         raise "Interrupted (Ctrl-c)"
       rescue Exception
-        FileUtils.rm_f path
+        FileUtils.rm_f path if File.exists? path
         raise $!
       end
     end

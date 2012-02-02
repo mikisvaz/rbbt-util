@@ -51,14 +51,18 @@ class Step
   def run(no_load = false)
     result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path}.uniq, :no_load => no_load do
       FileUtils.rm info_file if File.exists? info_file
-      log((task.name || "unnamed task"), "Starting task")
+      log(:starting, "Starting task: #{task.name || "unnamed task"}")
+
       set_info :dependencies, @dependencies.collect{|dep| [dep.task.name, dep.name]}
       @dependencies.each{|dependency| 
         log dependency.task.name || "dependency", "Processing dependency: #{ dependency.path }"
         dependency.run true
       }
+
       set_info :status, :started
+      
       set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
+
       res = begin
               exec
             rescue Exception
@@ -66,6 +70,7 @@ class Step
               log(:error, "#{$!.class}: #{$!.message}")
               raise $!
             end
+
       set_info :status, :done
       res
     end
