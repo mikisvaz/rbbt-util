@@ -7,6 +7,7 @@ require 'rbbt/resource/rake'
 module Resource
   extend ChainMethods
   self.chain_prefix = :resource
+
   def self.extended(base)
     setup_chains(base)
     if not base.respond_to? :pkgdir

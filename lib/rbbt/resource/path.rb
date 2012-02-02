@@ -36,6 +36,10 @@ module Path
     Path.setup File.dirname(self), @pkgdir, @resource
   end
 
+  def glob(pattern = '*')
+    Dir.glob(File.join(self, pattern))
+  end
+
   def path_get_brackets(name)
     join name
   end

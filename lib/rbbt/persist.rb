@@ -185,7 +185,7 @@ module Persist
           []
         when (keys.length == 1 and keys.first =~ /:SINGLE$/)
           key = keys.first
-          values = repo.write_and_close do
+          values = repo.read_and_close do
             repo[key]
           end
           Annotated.load_tsv_values(key, values, "literal", "annotation_types", "JSON")
