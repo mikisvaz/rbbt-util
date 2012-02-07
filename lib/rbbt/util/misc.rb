@@ -553,9 +553,15 @@ end
     Digest::MD5.hexdigest(text)
   end
 
+  HASH2MD5_MAX_STRING_LENGTH = 1000
+  HASH2MD5_MAX_ARRAY_LENGTH = 100
   def self.hash2md5(hash)
     str = ""
-    hash.keys.sort_by{|k| k.to_s}.each do |k|
+    keys = hash.keys
+    keys = keys.clean_annotations if keys.respond_to? :clean_annotations
+    keys = keys.sort_by{|k| k.to_s}
+
+    keys.each do |k|
       next if k == :monitor or k == "monitor" or k == :in_situ_persistence or k == "in_situ_persistence"
       v = hash[k]
       case
@@ -567,10 +573,14 @@ end
         str << k.to_s << "=>" << hash2md5(v)
       when Symbol === v
         str << k.to_s << "=>" << v.to_s
+      when (String === v and v.length > HASH2MD5_MAX_STRING_LENGTH)
+        str << k.to_s << "=>" << v[0..HASH2MD5_MAX_STRING_LENGTH]
       when String === v
-        str << k.to_s << "=>" << v[0..10000]
+        str << k.to_s << "=>" << v
+      when (Array === v and v.length > HASH2MD5_MAX_ARRAY_LENGTH)
+        str << k.to_s << "=>[" << v[0..HASH2MD5_MAX_ARRAY_LENGTH] * "," << "]"
       when Array === v
-        str << k.to_s << "=>[" << v[0..1000] * "," << "]"
+        str << k.to_s << "=>[" << v * "," << "]"
       else
         v_ins = v.inspect
 

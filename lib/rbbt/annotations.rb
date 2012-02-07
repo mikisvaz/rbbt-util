@@ -7,6 +7,7 @@ module Annotated
   attr_accessor :context
   attr_accessor :container
   attr_accessor :container_index
+  attr_accessor :id
 
   def self.extended(base)
     base.annotation_types ||= []
@@ -29,12 +30,12 @@ module Annotated
   end
 
   def id
-    Misc.hash2md5 info.merge :self => self
+    @id ||= Misc.hash2md5 info.merge :self => self
   end
 
   def self.load(object, info)
     annotation_types = info[:annotation_types] || []
-    annotation_types = annotation_types.split("+") if String === annotation_types
+    annotation_types = annotation_types.split("|") if String === annotation_types
 
     return object if annotation_types.nil? or annotation_types.empty?
 
@@ -43,6 +44,7 @@ module Annotated
       mod.setup(object, *info.values_at(*mod.all_annotations))
     end
 
+    object.id = info[:entity_id] if info.include? :entity_id
     object
   end
 
@@ -61,13 +63,15 @@ module Annotated
         when field == "JSON"
           info.to_json
         when field == "annotation_types"
-          annotation_types.collect{|t| t.to_s} * "+"
+          annotation_types.collect{|t| t.to_s} * "|"
         when field == "literal"
           (Array === self ? "Array:" << self * "|" : self).gsub(/\n|\t/, ' ')
         when info.include?(field.to_sym)
-          info.delete(field.to_sym)
+          res = info.delete(field.to_sym)
+          Array === res ? res * "|" : res
         when self.respond_to?(field)
-          self.send(field)
+          res = self.send(field)
+          Array === res ? res * "|" : res
         end
       end
 
@@ -125,7 +129,9 @@ module Annotated
              when (fields == [:literal] and not annotations.empty?)
                fields << :literal
              when (fields == [:all] and not annotations.empty?)
-               fields = [:annotation_types] + (Annotated === annotations ? annotations.annotations : annotations.compact.first.annotations)
+               fields = [:annotation_types] + (Annotated === annotations ? 
+                                               annotations.annotations : 
+                                               annotations.compact.first.annotations)
                fields << :literal
              when annotations.empty?
                [:annotation_types, :literal]
@@ -137,7 +143,7 @@ module Annotated
 
     case
     when (Annotated === annotations and not (AnnotatedArray === annotations and annotations.double_array))
-      tsv = TSV.setup({}, :key_field => "Single", :fields => fields, :type => :list, :unnamed => true)
+      tsv = TSV.setup({}, :key_field => "List", :fields => fields, :type => :list, :unnamed => true)
       tsv[annotations.id] = annotations.tsv_values(*fields)
     when Array === annotations 
       tsv = TSV.setup({}, :key_field => "ID", :fields => fields, :type => :list, :unnamed => true)
@@ -158,7 +164,7 @@ module Annotated
       end
 
       case tsv.key_field 
-      when "Single"
+      when "List"
         annotated_entities.first
       else
         annotated_entities
@@ -251,6 +257,7 @@ module Annotation
 
     inputs = Misc.positional2hash(all_annotations, *values)
     inputs.each do |name, value|
+      value = value.split("|") if String === value and value.index "|"
       object.send(name.to_s + '=', value)
     end
 
@@ -319,10 +326,14 @@ module AnnotatedArray
     res
   end
 
-  def annotated_array_select
+  def annotated_array_select(method = nil, *args)
     res = []
-    annotated_array_each do |value|
-      res << value if yield(value)
+    if method
+      res = self.zip(self.send(method, *args)).select{|e,result| result}.collect{|element,r| element}
+    else
+      annotated_array_each do |value|
+        res << value if yield(value)
+      end
     end
 
     annotation_types.each do |mod|

@@ -9,43 +9,6 @@ module Workflow
   end
   self.workflows = []
 
-  def self.require_local_workflow2(wf_name, wf_dir = nil)
-    require 'rbbt/resource/path'
-
-    if File.exists?(wf_name) or File.exists?(wf_name + '.rb')
-      $LOAD_PATH.unshift(File.join(File.expand_path(File.dirname(wf_name)), 'lib'))
-      require wf_name
-      return
-    end
-
-    wf_dir ||= case
-               when File.exists?(File.join(File.dirname(Path.caller_lib_dir), wf_name))
-                 dir = File.join(File.dirname(Path.caller_lib_dir), wf_name)
-                 Log.debug "Loading workflow from lib dir: #{dir}"
-                 dir
-                 File.join(File.dirname(Path.caller_lib_dir), wf_name)
-               when defined? Rbbt
-                 if Rbbt.etc.workflow_dir.exists?
-                   dir = File.join(Rbbt.etc.workflow_dir.read.strip, wf_name)
-                   Log.debug "Loading workflow from etc dir: #{dir}"
-                   dir
-                 else
-                   dir = Rbbt.workflows[wf_name]
-                   Log.debug "Loading workflow from main dir: #{dir}"
-                   dir
-                 end
-               else
-                 dir = File.join(ENV["HOME"], '.workflows')
-                 Log.debug "Loading workflow from home dir: #{dir}"
-                 dir
-               end
-
-    wf_dir = Path.setup(wf_dir)
-
-    $LOAD_PATH.unshift(File.join(File.dirname(wf_dir["workflow.rb"].find), 'lib'))
-    require wf_dir["workflow.rb"].find
-  end
-
   def self.require_remote_workflow(wf_name, url)
     require 'rbbt/workflow/rest/client'
     eval "Object::#{wf_name} = RbbtRestClient.new '#{ url }', '#{wf_name}'"
