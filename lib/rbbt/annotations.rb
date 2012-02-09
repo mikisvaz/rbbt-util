@@ -68,10 +68,10 @@ module Annotated
           (Array === self ? "Array:" << self * "|" : self).gsub(/\n|\t/, ' ')
         when info.include?(field.to_sym)
           res = info.delete(field.to_sym)
-          Array === res ? res * "|" : res
+          Array === res ? "Array:" << res * "|" : res
         when self.respond_to?(field)
           res = self.send(field)
-          Array === res ? res * "|" : res
+          Array === res ? "Array:"<< res * "|" : res
         end
       end
 
