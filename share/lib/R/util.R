@@ -47,7 +47,7 @@ rbbt.flat.tsv <- function(filename, sep = "\t", comment.char ="#", ...){
   return(result);
 }
 
-rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1,  ...){
+rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1, check.names=F,  ...){
   data=read.table(file=filename, sep=sep, fill=TRUE, as.is=TRUE, quote='', row.names= row.names, comment.char = comment.char, ...);
   f = file(filename, 'r');
   headers = readLines(f, 1);
