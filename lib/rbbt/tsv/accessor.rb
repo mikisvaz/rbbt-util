@@ -4,7 +4,16 @@ module TSV
   extend ChainMethods
   self.chain_prefix = :tsv
 
-  attr_accessor :unnamed, :serializer_module
+  attr_accessor :unnamed, :serializer_module, :entity_options
+
+  def entity_options
+    options = namespace ? {:namespace => namespace, :organism => namespace} : {}
+    if @entity_options
+      options.merge(@entity_options)
+    else
+      options
+    end
+  end
 
   def with_unnamed
     saved_unnamed = @unnamed 
@@ -72,10 +81,11 @@ module TSV
 
     case type
     when :double, :list
-      NamedArray.setup value, fields, key, namespace
+      NamedArray.setup value, fields, key, entity_options
     when :flat, :single
       value = value.dup if value.frozen?
-      Entity.formats[fields.first].setup(value, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => fields.first})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+
+      value = Misc.prepare_entity(value, fields.first, entity_options)
     end
     value
   end
@@ -88,11 +98,7 @@ module TSV
     keys = tsv_clean_keys - ENTRY_KEYS
     return keys if @unnamed or key_field.nil?
 
-    if defined?(Entity) and  Entity.respond_to?(:formats) and Entity.formats.include? key_field
-      Entity.formats[key_field].setup(keys.collect{|k| k.dup}, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => key_field}) )
-    else
-      keys
-    end
+    Misc.prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
   end
 
   def tsv_values
@@ -101,11 +107,9 @@ module TSV
 
     case type
     when :double, :list
-      values.each{|value| NamedArray.setup value, fields, nil, namespace }
+      values.each{|value| NamedArray.setup value, fields, nil, entity_options}
     when :flat, :single
-      values.each{|value| 
-        Entity.formats[fields.first].setup(value, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => fields.first}))
-      } if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+      values = values.collect{|v| Misc.prepare_entity(v, fields.first, entity_options)}
     end
       
     values
@@ -127,14 +131,12 @@ module TSV
         if not fields.nil? 
           case type
           when :double, :list
-            NamedArray.setup value, fields, key, namespace if Array === value 
+            NamedArray.setup value, fields, key, entity_options if Array === value 
           when :flat, :single
-            Entity.formats[fields.first].setup(value, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => fields.first})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+            Misc.prepare_entity(value, fields.first, entity_options)
           end
         end
-        if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
-          key = Entity.formats[key_field].setup(key.dup, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => key_field})) 
-        end
+        key = Misc.prepare_entity(key, key_field, entity_options)
       end
 
       yield key, value if block_given?
@@ -156,14 +158,12 @@ module TSV
         if not fields.nil? 
           case type
           when :double, :list
-            NamedArray.setup value, fields, key, namespace if Array === value 
+            NamedArray.setup value, fields, key, entity_options if Array === value 
           when :flat, :single
-            Entity.formats[fields.first].setup(value, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => fields.first})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? fields.first
+            value = Misc.prepare_entity(value, fields.first, entity_options)
           end
         end
-        if defined?(Entity) and not key_field.nil? and Entity.respond_to?(:formats) and Entity.formats.include? key_field
-          key = Entity.formats[key_field].setup(key.dup, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => key_field})) 
-        end
+        key = Misc.prepare_entity(key, key_field, entity_options)
       end
 
 
@@ -217,14 +217,14 @@ module TSV
       if fields == :all
         if just_keys
           keys = elems.sort_by{|key, value| key }.collect{|key, values| key}
-          Entity.formats[key_field].setup(keys, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => key_field})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? key_field
+          keys = Misc.prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
         else
           elems.sort_by{|key, value| key }
         end
       else
         if just_keys
           keys = elems.sort_by{|key, value| value }.collect{|key, value| key}
-          Entity.formats[key_field].setup(keys, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => fields.first})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? key_field
+          keys = Misc.prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
           keys
         else
           elems.sort_by{|key, value| value }.collect{|key, value| [key, self[key]]}
@@ -346,7 +346,7 @@ end
     if @fields.nil? or @unnamed
       @fields
     else
-      NamedArray.setup @fields, @fields, nil, namespace
+      NamedArray.setup @fields, @fields, nil, entity_options
     end
   end
 

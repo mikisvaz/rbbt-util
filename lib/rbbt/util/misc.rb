@@ -8,6 +8,14 @@ require 'narray'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.prepare_entity(entity, field, options = {})
+    return entity if entity.nil?
+    options ||= {}
+    dup_array = options.delete :dup_array
+    entity = Entity.formats[field].setup((entity.frozen? ? entity.dup : ((Array === entity and dup_array) ? entity.collect{|e| e.dup} : entity) ), options.merge({:format => field})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? field
+    entity
+  end
+
   ARRAY_MAX_LENGTH = 10000
   STRING_MAX_LENGTH = ARRAY_MAX_LENGTH * 10
   def self.remove_long_items(obj)

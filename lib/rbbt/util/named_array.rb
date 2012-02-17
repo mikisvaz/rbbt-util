@@ -7,13 +7,13 @@ module NamedArray
   self.chain_prefix = :named_array
   attr_accessor :fields
   attr_accessor :key
-  attr_accessor :namespace
+  attr_accessor :entity_options
 
-  def self.setup(array, fields, key = nil, namespace = nil)
+  def self.setup(array, fields, key = nil, entity_options = nil)
     array.extend NamedArray unless NamedArray === array
     array.fields = fields
     array.key = key
-    array.namespace = namespace
+    array.entity_options = entity_options
     array
   end
 
@@ -47,14 +47,14 @@ module NamedArray
     return elem if @fields.nil? or @fields.empty?
 
     field = NamedArray === @fields ? @fields.named_array_clean_get_brackets(pos) : @fields[pos]
-    elem = Entity.formats[field].setup((elem.frozen? ? elem.dup : elem), (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => field})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include?(field) and not field == elem
+    elem = Misc.prepare_entity(elem, field, entity_options)
     elem
   end
 
   def named_array_each(&block)
     if defined?(Entity) and not @fields.nil? and not @fields.empty?
       @fields.zip(self).each do |field,elem|
-        elem = Entity.formats[field].setup((elem.frozen? ? elem.dup : elem), (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => field})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include?(field) and not field == elem
+        elem = Misc.prepare_entity(elem, field, entity_options)
         yield(elem)
         elem
       end

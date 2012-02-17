@@ -179,9 +179,9 @@ module TSV
         if not traverser.new_field_names.nil? 
           case type
           when :double, :list
-            NamedArray.setup value, traverser.new_field_names 
+            NamedArray.setup value, traverser.new_field_names, entity_options
           when :flat, :single
-            Entity.formats[traverser.new_field_names.first].setup(value, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => traverser.new_field_names.first})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? traverser.new_field_names
+            Misc.prepare_entity(value, traverser.new_field_names.first, entity_options)
           end
         end
       end
@@ -197,8 +197,8 @@ module TSV
             r
           }
 
-          if not @unnamed and defined?(Entity) and not traverser.new_key_field_name.nil? and Entity.respond_to?(:formats) and Entity.formats.include? traverser.new_key_field_name
-            k = Entity.formats[traverser.new_key_field_name].setup(k.dup, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => traverser.new_key_field_name}))
+          if not @unnamed 
+            k = Misc.prepare_entity(k, traverser.new_key_field_name, entity_options)
           end
           v.key = k if NamedArray === v
           yield k, v
@@ -207,8 +207,8 @@ module TSV
 
       else
         keys.each do |key|
-          if not @unnamed and defined?(Entity) and not traverser.new_key_field_name.nil? and Entity.respond_to?(:formats) and Entity.formats.include? traverser.new_key_field_name
-            key = Entity.formats[traverser.new_key_field_name].setup(key.dup, (namespace ? {:namespace => namespace, :organism => namespace} : {}).merge({:format => traverser.new_key_field_name})) 
+          if not @unnamed
+            k = Misc.prepare_entity(k, traverser.new_key_field_name, entity_options)
           end
           value.key = key if NamedArray === value
           yield key, value
