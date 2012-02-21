@@ -37,12 +37,20 @@ module Filtered
 
       @list = nil
       case
+      when @match == :key
+        class << self
+          self
+        end.class_eval <<-EOC
+          def match_entry(key, entry)
+            key == @value or (Array === @value and @value.include? key)
+          end
+        EOC
       when @match.match(/field:(.*)/)
         @fieldnum = data.identify_field $1
         class << self
           self
         end.class_eval <<-EOC
-          def match_entry(entry)
+          def match_entry(key, entry)
             value = entry[@fieldnum] 
             value == @value or (Array === value and value.include? @value)
           end
@@ -78,7 +86,7 @@ module Filtered
 
       data.with_unnamed do
         data.unfiltered_each do |key, entry|
-          ids << key if match_entry(entry)
+          ids << key if match_entry(key, entry)
         end
       end
 
@@ -173,7 +181,7 @@ module Filtered
     if filters.empty?
       unfiltered_filename
     else
-      unfiltered_filename + ":Filtered[#{filters.collect{|f| [f.match, f.value] * "="} * ", "}]"
+      unfiltered_filename + ":Filtered[#{filters.collect{|f| [f.match, Array === f.value ? Misc.hash2md5(:values => f.value) : f.value] * "="} * ", "}]"
     end
   end
 
@@ -182,7 +190,7 @@ module Filtered
       self.send(:unfiltered_set, key, value)
     else
       filters.each do |filter| 
-        filter.add key if filter.match_entry value
+        filter.add key if filter.match_entry key, value
       end
       self.send(:unfiltered_set, key, value)
     end

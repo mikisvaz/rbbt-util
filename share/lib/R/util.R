@@ -1,13 +1,29 @@
-rbbt.ruby <- function(code, load = TRUE, flat = FALSE){
+rbbt.ruby <- function(code, load = TRUE, flat = FALSE, type = 'tsv', ...){
   file = system('rbbt_exec.rb - file', input = code, intern=TRUE);
+
+  error_str = "^#:rbbt_exec Error"
+  if (regexpr(error_str, file)[1] != -1 ){
+    print(file);
+    return(NULL);
+  }
+
   if (load){
-    if(flat){
-        data = rbbt.flat.tsv(file);
-    }else{
-        data = rbbt.tsv(file);
-    }
-    rm(file);
-    return(data);
+      if(type == 'tsv'){
+          if(flat){
+              data = rbbt.flat.tsv(file, ...);
+          }else{
+              data = rbbt.tsv(file, ...);
+          }
+          rm(file);
+          return(data)
+      }
+
+      if(type == 'list'){
+          data = scan(file, ...)
+          return(data);
+      }
+      
+      return(NULL);
   }else{
     return(file);
   }
@@ -19,8 +35,8 @@ rbbt.glob <- function(d, pattern){
 }
 
 rbbt.png_plot <- function(filename, width, height, p){
-    png(filename="temp.png", width=width, height=height);
-    eval(p);
+    png(filename=filename, width=width, height=height);
+    eval(parse(text=p));
     dev.off();
 }
 
@@ -47,8 +63,8 @@ rbbt.flat.tsv <- function(filename, sep = "\t", comment.char ="#", ...){
   return(result);
 }
 
-rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1, check.names=F,  ...){
-  data=read.table(file=filename, sep=sep, fill=TRUE, as.is=TRUE, quote='', row.names= row.names, comment.char = comment.char, ...);
+rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1, check.names=FALSE, fill=TRUE, as.is=TRUE, quote='',  ...){
+  data=read.table(file=filename, sep=sep, fill=fill, as.is=as.is, quote=quote, row.names= row.names, comment.char = comment.char, ...);
   f = file(filename, 'r');
   headers = readLines(f, 1);
   if (length(grep("^#: ", headers)) > 0){ 

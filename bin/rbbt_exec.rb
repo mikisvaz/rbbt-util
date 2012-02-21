@@ -12,9 +12,17 @@ code = case
          Open.read(code_file)
        end
 
-data = eval code
+begin
+  data = eval code
+rescue Exception
+  puts "#:rbbt_exec Error"
+  puts $!.message
+  puts $!.backtrace * "\n"
+  exit(-1)
+end
 
 data = data.to_s(:sort, true) if TSV === data
+data = data * "\n" if Array === data
 
 case
 when (output.nil? or output == '-')
