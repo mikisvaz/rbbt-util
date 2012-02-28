@@ -351,7 +351,7 @@ module TSV
             end
           when :list
             through :key, key do |key, values|
-              new[key] = self[key] if method.include? value.first
+              new[key] = self[key] if method.include? values.first
             end
           when :flat #untested
             through :key, key do |key, values|
@@ -359,7 +359,7 @@ module TSV
             end
           else
             through :key, key do |key, values|
-              new[key] = self[key] if (method & values.first).any?
+              new[key] = self[key] if (method & values.flatten).any?
             end
           end
         end

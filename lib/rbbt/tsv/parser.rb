@@ -75,7 +75,7 @@ module TSV
     def get_values_single(parts)
       return parts.shift, parts.first if field_positions.nil? and key_position.nil?
       key = parts[key_position]
-      value = parts[field_positions.nil? ? 0 : field_positions.first]
+      value = parts[(field_positions.nil? or field_positions.empty?) ? 0 : field_positions.first]
       [key, value]
     end
 

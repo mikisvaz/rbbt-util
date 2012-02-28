@@ -1,4 +1,5 @@
 require 'rbbt/util/misc'
+require 'set'
 module Filtered
 
   class FilterArray
@@ -38,6 +39,7 @@ module Filtered
       @list = nil
       case
       when @match == :key
+        @value = Set.new(@value)
         class << self
           self
         end.class_eval <<-EOC

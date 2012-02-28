@@ -366,7 +366,7 @@ end
       case
       when (TSV === identifiers.first or identifiers.empty?)
         identifiers
-      when
+      else
         identifiers.collect{|f| Path === f ? f : Path.setup(f, nil, namespace)}
       end
     when identifiers

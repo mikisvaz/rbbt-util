@@ -1,0 +1,9 @@
+Enrichment
+==========
+When geting lists of genes through genomic positions, for instance genes
+affected by mutations, gene clusters may brake de independence assumption of
+the enrichment statistic. A rename scheme can be used to correct this. Genes
+in clusters can be renamed to their cluster name so that they are only counted
+once in the statistic. The enrichment for a term is computed counting once all
+the cluster genes annotated for that term, and counting them as one in the
+gene list only if there is an overlap.

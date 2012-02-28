@@ -146,7 +146,12 @@ module TSV
 
     Log.medium("Attaching fields:#{fields.inspect} from #{other.filename.inspect}.")
 
-    other = other.tsv(:persist => options[:persist_input] == true) unless TSV === other 
+    unless TSV === other
+      other_identifier_files = other.identifier_files
+      other = other.tsv(:persist => options[:persist_input] == true) unless TSV === other 
+      other.identifiers = other_identifier_files 
+    end
+
     case
     when key_field == other.key_field
       attach_same_key other, fields
