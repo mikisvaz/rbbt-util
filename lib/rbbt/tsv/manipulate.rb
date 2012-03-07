@@ -318,11 +318,23 @@ module TSV
       end
     when String === method
       if block_given?
-        pos = identify_field method
         with_unnamed do
-          through do |key, values|
-            new[key] = values if yield((method == key_field or method == :key)? key : values[pos])
+          case
+          when (method == key_field or method == :key)
+            through do |key, values|
+              new[key] = values if yield(key)
+            end
+          when (type == :single or type == :flat)
+            through do |key, value|
+              new[key] = value if yield(value)
+            end
+          else
+            pos = identify_field method
+            through do |key, values|
+              new[key] = values if yield(values[pos])
+            end
           end
+
         end
       else
         with_unnamed do

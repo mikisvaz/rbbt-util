@@ -44,7 +44,7 @@ module Filtered
           self
         end.class_eval <<-EOC
           def match_entry(key, entry)
-            key == @value or (Array === @value and @value.include? key)
+            key == @value or (Set === @value and @value.include? key)
           end
         EOC
       when @match.match(/field:(.*)/)

@@ -413,7 +413,9 @@ end
     end
 
     if keys == :sort
-      keys = self.keys.sort
+      with_unnamed do
+        keys = self.keys.sort
+      end
     end
 
     str = ""

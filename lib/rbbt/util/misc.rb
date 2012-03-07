@@ -8,6 +8,67 @@ require 'narray'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.total_length(ranges)
+    processed = []
+    last = nil
+    ranges.sort_by{|range| range.begin}.each do |range|
+      if last.nil? or range.begin > last
+        processed << range
+        last = range.end
+      else
+        new_processed = []
+        processed.each do |processed_range|
+          if processed_range.end < range.begin
+            new_processed << processed_range
+          else
+            new_processed << (processed_range.begin..range.end)
+            break
+          end
+        end
+        processed = new_processed
+      end
+    end
+
+    processed.inject(0) do |total,range| total += range.end - range.begin + 1 end
+  end
+
+  def self.random_sample_in_range(total, size)
+    p = Set.new
+
+    if size > total / 10
+      template = (0..total - 1).to_a
+      size.times do |i|
+        pos = (rand * (total - i)).floor
+        if pos == template.length - 1
+          v = template.pop
+        else
+          v, n = template[pos], template[-1]
+          template.pop
+          template[pos] = n 
+        end
+        p << v
+      end
+    else
+      size.times do 
+        pos = nil
+        while pos.nil? 
+          pos = (rand * total).floor
+          if p.include? pos
+            pos = nil
+          end
+        end
+        p << pos
+      end
+    end
+    p
+  end
+
+  def self.sample(ary, size, replacement = false)
+    total = ary.length
+    p = random_sample_in_range(total, size)
+    ary.values_at *p
+  end
+
   Log2Multiplier = 1.0 / Math.log(2.0)
   def self.log2(x)
     Math.log(x) * Log2Multiplier
