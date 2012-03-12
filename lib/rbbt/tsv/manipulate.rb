@@ -460,6 +460,7 @@ module TSV
       else
         values << new_values
       end
+
       self[key] = values
     end
     @monitor = old_monitor

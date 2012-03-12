@@ -48,7 +48,7 @@ module TSV
 
     def process(line)
       l = line.chomp
-      raise Parser::SKIP_LINE if Proc === @select and not @select.call l
+      raise Parser::SKIP_LINE if l[0] == "#"[0] or (Proc === @select and not @select.call l)
       l = @fix.call l if Proc === @fix
       raise Parser::END_PARSING unless l
       l

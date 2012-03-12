@@ -129,10 +129,10 @@ module Persist
     when :string, :text
       Open.write(path, content)
     when :array
-      if content.any?
-        Open.write(path, content * "\n" + "\n")
-      else
+      if content.empty?
         Open.write(path, "")
+      else
+        Open.write(path, content * "\n" + "\n")
       end
     when :marshal_tsv
       Open.write(path, Marshal.dump(content.dup))

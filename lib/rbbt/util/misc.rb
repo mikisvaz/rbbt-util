@@ -21,11 +21,13 @@ module Misc
           if processed_range.end < range.begin
             new_processed << processed_range
           else
-            new_processed << (processed_range.begin..range.end)
+            eend = [range.end, processed_range.end].max
+            new_processed << (processed_range.begin..eend)
             break
           end
         end
         processed = new_processed
+        last = range.end if range.end > last
       end
     end
 
@@ -75,7 +77,7 @@ module Misc
   end
 
   def self.prepare_entity(entity, field, options = {})
-    return entity if entity.nil?
+    return entity unless String === entity or Array === entity
     options ||= {}
     dup_array = options.delete :dup_array
     entity = Entity.formats[field].setup(((entity.frozen? and not entity.nil?) ? entity.dup : ((Array === entity and dup_array) ? entity.collect{|e| e.nil? ? e : e.dup} : entity) ), options.merge({:format => field})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? field

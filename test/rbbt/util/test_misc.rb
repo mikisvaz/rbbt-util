@@ -5,8 +5,9 @@ require 'test/unit'
 class TestMisc < Test::Unit::TestCase
 
   def test_total_length
-    ranges = [(0..100), (50..150)]
-    assert_equal 151, Misc.total_length(ranges)
+    ranges = [(0..100), (50..150), (120..160)]
+    ranges = [(0..100), (50..150), (120..160), (51..70)]
+    assert_equal 161, Misc.total_length(ranges)
   end
 
   def test_id_filename?
