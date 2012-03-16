@@ -448,15 +448,12 @@ module AnnotatedArray
     value
   end
 
-  def annotated_array_sort
-    value = self.annotated_array_clean_sort
+  def annotated_array_sort(&block)
+    value = self.collect.sort(&block).collect{|value| value.respond_to?(:clean_annotations) ? value.clean_annotations.dup : value.dup }
 
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
     end
-
-    value.context = self.context
-    value.container = self.container
 
     value
   end

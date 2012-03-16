@@ -11,7 +11,7 @@ module Misc
   def self.total_length(ranges)
     processed = []
     last = nil
-    ranges.sort_by{|range| range.begin}.each do |range|
+    ranges.sort_by{|range| range.begin }.each do |range|
       if last.nil? or range.begin > last
         processed << range
         last = range.end

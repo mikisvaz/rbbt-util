@@ -131,7 +131,7 @@ module TSV
         if not fields.nil? 
           case type
           when :double, :list
-            NamedArray.setup value, fields, key, entity_options if Array === value 
+            NamedArray.setup value, fields, key, entity_options if Array === value
           when :flat, :single
             Misc.prepare_entity(value, fields.first, entity_options)
           end
