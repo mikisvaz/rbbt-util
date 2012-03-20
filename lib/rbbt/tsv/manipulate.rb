@@ -179,7 +179,7 @@ module TSV
         if not traverser.new_field_names.nil? 
           case type
           when :double, :list
-            NamedArray.setup value, traverser.new_field_names, entity_options
+            NamedArray.setup value, traverser.new_field_names, key, entity_options
           when :flat, :single
             Misc.prepare_entity(value, traverser.new_field_names.first, entity_options)
           end
