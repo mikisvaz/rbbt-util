@@ -77,6 +77,10 @@ class Step
     info[:status] == :error
   end
 
+  def aborted?
+    info[:status] == :aborted
+  end
+
   # {{{ INFO
 
   def files_dir

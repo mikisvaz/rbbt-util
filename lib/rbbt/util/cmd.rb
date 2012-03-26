@@ -222,7 +222,11 @@ module CMD
       sout.close unless sout.closed?
       SmartIO.tie out, pid, cmd, post, in_content, sin, serr
 
-      Process.waitpid pid
+      begin
+        Process.waitpid pid
+      rescue Errno::ECHILD
+        Log.debug "Process #{ pid } already finished: #{ cmd }"
+      end
 
       if not $?.success?
         exception      = CMDError.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"

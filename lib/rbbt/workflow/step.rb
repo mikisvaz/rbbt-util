@@ -42,7 +42,11 @@ class Step
       end
     else
       Log.debug "Waiting for pid: #{@pid}"
-      Process.waitpid @pid
+      begin
+        Process.waitpid @pid
+      rescue Errno::ECHILD
+        Log.debug "Process #{ @pid } already finished: #{ path }"
+      end
       @pid = nil
     end
     self
@@ -68,6 +72,7 @@ class Step
             rescue Exception
               set_info :backtrace, $!.backtrace
               log(:error, "#{$!.class}: #{$!.message}")
+              log(:error, "backtrace: #{$!.backtrace.first}")
               raise $!
             end
 
@@ -90,14 +95,19 @@ class Step
       end
     end
     set_info :pid, @pid
+    Signal.trap('CHLD', 'IGNORE')
     self
   end
 
   def abort
+    @pid ||= info[:pid]
     if @pid.nil?
+      Log.medium "Could not abort #{path}: no pid"
       false
     else
+      Log.medium "Aborting #{path}: #{ @pid }"
       Process.kill("INT", @pid)
+      log(:aborted, "Job aborted by user")
       true
     end
   end

@@ -784,6 +784,7 @@ end
   end
 
   def self.zip_fields(array)
+    return [] if array.empty?
     array[0].zip(*array[1..-1])
   end
 

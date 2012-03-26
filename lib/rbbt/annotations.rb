@@ -128,6 +128,9 @@ module Annotated
                fields << :annotation_types
              when (fields == [:literal] and not annotations.empty?)
                fields << :literal
+             when (fields == [:all] and Annotated === annotations)
+               fields = [:annotation_types] + annotations.annotations 
+               fields << :literal
              when (fields == [:all] and not annotations.empty?)
                fields = [:annotation_types] + (Annotated === annotations ? 
                                                annotations.annotations : 
