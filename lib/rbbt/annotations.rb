@@ -292,9 +292,11 @@ module AnnotatedArray
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.all_annotations))
     end
-    value.context = self.context
-    value.container = self
-    value.container_index = pos
+    if Entity === value
+      value.context = self.context
+      value.container = self
+      value.container_index = pos
+    end
     value
   end
 
@@ -305,9 +307,11 @@ module AnnotatedArray
       annotation_types.each do |mod|
         mod.setup(value, info)
       end
-      value.context = self.context
-      value.container = self
-      value.container_index = i
+      if Annotated === value
+        value.context = self.context
+        value.container = self
+        value.container_index = i
+      end
       i += 1
       yield value
     end

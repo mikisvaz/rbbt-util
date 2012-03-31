@@ -49,7 +49,9 @@ module TSV
         data.serializer = serializer
       end
 
-      stream = get_stream source
+      open_options = Misc.pull_keys options, :open
+
+      stream = get_stream source, open_options
       parse stream, data, options
 
       data.filename = filename.to_s unless filename.nil?

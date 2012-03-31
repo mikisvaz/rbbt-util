@@ -34,8 +34,8 @@ rbbt.glob <- function(d, pattern){
     sapply(dir(d, pattern), function(file){paste(d,file,sep="/")});
 }
 
-rbbt.png_plot <- function(filename, width, height, p){
-    png(filename=filename, width=width, height=height);
+rbbt.png_plot <- function(filename, width, height, p, ...){
+    png(filename=filename, width=width, height=height, ...);
     eval(parse(text=p));
     dev.off();
 }

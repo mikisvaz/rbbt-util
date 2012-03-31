@@ -67,12 +67,12 @@ module TSV
     filename
   end
 
-  def self.get_stream(file)
+  def self.get_stream(file, open_options = {})
     case
     when Path === file
-      file.open
+      file.open(open_options)
     when String === file
-      File.open(file)
+      Open.open(file, open_options)
     when file.respond_to?(:gets)
       file
     else

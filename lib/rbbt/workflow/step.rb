@@ -64,6 +64,8 @@ class Step
       }
 
       set_info :status, :started
+
+      set_info :started, Time.now
       
       set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 
@@ -95,7 +97,7 @@ class Step
       end
     end
     set_info :pid, @pid
-    Signal.trap('CHLD', 'IGNORE')
+    Process.detach(@pid)
     self
   end
 

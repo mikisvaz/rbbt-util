@@ -2,7 +2,7 @@ module AnnotatedModule
   def self.extended(base)
     if not base.respond_to? :inputs
       class << base
-        attr_accessor :description, :inputs, :input_types, :input_descriptions, :input_defaults, :result_description, :helpers
+        attr_accessor :description, :inputs, :input_types, :input_descriptions, :input_defaults, :input_options, :result_description, :helpers
 
         def description
           i = @description; @description = ""; i
@@ -38,6 +38,7 @@ module AnnotatedModule
       base.input_types = {}
       base.input_descriptions = {}
       base.input_defaults = {}
+      base.input_options = {}
       base.helpers = {}
 
     end
@@ -60,13 +61,14 @@ module AnnotatedModule
     @dependencies.concat dependencies
   end
 
-  def input(name, type = nil, desc = nil, default = nil)
+  def input(name, type = nil, desc = nil, default = nil, options = nil)
     name = name.to_sym
     type = type.to_sym
     @inputs << name
     @input_types[name] = type unless type.nil?
     @input_descriptions[name] = desc unless desc.nil?
     @input_defaults[name] = default unless default.nil?
+    @input_options[name] = options unless options.nil?
   end
 end
 

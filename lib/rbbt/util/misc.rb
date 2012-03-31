@@ -8,6 +8,24 @@ require 'narray'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  COLOR_LIST = %w(red green blue black yellow pink purple)
+  def self.colors_for(list)
+    unused = COLOR_LIST.dup
+
+    used = {}
+    colors = list.collect do |elem|
+      if used.include? elem
+        used[elem]
+      else
+        color = unused.shift
+        used[elem]=color
+        color
+      end
+    end
+
+    [colors, used]
+  end
+
   def self.total_length(ranges)
     processed = []
     last = nil

@@ -132,8 +132,8 @@ module Path
     Open.read(self.produce.find)
   end
 
-  def open
-    Open.open(self.produce.find)
+  def open(options = {})
+    Open.open(self.produce.find, options)
   end
 
   def to_s

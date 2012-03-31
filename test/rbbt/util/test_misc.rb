@@ -4,6 +4,11 @@ require 'test/unit'
 
 class TestMisc < Test::Unit::TestCase
 
+  def test_colors_for
+    colors, used = Misc.colors_for([1,2,2,1,2,1,2,2,3,3,2,3,2])
+    assert_equal Misc::COLOR_LIST[1], used[2]
+  end
+
   def test_total_length
     ranges = [(0..100), (50..150), (120..160)]
     ranges = [(0..100), (50..150), (120..160), (51..70)]
