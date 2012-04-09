@@ -104,6 +104,26 @@ module Misc
 
   ARRAY_MAX_LENGTH = 10000
   STRING_MAX_LENGTH = ARRAY_MAX_LENGTH * 10
+
+  def self.sanitize_filename(filename, length = 200)
+    if filename.length > length
+      if filename =~ /(\..{2,4})$/
+        ddd "YES"
+        extension = $1
+      else
+        ddd "NO"
+        extension = ''
+      end
+
+      post_fix = " TRUNCATED at #{length} (#{filename.length})" + extension
+
+      filename = filename[0..(length - post_fix.length - 1)] << post_fix
+    else
+      filename
+    end
+    filename
+  end
+
   def self.remove_long_items(obj)
     case
     when (Array === obj and obj.length > ARRAY_MAX_LENGTH)

@@ -292,7 +292,7 @@ module AnnotatedArray
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.all_annotations))
     end
-    if Entity === value
+    if Annotated === value
       value.context = self.context
       value.container = self
       value.container_index = pos
