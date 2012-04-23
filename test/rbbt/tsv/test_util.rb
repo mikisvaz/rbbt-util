@@ -17,6 +17,7 @@ row2    A    B    Id3
       tsv = TSV.open(filename, :sep => /\s+/)
 
       assert_equal 2, TSV.field_match_counts(tsv, ["a","A","a","b","Id3"])["ValueA"]
+      assert_equal nil, TSV.field_match_counts(tsv, ["ValueA"])["ValueA"]
 
     end
   

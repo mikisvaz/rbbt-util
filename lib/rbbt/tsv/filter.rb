@@ -279,12 +279,12 @@ module TSV
   end
 
   def reset_filters
-    if filter_dir.nil? or filter_dir.empty?
-      filters.each do |filter| filter.reset end
+    if @filter_dir.nil? or @filter_dir.empty?
+      @filters.each do |filter| filter.reset end if Array === @filters
       return
     end
 
-    Dir.glob(File.join(filter_dir, '*.filter')).each do |f|
+    Dir.glob(File.join(@filter_dir, '*.filter')).each do |f|
       FileUtils.rm f
     end
   end

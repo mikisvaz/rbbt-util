@@ -3,7 +3,7 @@ require 'rbbt/workflow/task'
 require 'rbbt/workflow/step'
 require 'rbbt'
 
-class TestStrp < Test::Unit::TestCase
+class TestStep < Test::Unit::TestCase
 
   def test_step
     task  = Task.setup do "TEST" end

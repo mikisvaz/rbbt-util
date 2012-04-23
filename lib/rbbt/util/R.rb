@@ -22,9 +22,14 @@ module R
     CMD.cmd('R --vanilla --slave --quiet', options.merge(:in => cmd))
   end
 
+  def self.interactive(init_file, options = {})
+    CMD.cmd("env R_PROFILE='#{init_file}' xterm R")
+  end
+
 end
 
 module TSV
+
   def R(script, open_options = {})
     TmpFile.with_file do |f|
       Open.write(f, self.to_s)
@@ -39,4 +44,20 @@ if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
       TSV.open(f, open_options) unless open_options[:ignore_output]
     end
   end
+
+  def R_interactive(open_options = {})
+    TmpFile.with_file do |f|
+      Open.write(f, self.to_s)
+      TmpFile.with_file do |init_file|
+        Open.write(init_file) do |file|
+          profile = File.join(ENV["HOME"], ".Rprofile")
+          file.puts "source('#{profile}');\n" if File.exists? profile
+          file.puts "source('#{R::UTIL}');\n"
+          file.puts "data_file = '#{f}';\n"
+        end
+        R.interactive(init_file)
+      end
+    end
+  end
 end
+

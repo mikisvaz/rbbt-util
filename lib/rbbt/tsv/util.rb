@@ -1,29 +1,6 @@
 require 'rbbt/resource/path'
 module TSV
 
-  def self.field_match_counts(file, values)
-    fields = TSV.parse_header(Open.open(file)).all_fields
-
-    counts = {}
-    TmpFile.with_file do |tmpfile|
-      if Array === values
-        Open.write(tmpfile, values * "\n")
-      else
-        FileUtils.ln_s values, tmpfile
-      end
-
-      fields.each_with_index do |field,i|
-        counts[field] = begin
-                          CMD.cmd("cat #{ file } |grep -v ^#|cut -f #{i + 1}|tr '|' '\\n' |sort -u |grep [[:alpha:]]|grep -f #{tmpfile} -F -w").read.count("\n")
-                        rescue
-                          0
-                        end
-      end
-    end
-
-    counts
-  end
-
   def self.field_match_counts(file, values, options = {})
     options = Misc.add_defaults options, :persist_prefix => "Field_Matches"
     persist_options = Misc.pull_keys options, :persist
@@ -45,12 +22,12 @@ module TSV
     end
 
     path = Persist.persistence_path(filename, persist_options)
-    TmpFile.with_file(values * "\n") do |value_file|
-      cmd = "cat '#{ path }' | grep -w -F -f '#{ value_file }' |cut -f 2 |sort|uniq -c|sed 's/^ *//;s/ /\t/'"
+    TmpFile.with_file(values.uniq * "\n") do |value_file|
+      cmd = "cat '#{ path }' | sed 's/\\t/\\tHEADERNOMATCH/' | grep -w -F -f '#{ value_file }' |cut -f 2 | sed 's/HEADERNOMATCH//' | sort|uniq -c|sed 's/^ *//;s/ /\t/'"
       begin
         TSV.open(CMD.cmd(cmd), :key_field => 1, :type => :single, :cast => :to_i)
       rescue
-        TSV.setup({nil => 0}, :type => :single, :cast => :to_i)
+        TSV.setup({}, :type => :single, :cast => :to_i)
       end
     end
   end
