@@ -574,6 +574,7 @@ end
   end
 
   def self.lock(file, *args)
+    return if file.nil?
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
 
     res = nil
