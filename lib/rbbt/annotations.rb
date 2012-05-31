@@ -346,8 +346,11 @@ module AnnotatedArray
     annotation_types.each do |mod|
       mod.setup(res, *info.values_at(*mod.annotations))
     end
+
     res.context = self.context
     res.container = self.container
+
+    res.extend AnnotatedArray if AnnotatedArray === self
 
     res
   end
@@ -364,16 +367,23 @@ module AnnotatedArray
     res.context = self.context
     res.container = self.container
 
+    res.extend AnnotatedArray if AnnotatedArray === self
+
     res
   end
 
   def annotated_array_subset(list)
     value = (self & list)
+
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.all_annotations))
     end
+
     value.context = self.context
     value.container = self.container
+
+    value.extend AnnotatedArray if AnnotatedArray === self
+
     value
   end
 
@@ -386,6 +396,8 @@ module AnnotatedArray
 
     value.context = self.context
     value.container = self.container
+
+    value.extend AnnotatedArray if AnnotatedArray === self
 
     value
   end
@@ -400,6 +412,8 @@ module AnnotatedArray
     value.context = self.context
     value.container = self.container
 
+    value.extend AnnotatedArray if AnnotatedArray === self
+
     value
   end
  
@@ -412,6 +426,8 @@ module AnnotatedArray
 
     value.context = self.context
     value.container = self.container
+
+    value.extend AnnotatedArray if AnnotatedArray === self
 
     value
   end
@@ -426,6 +442,8 @@ module AnnotatedArray
     value.context = self.context
     value.container = self.container
 
+    value.extend AnnotatedArray if AnnotatedArray === self
+
     value
   end
 
@@ -438,6 +456,8 @@ module AnnotatedArray
 
     value.context = self.context
     value.container = self.container
+
+    value.extend AnnotatedArray if AnnotatedArray === self
 
     value
   end
@@ -452,6 +472,8 @@ module AnnotatedArray
     value.context = self.context
     value.container = self.container
 
+    value.extend AnnotatedArray if AnnotatedArray === self
+
     value
   end
 
@@ -461,6 +483,8 @@ module AnnotatedArray
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
     end
+
+    value.extend AnnotatedArray if AnnotatedArray === self
 
     value
   end
@@ -480,6 +504,8 @@ module AnnotatedArray
     self.annotated_array_clean_each do |e|
       value << e if method.shift
     end
+
+    value.extend AnnotatedArray if AnnotatedArray === self
 
     value
   end

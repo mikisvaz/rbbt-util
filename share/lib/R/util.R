@@ -29,16 +29,22 @@ rbbt.ruby <- function(code, load = TRUE, flat = FALSE, type = 'tsv', ...){
   }
 }
 
+rbbt.ruby.substitutions <- function(script, substitutions = list(), ...){
+    
+    for (keyword in names(substitutions)){
+        script = sub(keyword, substitutions[[keyword]], script);
+    }
+
+    result = rbbt.ruby(script, ...);
+
+    return(result);
+}
+
 rbbt.glob <- function(d, pattern){
     d=sub("/$", '', d);
     sapply(dir(d, pattern), function(file){paste(d,file,sep="/")});
 }
 
-rbbt.png_plot <- function(filename, width, height, p, ...){
-    png(filename=filename, width=width, height=height, ...);
-    eval(parse(text=p));
-    dev.off();
-}
 
 rbbt.load.data <- function(filename, sep = "\t",  ...){
   data=read.table(file=filename, sep=sep, fill=TRUE,  as.is=TRUE, ...);
@@ -116,6 +122,10 @@ rbbt.percent <- function(values){
     values=values/sum(values);
 }
 
+rbbt.a.to.string <- function(a){
+   paste("'",paste(a, collapse="', '"), "'", sep="");
+}
+
 rbbt.split <- function(string){
   return(unlist(strsplit(string, "\\|")));
 }
@@ -150,6 +160,12 @@ rbbt.acc <- function(data, new){
     }
 }
 
+rbbt.png_plot <- function(filename, width, height, p, ...){
+    png(filename=filename, width=width, height=height, ...);
+    eval(parse(text=p));
+    dev.off();
+}
+
 rbbt.init <- function(data, new){
     if (is.null(data)){
         return(new);
@@ -180,6 +196,7 @@ rbbt.run <- function(filename){
     rbbt.reload();
     eval(rbbt.parse(filename), envir=globalenv());
 }
+
 
 
 # UTILITIES

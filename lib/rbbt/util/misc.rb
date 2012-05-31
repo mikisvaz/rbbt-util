@@ -108,10 +108,8 @@ module Misc
   def self.sanitize_filename(filename, length = 200)
     if filename.length > length
       if filename =~ /(\..{2,4})$/
-        ddd "YES"
         extension = $1
       else
-        ddd "NO"
         extension = ''
       end
 
