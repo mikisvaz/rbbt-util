@@ -38,7 +38,6 @@ module Workflow
 
     else
       case
-
         # Points to workflow file
       when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb')) 
         $LOAD_PATH.unshift(File.join(File.expand_path(File.dirname(wf_name)), 'lib'))
@@ -167,7 +166,7 @@ module Workflow
     block = self.method(name) unless block_given?
 
     result_type = result_type
-    task = Task.setup({
+    annotations = {
       :name => name,
       :inputs => inputs,
       :description => description,
@@ -175,8 +174,11 @@ module Workflow
       :result_type => Array == result_type ? result_type.to_sym : result_type,
       :input_defaults => input_defaults,
       :input_descriptions => input_descriptions,
+      :input_options => input_options,
       :result_description => result_description
-    }, &block)
+    }
+    
+    task = Task.setup(annotations, &block)
 
     @last_task = task
     @tasks[name] = task

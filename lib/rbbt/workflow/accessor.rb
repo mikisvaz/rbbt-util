@@ -172,6 +172,7 @@ module Workflow
     input_types = rec_input_types(name)
     input_descriptions = rec_input_descriptions(name)
     input_defaults = rec_input_defaults(name)
+    input_options = rec_input_options(name)
     export = case
              when (synchronous_exports.include?(name.to_sym) or synchronous_exports.include?(name.to_s))
                :synchronous
@@ -192,6 +193,7 @@ module Workflow
       :input_types => input_types,
       :input_descriptions => input_descriptions,
       :input_defaults => input_defaults,
+      :input_options => input_options,
       :result_type => result_type,
       :result_description => result_description,
       :dependencies => dependencies
@@ -223,6 +225,11 @@ module Workflow
   def rec_input_descriptions(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn].input_descriptions}
   end
+
+  def rec_input_options(taskname)
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn].input_options}
+  end
+
 
   def real_dependencies(task, jobname, inputs, dependencies)
     real_dependencies = []

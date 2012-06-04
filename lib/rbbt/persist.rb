@@ -91,6 +91,11 @@ module Persist
       FixWidthTable.get(path) 
     when :string, :text
       Open.read(path)
+    when :binary
+      f = File.open(path, 'rb')
+      res = f.read
+      f.close
+      res
     when :array
       res = Open.read(path).split("\n", -1)
       res.pop
@@ -128,6 +133,11 @@ module Persist
       Open.write(path, Annotated.tsv(content, :all).to_s)
     when :string, :text
       Open.write(path, content)
+    when :binary
+      f = File.open(path, 'wb')
+      f.puts content
+      f.close
+      content
     when :array
       if content.empty?
         Open.write(path, "")

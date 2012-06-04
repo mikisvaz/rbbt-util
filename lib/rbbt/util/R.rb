@@ -26,6 +26,18 @@ module R
     CMD.cmd("env R_PROFILE='#{init_file}' xterm R")
   end
 
+  def self.interactive(script, options = {})
+    TmpFile.with_file do |init_file|
+        Open.write(init_file) do |file|
+          profile = File.join(ENV["HOME"], ".Rprofile")
+          file.puts "source('#{profile}');\n" if File.exists? profile
+          file.puts "source('#{R::UTIL}');\n"
+          file.puts script
+        end
+        CMD.cmd("env R_PROFILE='#{init_file}' xterm R")
+    end
+  end
+
 end
 
 module TSV
@@ -48,15 +60,7 @@ if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
   def R_interactive(open_options = {})
     TmpFile.with_file do |f|
       Open.write(f, self.to_s)
-      TmpFile.with_file do |init_file|
-        Open.write(init_file) do |file|
-          profile = File.join(ENV["HOME"], ".Rprofile")
-          file.puts "source('#{profile}');\n" if File.exists? profile
-          file.puts "source('#{R::UTIL}');\n"
-          file.puts "data_file = '#{f}';\n"
-        end
-        R.interactive(init_file)
-      end
+      R.interactive("data_file = '#{f}';\n")
     end
   end
 end

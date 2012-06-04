@@ -24,6 +24,10 @@ module AnnotatedModule
           i = @input_defaults; @input_defaults = {}; i
         end
 
+        def input_options
+          i = @input_options; @input_options = {}; i
+        end
+
         def description
           i = @description; @description = ""; i
         end

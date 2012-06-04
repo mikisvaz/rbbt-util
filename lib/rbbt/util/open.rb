@@ -214,12 +214,14 @@ module Open
     f = open(file, options)
 
     if block_given?
+      res = []
       while not f.eof?
         l = f.gets
         l = fixutf8(l) if l.respond_to?(:valid_encoding?) && ! l.valid_encoding?
-        yield l
+        res << yield(l)
       end
       f.close
+      res
     else
       text = Misc.fixutf8(f.read)
       f.close unless f.closed?
