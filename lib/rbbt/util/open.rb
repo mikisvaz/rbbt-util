@@ -174,6 +174,8 @@ module Open
     wget_options[:cookies] = options.delete(:cookies)
 
     io = case
+         when (IO === url or StringIO === url)
+           url
          when (not remote?(url))
            file_open(url, options[:grep])
          when (options[:nocache] and options[:nocache] != :update)
@@ -189,8 +191,8 @@ module Open
            io.close
            file_open(in_cache(url, wget_options), options[:grep])
          end
-    io = unzip(io)  if (zip?(url)  and not options[:noz]) or options[:zip]
-    io = gunzip(io) if (gzip?(url) and not options[:noz]) or options[:gzip]
+    io = unzip(io)  if ((String === url and zip?(url))  and not options[:noz]) or options[:zip]
+    io = gunzip(io) if ((String === url and gzip?(url)) and not options[:noz]) or options[:gzip]
 
     if block_given?
       yield io 

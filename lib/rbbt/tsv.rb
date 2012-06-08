@@ -73,11 +73,15 @@ module TSV
 
   def self.parse(stream, data, options = {})
     monitor, grep = Misc.process_options options, :monitor, :grep
-    if grep
-      stream = Open.grep(stream, grep)
-    end
 
     parser = Parser.new stream, options
+
+    if grep
+      stream.rewind
+      stream = Open.grep(stream, grep)
+      parser.first_line = stream.gets
+    end
+
     line = parser.rescue_first_line
 
     if TokyoCabinet::HDB === data and parser.straight

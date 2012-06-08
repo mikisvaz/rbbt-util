@@ -1,7 +1,7 @@
 require 'rbbt/util/cmd'
 module TSV
   class Parser
-    attr_accessor :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace
+    attr_accessor :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace, :first_line
 
     class SKIP_LINE < Exception; end
     class END_PARSING < Exception; end

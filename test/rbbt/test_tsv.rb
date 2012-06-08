@@ -314,6 +314,21 @@ b 2
     end
   end
 
+  def test_grep_header
+    content =<<-EOF
+#: :sep=/\\s+/#:type=:single#:namespace=Test
+#Id Value
+a 1
+b 2
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :key_field => "Value", :grep => "2")
+      assert(! tsv.include?("1"))
+      assert(tsv.include?("2"))
+    end
+  end
+
   def test_json
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single

@@ -50,7 +50,7 @@ module TSV
   # Merge two files with the same keys and different fields
   def self.merge_different_fields(file1, file2, output, sep = "\t")
     case
-    when (String === file1 and not file1.index("\n") and file1.length < 250 and File.exists?(file1))
+    when (String === file1 and not file1 =~ /\n/ and file1.length < 250 and File.exists?(file1))
       file1 = CMD.cmd("sort -k1,1 -t'#{sep}' #{ file1 } | grep -v '^#{sep}' ", :pipe => true)
     when (String === file1 or StringIO === file1)
       file1 = CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file1, :pipe => true)
@@ -59,7 +59,7 @@ module TSV
     end
 
     case
-    when (String === file2 and not file2.index("\n") and file2.length < 250 and File.exists?(file2))
+    when (String === file2 and not file2 =~ /\n/ and file2.length < 250 and File.exists?(file2))
       file2 = CMD.cmd("sort -k1,1 -t'#{sep}' #{ file2 } | grep -v '^#{sep}' ", :pipe => true)
     when (String === file2 or StringIO === file2)
       file2 = CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file2, :pipe => true)
