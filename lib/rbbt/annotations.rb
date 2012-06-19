@@ -120,6 +120,15 @@ module Annotated
     self.load(object, info)
   end
 
+  def self.json(annotations)
+    annotations = [annotations] unless Array === annotations
+    hash = {}
+    annotations.each do |annotation|
+      hash[annotation.id] = annotation.info
+    end
+    hash.to_json
+  end
+
   def self.tsv(annotations, *fields)
     return nil if annotations.nil?
     fields = case
