@@ -43,7 +43,7 @@
 
     :script
     
-    gem install rbbt-util rbbt-sources rbbt-text rbbt-phgx
+    gem install rbbt-util rbbt-sources rbbt-text rbbt-phgx rbbt-entities rbbt-views
 
 3.bis - Or install github repos and make ruby use them
 
@@ -51,13 +51,13 @@
 
     cd
     cd git/
-    git clone git://github.com/mikisvaz/rbbt-util.git
-    git clone git://github.com/mikisvaz/rbbt-sources.git
-    git clone git://github.com/mikisvaz/rbbt-text.git
-    git clone git://github.com/mikisvaz/rbbt-phgx.git
-    git clone git://github.com/mikisvaz/rbbt-entities.git
-    git clone git://github.com/mikisvaz/rbbt-dm.git
-    git clone git://github.com/mikisvaz/rbbt-views.git
+    git clone git@github.com:mikisvaz/rbbt-util.git
+    git clone git@github.com:mikisvaz/rbbt-sources.git
+    git clone git@github.com:mikisvaz/rbbt-text.git
+    git clone git@github.com:mikisvaz/rbbt-phgx.git
+    git clone git@github.com:mikisvaz/rbbt-entities.git
+    git clone git@github.com:mikisvaz/rbbt-dm.git
+    git clone git@github.com:mikisvaz/rbbt-views.git
     alias druby="env RBBT_LOG=0 ruby $(for d in $HOME/git/rbbt-*;do echo -n "-I$d/lib ";done)"
     alias drake="env RBBT_LOG=0 rake $(for d in $HOME/git/rbbt-*;do echo -n "-I$d/lib ";done)"
 
@@ -71,6 +71,7 @@
     
     :script
 
+    mkdir -p ~/.rbbt/etc
     mkdir -p ~/git/workflows
     echo "~/git/workflows/" > ~/.rbbt/etc/workflow_dir
 

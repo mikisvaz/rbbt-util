@@ -30,7 +30,7 @@ module Annotated
   end
 
   def id
-    @id ||= Misc.hash2md5 info.merge :self => self
+    @id ||= self.respond_to?(:annotation_id) ? annotation_id : Misc.hash2md5(info.merge(:self => self))
   end
 
   def self.load(object, info)
