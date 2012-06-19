@@ -120,11 +120,15 @@ module Annotated
     self.load(object, info)
   end
 
-  def self.json(annotations)
+  def self.json(annotations, literal = false)
     annotations = [annotations] unless Array === annotations
     hash = {}
     annotations.each do |annotation|
-      hash[annotation.id] = annotation.info
+      if literal
+        hash[annotation.id] = annotation.info.merge(:literal => annotation)
+      else
+        hash[annotation.id] = annotation.info
+      end
     end
     hash.to_json
   end

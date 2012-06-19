@@ -20,11 +20,11 @@ end
 
 class TestAnnotations < Test::Unit::TestCase
 
-  def _test_annotated_string
+  def test_annotated_string
     assert_equal %w(annotation_str), AnnotatedString.annotations.collect{|a| a.to_s}
   end
 
-  def _test_string
+  def test_string
     str = "string"
     annotation_str = "Annotation String"
     AnnotatedString.setup(str, annotation_str)
@@ -32,7 +32,7 @@ class TestAnnotations < Test::Unit::TestCase
     assert_equal annotation_str, str.annotation_str
   end
 
-  def _test_array
+  def test_array
     ary = ["string"]
     annotation_str = "Annotation String"
     ary.extend AnnotatedArray
@@ -42,14 +42,14 @@ class TestAnnotations < Test::Unit::TestCase
     assert_equal annotation_str, ary[0].annotation_str
   end
 
-  def _test_info
+  def test_info
     ary = ["string"]
     annotation_str = "Annotation String"
     AnnotatedString.setup(ary, annotation_str)
     assert_equal({:annotation_str => annotation_str, :annotation_types => [AnnotatedString]}, ary.info)
   end
 
-  def _test_load
+  def test_load
     str = "string"
     annotation_str = "Annotation String"
     info = {:annotation_str => annotation_str, :annotation_types => [AnnotatedString]}
@@ -65,10 +65,10 @@ class TestAnnotations < Test::Unit::TestCase
     annotation_str2 = "Annotation String 2"
     AnnotatedString.setup(str1, annotation_str1)
     AnnotatedString.setup(str2, annotation_str2)
-    ddd Annotated.json(str1)
+    ddd Annotated.json(str1, true)
   end
 
-  def _test_tsv
+  def test_tsv
     str1 = "string1"
     annotation_str1 = "Annotation String 1"
     str2 = "string2"
@@ -79,14 +79,14 @@ class TestAnnotations < Test::Unit::TestCase
     assert_equal annotation_str1, Annotated.tsv([str1, str2], :annotation_str, :JSON)[str1.id]["annotation_str"] 
   end
 
-  def _test_literal
+  def test_literal
     str = "string"
     annotation_str = "Annotation String"
     AnnotatedString.setup(str, annotation_str)
     assert_equal ["string"], str.tsv_values("literal")
   end
 
-  def _test_load_tsv
+  def test_load_tsv
     str1 = "string1"
     annotation_str1 = "Annotation String 1"
     str2 = "string2"
@@ -97,7 +97,7 @@ class TestAnnotations < Test::Unit::TestCase
     assert_equal str1, Annotated.load_tsv(Annotated.tsv([str1, str2], :literal, :JSON)).sort.first
   end
 
-  def _test_load_array_tsv
+  def test_load_array_tsv
     str1 = "string1"
     str2 = "string2"
     a = [str1, str2]
@@ -111,7 +111,7 @@ class TestAnnotations < Test::Unit::TestCase
     assert_equal str1, Annotated.load_tsv(Annotated.tsv(a, :literal, :JSON)).sort.first
   end
 
-  def _test_inheritance
+  def test_inheritance
     str = "string1"
     annotation_str1 = "Annotation String 1"
     annotation_str2 = "Annotation String 2"
@@ -121,14 +121,14 @@ class TestAnnotations < Test::Unit::TestCase
     assert_equal annotation_str2, str.annotation_str2
   end
 
-  def _test_annotation_methods
+  def test_annotation_methods
     str = "string"
     annotation_str = "Annotation String"
     AnnotatedString.setup(str, annotation_str)
     assert_equal str + annotation_str, str.add_annot
   end
 
-  def _test_annotation_positional2hash
+  def test_annotation_positional2hash
     str = "string"
     annotation_str = "Annotation String"
     AnnotatedString.setup(str, :annotation_str => annotation_str)
