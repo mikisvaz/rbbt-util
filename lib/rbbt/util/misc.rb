@@ -892,13 +892,13 @@ module IndiferentHash
 end
 
 module PDF2Text
-  def self.pdftotext(filename)
+  def self.pdftotext(filename, options = {})
     require 'rbbt/util/cmd'
     require 'rbbt/util/tmpfile'
     require 'rbbt/util/open'
 
 
-    TmpFile.with_file(Open.open(filename, :nocache => true).read) do |pdf_file|
+    TmpFile.with_file(Open.open(filename, options.merge(:nocache => true)).read) do |pdf_file|
       CMD.cmd("pdftotext #{pdf_file} -", :pipe => false, :stderr => true)
     end
   end
