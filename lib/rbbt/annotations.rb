@@ -145,6 +145,8 @@ module Annotated
                fields = [:annotation_types] + annotations.annotations 
                fields << :literal
              when (fields == [:all] and not annotations.empty?)
+               raise "Input array must be annotated or its elements must be" if not Annotated === annotations.compact.first and not Array === annotations.compact.first
+               raise "Input array must be annotated or its elements must be. No duble arrays of singly annotated entities." if not Annotated === annotations.compact.first and Array === annotations.compact.first
                fields = [:annotation_types] + (Annotated === annotations ? 
                                                annotations.annotations : 
                                                annotations.compact.first.annotations)

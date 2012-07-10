@@ -83,15 +83,21 @@ module Persist
 
         def write_and_close
           write if @closed or not write?
-          res = yield
-          close
+          res = begin
+                  yield
+                ensure
+                  close
+                end
           res
         end
 
         def read_and_close
           read if @closed or write?
-          res = yield
-          close
+          res = begin
+                  yield
+                ensure
+                  close
+                end
           res
         end
 
