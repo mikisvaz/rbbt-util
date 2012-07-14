@@ -195,4 +195,41 @@ module Path
       [identifier_file_path]
     end
   end
+
+  def set_extension(new_extension = nil)
+    new_path = self.sub(/\.[^\.\/]+$/, "." << new_extension.to_s)
+    Path.setup new_path, @pkgdir, @resource
+  end
+
+  def doc_file(relative_to = 'lib')
+    if located?
+      lib_dir = Path.caller_lib_dir(self, relative_to)
+      relative_file = File.join( 'doc', self.sub(lib_dir,''))
+      Path.setup File.join(lib_dir, relative_file) , @pkgdir, @resource
+    else
+      Path.setup File.join('doc', self) , @pkgdir, @resource
+    end
+  end
+
+  def source_for_doc_file(relative_to = 'lib')
+    if located?
+      lib_dir = Path.caller_lib_dir(Path.caller_lib_dir(self, 'doc'), relative_to)
+      relative_file = self.sub(/(.*\/)doc\//, '\1').sub(lib_dir + "/",'')
+      file = File.join(lib_dir, relative_file)
+
+      if not File.exists?(file)
+        file= Dir.glob(file.sub(/\.[^\.\/]+$/, '.*')).first
+      end
+
+      Path.setup file, @pkgdir, @resource
+    else
+      relative_file = self.sub(/^doc\//, '\1')
+
+      if not File.exists?(relative_file)
+        relative_file = Dir.glob(relative_file.sub(/\.[^\.\/]+$/, '.*')).first
+      end
+
+      Path.setup relative_file , @pkgdir, @resource
+    end
+  end
 end

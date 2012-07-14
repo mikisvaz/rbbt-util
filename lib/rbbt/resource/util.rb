@@ -2,7 +2,7 @@ require 'rbbt/resource/rake'
 
 module Path
 
-  def self.caller_lib_dir(file = nil)
+  def self.caller_lib_dir(file = nil, relative_to = 'lib')
     file = caller.reject{|l| 
       l =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
       l =~ /rbbt\/resource\/path\.rb/ or
@@ -11,11 +11,11 @@ module Path
     }.first.sub(/\.rb.*/,'.rb') if file.nil?
 
     file = File.expand_path file
-    return Path.setup(file) if File.exists? File.join(file, 'lib')
+    return Path.setup(file) if File.exists? File.join(file, relative_to)
 
     while file != '/'
       dir = File.dirname file
-      return Path.setup(dir) if File.exists? File.join(dir, 'lib')
+      return Path.setup(dir) if File.exists? File.join(dir, relative_to)
       file = File.dirname file
     end
 
