@@ -93,7 +93,7 @@ module Annotated
 
     object = object["Array:".length..-1].split("|") if object =~ /^Array:/
 
-    if Array === values
+    if Array === values.first
       Misc.zip_fields(values).collect do |list|
         fields.each_with_index do |field,i|
           if field == "JSON"

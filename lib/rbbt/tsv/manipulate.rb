@@ -174,6 +174,8 @@ module TSV
 
       keys, value = traverser.process(key, value)
 
+      keys = [keys].compact unless Array === keys
+
       # Annotated with Entity and NamedArray
       if not @unnamed
         if not traverser.new_field_names.nil? 

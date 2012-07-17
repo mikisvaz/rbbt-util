@@ -23,6 +23,7 @@ begin
     gem.add_dependency('lockfile')
     gem.add_dependency('RubyInline')
     gem.add_dependency('narray')
+    gem.add_dependency('simplews')
 
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end

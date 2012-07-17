@@ -4,6 +4,7 @@ require 'rbbt/resource/path'
 require 'rbbt/annotations'
 require 'net/smtp'
 require 'narray'
+require 'digest/md5'
 
 module Misc
   class FieldNotFoundError < StandardError;end
@@ -615,11 +616,13 @@ end
   end
 
   def self.fixutf8(string)
-    if string.respond_to?(:valid_encoding?) and ! string.valid_encoding?
+    return string if (string.respond_to? :valid_encoding? and string.valid_encoding?) or
+                     (string.respond_to? :valid_encoding and string.valid_encoding)
+    if string.respond_to?(:encode)
+      string.encode("UTF-16BE", :invalid => :replace, :undef => :replace, :replace => "?").encode('UTF-8')
+    else
       @@ic ||= Iconv.new('UTF-8//IGNORE', 'UTF-8')
       @@ic.iconv(string)
-    else
-      string
     end
   end
 
@@ -710,7 +713,7 @@ end
     if str.empty?
       ""
     else
-      Digest::MD5.hexdigest(str)
+      digest(str)
     end
   end
 

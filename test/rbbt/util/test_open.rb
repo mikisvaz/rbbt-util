@@ -13,15 +13,13 @@ class TestOpen < Test::Unit::TestCase
   def test_nice
     nice =  0.5
 
-    Open.wget('http://google.com', :quiet => true, :nice => nice).read =~ /html/
     t = Time.now
-    Open.wget('http://google.com', :quiet => true, :nice => nice).read =~ /html/
+    Open.wget('http://google.com', :quiet => true, :nice => nice).read
     assert(Time.now - t + 0.5 >= nice)
 
-    Open.wget('http://google.com', :quiet => true, :nice => nice, :nice_key => 1).read =~ /html/
-    Open.wget('http://google.com', :quiet => true, :nice => nice, :nice_key => 2).read =~ /html/
+    Open.wget('http://google.com', :quiet => true, :nice => nice, :nice_key => 1).read
     t = Time.now
-    Open.wget('http://google.com', :quiet => true, :nice => nice, :nice_key => 1).read =~ /html/
+    Open.wget('http://google.com', :quiet => true, :nice => nice, :nice_key => 1).read
     assert(Time.now - t + 0.5 >= nice)
   end
 

@@ -9,8 +9,8 @@ module Task
     options = IndiferentHash.setup options
     block.singleton_methods.
       select{|method| method.to_s[-1] != "="[0]}.each{|method|
-      if block.respond_to?(method + "=") and options.include? method.to_sym
-        block.send(method + '=', options[method.to_sym]) 
+      if block.respond_to?(method.to_s + "=") and options.include? method.to_sym
+        block.send(method.to_s + '=', options[method.to_sym]) 
       end
     }
     block

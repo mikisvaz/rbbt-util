@@ -13,8 +13,6 @@ class TestTSV < Test::Unit::TestCase
 
     a.extend TSV
     
-    assert a.methods.include? "key_field="
-
     a.key_field = "Number"
 
     assert_equal "1", a["one"]

@@ -219,7 +219,7 @@ module Open
       res = []
       while not f.eof?
         l = f.gets
-        l = fixutf8(l) if l.respond_to?(:valid_encoding?) && ! l.valid_encoding?
+        l = Misc.fixutf8(l) 
         res << yield(l)
       end
       f.close

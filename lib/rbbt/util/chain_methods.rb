@@ -1,4 +1,3 @@
-require 'rbbt/util/log'
 require 'set'
 
 module ChainMethods
@@ -33,7 +32,7 @@ module ChainMethods
 
             class << base; self; end.module_eval do
               methods.each do |new_method|
-                original = new_method.sub(prefix.to_s + '_', '')
+                original = new_method.to_s.sub(prefix.to_s + '_', '')
                 clean_method = prefix.to_s + '_clean_' + original
 
                 original = "[]" if original == "get_brackets"

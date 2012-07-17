@@ -86,7 +86,7 @@ class TestStep < Test::Unit::TestCase
         while not job.abort do sleep 1 end
         Open.write(lock, "open")
         job.join
-        assert job.error?
+        assert job.aborted?
       end
     end
   end

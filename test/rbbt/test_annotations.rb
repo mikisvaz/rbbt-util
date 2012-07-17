@@ -108,7 +108,7 @@ class TestAnnotations < Test::Unit::TestCase
 
     assert_equal annotation_str, Annotated.load_tsv(Annotated.tsv(a, :all)).annotation_str
 
-    assert_equal str1, Annotated.load_tsv(Annotated.tsv(a, :literal, :JSON)).sort.first
+    assert_equal str2, Annotated.load_tsv(Annotated.tsv(a, :literal, :JSON)).sort.last
   end
 
   def test_inheritance

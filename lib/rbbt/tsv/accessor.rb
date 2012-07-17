@@ -1,5 +1,4 @@
 require 'rbbt/util/chain_methods'
-
 module TSV
   extend ChainMethods
   self.chain_prefix = :tsv

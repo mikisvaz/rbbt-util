@@ -1,5 +1,3 @@
-require 'digest/md5'
-
 require 'rbbt/util/misc'
 require 'rbbt/util/open'
 

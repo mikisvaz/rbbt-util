@@ -4,6 +4,15 @@ require 'test/unit'
 
 class TestMisc < Test::Unit::TestCase
 
+  def test_fixutf8
+    string = "abc\xffdef"
+    string = string.force_encoding("UTF-8") if string.respond_to? :force_encoding
+    assert(! string.valid_encoding?) if string.respond_to? :valid_encoding?
+    assert(! string.valid_encoding) if string.respond_to? :valid_encoding
+    assert( Misc.fixutf8(string).valid_encoding?) if string.respond_to? :valid_encoding?
+    assert( Misc.fixutf8(string).valid_encoding) if string.respond_to? :valid_encoding
+  end
+
   def test_colors_for
     colors, used = Misc.colors_for([1,2,2,1,2,1,2,2,3,3,2,3,2])
     assert_equal Misc::COLOR_LIST[1], used[2]

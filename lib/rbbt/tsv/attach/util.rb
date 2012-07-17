@@ -3,6 +3,8 @@ module TSV
   def attach_same_key(other, fields = nil)
     fields = other.fields - [key_field].concat(self.fields) if fields.nil?
 
+    fields = [fields].compact unless Array === fields
+
     field_positions = fields.collect{|field| other.identify_field field}
     other.with_unnamed do
       with_unnamed do
@@ -114,6 +116,7 @@ module TSV
         with_unnamed do
           through do |key, values|
             source_keys = index[key]
+            source_keys = [source_keys] unless Array === source_keys
             if source_keys.nil? or source_keys.empty?
               all_new_values = []
             else

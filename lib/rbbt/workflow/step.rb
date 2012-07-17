@@ -71,6 +71,8 @@ class Step
 
       res = begin
               exec
+            rescue Step::Aborted
+              raise $!
             rescue Exception
               set_info :backtrace, $!.backtrace
               log(:error, "#{$!.class}: #{$!.message}")
