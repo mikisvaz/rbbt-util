@@ -1,4 +1,5 @@
 rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf LICENSE" {
+ Migration-1.9.txt
  Rakefile
  LICENSE
  README.rdoc

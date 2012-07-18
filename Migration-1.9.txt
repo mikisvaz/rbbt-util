@@ -1,0 +1,25 @@
+tokyocabinet
+============
+
+from:
+  if(rb_block_given_p() != Qtrue) rb_raise(rb_eArgError, "no block given");
+to:
+  if(!rb_block_given_p()) rb_raise(rb_eArgError, "no block given");
+
+Rubyinline
+==========
+
+from: 
+  @mod.name
+to:
+  @mod.to_s.sub(/#<Class:/,'').sub(/>&/)
+
+
+rb_Digest_MD5_Init
+==================
+
+comment files
+~/.rvm/src/ruby-1.9.3-head/ext/digest/md5/md5.h
+~/.rvm/src/ruby-1.9.3-head/ext/digest/sha1/sha1.h
+
+cd ~/.rvm/src/ruby-1.9.3-head/; make && make install
