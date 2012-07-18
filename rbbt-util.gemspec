@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "rbbt-util"
-  s.version = "4.3.0"
+  s.version = "4.4.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
-  s.date = "2012-01-31"
+  s.date = "2012-07-18"
   s.description = "Utilities for handling tsv files, caches, etc"
   s.email = "miguel.vazquez@cnio.es"
   s.executables = ["tsv.rb", "tchash.rb", "run_workflow.rb", "rbbt_query.rb", "rbbt_exec.rb", "rbbt_Rutil.rb"]
@@ -34,6 +34,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/tsv/accessor.rb",
     "lib/rbbt/tsv/attach.rb",
     "lib/rbbt/tsv/attach/util.rb",
+    "lib/rbbt/tsv/excel.rb",
     "lib/rbbt/tsv/filter.rb",
     "lib/rbbt/tsv/index.rb",
     "lib/rbbt/tsv/manipulate.rb",
@@ -64,9 +65,9 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "http://github.com/mikisvaz/rbbt-util"
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.12"
+  s.rubygems_version = "1.8.24"
   s.summary = "Utilities for the Ruby Bioinformatics Toolkit (rbbt)"
-  s.test_files = ["test/test_helper.rb", "test/rbbt/util/test_tmpfile.rb", "test/rbbt/util/test_filecache.rb", "test/rbbt/util/test_open.rb", "test/rbbt/util/test_R.rb", "test/rbbt/util/test_misc.rb", "test/rbbt/util/test_cmd.rb", "test/rbbt/util/test_simpleDSL.rb", "test/rbbt/util/test_chain_methods.rb", "test/rbbt/util/test_excel2tsv.rb", "test/rbbt/util/test_simpleopt.rb", "test/rbbt/resource/test_path.rb", "test/rbbt/test_annotations.rb", "test/rbbt/test_fix_width_table.rb", "test/rbbt/test_resource.rb", "test/rbbt/test_tsv.rb", "test/rbbt/test_workflow.rb", "test/rbbt/tsv/test_accessor.rb", "test/rbbt/tsv/test_attach.rb", "test/rbbt/tsv/test_filter.rb", "test/rbbt/tsv/test_index.rb", "test/rbbt/tsv/test_manipulate.rb", "test/rbbt/tsv/test_util.rb", "test/rbbt/workflow/test_soap.rb", "test/rbbt/workflow/test_step.rb", "test/rbbt/workflow/test_task.rb", "test/rbbt/test_persist.rb", "test/test_rbbt.rb"]
+  s.test_files = ["test/test_helper.rb", "test/rbbt/util/test_tmpfile.rb", "test/rbbt/util/test_filecache.rb", "test/rbbt/util/test_misc.rb", "test/rbbt/util/test_R.rb", "test/rbbt/util/test_open.rb", "test/rbbt/util/test_cmd.rb", "test/rbbt/util/test_simpleDSL.rb", "test/rbbt/util/test_chain_methods.rb", "test/rbbt/util/test_excel2tsv.rb", "test/rbbt/util/test_simpleopt.rb", "test/rbbt/resource/test_path.rb", "test/rbbt/test_annotations.rb", "test/rbbt/test_fix_width_table.rb", "test/rbbt/test_resource.rb", "test/rbbt/test_tsv.rb", "test/rbbt/test_workflow.rb", "test/rbbt/tsv/test_accessor.rb", "test/rbbt/tsv/test_attach.rb", "test/rbbt/tsv/test_filter.rb", "test/rbbt/tsv/test_index.rb", "test/rbbt/tsv/test_manipulate.rb", "test/rbbt/tsv/test_util.rb", "test/rbbt/workflow/test_soap.rb", "test/rbbt/workflow/test_step.rb", "test/rbbt/workflow/test_task.rb", "test/rbbt/test_persist.rb", "test/test_rbbt.rb"]
 
   if s.respond_to? :specification_version then
     s.specification_version = 3
@@ -80,6 +81,7 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<lockfile>, [">= 0"])
       s.add_runtime_dependency(%q<RubyInline>, [">= 0"])
       s.add_runtime_dependency(%q<narray>, [">= 0"])
+      s.add_runtime_dependency(%q<simplews>, [">= 0"])
     else
       s.add_dependency(%q<rake>, [">= 0"])
       s.add_dependency(%q<spreadsheet>, [">= 0"])
@@ -89,6 +91,7 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<lockfile>, [">= 0"])
       s.add_dependency(%q<RubyInline>, [">= 0"])
       s.add_dependency(%q<narray>, [">= 0"])
+      s.add_dependency(%q<simplews>, [">= 0"])
     end
   else
     s.add_dependency(%q<rake>, [">= 0"])
@@ -99,6 +102,7 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<lockfile>, [">= 0"])
     s.add_dependency(%q<RubyInline>, [">= 0"])
     s.add_dependency(%q<narray>, [">= 0"])
+    s.add_dependency(%q<simplews>, [">= 0"])
   end
 end
 
