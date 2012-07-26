@@ -53,7 +53,7 @@ module SimpleDSL
       
       @config[@@method_name] = File.open(actions).read
 
-      eval File.open(actions).read
+      instance_eval Open.read(actions), actions
     end
 
     unhook_method

@@ -170,15 +170,18 @@ module Persist
         yield data
       end
     rescue Exception
-      begin
-        data.close if data.respondo_to? :close
-      rescue
-      end
       FileUtils.rm path if path and File.exists? path
       raise $!
+    ensure
+      begin
+        data.close if data.respond_to? :close
+      rescue
+        raise $!
+      end
     end
 
     data.read if data.respond_to? :read and ((data.respond_to?(:write?) and data.write?) or (data.respond_to?(:closed?) and data.closed?))
+
 
     data
   end

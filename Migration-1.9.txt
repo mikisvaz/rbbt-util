@@ -1,19 +1,41 @@
+soap4r
+======
+
+~/.rvm/gems/ruby-1.9.3-head/gems/soap4r-1.5.8/lib/xsd/xmlparser.rb:66
+from:
+  c.downcase == name
+to:
+  c.to_s.downcase == name
+
+
+
 tokyocabinet
 ============
+
+vi ~/.rvm/gems/ruby-1.9.3-head/gems/tokyocabinet-1.29/tokyocabinet.c
 
 from:
   if(rb_block_given_p() != Qtrue) rb_raise(rb_eArgError, "no block given");
 to:
   if(!rb_block_given_p()) rb_raise(rb_eArgError, "no block given");
 
+in vi:
+  :%s/rb_block_given_p() != Qtrue/!rb_block_given_p()/
+
+then:
+  make && make install
+
 Rubyinline
 ==========
 
+~/.rvm/gems/ruby-1.9.3-head/gems/RubyInline-3.11.3/lib/inline.rb
 from: 
   @mod.name
 to:
-  @mod.to_s.sub(/#<Class:/,'').sub(/>&/)
+  @mod.to_s.sub(/#<Class:/,'').sub(/>$/,'')
 
+in vi:
+  :%s/@mod.name/@mod.to_s.sub(\/#<Class:\/,'').sub(\/>$\/,'')/
 
 rb_Digest_MD5_Init
 ==================
@@ -23,3 +45,70 @@ comment files
 ~/.rvm/src/ruby-1.9.3-head/ext/digest/sha1/sha1.h
 
 cd ~/.rvm/src/ruby-1.9.3-head/; make && make install
+
+png
+===
+
+~/.rvm/gems/ruby-1.9.3-head/gems/png-1.2.0/lib/png.rb
+move this before code starts:
+    unsigned long c = 0xffffffff;
+    unsigned len    = RSTRING_LEN(self);
+    char * s        = StringValuePtr(self);
+    unsigned i;
+
+
+rvm
+=======
+
+rvm pkg install openssl
+rvm pkg install libyaml
+rvm reinstall 1.9.3-head -C --with-openssl-dir=$rvm_path/usr
+
+YAML
+====
+
+By default 1.8 uses Syck, 1.9 uses Psych. This ensures 1.9 uses Syck as well
+
+YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
+
+RSRuby
+======
+
+Change the stack size
+
+
+Add:
+
+// Fix stack size
+
+#include <sys/time.h>
+#include <sys/resource.h>
+#define STACK_MULTIPLIER 512
+
+void increase_stack_size(void)
+{
+    struct rlimit rlim;
+
+    getrlimit(RLIMIT_STACK, &rlim);
+    rlim.rlim_cur = RLIM_INFINITY;
+    rlim.rlim_max = RLIM_INFINITY;
+    setrlimit(RLIMIT_STACK, &rlim);
+}
+
+And:
+
+VALUE rr_init(VALUE self){
+
+  SEXP R_References;
+
+  increase_stack_size(); // <- THIS IS THE NEW LINE
+  init_R(0,NULL);
+  // Initialize the list of protected objects
+  R_References = R_NilValue;
+  SET_SYMVALUE(install("R.References"), R_References);
+
+  return self;
+
+}
+
+

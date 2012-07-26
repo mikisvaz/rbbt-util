@@ -1,0 +1,32 @@
+#:vim set ft=text
+
+The Resource class ushers the functionalities to the resources they need. This
+allows functionalities to specify resources symbolicaly and let the Resource
+class choose among some options. These options are typically to allow global
+resources get replaced by local ones; much like configuration files in a Unix filesystem,
+where an application might look for its configuration file in several locations in order
+of specificity: ~/.app_rc, /usr/local/etc/app.rc, /usr/etc/app.rc, /etc/app.rc.
+
+The mechanism to describe the path is using a relative path. So obvious is the solution that this
+even works if the path mechanism is completely removed. Relative paths can specify the
+semantics of a resource perfectly well, and they are direct equivalent of the underlaying 
+file system, so that makes this unobstrusive. All this is handled by the Path class, which
+transforms a relative path into an absolute path by checking a set of locations, and following a few
+simple rules. 
+
+Having Resources and the filesystem so closely tied up, makes implementing resource policies much
+easier. For example that local html templates replace global ones, in order to allow users to
+overide the default behaviour of an application for a particular analysis. Aboslute paths will 
+be left as they are, thus providing a way to overide this behaviour.
+
+A final and substantial enhancement of this scheme is that Resources may claim to know how to produce
+a resource, when this is nowhere to be found. This way, code can be made responsible of procuring for its
+own resources, buy providing a collection of functions that can produce each file and place it in its
+corresponding location in the filesystem. This clever trick helps modularize code and data in the same 
+place, takes care of building the infrascructure that supports the functionalities on-demand, and 
+provides a simple way to share code for complex functionalities without having to care for sharing and
+maintaining the data the supports it, since these are implicitly shared with the code. This 
+improves both reproducibility and reusability of bioinformatics research.
+
+
+

@@ -65,11 +65,12 @@ module TSV
     def get_values_single_from_flat(parts)
       return parts.shift, parts.first if field_positions.nil? and key_position.nil?
       if key_position == 0
-        [parts.shift, parts]
+        [parts.shift, parts.first]
       else
         key = parts.shift
-        [parts, [key]]
+        [parts, key]
       end
+
     end
 
     def get_values_single(parts)

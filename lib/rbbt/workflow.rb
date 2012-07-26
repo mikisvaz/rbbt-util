@@ -213,7 +213,7 @@ module Workflow
   end
 
   def job(taskname, jobname = nil, inputs = {})
-    jobname ||= "Default"
+    jobname = "Default" if jobname.nil? or jobname.empty?
     task = tasks[taskname]
     raise "Task not found: #{ taskname }" if task.nil?
 

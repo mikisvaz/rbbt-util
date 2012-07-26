@@ -120,11 +120,11 @@ module Open
     end
   end
   
-  def self.file_open(file, grep)
+  def self.file_open(file, grep, mode = 'r')
     if grep
-      grep(File.open(file), grep)
+      grep(File.open(file, mode), grep)
     else
-      File.open(file)
+      File.open(file, mode)
     end
   end
 
@@ -162,7 +162,9 @@ module Open
   # Open Read Write
 
   def self.open(url, options = {})
-    options = Misc.add_defaults options, :noz => false
+    options = Misc.add_defaults options, :noz => false, :mode => 'r'
+
+    mode = Misc.process_options options, :mode
 
     wget_options = options[:wget_options] || {}
     wget_options[:nice] = options.delete(:nice)
@@ -177,19 +179,19 @@ module Open
          when (IO === url or StringIO === url)
            url
          when (not remote?(url))
-           file_open(url, options[:grep])
+           file_open(url, options[:grep], mode)
          when (options[:nocache] and options[:nocache] != :update)
            # What about grep?
            wget(url, wget_options)
          when (options[:nocache] != :update and in_cache(url, wget_options))
            Misc.lock(in_cache(url, wget_options)) do
-             file_open(in_cache(url, wget_options), options[:grep])
+             file_open(in_cache(url, wget_options), options[:grep], mode)
            end
          else
            io = wget(url, wget_options)
            add_cache(url, io, wget_options)
            io.close
-           file_open(in_cache(url, wget_options), options[:grep])
+           file_open(in_cache(url, wget_options), options[:grep], mode)
          end
     io = unzip(io)  if ((String === url and zip?(url))  and not options[:noz]) or options[:zip]
     io = gunzip(io) if ((String === url and gzip?(url)) and not options[:noz]) or options[:gzip]
@@ -231,12 +233,16 @@ module Open
     end
   end
 
-  def self.write(file, content = nil)
+  def self.write(file, content = nil, options = {})
+    options = Misc.add_defaults options, :mode => 'w'
+
+    mode = Misc.process_options options, :mode
+
     FileUtils.mkdir_p File.dirname(file)
     case
     when content.nil?
       begin
-        File.open(file, 'w') do |f| 
+        File.open(file, mode) do |f| 
           yield f
         end
       rescue Exception
@@ -244,14 +250,14 @@ module Open
         raise $!
       end
     when String === content
-      File.open(file, 'w') do |f|
+      File.open(file, mode) do |f|
         f.flock(File::LOCK_EX)
         f.write content 
         f.flock(File::LOCK_UN)
       end
     else
       begin
-        File.open(file, 'w') do |f| 
+        File.open(file, mode) do |f| 
           f.flock(File::LOCK_EX)
           while not content.eof?
             f.write content.gets

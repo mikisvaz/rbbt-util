@@ -56,7 +56,7 @@ module TSV
 
       data.filename = filename.to_s unless filename.nil?
       if data.identifiers.nil? and Path === filename and filename.identifier_file_path
-        data.identifiers = filename.identifier_file_path.dup 
+        data.identifiers = filename.identifier_file_path.to_s 
       end
 
       data

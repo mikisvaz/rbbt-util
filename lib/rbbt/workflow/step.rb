@@ -62,7 +62,7 @@ class Step
         log dependency.task.name || "dependency", "Processing dependency: #{ dependency.path }"
         dependency.run true
       }
-
+      
       set_info :status, :started
 
       set_info :started, Time.now
@@ -74,7 +74,13 @@ class Step
             rescue Step::Aborted
               raise $!
             rescue Exception
-              set_info :backtrace, $!.backtrace
+              backtrace = $!.backtrace
+
+              # HACK: This fixes an strange behaviour in 1.9.3 where some
+              # bactrace strings are coded in ASCII-8BIT
+              backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
+
+              set_info :backtrace, backtrace 
               log(:error, "#{$!.class}: #{$!.message}")
               log(:error, "backtrace: #{$!.backtrace.first}")
               raise $!

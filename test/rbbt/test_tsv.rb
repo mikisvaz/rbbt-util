@@ -173,11 +173,32 @@ row1    1
 row2    4
     EOF
 
+    require 'rbbt/sources/organism'
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/, :cast => :to_i, :type => :single, :fields => "Value")
       assert_equal 1, tsv["row1"]
+      tsv = TSV.open(filename, :sep => /\s+/, :cast => :to_i, :type => :single, :fields => ["Value"])
+      assert_equal 1, tsv["row1"]
+      tsv = TSV.open(filename, :sep => /\s+/, :type => :single, :key_field => "Value", :fields => ["Id"])
+      assert_equal "row1", tsv["1"]
     end
   end
+
+  def test_tsv_single_from_flat
+    content =<<-EOF
+#: :type=:flat
+#Id    Value
+row1    1 2
+row2    4
+    EOF
+
+    require 'rbbt/sources/organism'
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :type => :single, :key_field => "Value", :fields => ["Id"])
+      assert_equal "row1", tsv["1"]
+    end
+  end
+
 
   def test_tsv_serializer
     content =<<-EOF

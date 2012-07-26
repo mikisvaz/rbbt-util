@@ -271,6 +271,7 @@ module Annotation
   end
 
   def setup(object, *values)
+    return nil if object.nil?
     object.extend self unless self === object
 
     inputs = Misc.positional2hash(all_annotations, *values)
@@ -303,6 +304,7 @@ module AnnotatedArray
 
   def annotated_array_get_brackets(pos)
     value = annotated_array_clean_get_brackets(pos)
+    return nil if value.nil?
     value = value.dup if value.frozen?
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.all_annotations))

@@ -93,6 +93,7 @@ module Persist
       f = File.open(path, 'rb')
       res = f.read
       f.close
+      res.force_encoding("ASCII-8BIT") if res.respond_to? :force_encoding
       res
     when :array
       res = Open.read(path).split("\n", -1)
@@ -106,8 +107,6 @@ module Persist
       Open.read(path).to_f
     when :integer
       Open.read(path).to_i
-    when :tsv
-      TSV.open(Open.open(path))
     else
       raise "Unknown persistence: #{ type }"
     end
@@ -132,6 +131,7 @@ module Persist
     when :string, :text
       Open.write(path, content)
     when :binary
+      content.force_encoding("ASCII-8BIT") if content.respond_to? :force_encoding
       f = File.open(path, 'wb')
       f.puts content
       f.close

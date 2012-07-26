@@ -1,7 +1,10 @@
 require 'rbbt/util/chain_methods'
+require 'yaml'
 module TSV
   extend ChainMethods
   self.chain_prefix = :tsv
+
+  NIL_YAML = "--- \n"
 
   attr_accessor :unnamed, :serializer_module, :entity_options
 
@@ -278,7 +281,8 @@ attr_accessor :#{entry}
 
 def #{ entry }
   if not defined? @#{entry}
-    @#{entry} = YAML.load(self.tsv_clean_get_brackets('#{key}') || nil.to_yaml)
+    value = self.tsv_clean_get_brackets('#{key}') || NIL_YAML
+    @#{entry} = YAML.load(value)
   end
   @#{entry}
 end
@@ -288,7 +292,7 @@ if '#{entry}' == 'serializer'
 
   def #{ entry }=(value)
     @#{entry} = value
-    self.tsv_clean_set_brackets '#{key}', value.to_yaml
+    self.tsv_clean_set_brackets '#{key}', value.nil? ? NIL_YAML : value.to_yaml
 
     return if value.nil?
 
@@ -324,7 +328,7 @@ if '#{entry}' == 'serializer'
 else
   def #{ entry }=(value)
     @#{entry} = value
-    self.tsv_clean_set_brackets '#{key}', value.to_yaml
+    self.tsv_clean_set_brackets '#{key}', value.nil? ? NIL_YAML : value.to_yaml
   end
 end
 "
@@ -341,7 +345,7 @@ end
     :serializer
 
   def fields
-    @fields ||= YAML.load(self.tsv_clean_get_brackets("__tsv_hash_fields") || nil.to_yaml)
+    @fields ||= YAML.load(self.tsv_clean_get_brackets("__tsv_hash_fields") || "--- \n")
     if @fields.nil? or @unnamed
       @fields
     else

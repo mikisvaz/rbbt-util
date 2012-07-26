@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+
 code_file = ARGV[0]
 output = ARGV[1]
 
@@ -13,7 +14,11 @@ code = case
        end
 
 begin
-  data = eval code
+  if code_file.nil?
+    data = instance_eval code
+  else
+    data = instance_eval code, code_file
+  end
 rescue Exception
   puts "#:rbbt_exec Error"
   puts $!.message
