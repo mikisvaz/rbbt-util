@@ -37,15 +37,6 @@ to:
 in vi:
   :%s/@mod.name/@mod.to_s.sub(\/#<Class:\/,'').sub(\/>$\/,'')/
 
-rb_Digest_MD5_Init
-==================
-
-comment files
-~/.rvm/src/ruby-1.9.3-head/ext/digest/md5/md5.h
-~/.rvm/src/ruby-1.9.3-head/ext/digest/sha1/sha1.h
-
-cd ~/.rvm/src/ruby-1.9.3-head/; make && make install
-
 png
 ===
 
@@ -63,6 +54,16 @@ rvm
 rvm pkg install openssl
 rvm pkg install libyaml
 rvm reinstall 1.9.3-head -C --with-openssl-dir=$rvm_path/usr
+
+rb_Digest_MD5_Init
+==================
+
+comment files
+~/.rvm/src/ruby-1.9.3-head/ext/digest/md5/md5.h
+~/.rvm/src/ruby-1.9.3-head/ext/digest/sha1/sha1.h
+
+cd ~/.rvm/src/ruby-1.9.3-head/; make && make install
+
 
 YAML
 ====

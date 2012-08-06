@@ -161,6 +161,24 @@ module Open
 
   # Open Read Write
 
+  def self.clean_cache(url, options = {})
+    options = Misc.add_defaults options, :noz => false, :mode => 'r'
+
+    wget_options = options[:wget_options] || {}
+    wget_options[:nice] = options.delete(:nice)
+    wget_options[:nice_key] = options.delete(:nice_key)
+    wget_options[:quiet] = options.delete(:quiet)
+    wget_options["--post-data="] = options.delete(:post) if options.include? :post
+    wget_options["--post-file"] = options.delete("--post-file") if options.include? "--post-file"
+    wget_options["--post-file="] = options.delete("--post-file=") if options.include? "--post-file="
+    wget_options[:cookies] = options.delete(:cookies)
+
+    cache_file = in_cache(url, wget_options)
+    Misc.lock(cache_file) do
+      FileUtils.rm(cache_file)
+    end if cache_file
+  end
+
   def self.open(url, options = {})
     options = Misc.add_defaults options, :noz => false, :mode => 'r'
 
