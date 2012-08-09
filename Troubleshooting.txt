@@ -1,0 +1,27 @@
+
+Writing on a tokyocabinet db hangs
+==================================
+
+This might be due to a different process holding the database open. Use the
+write_and_close and read_and_close, and make sure that when workflows that
+fork processes and define connections to databases close these databases
+before starting to issue jobs. 
+
+Example from workflows/MutEval/workflow.rb
+
+  CACHES = {
+    :mutation_assessor => Persist.open_tokyocabinet(File.join(CACHE_DIR, 'mutation_assessor'), false, :string),
+    :sift => Persist.open_tokyocabinet(File.join(CACHE_DIR, 'sift'), false, :string),
+    :polyphen => Persist.open_tokyocabinet(File.join(CACHE_DIR, 'polyphen'), false, :string)
+  }
+  CACHES.values.each{|db| db.close} # Close the databases
+
+
+Entity templates are not used
+=============================
+
+Check if you are running on a directory with its own 'www' directory and that might redefine it.
+Local templates take preference over entity templates. This is common when running a server from
+the workflow directory; the workflow templates go after entity templates, but local templates go 
+first.
+
