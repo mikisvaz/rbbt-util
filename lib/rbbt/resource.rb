@@ -29,7 +29,11 @@ module Resource
 
   def resource_method_missing(name, prev = nil, *args)
     # Fix problem with ruby 1.9 calling methods by its own initiative. ARG
-    root.send(name, prev, *args)
+    if prev.nil?
+      root.send(name, *args)
+    else
+      root.send(name, prev, *args)
+    end
   end
 
   def [](file = nil)
