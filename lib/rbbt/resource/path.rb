@@ -128,8 +128,8 @@ module Path
     path
   end
 
-  def read
-    Open.read(self.produce.find)
+  def read(&block)
+    Open.read(self.produce.find, &block)
   end
 
   def open(options = {})

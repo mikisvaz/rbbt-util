@@ -9,7 +9,7 @@ to:
 
 
 
-tokyocabinet
+tokyocabinet (rbbt-util test complain about no block given to each)
 ============
 
 vi ~/.rvm/gems/ruby-1.9.3-head/gems/tokyocabinet-1.29/tokyocabinet.c
