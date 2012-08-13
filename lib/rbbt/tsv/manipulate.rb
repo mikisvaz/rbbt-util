@@ -181,7 +181,14 @@ module TSV
         if not traverser.new_field_names.nil? 
           case type
           when :double, :list
-            NamedArray.setup value, traverser.new_field_names, key, entity_options
+            if value.frozen?
+              Log.warn "Value frozen: #{ value }"
+            end
+            if value.nil?
+              nil
+            else
+              NamedArray.setup value, traverser.new_field_names, key, entity_options
+            end
           when :flat, :single
             Misc.prepare_entity(value, traverser.new_field_names.first, entity_options)
           end

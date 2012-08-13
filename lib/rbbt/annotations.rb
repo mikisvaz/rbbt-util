@@ -162,7 +162,8 @@ module Annotated
     case
     when (Annotated === annotations and not (AnnotatedArray === annotations and annotations.double_array))
       tsv = TSV.setup({}, :key_field => "List", :fields => fields, :type => :list, :unnamed => true)
-      tsv[annotations.id] = annotations.tsv_values(*fields)
+      annot_id = annotations.id
+      tsv[annot_id] = annotations.tsv_values(*fields)
     when Array === annotations 
       tsv = TSV.setup({}, :key_field => "ID", :fields => fields, :type => :list, :unnamed => true)
       annotations.compact.each do |annotation|
