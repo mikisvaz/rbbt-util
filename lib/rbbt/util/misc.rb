@@ -561,6 +561,21 @@ end
     }.compact * "#"
   end
 
+  def self.hash2GET_params(hash)
+    hash.sort_by{|k,v| k.to_s}.collect{|k,v| 
+      next unless %w(Symbol String Float Fixnum Integer TrueClass FalseClass Module Class Object Array).include? v.class.to_s
+      v = case 
+          when Symbol === v
+            ":" << v.to_s
+          when Array === v
+            v * ","
+          else
+            v.to_s
+          end
+      [ Symbol === k ? k.to_s : k,  v] * "="
+    }.compact * "&"
+  end
+
   def self.path_relative_to(basedir, path)
     path = File.expand_path(path)
     basedir = File.expand_path(basedir)
