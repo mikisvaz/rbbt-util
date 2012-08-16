@@ -75,3 +75,6 @@
     mkdir -p ~/git/workflows
     echo "~/git/workflows/" > ~/.rbbt/etc/workflow_dir
 
+6- - Place some other files
+
+    /home/mvazquezg/.rbbt/share/databases/InterPro/pfam_names

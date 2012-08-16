@@ -156,7 +156,7 @@ class FixWidthTable
       idx = idx - 1
     end
 
-    idx
+    idx.to_i
   end
 
   def get_range(pos)
