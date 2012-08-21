@@ -131,10 +131,11 @@ module TSV
       progress_monitor = nil
     end
 
-    while not line.nil?
+    while not line.nil? 
       begin
         progress_monitor.tick(stream.pos) if progress_monitor 
 
+        line = Misc.fixutf8(line)
         line = parser.process line
         parts = parser.chop_line line
         key, values = parser.get_values parts
@@ -142,8 +143,12 @@ module TSV
         parser.add_to_data data, key, values
         line = stream.gets
       rescue Parser::SKIP_LINE
-        line = stream.gets
-        next
+        begin
+          line = stream.gets
+          next
+        rescue IOError
+          break
+        end
       rescue Parser::END_PARSING
         break
       rescue IOError

@@ -94,6 +94,7 @@ module Workflow
       require_local_workflow(wf_name) 
     rescue Exception
       Log.debug $!.message 
+      Log.debug $!.backtrace.first
       raise "Workflow not found: #{ wf_name }" if wf_name == wf_name.downcase
       Log.debug "Trying with downcase: '#{wf_name.downcase}'"
       begin

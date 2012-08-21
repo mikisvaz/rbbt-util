@@ -517,7 +517,7 @@ end
     ensure
       result = RubyProf.stop
       printer = RubyProf::FlatPrinter.new(result)
-      printer.print(STDOUT, 0)
+      printer.print(STDOUT)
     end
 
     res
