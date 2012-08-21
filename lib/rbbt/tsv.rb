@@ -72,13 +72,13 @@ module TSV
   end
 
   def self.parse(stream, data, options = {})
-    monitor, grep = Misc.process_options options, :monitor, :grep
+    monitor, grep, invert_grep = Misc.process_options options, :monitor, :grep, :invert_grep
 
     parser = Parser.new stream, options
 
     if grep
       stream.rewind
-      stream = Open.grep(stream, grep)
+      stream = Open.grep(stream, grep, invert_grep)
       parser.first_line = stream.gets
     end
 

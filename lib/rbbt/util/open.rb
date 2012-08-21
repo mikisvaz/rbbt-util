@@ -109,20 +109,20 @@ module Open
 
   # Grep
   
-  def self.grep(stream, grep)
+  def self.grep(stream, grep, invert = false)
     case 
     when Array === grep
       TmpFile.with_file(grep * "\n", false) do |f|
-        CMD.cmd("grep", "-w" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
+        CMD.cmd("grep #{invert ? '-v' : ''}", "-w" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
       end
     else
-      CMD.cmd("grep '#{grep}' -", :in => stream, :pipe => true, :post => proc{stream.force_close if stream.respond_to? :force_close})
+      CMD.cmd("grep #{invert ? '-v ' : ''} '#{grep}' -", :in => stream, :pipe => true, :post => proc{stream.force_close if stream.respond_to? :force_close})
     end
   end
   
-  def self.file_open(file, grep, mode = 'r')
+  def self.file_open(file, grep, mode = 'r', invert_grep = false)
     if grep
-      grep(File.open(file, mode), grep)
+      grep(File.open(file, mode), grep, invert_grep)
     else
       File.open(file, mode)
     end
@@ -197,19 +197,19 @@ module Open
          when (IO === url or StringIO === url)
            url
          when (not remote?(url))
-           file_open(url, options[:grep], mode)
+           file_open(url, options[:grep], mode, options[:invert_grep])
          when (options[:nocache] and options[:nocache] != :update)
            # What about grep?
            wget(url, wget_options)
          when (options[:nocache] != :update and in_cache(url, wget_options))
            Misc.lock(in_cache(url, wget_options)) do
-             file_open(in_cache(url, wget_options), options[:grep], mode)
+             file_open(in_cache(url, wget_options), options[:grep], mode, options[:invert_grep])
            end
          else
            io = wget(url, wget_options)
            add_cache(url, io, wget_options)
            io.close
-           file_open(in_cache(url, wget_options), options[:grep], mode)
+           file_open(in_cache(url, wget_options), options[:grep], mode, options[:invert_grep])
          end
     io = unzip(io)  if ((String === url and zip?(url))  and not options[:noz]) or options[:zip]
     io = gunzip(io) if ((String === url and gzip?(url)) and not options[:noz]) or options[:gzip]

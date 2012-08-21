@@ -333,6 +333,20 @@ b 2
     end
   end
 
+  def test_grep_invert
+    content =<<-EOF
+#: :sep=/\\s+/#:type=:single
+#Id Value
+a 1
+b 2
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :key_field => "Value", :grep => "#\\|2", :invert_grep => true)
+      assert(! tsv.include?("2"))
+    end
+  end
+
   def test_grep_header
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single#:namespace=Test
