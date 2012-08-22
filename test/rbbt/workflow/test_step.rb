@@ -41,11 +41,51 @@ class TestStep < Test::Unit::TestCase
       step2 = Step.new tmpfile + 'step2', task2, [], step1
 
       step1.clean
-      sleep 1
       step2.run
       assert_equal "TEST2", Open.read(tmpfile + 'step2')
     end
   end
+
+  def test_dependency_log_relay
+    str = "TEST"
+    TmpFile.with_file do |tmpfile|
+      task1  = Task.setup :result_type => nil, :name => :task1 do 
+        log(:starting_task1, "Starting Task1")
+        Open.write(tmpfile, str); 
+      end
+      step1 = Step.new tmpfile + 'step1', task1
+
+      task2  = Task.setup :result_type => :string, :name => :task1 do 
+        Open.read(tmpfile) 
+      end
+      step2 = Step.new tmpfile + 'step2', task2, [], [step1]
+
+      step2.run
+      assert step2.messages.include? "task1>Starting Task1"
+    end
+  end
+
+  def test_log_relay_step
+    str = "TEST"
+    TmpFile.with_file do |tmpfile|
+      task1  = Task.setup :result_type => nil, :name => :task1 do 
+        log(:starting_task1, "Starting Task1")
+        Open.write(tmpfile, str); 
+      end
+      step1 = Step.new tmpfile + 'step1', task1
+
+
+      task2  = Task.setup :result_type => :string, :name => :task1 do 
+        Open.read(tmpfile) 
+      end
+      step2 = Step.new tmpfile + 'step2', task2, [], [step1]
+
+      Step.log_relay_step = step2
+      step2.run
+      assert step2.messages.include? "task1>Starting Task1"
+    end
+  end
+
 
   def test_exec
     TmpFile.with_file do |lock|

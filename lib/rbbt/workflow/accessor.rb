@@ -54,12 +54,14 @@ class Step
     set_info(:messages, (messages || []) << message)
   end
 
-  def log(status, message = nil)
+  def log(status, message = nil, do_log = true)
+
     if message
       Log.low "[#{ status }] #{ message }: #{path}"
     else
       Log.low "[#{ status }]: #{path}"
-    end
+    end if do_log
+
     self.status = status
     message(message) unless message.nil?
   end

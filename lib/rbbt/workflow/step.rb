@@ -24,6 +24,26 @@ class Step
     @inputs = inputs || []
   end
 
+  class << self
+    attr_accessor :log_relay_step
+  end
+
+  def relay_log(step)
+    return self unless Task === self.task and not self.task.name.nil?
+    if not self.respond_to? :original_log
+      class << self
+        attr_accessor :relay_step
+        alias original_log log 
+        def log(status, message = nil, do_log = true)
+          original_log(status, message, do_log)
+          relay_step.log([task.name.to_s, status.to_s] * ">", message.nil? ? nil : [task.name.to_s, message] * ">", false)
+        end
+      end
+    end
+    @relay_step = step
+    self
+  end
+
   def prepare_result(value, description = nil, info = {})
     return value if description.nil?
     Entity.formats[description].setup(value, info.merge(:format => description)) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? description
@@ -54,16 +74,21 @@ class Step
 
   def run(no_load = false)
     result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path}.uniq, :no_load => no_load do
+      if Step === Step.log_relay_step and not self == Step.log_relay_step
+        relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
+      end
+
       FileUtils.rm info_file if File.exists? info_file
-      log(:starting, "Starting task: #{task.name || "unnamed task"}")
+      log(:dependencies, "Checking dependencies for task: #{task.name || "unnamed task"}")
 
       set_info :dependencies, @dependencies.collect{|dep| [dep.task.name, dep.name]}
       @dependencies.each{|dependency| 
         log dependency.task.name || "dependency", "Processing dependency: #{ dependency.path }"
+        dependency.relay_log self
         dependency.run true
       }
       
-      set_info :status, :started
+      log(:started, "Starting task: #{task.name || "unnamed task"}")
 
       set_info :started, Time.now
       
