@@ -191,6 +191,19 @@ module TSV
     end
   end
 
+  def chunked_values_at(keys, max = 5000)
+    Misc.divide(keys, (keys.length.to_f / max).ceil).inject(nil) do |acc,c|
+      new = self.values_at(*c)
+      if acc.nil?
+        acc = new
+      else
+        acc.concat(new)
+      end
+    end
+  end
+
+
+
   #{{{ Sorting
 
   def tsv_sort_by(field = nil, just_keys = false, &block)
