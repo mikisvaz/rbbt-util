@@ -83,7 +83,7 @@ class Step
 
       set_info :dependencies, @dependencies.collect{|dep| [dep.task.name, dep.name]}
       @dependencies.each{|dependency| 
-        log dependency.task.name || "dependency", "Processing dependency: #{ dependency.path }"
+        log [task.name.to_s, dependency.task.name.to_s] * ">" || "dependency", "Processing dependency: #{ dependency.path }"
         dependency.relay_log self
         dependency.run true
       }
