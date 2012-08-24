@@ -307,9 +307,11 @@ module AnnotatedArray
     value = annotated_array_clean_get_brackets(pos)
     return nil if value.nil?
     value = value.dup if value.frozen?
+
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.all_annotations))
-    end
+    end if String === value or Array === value
+
     if Annotated === value
       value.context = self.context
       value.container = self
@@ -322,9 +324,11 @@ module AnnotatedArray
     i = 0
     annotated_array_clean_each do |value|
       value = value.dup if value.frozen? and not value.nil?
+
       annotation_types.each do |mod|
         mod.setup(value, info)
-      end
+      end if String === value or Array === value
+      
       if Annotated === value
         value.context = self.context
         value.container = self
@@ -363,7 +367,7 @@ module AnnotatedArray
 
     annotation_types.each do |mod|
       mod.setup(res, *info.values_at(*mod.annotations))
-    end
+    end 
 
     res.context = self.context
     res.container = self.container
@@ -382,6 +386,7 @@ module AnnotatedArray
     annotation_types.each do |mod|
       mod.setup(res, *info.values_at(*mod.annotations))
     end
+
     res.context = self.context
     res.container = self.container
 
@@ -395,7 +400,7 @@ module AnnotatedArray
 
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.all_annotations))
-    end
+    end if String === value or Array === value
 
     value.context = self.context
     value.container = self.container
@@ -410,7 +415,7 @@ module AnnotatedArray
 
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
-    end
+    end if String === value or Array === value
 
     value.context = self.context
     value.container = self.container
@@ -425,7 +430,7 @@ module AnnotatedArray
 
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
-    end
+    end if String === value or Array === value
 
     value.context = self.context
     value.container = self.container
@@ -440,7 +445,7 @@ module AnnotatedArray
 
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
-    end
+    end if String === value or Array === value
 
     value.context = self.context
     value.container = self.container
@@ -455,7 +460,7 @@ module AnnotatedArray
 
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
-    end
+    end if String === value or Array === value
 
     value.context = self.context
     value.container = self.container
@@ -470,7 +475,7 @@ module AnnotatedArray
 
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
-    end
+    end if String === value or Array === value
 
     value.context = self.context
     value.container = self.container
@@ -485,7 +490,7 @@ module AnnotatedArray
 
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
-    end
+    end if String === value or Array === value
 
     value.context = self.context
     value.container = self.container
@@ -500,7 +505,7 @@ module AnnotatedArray
 
     annotation_types.each do |mod|
       mod.setup(value, *info.values_at(*mod.annotations))
-    end
+    end if String === value or Array === value
 
     value.extend AnnotatedArray if AnnotatedArray === self
 
