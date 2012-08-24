@@ -79,11 +79,9 @@ class Step
       end
 
       FileUtils.rm info_file if File.exists? info_file
-      log(:dependencies, "Checking dependencies for task: #{task.name || "unnamed task"}")
 
       set_info :dependencies, @dependencies.collect{|dep| [dep.task.name, dep.name]}
       @dependencies.each{|dependency| 
-        log [task.name.to_s, dependency.task.name.to_s] * ">" || "dependency", "Processing dependency: #{ dependency.path }"
         dependency.relay_log self
         dependency.run true
       }
