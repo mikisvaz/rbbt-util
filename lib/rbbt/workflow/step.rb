@@ -95,6 +95,7 @@ class Step
       res = begin
               exec
             rescue Step::Aborted
+              log(:error, "Aborted")
               raise $!
             rescue Exception
               backtrace = $!.backtrace

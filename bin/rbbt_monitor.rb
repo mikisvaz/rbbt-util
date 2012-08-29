@@ -26,7 +26,7 @@ def print_job(file, info)
     puts clean_file
   else
     str = [clean_file, info[:status].to_s] * " [ STATUS = " + " ]" 
-    str += " (#{running?(info)? :running : :zombie})" if info.include? :pid
+    str += " (#{running?(info)? :running : :zombie} #{info[:pid]})" if info.include? :pid
     puts str
   end
 end
