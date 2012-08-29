@@ -12,6 +12,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   rbbt_query.rb
   rbbt_exec.rb
   rbbt_Rutil.rb
+  rbbt_monitor.rb
  }
  lib=lib{
   rbbt.rb
@@ -86,11 +87,23 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   test_helper.rb
   test_rbbt.rb
   rbbt=rbbt{
+   test_annotations.rb
    test_fix_width_table.rb
+   test_persist.rb
    test_resource.rb
    test_tsv.rb
+   test_workflow.rb
+   tsv=tsv{
+    test_accessor.rb
+    test_attach.rb
+    test_filter.rb
+    test_index.rb
+    test_manipulate.rb
+    test_util.rb
+    }
    util=util{
     test_R.rb
+    test_chain_methods.rb
     test_cmd.rb
     test_excel2tsv.rb
     test_filecache.rb

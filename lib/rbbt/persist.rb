@@ -207,21 +207,19 @@ module Persist
         else
           entities = yield
 
-          Misc.lock(repo.persistence_path) do
-            repo.write_and_close do 
-              case
-              when entities.nil?
-                repo[subkey + "NIL"] = nil
-              when entities.empty?
-                repo[subkey + "EMPTY"] = nil
-              when (not Array === entities or AnnotatedArray === entities)
-                tsv_values = entities.tsv_values("literal", "annotation_types", "JSON") 
-                repo[subkey + entities.id << ":" << "SINGLE"] = tsv_values
-              else
-                entities.each do |e|
-                  tsv_values = e.tsv_values("literal", "annotation_types", "JSON") 
-                  repo[subkey + e.id] = tsv_values
-                end
+          repo.write_and_close do 
+            case
+            when entities.nil?
+              repo[subkey + "NIL"] = nil
+            when entities.empty?
+              repo[subkey + "EMPTY"] = nil
+            when (not Array === entities or AnnotatedArray === entities)
+              tsv_values = entities.tsv_values("literal", "annotation_types", "JSON") 
+              repo[subkey + entities.id << ":" << "SINGLE"] = tsv_values
+            else
+              entities.each do |e|
+                tsv_values = e.tsv_values("literal", "annotation_types", "JSON") 
+                repo[subkey + e.id] = tsv_values
               end
             end
           end
@@ -230,23 +228,23 @@ module Persist
         end
 
       else
-        Misc.lock(path) do
-          if is_persisted?(path, persist_options)
-            Log.debug "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
-            return nil if persist_options[:no_load]
-            return load_file(path, type) 
-          else
-            Log.debug "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
-          end
-          begin
-            res = yield
+        if is_persisted?(path, persist_options)
+          Log.debug "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
+          return nil if persist_options[:no_load]
+          return load_file(path, type) 
+        else
+          Log.debug "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
+        end
+        begin
+          res = yield
+          Misc.lock(path) do
             save_file(path, type, res)
-            res
-          rescue
-            Log.high "Error in persist. Erasing '#{ path }'"
-            FileUtils.rm path if File.exists? path
-            raise $!
           end
+          res
+        rescue
+          Log.high "Error in persist. Erasing '#{ path }'"
+          FileUtils.rm path if File.exists? path
+          raise $!
         end
       end
 

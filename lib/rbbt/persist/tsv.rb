@@ -82,13 +82,15 @@ module Persist
         end
 
         def write_and_close
-          write if @closed or not write?
-          res = begin
-                  yield
-                ensure
-                  close
-                end
-          res
+          Misc.lock(persistence_path) do
+            write if @closed or not write?
+            res = begin
+                    yield
+                  ensure
+                    close
+                  end
+            res
+          end
         end
 
         def read_and_close
@@ -161,10 +163,8 @@ module Persist
 
     begin
       if data.respond_to? :persistence_path and data != persist_options[:data]
-        Misc.lock data.persistence_path do
-          data.write_and_close do
-            yield data
-          end
+        data.write_and_close do
+          yield data
         end
       else
         yield data

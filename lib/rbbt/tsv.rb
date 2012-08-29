@@ -43,6 +43,9 @@ module TSV
 
     Log.debug "TSV open: #{ filename } - #{options.inspect}"
 
+    data = nil
+
+    Misc.lock filename  do
     data = Persist.persist_tsv source, filename, options, persist_options do |data|
       if serializer
         data.extend TSV unless TSV === data
@@ -60,6 +63,7 @@ module TSV
       end
 
       data
+    end
     end
 
     data.unnamed = unnamed unless unnamed.nil?
