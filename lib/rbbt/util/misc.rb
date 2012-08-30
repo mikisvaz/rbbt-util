@@ -561,6 +561,15 @@ end
     }.compact * "#"
   end
 
+  def self.GET_params2hash(string)
+    hash = {}
+    string.split('&').collect{|item|
+      key, value = item.split("=").values_at 0, 1
+      hash[key] = CGI.unescape(value)
+    }
+    hash
+  end
+
   def self.hash2GET_params(hash)
     hash.sort_by{|k,v| k.to_s}.collect{|k,v| 
       next unless %w(Symbol String Float Fixnum Integer TrueClass FalseClass Module Class Object Array).include? v.class.to_s
@@ -570,7 +579,7 @@ end
           when Array === v
             v * ","
           else
-            v.to_s
+            CGI.escape(v.to_s)
           end
       [ Symbol === k ? k.to_s : k,  v] * "="
     }.compact * "&"
