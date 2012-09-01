@@ -9,7 +9,8 @@ require 'digest/md5'
 module Misc
   class FieldNotFoundError < StandardError;end
 
-  COLOR_LIST = %w(red green blue black yellow pink purple)
+  COLOR_LIST = %w(red green blue black yellow pink purple orange beige) 
+
   def self.colors_for(list)
     unused = COLOR_LIST.dup
 
@@ -565,7 +566,7 @@ end
     hash = {}
     string.split('&').collect{|item|
       key, value = item.split("=").values_at 0, 1
-      hash[key] = CGI.unescape(value)
+      hash[key] = value.nil? ? "" : CGI.unescape(value)
     }
     hash
   end
