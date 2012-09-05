@@ -95,10 +95,10 @@ module Workflow
     rescue Exception
       Log.debug $!.message 
       Log.debug $!.backtrace.first
-      raise "Workflow not found: #{ wf_name }" if wf_name == wf_name.downcase
-      Log.debug "Trying with downcase: '#{wf_name.downcase}'"
+      raise "Workflow not found: #{ wf_name }" if wf_name == Misc.humanize(wf_name)
+      Log.debug "Trying with humanized: '#{Misc.humanize wf_name}'"
       begin
-        require_local_workflow(wf_name.downcase)
+        require_local_workflow(Misc.humanize(wf_name))
       rescue Exception
         Log.debug $!.message
         raise "Workflow not found: #{ wf_name }"

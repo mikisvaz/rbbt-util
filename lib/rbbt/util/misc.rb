@@ -9,6 +9,10 @@ require 'digest/md5'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.humanize(string)
+    string.gsub(/([a-z])([A-Z])/,'\1_\2').downcase
+  end
+
   COLOR_LIST = %w(red green blue black yellow pink purple orange beige) 
 
   def self.colors_for(list)
@@ -471,7 +475,11 @@ end
   end
 
   def self.zip2hash(list1, list2)
-    array2hash(list1.zip(list2))
+    hash = {}
+    list1.each_with_index do |e,i|
+      hash[e] = list2[i]
+    end
+    hash
   end
 
   def self.process_to_hash(list)

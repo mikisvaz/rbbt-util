@@ -4,6 +4,10 @@ require 'test/unit'
 
 class TestMisc < Test::Unit::TestCase
 
+  def test_humanize
+    assert_equal "mutation_enrichment", Misc.humanize("MutationEnrichment")
+  end
+
   def test_fixutf8
     string = "abc\xffdef"
     string = string.force_encoding("UTF-8") if string.respond_to? :force_encoding
