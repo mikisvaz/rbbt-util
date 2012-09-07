@@ -10,9 +10,13 @@ module TSV
       with_unnamed do
         through do |key, values|
           if other.include? key
-            new_values = other[key].values_at *field_positions
-            new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
-            new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
+            if other.type == :flat
+              new_values = [other[key]]
+            else
+              new_values = other[key].values_at *field_positions
+              new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
+              new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
+            end
             self[key] = self[key].concat new_values
           else
             if type == :double
