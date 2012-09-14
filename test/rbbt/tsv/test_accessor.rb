@@ -175,4 +175,13 @@ row3    A|AA|AAA|AAA    B    Id3    3
     end
   end
 
+  def test_chunked_values_at
+    tsv = TSV.setup({})
+    10.times do |i|
+      tsv[i] = i
+    end
+    pos = tsv.chunked_values_at (0..10-1).to_a, 2
+    assert_equal (0..10-1).to_a, pos
+  end
+
 end

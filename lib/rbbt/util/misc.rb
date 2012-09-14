@@ -13,7 +13,7 @@ module Misc
     string.gsub(/([a-z])([A-Z])/,'\1_\2').downcase
   end
 
-  COLOR_LIST = %w(red green blue black yellow pink purple orange beige) 
+  COLOR_LIST = %w(#BEBADA #FB8072 #80B1D3 #FDB462 #B3DE69 #FCCDE5 #D9D9D9 #BC80BD #CCEBC5 #FFED6F #8DD3C7 #FFFFB3)
 
   def self.colors_for(list)
     unused = COLOR_LIST.dup
@@ -855,6 +855,21 @@ end
     }
     chunks
   end
+
+  # Divides the array into +num+ chunks of the same size by placing one
+  # element in each chunk iteratively.
+  def self.ordered_divide(array, num)
+    last = array.length - 1
+    chunks = []
+    current = 0
+    while current <= last
+      next_current = [last, current + num - 1].min
+      chunks << array[current..next_current]
+      current = next_current + 1
+    end
+    chunks
+  end
+
 
   def self.zip_fields(array)
     return [] if array.empty?

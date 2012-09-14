@@ -192,7 +192,7 @@ module TSV
   end
 
   def chunked_values_at(keys, max = 5000)
-    Misc.divide(keys, (keys.length.to_f / max).ceil).inject([]) do |acc,c|
+    Misc.ordered_divide(keys, max).inject([]) do |acc,c|
       new = self.values_at(*c)
       new.annotate acc if new.respond_to? :annotate and acc.empty?
       acc.concat(new)
