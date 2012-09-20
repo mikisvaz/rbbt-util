@@ -69,6 +69,10 @@ class FixWidthTable
   end
   alias << add
 
+  def last_pos
+    pos(size - 1)
+  end
+
   def pos(index)
     return nil if index < 0 or index >= size
     @file.seek(5 + (record_size) * index, IO::SEEK_SET)
