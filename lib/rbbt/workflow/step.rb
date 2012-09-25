@@ -114,7 +114,11 @@ class Step
       res
     end
 
-    prepare_result result, @task.result_description, info
+    if no_load
+      self
+    else
+      prepare_result result, @task.result_description, info
+    end
   end
 
   def fork

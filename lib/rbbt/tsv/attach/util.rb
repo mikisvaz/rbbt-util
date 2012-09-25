@@ -252,7 +252,7 @@ module TSV
               if values.nil?
                 nil
               else
-                next_index.values_at(*values).flatten.collect
+                next_index.values_at(*values).flatten.collect.to_a
               end
             end
             current_index.fields = [next_key]
