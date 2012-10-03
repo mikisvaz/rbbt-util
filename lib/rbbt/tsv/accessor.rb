@@ -291,8 +291,7 @@ attr_accessor :#{entry}
 
 def #{ entry }
   if not defined? @#{entry}
-    value = self.tsv_clean_get_brackets('#{key}') || NIL_YAML
-    @#{entry} = YAML.load(value)
+    @#{entry} = (value = self.tsv_clean_get_brackets('#{key}')).nil? ? nil : YAML.load(value)
   end
   @#{entry}
 end

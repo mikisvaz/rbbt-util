@@ -752,9 +752,9 @@ end
 
   def self.process_options(hash, *keys)
     if keys.length == 1
-      hash.delete keys.first.to_sym
+      hash.include?(keys.first.to_sym) ? hash.delete(keys.first.to_sym) : hash.delete(keys.first.to_s) 
     else
-      keys.collect do |key| hash.delete(key.to_sym) || hash.delete(key.to_s) end
+      keys.collect do |key| hash.include?(key.to_sym) ? hash.delete(key.to_sym) : hash.delete(key.to_s) end
     end
   end
 
