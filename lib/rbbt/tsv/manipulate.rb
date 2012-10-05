@@ -445,10 +445,16 @@ module TSV
       when type == :flat
         self[key] = new_values
       else
-        values[field_pos].replace new_values
+        if (String === values[field_pos] and String === new_values) or
+          (Array === values[field_pos] and Array === new_values) 
+           values[field_pos].replace new_values
+        else
+          values[field_pos] = new_values
+        end
         self[key] = values
       end
     end
+    self
   end
 
   def add_field(name = nil)
