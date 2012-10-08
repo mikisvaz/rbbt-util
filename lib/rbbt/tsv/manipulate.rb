@@ -287,7 +287,7 @@ module TSV
     elems.sort_by{|k,v| v}.collect{|k,v| k}
   end
 
-  def select(method = nil)
+  def select(method = nil, &block)
     new = TSV.setup({}, :key_field => key_field, :fields => fields, :type => type, :filename => filename, :identifiers => identifiers)
 
     new.key_field = key_field
@@ -327,24 +327,48 @@ module TSV
       end
     when String === method
       if block_given?
-        with_unnamed do
-          case
-          when (method == key_field or method == :key)
-            through do |key, values|
-              new[key] = values if yield(key)
+        case 
+        when block.arity == 1
+          with_unnamed do
+            case
+            when (method == key_field or method == :key)
+              through do |key, values|
+                new[key] = values if yield(key)
+              end
+            when (type == :single or type == :flat)
+              through do |key, value|
+                new[key] = value if yield(value)
+              end
+            else
+              pos = identify_field method
+              through do |key, values|
+                new[key] = values if yield(values[pos])
+              end
             end
-          when (type == :single or type == :flat)
-            through do |key, value|
-              new[key] = value if yield(value)
+          end
+        when block.arity == 2
+          with_unnamed do
+            case
+            when (method == key_field or method == :key)
+              through do |key, values|
+                new[key] = values if yield(key, key)
+              end
+            when (type == :single or type == :flat)
+              through do |key, value|
+                new[key] = value if yield(key, value)
+              end
+            else
+              pos = identify_field method
+              through do |key, values|
+                new[key] = values if yield(key, values[pos])
+              end
             end
-          else
-            pos = identify_field method
-            through do |key, values|
-              new[key] = values if yield(values[pos])
-            end
+
           end
 
         end
+
+
       else
         with_unnamed do
           through do |key, values|
@@ -408,6 +432,22 @@ module TSV
       end
  
     end
+
+    new
+  end
+
+  def column(field, cast = nil)
+    new = slice(field)
+
+    new.with_unnamed do
+      new.each do |k,v|
+        nv = v.first 
+        nv = nv.send(cast) unless cast.nil?
+        new[k] = nv
+      end
+    end
+
+    new.type = :single
 
     new
   end
