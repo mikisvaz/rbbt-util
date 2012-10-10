@@ -103,7 +103,7 @@ source "$INSTALL_HELPER_FILE"
             raise "Could not produce #{ resource }. (#{ type }, #{ content })"
           end
         rescue
-          FileUtils.rm path if File.exists? path
+          FileUtils.rm_rf path if File.exists? path
           raise $!
         end
       end
