@@ -9,6 +9,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   tsv.rb
   tchash.rb
   run_workflow.rb
+  show_analysis.rb
   rbbt_query.rb
   rbbt_exec.rb
   rbbt_Rutil.rb
