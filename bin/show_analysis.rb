@@ -28,5 +28,16 @@ WorkflowREST.setup
 include RbbtHTMLHelpers
 $nomenu = true
 get '/' do
-  workflow_render(file, nil, nil, params)
+
+  params.delete "captures"
+  params.delete "splat"
+
+  visualization_parameters = get_visualization_parameters(params)
+
+  cache_type = params.delete(:_cache_type) || params.delete("_cache_type") || :async
+  update = params.delete(:_update) || params.delete("_update") || nil
+
+  cache("Show_analysis", :file => file, :update => update, :cache_type => cache_type, :params => params, :visualization_params => visualization_parameters) do
+    workflow_render(file, nil, nil, params)
+  end
 end
