@@ -103,8 +103,19 @@ module Misc
   def self.prepare_entity(entity, field, options = {})
     return entity unless String === entity or Array === entity
     options ||= {}
+
     dup_array = options.delete :dup_array
-    entity = Entity.formats[field].setup(((entity.frozen? and not entity.nil?) ? entity.dup : ((Array === entity and dup_array) ? entity.collect{|e| e.nil? ? e : e.dup} : entity) ), options.merge({:format => field})) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? field
+
+    if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? field
+      params = IndiferentHash.setup(options.dup)
+      params.merge(:format => field) unless params.include? :format
+
+      entity = Entity.formats[field].setup(
+        ((entity.frozen? and not entity.nil?) ? entity.dup : ((Array === entity and dup_array) ? entity.collect{|e| e.nil? ? e : e.dup} : entity) ),
+        params
+      ) 
+    end
+
     entity
   end
 
@@ -225,7 +236,8 @@ module Misc
       inputs = Misc.zip2hash(keys, values)
       inputs.delete_if{|k,v| v.nil?}
       inputs = Misc.add_defaults inputs, extra
-      inputs.delete_if{|k,v| not keys.include? k}
+      inputs.delete_if{|k,v| not keys.include?(k) and not (Symbol === k ? keys.include?(k.to_s) : keys.include?(k.to_sym))}
+      inputs
     else
       Misc.zip2hash(keys, values)
     end

@@ -193,6 +193,12 @@ class TestMisc < Test::Unit::TestCase
   def test_ordered_divide
     assert_equal 5, Misc.ordered_divide(%w(1 2 3 4 5 6 7 8 9),2).length
   end
+
+  def test_setup
+    require 'rbbt/entity/gene'
+    g = Misc.prepare_entity("TP53", "Gene", :format => "Associated Gene Name", "organism" => "Hsa/jun2011")
+  end
+
 #
 #  def test_process_to_hash
 #    list = [1,2,3,4]
