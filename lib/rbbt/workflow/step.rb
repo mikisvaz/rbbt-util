@@ -82,8 +82,17 @@ class Step
 
       set_info :dependencies, @dependencies.collect{|dep| [dep.task.name, dep.name]}
       @dependencies.each{|dependency| 
-        dependency.relay_log self
-        dependency.run true
+        begin
+          dependency.relay_log self
+          dependency.run true
+        rescue Exception
+          backtrace = $!.backtrace
+          set_info :backtrace, backtrace 
+          log(:error, "Exception processing dependency #{dependency.path}")
+          log(:error, "#{$!.class}: #{$!.message}")
+          log(:error, "backtrace: #{$!.backtrace.first}")
+          raise "Exception processing dependency #{dependency.path}"
+        end
       }
       
       log(:started, "Starting task: #{task.name || "unnamed task"}")
@@ -98,6 +107,7 @@ class Step
               log(:error, "Aborted")
               raise $!
             rescue Exception
+              ddd "Exception in #{ path }"
               backtrace = $!.backtrace
 
               # HACK: This fixes an strange behaviour in 1.9.3 where some
