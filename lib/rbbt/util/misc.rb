@@ -108,7 +108,7 @@ module Misc
 
     if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? field
       params = IndiferentHash.setup(options.dup)
-      params.merge(:format => field) unless params.include? :format
+      params.merge!(:format => field) unless params.include?(:format) and not ((f = params[:format]).nil? or String === f and f.empty?)
 
       entity = Entity.formats[field].setup(
         ((entity.frozen? and not entity.nil?) ? entity.dup : ((Array === entity and dup_array) ? entity.collect{|e| e.nil? ? e : e.dup} : entity) ),
@@ -234,7 +234,7 @@ module Misc
     if Hash === values.last
       extra = values.pop
       inputs = Misc.zip2hash(keys, values)
-      inputs.delete_if{|k,v| v.nil?}
+      inputs.delete_if{|k,v| v.nil? or (String === v and v.empty?)}
       inputs = Misc.add_defaults inputs, extra
       inputs.delete_if{|k,v| not keys.include?(k) and not (Symbol === k ? keys.include?(k.to_s) : keys.include?(k.to_sym))}
       inputs
