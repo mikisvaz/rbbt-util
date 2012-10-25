@@ -107,7 +107,6 @@ class Step
               log(:error, "Aborted")
               raise $!
             rescue Exception
-              ddd "Exception in #{ path }"
               backtrace = $!.backtrace
 
               # HACK: This fixes an strange behaviour in 1.9.3 where some
