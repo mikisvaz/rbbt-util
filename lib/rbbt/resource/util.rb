@@ -8,7 +8,7 @@ module Path
       l =~ /rbbt\/resource\/path\.rb/ or
       l =~ /rbbt\/util\/misc\.rb/ or
       l =~ /progress-monitor\.rb/ 
-    }.first.sub(/\.rb.*/,'.rb') if file.nil?
+    }.first.sub(/\.rb[^\w].*/,'.rb') if file.nil?
 
     file = File.expand_path file
     return Path.setup(file) if File.exists? File.join(file, relative_to)

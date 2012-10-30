@@ -707,6 +707,7 @@ end
 
       new_options[key] = value 
     end
+
     new_options
   end
 
