@@ -159,7 +159,7 @@ module CMD
         exit(-1)
       rescue Exception
         Log.debug("CMDError: #{$!.message}") if log
-        ddd $!.backtrace if log
+        Log.debug("Backtrace: \n" + $!.backtrace * "\n") if log
         raise CMDError, $!.message
       end
     }
