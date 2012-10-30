@@ -79,6 +79,14 @@ module Annotated
     end
   end
 
+  def self.resolve_array(entry)
+    if entry =~ /^Array:/
+      entry["Array:".length..-1].split("|")
+    else
+      entry
+    end
+  end
+
   def self.load_tsv_values(id, values, *fields)
     fields = fields.flatten
     info = {}
@@ -91,7 +99,7 @@ module Annotated
                id.dup
              end
 
-    object = object["Array:".length..-1].split("|") if object =~ /^Array:/
+    object = resolve_array(object)
 
     if Array === values.first
       Misc.zip_fields(values).collect do |list|
@@ -101,7 +109,7 @@ module Annotated
               info[key.to_sym] = value
             end
           else
-            info[field.to_sym] = list[i]
+            info[field.to_sym] = resolve_array(list[i])
           end
         end
       end
@@ -112,7 +120,7 @@ module Annotated
             info[key.to_sym] = value
           end
         else
-          info[field.to_sym] = values[i]
+          info[field.to_sym] = resolve_array(values[i])
         end
       end
     end

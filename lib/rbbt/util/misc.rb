@@ -860,7 +860,7 @@ end
   # element in each chunk iteratively.
   def self.divide(array, num)
     chunks = []
-    num.times do chunks << [] end
+    num.to_i.times do chunks << [] end
     array.each_with_index{|e, i|
       c = i % num
       chunks[c] << e

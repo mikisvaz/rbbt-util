@@ -37,12 +37,16 @@ module Rake
 
     raise TaskNotFound if Rake::Task[task].nil?
 
-    Misc.in_dir(dir) do
-      Rake::Task[task].invoke
+    t = nil
+    pid = Process.fork{
+      Misc.in_dir(dir) do
+        Rake::Task[task].invoke
 
-      Rake::Task.clear
-      Rake::FileTask.clear_files
-    end
+        Rake::Task.clear
+        Rake::FileTask.clear_files
+      end
+    }
+    Process.wait(pid)
 
   end
 end
