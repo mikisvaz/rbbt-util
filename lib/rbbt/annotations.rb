@@ -174,8 +174,9 @@ module Annotated
       tsv[annot_id] = annotations.tsv_values(*fields)
     when Array === annotations 
       tsv = TSV.setup({}, :key_field => "ID", :fields => fields, :type => :list, :unnamed => true)
-      annotations.compact.each do |annotation|
-        tsv[annotation.id] = annotation.tsv_values(*fields)
+      annotations.compact.each_with_index do |annotation,i|
+        tsv[annotation.id + ":" << i.to_s] = annotation.tsv_values(*fields)
+        #tsv[annotation.id] = annotation.tsv_values(*fields)
       end
     else
       raise "Annotations need to be an Array to create TSV"

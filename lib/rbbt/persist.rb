@@ -199,7 +199,7 @@ module Persist
           Annotated.load_tsv_values(key, values, "literal", "annotation_types", "JSON")
         when keys.any?
           repo.read_and_close do
-            keys.collect{|key|
+            keys.sort_by{|k| k.split(":").last.to_i}.collect{|key|
               v = repo[key]
               Annotated.load_tsv_values(key, v, "literal", "annotation_types", "JSON")
             }
@@ -217,9 +217,9 @@ module Persist
               tsv_values = entities.tsv_values("literal", "annotation_types", "JSON") 
               repo[subkey + entities.id << ":" << "SINGLE"] = tsv_values
             else
-              entities.each do |e|
+              entities.each_with_index do |e,i|
                 tsv_values = e.tsv_values("literal", "annotation_types", "JSON") 
-                repo[subkey + e.id] = tsv_values
+                repo[subkey + e.id << ":" << i] = tsv_values
               end
             end
           end

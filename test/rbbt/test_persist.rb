@@ -11,7 +11,7 @@ end
 
 class TestPersist < Test::Unit::TestCase
 
-  def test_annotation_persist
+  def _test_annotation_persist
     TmpFile.with_file do |tmp|
       entity1 = "Entity 1"
       entity2 = "Entity 2"
@@ -41,7 +41,44 @@ class TestPersist < Test::Unit::TestCase
     end
   end
 
-  def test_bdb
+  def test_annotation_persist_with_repeitions
+    TmpFile.with_file do |tmp|
+      entity1 = "Entity 1"
+      entity2 = "Entity 2"
+      entity2bis = "Entity 2"
+
+      TestAnnotation.setup(entity1, :test_annotation => "1")
+      TestAnnotation.setup(entity2, :test_annotation => "2")
+      TestAnnotation.setup(entity2bis, :test_annotation => "2")
+
+      annotations = [entity1, entity2, entity2bis]
+
+      persisted_annotations = Persist.persist("Test", :annotations, :file => tmp) do
+        annotations
+      end
+
+      assert_equal 3, persisted_annotations.length
+
+      assert_equal "Entity 1", persisted_annotations.first
+      assert_equal "Entity 2", persisted_annotations.last
+      assert_equal "1", persisted_annotations.first.test_annotation
+      assert_equal "2", persisted_annotations.last.test_annotation
+
+      persisted_annotations = Persist.persist("Test", :annotations, :file => tmp) do
+        annotations
+      end
+
+      assert_equal 3, persisted_annotations.length
+
+      assert_equal "Entity 1", persisted_annotations.sort.first
+      assert_equal "Entity 2", persisted_annotations.sort.last
+      assert_equal "1", persisted_annotations.sort.first.test_annotation
+      assert_equal "2", persisted_annotations.sort.last.test_annotation
+    end
+  end
+
+
+  def _test_bdb
     TmpFile.with_file do |tmp|
       repo = Persist.open_tokyocabinet(tmp, true, :double, TokyoCabinet::BDB)
       repo["test:string1"] = [["STR1"]]
@@ -53,7 +90,7 @@ class TestPersist < Test::Unit::TestCase
     end
   end
 
-  def test_annotation_persist_repo
+  def _test_annotation_persist_repo
     TmpFile.with_file do |tmp|
       repo = Persist.open_tokyocabinet(tmp, true, :list, TokyoCabinet::BDB)
 
@@ -85,8 +122,46 @@ class TestPersist < Test::Unit::TestCase
     end
   end
 
+  def _test_annotation_persist_repo_with_repetitions
+    TmpFile.with_file do |tmp|
+      repo = Persist.open_tokyocabinet(tmp, true, :list, TokyoCabinet::BDB)
 
-  def test_array_persist
+      entity1 = "Entity 1"
+      entity2 = "Entity 2"
+      entity2bis = "Entity 2"
+
+      TestAnnotation.setup(entity1, :test_annotation => "1")
+      TestAnnotation.setup(entity2, :test_annotation => "2")
+      TestAnnotation.setup(entity2bis, :test_annotation => "2")
+
+      annotations = [entity1, entity2, entity2bis]
+
+      persisted_annotations = Persist.persist("Test", :annotations, :annotation_repo => repo) do
+        annotations
+      end
+
+      assert_equal 3, persisted_annotations.length
+
+      assert_equal "Entity 1", persisted_annotations.first
+      assert_equal "Entity 2", persisted_annotations.last
+      assert_equal "1", persisted_annotations.first.test_annotation
+      assert_equal "2", persisted_annotations.last.test_annotation
+
+      persisted_annotations = Persist.persist("Test", :annotations, :annotation_repo => repo) do
+        annotations
+      end
+
+      assert_equal 3, persisted_annotations.length
+
+      assert_equal "Entity 1", persisted_annotations.sort.first
+      assert_equal "Entity 2", persisted_annotations.sort.last
+      assert_equal "1", persisted_annotations.sort.first.test_annotation
+      assert_equal "2", persisted_annotations.sort.last.test_annotation
+    end
+  end
+
+
+  def _test_array_persist
     TmpFile.with_file do |tmp|
       10.times do
         assert_equal ["1", "2"],(Persist.persist("Test", :array, :file => tmp) do

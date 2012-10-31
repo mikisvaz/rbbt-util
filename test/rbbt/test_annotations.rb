@@ -75,8 +75,8 @@ class TestAnnotations < Test::Unit::TestCase
     annotation_str2 = "Annotation String 2"
     AnnotatedString.setup(str1, annotation_str1)
     AnnotatedString.setup(str2, annotation_str2)
-    assert_equal str1, Annotated.tsv([str1, str2], :all)[str1.id]["literal"] 
-    assert_equal annotation_str1, Annotated.tsv([str1, str2], :annotation_str, :JSON)[str1.id]["annotation_str"] 
+    assert_equal str1, Annotated.tsv([str1, str2], :all)[str1.id + ":0"]["literal"] 
+    assert_equal annotation_str1, Annotated.tsv([str1, str2], :annotation_str, :JSON)[str1.id + ":0"]["annotation_str"] 
   end
 
   def test_literal
