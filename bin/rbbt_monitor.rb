@@ -25,6 +25,7 @@ def print_job(file, info)
   if $name
     puts clean_file
   else
+    info ||= {:status => :missing_info_file}
     str = [clean_file, info[:status].to_s] * " [ STATUS = " + " ]" 
     str += " (#{running?(info)? :running : :zombie} #{info[:pid]})" if info.include? :pid
     puts str
@@ -36,7 +37,12 @@ def list_jobs(options)
   info_files.each do |file|
     clean_file = file.sub('.info','')
     next if File.exists? clean_file
-    info = YAML.load(Open.read(file))
+    begin
+      info = YAML.load(Open.read(file))
+    rescue Exception
+      Log.debug "Error parsing info file: #{ file }"
+      info = nil
+    end
     case
     when (not omit_ok)
       print_job file, info
