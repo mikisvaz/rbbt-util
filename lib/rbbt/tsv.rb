@@ -45,7 +45,8 @@ module TSV
 
     data = nil
 
-    Misc.lock filename  do
+    lock_filename = filename.nil? ? nil : Persist.persistence_path(filename, {:dir => Rbbt.tmp.tsv_open_locks.find})
+    Misc.lock lock_filename  do
     data = Persist.persist_tsv source, filename, options, persist_options do |data|
       if serializer
         data.extend TSV unless TSV === data
