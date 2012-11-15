@@ -67,7 +67,7 @@ module Resource
     when has_rake(path)
       type = :rake
       rake_dir, content = rake_for(path)
-      rake_dir = Path.setup(rake_dir.dup, path.pkgdir, path.resource)
+      rake_dir = Path.setup(rake_dir.dup, self.pkgdir, self)
     else
       raise "Resource #{ path } does not seem to be claimed"
     end
