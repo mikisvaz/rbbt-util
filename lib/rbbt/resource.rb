@@ -45,7 +45,7 @@ module Resource
   end
 
   def claim(path, type, content = nil, &block)
-    path = path.find if path.respond_to? :find
+    #path = path.find if path.respond_to? :find
     if type == :rake
       @rake_dirs[path] = content
     else
@@ -67,21 +67,23 @@ module Resource
     when has_rake(path)
       type = :rake
       rake_dir, content = rake_for(path)
+      rake_dir = Path.setup(rake_dir.dup, path.pkgdir, path.resource)
     else
       raise "Resource #{ path } does not seem to be claimed"
     end
 
-    if not File.exists? path
-      Misc.lock path + '.produce' do
+    final_path = path.respond_to?(:find) ? path.find : path
+    if not File.exists? final_path
+      Misc.lock final_path + '.produce' do
         begin
           case type
           when :string
-            Open.write(path, content)
+            Open.write(final_path, content)
           when :url
-            Open.write(path, Open.open(content))
+            Open.write(final_path, Open.open(content))
           when :proc
             data = content.call
-            Open.write(path, data) 
+            Open.write(final_path, data) 
           when :rake
             run_rake(path, content, rake_dir)
           when :install
@@ -103,7 +105,7 @@ source "$INSTALL_HELPER_FILE"
             raise "Could not produce #{ resource }. (#{ type }, #{ content })"
           end
         rescue
-          FileUtils.rm_rf path if File.exists? path
+          FileUtils.rm_rf final_path if File.exists? final_path
           raise $!
         end
       end

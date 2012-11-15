@@ -82,7 +82,7 @@ module Resource
 
 
   def rake_for(path)
-    entry = @rake_dirs.reject{|dir, content|
+    @rake_dirs.reject{|dir, content|
       !Misc.common_path(dir, path)
     }.sort_by{|dir, content|
       dir.length
@@ -96,6 +96,8 @@ module Resource
   def run_rake(path, rakefile, rake_dir)
     task = Misc.path_relative_to rake_dir, path
     rakefile = rakefile.produce if rakefile.respond_to? :produce
+
+    rake_dir = rake_dir.find if rake_dir.respond_to? :find
 
     begin
       Rake.run(rakefile, rake_dir, task)

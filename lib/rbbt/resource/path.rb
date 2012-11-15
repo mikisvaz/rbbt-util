@@ -123,7 +123,7 @@ module Path
 
     raise "No resource defined to produce file: #{ self }" if resource.nil?
 
-    resource.produce path
+    resource.produce self
 
     path
   end
