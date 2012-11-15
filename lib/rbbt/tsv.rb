@@ -41,7 +41,7 @@ module TSV
     serializer = Misc.process_options options, :serializer
     unnamed = Misc.process_options options, :unnamed
 
-    Log.debug "TSV open: #{ filename } - #{options.inspect}"
+    Log.debug "TSV open: #{ filename } - #{options.inspect}.#{unnamed ? " [unnamed]" : ""}"
 
     data = nil
 
