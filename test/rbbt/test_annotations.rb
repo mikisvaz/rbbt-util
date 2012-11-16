@@ -134,4 +134,5 @@ class TestAnnotations < Test::Unit::TestCase
     AnnotatedString.setup(str, :annotation_str => annotation_str)
     assert_equal str + annotation_str, str.add_annot
   end
+
 end

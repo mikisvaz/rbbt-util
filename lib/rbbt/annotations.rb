@@ -315,33 +315,38 @@ module AnnotatedArray
   def annotated_array_get_brackets(pos)
     value = annotated_array_clean_get_brackets(pos)
     return nil if value.nil?
+    return value unless String === value or Array === value
+
     value = value.dup if value.frozen?
 
-    annotation_types.each do |mod|
-      mod.setup(value, *info.values_at(*mod.all_annotations))
-    end if String === value or Array === value
-
-    if Annotated === value
-      value.context = self.context
-      value.container = self
-      value.container_index = pos
+    annotation_types.each do |mod| 
+      value.extend mod  unless mod === value
+      mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
     end
+
+    value.context = self.context
+    value.container = self
+    value.container_index = pos
+
     value
   end
 
   def annotated_array_each
     i = 0
+    info = info
     annotated_array_clean_each do |value|
-      value = value.dup if value.frozen? and not value.nil?
+      if String === value or Array === value
+        value = value.dup if value.frozen? and not value.nil?
 
-      annotation_types.each do |mod|
-        mod.setup(value, info)
-      end if String === value or Array === value
+        annotation_types.each do |mod| 
+          value.extend mod  unless mod === value
+          mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
+        end
       
-      if Annotated === value
         value.context = self.context
         value.container = self
         value.container_index = i
+
       end
       i += 1
       yield value
@@ -374,9 +379,10 @@ module AnnotatedArray
       end
     end
 
-    annotation_types.each do |mod|
-      mod.setup(res, *info.values_at(*mod.annotations))
-    end 
+    annotation_types.each do |mod| 
+      res.extend mod  unless mod === res
+      mod.annotations.each do |annotation| res.send(annotation.to_s + "=", self.send(annotation)) end
+    end
 
     res.context = self.context
     res.container = self.container
@@ -392,8 +398,9 @@ module AnnotatedArray
       res << value unless yield(value)
     end
 
-    annotation_types.each do |mod|
-      mod.setup(res, *info.values_at(*mod.annotations))
+    annotation_types.each do |mod| 
+      res.extend mod  unless mod === res
+      mod.annotations.each do |annotation| res.send(annotation.to_s + "=", self.send(annotation)) end
     end
 
     res.context = self.context
@@ -407,9 +414,10 @@ module AnnotatedArray
   def annotated_array_subset(list)
     value = (self & list)
 
-    annotation_types.each do |mod|
-      mod.setup(value, *info.values_at(*mod.all_annotations))
-    end if String === value or Array === value
+    annotation_types.each do |mod| 
+      value.extend mod  unless mod === value
+      mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
+    end
 
     value.context = self.context
     value.container = self.container
@@ -422,9 +430,10 @@ module AnnotatedArray
   def annotated_array_remove(list)
     value = (self - list)
 
-    annotation_types.each do |mod|
-      mod.setup(value, *info.values_at(*mod.annotations))
-    end if String === value or Array === value
+    annotation_types.each do |mod| 
+      value.extend mod  unless mod === value
+      mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
+    end
 
     value.context = self.context
     value.container = self.container
@@ -437,9 +446,10 @@ module AnnotatedArray
   def annotated_array_compact
     value = self.annotated_array_clean_compact
 
-    annotation_types.each do |mod|
-      mod.setup(value, *info.values_at(*mod.annotations))
-    end if String === value or Array === value
+    annotation_types.each do |mod| 
+      value.extend mod  unless mod === value
+      mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
+    end
 
     value.context = self.context
     value.container = self.container
@@ -452,9 +462,10 @@ module AnnotatedArray
   def annotated_array_uniq
     value = self.annotated_array_clean_uniq
 
-    annotation_types.each do |mod|
-      mod.setup(value, *info.values_at(*mod.annotations))
-    end if String === value or Array === value
+    annotation_types.each do |mod| 
+      value.extend mod  unless mod === value
+      mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
+    end
 
     value.context = self.context
     value.container = self.container
@@ -467,9 +478,10 @@ module AnnotatedArray
   def annotated_array_flatten
     value = self.annotated_array_clean_flatten.dup
 
-    annotation_types.each do |mod|
-      mod.setup(value, *info.values_at(*mod.annotations))
-    end if String === value or Array === value
+    annotation_types.each do |mod| 
+      value.extend mod  unless mod === value
+      mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
+    end
 
     value.context = self.context
     value.container = self.container
@@ -482,9 +494,10 @@ module AnnotatedArray
   def annotated_array_reverse
     value = self.annotated_array_clean_reverse
 
-    annotation_types.each do |mod|
-      mod.setup(value, *info.values_at(*mod.annotations))
-    end if String === value or Array === value
+    annotation_types.each do |mod| 
+      value.extend mod  unless mod === value
+      mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
+    end
 
     value.context = self.context
     value.container = self.container
@@ -497,9 +510,10 @@ module AnnotatedArray
   def annotated_array_sort_by(&block)
     value = self.annotated_array_clean_sort_by &block
 
-    annotation_types.each do |mod|
-      mod.setup(value, *info.values_at(*mod.annotations))
-    end if String === value or Array === value
+    annotation_types.each do |mod| 
+      value.extend mod  unless mod === value
+      mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
+    end
 
     value.context = self.context
     value.container = self.container
@@ -512,9 +526,10 @@ module AnnotatedArray
   def annotated_array_sort(&block)
     value = self.collect.sort(&block).collect{|value| value.respond_to?(:clean_annotations) ? value.clean_annotations.dup : value.dup }
 
-    annotation_types.each do |mod|
-      mod.setup(value, *info.values_at(*mod.annotations))
-    end if String === value or Array === value
+    annotation_types.each do |mod| 
+      value.extend mod  unless mod === value
+      mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
+    end
 
     value.extend AnnotatedArray if AnnotatedArray === self
 
@@ -547,3 +562,4 @@ module AnnotatedArray
   end
 
 end
+
