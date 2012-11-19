@@ -22,6 +22,7 @@ module Annotated
 
   def info
     hash = {:annotation_types => annotation_types}
+    hash[:annotated_array] = true if AnnotatedArray === self
     annotations.each do |annotation|
       value = self.send(annotation)
       hash[annotation] = value unless value.nil?
@@ -39,12 +40,17 @@ module Annotated
 
     return object if annotation_types.nil? or annotation_types.empty?
 
+    annotated_array = info[:annotated_array] || false
+
     annotation_types.each do |mod|
       mod = Misc.string2const(mod) if String === mod
       mod.setup(object, *info.values_at(*mod.all_annotations))
     end
 
     object.id = info[:entity_id] if info.include? :entity_id
+
+    object.extend AnnotatedArray if annotated_array
+
     object
   end
 
@@ -328,6 +334,8 @@ module AnnotatedArray
     value.container = self
     value.container_index = pos
 
+    value.extend AnnotatedArray if Array === value and AnnotatedArray === self
+
     value
   end
 
@@ -342,6 +350,8 @@ module AnnotatedArray
           value.extend mod  unless mod === value
           mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
         end
+        
+        value.extend AnnotatedArray if Array === value and AnnotatedArray === self
       
         value.context = self.context
         value.container = self

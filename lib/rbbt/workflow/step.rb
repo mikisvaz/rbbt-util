@@ -95,7 +95,7 @@ class Step
         end
       }
       
-      log(:started, "Starting task: #{task.name || "unnamed task"}")
+      log(:started, "Starting task #{task.name || ""}")
 
       set_info :started, Time.now
       

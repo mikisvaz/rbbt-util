@@ -11,7 +11,7 @@ end
 
 class TestPersist < Test::Unit::TestCase
 
-  def _test_annotation_persist
+  def test_annotation_persist
     TmpFile.with_file do |tmp|
       entity1 = "Entity 1"
       entity2 = "Entity 2"
@@ -78,7 +78,7 @@ class TestPersist < Test::Unit::TestCase
   end
 
 
-  def _test_bdb
+  def test_bdb
     TmpFile.with_file do |tmp|
       repo = Persist.open_tokyocabinet(tmp, true, :double, TokyoCabinet::BDB)
       repo["test:string1"] = [["STR1"]]
@@ -90,7 +90,7 @@ class TestPersist < Test::Unit::TestCase
     end
   end
 
-  def _test_annotation_persist_repo
+  def test_annotation_persist_repo
     TmpFile.with_file do |tmp|
       repo = Persist.open_tokyocabinet(tmp, true, :list, TokyoCabinet::BDB)
 
@@ -122,7 +122,82 @@ class TestPersist < Test::Unit::TestCase
     end
   end
 
-  def _test_annotation_persist_repo_with_repetitions
+  def test_annotation_persist_repo_annotated_array
+    TmpFile.with_file do |tmp|
+      repo = Persist.open_tokyocabinet(tmp, true, :list, TokyoCabinet::BDB)
+
+      entity1 = "Entity 1"
+      entity2 = "Entity 2"
+
+      annotations = [entity1, entity2]
+      TestAnnotation.setup(annotations, :test_annotation => "1")
+      annotations.extend AnnotatedArray
+
+      persisted_annotations = Persist.persist("Test", :annotations, :annotation_repo => repo) do
+        annotations
+      end
+
+      assert_equal "Entity 1", persisted_annotations.first
+      assert_equal "Entity 2", persisted_annotations.last
+      assert_equal "1", persisted_annotations.first.test_annotation
+      assert_equal "1", persisted_annotations.last.test_annotation
+
+      persisted_annotations = Persist.persist("Test", :annotations, :annotation_repo => repo) do
+        annotations
+      end
+
+      persisted_annotations.extend AnnotatedArray
+
+      assert_equal "Entity 1", persisted_annotations.sort.first
+      assert_equal "Entity 2", persisted_annotations.sort.last
+      assert_equal "1", persisted_annotations.sort.first.test_annotation
+      assert_equal "1", persisted_annotations.sort.last.test_annotation
+    end
+  end
+
+
+  def test_annotation_persist_repo_triple_array
+    TmpFile.with_file do |tmp|
+      repo = Persist.open_tokyocabinet(tmp, true, :list, TokyoCabinet::BDB)
+
+      entity1 = "Entity 1"
+      entity2 = "Entity 2"
+
+      annotations = [entity1, entity2]
+      TestAnnotation.setup(annotations, :test_annotation => "1")
+      annotations.extend AnnotatedArray
+
+      annotations_ary = [annotations]
+      TestAnnotation.setup(annotations_ary, :test_annotation => "1")
+      annotations_ary.extend AnnotatedArray
+
+      persisted_annotations = Persist.persist("Test", :annotations, :annotation_repo => repo) do
+        annotations_ary
+      end
+      assert AnnotatedArray === persisted_annotations
+      ddd persisted_annotations.info
+      ddd persisted_annotations
+
+      assert_equal "Entity 1", persisted_annotations.first.first
+      assert_equal "Entity 2", persisted_annotations.first.last
+      assert_equal "1", persisted_annotations.first.first.test_annotation
+      assert_equal "1", persisted_annotations.first.last.test_annotation
+
+      persisted_annotations = Persist.persist("Test", :annotations, :annotation_repo => repo) do
+        annotations_ary
+      end
+
+      assert AnnotatedArray === persisted_annotations
+
+      assert_equal "Entity 1", persisted_annotations.sort.first.first
+      assert_equal "Entity 2", persisted_annotations.sort.first.last
+      assert_equal "1", persisted_annotations.sort.first.first.test_annotation
+      assert_equal "1", persisted_annotations.sort.first.last.test_annotation
+
+    end
+  end
+
+  def test_annotation_persist_repo_with_repetitions
     TmpFile.with_file do |tmp|
       repo = Persist.open_tokyocabinet(tmp, true, :list, TokyoCabinet::BDB)
 
@@ -161,7 +236,7 @@ class TestPersist < Test::Unit::TestCase
   end
 
 
-  def _test_array_persist
+  def test_array_persist
     TmpFile.with_file do |tmp|
       10.times do
         assert_equal ["1", "2"],(Persist.persist("Test", :array, :file => tmp) do

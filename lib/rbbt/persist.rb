@@ -197,12 +197,25 @@ module Persist
             repo[key]
           end
           Annotated.load_tsv_values(key, values, "literal", "annotation_types", "JSON")
-        when keys.any?
+        when (keys.any? and not keys.first =~ /ANNOTATED_DOUBLE_ARRAY/)
           repo.read_and_close do
             keys.sort_by{|k| k.split(":").last.to_i}.collect{|key|
               v = repo[key]
               Annotated.load_tsv_values(key, v, "literal", "annotation_types", "JSON")
             }
+          end
+        when (keys.any? and keys.first =~ /ANNOTATED_DOUBLE_ARRAY/)
+          repo.read_and_close do
+
+            res = keys.sort_by{|k| k.split(":").last.to_i}.collect{|key|
+              v = repo[key]
+              Annotated.load_tsv_values(key, v, "literal", "annotation_types", "JSON")
+            }
+
+            res.first.annotate res
+            res.extend AnnotatedArray
+
+            res
           end
         else
           entities = yield
@@ -213,13 +226,18 @@ module Persist
               repo[subkey + "NIL"] = nil
             when entities.empty?
               repo[subkey + "EMPTY"] = nil
-            when (not Array === entities or AnnotatedArray === entities)
+            when (not Array === entities or (AnnotatedArray === entities and not Array === entities.first))
               tsv_values = entities.tsv_values("literal", "annotation_types", "JSON") 
               repo[subkey + entities.id << ":" << "SINGLE"] = tsv_values
+            when (not Array === entities or (AnnotatedArray === entities and AnnotatedArray === entities.first))
+              entities.each_with_index do |e,i|
+                tsv_values = e.tsv_values("literal", "annotation_types", "JSON") 
+                repo[subkey + e.id << ":ANNOTATED_DOUBLE_ARRAY:" << i.to_s] = tsv_values
+              end
             else
               entities.each_with_index do |e,i|
                 tsv_values = e.tsv_values("literal", "annotation_types", "JSON") 
-                repo[subkey + e.id << ":" << i] = tsv_values
+                repo[subkey + e.id << ":" << i.to_s] = tsv_values
               end
             end
           end
