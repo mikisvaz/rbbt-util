@@ -117,13 +117,13 @@ module Path
     end
   end
 
-  def produce
+  def produce(force = false)
     path = self.find
-    return self if File.exists? path
+    return self if File.exists?(path) and not force
 
     raise "No resource defined to produce file: #{ self }" if resource.nil?
 
-    resource.produce self
+    resource.produce self, force
 
     path
   end

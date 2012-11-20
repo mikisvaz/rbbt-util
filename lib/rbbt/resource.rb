@@ -45,7 +45,6 @@ module Resource
   end
 
   def claim(path, type, content = nil, &block)
-    #path = path.find if path.respond_to? :find
     if type == :rake
       @rake_dirs[path] = content
     else
@@ -60,7 +59,7 @@ module Resource
     end
   end
 
-  def produce(path)
+  def produce(path, force = false)
     case
     when @resources.include?(path)
       type, content = @resources[path]
@@ -72,8 +71,8 @@ module Resource
       raise "Resource #{ path } does not seem to be claimed"
     end
 
-    final_path = path.respond_to?(:find) ? path.find : path
-    if not File.exists? final_path
+    final_path = path.respond_to?(:find) ? (force ? path.find(:user) : path.find) : path
+    if not File.exists? final_path or force
       Misc.lock final_path + '.produce' do
         begin
           case type
