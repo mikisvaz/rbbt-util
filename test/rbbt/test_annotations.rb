@@ -60,6 +60,7 @@ class TestAnnotations < Test::Unit::TestCase
     ary = ["string"]
     annotation_str = "Annotation String"
     AnnotatedString.setup(ary, annotation_str)
+    
     assert_equal({:annotation_str => annotation_str, :annotation_types => [AnnotatedString]}, ary.info)
   end
 
@@ -79,7 +80,6 @@ class TestAnnotations < Test::Unit::TestCase
     annotation_str2 = "Annotation String 2"
     AnnotatedString.setup(str1, annotation_str1)
     AnnotatedString.setup(str2, annotation_str2)
-    ddd Annotated.json(str1, true)
   end
 
   def test_tsv

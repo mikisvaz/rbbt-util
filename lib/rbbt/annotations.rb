@@ -22,7 +22,6 @@ module Annotated
 
   def info
     hash = {:annotation_types => annotation_types}
-    hash[:annotated_array] = true if AnnotatedArray === self
     annotations.each do |annotation|
       value = self.send(annotation)
       hash[annotation] = value unless value.nil?
@@ -40,7 +39,7 @@ module Annotated
 
     return object if annotation_types.nil? or annotation_types.empty?
 
-    annotated_array = info[:annotated_array] || false
+    annotated_array = info.delete(:annotated_array) || false
 
     annotation_types.each do |mod|
       mod = Misc.string2const(mod) if String === mod
@@ -60,6 +59,7 @@ module Annotated
     else
       fields = fields.flatten
       info = self.info
+      info[:annotated_array] = true if AnnotatedArray === self
       values = []
 
       fields.each do |field|
