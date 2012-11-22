@@ -104,7 +104,7 @@ module TSV
   end
 
   def tsv_values
-    values = values_at(*keys)
+    values = chunked_values_at(keys)
     return values if @unnamed or fields.nil?
 
     case type
