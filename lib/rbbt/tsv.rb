@@ -40,6 +40,7 @@ module TSV
     filename = get_filename source
     serializer = Misc.process_options options, :serializer
     unnamed = Misc.process_options options, :unnamed
+    entity_options = Misc.process_options options, :entity_options
 
     Log.debug "TSV open: #{ filename } - #{options.inspect}.#{unnamed ? " [unnamed]" : "[not unnamed]"}"
 
@@ -68,6 +69,8 @@ module TSV
     end
 
     data.unnamed = unnamed unless unnamed.nil?
+
+    data.entity_options = entity_options
 
     data
   end
