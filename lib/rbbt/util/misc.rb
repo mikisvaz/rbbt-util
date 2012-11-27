@@ -740,7 +740,7 @@ end
       when String === v
         str << k.to_s << "=>" << v
       when (Array === v and v.length > HASH2MD5_MAX_ARRAY_LENGTH)
-        str << k.to_s << "=>[" << v[0..HASH2MD5_MAX_ARRAY_LENGTH] * "," << "]"
+        str << k.to_s << "=>[" << v[0..HASH2MD5_MAX_ARRAY_LENGTH] * "," << "; #{ v.length }]"
       when Array === v
         str << k.to_s << "=>[" << v * "," << "]"
       else
