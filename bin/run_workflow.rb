@@ -102,7 +102,7 @@ if options[:server]
     Sinatra::Application.views = File.join(File.dirname(workflow), 'www/views')
   end
 
-  sinatra_file = 'lib/sinatra.rb'
+  sinatra_file = './lib/sinatra.rb'
   if File.exists? sinatra_file
     require sinatra_file
   end
