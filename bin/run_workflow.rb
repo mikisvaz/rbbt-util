@@ -85,6 +85,7 @@ options = SOPT.get "-t--task*:-l--log*:-h--help:-n--name*:-cl--clean:-rcl-recurs
 workflow = ARGV.first
 
 if options[:server]
+
   require 'rbbt/util/log'
   require 'rbbt/workflow'
   require 'rbbt/workflow/rest'
@@ -98,6 +99,7 @@ if options[:server]
 
   Sinatra::Application.port = options[:port] || 4567
   Sinatra::Application.run = true
+
   if File.exists? workflow
     Sinatra::Application.views = File.join(File.dirname(workflow), 'www/views')
   end
@@ -187,9 +189,6 @@ else
     Log.low "Job name: #{job.name}"
   end
 
-  #- error
-
-  #print
   case
   when Array === res
     puts res * "\n"

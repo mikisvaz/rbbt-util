@@ -9,6 +9,7 @@ module TSV
     other.with_unnamed do
       with_unnamed do
         through do |key, values|
+          self[key] = [] if self[key].nil?
           if other.include? key
             case
             when other.type == :flat

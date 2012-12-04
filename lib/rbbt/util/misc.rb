@@ -478,9 +478,10 @@ end
     new
   end
 
-  def self.array2hash(array)
+  def self.array2hash(array, default = nil)
     hash = {}
     array.each do |key, value|
+      value = default.dup if value.nil? and not default.nil?
       hash[key] = value
     end
     hash

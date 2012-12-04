@@ -17,7 +17,9 @@ require 'rbbt/tsv/filter'
 
 module TSV
   def self.setup(hash, options = {})
-    hash = Misc.array2hash hash if Array === hash
+    options = Misc.add_defaults options, :default_value => []
+    default_value = Misc.process_options options, :default_value
+    hash = Misc.array2hash(hash, default_value) if Array === hash
     hash.extend TSV
 
     IndiferentHash.setup(options)
