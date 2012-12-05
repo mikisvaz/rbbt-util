@@ -107,8 +107,10 @@ module Misc
     dup_array = options.delete :dup_array
 
     if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? field
-      params = IndiferentHash.setup(options.dup)
-      params.merge!(:format => field) unless params.include?(:format) and not ((f = params[:format]).nil? or String === f and f.empty?)
+      params = options.dup
+
+      params[:format] ||= params.delete "format"
+      params.merge!(:format => field) unless params.include?(:format) and not ((f = params[:format]).nil? or (String === f and f.empty?))
 
       entity = Entity.formats[field].setup(
         ((entity.frozen? and not entity.nil?) ? entity.dup : ((Array === entity and dup_array) ? entity.collect{|e| e.nil? ? e : e.dup} : entity) ),
@@ -528,7 +530,7 @@ end
     res
   end
 
-  def self.profile
+  def self.profile_html(options = {})
     require 'ruby-prof'
     RubyProf.start
     begin
@@ -538,8 +540,48 @@ end
       raise $!
     ensure
       result = RubyProf.stop
+      printer = RubyProf::MultiPrinter.new(result)
+      TmpFile.with_file do |dir|
+        FileUtils.mkdir_p dir unless File.exists? dir
+        printer.print(:path => dir, :profile => 'profile')
+        CMD.cmd("firefox  -no-remote  '#{ dir }'")
+      end
+    end
+
+    res
+  end
+
+  def self.profile_graph(options = {})
+    require 'ruby-prof'
+    RubyProf.start
+    begin
+      res = yield
+    rescue Exception
+      puts "Profiling aborted"
+      raise $!
+    ensure
+      result = RubyProf.stop
+      #result.eliminate_methods!([/annotated_array_clean_/])
+      printer = RubyProf::GraphPrinter.new(result)
+      printer.print(STDOUT, options)
+    end
+
+    res
+  end
+
+  def self.profile(options = {})
+    require 'ruby-prof'
+    RubyProf.start
+    begin
+      res = yield
+    rescue Exception
+      puts "Profiling aborted"
+      raise $!
+    ensure
+      result = RubyProf.stop
+      #result.eliminate_methods!([/annotated_array_clean_/])
       printer = RubyProf::FlatPrinter.new(result)
-      printer.print(STDOUT)
+      printer.print(STDOUT, options)
     end
 
     res
@@ -566,8 +608,10 @@ end
     begin
       yield
     rescue
+      Log.warn("Insisting after exception: #{$!.message}")
       try += 1
       retry if try < times
+      raise $!
     end
   end
 

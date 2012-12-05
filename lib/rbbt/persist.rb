@@ -236,6 +236,7 @@ module Persist
               end
             else
               entities.each_with_index do |e,i|
+                next if e.nil?
                 tsv_values = e.tsv_values("literal", "annotation_types", "JSON") 
                 repo[subkey + e.id << ":" << i.to_s] = tsv_values
               end

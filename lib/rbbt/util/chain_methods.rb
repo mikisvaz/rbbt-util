@@ -32,8 +32,8 @@ module ChainMethods
 
             class << base; self; end.module_eval do
               methods.each do |new_method|
-                original = new_method.to_s.sub(prefix.to_s + '_', '')
-                clean_method = prefix.to_s + '_clean_' + original
+                original = new_method.to_s.sub(prefix.to_s << '_', '')
+                clean_method = prefix.to_s << '_clean_' << original
 
                 original = "[]" if original == "get_brackets"
                 original = "[]=" if original == "set_brackets"
@@ -66,12 +66,12 @@ module ChainMethods
           end
         end
       end
+    end
+
+    base.chain_prefix = base.to_s.downcase.to_sym
   end
 
-  base.chain_prefix = base.to_s.downcase.to_sym
-end
-
-def self.extended(base)
-  chain_methods_extended(base)
-end
+  def self.extended(base)
+    chain_methods_extended(base)
+  end
 end

@@ -246,12 +246,12 @@ module Annotation
 
         def self.extended(object)
           self.send(:prev_annotation_extended, object)
-            object.extend Annotated unless Annotated == object
-            if not object.annotation_types.include? self
-              object.annotation_types.concat self.inheritance 
-              object.annotation_types << self
-              object.annotation_types.uniq!
-            end
+          object.extend Annotated unless Annotated === object
+          if not object.annotation_types.include? self
+            object.annotation_types.concat self.inheritance 
+            object.annotation_types << self
+            object.annotation_types.uniq!
+          end
         end
 
         def self.included(base)
@@ -288,12 +288,21 @@ module Annotation
 
   def setup(object, *values)
     return nil if object.nil?
+
     object.extend self unless self === object
 
-    inputs = Misc.positional2hash(all_annotations, *values)
-    inputs.each do |name, value|
-      value = value.split("|") if String === value and value.index "|"
-      object.send(name.to_s + '=', value)
+    if Hash === values.last
+      values.last.each do |name, value|
+        setter = "#{name}="
+        next unless object.respond_to? setter
+        value = value.split("|") if String === value and value.index "|"
+        object.send("#{name}=", value)
+      end
+    else
+      all_annotations.zip(values).each do |name, value|
+        value = value.split("|") if String === value and value.index "|"
+        object.send("#{name}=", value)
+      end
     end
 
     object
@@ -307,31 +316,32 @@ module AnnotatedArray
   self.chain_prefix = :annotated_array
 
   def double_array
-    AnnotatedArray === self.annotated_array_clean_get_brackets(0)
+    AnnotatedArray === self.send(:[], 0, true)
   end
 
-  def annotated_array_first
+  def first
     self[0]
   end
 
-  def annotated_array_last
+  def last
     self[-1]
   end
 
-  def annotated_array_get_brackets(pos)
-    value = annotated_array_clean_get_brackets(pos)
+  def [](pos, clean = false)
+    value = super(pos)
     return nil if value.nil?
+    return value if clean
     return value unless String === value or Array === value
 
     value = value.dup if value.frozen?
 
     annotation_types.each do |mod| 
       value.extend mod  unless mod === value
-      mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
+      mod.annotations.each do |annotation| value.send(annotation.to_s << "=", self.send(annotation)) end
     end
 
-    value.context = self.context
-    value.container = self
+    value.context         = self.context
+    value.container       = self
     value.container_index = pos
 
     value.extend AnnotatedArray if Array === value and AnnotatedArray === self
@@ -339,16 +349,16 @@ module AnnotatedArray
     value
   end
 
-  def annotated_array_each
+  def each
     i = 0
     info = info
-    annotated_array_clean_each do |value|
+    super do |value|
       if String === value or Array === value
         value = value.dup if value.frozen? and not value.nil?
 
         annotation_types.each do |mod| 
           value.extend mod  unless mod === value
-          mod.annotations.each do |annotation| value.send(annotation.to_s + "=", self.send(annotation)) end
+          mod.annotations.each do |annotation| value.send(annotation.to_s << "=", self.send(annotation)) end
         end
         
         value.extend AnnotatedArray if Array === value and AnnotatedArray === self
@@ -358,20 +368,22 @@ module AnnotatedArray
         value.container_index = i
 
       end
+
       i += 1
+
       yield value
     end
   end
 
-  def annotated_array_collect
+  def collect
     res = []
 
     if block_given?
-      annotated_array_each do |value|
+      each do |value|
         res << yield(value)
       end
     else
-      annotated_array_each do |value|
+      each do |value|
         res << value
       end
     end
@@ -379,12 +391,12 @@ module AnnotatedArray
     res
   end
 
-  def annotated_array_select(method = nil, *args)
+  def select(method = nil, *args)
     res = []
     if method
       res = self.zip(self.send(method, *args)).select{|e,result| result}.collect{|element,r| element}
     else
-      annotated_array_each do |value|
+      each do |value|
         res << value if yield(value)
       end
     end
@@ -402,9 +414,9 @@ module AnnotatedArray
     res
   end
 
-  def annotated_array_reject
+  def reject
     res = []
-    annotated_array_each do |value|
+    each do |value|
       res << value unless yield(value)
     end
 
@@ -421,7 +433,7 @@ module AnnotatedArray
     res
   end
 
-  def annotated_array_subset(list)
+  def subset(list)
     value = (self & list)
 
     annotation_types.each do |mod| 
@@ -437,7 +449,7 @@ module AnnotatedArray
     value
   end
 
-  def annotated_array_remove(list)
+  def remove(list)
     value = (self - list)
 
     annotation_types.each do |mod| 
@@ -453,8 +465,8 @@ module AnnotatedArray
     value
   end
 
-  def annotated_array_compact
-    value = self.annotated_array_clean_compact
+  def compact
+    value = super
 
     annotation_types.each do |mod| 
       value.extend mod  unless mod === value
@@ -469,8 +481,8 @@ module AnnotatedArray
     value
   end
  
-  def annotated_array_uniq
-    value = self.annotated_array_clean_uniq
+  def uniq
+    value = super
 
     annotation_types.each do |mod| 
       value.extend mod  unless mod === value
@@ -485,8 +497,8 @@ module AnnotatedArray
     value
   end
 
-  def annotated_array_flatten
-    value = self.annotated_array_clean_flatten.dup
+  def flatten
+    value = super.dup
 
     annotation_types.each do |mod| 
       value.extend mod  unless mod === value
@@ -501,8 +513,8 @@ module AnnotatedArray
     value
   end
 
-  def annotated_array_reverse
-    value = self.annotated_array_clean_reverse
+  def reverse
+    value = super
 
     annotation_types.each do |mod| 
       value.extend mod  unless mod === value
@@ -517,8 +529,8 @@ module AnnotatedArray
     value
   end
 
-  def annotated_array_sort_by(&block)
-    value = self.annotated_array_clean_sort_by &block
+  def sort_by(&block)
+    value = super &block
 
     annotation_types.each do |mod| 
       value.extend mod  unless mod === value
@@ -533,7 +545,7 @@ module AnnotatedArray
     value
   end
 
-  def annotated_array_sort(&block)
+  def sort(&block)
     value = self.collect.sort(&block).collect{|value| value.respond_to?(:clean_annotations) ? value.clean_annotations.dup : value.dup }
 
     annotation_types.each do |mod| 
@@ -546,7 +558,7 @@ module AnnotatedArray
     value
   end
 
-  def annotated_array_select_by(method)
+  def select_by(method)
     case
     when (Symbol === method or String === method)
       method = self.send(method) 
@@ -558,7 +570,7 @@ module AnnotatedArray
 
     value = []
     
-    self.annotated_array_clean_each do |e|
+    super do |e|
       value << e if method.shift
     end
 

@@ -142,6 +142,17 @@ class TestAnnotations < Test::Unit::TestCase
     assert_equal str + annotation_str, str.add_annot
   end
 
+  def test_double_array
+    a = ["a"]
+    b = AnnotatedString.setup([AnnotatedString.setup(["a"])])
+    AnnotatedString.setup(a)
+    a.extend AnnotatedArray
+    b.extend AnnotatedArray
+    assert AnnotatedString === b[0]
+    assert(!a.double_array)
+    assert(b.double_array)
+  end
+
   def test_annotation_positional2hash
     str = "string"
     annotation_str = "Annotation String"
