@@ -23,8 +23,8 @@ class Step
       File.open(info_file) do |file|
         YAML.load(file) || {}
       end
-    rescue
-      Log.debug "Error loading yaml: " + Open.read(info_file)
+    rescue Exception
+      Log.debug "Error loading yaml: " + info_file
       raise $!
     end
   end
