@@ -137,7 +137,15 @@ module Persist
              persist_options[:data]
            when persist_options[:persist]
 
-             filename ||= source.filename if source.respond_to? :filename
+             filename ||= case
+                          when source.respond_to?(:filename)
+                            source.filename
+                          when source.respond_to?(:cmd)
+                            "CMD-#{Misc.digest(source.cmd)}"
+                          else
+                            source.object_id.to_s
+                          end
+
              filename ||= source.object_id.to_s
 
              path = persistence_path(filename, persist_options, options)

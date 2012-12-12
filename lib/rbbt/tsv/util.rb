@@ -35,13 +35,14 @@ module TSV
   def self.get_filename(file)
     case
     when String === file
-      filename = file
+      file
+    when file.respond_to?(:filename)
+      file.filename
     when file.respond_to?(:gets)
-      filename = file.filename if file.respond_to? :filename
+      nil
     else
-      raise "Cannot get stream from: #{file.inspect}"
+      raise "Cannot get filename from: #{file.inspect}"
     end
-    filename
   end
 
   def self.get_stream(file, open_options = {})

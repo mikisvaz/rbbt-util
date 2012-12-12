@@ -66,7 +66,13 @@ def clean_jobs(options)
   info_files.each do |file|
     clean_file = file.sub('.info','')
     next if File.exists? clean_file
-    info = YAML.load(Open.read(file))
+    info = nil
+    begin
+      info = YAML.load(Open.read(file))
+    rescue
+      Log.debug "Error process #{ file }"
+      raise $!
+    end
     case
     when options[:all]
       remove_job file
