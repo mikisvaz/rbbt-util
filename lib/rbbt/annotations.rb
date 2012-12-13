@@ -20,9 +20,16 @@ module Annotated
     end.flatten.uniq
   end
 
-  def info
+  def unmasked_annotations
+    raise "Annotation types is nil for object: #{self.inspect}" if annotation_types.nil?
+    annotation_types.collect do |mod|
+      mod.unmasked_annotations
+    end.flatten.uniq
+  end
+
+  def info(masked = false)
     hash = {:annotation_types => annotation_types}
-    annotations.each do |annotation|
+    (masked ? unmasked_annotations : annotations).each do |annotation|
       value = self.send(annotation)
       hash[annotation] = value unless value.nil?
     end
@@ -230,11 +237,16 @@ module Annotation
   def self.extended(base)
     if not base.respond_to? :annotations
       class << base
-        attr_accessor :annotations, :inheritance, :all_inheritance, :all_annotations
+        attr_accessor :annotations, :inheritance, :all_inheritance, :all_annotations, :masked_annotations
+
+        def unmasked_annotations
+          annotations - masked_annotations
+        end
         self
       end
 
       base.annotations = []
+      base.masked_annotations = []
       base.inheritance = []
       base.all_annotations = []
       base.all_inheritance = []
@@ -307,7 +319,6 @@ module Annotation
 
     object
   end
-
 end
 
 module AnnotatedArray
