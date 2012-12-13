@@ -82,8 +82,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
 
    annotations.rb
-
-   associations.rb
   }
  }
  test=test {
