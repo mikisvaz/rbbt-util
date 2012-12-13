@@ -20,7 +20,7 @@ def running?(info)
   end
 end
 
-def print_job(file, info)
+def print_job(file, info, severity_color = nil)
   clean_file = file.sub('.info','')
   if $name
     puts clean_file
@@ -28,12 +28,16 @@ def print_job(file, info)
     info ||= {:status => :missing_info_file}
     str = [clean_file, info[:status].to_s] * " [ STATUS = " + " ]" 
     str += " (#{running?(info)? :running : :zombie} #{info[:pid]})" if info.include? :pid
+
+    str = "#{severity_color}" <<  str  << "\033[0m" if severity_color
     puts str
   end
 end
 
 def list_jobs(options)
+
   omit_ok = options[:zombies] || options[:errors]
+
   info_files.each do |file|
     clean_file = file.sub('.info','')
     next if File.exists? clean_file
@@ -43,13 +47,21 @@ def list_jobs(options)
       Log.debug "Error parsing info file: #{ file }"
       info = nil
     end
+
+    color = case
+            when info[:status] == :error
+              Log::SEVERITY_COLOR[3]
+            when (info[:pid] and not running? info)
+              Log::SEVERITY_COLOR[2]
+            end
+
     case
     when (not omit_ok)
-      print_job file, info
+      print_job file, info, color
     when options[:zombies]
-      print_job file, info if info[:pid] and not running? info
+      print_job file, info, color if info[:pid] and not running? info
     when options[:errors]
-      print_job file, info if info[:status] == :error
+      print_job file, info, color if info[:status] == :error
     end
 
   end
