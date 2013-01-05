@@ -81,8 +81,13 @@ module Resource
           when :url
             Open.write(final_path, Open.open(content))
           when :proc
-            data = content.call
-            Open.write(final_path, data) 
+            data = case content.arity
+                   when 0
+                     content.call
+                   when 1
+                     content.call final_path
+                   end
+            Open.write(final_path, data) unless data.nil?
           when :rake
             run_rake(path, content, rake_dir)
           when :install
