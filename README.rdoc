@@ -39,7 +39,28 @@
     mv tmp.bash_profile .bash_profile
     . .bash_profile
     
-3 - install gems rbbt-util rbbt-sources rbbt-text rbbt-phgx
+3.pre1 - If using ruby 1.9 install these gems from github so that some issues with 1.9 are fixed
+
+   :script
+
+   gem install specific_install
+   gem specific_install -l https://github.com/bensomers/png.git
+   gem specific_install -l https://github.com/felipec/soap4r.git
+   gem specific_install -l https://github.com/mikisvaz/tokyocabinet_19_fix.git
+
+3.pre2 - A couple of gems are better installed beforehand, since they require some configuration
+
+   :script
+
+   # RSRuby
+   R_HOME='full_path_to_R_dir' # Example in ubuntu
+   gem install rsruby -- --with-R-dir=/usr/lib/R/lib/ --with-R-include=/usr/share/R/include
+
+   # JRB
+   export JAVA_HOME="full_path_to_jdk"
+   gem install rjb
+
+3 - install gems rbbt-util rbbt-sources rbbt-text rbbt-phgx. 
 
     :script
     
@@ -75,6 +96,3 @@
     mkdir -p ~/git/workflows
     echo "~/git/workflows/" > ~/.rbbt/etc/workflow_dir
 
-6- - Place some other files
-
-    /home/mvazquezg/.rbbt/share/databases/InterPro/pfam_names
