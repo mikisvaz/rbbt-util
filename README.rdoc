@@ -60,11 +60,11 @@
    export JAVA_HOME="full_path_to_jdk"
    gem install rjb
 
-3 - install gems rbbt-util rbbt-sources rbbt-text rbbt-phgx. 
+3 - install gems rbbt-util rbbt-sources rbbt-text rbbt-phgx, ...
 
     :script
     
-    gem install rbbt-util rbbt-sources rbbt-text rbbt-phgx rbbt-entities rbbt-views
+    gem install rbbt-util rbbt-sources rbbt-text rbbt-phgx rbbt-entities rbbt-views rbbt-dm rbbt-GE
 
 3.bis - Or install github repos and make ruby use them
 
@@ -82,13 +82,19 @@
     alias druby="env RBBT_LOG=0 ruby $(for d in $HOME/git/rbbt-*;do echo -n "-I$d/lib ";done)"
     alias drake="env RBBT_LOG=0 rake $(for d in $HOME/git/rbbt-*;do echo -n "-I$d/lib ";done)"
 
-4 - Set up R to find the helper lib
+4 - Install other gems that you might need for some of my workflows
+    
+    script
+
+    gem install redcarpet thin 
+
+5 - Set up R to find the helper lib
 
     :script
 
     echo "source(system('rbbt_Rutil.rb', intern =T));" >> $HOME/.Rprofile
 
-5 - If you plan to run workflows you might want to redefine the default directory to place your workflows (~/.workflows)
+6 - If you plan to run workflows you might want to redefine the default directory to place your workflows (~/.workflows)
     
     :script
 
