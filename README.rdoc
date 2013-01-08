@@ -12,7 +12,7 @@
     cp .bash_profile .bash_profile.save
     mv tmp.bash_profile .bash_profile
     . .bash_profile
-    rvm install 1.8.7
+    rvm install 1.9.3
     
 2 - install tokyocabinet (Intructions for user install follow. For system level, make sure we have dev package)
     1 - download source from http://fallabs.com/tokyocabinet/tokyocabinet-1.4.47.tar.gz
