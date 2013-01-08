@@ -53,8 +53,12 @@
    :script
 
    # RSRuby
-   R_HOME='full_path_to_R_dir' # Example in ubuntu
+   ## Example in ubuntu
    gem install rsruby -- --with-R-dir=/usr/lib/R/lib/ --with-R-include=/usr/share/R/include
+   
+   ## Example in MAC
+   gem install rsruby -- --with-R-dir=/Library/Frameworks/R.framework/Resources/
+
 
    # JRB
    export JAVA_HOME="full_path_to_jdk"
