@@ -641,7 +641,7 @@ end
       next unless %w(Symbol String Float Fixnum Integer TrueClass FalseClass Module Class Object Array).include? v.class.to_s
       v = case 
           when Symbol === v
-            ":" << v.to_s
+            v.to_s
           when Array === v
             v * ","
           else
