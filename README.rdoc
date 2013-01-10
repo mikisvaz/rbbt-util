@@ -12,7 +12,7 @@
     cp .bash_profile .bash_profile.save
     mv tmp.bash_profile .bash_profile
     . .bash_profile
-    rvm install 1.8.7
+    rvm install 1.9.3
     
 2 - install tokyocabinet (Intructions for user install follow. For system level, make sure we have dev package)
     1 - download source from http://fallabs.com/tokyocabinet/tokyocabinet-1.4.47.tar.gz
@@ -43,7 +43,7 @@
 
    :script
 
-   gem install specific_install
+   gem install specific_install hoe
    gem specific_install -l https://github.com/bensomers/png.git
    gem specific_install -l https://github.com/felipec/soap4r.git
    gem specific_install -l https://github.com/mikisvaz/tokyocabinet_19_fix.git
@@ -53,18 +53,22 @@
    :script
 
    # RSRuby
-   R_HOME='full_path_to_R_dir' # Example in ubuntu
+   ## Example in ubuntu
    gem install rsruby -- --with-R-dir=/usr/lib/R/lib/ --with-R-include=/usr/share/R/include
+   
+   ## Example in MAC
+   gem install rsruby -- --with-R-dir=/Library/Frameworks/R.framework/Resources/
+
 
    # JRB
    export JAVA_HOME="full_path_to_jdk"
    gem install rjb
 
-3 - install gems rbbt-util rbbt-sources rbbt-text rbbt-phgx. 
+3 - install gems rbbt-util rbbt-sources rbbt-text rbbt-phgx, ...
 
     :script
     
-    gem install rbbt-util rbbt-sources rbbt-text rbbt-phgx rbbt-entities rbbt-views
+    gem install rbbt-util rbbt-sources rbbt-text rbbt-phgx rbbt-entities rbbt-views rbbt-dm rbbt-GE
 
 3.bis - Or install github repos and make ruby use them
 
@@ -82,13 +86,19 @@
     alias druby="env RBBT_LOG=0 ruby $(for d in $HOME/git/rbbt-*;do echo -n "-I$d/lib ";done)"
     alias drake="env RBBT_LOG=0 rake $(for d in $HOME/git/rbbt-*;do echo -n "-I$d/lib ";done)"
 
-4 - Set up R to find the helper lib
+4 - Install other gems that you might need for some of my workflows
+    
+    script
+
+    gem install redcarpet thin 
+
+5 - Set up R to find the helper lib
 
     :script
 
     echo "source(system('rbbt_Rutil.rb', intern =T));" >> $HOME/.Rprofile
 
-5 - If you plan to run workflows you might want to redefine the default directory to place your workflows (~/.workflows)
+6 - If you plan to run workflows you might want to redefine the default directory to place your workflows (~/.workflows)
     
     :script
 
