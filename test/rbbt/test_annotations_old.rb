@@ -62,7 +62,7 @@ class TestAnnotations < Test::Unit::TestCase
     annotation_str = "Annotation String"
     AnnotatedString.setup(ary, annotation_str)
     
-    assert_equal({:annotation_str => annotation_str, :annotation_types => [AnnotatedString], :annotated_array => true}, ary.info)
+    assert_equal({:annotation_str => annotation_str, :annotation_types => [AnnotatedString]}, ary.info)
   end
 
   def test_load
@@ -90,11 +90,8 @@ class TestAnnotations < Test::Unit::TestCase
     annotation_str2 = "Annotation String 2"
     AnnotatedString.setup(str1, annotation_str1)
     AnnotatedString.setup(str2, annotation_str2)
-    
-    assert_equal annotation_str1, Annotated.tsv([str1, str2], :all)[str1.id + ":0"]["annotation_str"] 
     assert_equal str1, Annotated.tsv([str1, str2], :all)[str1.id + ":0"]["literal"] 
-    assert_equal annotation_str1, Annotated.tsv([str1, str2], :all)[str1.id + ":0"]["annotation_str"] 
-    #assert_equal annotation_str1, Annotated.tsv([str1, str2], :annotation_str, :JSON)[str1.id + ":0"]["annotation_str"] 
+    assert_equal annotation_str1, Annotated.tsv([str1, str2], :annotation_str, :JSON)[str1.id + ":0"]["annotation_str"] 
   end
 
   def test_literal
@@ -133,6 +130,7 @@ class TestAnnotations < Test::Unit::TestCase
     str = "string1"
     annotation_str1 = "Annotation String 1"
     annotation_str2 = "Annotation String 2"
+    assert_equal [AnnotatedString], AnnotatedString2.inheritance
     AnnotatedString2.setup(str, annotation_str1, annotation_str2)
     assert_equal annotation_str1, str.annotation_str
     assert_equal annotation_str2, str.annotation_str2
@@ -150,9 +148,8 @@ class TestAnnotations < Test::Unit::TestCase
     b = AnnotatedString.setup([AnnotatedString.setup(["a"])])
     AnnotatedString.setup(a)
     a.extend AnnotatedArray
-    assert AnnotatedString === b[0]
     b.extend AnnotatedArray
-    assert AnnotatedString === b[0, true]
+    assert AnnotatedString === b[0]
     assert(!a.double_array)
     assert(b.double_array)
   end
