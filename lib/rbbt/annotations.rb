@@ -3,7 +3,6 @@ require 'rbbt/util/chain_methods'
 
 require 'json'
 module Annotated
-  attr_accessor :annotation_types
   attr_accessor :context
   attr_accessor :container
   attr_accessor :container_index
@@ -11,6 +10,10 @@ module Annotated
 
   def self.extended(base)
     base.annotation_types ||= []
+  end
+
+  def annotation_types
+    class << self; self; end.included_modules.select{|m| Annotation === m}
   end
 
   def annotations
@@ -189,7 +192,6 @@ module Annotated
       tsv = TSV.setup({}, :key_field => "ID", :fields => fields, :type => :list, :unnamed => true)
       annotations.compact.each_with_index do |annotation,i|
         tsv[annotation.id + ":" << i.to_s] = annotation.tsv_values(*fields)
-        #tsv[annotation.id] = annotation.tsv_values(*fields)
       end
     else
       raise "Annotations need to be an Array to create TSV"
@@ -234,56 +236,52 @@ end
 
 
 module Annotation
+  attr_accessor :annotations, :inheritance, :all_inheritance, :all_annotations, :masked_annotations
+
+  def annotations
+    @annotations ||= []
+  end
+
+  def inheritance
+    @inheritance ||= []
+  end
+
+  def all_inheritance
+    @all_inheritance ||= []
+  end
+
+  def all_annotations
+    @all_annotations ||= []
+  end
+
+  def masked_annotations
+    @masked_annotations ||= []
+  end
+
+  def unmasked_annotations
+    annotations - masked_annotations
+  end
+
   def self.extended(base)
-    if not base.respond_to? :annotations
-      class << base
-        attr_accessor :annotations, :inheritance, :all_inheritance, :all_annotations, :masked_annotations
+    base.module_eval do
+      include Annotated
 
-        def unmasked_annotations
-          annotations - masked_annotations
-        end
-        self
+      def self.included(base)
+        base.inheritance << self
+        base.all_inheritance.concat self.all_inheritance if self.respond_to? :all_inheritance
+        base.all_inheritance << self
+        base.all_inheritance.uniq!
+        base.update_annotations
       end
-
-      base.annotations = []
-      base.masked_annotations = []
-      base.inheritance = []
-      base.all_annotations = []
-      base.all_inheritance = []
-
-      base.module_eval do
-        class << self
-          alias prev_annotation_extended extended
-        end
-
-        def self.extended(object)
-          self.send(:prev_annotation_extended, object)
-          object.extend Annotated unless Annotated === object
-          if not object.annotation_types.include? self
-            object.annotation_types.concat self.inheritance 
-            object.annotation_types << self
-            object.annotation_types.uniq!
-          end
-        end
-
-        def self.included(base)
-          base.inheritance << self
-          base.all_inheritance.concat self.all_inheritance if self.respond_to? :all_inheritance
-          base.all_inheritance << self
-          base.all_inheritance.uniq!
-          base.update_annotations
-        end
-      end
-
     end
   end
 
   def update_annotations
-    @all_annotations = all_inheritance.inject([]){|acc,mod| acc.concat mod.all_annotations}.concat(@annotations)
+    @all_annotations = all_inheritance.inject([]){|acc,mod| acc.concat mod.all_annotations}.concat(annotations)
   end
 
   def annotation(*values)
-    @annotations.concat values.collect{|v| v.to_sym}
+    annotations.concat values.collect{|v| v.to_sym}
     update_annotations
 
     module_eval do
@@ -291,30 +289,31 @@ module Annotation
     end
   end
 
- def setup_info(object, info)
-    object.extend self unless self === object
+  def setup_info(object, info)
+    object.extend self
     all_annotations.each do |annotation|
-      object.send(annotation.to_s + '=', info[annotation])
+      value = info[annotation] || info[annotation.to_s]
+      #next if value.nil?
+      #value = value.split("|") if String === value and value.index "|"
+      object.instance_variable_set "@#{annotation}", value
+    end
+  end
+
+  def setup_positional(object, *values)
+    object.extend self 
+    all_annotations.zip(values).each do |name, value|
+      value = value.split("|") if String === value and value.index "|"
+      object.instance_variable_set "@#{name}", value
     end
   end
 
   def setup(object, *values)
-    return nil if object.nil?
+    return object if object.nil?
 
-    object.extend self unless self === object
-
-    if Hash === values.last
-      values.last.each do |name, value|
-        setter = "#{name}="
-        next unless object.respond_to? setter
-        value = value.split("|") if String === value and value.index "|"
-        object.send("#{name}=", value)
-      end
+    if Hash === (hash = values.last)
+      setup_info(object, hash)
     else
-      all_annotations.zip(values).each do |name, value|
-        value = value.split("|") if String === value and value.index "|"
-        object.send("#{name}=", value)
-      end
+      setup_positional(object, *values)
     end
 
     object
@@ -322,10 +321,6 @@ module Annotation
 end
 
 module AnnotatedArray
-  extend ChainMethods
-
-  self.chain_prefix = :annotated_array
-
   def double_array
     AnnotatedArray === self.send(:[], 0, true)
   end
@@ -363,13 +358,19 @@ module AnnotatedArray
   def each
     i = 0
     info = info
+    annotation_types = self.annotation_types
+    mod_annotations = {}
+    var_names = {}
     super do |value|
       if String === value or Array === value
         value = value.dup if value.frozen? and not value.nil?
 
         annotation_types.each do |mod| 
           value.extend mod  unless mod === value
-          mod.annotations.each do |annotation| value.send(annotation.to_s << "=", self.send(annotation)) end
+          (mod_annotations[mod] ||= mod.annotations).each do |annotation| 
+            var_name = (var_names[annotation] ||= "@" << annotation.to_s)
+            value.instance_variable_set(var_name, self.instance_variable_get(var_name))
+          end
         end
         
         value.extend AnnotatedArray if Array === value and AnnotatedArray === self

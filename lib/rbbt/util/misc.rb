@@ -101,12 +101,13 @@ module Misc
   end
 
   def self.prepare_entity(entity, field, options = {})
+    return entity unless defined? Entity
     return entity unless String === entity or Array === entity
     options ||= {}
 
     dup_array = options.delete :dup_array
 
-    if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? field
+    if  Entity.respond_to?(:formats) and Entity.formats.include? field
       params = options.dup
 
       params[:format] ||= params.delete "format"
