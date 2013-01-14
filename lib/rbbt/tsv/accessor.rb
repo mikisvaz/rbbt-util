@@ -17,6 +17,32 @@ module TSV
     end
   end
 
+  def prepare_entity(entity, field, options = {})
+    return entity if entity.nil?
+    return nil unless defined? Entity
+    @entity_templates ||= {}
+    if (template = @entity_templates[field])
+      entity = template.annotate(entity.frozen? ? entity.dup : entity)
+      entity.extend AnnotatedArray if Array === entity
+      entity
+    else
+      if @entity_templates.include? field
+        entity
+      else
+        template = Misc.prepare_entity("TEMPLATE", field, options)
+        if Annotated === template
+          @entity_templates[field] = template
+          entity = template.annotate(entity.frozen? ? entity.dup : entity)
+          entity.extend AnnotatedArray if Array === entity
+          entity
+        else
+          @entity_templates[field] = nil
+          entity
+        end
+      end
+    end
+  end
+
   def with_unnamed
     saved_unnamed = @unnamed 
     @unnamed = true
@@ -87,7 +113,7 @@ module TSV
     when :flat, :single
       value = value.dup if value.frozen?
 
-      value = Misc.prepare_entity(value, fields.first, entity_options)
+      value = prepare_entity(value, fields.first, entity_options)
     end
     value
   end
@@ -100,7 +126,7 @@ module TSV
     keys = tsv_clean_keys - ENTRY_KEYS
     return keys if @unnamed or key_field.nil?
 
-    Misc.prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
+    prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
   end
 
   def tsv_values
@@ -111,7 +137,7 @@ module TSV
     when :double, :list
       values.each{|value| NamedArray.setup value, fields, nil, entity_options}
     when :flat, :single
-      values = values.collect{|v| Misc.prepare_entity(v, fields.first, entity_options)}
+      values = values.collect{|v| prepare_entity(v, fields.first, entity_options)}
     end
       
     values
@@ -135,10 +161,10 @@ module TSV
           when :double, :list
             NamedArray.setup value, fields, key, entity_options if Array === value
           when :flat, :single
-            Misc.prepare_entity(value, fields.first, entity_options)
+            prepare_entity(value, fields.first, entity_options)
           end
         end
-        key = Misc.prepare_entity(key, key_field, entity_options)
+        key = prepare_entity(key, key_field, entity_options)
       end
 
       yield key, value if block_given?
@@ -162,10 +188,10 @@ module TSV
           when :double, :list
             NamedArray.setup value, fields, key, entity_options if Array === value 
           when :flat, :single
-            value = Misc.prepare_entity(value, fields.first, entity_options)
+            value = prepare_entity(value, fields.first, entity_options)
           end
         end
-        key = Misc.prepare_entity(key, key_field, entity_options)
+        key = prepare_entity(key, key_field, entity_options)
       end
 
 
@@ -229,14 +255,14 @@ module TSV
       if fields == :all
         if just_keys
           keys = elems.sort_by{|key, value| key }.collect{|key, values| key}
-          keys = Misc.prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
+          keys = prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
         else
           elems.sort_by{|key, value| key }
         end
       else
         if just_keys
           keys = elems.sort_by{|key, value| value }.collect{|key, value| key}
-          keys = Misc.prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
+          keys = prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
           keys
         else
           elems.sort_by{|key, value| value }.collect{|key, value| [key, self[key]]}
@@ -358,7 +384,7 @@ end
     if @fields.nil? or @unnamed
       @fields
     else
-      NamedArray.setup @fields, @fields, nil, entity_options
+      @named_fields ||= NamedArray.setup @fields, @fields, nil, entity_options
     end
   end
 

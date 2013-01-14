@@ -45,9 +45,20 @@ class Step
   end
 
   def prepare_result(value, description = nil, info = {})
-    return value if description.nil?
-    Entity.formats[description].setup(value, info.merge(:format => description)) if defined?(Entity) and Entity.respond_to?(:formats) and Entity.formats.include? description
-    value
+    case
+    when (not defined? Entity or description.nil? or not Entity.formats.include? description)
+      value
+    when (Annotated === value and info.empty?)
+      value
+    when Annotated === value
+      annotations = value.annotations
+      info.each do |k,v|
+        value.send("#{h}=", v) if annotations.include? k
+      end
+      value
+    else
+      Entity.formats[description].setup(value, info.merge(:format => description))
+    end
   end
 
   def exec

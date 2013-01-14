@@ -121,7 +121,7 @@ module Misc
 
     entity
   end
-
+ 
   ARRAY_MAX_LENGTH = 10000
   STRING_MAX_LENGTH = ARRAY_MAX_LENGTH * 10
 

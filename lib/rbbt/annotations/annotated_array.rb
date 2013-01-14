@@ -7,6 +7,10 @@ module AnnotatedArray
     self[0]
   end
 
+  def last
+    self[-1]
+  end
+
   def [](pos, clean = false)
 
     value = super(pos)
@@ -16,6 +20,8 @@ module AnnotatedArray
 
     value = annotate(value)
 
+    value.extend AnnotatedArray if Array === value
+
     value.container       = self
     value.container_index = pos
 
@@ -23,6 +29,7 @@ module AnnotatedArray
   end
 
   def each(&block)
+
     pos = 0
     super do |value|
 
@@ -35,6 +42,8 @@ module AnnotatedArray
 
         value = annotate(value)
 
+        value.extend AnnotatedArray if Array === value
+
         value.container       = self
         value.container_index = pos
 
@@ -46,14 +55,24 @@ module AnnotatedArray
   end
 
   def collect(&block)
-    return self unless block_given?
 
-    res = []
-    each do |value|
-      res << yield(value)
+    if block_given?
+
+      res = []
+      each do |value|
+        res << yield(value)
+      end
+
+      res
+    else
+
+      res = []
+      each do |value|
+        res << value
+      end
+
+      res
     end
-
-    res
   end
 
   def select(method = nil, *args)
@@ -125,7 +144,17 @@ module AnnotatedArray
     res
   end
 
-  %w(compact uniq flatten reverse sort_by sort).each do |method|
+  def sort(&block)
+    res = self.collect.sort(&block).collect{|value| value.respond_to?(:clean_annotations) ? value.clean_annotations.dup : value.dup }
+
+    annotate(res)
+    res.extend AnnotatedArray
+
+    res
+  end
+
+
+  %w(compact uniq flatten reverse sort_by).each do |method|
 
     self.module_eval <<-EOC
 

@@ -13,16 +13,24 @@ module Annotated
 
   def detach_annotations
     @annotation_values = @annotation_values.dup
+    @annotation_values.instance_variable_set(:@annotation_md5, nil)
     @shared_annotations = false
+  end
+
+  def reset
+    @info = nil
+    @id = nil
+    @self_md5 = nil
+    @annotation_values.instance_variable_set(:@annotation_md5, nil)
   end
 
   def annotation_types
 
     class << self; self; end.
-    included_modules.
-    select{|m| 
-      Annotation === m
-    }
+      included_modules.
+      select{|m| 
+        Annotation === m
+      }
   end
 
   def annotations
@@ -57,8 +65,8 @@ module Annotated
     @unmasked_annotations ||= annotations - masked_annotations
   end
 
+  def info(masked = false)
 
-  def info
     if @info.nil?
       info = annotation_values.dup
       info[:annotation_types] = annotation_types
@@ -66,14 +74,34 @@ module Annotated
       @info = info
     end
 
-    @info
+    if masked 
+      if @masked_info.nil?
+        @masked_info = @info.dup
+        masked_annotations.each do |annotation|
+          @masked_info.delete annotation
+        end
+      end
+      @masked_info
+    else
+      @info
+    end
+  end
+
+  def annotation_md5
+    if @annotation_values.instance_variable_get(:@annotation_md5).nil?
+      @annotation_values.instance_variable_set(:@annotation_md5, Misc.hash2md5(@annotation_values))
+    end
+    @annotation_values.instance_variable_get(:@annotation_md5)
+  end
+
+  def self_md5
+    @self_md5 ||= Misc.digest(annotation_md5 + self.to_s)
   end
 
   # ToDo This does not make much sense, why not change :id directly
   def id
     @id ||= self.respond_to?(:annotation_id) ? 
-      annotation_id : 
-      Misc.hash2md5(info.merge(:self => self))
+      annotation_id : self_md5
   end
 
   def annotate(value)
@@ -82,10 +110,14 @@ module Annotated
       value.extend annotation
     end
 
-    value.instance_variable_set(:@annotation_values,  annotation_values)
-
-    value.instance_variable_set(:@shared_annotations,  true)
-    @shared_annotations = true
+    if value.instance_variables.include?(:@annotation_values)
+      value.instance_variable_set(:@annotation_values,  value.instance_variable_get(:@annotation_values).merge(annotation_values))
+      value.instance_variable_set(:@shared_annotations,  false)
+    else
+      value.instance_variable_set(:@annotation_values,  annotation_values)
+      value.instance_variable_set(:@shared_annotations,  true)
+      @shared_annotations = true
+    end
 
     value
   end
@@ -101,6 +133,13 @@ module Annotated
     else
       self.dup
     end
+  end
+
+  def make_list
+    new = [self]
+    self.annotate(new)
+    new.extend AnnotatedArray
+    new
   end
 end
 
@@ -136,9 +175,10 @@ module Annotation
       self.send(:define_method, "#{ annot}=") do |value|
         if @shared_annotations 
           detach_annotations # avoid side effects
-          @info = nil
-          @id = nil
         end
+
+        reset
+
         annotation_values[annot] = value
       end
     end
@@ -146,14 +186,17 @@ module Annotation
 
   def setup_hash(object, values)
     object.instance_variable_set(:@annotation_values,  values)
+    object.instance_variable_set(:@shared_annotations,  true)
+    object.reset
     object
   end
 
   def clean_and_setup_hash(object, hash)
-    annotation_values = {}
+    annotation_values = object.instance_variable_get(:@annotation_values)
+    annotation_values = annotation_values.nil? ? {} : annotation_values.dup
+    annotation_values.instance_variable_set(:@annotation_md5, nil)
 
     hash.each do |key, value|
-
       begin
         next unless @annotations.include? (key = key.to_sym)
       rescue
@@ -166,13 +209,17 @@ module Annotation
     end
 
     object.instance_variable_set(:@annotation_values,  annotation_values)
-    object.instance_variable_set(:@shared_annotations,  true)
+    object.instance_variable_set(:@shared_annotations,  false)
+
+    object.reset
 
     object
   end
 
   def setup_positional(object, *values)
-    annotation_values = {}
+    annotation_values = object.instance_variable_get(:@annotation_values) 
+    annotation_values = annotation_values.nil? ? {} : annotation_values.dup
+    annotation_values.instance_variable_set(:@annotation_md5, nil)
 
     annotations.zip(values).each do |name, value|
 
@@ -182,6 +229,8 @@ module Annotation
     end
 
     object.instance_variable_set(:@annotation_values,  annotation_values)
+
+    object.reset
 
     object
   end

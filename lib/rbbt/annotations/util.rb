@@ -8,7 +8,8 @@ module Annotated
 
     return object if annotation_types.nil? or annotation_types.empty?
 
-    annotated_array = true if info.delete(:annotated_array) || info.delete("annotated_array")
+    annotated_array = false
+    annotated_array = true if (info.delete(:annotated_array) || info.delete("annotated_array")).to_s == "true"
     entity_id = info.delete(:entity_id) || info.delete("entity_id")
 
     annotation_types.each do |mod|
@@ -47,9 +48,11 @@ module Annotated
 
     object = resolve_array(object)
 
+
     if Array === values.first
       Misc.zip_fields(values).collect do |list|
         fields.each_with_index do |field,i|
+          next if field == "literal"
           if field == "JSON"
             JSON.parse(list[i]).each do |key, value|
               info[key.to_sym] = value
@@ -61,6 +64,7 @@ module Annotated
       end
     else
       fields.each_with_index do |field,i|
+        next if field == "literal"
         if field == "JSON"
           JSON.parse(values[i]).each do |key, value|
             info[key.to_sym] = value
@@ -72,6 +76,8 @@ module Annotated
     end
 
     self.load(object, info)
+
+    object
   end
  
   def self.load_tsv(tsv)
@@ -104,6 +110,7 @@ module Annotated
 
              when (fields == [:all] and Annotated === annotations)
                fields = [:annotation_types] + annotations.annotations 
+               fields << :annotated_array if AnnotatedArray === annotations
                fields << :literal
 
              when (fields == [:all] and not annotations.empty?)

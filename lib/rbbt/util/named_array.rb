@@ -17,6 +17,32 @@ module NamedArray
     array
   end
 
+  def prepare_entity(entity, field, options = {})
+    return entity if entity.nil?
+    return nil unless defined? Entity
+    @entity_templates ||= {}
+    if (template = @entity_templates[field])
+      entity = template.annotate(entity.frozen? ? entity.dup : entity)
+      entity.extend AnnotatedArray if Array === entity
+      entity
+    else
+      if @entity_templates.include? field
+        entity
+      else
+        template = Misc.prepare_entity("TEMPLATE", field, options)
+        if Annotated === template
+          @entity_templates[field] = template
+          entity = template.annotate(entity.frozen? ? entity.dup : entity)
+          entity.extend AnnotatedArray if Array === entity
+          entity
+        else
+          @entity_templates[field] = nil
+          entity
+        end
+      end
+    end
+  end
+
   def merge(array)
     double = Array === array.first 
     new = self.dup
@@ -47,14 +73,14 @@ module NamedArray
     return elem if @fields.nil? or @fields.empty?
 
     field = NamedArray === @fields ? @fields.named_array_clean_get_brackets(pos) : @fields[pos]
-    elem = Misc.prepare_entity(elem, field, entity_options)
+    elem = prepare_entity(elem, field, entity_options)
     elem
   end
 
   def named_array_each(&block)
     if defined?(Entity) and not @fields.nil? and not @fields.empty?
       @fields.zip(self).each do |field,elem|
-        elem = Misc.prepare_entity(elem, field, entity_options)
+        elem = prepare_entity(elem, field, entity_options)
         yield(elem)
         elem
       end
