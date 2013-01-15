@@ -26,7 +26,7 @@ module Annotated
 
   def annotation_types
 
-    class << self; self; end.
+    @annotation_types ||= class << self; self; end.
       included_modules.
       select{|m| 
         Annotation === m
@@ -88,10 +88,10 @@ module Annotated
   end
 
   def annotation_md5
-    if @annotation_values.instance_variable_get(:@annotation_md5).nil?
-      @annotation_values.instance_variable_set(:@annotation_md5, Misc.hash2md5(@annotation_values))
+    if annotation_values.instance_variable_get(:@annotation_md5).nil?
+      annotation_values.instance_variable_set(:@annotation_md5, Misc.hash2md5(annotation_values))
     end
-    @annotation_values.instance_variable_get(:@annotation_md5)
+    annotation_values.instance_variable_get(:@annotation_md5)
   end
 
   def self_md5
@@ -104,30 +104,40 @@ module Annotated
       annotation_id : self_md5
   end
 
-  def annotate(value)
+  def annotate(object)
 
     annotation_types.each do |annotation|
-      value.extend annotation
+      object.extend annotation
     end
 
-    if value.instance_variables.include?(:@annotation_values)
-      value.instance_variable_set(:@annotation_values,  value.instance_variable_get(:@annotation_values).merge(annotation_values))
-      value.instance_variable_set(:@shared_annotations,  false)
+    object.instance_variable_set(:@annotation_types, nil)
+
+    if object.instance_variables.include?(:@annotation_values)
+      hash = {}
+      object.instance_variable_get(:@annotation_values).each{|k,v| hash[k] = v}
+      self.annotation_values.each{|k,v| hash[k] = v}
+
+      object.instance_variable_set(:@annotation_values, hash)
+      object.instance_variable_set(:@shared_annotations,  false)
     else
-      value.instance_variable_set(:@annotation_values,  annotation_values)
-      value.instance_variable_set(:@shared_annotations,  true)
+      object.instance_variable_set(:@annotation_values,  self.annotation_values)
+      object.instance_variable_set(:@shared_annotations,  true)
       @shared_annotations = true
     end
 
-    value
+    object
   end
 
-  def clean_annotations
+  def clean_annotations(recursive = false)
     case
     when self.nil?
       nil
     when Array === self
-      self.dup.collect{|e| e.respond_to?(:clean_annotations)? e.clean_annotations : e}
+      if recursive
+        [].concat self.collect{|e| e.respond_to?(:clean_annotations)? e.clean_annotations : e}
+      else
+        [].concat self
+      end
     when String === self
       "" << self
     else
@@ -164,6 +174,7 @@ module Annotation
   def annotation(*list)
 
     list.each do |annot|
+      next if annotations.include? annot.to_sym
       annotations << annot.to_sym
 
       # Getter
@@ -240,6 +251,7 @@ module Annotation
 
     object.extend self
     object.extend AnnotatedArray if Array === object
+    object.instance_variable_set(:@annotation_types, nil)
 
     if Hash === (hash = values.last)
       clean_and_setup_hash(object, hash)
@@ -250,8 +262,17 @@ module Annotation
     object
   end
 
-  def extended(object)
-    object.extend Annotated
+  def fast_setup(object, hash, shared = false)
+    object.extend self
+    object.extend AnnotatedArray if Array === object
+    object.instance_variable_set(:@annotation_values, hash)
+    object.instance_variable_set(:@shared_annotations, true) if shared
+  end
+
+  def self.extended(object)
+    object.module_eval do
+      include Annotated
+    end
   end
 
   def included(mod)

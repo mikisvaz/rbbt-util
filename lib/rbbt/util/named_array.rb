@@ -19,7 +19,7 @@ module NamedArray
 
   def prepare_entity(entity, field, options = {})
     return entity if entity.nil?
-    return nil unless defined? Entity
+    return entity unless defined? Entity
     @entity_templates ||= {}
     if (template = @entity_templates[field])
       entity = template.annotate(entity.frozen? ? entity.dup : entity)

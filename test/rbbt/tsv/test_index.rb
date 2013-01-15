@@ -118,7 +118,6 @@ row3    A    a|B    Id4
 
     TmpFile.with_file(content) do |filename|
       index = TSV.index(filename, :target => "OtherID", :data_sep => /\s+/, :order => true, :persist => false)
-      ddd index
       assert_equal "Id1", index['a']
       assert_equal "Id3", index['A']
       assert_equal "OtherID", index.fields.first

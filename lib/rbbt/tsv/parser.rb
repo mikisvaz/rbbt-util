@@ -306,7 +306,7 @@ module TSV
       merge = Misc.process_options(options, :merge) || false
 
       @sep2 = Misc.process_options(options, :sep2) || "|"
-      @cast = Misc.process_options options, :cast
+      @cast = Misc.process_options options, :cast; @cast = @cast.to_sym if String === @cast
       @type ||= Misc.process_options options, :type
       @fix = Misc.process_options(options, :fix) 
       @select= Misc.process_options options, :select

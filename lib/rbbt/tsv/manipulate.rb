@@ -521,8 +521,8 @@ module TSV
     @monitor = old_monitor
 
     if not fields.nil? and not name.nil?
-      fields = self.fields + [name]
-      self.fields = fields
+      new_fields = self.fields + [name]
+      self.fields = new_fields
     end
 
     self

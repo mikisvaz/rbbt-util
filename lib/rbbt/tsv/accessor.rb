@@ -9,17 +9,17 @@ module TSV
   attr_accessor :unnamed, :serializer_module, :entity_options
 
   def entity_options
-    options = namespace ? {:namespace => namespace, :organism => namespace} : {}
-    if @entity_options
-      options.merge(@entity_options)
-    else
-      options
+    if @entity_options.nil?
+      @entity_options = namespace ? {:namespace => namespace, :organism => namespace} : {}
+      @entity_templates = nil
     end
+    @entity_options
   end
 
   def prepare_entity(entity, field, options = {})
     return entity if entity.nil?
-    return nil unless defined? Entity
+    return entity unless defined? Entity
+    entity = entity if options.delete :dup_array
     @entity_templates ||= {}
     if (template = @entity_templates[field])
       entity = template.annotate(entity.frozen? ? entity.dup : entity)
@@ -371,8 +371,8 @@ end
   end
 
   entry :key_field, 
-    :fields, 
     :type,
+    :fields,
     :cast,
     :identifiers,
     :namespace,
@@ -386,6 +386,18 @@ end
     else
       @named_fields ||= NamedArray.setup @fields, @fields, nil, entity_options
     end
+  end
+
+  def namespace=(value)
+    self.tsv_clean_set_brackets "__tsv_hash_namespace", value.nil? ? NIL_YAML : value.to_yaml
+    @namespace = value
+    @entity_options = nil
+  end
+
+  def fields=(value)
+    self.tsv_clean_set_brackets "__tsv_hash_fields", value.nil? ? NIL_YAML : value.to_yaml
+    @fields = value
+    @named_fields = nil
   end
 
   def self.zip_fields(list, fields = nil)

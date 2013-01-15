@@ -254,7 +254,7 @@ module Workflow
     if inputs.any? or dependencies.any?
       tagged_jobname = case TAG
                        when :hash
-                         jobname + '_' + Misc.digest((inputs + dependencies.collect{|dep| dep.name}).inspect)
+                         jobname + '_' + Misc.digest((inputs * "\n" + ";" + dependencies.collect{|dep| dep.name} * "\n"))
                        else
                          jobname
                        end

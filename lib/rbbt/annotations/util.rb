@@ -48,7 +48,6 @@ module Annotated
 
     object = resolve_array(object)
 
-
     if Array === values.first
       Misc.zip_fields(values).collect do |list|
         fields.each_with_index do |field,i|
