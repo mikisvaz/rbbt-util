@@ -1,79 +1,49 @@
 module AnnotatedModule
-  def self.extended(base)
-    if not base.respond_to? :inputs
-      class << base
-        attr_accessor :description, :inputs, :input_types, :input_descriptions, :input_defaults, :input_options, :result_description, :helpers
 
-        def description
-          i = @description; @description = ""; i
-        end
-
-        def inputs
-          i = @inputs; @inputs = []; i
-        end
-
-        def input_types
-          i = @input_types; @input_types = {}; i
-        end
-
-        def input_descriptions
-          i = @input_descriptions; @input_descriptions = {}; i
-        end
-
-        def input_defaults
-          i = @input_defaults; @input_defaults = {}; i
-        end
-
-        def input_options
-          i = @input_options; @input_options = {}; i
-        end
-
-        def description
-          i = @description; @description = ""; i
-        end
-
-        def result_description
-          i = @result_description; @result_description = nil; i
+  def self.add_consummable_annotation(target, *annotations)
+    if annotations.length == 1 and Hash === annotations.first
+      annotations.first.each do |annotation, default|
+        target.send(:attr_accessor, annotation)
+        target.send(:define_method, "consume_#{annotation}") do
+          value = instance_variable_get("@#{annotation}") || default.dup
+          instance_variable_set("@#{annotation}", default.dup)
+          value
         end
       end
-
-      base.description = ""
-      base.inputs = []
-      base.input_types = {}
-      base.input_descriptions = {}
-      base.input_defaults = {}
-      base.input_options = {}
-      base.helpers = {}
-
+    else
+      annotations.each do |annotation|
+        target.send(:attr_accessor, annotation)
+        target.send(:define_method, "consume_#{annotation}") do
+          value = instance_variable_get("@#{annotation}")
+          instance_variable_set("@#{annotation}", nil)
+        end
+      end
     end
   end
 
-  def helper(name, &block)
-    @helpers[name] = block
-  end
-
-  def returns(text)
-    @result_description = text
-  end
-
-  def desc(description)
-    @description = description
-  end
-
-  def dep(*dependencies, &block)
-    dependencies << block if block_given?
-    @dependencies.concat dependencies
-  end
+  add_consummable_annotation(self,
+    :description        => "",
+    :inputs             => [],
+    :input_types        => {},
+    :input_descriptions => {},
+    :input_defaults     => {},
+    :input_options      => {},
+  )
 
   def input(name, type = nil, desc = nil, default = nil, options = nil)
     name = name.to_sym
     type = type.to_sym
-    @inputs << name
-    @input_types[name] = type unless type.nil?
+
+    @inputs             = [] if @inputs.nil?
+    @input_types        = {} if @input_types.nil?
+    @input_descriptions = {} if @input_descriptions.nil?
+    @input_defaults     = {} if @input_defaults.nil?
+    @input_options      = {} if @input_options.nil?
+
+    @inputs                   << name
+    @input_types[name]        = type unless type.nil?
     @input_descriptions[name] = desc unless desc.nil?
-    @input_defaults[name] = default unless default.nil?
-    @input_options[name] = options unless options.nil?
+    @input_defaults[name]     = default unless default.nil?
+    @input_options[name]      = options unless options.nil?
   end
 end
-
-

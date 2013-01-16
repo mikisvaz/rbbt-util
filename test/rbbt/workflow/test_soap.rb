@@ -71,7 +71,7 @@ class TestSOAP < Test::Unit::TestCase
     assert $server.wsdl =~ /jobid/
   end
 
-  def test_check_status
+  def _test_check_status
     str = "TEST"
     job = TestSOAPWF.job(:repeat2, nil, :number => 3)
     id = TestSOAPWF.id_for job.path
@@ -79,7 +79,7 @@ class TestSOAP < Test::Unit::TestCase
     assert $driver.done id
   end
 
-  def test_launch_job
+  def _test_launch_job
     str = "TEST"
     id = $driver.repeat2("Default", 3)
     while not $driver.done id
@@ -88,7 +88,7 @@ class TestSOAP < Test::Unit::TestCase
     assert $driver.status(id) == "done"
   end
 
-  def test_load_job
+  def _test_load_job
     str = "TEST"
     id = $driver.repeat2("Default", 3)
     while not $driver.done id
@@ -97,7 +97,7 @@ class TestSOAP < Test::Unit::TestCase
     assert_equal ["TEST"] * 6 * "\n", $driver.load_string(id)
   end
 
-  def test_synchronous
+  def _test_synchronous
     assert_equal 6, $driver.double(3)
   end
 end

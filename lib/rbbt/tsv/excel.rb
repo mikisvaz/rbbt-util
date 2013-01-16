@@ -4,7 +4,7 @@ module TSV
     name = Misc.process_options options, :name
     sort_by = Misc.process_options options, :sort_by
     sort_by_cast = Misc.process_options options, :sort_by_cast
-    fields = Misc.process_options(options, :fields) || all_fields
+    fields = Misc.process_options(options, :fields) || tsv.all_fields
 
     book = Spreadsheet::Workbook.new
     sheet1 = book.create_worksheet 

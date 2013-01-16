@@ -280,21 +280,3 @@ module Annotation
     mod.instance_variable_set(:@masked_annotations, self.masked_annotations.dup)
   end
 end
-
-
-if __FILE__ == $0
-
-  module Gene
-    extend Annotation
-    annotation :format, :organism
-  end
-
-  a = %w(1 2 3 4 5 6 6)
-  Gene.setup a, "Ensembl Gene ID", "Hsa"
-
-  puts a.reject{|a| a.to_i < 6}.collect{|e| e.format}
-
-  puts 
-
-  puts a.reject{|a| a.to_i < 6}.uniq.collect{|e| e.format}
-end

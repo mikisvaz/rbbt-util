@@ -1,13 +1,32 @@
+require 'rbbt/workflow/definition'
 require 'rbbt/workflow/task'
 require 'rbbt/workflow/step'
-require 'rbbt/workflow/annotate'
 require 'rbbt/workflow/accessor'
 
 module Workflow
+  def self.resolve_locals(inputs)
+    inputs.each do |name, value|
+      if value =~ /^local:(.*?):(.*)/ or 
+        (Array === value and value.length == 1 and value.first =~ /^local:(.*?):(.*)/) or
+        (TSV === value and value.size == 1 and value.keys.first =~ /^local:(.*?):(.*)/)
+        task_name = $1
+        jobname = $2
+        value = load_id(File.join(task_name, jobname)).load
+      end
+      inputs[name] = value
+    end 
+  end
+
+  #{{{ WORKFLOW MANAGEMENT 
   class << self
     attr_accessor :workflows
   end
   self.workflows = []
+
+  def self.extended(base)
+    self.workflows << base
+    base.libdir = Path.caller_lib_dir
+  end
 
   def self.require_remote_workflow(wf_name, url)
     require 'rbbt/workflow/rest/client'
@@ -106,121 +125,64 @@ module Workflow
     end
   end
 
-  def self.extended(base)
-    if not base.respond_to? :workdir
-      base.extend AnnotatedModule
-      class << base
-        attr_accessor :libdir, :workdir, :tasks, :task_dependencies, :task_description, :dependencies, :asynchronous_exports, :synchronous_exports, :exec_exports, :last_task
- 
-        alias prev_workflow_extended extended if methods.include? "extended"
+  attr_accessor :libdir, :workdir 
+  attr_accessor :helpers, :tasks
+  attr_accessor :task_dependencies, :task_description, :last_task 
+  attr_accessor :asynchronous_exports, :synchronous_exports, :exec_exports
 
-        def extended(object)
-          self.send(:prev_workflow_extended, object) if methods.include? "prev_workflow_extended"
-          object.extend Workflow unless Workflow === object
+  #{{{ ATTR DEFAULTS
 
-          object.tasks.merge! self.tasks
-          object.task_dependencies.merge! self.task_dependencies
-        end
-
-        def dependencies
-          i = @dependencies; @dependencies = []; i
-        end
-
-        def task_dependencies
-          IndiferentHash.setup(@task_dependencies || {})
-        end
-
-        def tasks
-          IndiferentHash.setup(@tasks || {})
-        end
-      end
-
-      if defined? Rbbt
-        base.workdir = Rbbt.var.jobs.find
-      else
-        base.workdir = Path.setup('var/jobs')
-      end
-      base.tasks = {}
-      base.dependencies = []
-      base.task_dependencies = {}
-      base.task_description = {}
-      base.asynchronous_exports = []
-      base.synchronous_exports = []
-      base.exec_exports = []
-      base.libdir = Path.caller_lib_dir
-    end
-    self.workflows << base
+  def workdir
+    @workdir ||= if defined? Rbbt
+                   Rbbt.var.jobs.find
+                 else
+                   Path.setup('var/jobs')
+                 end
   end
 
-  # {{{ Task definition helpers
-
-  def task(name, &block)
-    if Hash === name
-      result_type = name.first.last
-      name = name.first.first
-    else
-      result_type = :marshal
-    end
-
-    name = name.to_sym
-
-    block = self.method(name) unless block_given?
-
-    result_type = result_type
-    annotations = {
-      :name => name,
-      :inputs => inputs,
-      :description => description,
-      :input_types => input_types,
-      :result_type => Array == result_type ? result_type.to_sym : result_type,
-      :input_defaults => input_defaults,
-      :input_descriptions => input_descriptions,
-      :input_options => input_options,
-      :result_description => result_description
-    }
-    
-    task = Task.setup(annotations, &block)
-
-    @last_task = task
-    @tasks[name] = task
-    @task_dependencies[name] = dependencies
+  def libdir
+    @libdir = Path.caller_lib_dir if @libdir.nil?
+    @libdir 
   end
 
-  def export_exec(*names)
-    @exec_exports.concat names
+  def helpers
+    @helpers ||= {}
   end
 
-  def export_asynchronous(*names)
-    @asynchronous_exports.concat names
+  def tasks
+    @tasks ||= {} 
   end
 
-  def export_synchronous(*names)
-    @synchronous_exports.concat names
+  def task_dependencies
+    @task_dependencies ||= {} 
   end
 
-  # {{{ Job management
-
-  def resolve_locals(inputs)
-    inputs.each do |name, value|
-      if value =~ /^local:(.*?):(.*)/ or 
-        (Array === value and value.length == 1 and value.first =~ /^local:(.*?):(.*)/) or
-        (TSV === value and value.size == 1 and value.keys.first =~ /^local:(.*?):(.*)/)
-        task_name = $1
-        jobname = $2
-        value = load_id(File.join(task_name, jobname)).load
-      end
-      inputs[name] = value
-    end 
+  def task_description
+    @task_description ||= ""
   end
+
+  def asynchronous_exports
+    @asynchronous_exports ||= []
+  end
+
+  def synchronous_exports
+    @synchronous_exports ||= []
+  end
+
+  def exec_exports
+    @exec_exports ||= []
+  end
+
+  # {{{ JOB MANAGEMENT
 
   def job(taskname, jobname = nil, inputs = {})
     jobname = "Default" if jobname.nil? or jobname.empty?
-    task = tasks[taskname]
+    task = tasks[taskname.to_sym]
     raise "Task not found: #{ taskname }" if task.nil?
 
     IndiferentHash.setup(inputs)
 
-    resolve_locals(inputs)
+    Workflow.resolve_locals(inputs)
 
     dependencies = real_dependencies(task, jobname, inputs, task_dependencies[taskname] || [])
 
@@ -230,9 +192,8 @@ module Workflow
 
     step = Step.new step_path, task, input_values, dependencies
 
-    helpers = @helpers
-    (class << step; self; end).class_eval do
-      helpers.each do |name, block|
+    helpers.each do |name, block|
+      (class << step; self; end).instance_eval do
         define_method name, &block
       end
     end

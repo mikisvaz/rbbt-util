@@ -166,6 +166,7 @@ module Workflow
   end
 
   def task_info(name)
+    name = name.to_sym
     task = tasks[name]
     description = task.description
     result_description = task.result_description
@@ -187,7 +188,7 @@ module Workflow
              end
 
     
-    dependencies = @task_dependencies[name].select{|dep| String === dep or Symbol === dep}
+    dependencies = task_dependencies[name].select{|dep| String === dep or Symbol === dep}
     { :id => File.join(self.to_s, name.to_s),
       :description => description,
       :export => export,
@@ -213,23 +214,23 @@ module Workflow
   end
 
   def rec_inputs(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject([]){|acc, tn| acc.concat tasks[tn].inputs}
+    [taskname].concat(rec_dependencies(taskname)).inject([]){|acc, tn| acc.concat tasks[tn.to_sym].inputs}
   end
 
   def rec_input_defaults(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn].input_defaults}
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn.to_sym].input_defaults}
   end
 
   def rec_input_types(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn].input_types}
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn.to_sym].input_types}
   end
 
   def rec_input_descriptions(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn].input_descriptions}
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn.to_sym].input_descriptions}
   end
 
   def rec_input_options(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn].input_options}
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn.to_sym].input_options}
   end
 
 

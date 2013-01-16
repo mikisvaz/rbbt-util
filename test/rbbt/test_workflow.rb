@@ -7,6 +7,8 @@ require 'test/unit'
 module TestWF
   extend Workflow
 
+  ddd TestWF.methods.sort
+
   helper :user do
     "User"
   end 
@@ -67,6 +69,7 @@ class TestWorkflow < Test::Unit::TestCase
   def test_helper
     assert_equal "User", TestWF.job(:user, "Default", :number => 3).run
   end
+
   def test_job
     str = "TEST"
     job = TestWF.job(:repeat2, "Default", :number => 3).fork
@@ -108,6 +111,16 @@ class TestWorkflow < Test::Unit::TestCase
 
   def test_double_dep
     assert_equal ["TEST", "TEST\nTEST", "TEST\nTEST\nTEST\nTEST"], TestWF.job(:double_dep, "foo", :times => 2, :number => 2).run
+  end
+
+  def test_object_workflow
+    a = ""
+    a.extend Workflow
+    a.task :foo => :string do
+      "bar"
+    end
+    
+    assert_equal 'bar', a.job(:foo).exec
   end
 
 end
