@@ -15,7 +15,7 @@ class WorkflowSOAP < SimpleWS
   end
 
   def initialize(workflow, *args)
-    super(workflow.to_s,*args)
+    super(workflow.to_s, *args)
     @workflow = workflow
     @workflow.synchronous_exports.each do |name| synchronous name end
     @workflow.asynchronous_exports.each do |name| asynchronous name end
@@ -38,6 +38,12 @@ class WorkflowSOAP < SimpleWS
       job(jobid).info.to_yaml
     end
 
+    desc "Job management: Load job result as string "
+    param_desc :jobid => "Job identifier", :return => "String containing the result of the job"
+    serve :load_string, %w(jobid), :jobid => :string, :return => :string do |jobid|
+      Open.read(job(jobid).path)
+    end
+
     desc "Job management: Abort the job"
     param_desc :jobid => "Job identifier"
     serve :abort, %w(jobid), :jobid => :string, :return => false do |jobid|
@@ -56,15 +62,19 @@ class WorkflowSOAP < SimpleWS
       job(jobid).status.to_sym == :error
     end
 
-    desc "Job management: Load job result as string "
-    param_desc :jobid => "Job identifier", :return => "String containing the result of the job"
-    serve :load_string, %w(jobid), :jobid => :string, :return => :string do |jobid|
-      job(jobid).load.to_s
+    desc "Job management: Check if the job has finished with error. The last message is the error message"
+    param_desc :jobid => "Job identifier", :return => "True if the job has status 'error'"
+    serve :clean, %w(jobid), :jobid => :string, :return => nil do |jobid|
+      job(jobid).clean
+      nil
     end
+
+
   end
 
   def synchronous(*tasknames)
     tasknames.each do |name|
+      name = name.to_sym
       task = @workflow.tasks[name]
       desc @workflow.task_description[name] if @workflow.task_description.include? name
 
