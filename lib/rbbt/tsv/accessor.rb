@@ -6,7 +6,7 @@ module TSV
 
   NIL_YAML = "--- \n"
 
-  attr_accessor :unnamed, :serializer_module, :entity_options
+  attr_accessor :unnamed, :serializer_module, :entity_options, :entity_templates
 
   def entity_options
     if @entity_options.nil?
@@ -16,31 +16,41 @@ module TSV
     @entity_options
   end
 
+  def entity_templates
+    @entity_templates ||= {}
+  end
+
   def prepare_entity(entity, field, options = {})
     return entity if entity.nil?
     return entity unless defined? Entity
     entity = entity if options.delete :dup_array
-    @entity_templates ||= {}
-    if (template = @entity_templates[field])
+    entity_templates
+    if (template = entity_templates[field])
       entity = template.annotate(entity.frozen? ? entity.dup : entity)
       entity.extend AnnotatedArray if Array === entity
       entity
     else
-      if @entity_templates.include? field
+      if entity_templates.include? field
         entity
       else
         template = Misc.prepare_entity("TEMPLATE", field, options)
         if Annotated === template
-          @entity_templates[field] = template
+          entity_templates[field] = template
           entity = template.annotate(entity.frozen? ? entity.dup : entity)
           entity.extend AnnotatedArray if Array === entity
           entity
         else
-          @entity_templates[field] = nil
+          entity_templates[field] = nil
           entity
         end
       end
     end
+  end
+
+  def setup_array(*args)
+    res = NamedArray.setup(*args)
+    res.instance_variable_set(:@entity_templates, entity_templates)
+    res
   end
 
   def with_unnamed
@@ -109,7 +119,7 @@ module TSV
 
     case type
     when :double, :list
-      NamedArray.setup value, fields, key, entity_options
+      setup_array value, fields, key, entity_options
     when :flat, :single
       value = value.dup if value.frozen?
 
@@ -135,7 +145,7 @@ module TSV
 
     case type
     when :double, :list
-      values.each{|value| NamedArray.setup value, fields, nil, entity_options}
+      values.each{|value| setup_array value, fields, nil, entity_options}
     when :flat, :single
       values = values.collect{|v| prepare_entity(v, fields.first, entity_options)}
     end
@@ -159,7 +169,7 @@ module TSV
         if not fields.nil? 
           case type
           when :double, :list
-            NamedArray.setup value, fields, key, entity_options if Array === value
+            setup_array value, fields, key, entity_options if Array === value
           when :flat, :single
             prepare_entity(value, fields.first, entity_options)
           end
@@ -186,7 +196,7 @@ module TSV
         if not fields.nil? 
           case type
           when :double, :list
-            NamedArray.setup value, fields, key, entity_options if Array === value 
+            setup_array value, fields, key, entity_options if Array === value 
           when :flat, :single
             value = prepare_entity(value, fields.first, entity_options)
           end
@@ -404,7 +414,7 @@ end
     return [] if list.nil? || list.empty?
     fields ||= list.fields if list.respond_to? :fields
     zipped = list[0].zip(*list[1..-1])
-    zipped = zipped.collect{|v| NamedArray.setup(v, fields)} if fields 
+    zipped = zipped.collect{|v| setup_array(v, fields)} if fields 
     zipped 
   end
 

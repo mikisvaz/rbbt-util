@@ -158,7 +158,7 @@ module Workflow
   end
 
   def task_description
-    @task_description ||= ""
+    @task_description ||= {}
   end
 
   def asynchronous_exports
