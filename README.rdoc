@@ -45,7 +45,6 @@
 
    gem install specific_install hoe
    gem specific_install -l https://github.com/bensomers/png.git
-   gem specific_install -l https://github.com/felipec/soap4r.git
    gem specific_install -l https://github.com/mikisvaz/tokyocabinet_19_fix.git
 
 3.pre2 - A couple of gems are better installed beforehand, since they require some configuration
