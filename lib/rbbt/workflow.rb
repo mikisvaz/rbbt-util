@@ -176,8 +176,9 @@ module Workflow
   # {{{ JOB MANAGEMENT
 
   def job(taskname, jobname = nil, inputs = {})
+    taskname = taskname.to_sym
     jobname = "Default" if jobname.nil? or jobname.empty?
-    task = tasks[taskname.to_sym]
+    task = tasks[taskname]
     raise "Task not found: #{ taskname }" if task.nil?
 
     IndiferentHash.setup(inputs)

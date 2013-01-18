@@ -241,7 +241,7 @@ module Workflow
       when Step === dependency
         dependency
       when Symbol === dependency
-        job dependency, jobname, inputs
+        job(dependency, jobname, inputs)
       when Proc === dependency
         dependency.call jobname, inputs
       end

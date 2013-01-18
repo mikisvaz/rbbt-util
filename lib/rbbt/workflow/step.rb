@@ -84,15 +84,15 @@ class Step
   end
 
   def run(no_load = false)
-    result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path}.uniq, :no_load => no_load do
+    result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path }.uniq, :no_load => no_load do
       if Step === Step.log_relay_step and not self == Step.log_relay_step
         relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
       end
 
       FileUtils.rm info_file if File.exists? info_file
 
-      set_info :dependencies, @dependencies.collect{|dep| [dep.task.name, dep.name]}
-      @dependencies.each{|dependency| 
+      set_info :dependencies, dependencies.collect{|dep| [dep.task.name, dep.name]}
+      dependencies.each{|dependency| 
         begin
           dependency.relay_log self
           dependency.run true
