@@ -11,6 +11,10 @@ class Step
     name.sub(/(.*)_.*/, '\1')
   end
 
+  def task_name
+    @task_name ||= task.name
+  end
+
   # {{{ INFO
 
   def info_file
@@ -71,8 +75,7 @@ class Step
   end
 
   def done?
-    status = info[:status]
-    status == :done or status == :error
+    path.exists?
   end
 
   def error?

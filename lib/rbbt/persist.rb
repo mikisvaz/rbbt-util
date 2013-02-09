@@ -231,6 +231,7 @@ module Persist
               repo[subkey + entities.id << ":" << "SINGLE"] = tsv_values
             when (not Array === entities or (AnnotatedArray === entities and AnnotatedArray === entities.first))
               entities.each_with_index do |e,i|
+                next if e.nil?
                 tsv_values = e.tsv_values("literal", "annotation_types", "JSON") 
                 repo[subkey + e.id << ":ANNOTATED_DOUBLE_ARRAY:" << i.to_s] = tsv_values
               end

@@ -92,15 +92,17 @@ if options[:server]
   require 'sinatra'
   require 'compass'
 
-  Workflow.require_workflow workflow
-  WorkflowREST.add_workflows *Workflow.workflows
+  if workflow
+    Workflow.require_workflow workflow
+    WorkflowREST.add_workflows *Workflow.workflows
+  end
 
   WorkflowREST.setup
 
   Sinatra::Application.port = options[:port] || 4567
   Sinatra::Application.run = true
 
-  if File.exists? workflow
+  if workflow and File.exists? workflow
     Sinatra::Application.views = File.join(File.dirname(workflow), 'www/views')
   end
 

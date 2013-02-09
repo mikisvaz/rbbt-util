@@ -1,4 +1,6 @@
 module AnnotatedArray
+  attr_accessor :list_id
+
   def double_array
     AnnotatedArray === self.send(:[], 0, true)
   end
@@ -153,6 +155,27 @@ module AnnotatedArray
     res
   end
 
+  def select_by(method, *args, &block)
+    return [] if self.empty? and not self.respond_to? :annotate
+
+    values = self.send(method, *args)
+    values = values.clean_annotations if values.respond_to? :clean_annotations
+
+    new = []
+    if block_given?
+      self.clean_annotations.each_with_index do |e,i|
+        new << e if yield(values[i])
+      end
+    else
+      self.clean_annotations.each_with_index do |e,i|
+        new << e if values[i]
+      end
+    end
+    self.annotate(new)
+    new.extend AnnotatedArray
+
+    new
+  end
 
   %w(compact uniq flatten reverse sort_by).each do |method|
 

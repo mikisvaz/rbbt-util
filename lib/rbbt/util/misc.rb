@@ -580,7 +580,6 @@ end
       raise $!
     ensure
       result = RubyProf.stop
-      #result.eliminate_methods!([/annotated_array_clean_/])
       printer = RubyProf::FlatPrinter.new(result)
       printer.print(STDOUT, options)
     end
@@ -651,6 +650,40 @@ end
       [ Symbol === k ? k.to_s : k,  v] * "="
     }.compact * "&"
   end
+
+  def self.hash_to_html_tag_attributes(hash)
+    return "" if hash.nil? or hash.empty?
+    hash.collect{|k,v| 
+      case 
+      when (k.nil? or v.nil? or (String === v and v.empty?))
+        nil
+      when Array === v
+        [k,"'" << v * " " << "'"] * "="
+      when String === v
+        [k,"'" << v << "'"] * "="
+      when Symbol === v
+        [k,"'" << v.to_s << "'"] * "="
+      when TrueClass === v
+        [k,"'" << v.to_s << "'"] * "="
+      when (Fixnum === v or Float === v)
+        [k,"'" << v.to_s << "'"] * "="
+      else
+        nil
+      end
+    }.compact * " "
+  end
+
+  def self.html_tag(tag, content = nil, params = {})
+    attr_str = hash_to_html_tag_attributes(params)
+    html = if content.nil?
+      "<#{ tag } #{attr_str} />"
+    else
+      "<#{ tag } #{attr_str} >#{ content }</#{ tag }>"
+    end
+
+    html
+  end
+
 
   def self.path_relative_to(basedir, path)
     path = File.expand_path(path)
@@ -800,6 +833,8 @@ end
         end
 
       end
+
+      str << "_" << hash2md5(v.info) if Annotated === v
     end
 
     if str.empty?

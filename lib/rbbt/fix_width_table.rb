@@ -116,14 +116,14 @@ class FixWidthTable
   #{{{ Adding data
 
   def add_point(data)
-    data.sort_by{|value, pos| pos}.each do |value, pos|
+    data.sort_by{|value, pos| pos }.each do |value, pos|
       add pos, value
     end
   end
 
   def add_range(data)
     latest = []
-    data.sort_by{|value, pos| pos[0]}.each do |value, pos|
+    data.sort_by{|value, pos| pos[0] }.each do |value, pos|
       while latest.any? and latest[0] < pos[0]
         latest.shift
       end

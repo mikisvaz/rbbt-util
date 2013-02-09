@@ -180,6 +180,7 @@ module Open
   end
 
   def self.open(url, options = {})
+    return url if IO === url
     options = Misc.add_defaults options, :noz => false, :mode => 'r'
 
     mode = Misc.process_options options, :mode

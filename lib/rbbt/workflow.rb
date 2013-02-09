@@ -204,13 +204,13 @@ module Workflow
 
   def load_step(path)
     task = task_for path
-    Step.new path, tasks[task]
+    Step.new path, tasks[task.to_sym]
   end
 
   def load_id(id)
     path = File.join(workdir, id)
     task = task_for path
-    step = Step.new path, tasks[task]
+    step = Step.new path, tasks[task.to_sym]
     if step.info.include? :dependencies
       step.dependencies = step.info[:dependencies].collect do |task, job|
         load_id(File.join(task.to_s, job))
