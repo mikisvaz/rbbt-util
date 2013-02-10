@@ -1,0 +1,15 @@
+# vim: filetype=ruby :
+require 'rbbt'
+require 'cgi'
+
+resource, directory, destination = ARGV
+
+resource_server = Rbbt.etc.resource_server.read.chomp
+
+url = File.join(resource_server, 'get_directory?' + Misc.hash2GET_params(:directory => directory, :resource => resource, :_format => 'raw'))
+
+puts url
+
+FileUtils.mkdir destination unless File.exists? destination
+Dir.chdir destination
+puts CMD.cmd("wget '#{url}' -O - |tar xvfz -").read
