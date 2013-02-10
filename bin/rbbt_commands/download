@@ -6,8 +6,7 @@ resource, file, destination = ARGV
 
 resource_server = Rbbt.etc.resource_server.read.chomp
 
-url = File.join(resource_server, 'get_file?' + Misc.hash2GET_params(:file => file, :resource => resource, :produce => false, :_format => 'raw'))
+url = File.join(resource_server, resource, 'get_file?' + Misc.hash2GET_params(:file => file, :produce => false, :_format => 'raw'))
 
-puts url
-
-Open.write(destination, Open.read(url, :nocache => true))
+`wget -O '#{ destination }' '#{ url }'`
+#Open.write(destination, Open.read(url, :nocache => true))
