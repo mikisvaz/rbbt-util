@@ -81,7 +81,8 @@
     git clone git@github.com:mikisvaz/rbbt-phgx.git
     git clone git@github.com:mikisvaz/rbbt-entities.git
     git clone git@github.com:mikisvaz/rbbt-dm.git
-    git clone git@github.com:mikisvaz/rbbt-views.git
+    git clone git@github.com:mikisvaz/rbbt-rest.git
+    git clone git@github.com:mikisvaz/rbbt-studies.git
     alias druby="env RBBT_LOG=0 ruby $(for d in $HOME/git/rbbt-*;do echo -n "-I$d/lib ";done)"
     alias drake="env RBBT_LOG=0 rake $(for d in $HOME/git/rbbt-*;do echo -n "-I$d/lib ";done)"
 

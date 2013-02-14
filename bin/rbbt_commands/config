@@ -1,0 +1,28 @@
+# vim: filetype=ruby :
+action = ARGV.shift
+
+raise "No action" if action.nil?
+require 'rbbt'
+
+case action.to_sym
+when :remove_remote_workflow
+    workflow = ARGV.shift
+    config_file = Rbbt.etc.remote_workflows
+    remote_workflows = config_file.exists? ? config_file.yaml : {}
+    remote_workflows.delete workflow
+    Open.write(config_file.find(:user), remote_workflows.to_yaml)
+when :show_remote_workflows
+    config_file = Rbbt.etc.remote_workflows
+    config_file.yaml.sort_by{|k,v| k}.each do |workflow, server|
+        puts [workflow, server] * "\t"
+    end
+when :add_remote_workflow
+    url, workflow = ARGV
+    url = File.join(url, workflow) unless url =~ /\/#{workflow}$/
+    config_file = Rbbt.etc.remote_workflows
+    remote_workflows = config_file.exists? ? config_file.yaml : {}
+    remote_workflows[workflow] = url
+    Open.write(config_file.find(:user), remote_workflows.to_yaml)
+else
+    raise "Unknown action"
+end

@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+$command_dir = File.join(File.dirname(__FILE__), 'rbbt_commands')
+
+command = ARGV.shift
+
+raise "No command specified" if command.nil?
+
+load File.join($command_dir, command)
