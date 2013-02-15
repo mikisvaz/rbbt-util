@@ -223,6 +223,7 @@ class Step
     if File.exists?(path) or File.exists?(info_file)
       begin
         FileUtils.rm info_file if File.exists? info_file
+        FileUtils.rm info_file + '.lock' if File.exists? info_file + '.lock'
         FileUtils.rm path if File.exists? path
         FileUtils.rm path + '.lock' if File.exists? path + '.lock'
         FileUtils.rm_rf files_dir if File.exists? files_dir

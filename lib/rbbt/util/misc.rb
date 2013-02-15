@@ -689,7 +689,10 @@ end
     path = File.expand_path(path)
     basedir = File.expand_path(basedir)
 
-    if path =~ /#{Regexp.quote basedir}\/(.*)/
+    case
+    when path == basedir
+      "."
+    when path =~ /#{Regexp.quote basedir}\/(.*)/
       return $1
     else
       return nil
