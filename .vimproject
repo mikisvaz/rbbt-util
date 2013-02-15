@@ -6,14 +6,15 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
  README.rdoc
  bin=bin {
   excel2tsv.rb
-  tsv.rb
-  tchash.rb
+  rbbt_Rutil.rb
+  rbbt_dangling_locks.rb
+  rbbt_exec.rb
+  rbbt_monitor.rb
+  rbbt_query.rb
   run_workflow.rb
   show_analysis.rb
-  rbbt_query.rb
-  rbbt_exec.rb
-  rbbt_Rutil.rb
-  rbbt_monitor.rb
+  tchash.rb
+  tsv.rb
  }
  lib=lib{
   rbbt.rb

@@ -9,6 +9,15 @@ require 'digest/md5'
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.pid_exists?(pid)
+    begin
+      Process.getpgid(pid)
+      true
+    rescue Errno::ESRCH
+      false
+    end
+  end
+
   def self.humanize(string)
     string.gsub(/([a-z])([A-Z])/,'\1_\2').downcase
   end
