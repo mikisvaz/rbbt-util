@@ -4,6 +4,7 @@ require 'rbbt-util'
 require 'fileutils'
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow/step'
+require 'rbbt/util/misc'
 
 options = SOPT.get("-l--list:-z--zombies:-e--errors:-c--clean:-n--name:-a--all:-w--wipe:-f--file*")
 
@@ -12,12 +13,7 @@ def info_files
 end
 
 def running?(info)
-  begin
-    Process.kill 0, info[:pid]
-    true
-  rescue
-    false
-  end
+  Misc.pid_exists? info[:pid]
 end
 
 def print_job(file, info, severity_color = nil)
@@ -28,6 +24,7 @@ def print_job(file, info, severity_color = nil)
     info ||= {:status => :missing_info_file}
     str = [clean_file, info[:status].to_s] * " [ STATUS = " + " ]" 
     str += " (#{running?(info)? :running : :zombie} #{info[:pid]})" if info.include? :pid
+    str += " (children: #{info[:children_pids].collect{|pid| [pid, Misc.pid_exists?(pid) ? "R" : "D"] * ":"} * ", "})" if info.include? :children_pids
 
     str = "#{severity_color}" <<  str  << "\033[0m" if severity_color
     puts str
@@ -40,11 +37,11 @@ def list_jobs(options)
 
   info_files.each do |file|
     clean_file = file.sub('.info','')
-    next if File.exists? clean_file
     begin
       info = YAML.load(Open.read(file))
+      next if File.exists? clean_file and not running? info
     rescue Exception
-      Log.debug "Error parsing info file: #{ file }"
+      puts "Error parsing info file: #{ file }"
       info = nil
     end
 

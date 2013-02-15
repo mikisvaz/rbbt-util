@@ -10,8 +10,9 @@ module Misc
   class FieldNotFoundError < StandardError;end
 
   def self.pid_exists?(pid)
+    return false if pid.nil?
     begin
-      Process.getpgid(pid)
+      Process.getpgid(pid.to_i)
       true
     rescue Errno::ESRCH
       false

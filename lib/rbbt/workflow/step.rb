@@ -163,18 +163,24 @@ class Step
       begin
         run
         children_pids = info[:children_pids]
+        ddd "DONE running: #{children_pids.collect{|pid| [pid, Misc.pid_exists?(pid)] * ": " } * ", " }"
         if children_pids
           children_pids.each do |pid|
-            begin
-              Process.waitpid pid
-            rescue Errno::ECHILD
-              Log.debug "Child #{ pid } already finished: #{ path }"
+            if Misc.pid_exists? pid
+              begin
+                ddd "Waiting for pid: #{ pid }"
+                Process.waitpid pid
+                ddd "Done waiting for pid: #{ pid }"
+              rescue Errno::ECHILD
+                Log.error "Waiting on #{ pid } failed: #{$!.message}"
+              end
             end
           end
         end
       rescue
         exit -1
       end
+      exit 0
     end
     Process.detach(@pid)
     self
@@ -206,8 +212,9 @@ class Step
     else
       children_pids << child_pid
     end
-    Process.detach(child_pid)
+    #Process.detach(child_pid)
     set_info :children_pids, children_pids
+    child_pid
   end
 
 
