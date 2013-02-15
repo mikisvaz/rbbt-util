@@ -25,7 +25,7 @@ end
 def fix_options(workflow, task, job_options)
   option_types = workflow.rec_input_types(task.name)
 
-  workflow.resolve_locals(job_options)
+  #workflow.resolve_locals(job_options)
 
   job_options_cleaned = {}
 
@@ -149,7 +149,7 @@ else
     namespace, task = options.delete(:task).split('.')
     namespace = Misc.string2const(namespace)
   else
-    task_name = options.delete(:task)
+    task_name = options.delete(:task).to_sym
     task = workflow.tasks[task_name]
     raise "Task not found: #{ task_name }" if task.nil?
   end
