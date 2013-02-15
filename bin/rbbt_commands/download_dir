@@ -3,15 +3,13 @@ require 'rbbt'
 require 'cgi'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("-lw--log_wget")
-puts options
-puts ARGV
+options = SOPT.get("-lw--log_wget:-2--two_steps")
 
+log_wget = options.delete :log_wget
+two_steps = options.delete :two_steps
 
 resource, directory, destination = ARGV
 destination, directory = directory, '.' if destination.nil?
-
-
 
 resource_server = Rbbt.etc.resource_server.read.chomp
 
@@ -22,9 +20,13 @@ puts "Feching: #{ url }"
 FileUtils.mkdir_p destination unless File.exists? destination
 Dir.chdir destination
 
-if options[:log_wget]
-    `wget '#{url}' -O - |tar xfz -` 
+if two_steps
+    `wget '#{url}' -c -O data.tar.gz && tar xvfz data.tar.gz`
 else
-    `wget --quiet '#{url}' -O - |tar xvfz -` 
+    if log_wget
+        `wget '#{url}' -O - |tar xfz -` 
+    else
+        `wget --quiet '#{url}' -O - |tar xvfz -` 
+    end
 end
 

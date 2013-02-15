@@ -91,6 +91,8 @@ class Step
 
       FileUtils.rm info_file if File.exists? info_file
 
+      set_info :pid, Process.pid
+
       set_info :dependencies, dependencies.collect{|dep| [dep.task.name, dep.name]}
       dependencies.each{|dependency| 
         begin
@@ -116,6 +118,18 @@ class Step
               exec
             rescue Step::Aborted
               log(:error, "Aborted")
+
+              children_pids = info[:children_pids]
+              Log.medium("Killing children: #{ children_pids * ", " }")
+              children_pids.each do |pid|
+                Log.medium("Killing child #{ pid }")
+                begin
+                  Process.kill "INT", pid
+                rescue Exception
+                  Log.medium("Exception killing child #{ pid }: #{$!.message}")
+                end
+              end if children_pids
+
               raise $!
             rescue Exception
               backtrace = $!.backtrace
@@ -148,11 +162,20 @@ class Step
       FileUtils.mkdir_p File.dirname(path) unless File.exists? File.dirname(path)
       begin
         run
+        children_pids = info[:children_pids]
+        if children_pids
+          children_pids.each do |pid|
+            begin
+              Process.waitpid pid
+            rescue Errno::ECHILD
+              Log.debug "Child #{ pid } already finished: #{ path }"
+            end
+          end
+        end
       rescue
         exit -1
       end
     end
-    set_info :pid, @pid
     Process.detach(@pid)
     self
   end
@@ -164,11 +187,29 @@ class Step
       false
     else
       Log.medium "Aborting #{path}: #{ @pid }"
-      Process.kill("INT", @pid)
+      begin
+        Process.kill("INT", @pid)
+        Process.waitpid @pid
+      rescue Exception
+        Log.debug("Aborted job #{@pid} was not killed: #{$!.message}")
+      end
       log(:aborted, "Job aborted by user")
       true
     end
   end
+
+  def child(&block)
+    child_pid = Process.fork &block
+    children_pids = info[:children_pids]
+    if children_pids.nil?
+      children_pids = [child_pid]
+    else
+      children_pids << child_pid
+    end
+    Process.detach(child_pid)
+    set_info :children_pids, children_pids
+  end
+
 
   def load
     raise "Can not load: Step is waiting for proces #{@pid} to finish" if not done?
