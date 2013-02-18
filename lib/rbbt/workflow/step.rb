@@ -163,14 +163,11 @@ class Step
       begin
         run
         children_pids = info[:children_pids]
-        ddd "DONE running: #{children_pids.collect{|pid| [pid, Misc.pid_exists?(pid)] * ": " } * ", " }"
         if children_pids
           children_pids.each do |pid|
             if Misc.pid_exists? pid
               begin
-                ddd "Waiting for pid: #{ pid }"
                 Process.waitpid pid
-                ddd "Done waiting for pid: #{ pid }"
               rescue Errno::ECHILD
                 Log.error "Waiting on #{ pid } failed: #{$!.message}"
               end
