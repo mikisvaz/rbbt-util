@@ -6,7 +6,10 @@ require 'rbbt/util/simpleopt'
 require 'rbbt/workflow/step'
 require 'rbbt/util/misc'
 
-options = SOPT.get("-l--list:-z--zombies:-e--errors:-c--clean:-n--name:-a--all:-w--wipe:-f--file*")
+options = SOPT.get("-l--list:-z--zombies:-e--errors:-c--clean:-n--name:-a--all:-w--wipe:-f--file*:-q--quick")
+
+
+YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
 
 def info_files
   Dir.glob('**/*.info')
@@ -38,6 +41,7 @@ def list_jobs(options)
   info_files.each do |file|
     clean_file = file.sub('.info','')
     begin
+      next if File.exists? clean_file and $quick
       info = YAML.load(Open.read(file))
       next if File.exists? clean_file and not running? info
     rescue Exception
@@ -97,6 +101,7 @@ end
 
 
 $name = options.delete :name
+$quick = options.delete :quick
 case
 when (options[:clean] and not options[:list])
   if options[:file]
