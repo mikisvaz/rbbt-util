@@ -23,7 +23,7 @@ def print_job(file, info, severity_color = nil)
   else
     info ||= {:status => :missing_info_file}
     str = [clean_file, info[:status].to_s] * " [ STATUS = " + " ]" 
-    str += " (#{running?(info)? :running : :zombie} #{info[:pid]})" if info.include? :pid
+    str += " (#{running?(info)? :running : :dead} #{info[:pid]})" if info.include? :pid
     str += " (children: #{info[:children_pids].collect{|pid| [pid, Misc.pid_exists?(pid) ? "R" : "D"] * ":"} * ", "})" if info.include? :children_pids
 
     str = "#{severity_color}" <<  str  << "\033[0m" if severity_color

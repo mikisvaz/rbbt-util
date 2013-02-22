@@ -120,15 +120,17 @@ class Step
               log(:error, "Aborted")
 
               children_pids = info[:children_pids]
-              Log.medium("Killing children: #{ children_pids * ", " }")
-              children_pids.each do |pid|
-                Log.medium("Killing child #{ pid }")
-                begin
-                  Process.kill "INT", pid
-                rescue Exception
-                  Log.medium("Exception killing child #{ pid }: #{$!.message}")
+              if children_pids and children_pids.any?
+                Log.medium("Killing children: #{ children_pids * ", " }")
+                children_pids.each do |pid|
+                  Log.medium("Killing child #{ pid }")
+                  begin
+                    Process.kill "INT", pid
+                  rescue Exception
+                    Log.medium("Exception killing child #{ pid }: #{$!.message}")
+                  end
                 end
-              end if children_pids
+              end
 
               raise $!
             rescue Exception

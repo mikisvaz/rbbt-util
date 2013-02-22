@@ -277,8 +277,9 @@ end
   end
 
   def self.counts(array)
-    counts = Hash.new 0
+    counts = {}
     array.each do |e|
+      counts[e] ||= 0
       counts[e] += 1
     end
 
