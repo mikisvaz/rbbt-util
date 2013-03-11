@@ -84,11 +84,14 @@ module TSV
       return parts.shift, parts if field_positions.nil? and key_position.nil?
       key = parts[key_position]
 
-      values = if field_positions.nil?
+      values = case
+               when field_positions.nil?
                 parts.tap{|o| o.delete_at key_position}
-              else
+               when field_positions.empty?
+                 []
+               else
                 parts.values_at *field_positions
-              end
+               end
 
       [key, values]
     end
@@ -96,11 +99,14 @@ module TSV
     def get_values_double(parts)
       return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if field_positions.nil? and key_position.nil?
       keys = parts[key_position].split(@sep2, -1)
-      values = if field_positions.nil?
+      values = case
+               when field_positions.nil?
                 parts.tap{|o| o.delete_at key_position}
-              else
-                parts.values_at *field_positions
-              end.collect{|value| value.split(@sep2, -1)}
+               when field_positions.empty?
+                 []
+               else
+                 parts.values_at *field_positions
+               end.collect{|value| value.split(@sep2, -1)}
       [keys, values]
     end
 

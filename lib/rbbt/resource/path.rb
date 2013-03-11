@@ -37,7 +37,7 @@ module Path
   end
 
   def glob(pattern = '*')
-    Dir.glob(File.join(self, pattern))
+    Dir.glob(File.join(self, pattern)).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
   end
 
   def path_get_brackets(name)
@@ -138,6 +138,10 @@ module Path
 
   def to_s
     "" + self
+  end
+
+  def basename
+    Path.setup(File.basename(self), self.resource, self.pkgdir)
   end
 
   def tsv(*args)

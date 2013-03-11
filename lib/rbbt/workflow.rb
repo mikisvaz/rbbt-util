@@ -25,7 +25,7 @@ module Workflow
 
   def self.extended(base)
     self.workflows << base
-    base.libdir = Path.caller_lib_dir
+    base.libdir = Path.caller_lib_dir.tap{|p| p.resource = base}
   end
 
   def self.require_remote_workflow(wf_name, url)
@@ -114,10 +114,10 @@ module Workflow
     rescue Exception
       Log.debug $!.message 
       Log.debug $!.backtrace.first
-      raise "Workflow not found: #{ wf_name }" if wf_name == Misc.humanize(wf_name)
-      Log.debug "Trying with humanized: '#{Misc.humanize wf_name}'"
+      raise "Workflow not found: #{ wf_name }" if wf_name == Misc.snake_case(wf_name)
+      Log.debug "Trying with humanized: '#{Misc.snake_case wf_name}'"
       begin
-        require_local_workflow(Misc.humanize(wf_name))
+        require_local_workflow(Misc.snake_case(wf_name))
       rescue Exception
         Log.debug $!.message
         raise "Workflow not found: #{ wf_name }"

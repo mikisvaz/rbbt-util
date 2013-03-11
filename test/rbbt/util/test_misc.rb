@@ -199,6 +199,21 @@ class TestMisc < Test::Unit::TestCase
     g = Misc.prepare_entity("TP53", "Gene", :format => "Associated Gene Name", "organism" => "Hsa/jun2011")
   end
 
+  def test_collapse_ranges
+    ranges = [(0..100), (50..150), (51..61),(200..250), (300..324),(320..350)]
+    assert_equal [(0..150),(200..250), (300..350)], Misc.collapse_ranges(ranges)
+  end
+
+  def test_humanize
+    str1 = "test_string"
+    str2 = "TEST_string"
+    str3 = "test"
+
+    assert_equal "Test string", Misc.humanize(str1)
+    assert_equal "TEST string", Misc.humanize(str2)
+    assert_equal "Test", Misc.humanize(str3)
+  end
+
 #
 #  def test_process_to_hash
 #    list = [1,2,3,4]

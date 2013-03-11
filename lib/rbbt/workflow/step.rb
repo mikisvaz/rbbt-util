@@ -179,6 +179,7 @@ class Step
       rescue
         exit -1
       end
+      set_info :pid, nil
       exit 0
     end
     Process.detach(@pid)

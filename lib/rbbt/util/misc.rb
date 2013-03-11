@@ -19,10 +19,6 @@ module Misc
     end
   end
 
-  def self.humanize(string)
-    string.gsub(/([a-z])([A-Z])/,'\1_\2').downcase
-  end
-
   COLOR_LIST = %w(#BC80BD #CCEBC5 #FFED6F #8DD3C7 #FFFFB3 #BEBADA #FB8072 #80B1D3 #FDB462 #B3DE69 #FCCDE5 #D9D9D9)
 
   def self.colors_for(list)
@@ -42,7 +38,7 @@ module Misc
     [colors, used]
   end
 
-  def self.total_length(ranges)
+  def self.collapse_ranges(ranges)
     processed = []
     last = nil
     ranges.sort_by{|range| range.begin }.each do |range|
@@ -65,8 +61,13 @@ module Misc
       end
     end
 
-    processed.inject(0) do |total,range| total += range.end - range.begin + 1 end
+    processed
   end
+
+  def self.total_length(ranges)
+    Misc.collapse_ranges(ranges).inject(0) do |total,range| total += range.end - range.begin + 1 end
+  end
+
 
   def self.random_sample_in_range(total, size)
     p = Set.new
@@ -983,6 +984,55 @@ end
     array[0].zip(*array[1..-1])
   end
 
+  def self.snake_case(string)
+    return nil if string.nil?
+    string.gsub(/([a-z])([A-Z])/,'\1_\2').gsub(/\s/,'_').gsub(/[^\w_]/, '').downcase
+  end
+
+  # source: https://gist.github.com/ekdevdes/2450285
+  # author: Ethan Kramer (https://github.com/ekdevdes)
+  def self.humanize(value, options = {})
+    if options.empty?
+      options[:format] = :sentence
+    end
+
+    values = []
+    values = value.split('_')
+    values.each_index do |index|
+      # lower case each item in array
+      # Miguel Vazquez edit: Except for acronyms
+      values[index].downcase! unless values[index].match(/[a-zA-Z][A-Z]/)
+    end
+    if options[:format] == :allcaps
+      values.each do |value|
+        value.capitalize!
+      end
+
+      if options.empty?
+        options[:seperator] = " "
+      end
+
+      return values.join " "
+    end
+
+    if options[:format] == :class
+      values.each do |value|
+        value.capitalize!
+      end
+
+      return values.join ""
+    end
+
+    if options[:format] == :sentence
+      values[0].capitalize! unless values[0].match(/[a-zA-Z][A-Z]/)
+
+      return values.join " "
+    end
+
+    if options[:format] == :nocaps
+      return values.join " "
+    end
+  end
 end
 
 class RBBTError < StandardError

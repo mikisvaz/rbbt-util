@@ -22,6 +22,10 @@ rbbt.ruby <- function(code, load = TRUE, flat = FALSE, type = 'tsv', ...){
           data = scan(file, ...)
           return(data);
       }
+
+      if(type == 'string'){
+          return(file);
+      }
       
       return(NULL);
   }else{
@@ -268,4 +272,12 @@ rbbt.plot.matrix <- function(x, ...){
     layout(1);
 }
 
+rbbt.log <- function(m){
+    cat(paste(m,"\n"), file = stderr())
+}
+
+rbbt.ddd <- function(o){
+    cat(toString(o), file = stderr())
+    cat("\n", file = stderr())
+}
 

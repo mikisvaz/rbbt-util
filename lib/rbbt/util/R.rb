@@ -38,6 +38,17 @@ module R
     end
   end
 
+  def self.ruby2R(object)
+    case object
+    when String
+      "'#{ object }'"
+    when Fixnum
+      object
+    when Array
+      "c(#{object.collect{|e| ruby2R(e) } * ", "})"
+    end
+  end
+
 end
 
 module TSV
@@ -64,4 +75,3 @@ if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
     end
   end
 end
-
