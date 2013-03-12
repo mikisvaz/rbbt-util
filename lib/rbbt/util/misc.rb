@@ -719,6 +719,15 @@ end
 
     lockfile = Lockfile.new(File.expand_path(file + '.lock'))
 
+    begin
+      if File.exists? lockfile and ENV["HOSTNAME"] == (info = YAML.load(Open.open(lockfile)))[:host] and not Misc.pid_exists? info[:pid] 
+        Log.info("Removing lockfile: #{lockfile}")
+        FileUtils.rm lockfile 
+      end
+    rescue
+      Log.warn("Error chekcing lockfile #{lockfile}: #{$!.message}")
+    end
+
     lockfile.lock do
       res = yield file, *args
     end
