@@ -720,12 +720,14 @@ end
     lockfile = Lockfile.new(File.expand_path(file + '.lock'))
 
     begin
-      if File.exists? lockfile and ENV["HOSTNAME"] == (info = YAML.load(Open.open(lockfile)))[:host] and not Misc.pid_exists? info[:pid] 
-        Log.info("Removing lockfile: #{lockfile}")
+      if File.exists? lockfile and
+        ENV["HOSTNAME"] == (info = YAML.load(Open.open(lockfile)))[:host] and info[:pid] and not Misc.pid_exists?(info[:pid])
+        Log.info("Removing lockfile: #{lockfile}. This pid #{Process.pid}. Content: #{info.inspect}")
         FileUtils.rm lockfile 
       end
     rescue
-      Log.warn("Error chekcing lockfile #{lockfile}: #{$!.message}")
+      Log.warn("Error chekcing lockfile #{lockfile}: #{$!.message}. Removing. Content: #{begin Open.read(lockfile) rescue "Could not open file" end}")
+      FileUtils.rm lockfile 
     end
 
     lockfile.lock do
