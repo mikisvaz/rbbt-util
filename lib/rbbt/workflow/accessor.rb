@@ -78,6 +78,12 @@ class Step
     path.exists?
   end
 
+  def running?
+    return nil if not File.exists? info_file
+    return nil if info[:pid].nil?
+    return Misc.pid_exists? info[:pid]
+  end
+
   def error?
     info[:status] == :error
   end
