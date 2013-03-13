@@ -214,45 +214,10 @@ class TestMisc < Test::Unit::TestCase
     assert_equal "Test", Misc.humanize(str3)
   end
 
-#
-#  def test_process_to_hash
-#    list = [1,2,3,4]
-#    assert_equal 4, Misc.process_to_hash(list){|l| l.collect{|e| e * 2}}[2]
-#  end
-
-#  def test_add_method
-#    a = "Test"
-#    Misc.add_method a, :invert do self.reverse end
-#    assert_equal "Test".reverse, a.invert
-#  end
-#
-#  def test_redefine_method
-#    a = "Test"
-#    worked = false
-#    Misc.redefine_method a, :reverse, :old_reverse do worked = true; self.old_reverse end
-#    assert_equal "Test".reverse, a.reverse
-#    assert worked
-#  end
-#
-#  def test_merge_sorted_arrays
-#    assert_equal [1,2,3,4], Misc.merge_sorted_arrays([1,3], [2,4])
-#  end
-#
-#  def test_intersect_sorted_arrays
-#    assert_equal [2,4], Misc.intersect_sorted_arrays([1,2,3,4], [2,4])
-#  end
-#
-#
-#  def test_in_dir
-#    TmpFile.with_file do |dir|
-#      FileUtils.mkdir_p dir
-#      Open.write(File.join(dir, 'test_file_in_dir'), 'test_file_in_dir')
-#      Misc.in_dir(dir) do
-#        assert Dir.glob("*").include? 'test_file_in_dir'
-#      end
-#      assert Dir.glob(File.join(dir, "*")).include?(File.join(dir, 'test_file_in_dir'))
-#      assert(! Dir.glob("*").include?('test_file_in_dir'))
-#    end
-#  end
-
+  def test_snake_case
+    str1 = "ACRONIMTest"
+    str2 = "ACRONIM_test"
+    assert_equal "ACRONIM_test", Misc.snake_case(str1)
+    assert_equal "ACRONIM_test", Misc.snake_case(str2)
+  end
 end

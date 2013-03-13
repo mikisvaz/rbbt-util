@@ -997,7 +997,11 @@ end
 
   def self.snake_case(string)
     return nil if string.nil?
-    string.gsub(/([a-z])([A-Z])/,'\1_\2').gsub(/\s/,'_').gsub(/[^\w_]/, '').downcase
+    string.
+      gsub(/([A-Z]{2,})([A-Z][a-z])/,'\1_\2').
+      gsub(/([a-z])([A-Z])/,'\1_\2').
+      gsub(/\s/,'_').gsub(/[^\w_]/, '').
+      split("_").collect{|p| p.match(/[A-Z]{2,}/) ? p : p.downcase } * "_"
   end
 
   # source: https://gist.github.com/ekdevdes/2450285
