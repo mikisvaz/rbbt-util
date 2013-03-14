@@ -721,7 +721,7 @@ end
 
     begin
       if File.exists? lockfile and
-        ENV["HOSTNAME"] == (info = YAML.load(Open.open(lockfile)))[:host] and info[:pid] and not Misc.pid_exists?(info[:pid])
+        ENV["HOSTNAME"] == (info = YAML.load_file(lockfile))[:host] and info[:pid] and not Misc.pid_exists?(info[:pid])
         Log.info("Removing lockfile: #{lockfile}. This pid #{Process.pid}. Content: #{info.inspect}")
         FileUtils.rm lockfile 
       end

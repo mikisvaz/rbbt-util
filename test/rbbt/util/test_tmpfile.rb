@@ -15,6 +15,14 @@ class TestTmpFile < Test::Unit::TestCase
     end
   end
 
+  def test_extension
+    TmpFile.with_file(nil, true, :extension => 'txt') do |file|
+      ddd file
+      assert file =~ /\.txt$/
+    end
+
+  end
+
 end
 
 

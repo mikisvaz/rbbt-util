@@ -28,8 +28,11 @@ module TmpFile
     File.join(TMPDIR, random_name(s,max))
   end
 
-  def self.with_file(content = nil, erase = true)
+  def self.with_file(content = nil, erase = true, options = {})
     tmpfile = tmp_file
+    if options[:extension]
+      tmpfile += ".#{options[:extension]}"
+    end
 
     File.open(tmpfile, 'w') do |f| f.write content end if content != nil
 
