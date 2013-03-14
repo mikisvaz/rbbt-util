@@ -50,24 +50,24 @@ module TSV
 
     lock_filename = filename.nil? ? nil : Persist.persistence_path(filename, {:dir => Rbbt.tmp.tsv_open_locks.find})
     Misc.lock lock_filename  do
-    data = Persist.persist_tsv source, filename, options, persist_options do |data|
-      if serializer
-        data.extend TSV unless TSV === data
-        data.serializer = serializer
+      data = Persist.persist_tsv source, filename, options, persist_options do |data|
+        if serializer
+          data.extend TSV unless TSV === data
+          data.serializer = serializer
+        end
+
+        open_options = Misc.pull_keys options, :open
+
+        stream = get_stream source, open_options
+        parse stream, data, options
+
+        data.filename = filename.to_s unless filename.nil?
+        if data.identifiers.nil? and Path === filename and filename.identifier_file_path
+          data.identifiers = filename.identifier_file_path.to_s 
+        end
+
+        data
       end
-
-      open_options = Misc.pull_keys options, :open
-
-      stream = get_stream source, open_options
-      parse stream, data, options
-
-      data.filename = filename.to_s unless filename.nil?
-      if data.identifiers.nil? and Path === filename and filename.identifier_file_path
-        data.identifiers = filename.identifier_file_path.to_s 
-      end
-
-      data
-    end
     end
 
     data.unnamed = unnamed unless unnamed.nil?
