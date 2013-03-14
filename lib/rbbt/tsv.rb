@@ -31,7 +31,7 @@ module TSV
     hash
   end
 
-  # options shifts if type.nil?
+  # options shift if type.nil?
   def self.open(source, type = nil, options = nil)
     type, options = nil, type if options.nil? and Hash === type
     options ||= {}
