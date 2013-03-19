@@ -138,6 +138,8 @@ module Persist
            when persist_options[:persist]
 
              filename ||= case
+                          when Path === source
+                            source
                           when source.respond_to?(:filename)
                             source.filename
                           when source.respond_to?(:cmd)
