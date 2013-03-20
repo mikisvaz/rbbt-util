@@ -721,13 +721,15 @@ end
 
     begin
       if File.exists? lockfile and
-        `hostname`.strip == (info = YAML.load_file(lockfile))["host"] and info["pid"] and not Misc.pid_exists?(info["pid"])
+        `hostname`.strip == (info = YAML.load_file(lockfile))["host"] and 
+        info["pid"] and not Misc.pid_exists?(info["pid"])
+
         Log.info("Removing lockfile: #{lockfile}. This pid #{Process.pid}. Content: #{info.inspect}")
         FileUtils.rm lockfile 
       end
     rescue
       Log.warn("Error chekcing lockfile #{lockfile}: #{$!.message}. Removing. Content: #{begin Open.read(lockfile) rescue "Could not open file" end}")
-      FileUtils.rm lockfile 
+      FileUtils.rm lockfile if File.exists? lockfile 
     end
 
     lockfile.lock do
