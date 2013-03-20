@@ -780,21 +780,25 @@ end
 
   def self.sensiblewrite(path, content)
     Misc.lock path + '.sensible_write' do
-      begin
-        case
-        when String === content
-          File.open(path, 'w') do |f|  f.write content  end
-        when (IO === content or StringIO === content)
-          File.open(path, 'w') do |f|  while l = content.gets; f.write l; end  end
-        else
-          File.open(path, 'w') do |f|  end
+      if not File.exists? path
+        begin
+          tmp_path = path + '.tmp'
+          case
+          when String === content
+            File.open(tmp_path, 'w') do |f|  f.write content  end
+          when (IO === content or StringIO === content)
+            File.open(tmp_path, 'w') do |f|  while l = content.gets; f.write l; end  end
+          else
+            File.open(tmp_path, 'w') do |f|  end
+          end
+          FileUtils.mv tmp_path, path
+        rescue Interrupt
+          FileUtils.rm_f path if File.exists? path
+          raise "Interrupted (Ctrl-c)"
+        rescue Exception
+          FileUtils.rm_f path if File.exists? path
+          raise $!
         end
-      rescue Interrupt
-        FileUtils.rm_f path if File.exists? path
-        raise "Interrupted (Ctrl-c)"
-      rescue Exception
-        FileUtils.rm_f path if File.exists? path
-        raise $!
       end
     end
   end
