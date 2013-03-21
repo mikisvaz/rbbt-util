@@ -284,12 +284,6 @@ end
       counts[e] += 1
     end
 
-    class << counts; self;end.class_eval do
-      def to_s
-        sort{|a,b| a[1] == b[1] ? a[0] <=> b[0] : a[1] <=> b[1]}.collect{|k,c| "%3d\t%s" % [c, k]} * "\n"
-      end
-    end
-
     counts
   end
 
@@ -793,9 +787,11 @@ end
           end
           FileUtils.mv tmp_path, path
         rescue Interrupt
+          FileUtils.rm_f tmp_path if File.exists? tmp_path
           FileUtils.rm_f path if File.exists? path
           raise "Interrupted (Ctrl-c)"
         rescue Exception
+          FileUtils.rm_f tmp_path if File.exists? tmp_path
           FileUtils.rm_f path if File.exists? path
           raise $!
         end

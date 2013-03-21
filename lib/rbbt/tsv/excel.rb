@@ -30,6 +30,7 @@ module TSV
       cells = []
       cells.push((name and key.respond_to?(:name)) ?  key.name || key : key )
 
+      values = [values] unless Array === values
       values.each do |value|
         v = (name and value.respond_to?(:name)) ?  value.name || value : value 
         if Array === v
@@ -74,6 +75,7 @@ module TSV
       cells = []
       cells.push((name and key.respond_to?(:name)) ?  key.name || key : key )
 
+      values = [values] unless Array === values
       values.each do |value|
         v = (name and value.respond_to?(:name)) ?  value.name || value : value 
         if Array === v
