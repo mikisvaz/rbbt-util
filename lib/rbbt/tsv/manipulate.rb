@@ -307,7 +307,7 @@ module TSV
         case type
         when :single
           through do |key, value|
-            new[key] = values if method.include? key or method.include? value
+            new[key] = value if method.include? key or method.include? value
           end
         when :list, :flat
           through do |key, values|

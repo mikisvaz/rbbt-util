@@ -292,14 +292,7 @@ module TSV
   end
 
   # Starts in page 1
-  def page(pnum, psize, field = nil, just_keys = false, &block)
-    if pnum.to_s =~ /-(.*)/
-      reverse = true
-      pnum = $1.to_i
-    else
-      reverse = false
-    end
-
+  def page(pnum, psize, field = nil, just_keys = false, reverse = false, &block)
     with_unnamed do
       pstart = psize * (pnum - 1)
       pend = psize * pnum - 1
