@@ -108,7 +108,7 @@ class Step
         end
       }
       
-      log(:started, "Starting task #{task.name || ""}")
+      log(:started, "Starting task #{task.name || ""} [#{Process.pid}]")
 
       set_info :started, Time.now
       
@@ -176,7 +176,8 @@ class Step
             end
           end
         end
-      rescue
+      rescue Exception
+        Log.debug("Exception caught on forked process: #{$!.message}")
         exit -1
       end
       set_info :pid, nil
@@ -216,7 +217,6 @@ class Step
     set_info :children_pids, children_pids
     child_pid
   end
-
 
   def load
     raise "Can not load: Step is waiting for proces #{@pid} to finish" if not done?
