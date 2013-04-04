@@ -235,8 +235,6 @@ module TSV
     end
   end
 
-
-
   #{{{ Sorting
 
   def tsv_sort_by(field = nil, just_keys = false, &block)
