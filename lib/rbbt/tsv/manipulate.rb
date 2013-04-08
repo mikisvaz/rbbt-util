@@ -173,7 +173,7 @@ module TSV
       progress_monitor.tick if progress_monitor
 
       keys, value = traverser.process(key, value)
-
+      
       keys = [keys].compact unless Array === keys
 
       # Annotated with Entity and NamedArray
@@ -295,6 +295,7 @@ module TSV
     new.type      = type
     new.filename  = filename
     new.namespace = namespace
+    new.entity_options = entity_options
     
    case
     when (method.nil? and block_given?)
