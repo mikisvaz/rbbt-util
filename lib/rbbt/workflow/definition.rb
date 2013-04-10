@@ -8,8 +8,7 @@ module Workflow
   AnnotatedModule.add_consummable_annotation(self,
                                              :result_description => "",
                                              :result_type        => nil,
-                                             :dependencies       => [],
-                                            )
+                                             :dependencies       => [])
   def helper(name, &block)
     helpers[name] = block
   end

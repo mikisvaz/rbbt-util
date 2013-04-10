@@ -27,8 +27,7 @@ module AnnotatedModule
     :input_types        => {},
     :input_descriptions => {},
     :input_defaults     => {},
-    :input_options      => {},
-  )
+    :input_options      => {})
 
   def input(name, type = nil, desc = nil, default = nil, options = nil)
     name = name.to_sym

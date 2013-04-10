@@ -209,7 +209,7 @@ module Annotation
 
     hash.each do |key, value|
       begin
-        next unless @annotations.include? (key = key.to_sym)
+        next unless @annotations.include?(key = key.to_sym)
       rescue
         next
       end
