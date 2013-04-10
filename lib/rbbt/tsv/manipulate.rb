@@ -528,4 +528,22 @@ module TSV
 
     self
   end
+
+  def transpose(key_field)
+    raise "Transposing only works for TSVs of type :list" unless type == :list
+    new_fields = keys
+    new = TSV.setup({}, :key_field => key_field, :fields => new_fields, :type => type, :filename => filename, :identifiers => identifiers)
+
+    through do |key, values|
+      fields.zip(values) do |new_key, value|
+        new[new_key] ||= []
+        new[new_key][new_fields.index key] = value
+      end
+    end
+
+    new.entity_options = entity_options
+    new.namespace = namespace
+
+    new
+  end
 end

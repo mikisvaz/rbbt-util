@@ -224,5 +224,23 @@ row3    a
     end
   end
 
+  def test_transpose
+     content =<<-EOF
+#: :type=:list
+#Row   vA   vB   vID
+row1    a    b    Id1
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+ 
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+
+      assert_equal %w(vA vB vID),  tsv.transpose("Values").keys
+
+    end
+ 
+  end
+
 
 end
