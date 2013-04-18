@@ -382,13 +382,26 @@ end
     for spos in 0..cols-1 do a[spos, 0] = spos * init_gap end
     for rpos in 0..rows-1 do a[0, rpos] = rpos * init_gap end
 
-    for spos in 1..cols-1 do
-      for rpos in 1..rows-1 do
+    #for spos in 1..cols-1 do
+    #  for rpos in 1..rows-1 do
+    #    match = a[spos-1,rpos-1] + (sequence[spos-1] != reference[rpos-1] ? diff : same)
+    #    skip_sequence = a[spos-1,rpos] + gap
+    #    skip_reference = a[spos,rpos-1] + gap
+    #    a[spos,rpos] = [match, skip_sequence, skip_reference].max
+    #  end
+    #end
+
+    spos = 1
+    while spos < cols do
+      rpos = 1
+      while rpos < rows do
         match = a[spos-1,rpos-1] + (sequence[spos-1] != reference[rpos-1] ? diff : same)
         skip_sequence = a[spos-1,rpos] + gap
         skip_reference = a[spos,rpos-1] + gap
         a[spos,rpos] = [match, skip_sequence, skip_reference].max
+        rpos += 1
       end
+      spos += 1
     end
 
     start = Misc.max(a[-1,0..rows-1])
@@ -435,9 +448,10 @@ end
       ref = ref + '-'
       spos -= 1
     end
-
+    
     [ref.reverse + reference[start_pos..-1], seq.reverse + '-' * (rows - start_pos - 1)]
   end
+
   def self.IUPAC_to_base(iupac)
     IUPAC2BASE[iupac]
   end

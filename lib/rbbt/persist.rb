@@ -1,3 +1,4 @@
+require 'rbbt'
 require 'rbbt/util/misc'
 require 'rbbt/util/open'
 
@@ -5,10 +6,10 @@ require 'rbbt/persist/tsv'
 require 'set'
 
 module Persist
-  CACHEDIR="/tmp/tsv_persistent_cache"
+  CACHEDIR = "/tmp/tsv_persistent_cache" unless defined? CACHEDIR
   FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
 
-  MEMORY = {}
+  MEMORY = {} unless defined? MEMORY
 
   def self.cachedir=(cachedir)
     CACHEDIR.replace cachedir
@@ -72,7 +73,7 @@ module Persist
     File.join(persistence_dir, filename)
   end
 
-  TRUE_STRINGS = Set.new ["true", "True", "TRUE", "t", "T", "1", "yes", "Yes", "YES", "y", "Y", "ON", "on"]
+  TRUE_STRINGS = Set.new ["true", "True", "TRUE", "t", "T", "1", "yes", "Yes", "YES", "y", "Y", "ON", "on"] unless defined? TRUE_STRINGS
   def self.load_file(path, type)
     case (type || "nil").to_sym
     when :nil
@@ -277,12 +278,18 @@ end
 module LocalPersist
 
   attr_accessor :local_persist_dir
+
+  def local_persist_dir
+    @local_persist_dir ||= Rbbt.var.cache.persistence.find(:lib) if defined? Rbbt
+    @local_persist_dir
+  end
+
   def local_persist(name, type = nil, options= {}, &block)
-    Persist.persist(name, type, options.merge({:dir => @local_persist_dir}), &block)
+    Persist.persist(name, type, options.merge({:dir => local_persist_dir}), &block)
   end
 
   def local_persist_tsv(source, name, opt = {}, options= {}, &block)
-    Persist.persist_tsv(source, name, opt, options.merge({:dir => @local_persist_dir}), &block)
+    Persist.persist_tsv(source, name, opt, options.merge({:dir => local_persist_dir}), &block)
   end
 
 end

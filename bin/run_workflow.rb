@@ -80,37 +80,98 @@ def fix_options(workflow, task, job_options)
   job_options_cleaned
 end
 
-options = SOPT.get "-t--task*:-l--log*:-h--help:-n--name*:-cl--clean:-rcl-recursive_clean:-pn--printname:-srv--server:-p--port*"
+options = SOPT.get "-t--task*:--profile:-l--log*:-h--help:-n--name*:-cl--clean:-rcl-recursive_clean:-pn--printname:-srv--server:-p--port*"
 
 workflow = ARGV.first
 
 if options[:server]
 
-  require 'rbbt/util/log'
-  require 'rbbt/workflow'
-  require 'rbbt/workflow/rest'
-  require 'sinatra'
-  require 'compass'
+  #require 'rbbt/util/log'
+  #require 'rbbt/workflow'
+  #require 'rbbt/workflow/rest'
+  #require 'sinatra'
+  #require 'compass'
 
-  if workflow
-    Workflow.require_workflow workflow
-    WorkflowREST.add_workflows *Workflow.workflows
+  #if workflow
+  #  Workflow.require_workflow workflow
+  #  WorkflowREST.add_workflows *Workflow.workflows
+  #end
+
+  #WorkflowREST.setup
+
+  #Sinatra::Application.port = options[:port] || 4567
+  #Sinatra::Application.run = true
+
+  #if workflow and File.exists? workflow
+  #  Sinatra::Application.views = File.join(File.dirname(workflow), 'www/views')
+  #end
+
+  #sinatra_file = './lib/sinatra.rb'
+  #if File.exists? sinatra_file
+  #  require sinatra_file
+  #end
+  require 'zurb-foundation'
+  require 'modular-scale'
+
+  require 'rbbt/rest/main'
+  require 'rbbt/rest/entity'
+  require 'rbbt/rest/workflow'
+  require 'rbbt/rest/file_server'
+  require 'rbbt/rest/helpers'
+
+  YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
+
+  Workflow.require_workflow workflow
+
+  class WorkflowRest < Sinatra::Base
+    get '/' do
+      redirect to(File.join('/', Workflow.workflows.last.to_s))
+    end
   end
 
-  WorkflowREST.setup
-
-  Sinatra::Application.port = options[:port] || 4567
-  Sinatra::Application.run = true
-
-  if workflow and File.exists? workflow
-    Sinatra::Application.views = File.join(File.dirname(workflow), 'www/views')
+  if options[:profile]
+    WorkflowRest.before File.join('/', Workflow.workflows.last.to_s, '*') do
+      @profile = true
+    end
   end
 
-  sinatra_file = './lib/sinatra.rb'
-  if File.exists? sinatra_file
-    require sinatra_file
+  class WorkflowRest < Sinatra::Base
+     
+    #{{{ MODULES AND HELPERS
+    register Sinatra::RbbtRESTMain
+    register Sinatra::RbbtRESTWorkflow
+    helpers Sinatra::RbbtMiscHelpers
+
+    #{{{ DIRECTORIES
+    local_var = Rbbt.var.find(:lib)
+    set :cache_dir           , local_var.sinatra.cache.find
+    set :file_dir            , local_var.sinatra.files.find
+    set :favourites_dir      , local_var.sinatra.favourites.find
+    set :favourite_lists_dir , local_var.sinatra.favourite_lists
+
+    #{{{ SESSIONS
+    use Rack::Session::Cookie, :key => 'rack.session',
+      :path => '/',
+      :expire_after => 2592000,
+      :secret => "Workflow #{Workflow.workflows.inspect} secret!!"
+
+    #{{{ FOUNDATION RESOURCES
+    add_sass_load_path "#{Gem.loaded_specs['compass'].full_gem_path}/frameworks/compass/stylesheets"
+    add_sass_load_path "#{Gem.loaded_specs['zurb-foundation'].full_gem_path}/scss/" 
+    add_sass_load_path "#{Gem.loaded_specs['modular-scale'].full_gem_path}/stylesheets/" 
+    RbbtRESTHelpers.javascript_resources << Path.setup("#{Gem.loaded_specs['zurb-foundation'].full_gem_path}/js/foundation")
+    RbbtRESTHelpers.javascript_resources << Path.setup("#{Gem.loaded_specs['zurb-foundation'].full_gem_path}/js/vendor")
+
+
+
+    $title = "Workflow Scout"
+    use Rack::Deflater
   end
 
+  WorkflowRest.add_workflow Workflow.workflows.last, true
+
+  WorkflowRest.port = options[:port] || 4567
+  WorkflowRest.run!
 else
 
   # Set log, fork, clean, recursive_clean and help
