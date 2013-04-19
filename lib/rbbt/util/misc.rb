@@ -787,14 +787,27 @@ end
     res
   end
 
+  def self.to_utf8(string)
+    string.encode("UTF-16BE", :invalid => :replace, :undef => :replace, :replace => "?").encode('UTF-8')
+  end
+
   def self.fixutf8(string)
     return string if (string.respond_to? :valid_encoding? and string.valid_encoding?) or
                      (string.respond_to? :valid_encoding and string.valid_encoding)
     if string.respond_to?(:encode)
       string.encode("UTF-16BE", :invalid => :replace, :undef => :replace, :replace => "?").encode('UTF-8')
     else
+      require 'iconv'
       @@ic ||= Iconv.new('UTF-8//IGNORE', 'UTF-8')
       @@ic.iconv(string)
+    end
+  end
+
+  def self.fixascii(string)
+    if string.respond_to?(:encode)
+      self.fixutf8(string).encode("ASCII-8BIT") 
+    else
+      string
     end
   end
 
