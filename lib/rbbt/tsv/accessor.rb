@@ -119,7 +119,7 @@ module TSV
 
     case type
     when :double, :list
-      setup_array value, fields, key, entity_options
+      setup_array value, fields, key, entity_options, entity_templates
     when :flat, :single
       value = value.dup if value.frozen?
 
@@ -169,7 +169,7 @@ module TSV
         if not fields.nil? 
           case type
           when :double, :list
-            setup_array value, fields, key, entity_options if Array === value
+            setup_array value, fields, key, entity_options, entity_templates if Array === value
           when :flat, :single
             prepare_entity(value, fields.first, entity_options)
           end
@@ -203,7 +203,6 @@ module TSV
         end
         key = prepare_entity(key, key_field, entity_options)
       end
-
 
       if block_given?
         yield key, value
@@ -291,22 +290,20 @@ module TSV
 
   # Starts in page 1
   def page(pnum, psize, field = nil, just_keys = false, reverse = false, &block)
-    with_unnamed do
-      pstart = psize * (pnum - 1)
-      pend = psize * pnum - 1
-      field = :key if field == "key"
-      keys = sort_by(field || :key, true, &block)
-      keys.reverse! if reverse
+    pstart = psize * (pnum - 1)
+    pend = psize * pnum - 1
+    field = :key if field == "key"
+    keys = sort_by(field || :key, true, &block)
+    keys.reverse! if reverse
 
-      if just_keys
-        keys[pstart..pend]
-      else
-        select :key => keys[pstart..pend]
-      end
+    if just_keys
+      keys[pstart..pend]
+    else
+      select :key => keys[pstart..pend]
     end
   end
 
-  
+
   def self.entry(*entries)
     entries = entries.collect{|entry| entry.to_s}
     ENTRIES.concat entries
@@ -333,7 +330,7 @@ if '#{entry}' == 'serializer'
     return if value.nil?
 
     self.serializer_module = SERIALIZER_ALIAS[value.to_sym]
-    
+
     if serializer_module.nil?
       class << self
         alias serialized_get tsv_clean_get_brackets
@@ -367,7 +364,7 @@ else
     self.tsv_clean_set_brackets '#{key}', value.nil? ? NIL_YAML : value.to_yaml
   end
 end
-"
+  "
     end
   end
 
@@ -385,7 +382,7 @@ end
     if @fields.nil? or @unnamed
       @fields
     else
-      @named_fields ||= NamedArray.setup @fields, @fields, nil, entity_options
+      @named_fields ||= NamedArray.setup @fields, @fields, nil, entity_options, entity_templates
     end
   end
 

@@ -8,35 +8,42 @@ module NamedArray
   attr_accessor :fields
   attr_accessor :key
   attr_accessor :entity_options
+  attr_accessor :entity_templates
 
-  def self.setup(array, fields, key = nil, entity_options = nil)
+  def entity_templates
+    @entity_templates ||= {}
+  end
+
+  def self.setup(array, fields, key = nil, entity_options = nil, entity_templates = nil)
     array.extend NamedArray unless NamedArray === array
     array.fields = fields
     array.key = key
-    array.entity_options = entity_options
+    array.entity_options = entity_options unless entity_options.nil?
+    array.entity_templates = entity_templates unless entity_templates.nil?
     array
   end
 
   def prepare_entity(entity, field, options = {})
     return entity if entity.nil?
     return entity unless defined? Entity
-    @entity_templates ||= {}
-    if (template = @entity_templates[field])
+    template = entity_templates[field]
+    entity_templates ||= {}
+    if template
       entity = template.annotate(entity.frozen? ? entity.dup : entity)
       entity.extend AnnotatedArray if Array === entity
       entity
     else
-      if @entity_templates.include? field
+      if entity_templates.include? field
         entity
       else
         template = Misc.prepare_entity("TEMPLATE", field, options)
         if Annotated === template
-          @entity_templates[field] = template
+          entity_templates[field] = template
           entity = template.annotate(entity.frozen? ? entity.dup : entity)
           entity.extend AnnotatedArray if Array === entity
           entity
         else
-          @entity_templates[field] = nil
+          entity_templates[field] = nil
           entity
         end
       end

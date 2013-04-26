@@ -134,7 +134,7 @@ module Workflow
 
   def workdir
     @workdir ||= if defined? Rbbt
-                   Rbbt.var.jobs.find
+                   Rbbt.var.jobs[self].find
                  else
                    Path.setup('var/jobs')
                  end

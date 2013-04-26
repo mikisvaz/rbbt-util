@@ -12,5 +12,5 @@ module Rbbt
   FileCache.cachedir   = var.cache.filecache.find :user
   TmpFile.tmpdir       = tmp.find :user
   Open.cachedir        = var.cache["open-remote"].find :user
-  Persist.cachedir = var.cache.persistence.find :user
+  Persist.cachedir     = var.cache.persistence.find :user
 end

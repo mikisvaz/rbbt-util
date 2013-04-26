@@ -187,10 +187,10 @@ module TSV
             if value.nil?
               nil
             else
-              NamedArray.setup value, traverser.new_field_names, key, entity_options
+              NamedArray.setup value, traverser.new_field_names, key, entity_options, entity_templates
             end
           when :flat, :single
-            Misc.prepare_entity(value, traverser.new_field_names.first, entity_options)
+            prepare_entity(value, traverser.new_field_names.first, entity_options)
           end
         end
       end
@@ -255,6 +255,8 @@ module TSV
         data.fields = new_field_names
         data.filename = filename
         data.namespace = namespace
+        data.entity_options = entity_options
+        data.entity_templates = entity_templates
         data.type = type
       end
     end
@@ -296,6 +298,7 @@ module TSV
     new.filename  = filename
     new.namespace = namespace
     new.entity_options = entity_options
+    new.entity_templates = entity_templates
     
    case
     when (method.nil? and block_given?)
@@ -542,6 +545,7 @@ module TSV
     end
 
     new.entity_options = entity_options
+    new.entity_templates = entity_templates
     new.namespace = namespace
 
     new

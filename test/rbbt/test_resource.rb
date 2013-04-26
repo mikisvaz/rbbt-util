@@ -41,7 +41,7 @@ class TestTSV < Test::Unit::TestCase
   end
 
 
-  def test_resolve
+  def test_resolve___
     assert_equal File.join(ENV['HOME'], '.rbbt/etc/foo'), Path.setup('etc/foo').find(:user)
     assert_equal File.join(ENV['HOME'], '.phgx/etc/foo'), Path.setup('etc/foo', 'phgx').find(:user)
 

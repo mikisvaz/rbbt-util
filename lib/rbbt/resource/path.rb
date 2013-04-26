@@ -59,12 +59,19 @@ module Path
   end
 
   SEARCH_PATHS = {
-    :user => File.join(ENV['HOME'], ".{PKGDIR}", "{TOPLEVEL}", "{SUBPATH}"),
-    :global => File.join('/', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
-    :local => File.join('/usr/local', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
-    :lib => File.join('{LIBDIR}', "{TOPLEVEL}", "{SUBPATH}"),
+    :user    => File.join(ENV['HOME'], ".{PKGDIR}", "{TOPLEVEL}", "{SUBPATH}"),
+    :global  => File.join('/', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
+    :local   => File.join('/usr/local', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
+    :lib     => File.join('{LIBDIR}', "{TOPLEVEL}", "{SUBPATH}"),
     :default => :user
   }
+
+  search_path_file = File.join(ENV['HOME'], '.rbbt/etc/search_paths')
+  if File.exists?(search_path_file)
+    YAML.load(File.open(search_path_file)).each do |where, location|
+      SEARCH_PATHS[where.to_sym] = location
+    end
+  end
 
   def find(where = nil, caller_lib = nil, search_paths = nil)
     where = search_paths[:default] if where == :default
@@ -78,7 +85,9 @@ module Path
 
     path = nil
     if where.nil?
-      search_paths.keys.each do |w| 
+      %w(user local global lib).each do |w| 
+        w = w.to_sym
+        next unless search_paths.include? w
         path = find(w, caller_lib, search_paths)
         return path if File.exists? path
       end
@@ -88,10 +97,17 @@ module Path
         raise "Path '#{ path }' not found, and no default specified in search paths: #{search_paths.inspect}"
       end
     else
+      where = where.to_sym
+      raise "Did not recognize the 'where' tag: #{where}. Options: #{search_paths.keys}" unless search_paths.include? where
       libdir = where == :lib ? Path.caller_lib_dir(caller_lib) : ""
       libdir ||= ""
       Path.setup search_paths[where].sub('{PKGDIR}', pkgdir).sub('{TOPLEVEL}', toplevel).sub('{SUBPATH}', subpath).sub('{LIBDIR}', libdir), @pkgdir, @resource
     end
+  end
+
+  def find_all(caller_lib = nil, search_paths = nil)
+    search_paths ||= SEARCH_PATHS
+    search_paths.keys.collect{|where| find(where, caller_lib_dir, search_paths)}.select{|file| file.exists?}.uniq
   end
 
   #{{{ Methods
@@ -161,15 +177,15 @@ module Path
   end
 
   def index(options = {})
-    TSV.index(self.produce.find, options)
+    TSV.index(self.produce, options)
   end
 
   def range_index(start, eend, options = {})
-    TSV.range_index(self.produce.find, start, eend, options)
+    TSV.range_index(self.produce, start, eend, options)
   end
 
   def pos_index(pos, options = {})
-    TSV.pos_index(self.produce.find, pos, options)
+    TSV.pos_index(self.produce, pos, options)
   end
 
   def to_yaml(*args)

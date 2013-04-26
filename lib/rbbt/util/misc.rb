@@ -635,12 +635,13 @@ end
     res
   end
 
-  def self.insist(times = 3)
+  def self.insist(times = 3, sleep = nil)
     try = 0
     begin
       yield
     rescue
       Log.warn("Insisting after exception: #{$!.message}")
+      sleep sleep if sleep
       try += 1
       retry if try < times
       raise $!
@@ -748,11 +749,11 @@ end
         FileUtils.rm lockfile 
       end
     rescue
-      Log.warn("Error chekcing lockfile #{lockfile}: #{$!.message}. Removing. Content: #{begin Open.read(lockfile) rescue "Could not open file" end}")
+      Log.warn("Error checking lockfile #{lockfile}: #{$!.message}. Removing. Content: #{begin Open.read(lockfile) rescue "Could not open file" end}")
       FileUtils.rm lockfile if File.exists? lockfile 
     end
 
-    lockfile.lock do
+    lockfile.lock do 
       res = yield file, *args
     end
 
@@ -793,7 +794,7 @@ end
 
   def self.fixutf8(string)
     return string if (string.respond_to? :valid_encoding? and string.valid_encoding?) or
-                     (string.respond_to? :valid_encoding and string.valid_encoding)
+    (string.respond_to? :valid_encoding and string.valid_encoding)
     if string.respond_to?(:encode)
       string.encode("UTF-16BE", :invalid => :replace, :undef => :replace, :replace => "?").encode('UTF-8')
     else
@@ -821,21 +822,21 @@ end
             File.open(tmp_path, 'w') do |f|  f.write content  end
           when (IO === content or StringIO === content)
             File.open(tmp_path, 'w') do |f|  while l = content.gets; f.write l; end  end
-          else
-            File.open(tmp_path, 'w') do |f|  end
-          end
-          FileUtils.mv tmp_path, path
-        rescue Interrupt
-          FileUtils.rm_f tmp_path if File.exists? tmp_path
-          FileUtils.rm_f path if File.exists? path
-          raise "Interrupted (Ctrl-c)"
-        rescue Exception
-          FileUtils.rm_f tmp_path if File.exists? tmp_path
-          FileUtils.rm_f path if File.exists? path
-          raise $!
+        else
+          File.open(tmp_path, 'w') do |f|  end
         end
+        FileUtils.mv tmp_path, path
+      rescue Interrupt
+        FileUtils.rm_f tmp_path if File.exists? tmp_path
+        FileUtils.rm_f path if File.exists? path
+        raise "Interrupted (Ctrl-c)"
+      rescue Exception
+        FileUtils.rm_f tmp_path if File.exists? tmp_path
+        FileUtils.rm_f path if File.exists? path
+        raise $!
       end
     end
+  end
   end
 
   def self.add_defaults(options, defaults = {})

@@ -53,7 +53,7 @@ module Resource
       if type == :install
         Log.debug "Preparing software: #{path}"
         path.produce
-        software_dir = path.resource.root.software.find :user
+        software_dir = path.resource.root.software
         set_software_env(software_dir)
       end
     end

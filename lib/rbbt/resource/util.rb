@@ -31,53 +31,58 @@ end
 
 module Resource
   def set_software_env(software_dir)
-    bin_dir = File.join(software_dir, 'bin')
-    opt_dir = File.join(software_dir, 'opt')
+    software_dir.find_all.each do |software_dir|
+      bin_dir = File.join(software_dir, 'bin')
+      opt_dir = File.join(software_dir, 'opt')
 
-    Misc.env_add 'PATH', bin_dir
+      Misc.env_add 'PATH', bin_dir
 
-    FileUtils.mkdir_p opt_dir unless File.exists? opt_dir
-    %w(.ld-paths .pkgconfig-paths .aclocal-paths .java-classpaths).each do |file|
-      filename = File.join(opt_dir, file)
-      FileUtils.touch filename unless File.exists? filename
+      FileUtils.mkdir_p opt_dir unless File.exists? opt_dir
+      %w(.ld-paths .pkgconfig-paths .aclocal-paths .java-classpaths).each do |file|
+        filename = File.join(opt_dir, file)
+        FileUtils.touch filename unless File.exists? filename
+      end
+
+      if not File.exists? File.join(opt_dir,'.post_install')
+        Open.write(File.join(opt_dir,'.post_install'),"#!/bin/bash\n")
+      end
+
+      Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
+        Misc.env_add('LD_LIBRARY_PATH',line.chomp)
+        Misc.env_add('LD_RUN_PATH',line.chomp)
+      end
+
+      Open.read(File.join opt_dir, '.pkgconfig-paths').split(/\n/).each do |line|
+        Misc.env_add('PKG_CONFIG_PATH',line.chomp)
+      end
+
+      Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
+        Misc.env_add('LD_LIBRARY_PATH',line.chomp)
+      end
+
+      Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
+        Misc.env_add('LD_LIBRARY_PATH',line.chomp)
+      end
+
+      Open.read(File.join opt_dir, '.aclocal-paths').split(/\n/).each do |line|
+        Misc.env_add('ACLOCAL_FLAGS', "-I#{File.join(opt_dir, line.chomp)}", ' ')
+      end
+
+      Open.read(File.join opt_dir, '.java-classpaths').split(/\n/).each do |line|
+        Misc.env_add('CLASSPATH', "#{File.join(opt_dir,'java', 'lib', line.chomp)}")
+      end
+
+      Dir.glob(File.join opt_dir, 'jars', '*').each do |file|
+        Misc.env_add('CLASSPATH', "#{File.expand_path(file)}")
+      end
+
+      begin
+        File.chmod 0777, File.join(opt_dir, '.post_install')
+      rescue
+      end
+
+      CMD.cmd(File.join(opt_dir, '.post_install'))
     end
-
-    if not File.exists? File.join(opt_dir,'.post_install')
-      Open.write(File.join(opt_dir,'.post_install'),"#!/bin/bash\n")
-    end
-
-    Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
-      Misc.env_add('LD_LIBRARY_PATH',line.chomp)
-      Misc.env_add('LD_RUN_PATH',line.chomp)
-    end
-
-    Open.read(File.join opt_dir, '.pkgconfig-paths').split(/\n/).each do |line|
-      Misc.env_add('PKG_CONFIG_PATH',line.chomp)
-    end
-
-    Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
-      Misc.env_add('LD_LIBRARY_PATH',line.chomp)
-    end
-
-    Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
-      Misc.env_add('LD_LIBRARY_PATH',line.chomp)
-    end
-
-    Open.read(File.join opt_dir, '.aclocal-paths').split(/\n/).each do |line|
-      Misc.env_add('ACLOCAL_FLAGS', "-I#{File.join(opt_dir, line.chomp)}", ' ')
-    end
-
-    Open.read(File.join opt_dir, '.java-classpaths').split(/\n/).each do |line|
-      Misc.env_add('CLASSPATH', "#{File.join(opt_dir,'java', 'lib', line.chomp)}")
-    end
-
-    Dir.glob(File.join opt_dir, 'jars', '*').each do |file|
-      Misc.env_add('CLASSPATH', "#{File.expand_path(file)}")
-    end
-
-    File.chmod 0774, File.join(opt_dir, '.post_install')
-
-    CMD.cmd(File.join(opt_dir, '.post_install'))
   end
 
 
