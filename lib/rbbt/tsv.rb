@@ -145,6 +145,8 @@ module TSV
       begin
         progress_monitor.tick(stream.pos) if progress_monitor 
 
+        raise Parser::SKIP_LINE if line.empty?
+
         line = Misc.fixutf8(line)
         line = parser.process line
         parts = parser.chop_line line
