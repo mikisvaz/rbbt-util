@@ -46,8 +46,7 @@ module Workflow
       :result_type        => (Array === type ? type.to_sym : type),
       :input_defaults     => consume_input_defaults,
       :input_descriptions => consume_input_descriptions,
-      :input_options      => consume_input_options,
-      :result_description => consume_result_description
+      :input_options      => consume_input_options
     }
     
     task = Task.setup(task_info, &block)

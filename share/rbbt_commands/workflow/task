@@ -101,7 +101,6 @@ do_fork = !!options.delete(:fork)
 clean = !!options.delete(:clean)
 recursive_clean = !!options.delete(:recursive_clean)
 
-
 # Get workflow
 
 if Rbbt.etc.remote_workflows.exists?
@@ -111,8 +110,8 @@ else
 end
 
 if remote_workflows.include? workflow
-  require 'rbbt/workflow/rest/client'
-  workflow = RbbtRestClient.new remote_workflows[workflow], workflow
+  require 'rbbt/rest/client'
+  workflow = WorkflowRESTClient.new remote_workflows[workflow], workflow
 else
   Workflow.require_workflow workflow
   workflow = Workflow.workflows.last
@@ -166,7 +165,7 @@ if options.delete(:printname)
   puts job.name
   exit
 else
-  Log.low "Job name: #{job.name}"
+  Log.low "Job name: #{job.name}" 
 end
 
 case
