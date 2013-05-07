@@ -1,9 +1,45 @@
 #!/usr/bin/env ruby
 
-$command_dir = File.join(File.dirname(__FILE__), 'rbbt_commands')
+require 'rbbt'
 
-command = ARGV.shift
+$rbbt_command_dir = Rbbt.share.rbbt_commands
 
-raise "No command specified" if command.nil?
+def commands(prev)
+    rbbt_command_dir = $rbbt_command_dir
 
-load File.join($command_dir, command)
+    prev.each do |previous_command|
+        rbbt_command_dir = rbbt_command_dir[previous_command]
+    end
+
+    command_file_dirs = rbbt_command_dir.find_all
+    command_files = command_file_dirs.collect{|d| d.glob('*') }.flatten
+    command_files.collect{|p| File.basename(p) }.uniq.reject{|p| p =~ /\.desc$/}.sort
+end
+
+dir = $rbbt_command_dir
+prev = []
+
+while ARGV.any?
+    command = ARGV.shift
+    case
+    when File.directory?(dir[command].find)
+        prev << command
+        dir = dir[command]
+    when dir[command].exists?
+        load dir[command].find
+        exit 0
+    else
+        raise "Command not understood"
+    end
+end
+
+puts "Command:"
+puts 
+puts "  #{File.basename($0)} #{prev * " "}"
+puts 
+puts "Subcommands:"
+puts 
+commands(prev).each do |command|
+    puts "  " << command
+end
+    

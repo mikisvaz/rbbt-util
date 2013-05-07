@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+require 'rbbt'
+
+url, workflow = ARGV
+url = File.join(url, workflow) unless url =~ /\/#{workflow}$/
+config_file = Rbbt.etc.remote_workflows
+remote_workflows = config_file.exists? ? config_file.yaml : {}
+remote_workflows[workflow] = url
+Open.write(config_file.find(:user), remote_workflows.to_yaml)
+

@@ -107,7 +107,7 @@ module Path
 
   def find_all(caller_lib = nil, search_paths = nil)
     search_paths ||= SEARCH_PATHS
-    search_paths.keys.collect{|where| find(where, caller_lib_dir, search_paths)}.select{|file| file.exists?}.uniq
+    search_paths.keys.collect{|where| find(where, Path.caller_lib_dir, search_paths)}.select{|file| file.exists?}.uniq
   end
 
   #{{{ Methods
@@ -141,12 +141,17 @@ module Path
 
     resource.produce self, force
 
-    path
+    self
   end
 
   def read(&block)
     Open.read(self.produce.find, &block)
   end
+
+  def write(*args, &block)
+    Open.write(self.produce.find, *args, &block)
+  end
+
 
   def open(options = {})
     Open.open(self.produce.find, options)

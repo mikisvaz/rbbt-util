@@ -140,6 +140,7 @@ if options[:server]
     #{{{ MODULES AND HELPERS
     register Sinatra::RbbtRESTMain
     register Sinatra::RbbtRESTWorkflow
+    register Sinatra::RbbtRESTEntity
     helpers Sinatra::RbbtMiscHelpers
 
     #{{{ DIRECTORIES
@@ -161,8 +162,6 @@ if options[:server]
     add_sass_load_path "#{Gem.loaded_specs['modular-scale'].full_gem_path}/stylesheets/" 
     RbbtRESTHelpers.javascript_resources << Path.setup("#{Gem.loaded_specs['zurb-foundation'].full_gem_path}/js/foundation")
     RbbtRESTHelpers.javascript_resources << Path.setup("#{Gem.loaded_specs['zurb-foundation'].full_gem_path}/js/vendor")
-
-
 
     $title = "Workflow Scout"
     use Rack::Deflater

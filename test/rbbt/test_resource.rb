@@ -1,4 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '/../test_helper')
+require 'rbbt'
 require 'rbbt/resource'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
@@ -41,7 +42,7 @@ class TestTSV < Test::Unit::TestCase
   end
 
 
-  def test_resolve___
+  def __test_resolve
     assert_equal File.join(ENV['HOME'], '.rbbt/etc/foo'), Path.setup('etc/foo').find(:user)
     assert_equal File.join(ENV['HOME'], '.phgx/etc/foo'), Path.setup('etc/foo', 'phgx').find(:user)
 

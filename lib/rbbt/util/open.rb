@@ -284,7 +284,7 @@ module Open
           f.flock(File::LOCK_UN)
         end
       rescue Exception
-        FileUtils.rm file if File.exists? file
+        FileUtils.rm_rf file if File.exists? file
         raise $!
       end
       content.close

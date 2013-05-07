@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+require 'rbbt'
+
+config_file = Rbbt.etc.remote_workflows
+config_file.yaml.sort_by{|k,v| k}.each do |workflow, server|
+  puts [workflow, server] * "\t"
+end
+

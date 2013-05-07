@@ -1,4 +1,3 @@
-require 'rbbt/resource/rake'
 
 module Path
 
@@ -38,39 +37,40 @@ module Resource
       Misc.env_add 'PATH', bin_dir
 
       FileUtils.mkdir_p opt_dir unless File.exists? opt_dir
+
       %w(.ld-paths .pkgconfig-paths .aclocal-paths .java-classpaths).each do |file|
         filename = File.join(opt_dir, file)
-        FileUtils.touch filename unless File.exists? filename
+        begin
+          FileUtils.touch filename unless File.exists? filename
+        rescue
+          Log.warn("Could not touch #{ filename }")
+        end
       end
 
-      if not File.exists? File.join(opt_dir,'.post_install')
-        Open.write(File.join(opt_dir,'.post_install'),"#!/bin/bash\n")
+      begin
+        if not File.exists? File.join(opt_dir,'.post_install')
+          Open.write(File.join(opt_dir,'.post_install'),"#!/bin/bash\n")
+        end
+      rescue Exception
+        Log.warn("Could not create default .post_install in #{ software_dir }")
       end
 
       Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
         Misc.env_add('LD_LIBRARY_PATH',line.chomp)
         Misc.env_add('LD_RUN_PATH',line.chomp)
-      end
+      end if File.exists? File.join(opt_dir, '.ld-paths')
 
       Open.read(File.join opt_dir, '.pkgconfig-paths').split(/\n/).each do |line|
         Misc.env_add('PKG_CONFIG_PATH',line.chomp)
-      end
-
-      Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
-        Misc.env_add('LD_LIBRARY_PATH',line.chomp)
-      end
-
-      Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
-        Misc.env_add('LD_LIBRARY_PATH',line.chomp)
-      end
+      end if File.exists? File.join(opt_dir, '.pkgconfig-paths')
 
       Open.read(File.join opt_dir, '.aclocal-paths').split(/\n/).each do |line|
         Misc.env_add('ACLOCAL_FLAGS', "-I#{File.join(opt_dir, line.chomp)}", ' ')
-      end
+      end if File.exists? File.join(opt_dir, '.aclocal-paths')
 
       Open.read(File.join opt_dir, '.java-classpaths').split(/\n/).each do |line|
         Misc.env_add('CLASSPATH', "#{File.join(opt_dir,'java', 'lib', line.chomp)}")
-      end
+      end if File.exists? File.join(opt_dir, '.java-classpaths')
 
       Dir.glob(File.join opt_dir, 'jars', '*').each do |file|
         Misc.env_add('CLASSPATH', "#{File.expand_path(file)}")
@@ -79,9 +79,10 @@ module Resource
       begin
         File.chmod 0777, File.join(opt_dir, '.post_install')
       rescue
+        Log.warn("Could not change permisions of .post_install in #{ software_dir }")
       end
 
-      CMD.cmd(File.join(opt_dir, '.post_install'))
+      CMD.cmd(File.join(opt_dir, '.post_install')) if File.exists? File.join(opt_dir, '.post_install')
     end
   end
 
@@ -105,6 +106,7 @@ module Resource
     rake_dir = rake_dir.find if rake_dir.respond_to? :find
 
     begin
+      require 'rbbt/resource/rake'
       Rake.run(rakefile, rake_dir, task)
     rescue Rake::TaskNotFound
       raise $! if rake_dir.nil? or rake_dir.empty? or rake_dir == "/" or rake_dir == "./"

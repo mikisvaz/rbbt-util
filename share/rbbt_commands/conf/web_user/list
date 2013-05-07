@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+require 'rbbt'
+
+if Rbbt.etc.web_users.exists?
+    puts Rbbt.etc.web_users.yaml.keys
+else
+    "Path #{Rbbt.etc.web_users} not found"
+end

@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+require 'rbbt'
+
+workflow = ARGV.shift
+config_file = Rbbt.etc.remote_workflows
+remote_workflows = config_file.exists? ? config_file.yaml : {}
+remote_workflows.delete workflow
+Open.write(config_file.find(:user), remote_workflows.to_yaml)

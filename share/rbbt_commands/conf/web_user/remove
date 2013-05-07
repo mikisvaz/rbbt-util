@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+
+require 'rbbt'
+require 'highline/import'
+
+if Rbbt.etc.web_users.exists?
+  web_users = Rbbt.etc.web_users.yaml
+else
+  web_users = {}
+end
+
+user = ARGV.shift
+
+raise "No user provided" if user.nil?
+
+web_users.delete user
+
+Rbbt.etc.web_users.write(web_users.to_yaml)

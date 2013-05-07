@@ -4,8 +4,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
  Rakefile
  LICENSE
  README.rdoc
- bin=bin {
+ bin=bin filter="*" {
   excel2tsv.rb
+  rbbt
   rbbt_Rutil.rb
   rbbt_dangling_locks.rb
   rbbt_exec.rb
@@ -48,6 +49,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     soap.rb
     step.rb
     task.rb
+    usage.rb
    }
 
    tsv.rb
@@ -129,6 +131,19 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   test_workflow.rb
  }
  share=share{
+  rbbt_commands=rbbt_commands filter="*"{
+   conf=conf{
+    web_user=web_user{
+     add
+     list
+     remove
+    }
+   }
+   workflow=workflow{
+    task
+    remote
+   }
+  }
   Rlib=lib/R{
    util.R
   }

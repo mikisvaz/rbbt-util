@@ -42,4 +42,16 @@ module TmpFile
 
     result
   end
+
+  def self.with_dir(erase = true, options = {})
+    tmpdir = tmp_file
+
+    FileUtils.mkdir_p tmpdir
+
+    result = yield(tmpdir)
+
+    FileUtils.rm_rf tmpdir if File.exists?(tmpdir) and erase
+
+    result
+  end
 end
