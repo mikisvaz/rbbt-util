@@ -115,8 +115,10 @@ module NamedArray
   end
 
   def named_array_values_at(*keys)
-    keys = keys.collect{|k| Misc.field_position(fields, k) }
-    named_array_clean_values_at(*keys)
+    keys = keys.collect{|k| Misc.field_position(fields, k, true) }
+    keys.collect{|k|
+      named_array_get_brackets(k) unless k.nil?
+    }
   end
 
   def zip_fields

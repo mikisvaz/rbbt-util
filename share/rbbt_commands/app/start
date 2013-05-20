@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+options = SOPT.get "-e--environment*:-p--port*:-s--server*"
+
+app = ARGV.shift
+
+app_dir = Rbbt.etc.app_dir.exists? ? Path.setup(Rbbt.etc.app_dir.read.strip) : Rbbt.apps.find
+
+app_dir = app_dir[app]
+
+server = options[:server] || 'thin'
+
+Misc.in_dir(app_dir) do
+  `#{options.include?(:environment)? "env RACK_ENV=#{options[:environment]}" : ""} #{server} start -p #{options[:port]} #{ARGV.collect{|a| "'#{a}'"} * " "}`
+end

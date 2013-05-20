@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+
+file = ARGV.shift
+
+header = TSV.parse_header(Open.open(file))
+
+puts "File: #{ file }"
+puts "Key: #{header.key_field}"
+puts "Fields: "
+header.fields.each_with_index do |f,i|
+  puts "  - #{i + 1}: " << f
+end
+puts "Rows: #{`wc -l #{ file }|cut -f 1 -d' '`}"
+puts "First line:"
+puts header.first_line
+

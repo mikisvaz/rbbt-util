@@ -635,6 +635,17 @@ end
     res
   end
 
+  def self.do_once(&block)
+    return nil if $__did_once
+    $__did_once = true
+    yield
+    nil
+  end
+
+  def self.reset_do_once
+    $__did_once = false
+  end
+
   def self.insist(times = 3, sleep = nil)
     try = 0
     begin

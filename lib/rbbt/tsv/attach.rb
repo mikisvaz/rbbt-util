@@ -137,6 +137,12 @@ module TSV
     fields, one2one = Misc.process_options options, :fields, :one2one
     in_namespace = options[:in_namespace]
 
+    unless TSV === other
+      other_identifier_files = other.identifier_files if other.respond_to? :identifier_files
+      other = TSV.open(other, :persist => options[:persist_input] == true) unless TSV === other 
+      other.identifiers = other_identifier_files 
+    end
+
     fields = other.fields - [key_field].concat(self.fields) if fields.nil?  or fields == :all 
     if in_namespace
       fields = other.fields_in_namespace - [key_field].concat(self.fields) if fields.nil?
@@ -144,13 +150,8 @@ module TSV
       fields = other.fields - [key_field].concat(self.fields) if fields.nil?
     end
 
-    Log.medium("Attaching fields:#{fields.inspect} from #{other.filename.inspect}.")
-
-    unless TSV === other
-      other_identifier_files = other.identifier_files
-      other = other.tsv(:persist => options[:persist_input] == true) unless TSV === other 
-      other.identifiers = other_identifier_files 
-    end
+    other_filename = other.respond_to?(:filename) ? other.filename : other.inspect
+    Log.medium("Attaching fields:#{fields.inspect} from #{other_filename}.")
 
     case
     when key_field == other.key_field

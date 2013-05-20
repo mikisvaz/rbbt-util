@@ -1,8 +1,7 @@
- require 'rbbt/util/open'
+require 'rbbt/util/open'
 require 'rbbt/util/log'
 require 'rbbt/util/chain_methods'
 require 'rbbt/resource/path'
-#require 'rbbt/resource/rake'
  
 module Resource
   extend ChainMethods

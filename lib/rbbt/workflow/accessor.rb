@@ -180,7 +180,7 @@ module Workflow
     description = task.description
     result_description = task.result_description
     result_type = task.result_type
-    inputs = rec_inputs(name)
+    inputs = rec_inputs(name).uniq
     input_types = rec_input_types(name)
     input_descriptions = rec_input_descriptions(name)
     input_defaults = rec_input_defaults(name)

@@ -86,30 +86,6 @@ workflow = ARGV.first
 
 if options[:server]
 
-  #require 'rbbt/util/log'
-  #require 'rbbt/workflow'
-  #require 'rbbt/workflow/rest'
-  #require 'sinatra'
-  #require 'compass'
-
-  #if workflow
-  #  Workflow.require_workflow workflow
-  #  WorkflowREST.add_workflows *Workflow.workflows
-  #end
-
-  #WorkflowREST.setup
-
-  #Sinatra::Application.port = options[:port] || 4567
-  #Sinatra::Application.run = true
-
-  #if workflow and File.exists? workflow
-  #  Sinatra::Application.views = File.join(File.dirname(workflow), 'www/views')
-  #end
-
-  #sinatra_file = './lib/sinatra.rb'
-  #if File.exists? sinatra_file
-  #  require sinatra_file
-  #end
   require 'zurb-foundation'
   require 'modular-scale'
 

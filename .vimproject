@@ -141,11 +141,18 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
    workflow=workflow{
     task
+    server
     remote=remote{
      list
      add
      remove
     }
+   }
+   app=app{
+    start
+   }
+   tsv=tsv{
+    info
    }
   }
   Rlib=lib/R{

@@ -6,20 +6,18 @@ require 'rbbt/persist/tsv'
 require 'set'
 
 module Persist
-  CACHEDIR = "/tmp/tsv_persistent_cache" unless defined? CACHEDIR
-  FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
+  class << self
+    attr_accessor :cachedir
+    def self.cachedir=(cachedir)
+      @cachedir = Path === cachedir ? cachedir : Path.setup(cachedir)
+    end
+    def self.cachedir
+      @cachedir ||= Rbbt.var.cache.persistence 
+    end
+  end
 
   MEMORY = {} unless defined? MEMORY
 
-  def self.cachedir=(cachedir)
-    CACHEDIR.replace cachedir
-    FileUtils.mkdir_p CACHEDIR unless File.exist? CACHEDIR
-  end
-
-  def self.cachedir
-    CACHEDIR
-  end
- 
   def self.newer?(path, file)
     return true if not File.exists? file
     return true if File.mtime(path) < File.mtime(file)
@@ -60,7 +58,8 @@ module Persist
       end
     end
 
-    persistence_dir = Misc.process_options(persist_options, :dir) || CACHEDIR
+    persistence_dir = Misc.process_options(persist_options, :dir) || Persist.cachedir
+    Path.setup(persistence_dir) unless Path === persistence_dir
 
     filename = perfile.gsub(/\s/,'_').gsub(/\//,'>')
     clean_options = options
@@ -70,7 +69,7 @@ module Persist
     options_md5 = Misc.hash2md5 clean_options
     filename  << ":" << options_md5 unless options_md5.empty?
 
-    File.join(persistence_dir, filename)
+    persistence_dir[filename].find
   end
 
   TRUE_STRINGS = Set.new ["true", "True", "TRUE", "t", "T", "1", "yes", "Yes", "YES", "y", "Y", "ON", "on"] unless defined? TRUE_STRINGS

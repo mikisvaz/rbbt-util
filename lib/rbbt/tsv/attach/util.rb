@@ -173,7 +173,6 @@ module TSV
             current += all_new_values
 
             self[key] = current
-
           end
         end
       end

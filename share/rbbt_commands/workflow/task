@@ -54,14 +54,20 @@ def fix_options(workflow, task, job_options)
               if Array === value
                 value
               else
-                case
+                str = case
                 when value == '-'
                   STDIN.read
                 when (String === value and File.exists?(value))
                   Open.read(value)
                 else
                   value
-                end.split(/[,|\s]/)
+                end
+                
+                if $array_separator
+                  str.split(/#{$array_separator}/)
+                else
+                  str.split(/[,|\s]/)
+                end
               end
             when :tsv
               if TSV === value
@@ -86,7 +92,7 @@ def fix_options(workflow, task, job_options)
   job_options_cleaned
 end
 
-options = SOPT.get "-t--task*:--profile:-l--log*:-h--help:-n--name*:-cl--clean:-rcl-recursive_clean:-pn--printname"
+options = SOPT.get "-t--task*:--profile:-l--log*:-h--help:-n--name*:-cl--clean:-rcl-recursive_clean:-pn--printname:-as--array_separator*"
 
 workflow = ARGV.shift
 usage if workflow.nil?
@@ -100,6 +106,7 @@ help = !!options.delete(:help)
 do_fork = !!options.delete(:fork)
 clean = !!options.delete(:clean)
 recursive_clean = !!options.delete(:recursive_clean)
+$array_separator = options.delete(:array_separator)
 
 # Get workflow
 

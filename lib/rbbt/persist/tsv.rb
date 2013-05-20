@@ -82,7 +82,8 @@ module Persist
         end
 
         def write_and_close
-          Misc.lock(persistence_path) do
+          lock_filename = Persist.persistence_path(persistence_path, {:dir => Rbbt.tmp.tsv_open_locks.find})
+          Misc.lock(lock_filename) do
             write if @closed or not write?
             res = begin
                     yield
@@ -154,7 +155,8 @@ module Persist
 
              if is_persisted? path
                Log.debug "TSV persistence up-to-date: #{ path }"
-               return Misc.lock(path) do open_tokyocabinet(path, false); end
+               lock_filename = Persist.persistence_path(path, {:dir => Rbbt.tmp.tsv_open_locks.find})
+               return Misc.lock(lock_filename) do open_tokyocabinet(path, false); end
              else
                Log.debug "TSV persistence creating: #{ path }"
              end

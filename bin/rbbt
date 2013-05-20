@@ -29,7 +29,9 @@ while ARGV.any?
         load dir[command].find
         exit 0
     else
-        raise "Command not understood"
+        puts "Error: Command not understood"
+        puts
+        break
     end
 end
 
