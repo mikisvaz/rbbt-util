@@ -11,10 +11,12 @@ def usage(workflow = nil, task = nil)
   end
 
   if task.nil?
+    workflow.load_tasks if workflow.respond_to? :load_tasks
     workflow.doc
   else
     workflow.doc(task)
   end
+
   exit 0
 end
 
@@ -146,14 +148,24 @@ name = options.delete(:name) || "Default"
 # get job args
 sopt_option_string = SOPT_options(workflow, task)
 job_options = SOPT.get sopt_option_string
-job_options = fix_options(workflow,task, job_options)
+job_options = fix_options(workflow, task, job_options)
 
 #- get job
+
 job = workflow.job(task.name, name, job_options)
 
 # clean job
-job.clean if clean
-job.recursive_clean if recursive_clean
+if clean and job.done?
+  job.clean 
+  sleep 1
+  job = workflow.job(task.name, name, job_options)
+end
+
+if recursive_clean and job.done?
+  job.recursive_clean 
+  sleep 1
+  job = workflow.job(task.name, name, job_options)
+end
 
 # run
 if do_fork

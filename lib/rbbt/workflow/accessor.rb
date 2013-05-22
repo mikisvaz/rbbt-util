@@ -75,7 +75,7 @@ class Step
   end
 
   def done?
-    path.exists?
+    path and path.exists?
   end
 
   def running?
