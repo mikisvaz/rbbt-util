@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "rbbt-util"
-  s.version = "5.2.0"
+  s.version = "5.2.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
-  s.date = "2013-05-08"
+  s.date = "2013-05-20"
   s.description = "Utilities for handling tsv files, caches, etc"
   s.email = "miguel.vazquez@cnio.es"
   s.executables = ["tsv.rb", "tchash.rb", "run_workflow.rb", "rbbt_query.rb", "rbbt_exec.rb", "rbbt_Rutil.rb", "rbbt_monitor.rb", "rbbt", "rbbt_dangling_locks.rb"]
@@ -66,12 +66,15 @@ Gem::Specification.new do |s|
     "lib/rbbt/workflow/usage.rb",
     "share/install/software/lib/install_helpers",
     "share/lib/R/util.R",
+    "share/rbbt_commands/app/start",
     "share/rbbt_commands/conf/web_user/add",
     "share/rbbt_commands/conf/web_user/list",
     "share/rbbt_commands/conf/web_user/remove",
+    "share/rbbt_commands/tsv/info",
     "share/rbbt_commands/workflow/remote/add",
     "share/rbbt_commands/workflow/remote/list",
     "share/rbbt_commands/workflow/remote/remove",
+    "share/rbbt_commands/workflow/server",
     "share/rbbt_commands/workflow/task"
   ]
   s.homepage = "http://github.com/mikisvaz/rbbt-util"

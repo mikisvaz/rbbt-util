@@ -32,18 +32,29 @@ module SOPT
 
     index = 0
     while index < ARGV.length do
-      arg = ARGV[index]
+      orig_arg = ARGV[index]
+
+      if orig_arg =~ /=/
+        arg, value = orig_arg.match(/(.*?)=(.*)/).values_at 1, 2
+      else
+        arg = orig_arg
+        value = nil
+      end
+
       if switches.include? arg
         name = switches[arg]
         i = info[name]
         if i[:arg]
-          options[name.to_sym] = ARGV[index + 1]
-          index += 1
+          if value.nil?
+            value = ARGV[index + 1]
+            index += 1
+          end
+          options[name.to_sym] = value
         else
           options[name.to_sym] = true
         end
       else
-        rest << arg
+        rest << orig_arg
       end
       index += 1
     end

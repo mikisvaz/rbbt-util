@@ -163,7 +163,11 @@ if do_fork
     sleep 2
   end
   raise job.messages.last if job.error?
-  res = job.load
+  if $array_separator
+    res = job.load(:sep2 => $array_separator)
+  else
+    res = job.load
+  end
 else
   res = job.run
 end

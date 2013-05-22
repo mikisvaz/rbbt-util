@@ -13,7 +13,13 @@ module Task
       default = input_defaults[name]
       type = input_types[name]
 
-      puts "  * -#{short}, --#{name}=<#{ type }>#{default ? " (default: #{default})" : ""}:"
+
+      if type.to_sym == :boolean
+        puts "  * -#{short}, --#{name}[=<true|false>]#{default != nil ? " (default: #{default})" : ""}:"
+      else
+        puts "  * -#{short}, --#{name}=<#{ type }>#{default != nil ? " (default: #{default})" : ""}:"
+      end
+
       puts "    " << description if description and not description.empty?
       puts
     end
@@ -32,7 +38,12 @@ module Task
           default = dep.input_defaults[name]
           type = dep.input_types[name]
 
-          puts "  * -#{short}, --#{name}=<#{ type }>#{default ? " (default: #{default})" : ""}:"
+          if type.to_sym == :boolean
+            puts "  * -#{short}, --#{name}[=<true|false>]#{default != nil ? " (default: #{default})" : ""}:"
+          else
+            puts "  * -#{short}, --#{name}=<#{ type }>#{default != nil ? " (default: #{default})" : ""}:"
+          end
+
           puts "    " << description if description and not description.empty?
           puts
         end
