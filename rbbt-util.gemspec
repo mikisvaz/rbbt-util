@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "rbbt-util"
-  s.version = "5.2.2"
+  s.version = "5.2.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
