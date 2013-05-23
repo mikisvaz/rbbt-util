@@ -48,13 +48,16 @@ module TSV
   end
 
   # Merge two files with the same keys and different fields
-  def self.merge_different_fields(file1, file2, output, sep = "\t")
+  def self.merge_different_fields(file1, file2, output, sep = "\t", monitor = false)
     case
     when (String === file1 and not file1 =~ /\n/ and file1.length < 250 and File.exists?(file1))
+      size = CMD.cmd("wc -l '#{file1}'").read.to_f if monitor
       file1 = CMD.cmd("sort -k1,1 -t'#{sep}' #{ file1 } | grep -v '^#{sep}' ", :pipe => true)
     when (String === file1 or StringIO === file1)
+      size = file1.length if monitor
       file1 = CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file1, :pipe => true)
     when TSV === file1
+      size = file1.size if monitor
       file1 = CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file1.to_s(:sort, true), :pipe => true)
     end
 
@@ -88,6 +91,8 @@ module TSV
       cols2 = parts2.length
     end
 
+    progress_monitor = Progress::Bar.new(size, 0, 100, "Merging fields") if monitor
+
     key = key1 < key2 ? key1 : key2
     parts = [""] * (cols1 + cols2)
     while not (done1 and done2)
@@ -99,6 +104,7 @@ module TSV
         while key1.nil? and not done1
           if file1.eof?; done1 = true; else key1, *parts1 = file1.gets.sub("\n",'').split(sep, -1) end
         end
+        progress_monitor.tick if monitor
       end
       while (not done2 and key2 == key)
         parts2.each_with_index do |part, i|
