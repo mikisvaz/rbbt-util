@@ -19,6 +19,32 @@ end
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.correct_vcf_mutation(pos, ref, mut_str)
+    muts = mut_str.split(',')
+
+    while ref.length >= 1 and muts.reject{|m| m[0] == ref[0]}.empty?
+      ref = ref[1..-1]
+      pos = pos + 1
+      muts = muts.collect{|m| m[1..-1]}
+    end
+
+    muts = muts.collect do |m|
+      case
+      when ref.empty?
+        "+" << m
+      when (m.length < ref.length and (m.empty? or ref.index(m)))
+        "-" * (ref.length - m.length)
+      when (ref.length == 1 and m.length == 1)
+        m
+      else
+        Log.debug "Cannot understand: #{[ref, m]} (#{ muts })"
+        '-' * ref.length + m
+      end
+    end
+
+    [pos, muts]
+  end
+
   def self.pid_exists?(pid)
     return false if pid.nil?
     begin
