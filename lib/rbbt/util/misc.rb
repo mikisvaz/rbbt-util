@@ -19,8 +19,14 @@ end
 module Misc
   class FieldNotFoundError < StandardError;end
 
+  def self.correct_icgc_mutation(pos, ref, mut_str)
+    mut = mut_str
+    mut = '-' * (mut_str.length - 1) if mut =~/^-[ACGT]/
+    [pos, [mut]]
+  end
+
   def self.correct_vcf_mutation(pos, ref, mut_str)
-    muts = mut_str.split(',')
+    muts = mut_str.nil? ? [] : mut_str.split(',')
 
     while ref.length >= 1 and muts.reject{|m| m[0] == ref[0]}.empty?
       ref = ref[1..-1]

@@ -249,11 +249,11 @@ module Persist
 
       else
         if is_persisted?(path, persist_options)
-          Log.debug "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
+          Log.low "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
           return nil if persist_options[:no_load]
           return load_file(path, type) 
         else
-          Log.debug "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
+          Log.medium "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
         end
         begin
           res = yield

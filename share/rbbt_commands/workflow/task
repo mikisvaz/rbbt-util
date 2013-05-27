@@ -5,6 +5,9 @@ require 'rbbt/workflow'
 require 'rbbt/workflow/usage'
 
 def usage(workflow = nil, task = nil)
+  puts SOPT.doc
+  puts "## WORKFLOW"
+  puts
   if workflow.nil?
     puts "No workflow specified"
     exit -1 
@@ -14,6 +17,9 @@ def usage(workflow = nil, task = nil)
     workflow.load_tasks if workflow.respond_to? :load_tasks
     workflow.doc
   else
+    puts workflow.to_s
+    puts "=" * workflow.to_s.length
+    puts
     workflow.doc(task)
   end
 
@@ -94,7 +100,14 @@ def fix_options(workflow, task, job_options)
   job_options_cleaned
 end
 
-options = SOPT.get "-t--task*:--profile:-l--log*:-h--help:-n--name*:-cl--clean:-rcl-recursive_clean:-pn--printname:-as--array_separator*"
+options = SOPT.get <<EOF
+-h--help Show this help:
+-as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default:
+-cl--clean Clean the last step of the job so that it gets recomputed:
+-rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely:
+-n--name* Job name to use. The name 'Default' is used by default:
+-pn--printname Print the name of the job and exit without starting it:
+EOF
 
 workflow = ARGV.shift
 usage if workflow.nil?
@@ -103,9 +116,9 @@ task     = ARGV.shift
 
 
 # Set log, fork, clean, recursive_clean and help
-Log.severity = options[:log].to_i if options.include? :log
 help = !!options.delete(:help)
 do_fork = !!options.delete(:fork)
+do_exec = !!options.delete(:exec)
 clean = !!options.delete(:clean)
 recursive_clean = !!options.delete(:recursive_clean)
 $array_separator = options.delete(:array_separator)
@@ -155,7 +168,7 @@ job_options = fix_options(workflow, task, job_options)
 job = workflow.job(task.name, name, job_options)
 
 # clean job
-if clean and job.done?
+if clean and job.done? != false
   job.clean 
   sleep 1
   job = workflow.job(task.name, name, job_options)
@@ -168,6 +181,21 @@ if recursive_clean and job.done?
 end
 
 # run
+if do_exec
+  res = job.exec
+  case
+  when Array === res
+    puts res * "\n"
+  when TSV === res
+    puts res
+  when Hash === res
+    puts res.to_yaml
+  else
+    puts res
+  end
+  exit 0
+end
+
 if do_fork
   job.fork
   while not job.done?
@@ -175,30 +203,17 @@ if do_fork
     sleep 2
   end
   raise job.messages.last if job.error?
-  if $array_separator
-    res = job.load(:sep2 => $array_separator)
-  else
-    res = job.load
-  end
 else
-  res = job.run
+  job.run(true)
 end
 
 if options.delete(:printname)
   puts job.name
-  exit
+  exit 0
 else
   Log.low "Job name: #{job.name}" 
 end
 
-case
-when Array === res
-  puts res * "\n"
-when TSV === res
-  puts res
-when Hash === res
-  puts res.to_yaml
-else
-  puts res
-end
+puts Open.read(job.path)
 
+exit 0

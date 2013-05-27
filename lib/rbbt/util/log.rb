@@ -25,7 +25,7 @@ module Log
   #  @severity
   #end
 
-  SEVERITY_COLOR = ["0;37m", "0;32m", "0;33m", "0;31m", "1;0m" ].collect{|e| "\033[#{e}"}
+  SEVERITY_COLOR = ["0;37m", "0;32m", "0;33m", "0;31m","0;37m", "0;32m", "0;33m"].collect{|e| "\033[#{e}"}
 
   def self.log(message, severity = MEDIUM)
     message ||= ""

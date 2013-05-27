@@ -229,7 +229,7 @@ module TSV
 
     traversal_ids = path.collect{|p| p.first}
 
-    Log.low "Found Traversal: #{traversal_ids * " => "}"
+    Log.debug "Found Traversal: #{traversal_ids * " => "}"
 
     data_key, data_file = path.shift
     data_index = if data_key == data_file.key_field

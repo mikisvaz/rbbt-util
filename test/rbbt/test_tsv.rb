@@ -420,6 +420,22 @@ row2   b  bbb bbbb bb
     end
   end
 
+  def test_flat_key
+    content =<<-EOF
+#Id    ValueA 
+row1   a   aa   aaa
+row2   b  bbb bbbb bb aa
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :merge => true, :type => :flat, :key_field => "ValueA")
+      assert_equal ["row1"], tsv["a"]
+      assert_equal ["row1", "row2"], tsv["aa"]
+    end
+  end
+
+
+
   def test_zipped
     content =<<-EOF
 #Id    ValueA    ValueB

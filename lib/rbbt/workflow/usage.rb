@@ -1,28 +1,11 @@
+require 'rbbt/util/simpleopt'
 
 module Task
   def doc(deps = nil)
-
     puts "## #{ name }:"
     puts "\n" << description if description and not description.empty?
-    puts 
-
-    inputs.each do |name|
-      short = name.to_s.chars.first
-
-      description = input_descriptions[name]
-      default = input_defaults[name]
-      type = input_types[name]
-
-
-      if type.to_sym == :boolean
-        puts "  * -#{short}, --#{name}[=<true|false>]#{default != nil ? " (default: #{default})" : ""}:"
-      else
-        puts "  * -#{short}, --#{name}=<#{ type }>#{default != nil ? " (default: #{default})" : ""}:"
-      end
-
-      puts "    " << description if description and not description.empty?
-      puts
-    end
+    puts
+    puts SOPT.input_doc(inputs, input_types, input_descriptions, input_defaults)
 
     if deps and deps.any?
       puts
@@ -31,22 +14,7 @@ module Task
       deps.each do |dep|
         puts "  #{dep.name}:"
         puts
-        dep.inputs.each do |name|
-          short = name.to_s.chars.first
-
-          description = dep.input_descriptions[name]
-          default = dep.input_defaults[name]
-          type = dep.input_types[name]
-
-          if type.to_sym == :boolean
-            puts "  * -#{short}, --#{name}[=<true|false>]#{default != nil ? " (default: #{default})" : ""}:"
-          else
-            puts "  * -#{short}, --#{name}=<#{ type }>#{default != nil ? " (default: #{default})" : ""}:"
-          end
-
-          puts "    " << description if description and not description.empty?
-          puts
-        end
+        puts SOPT.input_doc(dep.inputs, dep.input_types, dep.input_descriptions, dep.input_defaults)
       end
     end
   end

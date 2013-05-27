@@ -220,4 +220,8 @@ class TestMisc < Test::Unit::TestCase
     assert_equal "ACRONIM_test", Misc.snake_case(str1)
     assert_equal "ACRONIM_test", Misc.snake_case(str2)
   end
+
+  def test_correct_vcf_mutations
+    assert_equal [737407, ["-----", "-----G", "-----GTTAAT"]], Misc.correct_vcf_mutation(737406, "GTTAAT", "G,GG,GGTTAAT")
+  end
 end

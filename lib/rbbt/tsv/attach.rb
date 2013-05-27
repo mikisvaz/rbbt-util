@@ -157,7 +157,7 @@ module TSV
     end
 
     other_filename = other.respond_to?(:filename) ? other.filename : other.inspect
-    Log.medium("Attaching fields:#{fields.inspect} from #{other_filename}.")
+    Log.low("Attaching fields:#{fields.inspect} from #{other_filename}.")
 
     case
     when key_field == other.key_field

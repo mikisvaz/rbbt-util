@@ -41,14 +41,14 @@ module Workflow
       when ((File.exists?(wf_name.find) and not File.directory?(wf_name.find)) or File.exists?(wf_name.find + '.rb')) 
         $LOAD_PATH.unshift(File.join(File.expand_path(File.dirname(wf_name.find)), 'lib'))
         require wf_name.find
-        Log.debug "Workflow loaded from file: #{ wf_name }"
+        Log.medium "Workflow loaded from file: #{ wf_name }"
         return true
 
         # Points to workflow dir
       when (File.exists?(wf_name.find) and File.directory?(wf_name.find) and File.exists?(File.join(wf_name.find, 'workflow.rb')))
         $LOAD_PATH.unshift(File.join(File.expand_path(wf_name.find), 'lib'))
         require File.join(wf_name.find, 'workflow.rb')
-        Log.debug "Workflow loaded from directory: #{ wf_name }"
+        Log.medium "Workflow loaded from directory: #{ wf_name }"
         return true
 
       else
@@ -61,7 +61,7 @@ module Workflow
       when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb')) 
         $LOAD_PATH.unshift(File.join(File.expand_path(File.dirname(wf_name)), 'lib'))
         require wf_name
-        Log.debug "Workflow loaded from file: #{ wf_name }"
+        Log.medium "Workflow loaded from file: #{ wf_name }"
         return true
 
       when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
@@ -69,21 +69,21 @@ module Workflow
         dir = File.join(dir, wf_name)
         $LOAD_PATH.unshift(File.join(File.expand_path(dir), 'lib'))
         require File.join(dir, 'workflow.rb')
-        Log.debug "Workflow #{wf_name} loaded from workflow_dir: #{ dir }"
+        Log.medium "Workflow #{wf_name} loaded from workflow_dir: #{ dir }"
         return true
 
       when defined?(Rbbt)
         path = Rbbt.workflows[wf_name].find
         $LOAD_PATH.unshift(File.join(File.expand_path(path), 'lib'))
         require File.join(path, 'workflow.rb')
-        Log.debug "Workflow #{wf_name} loaded from Rbbt.workflows: #{ path }"
+        Log.medium "Workflow #{wf_name} loaded from Rbbt.workflows: #{ path }"
         return true
 
       else
         path = File.join(ENV['HOME'], '.workflows', wf_name)
         $LOAD_PATH.unshift(File.join(File.expand_path(path), 'lib'))
         require File.join(path, 'workflow.rb')
-        Log.debug "Workflow #{wf_name} loaded from .workflows: #{ path }"
+        Log.medium "Workflow #{wf_name} loaded from .workflows: #{ path }"
         return true
       end
     end

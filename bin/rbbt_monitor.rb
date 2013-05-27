@@ -50,6 +50,8 @@ def list_jobs(options)
     end
 
     color = case
+            when (not info)
+              Log::SEVERITY_COLOR[3]
             when info[:status] == :error
               Log::SEVERITY_COLOR[3]
             when (info[:pid] and not running? info)
@@ -57,6 +59,8 @@ def list_jobs(options)
             end
 
     case
+    when (not info)
+      print_job file, info, color
     when (not omit_ok)
       print_job file, info, color
     when options[:zombies]
@@ -89,9 +93,9 @@ def clean_jobs(options)
     case
     when options[:all]
       remove_job file
-    when (options[:zombies] and info[:pid] and not running? info)
+    when (options[:errors] and (not info or info[:status] == :error))
       remove_job file
-    when (options[:errors] and info[:status] == :error)
+    when (options[:zombies] and info[:pid] and not running? info)
       remove_job file
     end
 

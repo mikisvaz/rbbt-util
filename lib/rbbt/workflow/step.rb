@@ -108,7 +108,8 @@ class Step
         end
       }
       
-      log(:started, "Starting task #{task.name || ""} [#{Process.pid}]")
+      Log.medium("Starting task #{task.name || ""} [#{Process.pid}]: #{ path }")
+      set_info :status, :started
 
       set_info :started, Time.now
       
@@ -147,6 +148,8 @@ class Step
             end
 
       set_info :status, :done
+      set_info :done, Time.now
+      Log.medium("Completed task #{task.name || ""} [#{Process.pid}]: #{ path }")
       res
     end
 

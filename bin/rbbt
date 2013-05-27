@@ -1,8 +1,30 @@
 #!/usr/bin/env ruby
 
 require 'rbbt'
+require 'rbbt/util/simpleopt'
 
-$rbbt_command_dir = Rbbt.share.rbbt_commands
+options = SOPT.get("--log* Log level from 0 (debug) 7 (errors):--command_dir* Directory from where to load commands")
+
+if options[:log]
+  Log.severity = options[:log].to_i
+end
+
+if options[:command_dir]
+  $rbbt_command_dir = Path.setup(options[:command_dir])
+else
+  $rbbt_command_dir = Rbbt.share.rbbt_commands
+end
+
+SOPT.synopsys = "rbbt <command> <subcommand> ... -a --arg1 --arg2='value'"
+SOPT.summary = "Ruby bioinformatics toolkit"
+SOPT.description = <<-EOF
+This command controls many aspects of the Rbbt framework, from configuration tasks to running applications. 
+
+Commands are implemented in separate files under the Rbbt path#{
+} '#{$rbbt_command_dir}'. Known locations are: #{
+([$rbbt_command_dir] + $rbbt_command_dir.find_all) * ", "
+}. You can place your own commads at #{$rbbt_command_dir.find(:user)}.
+EOF
 
 def commands(prev)
     rbbt_command_dir = $rbbt_command_dir
@@ -35,6 +57,10 @@ while ARGV.any?
     end
 end
 
+puts SOPT.doc
+
+puts "## COMMANDS"
+puts
 puts "Command:"
 puts 
 puts "  #{File.basename($0)} #{prev * " "}"

@@ -158,7 +158,7 @@ module Persist
                lock_filename = Persist.persistence_path(path, {:dir => Rbbt.tmp.tsv_open_locks.find})
                return Misc.lock(lock_filename) do open_tokyocabinet(path, false); end
              else
-               Log.debug "TSV persistence creating: #{ path }"
+               Log.medium "TSV persistence creating: #{ path }"
              end
 
              FileUtils.rm path if File.exists? path
