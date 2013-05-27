@@ -204,7 +204,7 @@ if do_fork
   end
   raise job.messages.last if job.error?
 else
-  job.run(true)
+  res = job.run(true)
 end
 
 if options.delete(:printname)
@@ -214,6 +214,10 @@ else
   Log.low "Job name: #{job.name}" 
 end
 
-puts Open.read(job.path)
+if Step === res
+  puts Open.read(res.path)
+else
+  puts res
+end
 
 exit 0
