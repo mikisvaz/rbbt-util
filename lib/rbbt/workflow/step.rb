@@ -68,16 +68,14 @@ class Step
 
   def join
     if @pid.nil?
-      while not done? do
-        sleep 5
-      end
+      self
     else
-      Log.debug "Waiting for pid: #{@pid}"
       begin
-        Process.waitpid @pid
+        Log.debug "Waiting for pid: #{@pid}"
+        Process.waitpid @pid 
       rescue Errno::ECHILD
         Log.debug "Process #{ @pid } already finished: #{ path }"
-      end
+      end if Misc.pid_exists? @pid
       @pid = nil
     end
     self
@@ -167,6 +165,12 @@ class Step
       FileUtils.mkdir_p File.dirname(path) unless File.exists? File.dirname(path)
       begin
         run
+      rescue Exception
+        Log.debug("Exception caught on forked process: #{$!.message}")
+        exit -1
+      end
+
+      begin
         children_pids = info[:children_pids]
         if children_pids
           children_pids.each do |pid|
@@ -180,7 +184,7 @@ class Step
           end
         end
       rescue Exception
-        Log.debug("Exception caught on forked process: #{$!.message}")
+        Log.debug("Exception waiting for children: #{$!.message}")
         exit -1
       end
       set_info :pid, nil
