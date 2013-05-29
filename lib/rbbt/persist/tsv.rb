@@ -124,8 +124,10 @@ module Persist
     database.persistence_path ||= path
     database.tokyocabinet_class = tokyocabinet_class
 
-    TSV.setup database
-    database.serializer = serializer || database.serializer 
+    unless serializer == :clean
+      TSV.setup database
+      database.serializer = serializer || database.serializer
+    end
 
     database
   end
@@ -164,7 +166,7 @@ module Persist
              FileUtils.rm path if File.exists? path
 
              data = open_tokyocabinet(path, true, persist_options[:serializer])
-             data.serializer = :type unless data.serializer
+             data.serializer = :type if TSV === data and data.serializer.nil?
 
              data.close
 
@@ -197,5 +199,4 @@ module Persist
 
     data
   end
-
 end

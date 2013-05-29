@@ -17,6 +17,7 @@ module Persist
   end
 
   MEMORY = {} unless defined? MEMORY
+  MAX_FILE_LENGTH = 150
 
   def self.newer?(path, file)
     return true if not File.exists? file
@@ -65,6 +66,8 @@ module Persist
     clean_options = options
     clean_options.delete :unnamed
     clean_options.delete "unnamed"
+
+    filename = filename[0..MAX_FILE_LENGTH] << Misc.digest(filename[MAX_FILE_LENGTH+1..-1]) if filename.length > MAX_FILE_LENGTH + 10
 
     options_md5 = Misc.hash2md5 clean_options
     filename  << ":" << options_md5 unless options_md5.empty?
@@ -290,5 +293,4 @@ module LocalPersist
   def local_persist_tsv(source, name, opt = {}, options= {}, &block)
     Persist.persist_tsv(source, name, opt, options.merge({:dir => local_persist_dir}), &block)
   end
-
 end

@@ -1044,8 +1044,8 @@ end
     return field if Integer === field or Range === field
     raise FieldNotFoundError, "Field information missing" if fields.nil? && ! quiet
     fields.each_with_index{|f,i| return i if f == field}
-    field_re = Regexp.new /#{field}/i
-      fields.each_with_index{|f,i| return i if f =~ field_re}
+    field_re = Regexp.new /^#{field}$/i
+    fields.each_with_index{|f,i| return i if f =~ field_re}
     raise FieldNotFoundError, "Field #{ field.inspect } was not found" unless quiet
   end
 

@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "rbbt-util"
-  s.version = "5.2.3"
+  s.version = "5.2.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
-  s.date = "2013-05-22"
+  s.date = "2013-05-27"
   s.description = "Utilities for handling tsv files, caches, etc"
   s.email = "miguel.vazquez@cnio.es"
   s.executables = ["tsv.rb", "tchash.rb", "run_workflow.rb", "rbbt_query.rb", "rbbt_exec.rb", "rbbt_Rutil.rb", "rbbt_monitor.rb", "rbbt", "rbbt_dangling_locks.rb"]
@@ -79,12 +79,12 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "http://github.com/mikisvaz/rbbt-util"
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.24"
+  s.rubygems_version = "2.0.3"
   s.summary = "Utilities for the Ruby Bioinformatics Toolkit (rbbt)"
   s.test_files = ["test/rbbt/tsv/test_accessor.rb", "test/rbbt/tsv/test_index.rb", "test/rbbt/tsv/test_util.rb", "test/rbbt/tsv/test_filter.rb", "test/rbbt/tsv/test_attach.rb", "test/rbbt/tsv/test_manipulate.rb", "test/rbbt/test_fix_width_table.rb", "test/rbbt/test_workflow.rb", "test/rbbt/workflow/test_step.rb", "test/rbbt/workflow/test_task.rb", "test/rbbt/workflow/test_soap.rb", "test/rbbt/resource/test_path.rb", "test/rbbt/test_tsv.rb", "test/rbbt/test_resource.rb", "test/rbbt/test_annotations.rb", "test/rbbt/test_persist.rb", "test/rbbt/util/test_filecache.rb", "test/rbbt/util/test_tmpfile.rb", "test/rbbt/util/test_excel2tsv.rb", "test/rbbt/util/test_simpleopt.rb", "test/rbbt/util/test_misc.rb", "test/rbbt/util/test_open.rb", "test/rbbt/util/test_cmd.rb", "test/rbbt/util/test_chain_methods.rb", "test/rbbt/util/test_R.rb", "test/rbbt/util/test_simpleDSL.rb", "test/test_rbbt.rb", "test/test_helper.rb"]
 
   if s.respond_to? :specification_version then
-    s.specification_version = 3
+    s.specification_version = 4
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<rake>, [">= 0"])
