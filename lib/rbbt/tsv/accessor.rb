@@ -146,7 +146,9 @@ module TSV
     case type
     when :double, :list
       values.each{|value| setup_array value, fields, nil, entity_options}
-    when :flat, :single
+    when :single
+      values = prepare_entity(values, fields.first, entity_options)
+    when :flat
       values = values.collect{|v| prepare_entity(v, fields.first, entity_options)}
     end
       
