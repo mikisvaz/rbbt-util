@@ -3,7 +3,7 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-f--finder"
 
 app = ARGV.shift
 
@@ -14,6 +14,8 @@ app_dir = app_dir[app]
 server = options[:server] || 'thin'
 
 Misc.in_dir(app_dir) do
-  `env RBBT_LOG=#{Log.severity} #{options.include?(:environment)? "env RACK_ENV=#{options[:environment]}" : ""} \
+  `env RBBT_LOG=#{Log.severity} \
+  #{options.include?(:environment)? "env RACK_ENV=#{options[:environment]}" : ""} \
+  #{options.include?(:finder)? "env RBBT_FINDER=true" : ""} \
   #{server} start -p #{options[:port]} #{ARGV.collect{|a| "'#{a}'"} * " "}`
 end

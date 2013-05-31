@@ -64,7 +64,11 @@ if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
       EOF
       ).read)
       open_options = Misc.add_defaults open_options, :type => :list
-      TSV.open(f, open_options) unless open_options[:ignore_output]
+      if open_options[:raw]
+        Open.read(f)
+      else
+        TSV.open(f, open_options) unless open_options[:ignore_output]
+      end
     end
   end
 
