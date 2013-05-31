@@ -42,10 +42,12 @@ module R
     case object
     when String
       "'#{ object }'"
-    when Fixnum
+    when Fixnum, Float
       object
     when Array
       "c(#{object.collect{|e| ruby2R(e) } * ", "})"
+    else
+      raise "Type of object not known: #{ object.inspect }"
     end
   end
 
