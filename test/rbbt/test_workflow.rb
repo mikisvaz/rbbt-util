@@ -7,8 +7,6 @@ require 'test/unit'
 module TestWF
   extend Workflow
 
-  ddd TestWF.methods.sort
-
   helper :user do
     "User"
   end 

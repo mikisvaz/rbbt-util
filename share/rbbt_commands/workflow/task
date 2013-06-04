@@ -20,6 +20,8 @@ def usage(workflow = nil, task = nil)
     puts workflow.to_s
     puts "=" * workflow.to_s.length
     puts
+    puts workflow.workflow_description
+    puts
     workflow.doc(task)
   end
 

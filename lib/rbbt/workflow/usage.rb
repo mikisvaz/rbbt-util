@@ -27,6 +27,8 @@ module Workflow
       puts self.to_s 
       puts "=" * self.to_s.length
       puts
+      puts "\n" << workflow_description if workflow_description and not workflow_description.empty?
+      puts
 
       puts "## TASKS"
       puts

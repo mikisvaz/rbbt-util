@@ -141,11 +141,16 @@ module TSV
                       source_key
                     end
                   else
-                    other[source_key][pos]
+                    if other.type == :flat
+                      other[source_key]
+                    else
+                      other[source_key][pos]
+                    end
                   end
                 end
                 new_values.collect!{|v| v.nil? ? [[]] : [v]}    if     type == :double and not other.type == :double
                 new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
+                new_values.flatten! if type == :flat
                 all_new_values << new_values
               end
             end

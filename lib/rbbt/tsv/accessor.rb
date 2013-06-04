@@ -16,6 +16,12 @@ module TSV
     @entity_options
   end
 
+  def entity_options=(options)
+    @entity_options = options
+    @entity_templates = nil
+  end
+
+
   def entity_templates
     @entity_templates ||= {}
   end

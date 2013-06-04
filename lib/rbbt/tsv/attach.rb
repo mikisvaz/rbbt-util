@@ -161,6 +161,7 @@ module TSV
 
     case
     when key_field == other.key_field
+      Log.debug "Attachment with same key: #{other.key_field}"
       attach_same_key other, fields
     when (not in_namespace and self.fields.include?(other.key_field))
       Log.debug "Found other's key field: #{other.key_field}"
@@ -171,6 +172,7 @@ module TSV
     else
       index = TSV.find_traversal(self, other, options)
       raise "Cannot traverse identifiers" if index.nil?
+      Log.debug "Attachment with index: #{other.key_field}"
       attach_index other, index, fields
     end
     Log.debug("Attachment of fields:#{fields.inspect} from #{other.filename.inspect} finished.")

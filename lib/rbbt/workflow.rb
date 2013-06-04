@@ -125,6 +125,7 @@ module Workflow
     end
   end
 
+  attr_accessor :description
   attr_accessor :libdir, :workdir 
   attr_accessor :helpers, :tasks
   attr_accessor :task_dependencies, :task_description, :last_task 
@@ -140,9 +141,21 @@ module Workflow
                  end
   end
 
+
   def libdir
     @libdir = Path.caller_lib_dir if @libdir.nil?
     @libdir 
+  end
+  
+  def workflow_description
+    @workflow_description ||= begin
+                       file = @libdir['workflow.md']
+                       if file.exists?
+                         file.read
+                       else
+                         ""
+                       end
+                     end
   end
 
   def helpers
