@@ -112,14 +112,10 @@ module Workflow
     begin
       require_local_workflow(wf_name) 
     rescue Exception
-      Log.debug $!.message 
-      Log.debug $!.backtrace.first
       raise "Workflow not found: #{ wf_name }" if wf_name == Misc.snake_case(wf_name)
-      Log.debug "Trying with humanized: '#{Misc.snake_case wf_name}'"
       begin
         require_local_workflow(Misc.snake_case(wf_name))
       rescue Exception
-        Log.debug $!.message
         raise "Workflow not found: #{ wf_name }"
       end
     end
