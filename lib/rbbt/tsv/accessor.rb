@@ -430,7 +430,7 @@ end
     when Path === filename
       filename.identifier_files
     when filename
-      Path.setup(filename).identifier_files
+      Path.setup(filename.dup).identifier_files
     else
       []
     end

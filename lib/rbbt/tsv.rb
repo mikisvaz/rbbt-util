@@ -96,11 +96,17 @@ module TSV
 
     if TokyoCabinet::HDB === data and parser.straight
       data.close
+      pos = stream.pos if stream.respond_to? :pos
       begin
         CMD.cmd("tchmgr importtsv '#{data.persistence_path}'", :in => stream, :log => false)
       rescue
         Log.debug("tchmgr importtsv failed for: #{data.persistence_path}")
         Log.debug($!.message)
+        if stream.respond_to? :seek
+          stream.seek pos
+        else
+          raise "tchmgr import failed and cannot restore stream"
+        end
       end
       data.write
     end

@@ -85,8 +85,8 @@ module TSV
             values.unshift key
 
             values.uniq.each do |value|
-              case
-              when index_type == :double
+              case index_type
+              when :double
                 if not new.include? value
                   new[value] = [[key]]
                 else
@@ -94,6 +94,15 @@ module TSV
                   current[0] << key
                   new[value] = current
                 end
+              when :flat
+                if not new.include? value
+                  new[value] = [key]
+                else
+                  current = new[value]
+                  current << key
+                  new[value] = current
+                end
+
               else
                 new[value] = key unless new.include? value
               end
@@ -101,7 +110,7 @@ module TSV
           end
         end
 
-        TSV.setup(new, :serializer => index_type, :type => index_type, :filename => filename, :fields => [new_key_field], :key_field => new_fields * ", ")
+        TSV.setup(new, :type => index_type, :filename => filename, :fields => [new_key_field], :key_field => new_fields * ", ")
       end
     end
   end

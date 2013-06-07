@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+
+file = ARGV.shift
+identifiers = ARGV.shift
+format = ARGV.shift
+
+
+tsv = TSV.open(file).attach identifiers, :fields => [format]
+ddd tsv.type
+ddd tsv.value_peek
+
+puts tsv.reorder(format, tsv.fields - [format])
+

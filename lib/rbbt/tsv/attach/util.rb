@@ -224,7 +224,7 @@ module TSV
   end
 
   def self.build_traverse_index(files, options = {})
-    options       = Misc.add_defaults options, :in_namespace => false, :persist_input => false
+    options       = Misc.add_defaults options, :in_namespace => false, :persist_input => true
     in_namespace  = options[:in_namespace]
     persist_input = options[:persist_input]
 
@@ -242,7 +242,7 @@ module TSV
                    nil
                  else
                    Log.debug "Data index required"
-                   data_file.index :target => data_key, :fields => [data_file.key_field], :persist => false
+                   data_file.index :target => data_key, :fields => [data_file.key_field], :persist => false, :type => (data_file.type == :single ? :single : :flat)
                  end
 
     current_index = data_index
@@ -262,7 +262,12 @@ module TSV
               if values.nil?
                 nil
               else
-                next_index.values_at(*values).flatten.collect.to_a
+                new_values = next_index.values_at(*values).flatten
+                if current_index.type == :single
+                  new_values.first
+                else
+                  new_values
+                end
               end
             end
             current_index.fields = [next_key]

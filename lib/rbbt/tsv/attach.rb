@@ -145,7 +145,7 @@ module TSV
 
     unless TSV === other
       other_identifier_files = other.identifier_files if other.respond_to? :identifier_files
-      other = TSV.open(other, :persist => options[:persist_input] == true) unless TSV === other 
+      other = TSV.open(other, :persist => options[:persist_input] == true)
       other.identifiers = other_identifier_files 
     end
 

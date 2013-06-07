@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+
+file = ARGV.shift
+identifiers = ARGV.shift
+format = ARGV.shift
+
+
+puts TSV.open(file).attach identifiers, :fields => [format]
+
