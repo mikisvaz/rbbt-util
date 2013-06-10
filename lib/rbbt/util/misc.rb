@@ -774,6 +774,10 @@ end
     end
   end
 
+  def self.hostname
+    @hostanem ||= `hostname`.strip
+  end
+
   def self.lock(file, *args)
     return yield file, *args if file.nil?
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
@@ -784,7 +788,7 @@ end
 
     begin
       if File.exists? lockfile and
-        `hostname`.strip == (info = YAML.load_file(lockfile))["host"] and 
+        Misc.hostname == (info = YAML.load_file(lockfile))["host"] and 
         info["pid"] and not Misc.pid_exists?(info["pid"])
 
         Log.info("Removing lockfile: #{lockfile}. This pid #{Process.pid}. Content: #{info.inspect}")
@@ -798,6 +802,39 @@ end
     lockfile.lock do 
       res = yield file, *args
     end
+
+    res
+  end
+
+  LOCK_REPO_SERIALIZER=Marshal
+
+  def self.lock_in_repo(repo, key, *args)
+    return yield file, *args if repo.nil? or key.nil?
+
+    lock_key = "lock-" << key
+
+    begin
+      if repo[lock_key] and
+        Misc.hostname == (info = LOCK_REPO_SERIALIZER.load(repo[lock_key]))["host"] and 
+        info["pid"] and not Misc.pid_exists?(info["pid"])
+
+        Log.info("Removing lockfile: #{lock_key}. This pid #{Process.pid}. Content: #{info.inspect}")
+        repo.out lock_key 
+      end
+    rescue
+      Log.warn("Error checking lockfile #{lock_key}: #{$!.message}. Removing. Content: #{begin repo[lock_key] rescue "Could not open file" end}")
+      repo.out lock_key if repo.include? lock_key
+    end
+
+    while repo[lock_key]
+      sleep 1
+    end
+    
+    repo[lock_key] = LOCK_REPO_SERIALIZER.dump({:hostname => Misc.hostname, :pid => Process.pid})
+
+    res = yield lock_key, *args
+
+    repo.delete lock_key
 
     res
   end

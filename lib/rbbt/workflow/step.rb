@@ -87,7 +87,7 @@ class Step
         relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
       end
 
-      FileUtils.rm info_file if File.exists? info_file
+      Open.rm info_file if Open.exists? info_file
 
       set_info :pid, Process.pid
 
@@ -162,7 +162,7 @@ class Step
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil?
     @pid = Process.fork do
       trap(:INT) { raise Step::Aborted.new "INT signal recieved" }
-      FileUtils.mkdir_p File.dirname(path) unless File.exists? File.dirname(path)
+      FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
       begin
         run
       rescue Exception
@@ -234,13 +234,13 @@ class Step
   end
 
   def clean
-    if File.exists?(path) or File.exists?(info_file)
+    if Open.exists?(path) or Open.exists?(info_file)
       begin
-        FileUtils.rm info_file if File.exists? info_file
-        FileUtils.rm info_file + '.lock' if File.exists? info_file + '.lock'
-        FileUtils.rm path if File.exists? path
-        FileUtils.rm path + '.lock' if File.exists? path + '.lock'
-        FileUtils.rm_rf files_dir if File.exists? files_dir
+        Open.rm info_file if Open.exists? info_file
+        Open.rm info_file + '.lock' if Open.exists? info_file + '.lock'
+        Open.rm path if Open.exists? path
+        Open.rm path + '.lock' if Open.exists? path + '.lock'
+        Open.rm_rf files_dir if Open.exists? files_dir
       end
     end
     self

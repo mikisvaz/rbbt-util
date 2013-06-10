@@ -126,7 +126,8 @@ module Path
 
   def produce(force = false)
     path = self.find
-    return self if File.exists?(path) and not force
+
+    return self if Open.exists?(path.to_s) and not force
 
     raise "No resource defined to produce file: #{ self }" if resource.nil?
 

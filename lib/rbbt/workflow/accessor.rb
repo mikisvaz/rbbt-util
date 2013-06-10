@@ -74,7 +74,7 @@ class Step
   end
 
   def started?
-    File.exists? info_file
+    Open.exists? info_file
   end
 
   def done?
@@ -82,7 +82,7 @@ class Step
   end
 
   def running?
-    return nil if not File.exists? info_file
+    return nil if not Open.exists? info_file
     return nil if info[:pid].nil?
     return Misc.pid_exists? info[:pid]
   end

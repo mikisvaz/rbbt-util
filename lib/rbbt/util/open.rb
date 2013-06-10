@@ -11,6 +11,19 @@ module Open
   REMOTE_CACHEDIR = "/tmp/open_cache" 
   FileUtils.mkdir REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
 
+  class << self
+    attr_accessor :repository_dirs
+
+    def repository_dirs
+      @repository_dirs ||= begin
+                             File.exists?(Rbbt.etc.repository_dirs.find) ? 
+                               File.read(Rbbt.etc.repository_dirs.find).split("\n") :
+                               []
+                           end
+    end
+
+  end
+
   def self.cachedir=(cachedir)
     REMOTE_CACHEDIR.replace cachedir
     FileUtils.mkdir REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
@@ -119,14 +132,114 @@ module Open
       CMD.cmd("grep #{invert ? '-v ' : ''} '#{grep}' -", :in => stream, :pipe => true, :post => proc{stream.force_close if stream.respond_to? :force_close})
     end
   end
-  
-  def self.file_open(file, grep, mode = 'r', invert_grep = false)
-    if grep
-      grep(File.open(file, mode), grep, invert_grep)
+
+  def self.get_repo_from_dir(dir)
+    @repos ||= {}
+    @repos[dir] ||= begin
+                      repo_path = File.join(dir, '.file_repo')
+                      Persist.open_tokyocabinet(repo_path, false, :clean,TokyoCabinet::BDB )
+                    end
+  end
+
+  def self.get_stream_from_repo(dir, sub_path)
+    repo = get_repo_from_dir(dir)
+    repo.read
+    StringIO.new repo[sub_path]
+  end
+
+  def self.save_content_in_repo(dir, sub_path, content)
+    repo = get_repo_from_dir(dir)
+    repo.write
+    repo[sub_path] = content
+  end
+
+  def self.remove_from_repo(dir, sub_path, recursive = false)
+    repo = get_repo_from_dir(dir)
+    repo.write
+    if recursive
+      repo.outlist repo.range sub_path, true, sub_path.sub(/.$/,('\1'.ord + 1).chr), false
     else
-      File.open(file, mode)
+      repo.outlist sub_path
     end
   end
+
+  def self.exists_in_repo(dir, sub_path, content)
+    repo = get_repo_from_dir(dir)
+    repo.include? sub_path
+  end
+
+  def self.find_repo_dir(file)
+    self.repository_dirs.each do |dir|
+      if file.start_with? dir
+        sub_path = file.to_s[dir.length..-1]
+        return [dir, sub_path]
+      end
+    end
+    nil
+  end
+
+  def self.rm(file)
+    if (dir_sub_path = find_repo_dir(file))
+      remove_from_repo(*dir_sub_path)
+    else
+      FileUtils.rm(file)
+    end
+  end
+
+  def self.rm_rf(file)
+    if (dir_sub_path = find_repo_dir(file))
+      remove_from_repo(*dir_sub_path, true)
+    else
+      FileUtils.rm_rf(file)
+    end
+  end
+
+  def self.file_open(file, grep, mode = 'r', invert_grep = false)
+    if (dir_sub_path = find_repo_dir(file))
+      stream =  get_stream_from_repo(*dir_sub_path)
+    else
+      stream =  File.open(file, mode)
+    end
+
+    if grep
+      grep(stream, grep, invert_grep)
+    else
+      stream
+    end
+  end
+
+  def self.file_write(file, content, mode = 'w')
+    if (dir_sub_path = find_repo_dir(file))
+      dir_sub_path.push content
+      save_content_in_repo(*dir_sub_path)
+    else
+      File.open(file, mode) do |f|
+        f.flock(File::LOCK_EX)
+        f.write content 
+        f.flock(File::LOCK_UN)
+      end
+    end
+  end
+
+  def self.exists?(file)
+    if (dir_sub_path = find_repo_dir(file))
+      dir_sub_path.push file
+      exists_in_repo(*dir_sub_path)
+    else
+      File.exists? file
+    end
+  end
+
+  def self.lock(file, &block)
+    if (dir_sub_path = find_repo_dir(file))
+      dir, sub_path = dir_sub_path
+      repo = get_repo_from_dir(dir)
+      Misc.lock_in_repo(repo, sub_path, &block)
+    else
+      Misc.lock(file, &block)
+    end
+  end
+
 
   # Decompression
    
@@ -269,11 +382,12 @@ module Open
         raise $!
       end
     when String === content
-      File.open(file, mode) do |f|
-        f.flock(File::LOCK_EX)
-        f.write content 
-        f.flock(File::LOCK_UN)
-      end
+      file_write(file, content, mode)
+      #File.open(file, mode) do |f|
+      #  f.flock(File::LOCK_EX)
+      #  f.write content 
+      #  f.flock(File::LOCK_UN)
+      #end
     else
       begin
         File.open(file, mode) do |f| 

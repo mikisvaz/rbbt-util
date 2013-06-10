@@ -80,18 +80,13 @@ def fix_options(workflow, task, job_options)
                 end
               end
             when :tsv
-              if TSV === value
+              case value
+              when TSV
                 value
+              when '-'
+                TSV.open(STDIN)
               else
-                begin
-                  if value == '-'
-                    TSV.open(STDIN).to_s :sort
-                  else
-                    TSV.new(value).to_s :sort
-                  end
-                rescue
-                  value
-                end
+                TSV.open(value)
               end
             else
               value

@@ -105,6 +105,7 @@ module CMD
     pipe       = options.delete(:pipe)
     post       = options.delete(:post)
     log        = options.delete(:log)
+    dont_close_in        = options.delete(:dont_close_in)
 
     log = true if log.nil?
 
@@ -186,7 +187,7 @@ module CMD
           end
 
           sin.close unless sin.closed?
-          in_content.close unless in_content.closed?
+          in_content.close unless in_content.closed? or dont_close_in
         rescue
           Process.kill "INT", pid
           raise $!

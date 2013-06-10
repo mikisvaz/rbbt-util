@@ -20,13 +20,13 @@ module Persist
   MAX_FILE_LENGTH = 150
 
   def self.newer?(path, file)
-    return true if not File.exists? file
+    return true if not Open.exists? file
     return true if File.mtime(path) < File.mtime(file)
     return false
   end
 
   def self.is_persisted?(path, persist_options = {})
-    return false if not File.exists? path
+    return false if not Open.exists? path
     return false if TrueClass === persist_options[:update]
 
     check = persist_options[:check]
@@ -267,8 +267,8 @@ module Persist
           end
           res
         rescue
-          Log.high "Error in persist. #{File.exists?(path) ? "Erasing '#{ path }'" : ""}"
-          FileUtils.rm path if File.exists? path 
+          Log.high "Error in persist. #{Open.exists?(path) ? "Erasing '#{ path }'" : ""}"
+          FileUtils.rm path if Open.exists? path 
           raise $!
         end
       end

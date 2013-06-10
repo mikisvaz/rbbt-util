@@ -15,7 +15,7 @@ else
   $rbbt_command_dir = Rbbt.share.rbbt_commands
 end
 
-SOPT.synopsys = "rbbt <command> <subcommand> ... -a --arg1 --arg2='value'"
+SOPT.synopsys = "rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value'"
 SOPT.summary = "Ruby bioinformatics toolkit"
 SOPT.description = <<-EOF
 This command controls many aspects of the Rbbt framework, from configuration tasks to running applications. 

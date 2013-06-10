@@ -103,6 +103,37 @@ class TestOpen < Test::Unit::TestCase
       FileUtils.rm file + '.gz'
     end
   end
+
+  def test_repo_dir
+    file1 = "TEST"
+    file2 = "TEST" * 1000
+    TmpFile.with_file do |tmpdir|
+      tmpdir = "/home/mvazquezg/tmp/repo_dir"
+      normal = File.join(tmpdir, 'normal')
+      repo = File.join(tmpdir, 'repo')
+
+      Open.repository_dirs.push(repo)
+
+      Misc.benchmark(100) do
+        filename = "file" << (rand * 100).to_i.to_s
+        Open.write(File.join(normal, filename), file2)
+        100.times do 
+          Open.read(File.join(normal,  filename))
+        end
+      end
+
+
+      Misc.benchmark(100) do
+        filename = "file" << (rand * 100).to_i.to_s
+        Open.write(File.join(repo, filename), file2)
+        100.times do 
+          Open.read(File.join(repo, filename))
+        end
+      end
+
+
+    end
+  end
   
 end
 
