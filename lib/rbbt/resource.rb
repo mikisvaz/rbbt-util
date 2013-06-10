@@ -4,11 +4,7 @@ require 'rbbt/util/chain_methods'
 require 'rbbt/resource/path'
  
 module Resource
-  extend ChainMethods
-  self.chain_prefix = :resource
-
   def self.extended(base)
-    setup_chains(base)
     if not base.respond_to? :pkgdir
       class << base
         attr_accessor :pkgdir, :subdir, :resources, :rake_dirs
@@ -26,8 +22,7 @@ module Resource
     Path.setup @subdir || "", @pkgdir, self
   end
 
-  def resource_method_missing(name, prev = nil, *args)
-    # Fix problem with ruby 1.9 calling methods by its own initiative. ARG
+  def method_missing(name, prev = nil, *args)
     if prev.nil?
       root.send(name, *args)
     else

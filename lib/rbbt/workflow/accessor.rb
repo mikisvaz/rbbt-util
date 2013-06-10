@@ -2,6 +2,8 @@ require 'rbbt/util/open'
 require 'yaml'
 
 class Step
+   
+  INFO_SERIALIAZER = Marshal
 
   def name
     @path.sub(/.*\/#{Regexp.quote task.name.to_s}\/(.*)/, '\1')
@@ -22,10 +24,10 @@ class Step
   end
 
   def info
-    return {} if not File.exists? info_file
+    return {} if not Open.exists? info_file
     begin
-      File.open(info_file) do |file|
-        YAML.load(file) || {}
+      Open.open(info_file) do |file|
+        INFO_SERIALIAZER.load(file) || {}
       end
     rescue Exception
       Log.debug "Error loading yaml: " + info_file
@@ -34,10 +36,11 @@ class Step
   end
 
   def set_info(key, value)
-    Misc.lock(info_file) do
+    value = Annotated.purge value 
+    Open.lock(info_file) do
       i = info
       i[key] = value
-      Open.write(info_file, i.to_yaml)
+      Open.write(info_file, INFO_SERIALIAZER.dump(i))
       value
     end
   end

@@ -4,7 +4,8 @@ module TSV
   extend ChainMethods
   self.chain_prefix = :tsv
 
-  NIL_YAML = "--- \n"
+  TSV_SERIALIZER = YAML
+  SERIALIZED_NIL = TSV_SERIALIZER.dump nil
 
   attr_accessor :unnamed, :serializer_module, :entity_options, :entity_templates
 
@@ -323,7 +324,7 @@ attr_accessor :#{entry}
 
 def #{ entry }
   if not defined? @#{entry}
-    @#{entry} = (value = self.tsv_clean_get_brackets('#{key}')).nil? ? nil : YAML.load(value)
+    @#{entry} = (value = self.tsv_clean_get_brackets('#{key}')).nil? ? nil : TSV_SERIALIZER.load(value)
   end
   @#{entry}
 end
@@ -333,7 +334,7 @@ if '#{entry}' == 'serializer'
 
   def #{ entry }=(value)
     @#{entry} = value
-    self.tsv_clean_set_brackets '#{key}', value.nil? ? NIL_YAML : value.to_yaml
+    self.tsv_clean_set_brackets '#{key}', value.nil? ? SERIALIZED_NIL : value.to_yaml
 
     return if value.nil?
 
@@ -369,7 +370,7 @@ if '#{entry}' == 'serializer'
 else
   def #{ entry }=(value)
     @#{entry} = value
-    self.tsv_clean_set_brackets '#{key}', value.nil? ? NIL_YAML : value.to_yaml
+    self.tsv_clean_set_brackets '#{key}', value.nil? ? SERIALIZED_NIL : value.to_yaml
   end
 end
   "
@@ -386,7 +387,7 @@ end
     :serializer
 
   def fields
-    @fields ||= YAML.load(self.tsv_clean_get_brackets("__tsv_hash_fields") || "--- \n")
+    @fields ||= TSV_SERIALIZER.load(self.tsv_clean_get_brackets("__tsv_hash_fields") || SERIALIZED_NIL)
     if @fields.nil? or @unnamed
       @fields
     else
@@ -395,13 +396,13 @@ end
   end
 
   def namespace=(value)
-    self.tsv_clean_set_brackets "__tsv_hash_namespace", value.nil? ? NIL_YAML : value.to_yaml
+    self.tsv_clean_set_brackets "__tsv_hash_namespace", value.nil? ? SERIALIZED_NIL : value.to_yaml
     @namespace = value
     @entity_options = nil
   end
 
   def fields=(value)
-    self.tsv_clean_set_brackets "__tsv_hash_fields", value.nil? ? NIL_YAML : value.to_yaml
+    self.tsv_clean_set_brackets "__tsv_hash_fields", value.nil? ? SERIALIZED_NIL : value.to_yaml
     @fields = value
     @named_fields = nil
   end

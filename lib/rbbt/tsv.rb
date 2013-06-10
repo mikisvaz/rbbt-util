@@ -16,6 +16,14 @@ require 'rbbt/tsv/attach'
 require 'rbbt/tsv/filter'
 
 module TSV
+  class << self
+    attr_accessor :lock_dir
+    
+    def lock_dir
+      @lock_dir ||= Rbbt.tmp.tsv_open_locks.find
+    end
+  end
+
   def self.setup(hash, options = {})
     options = Misc.add_defaults options, :default_value => []
     default_value = Misc.process_options options, :default_value
@@ -48,7 +56,7 @@ module TSV
 
     data = nil
 
-    lock_filename = filename.nil? ? nil : Persist.persistence_path(filename, {:dir => Rbbt.tmp.tsv_open_locks.find})
+    lock_filename = filename.nil? ? nil : Persist.persistence_path(filename, {:dir => TSV.lock_dir})
     Misc.lock lock_filename  do
       data = Persist.persist_tsv source, filename, options, persist_options do |data|
         if serializer
@@ -98,14 +106,14 @@ module TSV
       data.close
       pos = stream.pos if stream.respond_to? :pos
       begin
-        CMD.cmd("tchmgr importtsv '#{data.persistence_path}'", :in => stream, :log => false)
+        CMD.cmd("tchmgr importtsv '#{data.persistence_path}'", :in => stream, :log => false, :dont_close_in => true)
       rescue
         Log.debug("tchmgr importtsv failed for: #{data.persistence_path}")
         Log.debug($!.message)
-        if stream.respond_to? :seek
+        if stream.respond_to? :seek 
           stream.seek pos
         else
-          raise "tchmgr import failed and cannot restore stream"
+          #raise "tchmgr import failed and cannot restore stream"
         end
       end
       data.write

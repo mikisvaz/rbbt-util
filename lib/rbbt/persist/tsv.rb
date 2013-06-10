@@ -82,7 +82,7 @@ module Persist
         end
 
         def write_and_close
-          lock_filename = Persist.persistence_path(persistence_path, {:dir => Rbbt.tmp.tsv_open_locks.find})
+          lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
           Misc.lock(lock_filename) do
             write if @closed or not write?
             res = begin

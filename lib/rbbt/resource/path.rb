@@ -1,12 +1,8 @@
-require 'rbbt/util/chain_methods'
 require 'rbbt/resource/util'
 require 'rbbt/tsv'
 
 module Path
   attr_accessor :resource, :pkgdir
-
-  extend ChainMethods
-  self.chain_prefix = :path
 
   def self.setup(string, pkgdir = nil, resource = nil)
     string.extend Path
@@ -14,16 +10,6 @@ module Path
     string.resource = resource
     string
   end
-
-  def self.extended(string)
-    setup_chains(string)
-    if not string.respond_to? :byte
-      class << string
-        alias byte path_clean_get_brackets
-      end
-    end
-  end
-
   def join(name)
     if self.empty?
       Path.setup name.to_s, @pkgdir, @resource
@@ -40,21 +26,26 @@ module Path
     Dir.glob(File.join(self, pattern)).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
   end
 
-  def path_get_brackets(name)
+  def [](name, orig = false)
+    return super(name) if orig
     join name
   end
 
-  def path_method_missing(name, prev = nil, *args, &block)
+  def byte(pos)
+    send(:[], pos, true)
+  end
+
+  def method_missing(name, prev = nil, *args, &block)
     if block_given?
-      path_clean_method_missing name, prev, *args, &block
+      super name, prev, *args, &block
     else
       # Fix problem with ruby 1.9 calling methods by its own initiative. ARG
-      path_clean_method_missing(name, prev, *args) if name.to_s =~ /^to_/
-        if prev.nil?
-          join name
-        else
-          join(prev).join(name)
-        end
+      super(name, prev, *args) if name.to_s =~ /^to_/
+      if prev.nil?
+        join name
+      else
+        join(prev).join(name)
+      end
     end
   end
 

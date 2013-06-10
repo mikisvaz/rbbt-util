@@ -145,6 +145,25 @@ module Annotated
     end
   end
 
+  def self.purge(object)
+    case object
+    when String
+      object.respond_to?(:clean_annotations) ?
+        object.clean_annotations : 
+        object
+    when Array
+      object.respond_to?(:clean_annotations) ?
+        object.clean_annotations : 
+        object.collect{|e| Annotated.purge e}
+    when Hash
+      object.each do |key, value|
+        object[key] = Annotated.purge value
+      end
+    else
+      object
+    end
+  end
+
   def make_list
     new = [self]
     self.annotate(new)

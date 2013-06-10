@@ -137,7 +137,6 @@ module Workflow
                  end
   end
 
-
   def libdir
     @libdir = Path.caller_lib_dir if @libdir.nil?
     @libdir 

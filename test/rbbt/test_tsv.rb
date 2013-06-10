@@ -233,6 +233,7 @@ row2    4
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
+row3    AA    B    Id3
     EOF
 
     TmpFile.with_file(content.gsub(/ +/,"\t")) do |filename|

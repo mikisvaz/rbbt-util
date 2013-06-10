@@ -760,7 +760,6 @@ end
     html
   end
 
-
   def self.path_relative_to(basedir, path)
     path = File.expand_path(path)
     basedir = File.expand_path(basedir)

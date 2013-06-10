@@ -216,7 +216,7 @@ module Open
     io = gunzip(io) if ((String === url and gzip?(url)) and not options[:noz]) or options[:gzip]
 
     if block_given?
-      yield io 
+      return yield io 
     else
       io
     end

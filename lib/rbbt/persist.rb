@@ -251,6 +251,7 @@ module Persist
         end
 
       else
+
         if is_persisted?(path, persist_options)
           Log.low "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
           return nil if persist_options[:no_load]
@@ -258,6 +259,7 @@ module Persist
         else
           Log.medium "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
         end
+
         begin
           res = yield
           Misc.lock(path) do
