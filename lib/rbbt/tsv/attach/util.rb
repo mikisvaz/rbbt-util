@@ -10,6 +10,8 @@ module TSV
       with_unnamed do
         through do |key, values|
           self[key] = [] if self[key].nil?
+          current = self[key]
+          current = [current] unless Array === current
           if other.include? key
             case
             when other.type == :flat
@@ -23,17 +25,19 @@ module TSV
             new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
             new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
 
-            self[key] = self[key].concat new_values
+            self[key] = current.concat new_values
           else
             if type == :double
-              self[key] = self[key].concat [[]] * fields.length
+              self[key] = current.concat [[]] * fields.length
             else
-              self[key] = self[key].concat [""] * fields.length
+              self[key] = current.concat [""] * fields.length
             end
           end
         end
       end
     end
+
+    self.type = :list if self.type == :single
 
     self.fields = self.fields.concat other.fields.values_at *fields
   end
@@ -165,6 +169,8 @@ module TSV
 
             current = self[key] || [[]] * fields.length
 
+            current = [current] unless Array === current
+
             if current.length > length
               all_new_values << current.slice!(length..current.length - 1)
             end
@@ -182,6 +188,8 @@ module TSV
         end
       end
     end
+
+    self.type = :list if self.type == :single
 
     self.fields = self.fields.concat field_names
   end
