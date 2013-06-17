@@ -345,6 +345,8 @@ module TSV
               end
             else
               pos = identify_field method
+              raise "Field #{ method } not identified. Available: #{ fields * ", " }" if pos.nil?
+
               through do |key, values|
                 new[key] = values if yield(values[pos])
               end
@@ -451,7 +453,12 @@ module TSV
       end
     end
 
-    new.type = :single
+    case type
+    when :double, :flat
+      new.type = :flat
+    else
+      new.type = :single
+    end
 
     new
   end

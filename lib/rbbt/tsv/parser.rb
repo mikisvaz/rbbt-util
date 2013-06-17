@@ -370,6 +370,7 @@ module TSV
       data.key_field = @key_field
       data.fields = @fields
       data.namespace = @namespace
+      data.cast = @cast if Symbol === @cast
       data
     end
   end

@@ -42,7 +42,7 @@ def list_jobs(options)
     clean_file = file.sub('.info','')
     begin
       next if File.exists? clean_file and $quick
-      info = YAML.load(Open.read(file))
+      info = Step::INFO_SERIALIAZER.load(Open.read(file, :mode => 'rb'))
       next if File.exists? clean_file and not running? info
     rescue Exception
       puts "Error parsing info file: #{ file }"
@@ -85,7 +85,7 @@ def clean_jobs(options)
     next if File.exists? clean_file
     info = nil
     begin
-      info = YAML.load(Open.read(file))
+      info = Step::INFO_SERIALIAZER.load(Open.read(file, :mode => 'rb'))
     rescue
       Log.debug "Error process #{ file }"
       raise $!
@@ -115,7 +115,7 @@ when (options[:clean] and not options[:list])
   end
 else
   if options[:file]
-    info = YAML.load(Open.read(options[:file]))
+    info = Step::INFO_SERIALIAZER.load(Open.read(options[:file], :mode => 'rb'))
     print_job options[:file], info
   else
     list_jobs options

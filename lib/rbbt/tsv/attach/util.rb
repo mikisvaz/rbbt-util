@@ -15,7 +15,11 @@ module TSV
           if other.include? key
             case
             when other.type == :flat
-              new_values = [other[key]]
+              if type == :flat
+                new_values = other[key]
+              else
+                new_values = [other[key]]
+              end
             when other.type == :single
               new_values = [other[key]]
             else
@@ -24,6 +28,8 @@ module TSV
 
             new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
             new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
+
+            new_values.flatten if type == :flat
 
             self[key] = current.concat new_values
           else

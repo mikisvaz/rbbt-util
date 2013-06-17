@@ -244,4 +244,11 @@ class FixWidthTable
     }
   end
 
+  def chunked_values_at(keys, max = 5000)
+    Misc.ordered_divide(keys, max).inject([]) do |acc,c|
+      new = self.values_at(*c)
+      new.annotate acc if new.respond_to? :annotate and acc.empty?
+      acc.concat(new)
+    end
+  end
 end

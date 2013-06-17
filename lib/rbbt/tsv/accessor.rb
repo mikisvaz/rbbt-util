@@ -258,7 +258,7 @@ module TSV
         end
       when :list, :flat
         through :key, field do |key, fields|
-          elems << [key, fields.first]
+          elems << [key, fields]
         end
       when :double
         through :key, field do |key, fields|
@@ -276,12 +276,33 @@ module TSV
           elems.sort_by{|key, value| key }
         end
       else
+        sorted = elems.sort do |a, b| 
+          a_value = a.last
+          b_value = b.last
+          case
+          when ((a_value.nil? or (a_value.respond_to?(:empty?) and a_value.empty?)) and (b_value.nil? or (b_value.respond_to?(:empty?) and b_value.empty?)))
+            0
+          when (a_value.nil? or (a_value.respond_to?(:empty?) and a_value.empty?))
+            -1
+          when (b_value.nil? or (b_value.respond_to?(:empty?) and b_value.empty?))
+            1
+          when Array === a_value
+            if a_value.length == 1 and b_value.length == 1
+              a_value.first <=> b_value.first
+            else
+              a_value.length <=> b_value.length
+            end
+          else
+            a_value <=> b_value
+          end
+        end
         if just_keys
-          keys = elems.sort_by{|key, value| value }.collect{|key, value| key}
+          #keys = elems.sort_by{|key, value| value }.collect{|key, value| key}
+          keys = sorted.collect{|key, value| key}
           keys = prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
           keys
         else
-          elems.sort_by{|key, value| value }.collect{|key, value| [key, self[key]]}
+          sorted.collect{|key, value| [key, self[key]]}
         end
       end
     else
@@ -451,16 +472,16 @@ end
   end
 
   def values_to_s(values)
-      case
-      when (values.nil? and fields.nil?)
-        "\n"
-      when (values.nil? and not fields.nil?)
-        "\t" << ([""] * fields.length) * "\t" << "\n"
-      when (not Array === values)
-        "\t" << values.to_s << "\n"
-      else
-        "\t" << values.collect{|v| Array === v ? v * "|" : v} * "\t" << "\n"
-      end
+    case
+    when (values.nil? and fields.nil?)
+      "\n"
+    when (values.nil? and not fields.nil?)
+      "\t" << ([""] * fields.length) * "\t" << "\n"
+    when (not Array === values)
+      "\t" << values.to_s << "\n"
+    else
+      "\t" << values.collect{|v| Array === v ? v * "|" : v} * "\t" << "\n"
+    end
   end
 
   def to_s(keys = nil, no_options = false)

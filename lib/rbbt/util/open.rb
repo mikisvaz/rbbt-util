@@ -293,7 +293,15 @@ module Open
   end
 
   def self.open(url, options = {})
-    return url if IO === url
+    if IO === url
+      if block_given?
+        res = yield url 
+        url.close
+        return res
+      else
+        return url 
+      end
+    end
     options = Misc.add_defaults options, :noz => false, :mode => 'r'
 
     mode = Misc.process_options options, :mode
@@ -329,7 +337,9 @@ module Open
     io = gunzip(io) if ((String === url and gzip?(url)) and not options[:noz]) or options[:gzip]
 
     if block_given?
-      return yield io 
+      res = yield(io)
+      io.close
+      return res
     else
       io
     end
