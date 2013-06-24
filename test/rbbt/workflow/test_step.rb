@@ -178,5 +178,37 @@ class TestStep < Test::Unit::TestCase
     end
   end
 
+  def test_semaphore
+    TmpFile.with_file do |semaphore|
+      begin
+        semaphore = "/" << semaphore.gsub('/','_')
+        RbbtSemaphore.create_semaphore(semaphore, 2)
+
+        task  = Task.setup do 
+          5.times do
+            puts "Process: #{Process.pid}"
+            sleep rand * 2
+          end
+        end
+
+        jobs = []
+        10.times do
+          TmpFile.with_file do |tmp|
+            step = Step.new tmp, task
+            jobs << step.fork(semaphore)
+          end
+        end
+        jobs.each do |job|
+          while not job.done?
+            sleep 1
+          end
+        end
+      ensure
+        RbbtSemaphore.delete_semaphore(semaphore)
+      end
+    end
+
+  end
+
 
 end

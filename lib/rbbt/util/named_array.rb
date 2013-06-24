@@ -36,7 +36,7 @@ module NamedArray
       if entity_templates.include? field
         entity
       else
-        template = Misc.prepare_entity("TEMPLATE", field, options)
+        template = Misc.prepare_entity("ENTITY_TEMPLATE", field, options)
         if Annotated === template
           entity_templates[field] = template
           entity = template.annotate(entity.frozen? ? entity.dup : entity)

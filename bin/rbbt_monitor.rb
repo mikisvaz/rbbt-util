@@ -43,7 +43,7 @@ def list_jobs(options)
     begin
       next if File.exists? clean_file and $quick
       info = Step::INFO_SERIALIAZER.load(Open.read(file, :mode => 'rb'))
-      next if File.exists? clean_file and not running? info
+      next if File.exists? clean_file and info[:status] == :done
     rescue Exception
       puts "Error parsing info file: #{ file }"
       info = nil
@@ -82,13 +82,13 @@ end
 def clean_jobs(options)
   info_files.each do |file|
     clean_file = file.sub('.info','')
-    next if File.exists? clean_file
     info = nil
+    next if File.exists? clean_file
     begin
       info = Step::INFO_SERIALIAZER.load(Open.read(file, :mode => 'rb'))
-    rescue
+    rescue Exception
       Log.debug "Error process #{ file }"
-      raise $!
+      remove_job file if options[:errors]
     end
     case
     when options[:all]

@@ -28,6 +28,8 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     log.rb
     open.rb
 
+    semaphore.rb
+
     simpleopt.rb
     simpleDSL.rb
 
@@ -155,6 +157,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     info
     change_id
     attach
+   }
+   study=study{
+    task
    }
   }
   Rlib=lib/R{

@@ -164,13 +164,14 @@ module Misc
 
     dup_array = options.delete :dup_array
 
-    if  Entity.respond_to?(:formats) and Entity.formats.include? field
+    if Annotated === field or Entity.respond_to?(:formats) and Entity.formats.include? field
       params = options.dup
 
       params[:format] ||= params.delete "format"
       params.merge!(:format => field) unless params.include?(:format) and not ((f = params[:format]).nil? or (String === f and f.empty?))
 
-      entity = Entity.formats[field].setup(
+      mod = Entity === field ? field : Entity.formats[field]
+      entity = mod.setup(
         ((entity.frozen? and not entity.nil?) ? entity.dup : ((Array === entity and dup_array) ? entity.collect{|e| e.nil? ? e : e.dup} : entity) ),
         params
       ) 

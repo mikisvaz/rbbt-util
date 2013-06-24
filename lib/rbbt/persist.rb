@@ -284,12 +284,15 @@ module LocalPersist
   attr_accessor :local_persist_dir
 
   def local_persist_dir
-    @local_persist_dir ||= Rbbt.var.cache.persistence.find(:lib) if defined? Rbbt
+    @local_persist_dir ||= Rbbt.var.cache.persistence if defined? Rbbt
     @local_persist_dir
   end
 
-  def local_persist(name, type = nil, options= {}, &block)
-    Persist.persist(name, type, options.merge({:dir => local_persist_dir}), &block)
+  def local_persist(name, type = nil, options= {}, persist_options = nil, &block)
+    persist_options ||= {}
+    persist_options = {:dir => local_persist_dir}.merge persist_options
+    persist_options[:other] = options
+    Persist.persist(name, type, persist_options, &block)
   end
 
   def local_persist_tsv(source, name, opt = {}, options= {}, &block)

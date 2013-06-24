@@ -16,5 +16,7 @@ header.fields.each_with_index do |f,i|
 end
 puts "Rows: #{`wc -l #{ file }|cut -f 1 -d' '`}"
 puts "First line:"
-puts header.first_line
+parts = []
+header.first_line.split(header.sep).each_with_index{|p,i| parts << "(#{i}) #{p}"}
+puts parts * "\t"
 

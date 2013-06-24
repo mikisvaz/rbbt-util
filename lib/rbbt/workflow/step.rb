@@ -1,6 +1,7 @@
 require 'rbbt/persist'
 require 'rbbt/persist/tsv'
 require 'rbbt/util/log'
+require 'rbbt/util/semaphore'
 require 'rbbt/workflow/accessor'
 
 class Step
@@ -158,37 +159,43 @@ class Step
     end
   end
 
-  def fork
+  def fork(semaphore = nil)
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil?
     @pid = Process.fork do
       trap(:INT) { raise Step::Aborted.new "INT signal recieved" }
-      FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
       begin
-        run
-      rescue Exception
-        Log.debug("Exception caught on forked process: #{$!.message}")
-        exit -1
-      end
+        RbbtSemaphore.wait_semaphore(semaphore) if semaphore
+        FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
+        begin
+          run
+        rescue Exception
+          Log.debug("Exception caught on forked process: #{$!.message}")
+          exit -1
+        end
 
-      begin
-        children_pids = info[:children_pids]
-        if children_pids
-          children_pids.each do |pid|
-            if Misc.pid_exists? pid
-              begin
-                Process.waitpid pid
-              rescue Errno::ECHILD
-                Log.error "Waiting on #{ pid } failed: #{$!.message}"
+        begin
+          children_pids = info[:children_pids]
+          if children_pids
+            children_pids.each do |pid|
+              if Misc.pid_exists? pid
+                begin
+                  Process.waitpid pid
+                rescue Errno::ECHILD
+                  Log.error "Waiting on #{ pid } failed: #{$!.message}"
+                end
               end
             end
+            set_info :children_done, Time.now
           end
+        rescue Exception
+          Log.debug("Exception waiting for children: #{$!.message}")
+          exit -1
         end
-      rescue Exception
-        Log.debug("Exception waiting for children: #{$!.message}")
-        exit -1
+        set_info :pid, nil
+        exit 0
+      ensure
+        RbbtSemaphore.post_semaphore(semaphore) if semaphore
       end
-      set_info :pid, nil
-      exit 0
     end
     Process.detach(@pid)
     self

@@ -1,8 +1,11 @@
 #!/usr/bin/env ruby
 
+
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
 require 'rbbt/workflow/usage'
+require 'rbbt/entity/study'
+require 'rbbt/entity/study/genotypes'
 
 def usage(workflow = nil, task = nil)
   puts SOPT.doc
@@ -34,7 +37,7 @@ def SOPT_options(workflow, task)
     short = name.to_s.chars.first
     boolean = workflow.rec_input_types(task.name)[name].to_sym == :boolean
     
-    sopt_options << "-#{short}--#{name}*"
+    sopt_options << "-#{short}--#{name}#{boolean ? '' : '*'}"
   end
 
   sopt_options * ":"
@@ -47,8 +50,6 @@ def fix_options(workflow, task, job_options)
 
   job_options.each do |name, value|
     value = case option_types[name].to_sym
-            when :boolean
-              %w(true TRUE T yes).include? value
             when :float
               value.to_f
             when :integer
@@ -106,13 +107,25 @@ options = SOPT.get <<EOF
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely:
 -n--name* Job name to use. The name 'Default' is used by default:
 -pn--printname Print the name of the job and exit without starting it:
+-rw--require_workflow* Workflows to require, separated by commas
 EOF
 
-workflow = ARGV.shift
+(options[:require_workflow] || "").split(',').each do |workflow|
+  Workflow.require_workflow workflow
+end
+
+study = ARGV.shift.dup
+if Open.exists? study
+  study = Study.setup(File.basename(study))
+  study.dir = study
+else
+  Study.setup(study)
+end
+workflow = study.workflow
+
 usage if workflow.nil?
 
 task     = ARGV.shift
-
 
 # Set log, fork, clean, recursive_clean and help
 help = !!options.delete(:help)
@@ -124,19 +137,19 @@ $array_separator = options.delete(:array_separator)
 
 # Get workflow
 
-if Rbbt.etc.remote_workflows.exists?
-  remote_workflows = Rbbt.etc.remote_workflows.yaml
-else
-  remote_workflows = {}
-end
-
-if remote_workflows.include? workflow
-  require 'rbbt/rest/client'
-  workflow = WorkflowRESTClient.new remote_workflows[workflow], workflow
-else
-  Workflow.require_workflow workflow
-  workflow = Workflow.workflows.select{|mod| Misc.snake_case(mod.to_s) == Misc.snake_case(workflow)}.first
-end
+#if Rbbt.etc.remote_workflows.exists?
+#  remote_workflows = Rbbt.etc.remote_workflows.yaml
+#else
+#  remote_workflows = {}
+#end
+#
+#if remote_workflows.include? workflow
+#  require 'rbbt/rest/client'
+#  workflow = WorkflowRESTClient.new remote_workflows[workflow], workflow
+#else
+#  Workflow.require_workflow workflow
+#  workflow = Workflow.workflows.last
+#end
 
 # Set task
 namespace = nil, nil
@@ -160,13 +173,11 @@ name = options.delete(:name) || "Default"
 # get job args
 sopt_option_string = SOPT_options(workflow, task)
 job_options = SOPT.get sopt_option_string
-ddd job_options
 job_options = fix_options(workflow, task, job_options)
-ddd job_options
 
 #- get job
 
-job = workflow.job(task.name, name, job_options)
+job = study.job(task.name, study, job_options)
 
 # clean job
 if clean and job.done? != false

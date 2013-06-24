@@ -3,7 +3,7 @@
 require 'rbbt'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("--log* Log level from 0 (debug) 7 (errors):--command_dir* Directory from where to load commands")
+options = SOPT.get("--log* Log level from 0 (debug) 7 (errors):--command_dir* Directory from where to load commands:--profile Profile execution")
 
 if options[:log]
   Log.severity = options[:log].to_i
@@ -13,6 +13,11 @@ if options[:command_dir]
   $rbbt_command_dir = Path.setup(options[:command_dir])
 else
   $rbbt_command_dir = Rbbt.share.rbbt_commands
+end
+
+if options[:profile]
+  require 'ruby-prof'
+  RubyProf.start
 end
 
 SOPT.synopsys = "rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value'"
@@ -41,20 +46,28 @@ end
 dir = $rbbt_command_dir
 prev = []
 
-while ARGV.any?
+begin
+  while ARGV.any?
     command = ARGV.shift
     case
     when File.directory?(dir[command].find)
-        prev << command
-        dir = dir[command]
+      prev << command
+      dir = dir[command]
     when dir[command].exists?
-        load dir[command].find
-        exit 0
+      load dir[command].find
+      exit 0
     else
-        puts "Error: Command not understood"
-        puts
-        break
+      puts "Error: Command not understood"
+      puts
+      break
     end
+  end
+ensure
+  if options[:profile]
+    result = RubyProf.stop
+    printer = RubyProf::FlatPrinter.new(result)
+    printer.print(STDOUT, :min_percent => 10)
+  end
 end
 
 puts SOPT.doc
