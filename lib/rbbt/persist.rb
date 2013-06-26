@@ -296,6 +296,6 @@ module LocalPersist
   end
 
   def local_persist_tsv(source, name, opt = {}, options= {}, &block)
-    Persist.persist_tsv(source, name, opt, options.merge({:dir => local_persist_dir}), &block)
+    Persist.persist_tsv(source, name, opt, options.merge({:dir => local_persist_dir, :persist => true}), &block)
   end
 end

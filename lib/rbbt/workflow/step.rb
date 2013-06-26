@@ -96,6 +96,7 @@ class Step
       dependencies.each{|dependency| 
         begin
           dependency.relay_log self
+          dependency.clean if not dependency.done? and dependency.error?
           dependency.run true
         rescue Exception
           backtrace = $!.backtrace

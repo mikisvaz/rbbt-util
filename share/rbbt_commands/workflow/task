@@ -113,7 +113,6 @@ usage if workflow.nil?
 
 task     = ARGV.shift
 
-
 # Set log, fork, clean, recursive_clean and help
 help = !!options.delete(:help)
 do_fork = !!options.delete(:fork)
@@ -136,6 +135,7 @@ if remote_workflows.include? workflow
 else
   Workflow.require_workflow workflow
   workflow = Workflow.workflows.select{|mod| Misc.snake_case(mod.to_s) == Misc.snake_case(workflow)}.first
+  workflow = Workflow.workflows.last if workflow.nil?
 end
 
 # Set task
@@ -160,9 +160,7 @@ name = options.delete(:name) || "Default"
 # get job args
 sopt_option_string = SOPT_options(workflow, task)
 job_options = SOPT.get sopt_option_string
-ddd job_options
 job_options = fix_options(workflow, task, job_options)
-ddd job_options
 
 #- get job
 

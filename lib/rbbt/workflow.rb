@@ -58,8 +58,9 @@ module Workflow
     else
       case
         # Points to workflow file
-      when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb')) 
+      when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb') or File.exists?(wf_name))
         $LOAD_PATH.unshift(File.join(File.expand_path(File.dirname(wf_name)), 'lib'))
+        wf_name = "./" << wf_name unless wf_name[0] == "/"
         require wf_name
         Log.medium "Workflow loaded from file: #{ wf_name }"
         return true
@@ -240,5 +241,21 @@ module Workflow
     Dir.glob(path).collect{|f|
       Misc.path_relative_to(task_dir, f).sub(".info",'')
     }
+  end
+
+  def local_persist_setup
+    class << self
+      include LocalPersist
+    end
+    self.local_persist_dir = Rbbt.var.cache.persistence.find :lib
+  end
+
+  def local_workdir_setup
+    self.workdir = Rbbt.var.jobs.find :lib
+  end
+
+  def make_local
+    local_persist_setup
+    local_workdir_setup
   end
 end
