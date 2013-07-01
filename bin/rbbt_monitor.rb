@@ -26,7 +26,7 @@ def print_job(file, info, severity_color = nil)
   else
     info ||= {:status => :missing_info_file}
     str = [clean_file, info[:status].to_s] * " [ STATUS = " + " ]" 
-    str += " (#{running?(info)? :running : :dead} #{info[:pid]})" if info.include? :pid
+    str += " (#{running?(info)? :running : :dead} #{info[:pid]})" if info[:pid]
     str += " (children: #{info[:children_pids].collect{|pid| [pid, Misc.pid_exists?(pid) ? "R" : "D"] * ":"} * ", "})" if info.include? :children_pids
 
     str = "#{severity_color}" <<  str  << "\033[0m" if severity_color
@@ -43,7 +43,7 @@ def list_jobs(options)
     begin
       next if File.exists? clean_file and $quick
       info = Step::INFO_SERIALIAZER.load(Open.read(file, :mode => 'rb'))
-      next if File.exists? clean_file and info[:status] == :done
+      next if File.exists? clean_file and info[:status] == :done and (info[:children_pids].nil? or info[:children_done] or info[:children_pids].select{|pid| Misc.pid_exists? pid}.empty?)
     rescue Exception
       puts "Error parsing info file: #{ file }"
       info = nil

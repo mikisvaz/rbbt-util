@@ -25,6 +25,10 @@ module Persist
       class << database
         attr_accessor :writable, :closed, :persistence_path, :tokyocabinet_class
 
+        def prefix(key)
+          range(key, 1, key + 255.chr, 1)
+        end
+
         def closed?
           @closed
         end
@@ -155,17 +159,17 @@ module Persist
 
              path = persistence_path(filename, persist_options, options)
 
-             if is_persisted? path
+             if is_persisted? path and not persist_options[:update]
                Log.debug "TSV persistence up-to-date: #{ path }"
                lock_filename = Persist.persistence_path(path, {:dir => Rbbt.tmp.tsv_open_locks.find})
-               return Misc.lock(lock_filename) do open_tokyocabinet(path, false); end
+               return Misc.lock(lock_filename) do open_tokyocabinet(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB); end
              else
                Log.medium "TSV persistence creating: #{ path }"
              end
 
              FileUtils.rm path if File.exists? path
 
-             data = open_tokyocabinet(path, true, persist_options[:serializer])
+             data = open_tokyocabinet(path, true, persist_options[:serializer], persist_options[:engine] || TokyoCabinet::HDB)
              data.serializer = :type if TSV === data and data.serializer.nil?
 
              data.close

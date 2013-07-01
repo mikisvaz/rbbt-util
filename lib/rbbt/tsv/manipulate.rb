@@ -463,6 +463,22 @@ module TSV
     new
   end
 
+  def process_key(&block)
+    new = annotate({})
+    through do |key, values|
+      key = case 
+            when block.arity == 1
+              yield(key)
+            when block.arity == 2
+              yield(key, values)
+            else
+              raise "Unexpected arity in block, must be 1, 2 or 3: #{block.arity}"
+            end
+      new[key] = values
+    end
+    new
+  end
+
   def process(field, &block)
     field_pos = identify_field field
 

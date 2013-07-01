@@ -86,7 +86,18 @@ module TSV
   end
 
   def self.parse_header(stream, options = {})
-    Parser.new stream, options
+    case
+    when Path === stream 
+      stream.open do |f|
+        Parser.new f, options
+      end
+    when (String === stream and stream.length < 300 and Open.exists? stream)
+      stream.open do |f|
+        Parser.new f, options
+      end
+    else
+      Parser.new stream, options
+    end
   end
 
   def self.parse(stream, data, options = {})

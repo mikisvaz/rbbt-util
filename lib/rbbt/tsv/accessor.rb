@@ -10,7 +10,7 @@ module TSV
   attr_accessor :unnamed, :serializer_module, :entity_options, :entity_templates
 
   def annotate(tsv)
-    TSV.setup(tsv, :key_field => key_field, :fields => fields, :namespace => namespace, :entity_options => entity_options)
+    TSV.setup(tsv, :key_field => key_field, :fields => fields, :namespace => namespace, :entity_options => entity_options, :type => type)
   end
 
   def entity_options
@@ -413,7 +413,7 @@ end
 
   def fields
     @fields ||= TSV_SERIALIZER.load(self.tsv_clean_get_brackets("__tsv_hash_fields") || SERIALIZED_NIL)
-    if @fields.nil? or @unnamed
+    if true or @fields.nil? or @unnamed
       @fields
     else
       @named_fields ||= NamedArray.setup @fields, @fields, nil, entity_options, entity_templates
