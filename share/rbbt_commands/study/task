@@ -116,8 +116,9 @@ end
 
 study = ARGV.shift.dup
 if Open.exists? study
+  dir = study
   study = Study.setup(File.basename(study))
-  study.dir = study
+  study.dir = Path.setup(dir, Study)
 else
   Study.setup(study)
 end
