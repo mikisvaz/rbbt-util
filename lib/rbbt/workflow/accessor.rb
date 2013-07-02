@@ -30,7 +30,7 @@ class Step
         INFO_SERIALIAZER.load(file) || {}
       end
     rescue Exception
-      Log.debug "Error loading yaml: " + info_file
+      Log.debug "Error loading info file: " + info_file
       raise $!
     end
   end

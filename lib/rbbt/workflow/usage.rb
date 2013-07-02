@@ -15,6 +15,7 @@ module Task
         puts "  #{dep.name}:"
         puts
         puts SOPT.input_doc(dep.inputs, dep.input_types, dep.input_descriptions, dep.input_defaults)
+        puts
       end
     end
   end
