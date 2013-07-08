@@ -258,6 +258,11 @@ class Step
     @dependencies.collect{|step| step.rec_dependencies}.flatten.concat  @dependencies
   end
 
+  def recursive_clean
+    rec_dependencies.each{|step| step.clean }
+    clean
+  end
+
   def step(name)
     rec_dependencies.select{|step| step.task.name.to_sym == name.to_sym}.first
   end

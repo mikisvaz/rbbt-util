@@ -48,36 +48,24 @@ void post_semaphore(char* name){
     file = Misc.digest(rand.to_s) if file.nil?
     file.gsub!('/', '_')
     begin
-      RbbtSemaphore.create_semaphore(file, 2)
+      RbbtSemaphore.create_semaphore(file, size)
       yield file
     ensure
       RbbtSemaphore.delete_semaphore(file)
     end
   end
-end
 
-if __FILE__ == $0
-  s = "/tmp_semaphore"
-  RbbtSemaphore.delete_semaphore(s)
-  RbbtSemaphore.create_semaphore(s, 2)
-
-  pids = []
-  5.times do
-    pids << Process.fork{
-      begin
-        RbbtSemaphore.wait_semaphore(s)
-        10.times do
-          puts "Process: #{Process.pid}"
-          sleep rand * 2
+  def self.fork_each_on_semaphore(elems, size, file = nil)
+    with_semaphore(size, file) do |file|
+      pids = elems.collect do |elem| 
+        Process.fork do 
+          RbbtSemaphore.wait_semaphore(file)
+          yield elem
+          RbbtSemaphore.post_semaphore(file)
         end
-      ensure
-        RbbtSemaphore.post_semaphore(s)
       end
-    }
+      pids.each do |pid| Process.waitpid pid end
+    end
   end
-
-  pids.collect{|p| Process.waitpid p}
-
-
-  RbbtSemaphore.delete_semaphore(s)
 end
+

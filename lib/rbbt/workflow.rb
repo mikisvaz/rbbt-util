@@ -117,7 +117,8 @@ module Workflow
       begin
         require_local_workflow(Misc.snake_case(wf_name))
       rescue Exception
-        raise "Workflow not found: #{ wf_name }"
+        Log.error("Workflow not found: #{ wf_name }")
+        raise $!
       end
     end
   end
