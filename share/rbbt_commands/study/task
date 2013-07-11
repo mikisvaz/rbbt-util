@@ -6,6 +6,7 @@ require 'rbbt/workflow'
 require 'rbbt/workflow/usage'
 require 'rbbt/entity/study'
 require 'rbbt/entity/study/genotypes'
+require 'rbbt/entity/study/cnv'
 
 def usage(workflow = nil, task = nil)
   puts SOPT.doc
@@ -136,22 +137,6 @@ clean = !!options.delete(:clean)
 recursive_clean = !!options.delete(:recursive_clean)
 $array_separator = options.delete(:array_separator)
 
-# Get workflow
-
-#if Rbbt.etc.remote_workflows.exists?
-#  remote_workflows = Rbbt.etc.remote_workflows.yaml
-#else
-#  remote_workflows = {}
-#end
-#
-#if remote_workflows.include? workflow
-#  require 'rbbt/rest/client'
-#  workflow = WorkflowRESTClient.new remote_workflows[workflow], workflow
-#else
-#  Workflow.require_workflow workflow
-#  workflow = Workflow.workflows.last
-#end
-
 # Set task
 namespace = nil, nil
 
@@ -178,19 +163,19 @@ job_options = fix_options(workflow, task, job_options)
 
 #- get job
 
-job = study.job(task.name, study, job_options)
+job = study.job(task.name, job_options)
 
 # clean job
 if clean and job.done? != false
   job.clean 
   sleep 1
-  job = workflow.job(task.name, name, job_options)
+  job = study.job(task.name, job_options)
 end
 
 if recursive_clean and job.done?
   job.recursive_clean 
   sleep 1
-  job = workflow.job(task.name, name, job_options)
+  job = study.job(task.name, job_options)
 end
 
 # run

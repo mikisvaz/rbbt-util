@@ -1,10 +1,10 @@
-require 'rbbt/util/chain_methods'
+#require 'rbbt/util/chain_methods'
 require 'rbbt/util/misc'
 
 module NamedArray
-  extend ChainMethods
+  #extend ChainMethods
+  #self.chain_prefix = :named_array
 
-  self.chain_prefix = :named_array
   attr_accessor :fields
   attr_accessor :key
   attr_accessor :entity_options
@@ -73,9 +73,20 @@ module NamedArray
     end
   end
 
-  def named_array_get_brackets(key)
+  #def named_array_get_brackets(key)
+  #  pos = Misc.field_position(fields, key)
+  #  elem = named_array_clean_get_brackets(pos)
+
+  #  return elem if @fields.nil? or @fields.empty?
+
+  #  field = NamedArray === @fields ? @fields.named_array_clean_get_brackets(pos) : @fields[pos]
+  #  elem = prepare_entity(elem, field, entity_options)
+  #  elem
+  #end
+
+  def [](key, clean = false)
     pos = Misc.field_position(fields, key)
-    elem = named_array_clean_get_brackets(pos)
+    elem = super(pos)
 
     return elem if @fields.nil? or @fields.empty?
 
@@ -84,7 +95,19 @@ module NamedArray
     elem
   end
 
-  def named_array_each(&block)
+  #def named_array_each(&block)
+  #  if defined?(Entity) and not @fields.nil? and not @fields.empty?
+  #    @fields.zip(self).each do |field,elem|
+  #      elem = prepare_entity(elem, field, entity_options)
+  #      yield(elem)
+  #      elem
+  #    end
+  #  else
+  #    named_array_clean_each &block
+  #  end
+  #end
+
+  def each(&block)
     if defined?(Entity) and not @fields.nil? and not @fields.empty?
       @fields.zip(self).each do |field,elem|
         elem = prepare_entity(elem, field, entity_options)
@@ -92,14 +115,30 @@ module NamedArray
         elem
       end
     else
-      named_array_clean_each &block
+      super &block
     end
+
   end
 
-  def named_array_collect
+  #def named_array_collect
+  #  res = []
+
+  #  each do |elem|
+  #    if block_given?
+  #      res << yield(elem)
+  #    else
+  #      res << elem
+  #    end
+  #  end
+
+  #  res
+  #end
+
+
+  def collect
     res = []
 
-    named_array_each do |elem|
+    each do |elem|
       if block_given?
         res << yield(elem)
       else
@@ -110,14 +149,27 @@ module NamedArray
     res
   end
 
-  def named_array_set_brackets(key,value)
-    named_array_clean_set_brackets(Misc.field_position(fields, key), value)
+  #def named_array_set_brackets(key,value)
+  #  named_array_clean_set_brackets(Misc.field_position(fields, key), value)
+  #end
+  
+  def []=(key, value)
+    super(Misc.field_position(fields, key), value)
   end
 
-  def named_array_values_at(*keys)
+  #def named_array_values_at(*keys)
+  #  keys = keys.collect{|k| Misc.field_position(fields, k, true) }
+  #  keys.collect{|k|
+  #    named_array_get_brackets(k) unless k.nil?
+  #  }
+  #end
+
+
+
+  def values_at(*keys)
     keys = keys.collect{|k| Misc.field_position(fields, k, true) }
     keys.collect{|k|
-      named_array_get_brackets(k) unless k.nil?
+      self[k] unless k.nil?
     }
   end
 

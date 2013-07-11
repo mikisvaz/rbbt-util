@@ -43,7 +43,7 @@ def list_jobs(options)
     begin
       next if File.exists? clean_file and $quick
       info = Step::INFO_SERIALIAZER.load(Open.read(file, :mode => 'rb'))
-      next if File.exists? clean_file and info[:status] == :done and (info[:children_pids].nil? or info[:children_done] or info[:children_pids].select{|pid| Misc.pid_exists? pid}.empty?)
+      next if (File.exists?(clean_file) or info[:status] == :done) and (info[:children_pids].nil? or info[:children_done] or info[:children_pids].select{|pid| Misc.pid_exists? pid}.empty?)
     rescue Exception
       puts "Error parsing info file: #{ file }"
       info = nil

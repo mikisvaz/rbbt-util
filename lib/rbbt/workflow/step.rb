@@ -168,7 +168,7 @@ class Step
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
         begin
-          run
+          run(true)
         rescue Exception
           Log.debug("Exception caught on forked process: #{$!.message}")
           exit -1
