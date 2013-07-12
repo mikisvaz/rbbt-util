@@ -1,8 +1,8 @@
-require 'rbbt/util/chain_methods'
+#require 'rbbt/util/chain_methods'
 require 'yaml'
 module TSV
-  extend ChainMethods
-  self.chain_prefix = :tsv
+  #extend ChainMethods
+  #self.chain_prefix = :tsv
 
   TSV_SERIALIZER = YAML
   SERIALIZED_NIL = TSV_SERIALIZER.dump nil
@@ -81,7 +81,7 @@ module TSV
   end
 
   def self.extended(data)
-    setup_chains(data)
+    #setup_chains(data)
 
     if not data.respond_to? :write
       class << data
@@ -107,10 +107,10 @@ module TSV
     end
 
     if not data.respond_to? :serialized_get
-      class << data
-        alias serialized_get tsv_clean_get_brackets
-        alias serialized_set tsv_clean_set_brackets
-      end
+      #class << data
+      #  alias serialized_get []
+      #  alias serialized_set []=
+      #end
     end
   end
 
@@ -120,13 +120,13 @@ module TSV
   ENTRY_KEYS = []
 
   #{{{ Chained Methods
-  def tsv_empty?
+  def empty?
     length == 0
   end
 
-  def tsv_get_brackets(key)
-    value = serialized_get(key)
-    return value if value.nil? or @unnamed or fields.nil?
+  def [](key, clean = false)
+    value = (self.respond_to?(:serialized_get) and not clean) ? serialized_get(key) : super(key)
+    return value if value.nil? or @unnamed or clean == :entry_key or fields.nil?
 
     case type
     when :double, :list
@@ -139,18 +139,19 @@ module TSV
     value
   end
 
-  def tsv_set_brackets(key,value)
+  def []=(key, value, clean = false)
+    return super(key, value) if clean or not self.respond_to?(:serialized_set)
     serialized_set(key, value)
   end
 
-  def tsv_keys
-    keys = tsv_clean_keys - ENTRY_KEYS
+  def keys
+    keys = super - ENTRY_KEYS
     return keys if @unnamed or key_field.nil?
 
     prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
   end
 
-  def tsv_values
+  def values
     values = chunked_values_at(keys)
     return values if @unnamed or fields.nil?
 
@@ -166,16 +167,16 @@ module TSV
     values
   end
 
-  def tsv_each
+  def each
     fields = self.fields
 
     serializer = self.serializer
     serializer_module = SERIALIZER_ALIAS[serializer] unless serializer.nil?
-    tsv_clean_each do |key, value|
+    super do |key, value|
       next if ENTRY_KEYS.include? key
 
       # TODO Update this to be more efficient
-      value = serializer_module.load(value) unless serializer.nil?
+      value = serializer_module.load(value) unless serializer.nil? or FalseClass === serializer
 
       # Annotated with Entity and NamedArray
       if not @unnamed
@@ -195,10 +196,10 @@ module TSV
     end
   end
 
-  def tsv_collect
+  def collect
     serializer = self.serializer
     serializer_module = SERIALIZER_ALIAS[serializer] unless serializer.nil?
-    tsv_clean_collect do |key, value|
+    super do |key, value|
       next if ENTRY_KEYS.include? key
 
       # TODO Update this to be more efficient
@@ -225,15 +226,15 @@ module TSV
     end
   end
 
-  def tsv_size
+  def size
     keys.length
   end
 
-  def tsv_length
+  def length
     keys.length
   end
 
-  def tsv_values_at(*keys)
+  def values_at(*keys)
     keys.collect do |key|
       self[key]
     end
@@ -249,7 +250,7 @@ module TSV
 
   #{{{ Sorting
 
-  def tsv_sort_by(field = nil, just_keys = false, &block)
+  def sort_by(field = nil, just_keys = false, &block)
     field = :all if field.nil?
     if field == :all
       elems = collect
@@ -344,12 +345,13 @@ module TSV
     entries.each do |entry|
       key = KEY_PREFIX + entry
       ENTRY_KEYS << key
-      self.module_eval "
+      line = __LINE__; self.module_eval "
 attr_accessor :#{entry}
 
 def #{ entry }
   if not defined? @#{entry}
-    @#{entry} = (value = self.tsv_clean_get_brackets('#{key}')).nil? ? nil : TSV_SERIALIZER.load(value)
+    # @#{entry} = (value = self.clean_get_brackets('#{key}')).nil? ? nil : TSV_SERIALIZER.load(value)
+    @#{entry} = (value = self.send(:[], '#{key}', :entry_key)).nil? ? nil : TSV_SERIALIZER.load(value)
   end
   @#{entry}
 end
@@ -359,33 +361,36 @@ if '#{entry}' == 'serializer'
 
   def #{ entry }=(value)
     @#{entry} = value
-    self.tsv_clean_set_brackets '#{key}', value.nil? ? SERIALIZED_NIL : value.to_yaml
+    #self.tsv_clean_set_brackets '#{key}', value.nil? ? SERIALIZED_NIL : value.to_yaml
+    self.send(:[]=, '#{key}', value.nil? ? SERIALIZED_NIL : value.to_yaml, true)
 
     return if value.nil?
 
     self.serializer_module = SERIALIZER_ALIAS[value.to_sym]
 
     if serializer_module.nil?
-      class << self
-        alias serialized_get tsv_clean_get_brackets
-        alias serialized_set tsv_clean_set_brackets
-      end
+      #class << self
+      #  alias serialized_get tsv_clean_get_brackets
+      #  alias serialized_set tsv_clean_set_brackets
+      #end
 
     else
       class << self
 
         define_method :serialized_get do |key|
           return nil unless self.include? key
-          res = tsv_clean_get_brackets(key)
+          res = self.send(:[], key, true)
           return res if res.nil?
           self.serializer_module.load(res)
         end
 
         define_method :serialized_set do |key, value|
           if value.nil?
-            tsv_clean_set_brackets key, value
+            self.send(:[]=, key, value, true)
+            #tsv_clean_set_brackets key, value
           else
-            tsv_clean_set_brackets key, self.serializer_module.dump(value)
+            self.send(:[]=, key, self.serializer_module.dump(value), true)
+            #tsv_clean_set_brackets key, self.serializer_module.dump(value)
           end
         end
       end
@@ -395,10 +400,11 @@ if '#{entry}' == 'serializer'
 else
   def #{ entry }=(value)
     @#{entry} = value
-    self.tsv_clean_set_brackets '#{key}', value.nil? ? SERIALIZED_NIL : value.to_yaml
+    self.send(:[]=, '#{key}', value.nil? ? SERIALIZED_NIL : value.to_yaml, true)
+    #self.tsv_clean_set_brackets '#{key}', value.nil? ? SERIALIZED_NIL : value.to_yaml
   end
 end
-  "
+  ", __FILE__, line
     end
   end
 
@@ -412,7 +418,8 @@ end
     :serializer
 
   def fields
-    @fields ||= TSV_SERIALIZER.load(self.tsv_clean_get_brackets("__tsv_hash_fields") || SERIALIZED_NIL)
+    #@fields ||= TSV_SERIALIZER.load(self.tsv_clean_get_brackets("__tsv_hash_fields") || SERIALIZED_NIL)
+    @fields ||= TSV_SERIALIZER.load(self.send(:[], "__tsv_hash_fields", :entry_key) || SERIALIZED_NIL)
     if true or @fields.nil? or @unnamed
       @fields
     else
@@ -421,13 +428,15 @@ end
   end
 
   def namespace=(value)
-    self.tsv_clean_set_brackets "__tsv_hash_namespace", value.nil? ? SERIALIZED_NIL : value.to_yaml
+    #self.tsv_clean_set_brackets "__tsv_hash_namespace", value.nil? ? SERIALIZED_NIL : value.to_yaml
+    self.send(:[]=, "__tsv_hash_namespace", value.nil? ? SERIALIZED_NIL : value.to_yaml, true)
     @namespace = value
     @entity_options = nil
   end
 
   def fields=(value)
-    self.tsv_clean_set_brackets "__tsv_hash_fields", value.nil? ? SERIALIZED_NIL : value.to_yaml
+    #self.tsv_clean_set_brackets "__tsv_hash_fields", value.nil? ? SERIALIZED_NIL : value.to_yaml
+    self.send(:[]=, "__tsv_hash_fields", value.nil? ? SERIALIZED_NIL : value.to_yaml, true)
     @fields = value
     @named_fields = nil
   end

@@ -116,10 +116,10 @@ row2 A b C
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(File.open(filename), :double, :sep => /\s/)
-      assert_equal %w(row2 row1), tsv.sort{|a,b|
+      assert_equal %w(row2 row1), tsv.tsv_sort{|a,b|
         a[1]["ValueA"] <=> b[1]["ValueA"]
       }.collect{|k,v| k}
-      assert_equal %w(row1 row2), tsv.sort{|a,b|
+      assert_equal %w(row1 row2), tsv.tsv_sort{|a,b|
         a[1]["ValueB"] <=> b[1]["ValueB"]
       }.collect{|k,v| k}
     end

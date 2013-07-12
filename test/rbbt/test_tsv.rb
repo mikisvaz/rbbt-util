@@ -210,7 +210,7 @@ row2    4
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/, :cast => :to_i, :type => :single, :serializer => :integer)
       assert_equal 1, tsv["row1"]
-      assert String === tsv.tsv_clean_get_brackets("row1")
+      assert String === tsv.send(:[], "row1", true)
     end
   end
 

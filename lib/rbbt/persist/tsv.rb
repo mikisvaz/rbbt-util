@@ -131,6 +131,7 @@ module Persist
     unless serializer == :clean
       TSV.setup database
       database.serializer = serializer || database.serializer
+      database.fields
     end
 
     database
