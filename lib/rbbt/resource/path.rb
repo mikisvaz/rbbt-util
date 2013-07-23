@@ -23,7 +23,7 @@ module Path
   end
 
   def glob(pattern = '*')
-    Dir.glob(File.join(self, pattern)).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
+    Dir.glob(File.join(Regexp.quote(self), pattern)).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
   end
 
   def [](name, orig = false)
@@ -171,6 +171,10 @@ module Path
 
   def yaml
     YAML.load self.open
+  end
+
+  def pipe_to(cmd, options = {})
+    CMD.cmd(cmd, {:in => self.open, :pipe => true}.merge(options))
   end
 
   def index(options = {})

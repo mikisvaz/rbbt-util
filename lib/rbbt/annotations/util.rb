@@ -14,7 +14,7 @@ module Annotated
 
     annotation_types.each do |mod|
       mod = Misc.string2const(mod) if String === mod
-      object.extend mod
+      object.extend mod unless mod === object
     end
 
     object.instance_variable_set(:@annotation_values, info) 

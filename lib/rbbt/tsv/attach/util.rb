@@ -189,7 +189,7 @@ module TSV
 
             current += all_new_values
 
-            self[key] = current
+            self[key].replace current
           end
         end
       end

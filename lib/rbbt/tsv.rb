@@ -71,7 +71,7 @@ module TSV
 
         data.filename = filename.to_s unless filename.nil?
         if data.identifiers.nil? and Path === filename and filename.identifier_file_path
-          data.identifiers = filename.identifier_file_path.to_s 
+          data.identifiers = filename.identifier_file_path.to_s
         end
 
         data
@@ -81,6 +81,10 @@ module TSV
     data.unnamed = unnamed unless unnamed.nil?
 
     data.entity_options = entity_options
+
+    if Path === source and data.identifiers
+      data.identifiers = Path.setup(data.identifiers, source.pkgdir, source.resource)
+    end
 
     data
   end

@@ -7,7 +7,12 @@ module R
   UTIL    = File.join(LIB_DIR, 'util.R')
 
   def self.run(command, options = {})
-    cmd = "source('#{UTIL}');\n"
+    cmd =<<-EOF
+# Loading basic rbbt environment
+source('#{UTIL}');
+
+    EOF
+
     case
     when IO === command
       cmd << command.read
@@ -19,7 +24,15 @@ module R
 
     Log.debug "R Script:\n#{ cmd }"
 
-    CMD.cmd('R --vanilla --slave --quiet', options.merge(:in => cmd))
+    if options.delete :monitor
+      io = CMD.cmd('R --vanilla --slave --quiet', options.merge(:in => cmd, :pipe => true))
+      while line = io.gets
+        puts line
+      end
+      nil
+    else
+      CMD.cmd('R --vanilla --slave --quiet', options.merge(:in => cmd))
+    end
   end
 
   def self.interactive(init_file, options = {})
@@ -29,9 +42,9 @@ module R
   def self.interactive(script, options = {})
     TmpFile.with_file do |init_file|
         Open.write(init_file) do |file|
-          profile = File.join(ENV["HOME"], ".Rprofile")
-          file.puts "source('#{profile}');\n" if File.exists? profile
+          file.puts "# Loading basic rbbt environment"
           file.puts "source('#{R::UTIL}');\n"
+          file.puts 
           file.puts script
         end
         CMD.cmd("env R_PROFILE='#{init_file}' xterm R")
@@ -40,6 +53,13 @@ module R
 
   def self.ruby2R(object)
     case object
+    when nil
+      "NULL"
+    when TSV
+      #"as.matrix(data.frame(c(#{object.transpose("Field").collect{|k,v| "#{k}=" << R.ruby2R(v)}.flatten * ", "}), row.names=#{R.ruby2R object.keys}))"
+      "matrix(#{R.ruby2R object.values},dimnames=list(#{R.ruby2R object.keys}, #{R.ruby2R object.fields}))"
+    when Symbol
+      "#{ object }"
     when String
       "'#{ object }'"
     when Fixnum, Float
@@ -60,8 +80,12 @@ module TSV
       Open.write(f, self.to_s)
       Log.debug(R.run(
       <<-EOF
+## Loading tsv into data
 data = rbbt.tsv('#{f}');
+
 #{script.strip}
+
+## Resaving data
 if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
       EOF
       ).read)

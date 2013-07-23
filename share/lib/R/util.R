@@ -167,7 +167,38 @@ rbbt.acc <- function(data, new){
 rbbt.png_plot <- function(filename, width, height, p, ...){
     png(filename=filename, width=width, height=height, ...);
     eval(parse(text=p));
+}
+
+rbbt.heatmap <- function(filename, width, height, data, take_log=FALSE, ...){
+    require(gplots, quietly = TRUE, warn.conflicts = FALSE)
+    library(pls, quietly = TRUE, warn.conflicts = FALSE)
+    opar = par()
+    png(filename=filename, width=width, height=height);
+
+    #par(cex.lab=0.5, cex=0.5, ...)
+
+    data = as.matrix(data)
+    data[is.nan(data)] = NA
+
+    #data = data[rowSums(!is.na(data))!=0, colSums(!is.na(data))!=0]
+    data = data[rowSums(is.na(data))==0, ]
+
+    if (take_log){
+        for (study in colnames(data)){
+            skip = sum(data[, study] <= 0) != 0
+            if (!skip){
+                data[, study] = log(data[, study])
+            }
+        }
+        data = data[, colSums(is.na(data))==0]
+    }
+
+    data = stdize(data)
+
+    heatmap.2(data, margins = c(20,5), scale='column')
+
     dev.off();
+    par(opar)
 }
 
 rbbt.init <- function(data, new){

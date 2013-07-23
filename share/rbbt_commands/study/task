@@ -7,6 +7,7 @@ require 'rbbt/workflow/usage'
 require 'rbbt/entity/study'
 require 'rbbt/entity/study/genotypes'
 require 'rbbt/entity/study/cnv'
+require 'rbbt/entity/study/expression'
 
 def usage(workflow = nil, task = nil)
   puts SOPT.doc

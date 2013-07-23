@@ -107,7 +107,7 @@ module Annotated
   def annotate(object)
 
     annotation_types.each do |annotation|
-      object.extend annotation
+      object.extend annotation unless annotation === object
     end
 
     object.instance_variable_set(:@annotation_types, nil)
