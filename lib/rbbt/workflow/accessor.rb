@@ -36,6 +36,7 @@ class Step
   end
 
   def set_info(key, value)
+    return nil if @exec
     value = Annotated.purge value 
     Open.lock(info_file) do
       i = info

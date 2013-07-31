@@ -7,6 +7,7 @@ require 'rbbt/workflow/accessor'
 class Step
   attr_accessor :path, :task, :inputs, :dependencies, :bindings
   attr_accessor :pid
+  attr_accessor :exec
 
   class Aborted < Exception; end
 
@@ -63,6 +64,7 @@ class Step
   end
 
   def exec
+    @exec = true if @exec.nil?
     result = @task.exec_in((bindings ? bindings : self), *@inputs)
     prepare_result result, @task.result_description
   end
@@ -84,6 +86,7 @@ class Step
 
   def run(no_load = false)
     result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path }.uniq, :no_load => no_load do
+      @exec = false
       if Step === Step.log_relay_step and not self == Step.log_relay_step
         relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
       end
