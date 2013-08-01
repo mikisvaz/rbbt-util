@@ -106,6 +106,8 @@ module Annotated
 
   def annotate(object)
 
+    return object unless Array === object or String === object
+
     annotation_types.each do |annotation|
       object.extend annotation unless annotation === object
     end

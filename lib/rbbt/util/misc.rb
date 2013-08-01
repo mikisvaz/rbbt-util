@@ -946,6 +946,10 @@ end
     keys = keys.clean_annotations if keys.respond_to? :clean_annotations
     keys = keys.sort_by{|k| k.to_s}
 
+    if hash.respond_to? :unnamed
+      unnamed = hash.unnamed
+      hash.unnamed = true 
+    end
     keys.each do |k|
       next if k == :monitor or k == "monitor" or k == :in_situ_persistence or k == "in_situ_persistence"
       v = hash[k]
@@ -980,6 +984,7 @@ end
 
       str << "_" << hash2md5(v.info) if Annotated === v
     end
+    hash.unnamed = unnamed if hash.respond_to? :unnamed
 
     if str.empty?
       ""
