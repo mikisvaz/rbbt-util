@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "rbbt-util"
-  s.version = "5.2.4"
+  s.version = "5.3.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
-  s.date = "2013-05-27"
+  s.date = "2013-08-01"
   s.description = "Utilities for handling tsv files, caches, etc"
   s.email = "miguel.vazquez@cnio.es"
   s.executables = ["tsv.rb", "tchash.rb", "run_workflow.rb", "rbbt_query.rb", "rbbt_exec.rb", "rbbt_Rutil.rb", "rbbt_monitor.rb", "rbbt", "rbbt_dangling_locks.rb"]
@@ -24,6 +24,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/annotations.rb",
     "lib/rbbt/annotations/annotated_array.rb",
     "lib/rbbt/annotations/util.rb",
+    "lib/rbbt/entity.rb",
     "lib/rbbt/fix_width_table.rb",
     "lib/rbbt/persist.rb",
     "lib/rbbt/persist/tsv.rb",
@@ -46,12 +47,15 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/R.rb",
     "lib/rbbt/util/chain_methods.rb",
     "lib/rbbt/util/cmd.rb",
+    "lib/rbbt/util/color.rb",
+    "lib/rbbt/util/colorize.rb",
     "lib/rbbt/util/excel2tsv.rb",
     "lib/rbbt/util/filecache.rb",
     "lib/rbbt/util/log.rb",
     "lib/rbbt/util/misc.rb",
     "lib/rbbt/util/named_array.rb",
     "lib/rbbt/util/open.rb",
+    "lib/rbbt/util/semaphore.rb",
     "lib/rbbt/util/simpleDSL.rb",
     "lib/rbbt/util/simpleopt.rb",
     "lib/rbbt/util/task/job.rb",
@@ -70,6 +74,9 @@ Gem::Specification.new do |s|
     "share/rbbt_commands/conf/web_user/add",
     "share/rbbt_commands/conf/web_user/list",
     "share/rbbt_commands/conf/web_user/remove",
+    "share/rbbt_commands/study/task",
+    "share/rbbt_commands/tsv/attach",
+    "share/rbbt_commands/tsv/change_id",
     "share/rbbt_commands/tsv/info",
     "share/rbbt_commands/workflow/remote/add",
     "share/rbbt_commands/workflow/remote/list",
@@ -81,7 +88,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.rubygems_version = "2.0.3"
   s.summary = "Utilities for the Ruby Bioinformatics Toolkit (rbbt)"
-  s.test_files = ["test/rbbt/tsv/test_accessor.rb", "test/rbbt/tsv/test_index.rb", "test/rbbt/tsv/test_util.rb", "test/rbbt/tsv/test_filter.rb", "test/rbbt/tsv/test_attach.rb", "test/rbbt/tsv/test_manipulate.rb", "test/rbbt/test_fix_width_table.rb", "test/rbbt/test_workflow.rb", "test/rbbt/workflow/test_step.rb", "test/rbbt/workflow/test_task.rb", "test/rbbt/workflow/test_soap.rb", "test/rbbt/resource/test_path.rb", "test/rbbt/test_tsv.rb", "test/rbbt/test_resource.rb", "test/rbbt/test_annotations.rb", "test/rbbt/test_persist.rb", "test/rbbt/util/test_filecache.rb", "test/rbbt/util/test_tmpfile.rb", "test/rbbt/util/test_excel2tsv.rb", "test/rbbt/util/test_simpleopt.rb", "test/rbbt/util/test_misc.rb", "test/rbbt/util/test_open.rb", "test/rbbt/util/test_cmd.rb", "test/rbbt/util/test_chain_methods.rb", "test/rbbt/util/test_R.rb", "test/rbbt/util/test_simpleDSL.rb", "test/test_rbbt.rb", "test/test_helper.rb"]
+  s.test_files = ["test/rbbt/tsv/test_accessor.rb", "test/rbbt/tsv/test_index.rb", "test/rbbt/tsv/test_util.rb", "test/rbbt/tsv/test_filter.rb", "test/rbbt/tsv/test_attach.rb", "test/rbbt/tsv/test_manipulate.rb", "test/rbbt/test_fix_width_table.rb", "test/rbbt/test_workflow.rb", "test/rbbt/workflow/test_step.rb", "test/rbbt/workflow/test_task.rb", "test/rbbt/workflow/test_soap.rb", "test/rbbt/resource/test_path.rb", "test/rbbt/test_tsv.rb", "test/rbbt/test_resource.rb", "test/rbbt/test_annotations.rb", "test/rbbt/test_entity.rb", "test/rbbt/test_persist.rb", "test/rbbt/util/test_filecache.rb", "test/rbbt/util/test_tmpfile.rb", "test/rbbt/util/test_excel2tsv.rb", "test/rbbt/util/test_simpleopt.rb", "test/rbbt/util/test_colorize.rb", "test/rbbt/util/test_misc.rb", "test/rbbt/util/test_open.rb", "test/rbbt/util/test_cmd.rb", "test/rbbt/util/test_chain_methods.rb", "test/rbbt/util/test_R.rb", "test/rbbt/util/test_simpleDSL.rb", "test/test_rbbt.rb", "test/test_helper.rb"]
 
   if s.respond_to? :specification_version then
     s.specification_version = 4
