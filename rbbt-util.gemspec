@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "rbbt-util"
-  s.version = "5.3.1"
+  s.version = "5.3.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
@@ -99,7 +99,6 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<ruby-prof>, [">= 0"])
       s.add_runtime_dependency(%q<progress-monitor>, [">= 0"])
       s.add_runtime_dependency(%q<lockfile>, [">= 0"])
-      s.add_runtime_dependency(%q<RubyInline>, [">= 0"])
       s.add_runtime_dependency(%q<narray>, [">= 0"])
       s.add_runtime_dependency(%q<simplews>, [">= 0"])
       s.add_runtime_dependency(%q<highline>, [">= 0"])
@@ -109,7 +108,6 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<ruby-prof>, [">= 0"])
       s.add_dependency(%q<progress-monitor>, [">= 0"])
       s.add_dependency(%q<lockfile>, [">= 0"])
-      s.add_dependency(%q<RubyInline>, [">= 0"])
       s.add_dependency(%q<narray>, [">= 0"])
       s.add_dependency(%q<simplews>, [">= 0"])
       s.add_dependency(%q<highline>, [">= 0"])
@@ -120,7 +118,6 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<ruby-prof>, [">= 0"])
     s.add_dependency(%q<progress-monitor>, [">= 0"])
     s.add_dependency(%q<lockfile>, [">= 0"])
-    s.add_dependency(%q<RubyInline>, [">= 0"])
     s.add_dependency(%q<narray>, [">= 0"])
     s.add_dependency(%q<simplews>, [">= 0"])
     s.add_dependency(%q<highline>, [">= 0"])
