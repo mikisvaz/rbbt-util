@@ -10,7 +10,7 @@ if options[:log]
 end
 
 if options[:command_dir]
-  $rbbt_command_dir = Path.setup(options[:command_dir])
+  $rbbt_command_dir = Path.setup(options[:command_dir].dup)
 else
   $rbbt_command_dir = Rbbt.share.rbbt_commands
 end

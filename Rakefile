@@ -18,7 +18,6 @@ begin
     gem.add_dependency('rake')
     gem.add_dependency('spreadsheet')
     gem.add_dependency('ruby-prof')
-    gem.add_dependency('tokyocabinet')
     gem.add_dependency('progress-monitor')
     gem.add_dependency('lockfile')
     gem.add_dependency('RubyInline')
