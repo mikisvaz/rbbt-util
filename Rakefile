@@ -20,7 +20,6 @@ begin
     gem.add_dependency('ruby-prof')
     gem.add_dependency('progress-monitor')
     gem.add_dependency('lockfile')
-    gem.add_dependency('RubyInline')
     gem.add_dependency('narray')
     gem.add_dependency('simplews')
     gem.add_dependency('highline')
