@@ -26,7 +26,7 @@ module Open
 
   def self.cachedir=(cachedir)
     REMOTE_CACHEDIR.replace cachedir
-    FileUtils.mkdir REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
+    FileUtils.mkdir_p REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
   end
 
   def self.cachedir
