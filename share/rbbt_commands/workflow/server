@@ -12,7 +12,7 @@ require 'rbbt/rest/workflow'
 require 'rbbt/rest/file_server'
 require 'rbbt/rest/helpers'
 
-options = SOPT.get "--profile:-p--port*"
+options = SOPT.get "-e--environment*:-p--port*"
 
 workflow = ARGV.first
 
@@ -26,11 +26,7 @@ class WorkflowRest < Sinatra::Base
   end
 end
 
-if options[:profile]
-  WorkflowRest.before File.join('/', Workflow.workflows.last.to_s, '*') do
-    @profile = true
-  end
-end
+ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
 
 class WorkflowRest < Sinatra::Base
    
@@ -41,7 +37,7 @@ class WorkflowRest < Sinatra::Base
   helpers Sinatra::RbbtMiscHelpers
 
   #{{{ DIRECTORIES
-  local_var = Rbbt.var.find(:lib)
+  local_var = Rbbt.var.find(:user)
   set :cache_dir           , local_var.sinatra.cache.find
   set :file_dir            , local_var.sinatra.files.find
   set :favourites_dir      , local_var.sinatra.favourites.find

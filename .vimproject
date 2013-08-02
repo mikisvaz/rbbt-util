@@ -138,8 +138,8 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   test_workflow.rb
  }
  share=share{
-  color=color{
-   divergingcolors.hex
+  color=color filter="*"{
+   diverging_colors.hex
   }
   rbbt_commands=rbbt_commands filter="*"{
    conf=conf{

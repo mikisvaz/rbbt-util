@@ -67,6 +67,7 @@ module Resource
 
     final_path = path.respond_to?(:find) ? (force ? path.find(:user) : path.find) : path
     if not File.exists? final_path or force
+      Log.medium "Producing: #{ final_path }"
       Misc.lock final_path + '.produce' do
         begin
           case type

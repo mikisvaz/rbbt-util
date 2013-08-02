@@ -24,6 +24,10 @@ begin
     gem.add_dependency('simplews')
     gem.add_dependency('highline')
 
+    # I hate this...
+    gem.add_dependency('ZenTest', '4.3')
+    gem.add_dependency('RubyInline')
+
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new  
