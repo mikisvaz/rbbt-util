@@ -9,14 +9,15 @@ module Association
   end
 
   def self.open(file, options)
+    options = options.clone
     options = Misc.add_defaults options, :merge => true
     namespace = options[:namespace]
     old_file, file = file, file.sub('NAMESPACE', namespace) if namespace and String === file
     old_file.annotate file if Path === old_file
     Persist.persist_tsv(file, nil, options, :persist => true, :prefix => "Association", :update => false) do |data|
-      source = options.delete :source
-      target = options.delete :target
-      target_field = options.delete :target_field
+      source = options[:source]
+      target = options[:target]
+      target_field = options[:target_field]
 
       if source
         source_entity = Entity.formats[source]
