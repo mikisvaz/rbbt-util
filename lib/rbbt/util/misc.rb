@@ -184,15 +184,15 @@ module Misc
   ARRAY_MAX_LENGTH = 1000
   STRING_MAX_LENGTH = ARRAY_MAX_LENGTH * 10
 
-  def self.sanitize_filename(filename, length = 200)
+  def self.sanitize_filename(filename, length = 254)
     if filename.length > length
-      if filename =~ /(\..{2,4})$/
+      if filename =~ /(\..{2,9})$/
         extension = $1
       else
         extension = ''
       end
 
-      post_fix = " TRUNCATED at #{length} (#{filename.length})" + extension
+      post_fix = "--#{filename.length}@#{length}_#{Misc.digest(filename)[0..4]}" + extension
 
       filename = filename[0..(length - post_fix.length - 1)] << post_fix
     else

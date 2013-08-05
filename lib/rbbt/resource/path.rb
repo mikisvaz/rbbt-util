@@ -10,11 +10,16 @@ module Path
     string.resource = resource
     string
   end
+
+  def annotate(name)
+    Path.setup name.to_s, @pkgdir, @resource
+  end
+
   def join(name)
     if self.empty?
-      Path.setup name.to_s, @pkgdir, @resource
+      self.annotate name.to_s
     else
-      Path.setup File.join(self, name.to_s), @pkgdir, @resource
+      self.annotate File.join(self, name.to_s)
     end
   end
 

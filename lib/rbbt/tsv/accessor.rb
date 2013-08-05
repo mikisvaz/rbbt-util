@@ -540,6 +540,17 @@ end
     peek
   end
 
+  def summary
+    <<-EOF
+Key field = #{key_field}
+Fields = #{fields * ", "}
+Type = #{type}
+Example:
+  - #{key = keys.first}: #{self[key].inspect}
+
+    EOF
+  end
+
   def to_hash
     new = self.dup
     ENTRY_KEYS.each{|entry| new.delete entry}

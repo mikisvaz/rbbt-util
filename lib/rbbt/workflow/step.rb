@@ -12,6 +12,7 @@ class Step
   class Aborted < Exception; end
 
   def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil)
+    path = Misc.sanitize_filename path
     @path = Path.setup(path)
     @task = task
     @bindings = bindings
