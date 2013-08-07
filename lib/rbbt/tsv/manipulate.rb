@@ -257,7 +257,7 @@ module TSV
         data.namespace = namespace
         data.entity_options = entity_options
         data.entity_templates = entity_templates
-        data.type = type
+        data.type = zipped ? :list : type
       end
     end
   end

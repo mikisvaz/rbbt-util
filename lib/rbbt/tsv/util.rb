@@ -62,19 +62,72 @@ module TSV
     case
     when Integer === field
       field
-    when (field.nil? or field == :key or key_field == field)
+    when (field.nil? or field == :key)
       :key
-    when String === field
-      raise "No fields specified in TSV.identify_field" if fields.nil?
+    when (String === field and not fields.nil?)
       pos = fields.index field
+      pos ||= :key if key_field == field
       Log.medium "Field #{ field } was not found. Options: #{fields * ", "}" if pos.nil?
       pos
+    else
+      raise "No fields specified in TSV.identify_field" if fields.nil?
+      Log.medium "Field #{ field } was not found. Options: (#{key_field}), #{fields * ", "}"
     end
   end
 
   def identify_field(field)
     TSV.identify_field(key_field, fields, field)
   end
+
+  def to_double
+    new = {}
+    case type
+    when :double
+      self
+    when :flat
+      through do |k,v|
+        new[k] = [v]
+      end
+    when :single
+      through do |k,v|
+        new[k] = [[v]]
+      end
+    when :list
+      through do |k,v|
+        new[k] = v.collect{|e| [e]}
+      end
+    end
+    self.annotate(new)
+    new.type = :double
+    new
+  end
+
+  def to_flat(field = nil)
+    new = {}
+    case type
+    when :double
+      if field.nil?
+        through do |k,v| new[k] = v.first end
+      else
+        pos = identify_field field
+        through do |k,v| new[k] = v[pos] end
+      end
+    when :flat
+      self
+    when :single
+      through do |k,v|
+        new[k] = [v]
+      end
+    when :list
+      through do |k,v|
+        new[k] = [v.first]
+      end
+    end
+    self.annotate(new)
+    new.type = :flat
+    new
+  end
+
 
 
 end

@@ -173,6 +173,10 @@ class Step
         FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
         begin
           run(true)
+        rescue Step::Aborted
+          Log.debug("Forked process aborted: #{@path}")
+          log :aborted, "Aborted"
+          exit -1
         rescue Exception
           Log.debug("Exception caught on forked process: #{$!.message}")
           exit -1

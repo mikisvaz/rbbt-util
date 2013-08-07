@@ -187,6 +187,12 @@ module TSV
 
     def add_to_data_merge_zipped(data, keys, values)
       num = keys.length
+
+      if values.first.length > 1 and num == 1
+        keys = keys * values.first.length
+        num = keys.length
+      end
+
       values = values.collect{|v| v.length != num ? [v.first] * num : v}
       all = values.unshift keys
       Misc.zip_fields(all).each do |values|
@@ -204,6 +210,12 @@ module TSV
 
     def add_to_data_zipped(data, keys, values)
       num = keys.length
+
+      if values.first.length > 1 and num == 1
+        keys = keys * values.first.length
+        num = keys.length
+      end
+
       values = values.collect{|v| v.length != num ? [v.first] * num : v}
       all = values.unshift keys
       Misc.zip_fields(all).each do |values|
@@ -309,7 +321,6 @@ module TSV
       options = header_options.merge options
 
       @type = Misc.process_options(options, :type) || :double
-      merge = Misc.process_options(options, :merge) || false
 
       @sep2 = Misc.process_options(options, :sep2) || "|"
       @cast = Misc.process_options options, :cast; @cast = @cast.to_sym if String === @cast
@@ -318,6 +329,9 @@ module TSV
       @select= Misc.process_options options, :select
       @zipped = Misc.process_options options, :zipped
       @namespace = Misc.process_options options, :namespace
+      merge = Misc.process_options(options, :merge)
+      merge = @zipped if merge.nil?
+      merge = false if merge.nil?
 
       case @type
       when :double 

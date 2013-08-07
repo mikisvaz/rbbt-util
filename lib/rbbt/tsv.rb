@@ -96,7 +96,7 @@ module TSV
         Parser.new f, options
       end
     when (String === stream and stream.length < 300 and Open.exists? stream)
-      stream.open do |f|
+      Open.open(stream) do |f|
         Parser.new f, options
       end
     else

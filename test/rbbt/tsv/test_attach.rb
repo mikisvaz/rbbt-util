@@ -446,5 +446,33 @@ bb   Id4
     assert_equal %w(ValueA ValueB OtherID), tsv1.fields
     assert_equal %w(Id1 Id4), tsv1["row3"]["OtherID"]
   end
+
+  def test_attach_flat
+    content1 =<<-EOF
+#Id    ValueA    ValueB
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+    content2 =<<-EOF
+#ValueA    OtherID
+a    Id1|Id2
+A    Id3
+    EOF
+
+    tsv1 = tsv2 = index = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.open(File.open(filename), :flat, :fields => ["ValueA"], :sep => /\s+/)
+      puts tsv1
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.open(File.open(filename), :double, :sep => /\s+/)
+    end
+
+    res = tsv1.attach tsv2, :fields => ["OtherID"]
+    puts res
+
+  end
 end
 

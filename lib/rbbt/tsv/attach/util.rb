@@ -237,19 +237,7 @@ module TSV
     end
   end
 
-  def self.build_traverse_index(files, options = {})
-    options       = Misc.add_defaults options, :in_namespace => false, :persist_input => true
-    in_namespace  = options[:in_namespace]
-    persist_input = options[:persist_input]
-
-    path = find_path(files, options)
-
-    return nil if path.nil?
-
-    traversal_ids = path.collect{|p| p.first}
-
-    Log.debug "Found Traversal: #{traversal_ids * " => "}"
-
+  def self.index_for_traversal(path, persist_input = false)
     data_key, data_file = path.shift
     data_index = if data_key == data_file.key_field
                    Log.debug "Data index not required '#{data_file.key_field}' => '#{data_key}'"
@@ -292,6 +280,23 @@ module TSV
     end
 
     current_index
+
+  end
+
+  def self.build_traverse_index(files, options = {})
+    options       = Misc.add_defaults options, :in_namespace => false, :persist_input => true
+    in_namespace  = options[:in_namespace]
+    persist_input = options[:persist_input]
+
+    path = find_path(files, options)
+
+    return nil if path.nil?
+
+    traversal_ids = path.collect{|p| p.first}
+
+    Log.debug "Found Traversal: #{traversal_ids * " => "}"
+
+    index_for_traversal path, persist_input
   end
 
 

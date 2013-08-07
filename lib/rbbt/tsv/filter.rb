@@ -187,14 +187,14 @@ module Filtered
     end
   end
 
-  def filtered_set(key, value)
+  def filtered_set(key, value, clean = false)
     if filters.empty?
-      self.send(:unfiltered_set, key, value)
+      self.send(:unfiltered_set, key, value, clean)
     else
       filters.each do |filter| 
         filter.add key if filter.match_entry key, value
       end
-      self.send(:unfiltered_set, key, value)
+      self.send(:unfiltered_set, key, value, clean)
     end
   end
 

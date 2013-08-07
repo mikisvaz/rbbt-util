@@ -87,10 +87,11 @@ module NamedArray
   def [](key, clean = false)
     pos = Misc.field_position(fields, key)
     elem = super(pos)
+    return elem if clean
 
     return elem if @fields.nil? or @fields.empty?
 
-    field = NamedArray === @fields ? @fields.named_array_clean_get_brackets(pos) : @fields[pos]
+    field = NamedArray === @fields ? @fields[pos, true] : @fields[pos]
     elem = prepare_entity(elem, field, entity_options)
     elem
   end

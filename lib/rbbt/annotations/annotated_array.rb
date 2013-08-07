@@ -24,8 +24,10 @@ module AnnotatedArray
 
     value.extend AnnotatedArray if Array === value
 
-    value.container       = self
-    value.container_index = pos
+    if value.respond_to? :container
+      value.container       = self
+      value.container_index = pos
+    end
 
     value
   end
