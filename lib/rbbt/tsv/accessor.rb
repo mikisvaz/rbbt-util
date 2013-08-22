@@ -481,6 +481,7 @@ end
 
 
   def all_fields
+    return nil if key_field.nil? or fields.nil?
     [key_field] + fields
   end
 
@@ -545,6 +546,7 @@ end
 Key field = #{key_field}
 Fields = #{fields * ", "}
 Type = #{type}
+Size = #{size}
 Example:
   - #{key = keys.first}: #{self[key].inspect}
 

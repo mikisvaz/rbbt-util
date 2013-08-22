@@ -6,14 +6,15 @@ class TestTSVManipulate < Test::Unit::TestCase
 
   def load_segment_data(data)
     tsv = TSV.open(data, :list, :sep=>":", :cast => proc{|e| e =~ /(\s*)(_*)/; ($1.length..($1.length + $2.length - 1))})
+
     tsv.add_field "Start" do |key, values|
       values["Range"].first
     end
+
     tsv.add_field "End" do |key, values|
       values["Range"].last
     end
 
-    puts tsv.type
     tsv = tsv.slice ["Start", "End"]
  
     tsv

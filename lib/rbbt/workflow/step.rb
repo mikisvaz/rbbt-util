@@ -176,10 +176,10 @@ class Step
         rescue Step::Aborted
           Log.debug("Forked process aborted: #{@path}")
           log :aborted, "Aborted"
-          exit -1
+          raise $!
         rescue Exception
-          Log.debug("Exception caught on forked process: #{$!.message}")
-          exit -1
+          Log.debug("Exception caught on forked process: #{@path}")
+          raise $!
         end
 
         begin

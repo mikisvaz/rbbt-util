@@ -69,6 +69,8 @@ module TSV
       pos ||= :key if key_field == field
       Log.medium "Field #{ field } was not found. Options: #{fields * ", "}" if pos.nil?
       pos
+    when key_field == field
+      :key
     else
       raise "No fields specified in TSV.identify_field" if fields.nil?
       Log.medium "Field #{ field } was not found. Options: (#{key_field}), #{fields * ", "}"

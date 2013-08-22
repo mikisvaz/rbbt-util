@@ -26,8 +26,10 @@ def print_job(file, info, severity_color = nil)
   else
     info ||= {:status => :missing_info_file}
     str = [clean_file, info[:status].to_s] * " [ STATUS = " + " ]" 
-    str += " (#{running?(info)? :running : :dead} #{info[:pid]})" if info[:pid]
-    str += " (children: #{info[:children_pids].collect{|pid| [pid, Misc.pid_exists?(pid) ? "R" : "D"] * ":"} * ", "})" if info.include? :children_pids
+    if info[:status] != :error and info[:status] != :aborted
+      str += " (#{running?(info)? :running : :dead} #{info[:pid]})" if info[:pid]
+      str += " (children: #{info[:children_pids].collect{|pid| [pid, Misc.pid_exists?(pid) ? "R" : "D"] * ":"} * ", "})" if info.include? :children_pids
+    end
 
     str = "#{severity_color}" <<  str  << "\033[0m" if severity_color
     puts str
@@ -52,8 +54,10 @@ def list_jobs(options)
     color = case
             when (not info)
               Log::SEVERITY_COLOR[3]
-            when info[:status] == :error
+            when info[:status] == :error 
               Log::SEVERITY_COLOR[3]
+            when info[:status] == :aborted 
+              Log::SEVERITY_COLOR[2]
             when (info[:pid] and not running? info)
               Log::SEVERITY_COLOR[2]
             end
@@ -93,7 +97,7 @@ def clean_jobs(options)
     case
     when options[:all]
       remove_job file
-    when (options[:errors] and (not info or info[:status] == :error))
+    when (options[:errors] and (not info or info[:status] == :error or info[:status] == :aborted))
       remove_job file
     when (options[:zombies] and info[:pid] and not running? info)
       remove_job file

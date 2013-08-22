@@ -237,18 +237,46 @@ module TSV
     Persist.persist_tsv self, self.filename, {:key_field => new_key_field, :fields => new_fields}, persist_options do |data|
 
       with_unnamed do
-        new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
-          if data.include?(key) and not zipped
-            case type 
-            when :double
-              data[key] = data[key].zip(value).collect do |old_list, new_list| old_list + new_list end
-            when :flat
+        if zipped or (type != :double and type != :flat)
+          new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
+            data[key] = value.clone if Array === value
+          end
+        else
+          case type 
+          when :double
+            new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
+              if data[key].nil?
+                #data[key] = value.collect{|v| v.dup}
+                data[key] = value.collect{|v| v.dup}
+              else
+                current = data[key]
+                value.each_with_index do |v, i|
+                  current[i].concat v
+                end
+                data[key] = current if data.respond_to? :tokyocabinet_class
+              end
+            end
+          when :flat
+            new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
+              data[key] ||= []
               data[key].concat value
             end
-          else
-            data[key] = value.dup
           end
         end
+
+
+        #new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
+        #  if data.include?(key) and not zipped
+        #    case type 
+        #    when :double
+        #      data[key] = data[key].zip(value).collect do |old_list, new_list| old_list + new_list end
+        #    when :flat
+        #      data[key].concat value
+        #    end
+        #  else
+        #    data[key] = value.dup
+        #  end
+        #end
 
         data.extend TSV unless TSV === data
         data.key_field = new_key_field_name
@@ -371,9 +399,7 @@ module TSV
             end
 
           end
-
         end
-
 
       else
         with_unnamed do
@@ -414,6 +440,7 @@ module TSV
             end
           end
         end
+
       when Regexp === method
         with_unnamed do
           through :key, key do |key, values|
@@ -421,11 +448,35 @@ module TSV
             new[key] = self[key] if values.flatten.select{|v| v =~ method}.any?
           end
         end
+
+      when (String === method and method =~ /name:(.*)/)
+        name = $1
+        if name.strip =~ /^\/(.*)\/$/
+          regexp = Regexp.new $1
+          ddd regexp
+          through :key, key do |key, values|
+            values = [values] if type == :single
+            new[key] = self[key] if values.flatten.select{|v|  ddd v.name ; v.name =~ regexp}.any?
+          end
+        else
+          through :key, key do |key, values|
+            values = [values] if type == :single
+            new[key] = self[key] if values.flatten.select{|v| v.name == name}.any?
+          end
+        end
+
       when String === method
         with_unnamed do
           through :key, key do |key, values|
             values = [values] if type == :single
             new[key] = self[key] if values.flatten.select{|v| v == method}.any?
+          end
+        end
+
+      when Fixnum === method
+        with_unnamed do
+          through :key, key do |key, values|
+            new[key] = self[key] if values.flatten.length > method
           end
         end
       when Proc === method
@@ -436,7 +487,6 @@ module TSV
           end
         end
       end
- 
     end
 
     new

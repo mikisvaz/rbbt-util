@@ -60,13 +60,13 @@ class TestAssociations < Test::Unit::TestCase
     assert_equal ["aa"], database[tp53.ensembl].first
   end
 
-  def test_gene_target_open_translate
+  def __test_gene_target_open_translate
     tp53 = Gene.setup("TP53", "Associated Gene Name", "Hsa/jan2013")
     database = Association.open(FAssocs, {:target => "Gene=~Associated Gene Name=>Ensembl Gene ID", :source => "Entity3", :zipped => true}, :dir => DAssocs)
     assert_equal [tp53.ensembl], database["aa"].first
   end
 
-  def test_undirected
+  def __test_undirected
     require 'rbbt/sources/pina'
     require 'rbbt/gene_associations'
     tp53 = Gene.setup("TP53", "Associated Gene Name", "Hsa/jan2013")

@@ -204,7 +204,7 @@ module Misc
   def self.remove_long_items(obj)
     case
     when TSV === obj
-      remove_long_items(obj.fields + obj.keys.sort)
+      remove_long_items((obj.all_fields || []) + obj.keys.sort)
     when (Array === obj and obj.length > ARRAY_MAX_LENGTH)
       remove_long_items(obj[0..ARRAY_MAX_LENGTH-2] << "TRUNCATED at #{ ARRAY_MAX_LENGTH } (#{obj.length})")
     when (Hash === obj and obj.length > ARRAY_MAX_LENGTH)
@@ -1099,7 +1099,7 @@ end
     chunks
   end
 
-  # Divides the array into +num+ chunks of the same size by placing one
+  # Divides the array into chunks of +num+ same size by placing one
   # element in each chunk iteratively.
   def self.ordered_divide(array, num)
     last = array.length - 1
