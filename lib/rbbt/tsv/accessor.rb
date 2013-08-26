@@ -35,7 +35,6 @@ module TSV
     return entity if entity.nil?
     return entity unless defined? Entity
     entity = entity if options.delete :dup_array
-    entity_templates
     if (template = entity_templates[field])
       entity = template.annotate(entity.frozen? ? entity.dup : entity)
       entity.extend AnnotatedArray if Array === entity

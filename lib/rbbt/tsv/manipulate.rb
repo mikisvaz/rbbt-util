@@ -284,7 +284,10 @@ module TSV
         data.filename = filename
         data.namespace = namespace
         data.entity_options = entity_options
-        data.entity_templates = entity_templates
+        data.entity_templates = {}
+        data.fields.each do |field|
+          data.entity_templates[field] = entity_templates[field] if entity_templates.include? field
+        end
         data.type = zipped ? :list : type
       end
     end
@@ -317,7 +320,7 @@ module TSV
     elems.sort_by{|k,v| v}.collect{|k,v| k}
   end
 
-  def select(method = nil, &block)
+  def select(method = nil, invert = false, &block)
     new = TSV.setup({}, :key_field => key_field, :fields => fields, :type => type, :filename => filename, :identifiers => identifiers)
 
     new.key_field = key_field
@@ -331,7 +334,7 @@ module TSV
    case
     when (method.nil? and block_given?)
       through do |key, values|
-        new[key] = values if yield key, values
+        new[key] = values if invert ^ (yield key, values)
       end
     when Array === method
       method = Set.new method
@@ -339,22 +342,22 @@ module TSV
         case type
         when :single
           through do |key, value|
-            new[key] = value if method.include? key or method.include? value
+            new[key] = value if invert ^ (method.include? key or method.include? value)
           end
         when :list, :flat
           through do |key, values|
-            new[key] = values if method.include? key or (method & values).any?
+            new[key] = values if invert ^ (method.include? key or (method & values).any?)
           end
         else
           through do |key, values|
-            new[key] = values if method.include? key or (method & values.flatten).any?
+            new[key] = values if invert ^ (method.include? key or (method & values.flatten).any?)
           end
         end
       end
     when Regexp === method
       with_unnamed do
         through do |key, values|
-          new[key] = values if [key,values].flatten.select{|v| v =~ method}.any?
+          new[key] = values if invert ^ ([key,values].flatten.select{|v| v =~ method}.any?)
         end
       end
     when String === method
@@ -365,18 +368,18 @@ module TSV
             case
             when (method == key_field or method == :key)
               through do |key, values|
-                new[key] = values if yield(key)
+                new[key] = values if invert ^ (yield(key))
               end
             when (type == :single or type == :flat)
               through do |key, value|
-                new[key] = value if yield(value)
+                new[key] = value if invert ^ (yield(value))
               end
             else
               pos = identify_field method
               raise "Field #{ method } not identified. Available: #{ fields * ", " }" if pos.nil?
 
               through do |key, values|
-                new[key] = values if yield(values[pos])
+                new[key] = values if invert ^ (yield(values[pos]))
               end
             end
           end
@@ -385,16 +388,16 @@ module TSV
             case
             when (method == key_field or method == :key)
               through do |key, values|
-                new[key] = values if yield(key, key)
+                new[key] = values if invert ^ (yield(key, key))
               end
             when (type == :single or type == :flat)
               through do |key, value|
-                new[key] = value if yield(key, value)
+                new[key] = value if invert ^ (yield(key, value))
               end
             else
               pos = identify_field method
               through do |key, values|
-                new[key] = values if yield(key, values[pos])
+                new[key] = values if invert ^ (yield(key, values[pos]))
               end
             end
 
@@ -404,7 +407,7 @@ module TSV
       else
         with_unnamed do
           through do |key, values|
-            new[key] = values if [key,values].flatten.select{|v| v == method}.any?
+            new[key] = values if invert ^ ([key,values].flatten.select{|v| v == method}.any?)
           end
         end
       end
@@ -415,7 +418,7 @@ module TSV
       when (Array === method and (key == :key or key_field == key))
         with_unnamed do
           method.each{|key| 
-            new[key] = self[key] if self.include? key
+            new[key] = self[key] if invert ^ (self.include? key)
           }
         end
       when Array === method
@@ -424,19 +427,19 @@ module TSV
           case type
           when :single
             through :key, key do |key, value|
-              new[key] = self[key] if method.include? value
+              new[key] = self[key] if invert ^ (method.include? value)
             end
           when :list
             through :key, key do |key, values|
-              new[key] = self[key] if method.include? values.first
+              new[key] = self[key] if invert ^ (method.include? values.first)
             end
           when :flat #untested
             through :key, key do |key, values|
-              new[key] = self[key] if (method & values.flatten).any?
+              new[key] = self[key] if invert ^ ((method & values.flatten).any?)
             end
           else
             through :key, key do |key, values|
-              new[key] = self[key] if (method & values.flatten).any?
+              new[key] = self[key] if invert ^ ((method & values.flatten).any?)
             end
           end
         end
@@ -445,7 +448,7 @@ module TSV
         with_unnamed do
           through :key, key do |key, values|
             values = [values] if type == :single
-            new[key] = self[key] if values.flatten.select{|v| v =~ method}.any?
+            new[key] = self[key] if invert ^ (values.flatten.select{|v| v =~ method}.any?)
           end
         end
 
@@ -453,15 +456,14 @@ module TSV
         name = $1
         if name.strip =~ /^\/(.*)\/$/
           regexp = Regexp.new $1
-          ddd regexp
           through :key, key do |key, values|
             values = [values] if type == :single
-            new[key] = self[key] if values.flatten.select{|v|  ddd v.name ; v.name =~ regexp}.any?
+            new[key] = self[key] if invert ^ (values.flatten.select{|v|  ddd v.name ; v.name =~ regexp}.any?)
           end
         else
           through :key, key do |key, values|
             values = [values] if type == :single
-            new[key] = self[key] if values.flatten.select{|v| v.name == name}.any?
+            new[key] = self[key] if invert ^ (values.flatten.select{|v| v.name == name}.any?)
           end
         end
 
@@ -469,21 +471,21 @@ module TSV
         with_unnamed do
           through :key, key do |key, values|
             values = [values] if type == :single
-            new[key] = self[key] if values.flatten.select{|v| v == method}.any?
+            new[key] = self[key] if invert ^ (values.flatten.select{|v| v == method}.any?)
           end
         end
 
       when Fixnum === method
         with_unnamed do
           through :key, key do |key, values|
-            new[key] = self[key] if values.flatten.length > method
+            new[key] = self[key] if invert ^ (values.flatten.length >= method)
           end
         end
       when Proc === method
         with_unnamed do
           through :key, key do |key, values|
             values = [values] if type == :single
-            new[key] = self[key] if values.flatten.select{|v| method.call(v)}.any?
+            new[key] = self[key] if invert ^ (values.flatten.select{|v| method.call(v)}.any?)
           end
         end
       end

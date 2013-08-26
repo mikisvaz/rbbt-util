@@ -132,6 +132,37 @@ row3    a    C    Id4
     end
   end
 
+  def test_select_invert
+     content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+      assert tsv.type == :double
+      
+      new = tsv.select %w(b Id4), true
+      assert_equal %w(row2).sort, new.keys
+
+      new = tsv.select /b|Id4/, true
+      assert_equal %w(row2).sort, new.keys
+      
+      new = tsv.select %w(b Id4)
+      assert_equal %w(row1 row3).sort, new.keys.sort
+
+      new = tsv.select do |k,v| 
+        v["ValueA"].include? "A" 
+      end
+      assert_equal %w(row2).sort, new.keys.sort
+
+      tsv = TSV.open(filename, :sep => /\s+/, :type => :flat)
+      assert tsv.type != :double
+    end
+  end
+
   def test_process
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
