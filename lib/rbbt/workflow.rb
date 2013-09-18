@@ -33,66 +33,163 @@ module Workflow
     eval "Object::#{wf_name} = RbbtRestClient.new '#{ url }', '#{wf_name}'"
   end
 
+  #def self.log_require(file)
+  #  begin
+  #    require file
+  #  rescue Exception
+  #    Log.warn $!.message
+  #    Log.warn $!.backtrace * "\n"
+  #    raise $!
+  #  end
+  #end
+
+  #def self.require_local_workflow(wf_name)
+  #  if Path === wf_name
+  #    case
+
+  #      # Points to workflow file
+  #    when ((File.exists?(wf_name.find) and not File.directory?(wf_name.find)) or File.exists?(wf_name.find + '.rb')) 
+  #      $LOAD_PATH.unshift(File.join(File.expand_path(File.dirname(wf_name.find)), 'lib'))
+  #      log_require wf_name.find
+  #      Log.medium "Workflow loaded from file: #{ wf_name }"
+  #      return true
+
+  #      # Points to workflow dir
+  #    when (File.exists?(wf_name.find) and File.directory?(wf_name.find) and File.exists?(File.join(wf_name.find, 'workflow.rb')))
+  #      $LOAD_PATH.unshift(File.join(File.expand_path(wf_name.find), 'lib'))
+  #      log_require File.join(wf_name.find, 'workflow.rb')
+  #      Log.medium "Workflow loaded from directory: #{ wf_name }"
+  #      return true
+
+  #    else
+  #      raise "Workflow path was not resolved: #{ wf_name } (#{wf_name.find})"
+  #    end
+
+  #  else
+  #    case
+  #      # Points to workflow file
+  #    when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb') or File.exists?(wf_name))
+  #      $LOAD_PATH.unshift(File.join(File.expand_path(File.dirname(wf_name)), 'lib'))
+  #      wf_name = "./" << wf_name unless wf_name[0] == "/"
+  #      log_require wf_name
+  #      Log.medium "Workflow loaded from file: #{ wf_name }"
+  #      return true
+
+  #    when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
+  #      dir = Rbbt.etc.workflow_dir.read.strip
+  #      dir = File.join(dir, wf_name)
+  #      $LOAD_PATH.unshift(File.join(File.expand_path(dir), 'lib'))
+  #      filename = File.join(dir, 'workflow.rb')
+  #      return false unless File.exists? filename
+  #      log_require filename
+  #      Log.medium "Workflow #{wf_name} loaded from workflow_dir: #{ dir }"
+  #      return true
+
+  #    when defined?(Rbbt)
+  #      path = Rbbt.workflows[wf_name].find
+  #      $LOAD_PATH.unshift(File.join(File.expand_path(path), 'lib'))
+  #      filename = File.join(dir, 'workflow.rb')
+  #      return false unless File.exists? filename
+  #      log_require filename
+  #      Log.medium "Workflow #{wf_name} loaded from Rbbt.workflows: #{ path }"
+  #      return true
+
+  #    else
+  #      path = File.join(ENV['HOME'], '.workflows', wf_name)
+  #      $LOAD_PATH.unshift(File.join(File.expand_path(path), 'lib'))
+  #      filename = File.join(dir, 'workflow.rb')
+  #      return false unless File.exists? filename
+  #      log_require filename
+  #      Log.medium "Workflow #{wf_name} loaded from .workflows: #{ path }"
+  #      return true
+  #    end
+  #  end
+
+  #  raise "Workflow not found our could not be loaded: #{ wf_name }"
+  #end
+
+  #def self.require_workflow(wf_name)
+  #  begin
+  #    Misc.string2const wf_name
+  #    Log.debug "Workflow #{ wf_name } already loaded"
+  #    return true
+  #  rescue Exception
+  #  end
+
+  #  if Rbbt.etc.remote_workflows.exists?
+  #    remote_workflows = Rbbt.etc.remote_workflows.yaml
+  #    if remote_workflows.include? wf_name
+  #      url = remote_workflows[wf_name]
+  #      require_remote_workflow(wf_name, url)
+  #      Log.debug "Workflow #{ wf_name } loaded remotely: #{ url }"
+  #      return
+  #    end
+  #  end
+
+  #  begin
+  #    require_local_workflow(wf_name) 
+  #  rescue Exception
+  #    raise "Workflow not found or could not be loaded: #{ wf_name }" if wf_name == Misc.snake_case(wf_name)
+  #    begin
+  #      require_local_workflow(Misc.snake_case(wf_name))
+  #    rescue Exception
+  #      Log.error("Workflow not found or could not be loaded: #{ wf_name }")
+  #      raise $!
+  #    end
+  #  end
+  #end
+
+
+  def self.load_workflow_file(filename)
+    begin
+      $LOAD_PATH.unshift(File.join(File.dirname(File.expand_path(filename)), 'lib'))
+      require filename
+      Log.info "Workflow loaded from: #{ filename }"
+      return true
+    rescue Exception
+      Log.warn "Error loading workflow: #{ filename }"
+      raise $!
+    end
+  end
+
   def self.require_local_workflow(wf_name)
+    filename = nil
+
     if Path === wf_name
       case
-
         # Points to workflow file
       when ((File.exists?(wf_name.find) and not File.directory?(wf_name.find)) or File.exists?(wf_name.find + '.rb')) 
-        $LOAD_PATH.unshift(File.join(File.expand_path(File.dirname(wf_name.find)), 'lib'))
-        require wf_name.find
-        Log.medium "Workflow loaded from file: #{ wf_name }"
-        return true
+        filename = wf_name.find
 
         # Points to workflow dir
       when (File.exists?(wf_name.find) and File.directory?(wf_name.find) and File.exists?(File.join(wf_name.find, 'workflow.rb')))
-        $LOAD_PATH.unshift(File.join(File.expand_path(wf_name.find), 'lib'))
-        require File.join(wf_name.find, 'workflow.rb')
-        Log.medium "Workflow loaded from directory: #{ wf_name }"
-        return true
-
-      else
-        raise "Workflow path was not resolved: #{ wf_name } (#{wf_name.find})"
+        filename = wf_name['workflow.rb'].find
       end
 
     else
       case
         # Points to workflow file
       when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb') or File.exists?(wf_name))
-        $LOAD_PATH.unshift(File.join(File.expand_path(File.dirname(wf_name)), 'lib'))
-        wf_name = "./" << wf_name unless wf_name[0] == "/"
-        require wf_name
-        Log.medium "Workflow loaded from file: #{ wf_name }"
-        return true
-
+        filename = (wf_name =~ /\.?\//) ? wf_name : "./" << wf_name 
       when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
         dir = Rbbt.etc.workflow_dir.read.strip
         dir = File.join(dir, wf_name)
-        $LOAD_PATH.unshift(File.join(File.expand_path(dir), 'lib'))
-        require File.join(dir, 'workflow.rb')
-        Log.medium "Workflow #{wf_name} loaded from workflow_dir: #{ dir }"
-        return true
-
+        filename = File.join(dir, 'workflow.rb')
       when defined?(Rbbt)
         path = Rbbt.workflows[wf_name].find
-        $LOAD_PATH.unshift(File.join(File.expand_path(path), 'lib'))
-        require File.join(path, 'workflow.rb')
-        Log.medium "Workflow #{wf_name} loaded from Rbbt.workflows: #{ path }"
-        return true
-
+        filename = File.join(dir, 'workflow.rb')
       else
         path = File.join(ENV['HOME'], '.workflows', wf_name)
-        $LOAD_PATH.unshift(File.join(File.expand_path(path), 'lib'))
-        require File.join(path, 'workflow.rb')
-        Log.medium "Workflow #{wf_name} loaded from .workflows: #{ path }"
-        return true
+        filename = File.join(dir, 'workflow.rb')
       end
     end
 
-    raise "Workflow not found our could not be loaded: #{ wf_name }"
+    return false if filename.nil? or not File.exists? filename
+    load_workflow_file filename
   end
-
   def self.require_workflow(wf_name)
+
+    # Already loaded
     begin
       Misc.string2const wf_name
       Log.debug "Workflow #{ wf_name } already loaded"
@@ -100,9 +197,10 @@ module Workflow
     rescue Exception
     end
 
+    # Load remotely
     if Rbbt.etc.remote_workflows.exists?
       remote_workflows = Rbbt.etc.remote_workflows.yaml
-      if remote_workflows.include? wf_name
+      if Hash === remote_workflows and remote_workflows.include?(wf_name)
         url = remote_workflows[wf_name]
         require_remote_workflow(wf_name, url)
         Log.debug "Workflow #{ wf_name } loaded remotely: #{ url }"
@@ -110,18 +208,22 @@ module Workflow
       end
     end
 
-    begin
-      require_local_workflow(wf_name) 
-    rescue Exception
-      raise "Workflow not found: #{ wf_name }" if wf_name == Misc.snake_case(wf_name)
-      begin
-        require_local_workflow(Misc.snake_case(wf_name))
-      rescue Exception
-        Log.error("Workflow not found: #{ wf_name }")
-        raise $!
-      end
-    end
+    # Load locally
+
+    require_local_workflow(wf_name) || require_local_workflow(Misc.snake_case(wf_name)) || raise("Workflow not found or could not be loaded: #{ wf_name }")
+    #begin
+    #  require_local_workflow(wf_name) 
+    #rescue Exception
+    #  raise "Workflow not found or could not be loaded: #{ wf_name }" if wf_name == Misc.snake_case(wf_name)
+    #  begin
+    #    require_local_workflow(Misc.snake_case(wf_name))
+    #  rescue Exception
+    #    Log.error("Workflow not found or could not be loaded: #{ wf_name }")
+    #    raise $!
+    #  end
+    #end
   end
+
 
   attr_accessor :description
   attr_accessor :libdir, :workdir 

@@ -36,6 +36,8 @@ module TSV
       hash.send("#{ entry }=", options[entry.to_sym]) if options.include? entry.to_sym
     end
 
+    hash.unnamed = options[:unnamed]
+
     hash
   end
 

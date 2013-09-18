@@ -1,7 +1,7 @@
 class FixWidthTable
 
   attr_accessor :filename, :file, :value_size, :record_size, :range, :size
-  def initialize(filename, value_size = nil, range = nil, update = false)
+  def initialize(filename, value_size = nil, range = nil, update = false, in_memory = true)
     @filename = filename
 
     if update or %w(memory stringio).include?(filename.to_s.downcase) or not File.exists?(filename)
@@ -23,7 +23,11 @@ class FixWidthTable
       @size = 0
     else
       Log.debug "FixWidthTable up-to-date: #{ filename }"
-      @file        = File.open(@filename, 'r')
+      if in_memory
+        @file        = StringIO.new(Open.read(@filename, :mode => 'rb'), 'r')
+      else
+        @file        = File.open(@filename, 'r')
+      end
       @value_size  = @file.read(4).unpack("L").first
       @range       = @file.read(1).unpack("C").first == 1
       @record_size = @value_size + (@range ? 12 : 4)
@@ -145,18 +149,19 @@ class FixWidthTable
 
     while(upper >= lower) do
       idx = lower + (upper - lower) / 2
-      comp = pos <=> pos(idx)
+      pos_idx = pos(idx)
 
-      if comp == 0
-        break 
-      elsif comp > 0
-        lower = idx + 1
-      else
+      case pos <=> pos_idx
+      when 0
+        break
+      when -1
         upper = idx - 1
+      when 1
+        lower = idx + 1
       end
     end
 
-    if pos(idx) > pos
+    if pos_idx > pos
       idx = idx - 1
     end
 

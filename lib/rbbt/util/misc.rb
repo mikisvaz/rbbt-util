@@ -3,7 +3,6 @@ require 'rbbt/util/chain_methods'
 require 'rbbt/resource/path'
 require 'rbbt/annotations'
 require 'net/smtp'
-require 'narray'
 require 'digest/md5'
 
 class Hash
@@ -406,6 +405,7 @@ end
   }
 
   def self.fast_align(reference, sequence)
+    require 'narray'
     init_gap = -1
     gap = -2
     diff = -2

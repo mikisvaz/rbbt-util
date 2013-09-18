@@ -1,4 +1,8 @@
-require 'tokyocabinet'
+begin
+  require 'tokyocabinet'
+rescue Exception
+  Log.warn "The tokyocabinet gem could not be loaded: persistence over TSV files will fail"
+end
 
 module Persist
   TC_CONNECTIONS = {}

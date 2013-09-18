@@ -1,4 +1,10 @@
-require 'inline'
+begin
+  require 'inline'
+  continue = true
+rescue Exception
+  Log.warn "The RubyInline gem could not be loaded: semaphore synchronization will not work"
+  continue = false
+end
 
 module RbbtSemaphore
   inline(:C) do |builder|
@@ -67,5 +73,5 @@ void post_semaphore(char* name){
       pids.each do |pid| Process.waitpid pid end
     end
   end
-end
+end if continue
 
