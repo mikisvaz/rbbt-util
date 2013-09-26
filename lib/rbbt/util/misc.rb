@@ -748,10 +748,11 @@ end
 
   def self.html_tag(tag, content = nil, params = {})
     attr_str = hash_to_html_tag_attributes(params)
+    attr_str = " " << attr_str if String === attr_str and attr_str != ""
     html = if content.nil?
-      "<#{ tag } #{attr_str} />"
+      "<#{ tag }#{attr_str}/>"
     else
-      "<#{ tag } #{attr_str} >#{ content }</#{ tag }>"
+      "<#{ tag }#{attr_str}>#{ content }</#{ tag }>"
     end
 
     html
