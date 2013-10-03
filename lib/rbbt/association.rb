@@ -253,4 +253,15 @@ module Association
       end.compact
     end.flatten
   end
+
+  def self.neighbours(repo, source_entities)
+    ddd source_entities
+    source_entities.collect do |source|
+      keys = repo.prefix(source + "~")
+      keys.collect do |key|
+        source, target = key.split("~")
+        target
+      end.compact
+    end.flatten.uniq
+  end
 end
