@@ -1,4 +1,5 @@
 require 'rbbt-util'
+require 'rbbt/tsv/change_id'
 
 module Association
   class << self
@@ -125,7 +126,7 @@ module Association
     if source_final_type and tsv.key_field != source_final_type
       Log.debug("Changing source type from #{tsv.key_field} to #{source_final_type}")
       tsv.with_unnamed do
-        tsv = TSVWorkflow.job(:change_id, tsv.filename, :tsv => tsv, :format => source_final_type, :organism => tsv.namespace).exec
+        tsv = tsv.change_key source_final_type, :identifiers => Organism.identifiers(tsv.namespace), :persist => true
       end
     end
 
@@ -141,7 +142,7 @@ module Association
       save_key_field = tsv.key_field
       tsv.key_field = "MASKED"
       tsv.with_unnamed do
-        tsv = TSVWorkflow.job(:swap_id, tsv.filename, :tsv => tsv, :field => tsv.fields.first, :format => target_final_type, :organism => tsv.namespace).exec
+        tsv = tsv.swap_id tsv.fields.first, target_final_type, :identifiers => Organism.identifiers(tsv.namespace), :persist => true
       end
       tsv.key_field = save_key_field 
     end
@@ -230,6 +231,24 @@ module Association
     end
   end
 
+  def self.reverse(repo)
+    reverse_filename = repo.persistence_path + '.reverse'
+    if File.exists?(reverse_filename)
+      new = Persist.open_tokyocabinet(reverse_filename, false, repo.serializer, TokyoCabinet::BDB)
+    else
+      new = Persist.open_tokyocabinet(reverse_filename, true, repo.serializer, TokyoCabinet::BDB)
+      new.write
+      repo.through do |key, value|
+        new_key = key.split("~").reverse.join("~")
+        new[new_key] = value
+      end
+      repo.annotate(new)
+      new.key_field = repo.key_field.split("~").values_at(1,0,2).compact * "~"
+      new.close
+      new
+    end
+  end
+
   def self.connections(repo, entities)
     source_field, target_field, undirected = repo.key_field.split("~")
 
@@ -254,8 +273,8 @@ module Association
     end.flatten
   end
 
-  def self.neighbours(repo, source_entities)
-    ddd source_entities
+  def self.children(repo, source_entities)
+    return [] if source_entities.nil?
     source_entities.collect do |source|
       keys = repo.prefix(source + "~")
       keys.collect do |key|
@@ -263,5 +282,22 @@ module Association
         target
       end.compact
     end.flatten.uniq
+  end
+
+  def self.parents(repo, target_entities)
+    return [] if target_entities.nil?
+    rev_repo = reverse repo
+    children(rev_repo, target_entities)
+  end
+
+  def self.neighbours(repo, entities)
+    return [] if entities.nil? or entities.empty?
+    source_field, target_field, undirected = repo.key_field.split("~")
+    if undirected
+      self.children(repo, entities)
+    else
+      [self.children(repo, entities), self.parents(repo, entities)].
+        inject(nil){|acc,e| acc = acc.nil? ? e : (e.nil? ? acc : acc.concat(e)) }
+    end
   end
 end

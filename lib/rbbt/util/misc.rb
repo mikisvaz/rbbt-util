@@ -200,6 +200,36 @@ module Misc
     filename
   end
 
+  def self.fingerprint(obj)
+    case
+    when obj.nil?
+      "nil"
+    when (String === obj and obj.length > 100)
+      "'" << obj[0..20-1] << "<...#{obj.length}...>" << obj[-10..-1] << " " << "'"
+    when String === obj
+      "'" << obj << "'"
+    when TSV === obj
+      "TSV:{"<< fingerprint(obj.all_fields|| []).inspect << "," << fingerprint(obj.keys).inspect << "}"
+    when (Array === obj and obj.length > 10)
+      len = obj.length
+      "[" << len << "-" <<  (obj.values_at(0,1, len / 2, -2, -1) * ",") << "]"
+    when Array === obj
+      "[" << (obj.collect{|e| fingerprint(e) } * ",") << "]"
+    when (Hash === obj and obj.length > 10)
+      "H:{"<< fingerprint(obj.keys).inspect << "," << fingerprint(obj.values).inspect << "}"
+    when Hash === obj
+      new = "{"
+      obj.each do |k,v|
+        new << k.to_s << '=>' << fingerprint(v) << ' '
+      end
+      new << "}"
+    when Symbol === obj
+      ":" << obj.to_s
+    else
+      obj.to_s
+    end
+  end
+
   def self.remove_long_items(obj)
     case
     when TSV === obj

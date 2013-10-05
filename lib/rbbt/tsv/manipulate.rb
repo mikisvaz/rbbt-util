@@ -458,7 +458,7 @@ module TSV
           regexp = Regexp.new $1
           through :key, key do |key, values|
             values = [values] if type == :single
-            new[key] = self[key] if invert ^ (values.flatten.select{|v|  ddd v.name ; v.name =~ regexp}.any?)
+            new[key] = self[key] if invert ^ (values.flatten.select{|v| v.name =~ regexp}.any?)
           end
         else
           through :key, key do |key, values|

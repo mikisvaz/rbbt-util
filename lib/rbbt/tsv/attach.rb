@@ -144,9 +144,9 @@ module TSV
     in_namespace = options[:in_namespace]
 
     unless TSV === other
-      other_identifier_files = other.identifier_files if other.respond_to? :identifier_files
+      other_identifier_file = other.identifier_files.first if other.respond_to? :identifier_files
       other = TSV.open(other, :persist => options[:persist_input] == true)
-      other.identifiers = other_identifier_files 
+      other.identifiers = other_identifier_file
     end
 
     fields = other.fields - [key_field].concat(self.fields) if fields.nil?  or fields == :all 
@@ -160,7 +160,7 @@ module TSV
     Log.low("Attaching fields:#{fields.inspect} from #{other_filename}.")
 
     case
-    when key_field == other.key_field
+    when key_field == other.key_field 
       Log.debug "Attachment with same key: #{other.key_field}"
       attach_same_key other, fields
     when (not in_namespace and self.fields.include?(other.key_field))

@@ -46,6 +46,8 @@ module TSV
     self.type = :list if self.type == :single
 
     self.fields = self.fields.concat fields
+
+    self
   end
 
   def attach_source_key(other, source, options = {})
