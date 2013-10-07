@@ -32,45 +32,73 @@ class TestAssociations < Test::Unit::TestCase
     FileUtils.rm_rf DAssocs
   end
 
-  def test_simple_open
+  def _test_simple_open
     database = Association.open(FAssocs, {}, :dir => DAssocs)
     assert_equal ["C", "K"], database["c"]["Entity2"]
   end
  
-  def test_source_open
+  def _test_source_open
     database = Association.open(FAssocs, {:source => "Entity2", :zipped => true}, :dir => DAssocs)
     assert_equal ["c", "3", 'cc', "PTEN"], database["C"].flatten
     assert_equal ["c", "4", 'kk', "PTEN"], database["K"].flatten
   end
   
-  def test_target_open
+  def _test_target_open
     database = Association.open(FAssocs, {:source => "Entity2", :target => "Entity3", :zipped => true}, :dir => DAssocs)
     assert_equal ["cc", "c", "3", "PTEN"], database["C"].flatten
     assert_equal ["kk", "c", "4", "PTEN"], database["K"].flatten
   end
 
-  def test_gene_open
+  def _test_gene_open
     database = Association.open(FAssocs, {:source => "Gene=~Associated Gene Name", :target => "Entity3", :zipped => true}, :dir => DAssocs)
     assert_equal ["aa"], database["TP53"].first
   end
 
-  def test_gene_open_translate
+  def _test_gene_open_translate
     tp53 = Gene.setup("TP53", "Associated Gene Name", "Hsa/jan2013")
     database = Association.open(FAssocs, {:source => "Gene=~Associated Gene Name", :source_type => "Ensembl Gene ID", :target => "Entity3", :zipped => true}, :dir => DAssocs)
     assert_equal ["aa"], database[tp53.ensembl].first
   end
 
-  def test_gene_target_open_translate
+  def _test_gene_target_open_translate
     tp53 = Gene.setup("TP53", "Associated Gene Name", "Hsa/jan2013")
     database = Association.open(FAssocs, {:target => "Gene=~Associated Gene Name=>Ensembl Gene ID", :source => "Entity3", :zipped => true}, :dir => DAssocs)
     assert_equal [tp53.ensembl], database["aa"].first
+  end
+
+ def _test_undirected
+    require 'rbbt/sources/pina'
+    require 'rbbt/gene_associations'
+    tp53 = Gene.setup("TP53", "Associated Gene Name", "Hsa/jan2013")
+    index = Association.index_database('pina', {:source_type => "Ensembl Gene ID", :target_type => "Ensembl Gene ID", :undirected => true}, {:dir => DAssocs})
+    #assert Association.connections(index, "Gene" => tp53.pina_interactors.ensembl.compact).any?
+    assert index.connections("Gene" => tp53.pina_interactors.ensembl.compact).any?
   end
 
   def test_undirected
     require 'rbbt/sources/pina'
     require 'rbbt/gene_associations'
     tp53 = Gene.setup("TP53", "Associated Gene Name", "Hsa/jan2013")
-    index = Association.index_database('pina', {:source_type => "Ensembl Gene ID", :target_type => "Ensembl Gene ID", :undirected => true}, {:dir => DAssocs})
-    assert Association.connections(index, "Gene" => tp53.pina_interactors.ensembl.compact).any?
+    index = Association.index_database('pina', {:source_type => "Ensembl Gene ID", :target_type => "Ensembl Gene ID", :undirected => true}, {:dir => '/tmp/test_association'})
+    res1 = res2 = nil
+    Misc.benchmark do
+      res1 = index.subset("Gene" => tp53.pina_interactors.ensembl.compact)
+      puts res1.length
+    end
+    Misc.benchmark do
+      res2 = index.connections("Gene" => tp53.pina_interactors.ensembl.compact).collect{|i| i.values_at(:source, :target) * "~"}
+      puts res2.length
+    end
+    ddd res2 - res1
   end
+
+  def _test_benchmark
+    require 'rbbt/sources/pina'
+    require 'rbbt/gene_associations'
+    tp53 = Gene.setup("TP53", "Associated Gene Name", "Hsa/jan2013")
+    index = Association.index_database('pina', {:source_type => "Ensembl Gene ID", :target_type => "Ensembl Gene ID", :undirected => true}, {:dir => '/tmp/test_association'})
+    assert index.connections("Gene" => tp53.pina_interactors.ensembl.compact).any?
+  end
+
+
 end

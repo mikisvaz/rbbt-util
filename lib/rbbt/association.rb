@@ -1,5 +1,6 @@
 require 'rbbt-util'
 require 'rbbt/tsv/change_id'
+require 'rbbt/association/index'
 
 module Association
   class << self
@@ -7,33 +8,6 @@ module Association
     def databases
       @databases ||= {}
     end
-  end
-
-  def self.register(database, file, options = {})
-    self.databases[database.to_s] = [file, options]
-  end
-
-  def self.get_database(database)
-    self.databases[database.to_s]
-  end
-
-  def self.open_database(database, options = {}, persist_options = {})
-    file, database_options = get_database database
-    open(file, database_options.merge(options), persist_options)
-  end
-
-  def self.index_database(database, options = {}, persist_options = {})
-    file, database_options = databases[database.to_s]
-    index(file, database_options.merge(options), persist_options)
-  end
-
-  def self.parse_field_specification(spec, fields)
-    spec = spec.split "=>" unless Array === spec
-    field_part, final_type = spec
-
-    field, type = field_part.split "=~"
-
-    [field, type, final_type]
   end
 
   def self.resolve_field(name, fields)
@@ -176,128 +150,101 @@ module Association
     end
   end
 
+  def self.open_index(index_file, write = false)
+    Persist.open_tokyocabinet(index_file, write, :list, TokyoCabinet::BDB).tap{|r| r.unnamed = true }
+  end
+
   def self.index(file, options = {}, persist_options = {})
     options = {} if options.nil?
     persist_options = {} if persist_options.nil?
 
     Persist.persist_tsv(file, nil, options, {:persist => true, :prefix => "Association Index"}.merge(persist_options).merge(:engine => TokyoCabinet::BDB, :serializer => :clean)) do |assocs|
       undirected = options[:undirected]
-      tsv = TSV === file ? file : Association.open(file, options, persist_options.merge(:persist => false))
+      if file
+        tsv = TSV === file ? file : Association.open(file, options, persist_options.merge(:persist => false))
 
-      key_field = [tsv.key_field, tsv.fields.first.split(":").last, undirected ? "undirected" : nil].compact * "~"
+        fields = tsv.fields
+        key_field = [tsv.key_field, fields.first.split(":").last, undirected ? "undirected" : nil].compact * "~"
 
-      TSV.setup(assocs, :key_field => key_field, :fields => tsv.fields[1..-1], :type => :list, :serializer => :list)
+        TSV.setup(assocs, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => :list)
 
-      tsv.with_unnamed do
-        tsv.with_monitor :desc => "Extracting annotations" do
-          case tsv.type
-          when :flat
-            tsv.through do |source, targets|
-              next if source.nil? or source.empty? or targets.nil? or targets.empty?
+        tsv.with_unnamed do
+          tsv.with_monitor :desc => "Extracting annotations" do
+            case tsv.type
+            when :flat
+              tsv.through do |source, targets|
+                next if source.nil? or source.empty? or targets.nil? or targets.empty?
 
-              targets.each do |target|
-                next if target.nil? or target.empty?
-                key = [source, target] * "~"
-                assocs[key] = nil
+                targets.each do |target|
+                  next if target.nil? or target.empty?
+                  key = [source, target] * "~"
+                  assocs[key] = nil
+                end
               end
-            end
 
-          when :double
-            tsv.through do |source, values|
-              next if values.empty?
-              next if source.nil?
-              next if values.empty?
-              targets = values.first
-              rest = Misc.zip_fields values[1..-1]
+            when :double
+              tsv.through do |source, values|
+                next if values.empty?
+                next if source.nil?
+                next if values.empty?
+                targets = values.first
+                rest = Misc.zip_fields values[1..-1]
 
-              annotations = rest.length > 1 ?
-                targets.zip(rest) :
-                targets.zip(rest * targets.length) 
+                annotations = rest.length > 1 ?
+                  targets.zip(rest) :
+                  targets.zip(rest * targets.length) 
 
-              annotations.each do |target, info|
-                next if target.nil?
-                key = [source, target] * "~"
-                assocs[key] = info
+                annotations.each do |target, info|
+                  next if target.nil?
+                  key = [source, target] * "~"
+                  assocs[key] = info
+                end
               end
+            else
+              raise "Type not supported: #{tsv.type}"
             end
-          else
-            raise "Type not supported: #{tsv.type}"
           end
         end
+      else
+        key_field, fields = options.values_at :key_field, :fields
+        TSV.setup(assocs, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => :list)
       end
       assocs.close
 
       assocs
+    end.tap do |assocs|
+      Association::Index.setup assocs
     end
   end
 
-  def self.reverse(repo)
-    reverse_filename = repo.persistence_path + '.reverse'
-    if File.exists?(reverse_filename)
-      new = Persist.open_tokyocabinet(reverse_filename, false, repo.serializer, TokyoCabinet::BDB)
-    else
-      new = Persist.open_tokyocabinet(reverse_filename, true, repo.serializer, TokyoCabinet::BDB)
-      new.write
-      repo.through do |key, value|
-        new_key = key.split("~").reverse.join("~")
-        new[new_key] = value
-      end
-      repo.annotate(new)
-      new.key_field = repo.key_field.split("~").values_at(1,0,2).compact * "~"
-      new.close
-      new
-    end
-  end
 
-  def self.connections(repo, entities)
-    source_field, target_field, undirected = repo.key_field.split("~")
 
-    source_type = Entity.formats[source_field].to_s
-    target_type = Entity.formats[target_field].to_s
+  #def self.register(database, file, options = {})
+  #  self.databases[database.to_s] = [file, options]
+  #end
 
-    source_entities = entities[source_type] || entities[source_field]
-    target_entities = entities[target_type] || entities[target_field]
+  #def self.get_database(database)
+  #  self.databases[database.to_s]
+  #end
 
-    return [] if source_entities.nil? or target_entities.nil?
+  #def self.open_database(database, options = {}, persist_options = {})
+  #  file, database_options = get_database database
+  #  open(file, database_options.merge(options), persist_options)
+  #end
 
-    source_entities.collect do |entity|
-      keys = repo.prefix(entity + "~")
-      keys.collect do |key|
-        source, target = key.split("~")
-        next unless target_entities.include? target
-        next if undirected and target > source
-        info = Hash[*repo.fields.zip(repo[key]).flatten]
+  #def self.index_database(database, options = {}, persist_options = {})
+  #  file, database_options = databases[database.to_s]
+  #  index(file, database_options.merge(options), persist_options)
+  #end
 
-        {:source => source, :target => target, :info => info}
-      end.compact
-    end.flatten
-  end
+  #def self.parse_field_specification(spec, fields)
+  #  spec = spec.split "=>" unless Array === spec
+  #  field_part, final_type = spec
 
-  def self.children(repo, source_entities)
-    return [] if source_entities.nil?
-    source_entities.collect do |source|
-      keys = repo.prefix(source + "~")
-      keys.collect do |key|
-        source, target = key.split("~")
-        target
-      end.compact
-    end.flatten.uniq
-  end
+  #  field, type = field_part.split "=~"
 
-  def self.parents(repo, target_entities)
-    return [] if target_entities.nil?
-    rev_repo = reverse repo
-    children(rev_repo, target_entities)
-  end
+  #  [field, type, final_type]
+  #end
 
-  def self.neighbours(repo, entities)
-    return [] if entities.nil? or entities.empty?
-    source_field, target_field, undirected = repo.key_field.split("~")
-    if undirected
-      self.children(repo, entities)
-    else
-      [self.children(repo, entities), self.parents(repo, entities)].
-        inject(nil){|acc,e| acc = acc.nil? ? e : (e.nil? ? acc : acc.concat(e)) }
-    end
-  end
 end
+

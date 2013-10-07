@@ -32,6 +32,10 @@ module Entity
         end
       end
 
+      def base_entity
+        self.annotation_types.select{|m| Entity === m}.last
+      end
+
       def property(*args, &block)
         class << self; self; end.property(*args,&block)
       end
