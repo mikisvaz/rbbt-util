@@ -12,6 +12,8 @@ app_dir = Rbbt.etc.app_dir.exists? ? Path.setup(Rbbt.etc.app_dir.read.strip) : R
 
 app_dir = app_dir[app]
 
+ddd app_dir
+
 server = options[:server] || 'thin'
 Misc.in_dir(app_dir) do
   require 'rack'

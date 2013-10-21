@@ -71,7 +71,7 @@ module Workflow
         filename = File.join(dir, 'workflow.rb')
       when defined?(Rbbt)
         path = Rbbt.workflows[wf_name].find
-        filename = File.join(dir, 'workflow.rb')
+        filename = File.join(path, 'workflow.rb')
       else
         path = File.join(ENV['HOME'], '.workflows', wf_name)
         filename = File.join(dir, 'workflow.rb')
