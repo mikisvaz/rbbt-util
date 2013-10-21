@@ -157,7 +157,7 @@ module TSV
     end
 
     other_filename = other.respond_to?(:filename) ? other.filename : other.inspect
-    Log.low("Attaching fields:#{fields.inspect} from #{other_filename}.")
+    Log.low("Attaching fields:#{Misc.fingerprint fields } from #{other_filename}.")
 
     case
     when key_field == other.key_field 
@@ -175,7 +175,7 @@ module TSV
       Log.debug "Attachment with index: #{other.key_field}"
       attach_index other, index, fields
     end
-    Log.debug("Attachment of fields:#{fields.inspect} from #{other.filename.inspect} finished.")
+    Log.debug("Attachment of fields:#{Misc.fingerprint fields } from #{other.filename.inspect} finished.")
 
     self
   end

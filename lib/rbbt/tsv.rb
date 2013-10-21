@@ -1,10 +1,9 @@
-require 'yaml'
+require 'rbbt/persist'
+require 'rbbt/persist/tsv'
 
+require 'rbbt/util/log'
 require 'rbbt/util/misc'
 require 'rbbt/util/named_array'
-require 'rbbt/util/log'
-
-require 'rbbt/persist'
 
 require 'rbbt/tsv/util'
 require 'rbbt/tsv/serializers'
@@ -97,17 +96,19 @@ module TSV
       stream.open do |f|
         Parser.new f, options
       end
-    when (String === stream and stream.length < 300 and Open.exists? stream)
+    when (String === stream and stream.length < 300 and Open.exists? stream or Open.remote? stream)
       Open.open(stream) do |f|
         Parser.new f, options
       end
     else
+      filename = stream.respond_to?(:filename) ? stream.filename : Misc.fingerprint(stream)
+      Log.debug("Parsing header of open stream: #{filename}")
       Parser.new stream, options
     end
   end
 
   def self.parse(stream, data, options = {})
-    monitor, grep, invert_grep = Misc.process_options options, :monitor, :grep, :invert_grep
+    monitor, grep, invert_grep, head = Misc.process_options options, :monitor, :grep, :invert_grep, :head
 
     parser = Parser.new stream, options
 
@@ -119,19 +120,14 @@ module TSV
 
     line = parser.rescue_first_line
 
-    if TokyoCabinet::HDB === data and parser.straight
+    if TokyoCabinet::HDB === data and parser.straight and
       data.close
-      pos = stream.pos if stream.respond_to? :pos
       begin
+        CMD.cmd('tchmgr', :log => false)
+        FileUtils.mkdir_p File.dirname(data.persistence_path)
         CMD.cmd("tchmgr importtsv '#{data.persistence_path}'", :in => stream, :log => false, :dont_close_in => true)
       rescue
         Log.debug("tchmgr importtsv failed for: #{data.persistence_path}")
-        Log.debug($!.message)
-        if stream.respond_to? :seek 
-          stream.seek pos
-        else
-          #raise "tchmgr import failed and cannot restore stream"
-        end
       end
       data.write
     end
@@ -172,6 +168,7 @@ module TSV
       progress_monitor = nil
     end
 
+    line_num = 1
     while not line.nil? 
       begin
         progress_monitor.tick(stream.pos) if progress_monitor 
@@ -185,6 +182,8 @@ module TSV
         values = parser.cast_values values if parser.cast?
         parser.add_to_data data, key, values
         line = stream.gets
+        line_num += 1
+        raise Parser::END_PARSING if head and line_num > head.to_i
       rescue Parser::SKIP_LINE
         begin
           line = stream.gets

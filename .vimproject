@@ -98,6 +98,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    association.rb
    association=association{
     index.rb
+    item.rb
    }
 
    knowledge_base.rb
@@ -106,7 +107,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    knowledge_base.rb.save
 
    link.rb
-
   }
  }
  test=test {

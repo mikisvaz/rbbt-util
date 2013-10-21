@@ -63,4 +63,5 @@ end
 WorkflowRest.add_workflow Workflow.workflows.last, true
 
 WorkflowRest.port = options[:port] || 4567
+WorkflowRest.bind = options[:bind] || "0.0.0.0"
 WorkflowRest.run!

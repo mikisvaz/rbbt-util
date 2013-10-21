@@ -6,7 +6,7 @@ require 'rbbt/workflow/usage'
 
 YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
 
-def usage(workflow = nil, task = nil)
+def usage(workflow = nil, task = nil, error = nil)
   puts SOPT.doc
   puts "## WORKFLOW"
   puts
@@ -25,6 +25,10 @@ def usage(workflow = nil, task = nil)
     puts workflow.workflow_description
     puts
     workflow.doc(task)
+    if error
+        puts
+        puts "Error: " << error 
+    end
   end
 
   exit 0
@@ -182,6 +186,7 @@ if recursive_clean and job.done?
 end
 
 # run
+begin
 if do_exec
   res = job.exec
   case
@@ -213,6 +218,9 @@ if options.delete(:printname)
   exit 0
 else
   Log.low "Job name: #{job.name}" 
+end
+rescue ParameterException
+    usage(workflow, task, $!.message)
 end
 
 if Step === res

@@ -46,7 +46,7 @@ module TSV
         end
       else
         tsv.through do |k,v|
-          v[pos] = index.values_at *v[pos]
+          v[pos] = index.values_at(*v[pos])
           tsv[k] = v
         end
       end

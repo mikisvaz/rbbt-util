@@ -18,6 +18,7 @@ module TSV
 
       line = stream.gets
       raise "Empty content" if line.nil?
+      line = Misc.fixutf8 line
       line.chomp!
 
       # Process options line
@@ -33,7 +34,7 @@ module TSV
 
       # Process fields line
 
-      if line and line =~ /^#{@header_hash}/
+      if line and Misc.fixutf8(line) =~ /^#{@header_hash}/
         line.chomp!
         @fields = line.split(@sep)
         @key_field = @fields.shift

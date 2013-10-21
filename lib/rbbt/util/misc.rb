@@ -1,7 +1,4 @@
 require 'lockfile'
-require 'rbbt/util/chain_methods'
-require 'rbbt/resource/path'
-require 'rbbt/annotations'
 require 'net/smtp'
 require 'digest/md5'
 
@@ -12,6 +9,12 @@ class Hash
       new.annotate acc if new.respond_to? :annotate and acc.empty?
       acc.concat(new)
     end
+  end
+end
+
+module LaterString
+  def to_s
+    yield
   end
 end
 
@@ -201,34 +204,42 @@ module Misc
   end
 
   def self.fingerprint(obj)
-    case
-    when obj.nil?
+    case obj
+    when nil
       "nil"
-    when (String === obj and obj.length > 100)
-      "'" << obj[0..20-1] << "<...#{obj.length}...>" << obj[-10..-1] << " " << "'"
-    when String === obj
-      "'" << obj << "'"
-    when TSV === obj
-      "TSV:{"<< fingerprint(obj.all_fields|| []).inspect << "," << fingerprint(obj.keys).inspect << "}"
-    when (Array === obj and obj.length > 10)
-      len = obj.length
-      "[" << len << "-" <<  (obj.values_at(0,1, len / 2, -2, -1) * ",") << "]"
-    when Array === obj
-      "[" << (obj.collect{|e| fingerprint(e) } * ",") << "]"
-    when (Hash === obj and obj.length > 10)
-      "H:{"<< fingerprint(obj.keys).inspect << "," << fingerprint(obj.values).inspect << "}"
-    when Hash === obj
-      new = "{"
-      obj.each do |k,v|
-        new << k.to_s << '=>' << fingerprint(v) << ' '
-      end
-      new << "}"
-    when Symbol === obj
+    when Symbol
       ":" << obj.to_s
+    when String
+      if obj.length > 100
+        "'" << obj[0..20-1] << "<...#{obj.length}...>" << obj[-10..-1] << " " << "'"
+      else 
+        "'" << obj << "'"
+      end
+    when Array
+      if (length = obj.length) > 10
+        "[#{length}-" <<  (obj.values_at(0,1, length / 2, -2, -1).collect{|e| fingerprint(e)} * ",") << "]"
+      else
+        "[" << (obj.collect{|e| fingerprint(e) } * ",") << "]"
+      end
+    when TSV
+      obj.with_unnamed do
+        "TSV:{"<< fingerprint(obj.all_fields|| []).inspect << "," << fingerprint(obj.keys).inspect << "}"
+      end
+    when Hash
+      if obj.length > 10
+        "H:{"<< fingerprint(obj.keys) << "," << fingerprint(obj.values) << "}"
+      else
+        new = "{"
+        obj.each do |k,v|
+          new << k.to_s << '=>' << fingerprint(v) << ' '
+        end
+        new << "}"
+      end
     else
       obj.to_s
     end
   end
+
 
   def self.remove_long_items(obj)
     case
@@ -339,7 +350,6 @@ module Misc
   def self.send_email(from, to, subject, message, options = {})
     IndiferentHash.setup(options)
     options = Misc.add_defaults options, :from_alias => nil, :to_alias => nil, :server => 'localhost', :port => 25, :user => nil, :pass => nil, :auth => :login
-    IndiferentHash.setup(options)
 
     server, port, user, pass, from_alias, to_alias, auth = Misc.process_options options, :server, :port, :user, :pass, :from_alias, :to_alias, :auth
 
@@ -516,9 +526,33 @@ end
   end
 
   def self.is_filename?(string)
-    return true if Path === string
+    return true if string.respond_to? :exists
     return true if String === string and string.length < 265 and File.exists? string
     return false
+  end
+
+  def self.sorted_array_hits(a1, a2)
+    e1, e2 = a1.shift, a2.shift
+    counter = 0
+    match = []
+    while true
+      break if e1.nil? or e2.nil?
+      case e1 <=> e2
+      when 0
+        match << counter
+        e1, e2 = a1.shift, a2.shift
+        counter += 1
+      when -1
+        while not e1.nil? and e1 < e2
+          e1 = a1.shift 
+          counter += 1
+        end
+      when 1
+        e2 = a2.shift
+        e2 = a2.shift while not e2.nil? and e2 < e1
+      end
+    end
+    match
   end
 
   def self.intersect_sorted_arrays(a1, a2)
@@ -571,6 +605,33 @@ end
     end
     new
   end
+
+  def self.binary_include?(array, elem)
+    upper = array.size - 1
+    lower = 0
+
+    return -1 if upper < lower
+
+    while(upper >= lower) do
+      idx = lower + (upper - lower) / 2
+      value = array[idx]
+
+      case elem <=> value
+      when 0
+        return true
+      when -1
+        upper = idx - 1
+      when 1
+        lower = idx + 1
+      else
+        raise "Cannot compare #{[elem.inspect, value.inspect] * " with "}"
+      end
+    end
+
+    return false
+  end
+
+
 
   def self.array2hash(array, default = nil)
     hash = {}
@@ -1013,7 +1074,7 @@ end
 
       end
 
-      str << "_" << hash2md5(v.info) if Annotated === v
+      str << "_" << hash2md5(v.info) if defined? Annotated and Annotated === v
     end
     hash.unnamed = unnamed if hash.respond_to? :unnamed
 
@@ -1151,6 +1212,7 @@ end
 
   def self.snake_case(string)
     return nil if string.nil?
+    string = string.to_s if Symbol === string
     string.
       gsub(/([A-Z]{2,})([A-Z][a-z])/,'\1_\2').
       gsub(/([a-z])([A-Z])/,'\1_\2').
@@ -1218,53 +1280,48 @@ class RBBTError < StandardError
 end
 
 module IndiferentHash
-  extend ChainMethods
-  self.chain_prefix = :indiferent
-
-  def indiferent_get_brackets(key)
-    case 
-    when (Symbol === key and indiferent_clean_include? key)
-      indiferent_clean_get_brackets(key)
-    when (Symbol === key and indiferent_clean_include? key.to_s)
-      indiferent_clean_get_brackets(key.to_s)
-    when (String === key and indiferent_clean_include? key)
-      indiferent_clean_get_brackets(key)
-    when (String === key and indiferent_clean_include? key.to_sym)
-      indiferent_clean_get_brackets(key.to_sym)
-    else
-      indiferent_clean_get_brackets(key) 
-    end
-  end
-
-  def indiferent_values_at(*key_list)
-    res = []
-    key_list.each{|key| res << indiferent_get_brackets(key)}
-    res
-  end
-
-  def indiferent_include?(key)
-    case
-    when Symbol === key
-      indiferent_clean_include?(key) or indiferent_clean_include?(key.to_s) 
-    when String === key
-      indiferent_clean_include?(key) or indiferent_clean_include?(key.to_sym) 
-    else
-      indiferent_clean_include?(key)
-    end
-  end
-
-  def indiferent_delete(value)
-    if indiferent_clean_include? value.to_s
-      indiferent_clean_delete(value.to_s) 
-    else
-      indiferent_clean_delete(value.to_sym) 
-    end
-  end
 
   def self.setup(hash)
-    return hash if IndiferentHash === hash
-    hash.extend IndiferentHash unless IndiferentHash === hash
-    hash
+    hash.extend IndiferentHash 
+  end
+
+  def [](key)
+    res = super(key) and return res
+
+    case key
+    when Symbol, Module
+      super(key.to_s)
+    when String
+      super(key.to_sym)
+    else
+      super(key)
+    end
+  end
+
+  def values_at(*key_list)
+    key_list.inject([]){|acc,key| acc << self[key]}
+  end
+
+  def include?(key)
+    case key
+    when Symbol, Module
+      super(key) || super(key.to_s)
+    when String
+      super(key) || super(key.to_sym)
+    else
+      super(key)
+    end
+  end
+
+  def delete(key)
+    case key
+    when Symbol, Module
+      super(key) || super(key.to_s)
+    when String
+      super(key) || super(key.to_sym)
+    else
+      super(key)
+    end
   end
 end
 

@@ -1,4 +1,3 @@
-#require 'rbbt/util/chain_methods'
 require 'yaml'
 module TSV
   #extend ChainMethods
@@ -262,7 +261,7 @@ module TSV
         end
       when :list, :flat
         through :key, field do |key, fields|
-          elems << [key, fields]
+          elems << [key, fields.first]
         end
       when :double
         through :key, field do |key, fields|
@@ -485,15 +484,17 @@ end
   end
 
   def values_to_s(values)
-    case
-    when (values.nil? and fields.nil?)
-      "\n"
-    when (values.nil? and not fields.nil?)
-      "\t" << ([""] * fields.length) * "\t" << "\n"
-    when (not Array === values)
-      "\t" << values.to_s << "\n"
-    else
+    case values
+    when nil
+      if fields.nil? or fields.empty?
+        "\n"
+      else
+        "\t" << ([""] * fields.length) * "\t" << "\n"
+      end
+    when Array
       "\t" << values.collect{|v| Array === v ? v * "|" : v} * "\t" << "\n"
+    else
+      "\t" << values.to_s << "\n"
     end
   end
 
@@ -541,15 +542,18 @@ end
   end
 
   def summary
-    <<-EOF
-Key field = #{key_field}
-Fields = #{fields * ", "}
+    with_unnamed do
+      <<-EOF
+Key field = #{key_field || "*No key field*"}
+Fields = #{fields ? Misc.fingerprint(fields) : "*No field info*"}
 Type = #{type}
 Size = #{size}
+namespace = #{namespace}
 Example:
-  - #{key = keys.first}: #{self[key].inspect}
+  - #{key = keys.first}: #{Misc.fingerprint self[key] }
 
-    EOF
+  EOF
+    end
   end
 
   def to_hash

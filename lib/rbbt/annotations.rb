@@ -1,3 +1,4 @@
+require 'rbbt/tsv'
 require 'rbbt/util/misc'
 require 'rbbt/annotations/annotated_array'
 require 'rbbt/annotations/util'
@@ -253,12 +254,14 @@ module Annotation
     annotation_values = annotation_values.nil? ? {} : annotation_values.dup
     annotation_values.instance_variable_set(:@annotation_md5, nil)
 
-    annotations.zip(values).each do |name, value|
+    annotations.each_with_index do |name,i|
+      value = values[i]
 
       value = value.split("|") if String === value and value.index "|"
 
       annotation_values[name] = value
     end
+
 
     object.instance_variable_set(:@annotation_values,  annotation_values)
 

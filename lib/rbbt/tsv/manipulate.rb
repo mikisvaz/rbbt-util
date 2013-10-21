@@ -1,7 +1,4 @@
 require 'progress-bar'
-require 'rbbt/persist'
-require 'rbbt/tsv/util'
-require 'set'
 
 module TSV
   
@@ -59,6 +56,7 @@ module TSV
           [key] : values[field] }.flatten
       ]
     end
+
     def initialize(key_field, fields, new_key_field, new_fields, type, uniq)
       @new_key_field = TSV.identify_field(key_field, fields, new_key_field)
 
@@ -235,6 +233,10 @@ module TSV
     persist_options[:prefix] = "Reorder"
 
     Persist.persist_tsv self, self.filename, {:key_field => new_key_field, :fields => new_fields}, persist_options do |data|
+      if data.respond_to? :persistence_path
+        real_data = data 
+        data = {}
+      end
 
       with_unnamed do
         if zipped or (type != :double and type != :flat)
@@ -264,19 +266,11 @@ module TSV
           end
         end
 
-
-        #new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
-        #  if data.include?(key) and not zipped
-        #    case type 
-        #    when :double
-        #      data[key] = data[key].zip(value).collect do |old_list, new_list| old_list + new_list end
-        #    when :flat
-        #      data[key].concat value
-        #    end
-        #  else
-        #    data[key] = value.dup
-        #  end
-        #end
+        if real_data and real_data.respond_to? :persistence_path
+          real_data.serializer = type if real_data.respond_to? :serializer
+          real_data.merge!(data)
+          data = real_data
+        end
 
         data.extend TSV unless TSV === data
         data.key_field = new_key_field_name
@@ -590,7 +584,7 @@ module TSV
         values = [new_values]
       when values.nil?  
         values = [nil] * fields.length + [new_values]
-      when NamedArray === values
+      when Array === values
         values += [new_values]
       else
         values << new_values

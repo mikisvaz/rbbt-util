@@ -43,7 +43,7 @@ module Persist
 
   def self.persistence_path(file, persist_options = {}, options = {})
     persistence_file = Misc.process_options persist_options, :file
-    return persistence_file if not persistence_file.nil?
+    return persistence_file unless persistence_file.nil?
 
     prefix = Misc.process_options persist_options, :prefix
 

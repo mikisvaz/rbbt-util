@@ -1,6 +1,6 @@
 require 'rbbt/util/cmd'
-require 'rbbt/util/misc'
 require 'rbbt/util/tmpfile'
+require 'rbbt/util/misc'
 
 require 'zlib'
 
@@ -19,6 +19,8 @@ module Open
                              File.exists?(Rbbt.etc.repository_dirs.find) ? 
                                File.read(Rbbt.etc.repository_dirs.find).split("\n") :
                                []
+                           rescue
+                             []
                            end
     end
 
@@ -393,11 +395,6 @@ module Open
       end
     when String === content
       file_write(file, content, mode)
-      #File.open(file, mode) do |f|
-      #  f.flock(File::LOCK_EX)
-      #  f.write content 
-      #  f.flock(File::LOCK_UN)
-      #end
     else
       begin
         File.open(file, mode) do |f| 
@@ -414,15 +411,4 @@ module Open
       content.close
     end
   end
-end
-
-if __FILE__ == $0
-  require 'benchmark'
-  require 'progress-monitor'
-
-  file = '/home/mvazquezg/rbbt/data/dbs/entrez/gene_info'
-  puts Benchmark.measure {
-    #Open.open(file).read.split(/\n/).each do |l| l end
-    Open.read(file) do |l| l end
-  }
 end

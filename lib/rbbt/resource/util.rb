@@ -1,4 +1,3 @@
-
 module Path
 
   def self.caller_lib_dir(file = nil, relative_to = 'lib')

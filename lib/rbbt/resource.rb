@@ -1,6 +1,5 @@
 require 'rbbt/util/open'
 require 'rbbt/util/log'
-require 'rbbt/util/chain_methods'
 require 'rbbt/resource/path'
  
 module Resource

@@ -1,5 +1,5 @@
 require 'rbbt/resource/util'
-require 'rbbt/tsv'
+require 'yaml'
 
 module Path
   attr_accessor :resource, :pkgdir

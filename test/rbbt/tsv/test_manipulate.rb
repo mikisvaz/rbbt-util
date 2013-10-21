@@ -273,5 +273,25 @@ row3    a    C    Id4
  
   end
 
+  def test_through_flat
+     content =<<-EOF
+#: :type=:flat
+#Row   vA
+row1    a    b    Id1
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
+ 
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+      tsv.through :key, ["vA"] do |k,v|
+        assert_equal 3, v.length
+      end
+
+
+    end
+ 
+  end
+
 
 end

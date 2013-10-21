@@ -10,120 +10,206 @@ module Association
     end
   end
 
+  def self.add_reciprocal(tsv)
+
+    new = {}
+    tsv.with_unnamed do
+      tsv.through do |key, values|
+        new[key] ||= values
+        Misc.zip_fields(values).each do |fields|
+          target, *rest = fields
+          
+          target_values = new[target] || tsv[target] || [[]] * values.length
+          zipped_target_values = Misc.zip_fields(target_values) 
+
+          zipped_target_values << ([key].concat rest)
+          
+          new_values = Misc.zip_fields zipped_target_values
+
+          new[target] = new_values
+        end
+      end
+    end
+
+    tsv.annotate(new)
+
+    new
+  end
+
   def self.resolve_field(name, fields)
-    type = Entity.formats[name]
-    return "Field #{ name } could not be resolved: #{fields}" if type.nil?
-    field = fields.select{|f| Entity.formats[f] == type}.first
+    entity_type = Entity.formats[name]
+    return "Field #{ name } could not be resolved: #{fields}" if entity_type.nil?
+    field = fields.select{|f| Entity.formats[f] == entity_type}.first
     [field, nil, name]
   end
 
-  def self.add_reciprocal(tsv)
-    new_tsv = {}
-    tsv.with_unnamed do
+  def self.parse_field_specification(spec)
+    return [2,nil,nil] if Fixnum === spec
+    spec = spec.split "=>" unless Array === spec
+    field_part, final_format = spec
 
-      tsv.through do |target,v|
-        source_values = tsv.type == :double ? Misc.zip_fields(v) : [v]
-        
-        source_values.each do |values|
-          source = values.shift
-          values.unshift target
-          current = new_tsv[source] || tsv[source]
+    field, format = field_part.split "=~"
 
-          case tsv.type
-          when :double
-            new  = current ? current.zip(values).collect{|p| p.flatten} : values.collect{|p| [p]}
-          when :flat
-            new = current ? (current + values).compact.uniq : values
+    [field, format, final_format]
+  end
+
+  def self.calculate_headers(key_field, fields, spec)
+    all_fields = [key_field].concat fields if fields and key_field
+    field, header, format = parse_field_specification spec if spec
+
+    if field and key_field == field and not all_fields.include? field
+      field, header, format = resolve_field field, all_fields
+    end
+
+    [field, header, format]
+  end
+
+  #{{{ Open
+  
+  def self.open_tsv(file, source, source_header, target, target_header, all_fields, options)
+    fields = all_fields.dup
+    fields.delete source
+    fields.delete target
+    fields.unshift target
+
+    open_options = options.merge({
+      :persist => false,
+      :key_field => all_fields.index(source), 
+      :fields => fields.collect{|f| String === f ? all_fields.index(f): f },
+      :type => options[:type].to_s == :flat ? :flat : :double,
+      :merge => options[:type].to_s == :flat ? false : true
+    })
+
+    # Preserve first line, which would have been considered a header otherwise
+    open_options["header_hash"] = "#" if options["header_hash"] == ""
+
+    field_headers = all_fields.values_at *open_options[:fields]
+
+    tsv = case file
+          when TSV
+            file.fields == field_headers ? 
+              file :
+              file.reorder(source, field_headers)
+          else
+            TSV.open(file, open_options)
           end
 
-          new_tsv[source] = new
-        end
-      end
+    tsv.fields = field_headers
+    tsv.key_field = source
 
-      tsv.merge! new_tsv
+    # Fix source header
+    if source_header and tsv.key_field != source_header
+      tsv.key_field = source_header
+    end
+
+    # Fix target header
+    if target_header and tsv.fields.first != target_header
+      tsv.fields = tsv.fields.collect{|f| f == target ? target_header : f }
     end
 
     tsv
   end
 
-  def self.load_tsv(file, options)
-    key_field = TSV.parse_header(file, options).key_field
-    fields = TSV.parse_header(file, options).fields
-    all_fields = TSV.parse_header(file, options).all_fields
-    
-    source = options[:source] || options[:source_type]
-    source = TSV.identify_field key_field, fields, options[:key_field] if source.nil? and options[:key_field]
-    source = all_fields[source] if Fixnum === source
-    source = key_field if source == :key or source.nil?
+  def self.translate_tsv(tsv, source_final_format, target_final_format)
+    source_field = tsv.key_field
+    target_field = tsv.fields.first
 
-    target = options[:target]
-    target = TSV.identify_field key_field, fields, options[:fields].first if target.nil? and options[:fields]
-    target = all_fields[target] if Fixnum === target
-    target = key_field if target == :key
+    if source_final_format and source_field != source_final_format and
+      Entity.formats[source_field] and
+      Entity.formats[source_field] == Entity.formats[source_final_format]
 
-    zipped = options[:zipped]
-    undirected = options[:undirected]
+      Log.debug("Changing source format from #{tsv.key_field} to #{source_final_format}")
 
-    source, source_header, source_final_type = parse_field_specification source, all_fields
-    target, target_header, target_final_type = parse_field_specification target, all_fields if target
-
-    if source and not all_fields.include? source
-      Log.debug("Resolving source: #{ source }")
-      source, source_header, source_final_type = resolve_field source, all_fields
-      Log.debug([source, source_header, source_final_type] * ", ")
-    end
-
-    if target and not all_fields.include? target
-      Log.debug("Resolving target: #{ target }")
-      target, target_header, target_final_type = resolve_field target, all_fields
-      Log.debug([target, target_header, target_final_type] * ", ")
-    end
-
-    source_final_type ||= options[:source_type] if options[:source_type]
-    target_final_type ||= options[:target_type] if options[:target_type]
-
-    Log.debug("Loading associations from: #{ file }")
-    Log.debug("sources: #{[source, source_header, source_final_type] * ", "}")
-    Log.debug("targets: #{[target, target_header, target_final_type] * ", "}")
-    if source != all_fields.first or (target and target != all_fields[1])
-      fields = ([target] + (all_fields - [source, target])).compact
-      open_options = options.merge({:key_field => source, :fields => fields})
-      tsv = TSV.open(file, open_options)
-    else
-      tsv = TSV.open(file, options)
-    end
-
-    if source_header and tsv.key_field != source_header
-      tsv.key_field = source_header
-    end
-
-    if source_final_type and tsv.key_field != source_final_type
-      Log.debug("Changing source type from #{tsv.key_field} to #{source_final_type}")
       tsv.with_unnamed do
-        tsv = tsv.change_key source_final_type, :identifiers => Organism.identifiers(tsv.namespace), :persist => true
+        tsv = tsv.change_key source_final_format, :identifiers => Organism.identifiers(tsv.namespace), :persist => true
       end
     end
 
-    if target_header and tsv.fields.first != target_header
-      tsv.fields = tsv.fields.collect{|f| f == target ? target_header : f }
-    end
+    # Translate target 
+    if target_final_format and target_field != target_final_format and
+      Entity.formats[target_field] and
+      Entity.formats[target_field] == Entity.formats[target_final_format]
 
-    if target_final_type and tsv.fields.first != target_final_type and
-      Entity.formats[tsv.fields.first] and
-      Entity.formats[tsv.fields.first] == Entity.formats[target_final_type]
+      Log.debug("Changing target format from #{tsv.fields.first} to #{target_final_format}")
 
-      Log.debug("Changing target type from #{tsv.fields.first} to #{source_final_type}")
       save_key_field = tsv.key_field
       tsv.key_field = "MASKED"
+
       tsv.with_unnamed do
-        tsv = tsv.swap_id tsv.fields.first, target_final_type, :identifiers => Organism.identifiers(tsv.namespace), :persist => true
+        tsv = tsv.swap_id tsv.fields.first, target_final_format, :identifiers => Organism.identifiers(tsv.namespace), :persist => true
       end
+
       tsv.key_field = save_key_field 
     end
+    tsv
+  end
 
-    if undirected
-      tsv = add_reciprocal tsv
+  def self.specs(all_fields, options = {})
+    source_spec, source_format, target_spec, target_format, format, key_field, fields = Misc.process_options options, :source, :source_format, :target, :target_format, :format, :key_field, :fields
+
+    if key_field and all_fields
+      key_pos = (Fixnum === key_field ? key_field : all_fields.index(key_field) )
+      key_field = all_fields[key_pos]
+    else
+      key_field = all_fields.first if all_fields
     end
+
+    if fields and all_fields
+      field_pos = fields.collect{|f| Fixnum === f ? f : fields.index(f) }
+      fields = all_fields.values_at *field_pos
+    else
+      fields = all_fields[1..-1] if all_fields
+    end
+
+    source, source_header, orig_source_format = calculate_headers(key_field, fields, source_spec)
+    source_format ||= orig_source_format 
+    source = key_field if source.nil? 
+    source = key_field if source == :key
+    source_header ||= source
+
+    target, target_header, orig_target_format = calculate_headers(key_field, fields, target_spec)
+    target_format ||= orig_target_format 
+    target = (([key_field] + fields) - [source]).first if target.nil?
+    target = key_field if target == :key
+    target_header ||= target
+
+    case format
+    when String
+      source_format ||= format if Entity.formats[source_header] == Entity.formats[format]
+      target_format ||= format if Entity.formats[target_header] == Entity.formats[format]
+    when Hash
+      _type = Entity.formats[source_header].to_s
+      source_format ||= format[_type] if format.include? _type 
+      _type = Entity.formats[target_header].to_s
+      target_format ||= format[_type] if format.include? _type 
+    end
+
+    [source, source_header, source_format, target, target_header, target_format]
+  end
+
+  def self.load_tsv(file, options)
+    undirected = Misc.process_options options, :undirected
+
+    case file
+    when Proc
+      return load_tsv(file.call, options)
+    when TSV
+      key_field, *fields = all_fields = file.all_fields
+    else 
+      key_field, *fields = all_fields = TSV.parse_header(file, options.merge(:fields => nil, :key_field => nil)).all_fields
+    end
+
+    source, source_header, source_format, target, target_header, target_format = specs(all_fields, options)
+ 
+    Log.info("Loading associations from: #{ Misc.fingerprint file }")
+    Log.info("sources: #{ [source, source_header, source_format].join(", ") }")
+    Log.info("targets: #{ [target, target_header, target_format].join(", ") }")
+
+    tsv = open_tsv(file, source, source_header, target, target_header, all_fields, options)
+
+    tsv = translate_tsv(tsv, source_format, target_format)
+
+    tsv = add_reciprocal(tsv) if undirected
 
     tsv
   end
@@ -150,12 +236,15 @@ module Association
     end
   end
 
-  def self.open_index(index_file, write = false)
-    Persist.open_tokyocabinet(index_file, write, :list, TokyoCabinet::BDB).tap{|r| r.unnamed = true }
+  #{{{ Index
+
+  def self.get_index(index_file, write = false)
+    Persist.open_tokyocabinet(index_file, write, :list, TokyoCabinet::BDB).tap{|r| r.unnamed = true; Association::Index.setup r }
   end
 
   def self.index(file, options = {}, persist_options = {})
     options = {} if options.nil?
+    options = Misc.add_defaults options, :persist => true
     persist_options = {} if persist_options.nil?
 
     Persist.persist_tsv(file, nil, options, {:persist => true, :prefix => "Association Index"}.merge(persist_options).merge(:engine => TokyoCabinet::BDB, :serializer => :clean)) do |assocs|
@@ -169,8 +258,16 @@ module Association
         TSV.setup(assocs, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => :list)
 
         tsv.with_unnamed do
-          tsv.with_monitor :desc => "Extracting annotations" do
+          tsv.with_monitor :desc => "Extracting associations" do
             case tsv.type
+            when :list
+              tsv.through do |source, values|
+                target, *rest = values
+                next if source.nil? or source.empty? or target.nil? or target.empty?
+
+                key = [source, target] * "~"
+                assocs[key] = rest
+              end
             when :flat
               tsv.through do |source, targets|
                 next if source.nil? or source.empty? or targets.nil? or targets.empty?
@@ -216,35 +313,5 @@ module Association
       Association::Index.setup assocs
     end
   end
-
-
-
-  #def self.register(database, file, options = {})
-  #  self.databases[database.to_s] = [file, options]
-  #end
-
-  #def self.get_database(database)
-  #  self.databases[database.to_s]
-  #end
-
-  #def self.open_database(database, options = {}, persist_options = {})
-  #  file, database_options = get_database database
-  #  open(file, database_options.merge(options), persist_options)
-  #end
-
-  #def self.index_database(database, options = {}, persist_options = {})
-  #  file, database_options = databases[database.to_s]
-  #  index(file, database_options.merge(options), persist_options)
-  #end
-
-  #def self.parse_field_specification(spec, fields)
-  #  spec = spec.split "=>" unless Array === spec
-  #  field_part, final_type = spec
-
-  #  field, type = field_part.split "=~"
-
-  #  [field, type, final_type]
-  #end
-
 end
 

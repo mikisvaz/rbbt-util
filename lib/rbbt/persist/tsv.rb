@@ -89,6 +89,20 @@ module Persist
           out(key)
         end
 
+        def write_and_read
+          lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
+          Misc.lock(lock_filename) do
+            write if @closed or not write?
+            res = begin
+                    yield
+                  ensure
+                    read
+                  end
+            res
+          end
+        end
+
+
         def write_and_close
           lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
           Misc.lock(lock_filename) do
@@ -152,10 +166,12 @@ module Persist
              filename ||= case
                           when Path === source
                             source
-                          when source.respond_to?(:filename)
+                          when (source.respond_to?(:filename) and source.filename)
                             source.filename
                           when source.respond_to?(:cmd)
                             "CMD-#{Misc.digest(source.cmd)}"
+                          when TSV === source
+                            "TSV[#{Misc.digest Misc.fingerprint(source)}]"
                           else
                             source.object_id.to_s
                           end

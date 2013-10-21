@@ -1,9 +1,11 @@
-require 'rbbt/util/misc'
 require 'rbbt/fix_width_table'
+require 'rbbt/util/misc'
+
+require 'rbbt/persist'
+require 'rbbt/persist/tsv'
+
 require 'rbbt/tsv/manipulate'
 require 'rbbt/tsv/filter'
-require 'rbbt/persist/tsv'
-require 'rbbt/persist'
 
 module TSV
 

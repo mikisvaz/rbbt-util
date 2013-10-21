@@ -36,7 +36,7 @@ module TSV
             if type == :double
               self[key] = current.concat [[]] * fields.length
             else
-              self[key] = current.concat [""] * fields.length
+              self[key] = current.concat [nil] * fields.length
             end
           end
         end
@@ -171,7 +171,7 @@ module TSV
               if type == :double
                 all_new_values = [[[]] * field_positions.length]
               else
-                all_new_values = [[""] * field_positions.length]
+                all_new_values = [[nil] * field_positions.length]
               end
             end
 

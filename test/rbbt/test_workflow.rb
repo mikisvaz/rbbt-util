@@ -104,11 +104,13 @@ class TestWorkflow < Test::Unit::TestCase
 
     assert_equal [job1.name, job2.name].sort, TestWF.jobs(:repeat2, "subdir/").sort
     assert_equal [job1.name].sort, TestWF.jobs(:repeat2, "subdir/Default")
-    assert_equal [job1.name, job2.name, job3.name].sort, TestWF.jobs(:repeat2).sort
+    assert TestWF.jobs(:repeat2).include?(job1.name)
+    assert TestWF.jobs(:repeat2).include?(job2.name)
+    assert TestWF.jobs(:repeat2).include?(job3.name)
   end
 
   def test_double_dep
-    assert_equal ["TEST", "TEST\nTEST", "TEST\nTEST\nTEST\nTEST"], TestWF.job(:double_dep, "foo", :times => 2, :number => 2).run
+    assert_equal ["TEST", "TEST\nTEST", "TEST\nTEST\nTEST\nTEST"], TestWF.job(:double_dep, "foo", :times => 2, :number => 2).clean.run
   end
 
   def test_object_workflow
