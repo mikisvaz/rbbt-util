@@ -26,8 +26,10 @@ class Step
   def info
     return {} if not Open.exists? info_file
     begin
-      Open.open(info_file) do |file|
-        INFO_SERIALIAZER.load(file) || {}
+      Misc.insist(2, 0.5) do
+        Open.open(info_file) do |file|
+          INFO_SERIALIAZER.load(file) || {}
+        end
       end
     rescue Exception
       Log.debug "Error loading info file: " + info_file

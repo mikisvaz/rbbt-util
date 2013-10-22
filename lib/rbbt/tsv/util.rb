@@ -126,6 +126,7 @@ module TSV
       end
     end
     self.annotate(new)
+    new.fields = new.fields[0..0] if new.fields
     new.type = :flat
     new
   end

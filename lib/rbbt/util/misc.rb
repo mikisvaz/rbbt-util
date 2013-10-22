@@ -941,6 +941,7 @@ end
     return false
   end
 
+  # WARN: probably not thread safe...
   def self.in_dir(dir)
     old_pwd = FileUtils.pwd
     res = nil
@@ -948,8 +949,6 @@ end
       FileUtils.mkdir_p dir unless File.exists? dir
       FileUtils.cd dir
       res = yield
-    rescue
-      raise $!
     ensure
       FileUtils.cd old_pwd
     end

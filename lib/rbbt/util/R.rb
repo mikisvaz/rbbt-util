@@ -35,19 +35,16 @@ source('#{UTIL}');
     end
   end
 
-  def self.interactive(init_file, options = {})
-    CMD.cmd("env R_PROFILE='#{init_file}' xterm R")
-  end
-
   def self.interactive(script, options = {})
     TmpFile.with_file do |init_file|
         Open.write(init_file) do |file|
           file.puts "# Loading basic rbbt environment"
+          file.puts "library(utils);\n"
           file.puts "source('#{R::UTIL}');\n"
           file.puts 
           file.puts script
         end
-        CMD.cmd("env R_PROFILE='#{init_file}' xterm R")
+        CMD.cmd("env R_PROFILE='#{init_file}' xterm \"$RHOME/bin/R\"")
     end
   end
 
@@ -98,10 +95,14 @@ if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
     end
   end
 
-  def R_interactive(open_options = {})
+  def R_interactive(pre_script = nil)
     TmpFile.with_file do |f|
-      Open.write(f, self.to_s)
-      R.interactive("data_file = '#{f}';\n")
+      TmpFile.with_file(pre_script) do |script_file|
+        Open.write(f, self.to_s)
+        script = "data_file = '#{f}';\n"
+        script << "script_file = '#{script_file}';\n" if pre_script
+        R.interactive(script)
+      end
     end
   end
 end
