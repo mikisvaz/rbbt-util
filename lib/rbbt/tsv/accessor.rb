@@ -537,7 +537,15 @@ end
 
   def value_peek
     peek = {}
-    keys[0..10].zip(values[0..10]).each do |k,v| peek[k] = v end
+    i = 0
+    begin
+      through do |k,v|
+        peek[k] = v 
+        i += 1
+        raise "STOP" if i > 10
+      end
+    rescue
+    end
     peek
   end
 

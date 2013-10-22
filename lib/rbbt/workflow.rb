@@ -38,10 +38,10 @@ module Workflow
     begin
       $LOAD_PATH.unshift(File.join(File.dirname(File.expand_path(filename)), 'lib'))
       require filename
-      Log.info "Workflow loaded from: #{ filename }"
+      Log.debug{"Workflow loaded from: #{ filename }"}
       return true
     rescue Exception
-      Log.warn "Error loading workflow: #{ filename }"
+      Log.warn{"Error loading workflow: #{ filename }"}
       raise $!
     end
   end
@@ -86,7 +86,7 @@ module Workflow
     # Already loaded
     begin
       Misc.string2const wf_name
-      Log.debug "Workflow #{ wf_name } already loaded"
+      Log.debug{"Workflow #{ wf_name } already loaded"}
       return true
     rescue Exception
     end
@@ -97,13 +97,14 @@ module Workflow
       if Hash === remote_workflows and remote_workflows.include?(wf_name)
         url = remote_workflows[wf_name]
         require_remote_workflow(wf_name, url)
-        Log.debug "Workflow #{ wf_name } loaded remotely: #{ url }"
+        Log.debug{"Workflow #{ wf_name } loaded remotely: #{ url }"}
         return
       end
     end
 
     # Load locally
 
+    Log.info{"Loading workflow #{wf_name}"}
     require_local_workflow(wf_name) || require_local_workflow(Misc.snake_case(wf_name)) || raise("Workflow not found or could not be loaded: #{ wf_name }")
   end
 

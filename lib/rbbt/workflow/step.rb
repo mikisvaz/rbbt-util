@@ -77,10 +77,10 @@ class Step
       self
     else
       begin
-        Log.debug "Waiting for pid: #{@pid}"
+        Log.debug{"Waiting for pid: #{@pid}"}
         Process.waitpid @pid 
       rescue Errno::ECHILD
-        Log.debug "Process #{ @pid } already finished: #{ path }"
+        Log.debug{"Process #{ @pid } already finished: #{ path }"}
       end if Misc.pid_exists? @pid
       @pid = nil
     end
@@ -176,7 +176,7 @@ class Step
         begin
           run(true)
         rescue Step::Aborted
-          Log.debug("Forked process aborted: #{@path}")
+          Log.debug{"Forked process aborted: #{@path}"}
           log :aborted, "Aborted"
           raise $!
         rescue Exception

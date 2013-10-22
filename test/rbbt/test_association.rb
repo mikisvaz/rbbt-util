@@ -6,8 +6,6 @@ require 'rbbt/entity'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
 
-Workflow.require_workflow "Genomics"
-require 'rbbt/entity/gene'
 
 Workflow.require_workflow "TSVWorkflow"
 
@@ -35,18 +33,18 @@ class TestAssociations < Test::Unit::TestCase
     FileUtils.rm_rf DAssocs
   end
 
-  def _test_simple_open
+  def test_simple_open
     database = Association.open(FAssocs, {}, :dir => DAssocs)
     assert_equal ["C", "K"], database["c"]["Entity2"]
   end
  
-  def _test_source_open
+  def test_source_open
     database = Association.open(FAssocs, {:source => "Entity2", :zipped => true}, :dir => DAssocs)
     assert_equal ["c", "3", 'cc', "PTEN"], database["C"].flatten
     assert_equal ["c", "4", 'kk', "PTEN"], database["K"].flatten
   end
   
-  def _test_target_open
+  def test_target_open
     database = Association.open(FAssocs, {:source => "Entity2", :target => "Entity3", :zipped => true}, :dir => DAssocs)
     assert_equal ["cc", "c", "3", "PTEN"], database["C"].flatten
     assert_equal ["kk", "c", "4", "PTEN"], database["K"].flatten
@@ -71,24 +69,24 @@ class TestAssociations < Test::Unit::TestCase
   end
 
 
-  def _test_gene_open
+  def test_gene_open
     database = Association.open(FAssocs, {:source => "Gene=~Associated Gene Name", :target => "Entity3", :zipped => true}, :dir => DAssocs)
     assert_equal ["aa"], database["TP53"].first
   end
 
-  def _test_gene_open_translate
+  def test_gene_open_translate
     tp53 = Gene.setup("TP53", "Associated Gene Name", "Hsa/jan2013")
     database = Association.open(FAssocs, {:source => "Gene=~Associated Gene Name", :source_format => "Ensembl Gene ID", :target => "Entity3", :zipped => true}, :dir => DAssocs)
     assert_equal ["aa"], database[tp53.ensembl].first
   end
 
-  def _test_gene_target_open_translate
+  def test_gene_target_open_translate
     tp53 = Gene.setup("TP53", "Associated Gene Name", "Hsa/jan2013")
     database = Association.open(FAssocs, {:target => "Gene=~Associated Gene Name=>Ensembl Gene ID", :source => "Entity3", :zipped => true}, :dir => DAssocs)
     assert_equal [tp53.ensembl], database["aa"].first
   end
 
-  def _test_ICGC
+  def test_ICGC
     assoc = Association.open(Open.open('ftp://data.dcc.icgc.org/current/Chronic_Lymphocytic_Leukemia-ISC_MICINN-ES/simple_somatic_mutation.CLLE-ES.tsv.gz'),
                          { :source => "gene_affected=~Ensembl Gene ID=>Associated Gene Name", :target => "icgc_donor_id=~Sample", 
                            :fields => ['consequence_type'],  

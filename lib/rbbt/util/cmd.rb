@@ -29,10 +29,10 @@ module CMD
         rescue
         end
 
-        Log.debug "Process #{ cmd } succeded" if $? and $?.success? and log
+        Log.debug{"Process #{ cmd } succeded" if $? and $?.success? and log}
 
         if $? and not $?.success?
-          Log.debug "Raising exception" if log
+          Log.debug{"Raising exception" if log}
           exception = CMDError.new "Command [#{@pid}] #{@cmd} failed with error status #{$?.exitstatus}"
           original_close
           raise exception
@@ -52,7 +52,7 @@ module CMD
 
     def force_close
       if @pid
-        Log.debug "Forcing close by killing '#{@pid}'" if log
+        Log.debug{"Forcing close by killing '#{@pid}'" if log}
         begin
           Process.kill("KILL", @pid)
           Process.waitpid(@pid)
@@ -158,8 +158,8 @@ module CMD
 
         exit(-1)
       rescue Exception
-        Log.debug("CMDError: #{$!.message}") if log
-        Log.debug("Backtrace: \n" + $!.backtrace * "\n") if log
+        Log.debug{ "CMDError: #{$!.message}" } if log
+        Log.debug{ "Backtrace: \n" + $!.backtrace * "\n" } if log
         raise CMDError, $!.message
       end
     }
@@ -173,7 +173,7 @@ module CMD
     serr = serr.first
     
 
-    Log.debug "CMD: [#{pid}] #{cmd}" if log
+    Log.debug{"CMD: [#{pid}] #{cmd}" if log}
 
     if in_content.respond_to?(:read)
       Thread.new do

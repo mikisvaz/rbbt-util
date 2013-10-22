@@ -46,7 +46,7 @@ module Misc
       when (ref.length == 1 and m.length == 1)
         m
       else
-        Log.debug "Cannot understand: #{[ref, m]} (#{ muts })"
+        Log.debug{"Cannot understand: #{[ref, m]} (#{ muts })"}
         '-' * ref.length + m
       end
     end
@@ -223,11 +223,11 @@ module Misc
       end
     when TSV
       obj.with_unnamed do
-        "TSV:{"<< fingerprint(obj.all_fields|| []).inspect << "," << fingerprint(obj.keys).inspect << "}"
+        "TSV:{"<< fingerprint(obj.all_fields|| []).inspect << ";" << fingerprint(obj.keys).inspect << "}"
       end
     when Hash
       if obj.length > 10
-        "H:{"<< fingerprint(obj.keys) << "," << fingerprint(obj.values) << "}"
+        "H:{"<< fingerprint(obj.keys) << ";" << fingerprint(obj.values) << "}"
       else
         new = "{"
         obj.each do |k,v|

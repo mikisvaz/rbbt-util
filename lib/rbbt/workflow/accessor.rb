@@ -32,7 +32,7 @@ class Step
         end
       end
     rescue Exception
-      Log.debug "Error loading info file: " + info_file
+      Log.debug{"Error loading info file: " + info_file}
       raise $!
     end
   end

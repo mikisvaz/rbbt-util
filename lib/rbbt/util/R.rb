@@ -22,7 +22,7 @@ source('#{UTIL}');
       cmd << command
     end
 
-    Log.debug "R Script:\n#{ cmd }"
+    Log.debug{"R Script:\n#{ cmd }"}
 
     if options.delete :monitor
       io = CMD.cmd('R --vanilla --slave --quiet', options.merge(:in => cmd, :pipe => true))

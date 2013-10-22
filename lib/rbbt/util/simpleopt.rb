@@ -166,7 +166,7 @@ module SOPT
 
       if shortcuts.include? short
         i[:short] = short_for(i[:long])
-        Log.debug("Short for #{ long } is taken. Changed to #{i[:short]}")
+        Log.debug{ "Short for #{ long } is taken. Changed to #{i[:short]}" }
       else
         shortcuts << i[:short] if short
       end

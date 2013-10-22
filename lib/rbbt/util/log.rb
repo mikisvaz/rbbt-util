@@ -17,12 +17,15 @@ module Log
     @logfile = nil
   end
 
-  SEVERITY_COLOR = ["0;37m", "0;32m", "0;33m", "0;31m","0;37m", "0;32m", "0;33m"].collect{|e| "\033[#{e}"}
+  WHITE, DARK, GREEN, YELLOW, RED = ["0;37m", "0m", "0;32m", "0;33m", "0;31m"].collect{|e| "\033[#{e}"}
+
+  SEVERITY_COLOR = [WHITE, GREEN, YELLOW, RED,WHITE, GREEN, YELLOW].collect{|e| "\033[#{e}"}
 
   def self.log(message = nil, severity = MEDIUM, &block)
     message ||= block
+    return if message.nil?
     severity_color = SEVERITY_COLOR[severity]
-    font_color = {false => "\033[0;37m", true => "\033[0m"}[severity >= INFO]
+    font_color = {true => WHITE, false => DARK}[severity >= INFO]
 
     return if severity < self.severity
     message = message.call if Proc === message

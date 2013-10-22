@@ -4,12 +4,13 @@ require 'test/unit'
 require 'rbbt/knowledge_base'
 require 'rbbt/sources/pina'
 
-require 'rbbt/workflow'
-Workflow.require_workflow "Genomics"
-require 'genomics_kb'
-
 class TestKnowledgeBase < Test::Unit::TestCase
   def setup
+    require 'rbbt/workflow'
+    Workflow.require_workflow "Genomics"
+    require 'genomics_kb'
+
+
     KnowledgeBase.knowledge_base_dir = Rbbt.tmp.knowledge_base_test.find
     @kb = Genomics.knowledge_base
   end
