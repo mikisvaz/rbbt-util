@@ -37,12 +37,12 @@ source('#{UTIL}');
 
   def self.interactive(script, options = {})
     TmpFile.with_file do |init_file|
-        Open.write(init_file) do |file|
-          file.puts "# Loading basic rbbt environment"
-          file.puts "library(utils);\n"
-          file.puts "source('#{R::UTIL}');\n"
-          file.puts 
-          file.puts script
+        Open.write(init_file) do |f|
+          f.puts "# Loading basic rbbt environment"
+          f.puts "library(utils);\n"
+          f.puts "source('#{R::UTIL}');\n"
+          f.puts 
+          f.puts script
         end
         CMD.cmd("env R_PROFILE='#{init_file}' xterm \"$RHOME/bin/R\"")
     end
