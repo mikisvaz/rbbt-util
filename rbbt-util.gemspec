@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "rbbt-util"
-  s.version = "5.5.3"
+  s.version = "5.5.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Miguel Vazquez"]
@@ -79,6 +79,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/workflow/task.rb",
     "lib/rbbt/workflow/usage.rb",
     "share/Rlib/util.R",
+    "share/config.ru",
     "share/install/software/lib/install_helpers",
     "share/rbbt_commands/app/start",
     "share/rbbt_commands/conf/web_user/add",
