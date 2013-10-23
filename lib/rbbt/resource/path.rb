@@ -55,6 +55,7 @@ module Path
   end
 
   SEARCH_PATHS = {
+    :current => File.join(File.expand_path('.'), "{TOPLEVEL}", "{SUBPATH}"),
     :user    => File.join(ENV['HOME'], ".{PKGDIR}", "{TOPLEVEL}", "{SUBPATH}"),
     :global  => File.join('/', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
     :local   => File.join('/usr/local', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
@@ -81,7 +82,7 @@ module Path
 
     path = nil
     if where.nil?
-      %w(user local global lib).each do |w| 
+      %w(current user local global lib).each do |w| 
         w = w.to_sym
         next unless search_paths.include? w
         path = find(w, caller_lib, search_paths)

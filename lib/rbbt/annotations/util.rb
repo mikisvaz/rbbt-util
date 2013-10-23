@@ -2,7 +2,14 @@ require 'json'
 
 module Annotated
 
-  def self.load(object, info)
+  def self.flatten(array)
+    return array if array.nil?  or array.empty?
+    return array.flatten if AnnotatedArray === array
+    return array if array.compact.collect{|e| e.info }.uniq.length > 1
+    array.compact.first.annotate(array.flatten).tap{|a| a.extend AnnotatedArray }
+  end
+
+  def self.load_entity(object, info)
     annotation_types = info.delete(:annotation_types) || info.delete("annotation_types") || []
     annotation_types = annotation_types.split("|") if String === annotation_types
 
@@ -34,9 +41,23 @@ module Annotated
     end
   end
 
+  def self.load_info(fields, values)
+    info = {}
+    fields.each_with_index do |field,i|
+      next if field == "literal"
+      if field == "JSON"
+        JSON.parse(values[i]).each do |key, value|
+          info[key.to_sym] = value
+        end
+      else
+        info[field.to_sym] = resolve_array(values[i])
+      end
+    end
+    info
+  end
+
   def self.load_tsv_values(id, values, *fields)
     fields = fields.flatten
-    info = {}
     literal_pos = fields.index "literal"
 
     object = case
@@ -49,36 +70,18 @@ module Annotated
     object = resolve_array(object)
 
     if Array === values.first
-      Misc.zip_fields(values).collect do |list|
-        fields.each_with_index do |field,i|
-          next if field == "literal"
-          if field == "JSON"
-            JSON.parse(list[i]).each do |key, value|
-              info[key.to_sym] = value
-            end
-          else
-            info[field.to_sym] = resolve_array(list[i])
-          end
-        end
+      Misc.zip_fields(values).collect do |v|
+        info = load_info(fields, v)
       end
     else
-      fields.each_with_index do |field,i|
-        next if field == "literal"
-        if field == "JSON"
-          JSON.parse(values[i]).each do |key, value|
-            info[key.to_sym] = value
-          end
-        else
-          info[field.to_sym] = resolve_array(values[i])
-        end
-      end
+      info = load_info(fields, values)
     end
 
-    self.load(object, info)
+    self.load_entity(object, info)
 
     object
   end
- 
+
   def self.load_tsv(tsv)
     tsv.with_unnamed do
       annotated_entities = tsv.collect do |id, values|
@@ -104,7 +107,7 @@ module Annotated
                fields = AnnotatedArray === annotations ? annotations.annotations : annotations.compact.first.annotations
                fields << :annotation_types
 
-             when (fields == [:literal] and not annotations.empty?)
+             when (fields == [:literal] and not annotations.compact.empty?)
                fields << :literal
 
              when (fields == [:all] and Annotated === annotations)
@@ -112,9 +115,9 @@ module Annotated
                fields << :annotated_array if AnnotatedArray === annotations
                fields << :literal
 
-             when (fields == [:all] and not annotations.empty?)
+             when (fields == [:all] and not annotations.compact.empty?)
                raise "Input array must be annotated or its elements must be" if not Annotated === annotations.compact.first and not Array === annotations.compact.first
-               raise "Input array must be annotated or its elements must be. No duble arrays of singly annotated entities." if not Annotated === annotations.compact.first and Array === annotations.compact.first
+               raise "Input array must be annotated or its elements must be. No double arrays of singly annotated entities." if not Annotated === annotations.compact.first and Array === annotations.compact.first
                fields = [:annotation_types] + (Annotated === annotations ? 
                                                annotations.annotations: 
                                                annotations.compact.first.annotations)

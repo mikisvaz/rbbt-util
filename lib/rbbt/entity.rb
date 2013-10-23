@@ -97,7 +97,6 @@ module Entity
           define_method ary_name, &block 
           
           define_method name do |*args|
-            #ary_name = "_ary_" << __method__.to_s
             case
             when Array === self
               self.send(ary_name, *args)

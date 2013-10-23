@@ -3,7 +3,7 @@ require 'rbbt/tsv'
 
 module R
 
-  LIB_DIR = File.join(File.expand_path(File.dirname(__FILE__)),'../../../share/lib/R')
+  LIB_DIR = File.join(File.expand_path(File.dirname(__FILE__)),'../../../share/Rlib')
   UTIL    = File.join(LIB_DIR, 'util.R')
 
   def self.run(command, options = {})
@@ -97,6 +97,7 @@ if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
 
   def R_interactive(pre_script = nil)
     TmpFile.with_file do |f|
+      Log.debug{"R Script:\n" << pre_script }
       TmpFile.with_file(pre_script) do |script_file|
         Open.write(f, self.to_s)
         script = "data_file = '#{f}';\n"

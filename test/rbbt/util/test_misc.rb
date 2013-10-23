@@ -81,9 +81,16 @@ class TestMisc < Test::Unit::TestCase
     assert_equal(true, Misc.string2hash("true")["true"])
     assert_equal(1, Misc.string2hash("a=1")["a"])
     assert_equal('b', Misc.string2hash("a=b")["a"])
-    assert_equal('d', Misc.string2hash("a=b#c=d#:h=j")["c"])
-    assert_equal('j', Misc.string2hash("a=b#c=d#:h=j")[:h])
+    assert_equal('d', Misc.string2hash("a=b#c=d#:h='j'")["c"])
+    assert_equal('j', Misc.string2hash("a=b#c=d#:h='j'")[:h])
     assert_equal(:j, Misc.string2hash("a=b#c=d#:h=:j")[:h])
+
+    Misc.benchmark(1000) do
+      Misc.string2hash_old("a=b#c=d#:h=:j#test='1'#:num=1#:sep=/#/")
+    end
+    Misc.benchmark(1000) do
+      Misc.string2hash("a=b#c=d#:h=:j#test='1'#:num=1#:sep=/#/")
+    end
   end
   
   def test_named_array
@@ -121,9 +128,6 @@ class TestMisc < Test::Unit::TestCase
     hash = {:a => true}
     assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
 
-    hash = {:a => Misc}
-    assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
- 
     hash = {:a => :b}
     assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
  

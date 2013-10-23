@@ -70,7 +70,7 @@ class TestAnnotations < Test::Unit::TestCase
     annotation_str = "Annotation String"
     info = {:annotation_str => annotation_str, :annotation_types => [AnnotatedString]}
 
-    Annotated.load(str, info)
+    Annotated.load_entity(str, info)
     assert_equal annotation_str, str.annotation_str
   end
 

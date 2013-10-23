@@ -21,10 +21,11 @@ end
 module Misc
   class FieldNotFoundError < StandardError;end
 
+
   def self.correct_icgc_mutation(pos, ref, mut_str)
     mut = mut_str
     mut = '-' * (mut_str.length - 1) if mut =~/^-[ACGT]/
-    mut = "+" << mut if ref == '-'
+      mut = "+" << mut if ref == '-'
     [pos, [mut]]
   end
 
@@ -1123,7 +1124,7 @@ end
     mod
   end
 
-  def self.string2hash(string)
+  def self.string2hash_old(string)
 
     options = {}
     string.split(/#/).each do |str|
@@ -1133,37 +1134,112 @@ end
         option, value = str, true
       end
 
-    option = option.sub(":",'').to_sym if option.chars.first == ':'
-    value  = value.sub(":",'').to_sym if String === value and value.chars.first == ':'
+      option = option.sub(":",'').to_sym if option.chars.first == ':'
+      value  = value.sub(":",'').to_sym if String === value and value.chars.first == ':'
 
-    if value == true
-      options[option] = option.to_s.chars.first != '!' 
-    else
-      options[option] = Thread.start do
-        $SAFE = 0;
-        case 
-        when value =~ /^(?:true|T)$/i
-          true
-        when value =~ /^(?:false|F)$/i
-          false
-        when Symbol === value
-          value
-        when (String === value and value =~ /^\/(.*)\/$/)
-          Regexp.new /#{$1}/
-        else
-          begin
-            Kernel.const_get value
-          rescue
-            begin  
-              raise if value =~ /[a-z]/ and defined? value
-              eval(value) 
-            rescue Exception
-              value 
+      if value == true
+        options[option] = option.to_s.chars.first != '!' 
+      else
+        options[option] = Thread.start do
+          $SAFE = 0;
+          case 
+          when value =~ /^(?:true|T)$/i
+            true
+          when value =~ /^(?:false|F)$/i
+            false
+          when Symbol === value
+            value
+          when (String === value and value =~ /^\/(.*)\/$/)
+            Regexp.new /#{$1}/
+          else
+            begin
+              Kernel.const_get value
+            rescue
+              begin  
+                raise if value =~ /[a-z]/ and defined? value
+                eval(value) 
+              rescue Exception
+                value 
+              end
             end
           end
-        end
-      end.value
+        end.value
+      end
     end
+
+    options
+  end
+
+  def self.string2hash(string)
+    options = {}
+
+    string.split('#').each do |str|
+      key, sep, value = str.partition "="
+
+      key = key[1..-1].to_sym if key[0] == ":"
+
+      options[key] = true and next if value.empty?
+      options[key] = value[1..-1].to_sym and next if value[0] == ":"
+      options[key] = Regexp.new(/#{value[1..-2]}/) and next if value[0] == "/" and value[-1] == "/"
+      options[key] = value[1..-2] and next if value =~ /^['"].*['"]$/
+      options[key] = value.to_i and next if value =~ /^\d+$/
+      options[key] = value.to_f and next if value =~ /^\d*\.\d+$/
+      options[key] = true and next if value == "true"
+      options[key] = false and next if value == "false"
+      options[key] = value and next 
+
+      options[key] = begin
+                       saved_safe = $SAFE
+                       $SAFE = 0
+                       eval(value)
+                     rescue Exception
+                       value
+                     ensure
+                       $SAFE = saved_safe
+                     end
+    end
+
+    return options
+
+    options = {}
+    string.split(/#/).each do |str|
+      if str.match(/(.*)=(.*)/)
+        option, value = $1, $2
+      else
+        option, value = str, true
+      end
+
+      option = option.sub(":",'').to_sym if option.chars.first == ':'
+      value  = value.sub(":",'').to_sym if String === value and value.chars.first == ':'
+
+      if value == true
+        options[option] = option.to_s.chars.first != '!' 
+      else
+        options[option] = Thread.start do
+          $SAFE = 0;
+          case 
+          when value =~ /^(?:true|T)$/i
+            true
+          when value =~ /^(?:false|F)$/i
+            false
+          when Symbol === value
+            value
+          when (String === value and value =~ /^\/(.*)\/$/)
+            Regexp.new /#{$1}/
+          else
+            begin
+              Kernel.const_get value
+            rescue
+              begin  
+                raise if value =~ /[a-z]/ and defined? value
+                eval(value) 
+              rescue Exception
+                value 
+              end
+            end
+          end
+        end.value
+      end
     end
 
     options

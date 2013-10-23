@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
 require 'rbbt-util'
+require 'rbbt/util/R'
 
-STDOUT.write Rbbt.share.lib.R["util.R"].find
+STDOUT.write File.join(R::LIB_DIR, "util.R")
+
