@@ -117,7 +117,7 @@ class Step
       Log.medium("Starting task #{task.name || ""} [#{Process.pid}]: #{ path }")
       set_info :status, :started
 
-      set_info :started, Time.now
+      set_info :started, (start_time = Time.now)
       
       set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 
@@ -154,7 +154,8 @@ class Step
             end
 
       set_info :status, :done
-      set_info :done, Time.now
+      set_info :done, (done_time = Time.now)
+      set_info :time_elapsed, done_time - start_time
       Log.medium("Completed task #{task.name || ""} [#{Process.pid}]: #{ path }")
       res
     end

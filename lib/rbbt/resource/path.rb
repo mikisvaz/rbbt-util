@@ -55,7 +55,7 @@ module Path
   end
 
   SEARCH_PATHS = {
-    :current => File.join(File.expand_path('.'), "{TOPLEVEL}", "{SUBPATH}"),
+    :current => File.join("{PWD}", "{TOPLEVEL}", "{SUBPATH}"),
     :user    => File.join(ENV['HOME'], ".{PKGDIR}", "{TOPLEVEL}", "{SUBPATH}"),
     :global  => File.join('/', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
     :local   => File.join('/usr/local', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
@@ -98,13 +98,19 @@ module Path
       raise "Did not recognize the 'where' tag: #{where}. Options: #{search_paths.keys}" unless search_paths.include? where
       libdir = where == :lib ? Path.caller_lib_dir(caller_lib) : ""
       libdir ||= ""
-      Path.setup search_paths[where].sub('{PKGDIR}', pkgdir).sub('{TOPLEVEL}', toplevel).sub('{SUBPATH}', subpath).sub('{LIBDIR}', libdir), @pkgdir, @resource
+      pwd = FileUtils.pwd
+      Path.setup search_paths[where].sub('{PKGDIR}', pkgdir).sub('{PWD}', pwd).sub('{TOPLEVEL}', toplevel).sub('{SUBPATH}', subpath).sub('{LIBDIR}', libdir), @pkgdir, @resource
     end
   end
 
   def find_all(caller_lib = nil, search_paths = nil)
     search_paths ||= SEARCH_PATHS
-    search_paths.keys.collect{|where| find(where, Path.caller_lib_dir, search_paths)}.select{|file| file.exists?}.uniq
+    search_paths = search_paths.dup
+
+    search_paths.keys.
+      collect{|where| find(where, Path.caller_lib_dir, search_paths)}.
+      compact.select{|file| file.exists?}.uniq
+
   end
 
   #{{{ Methods

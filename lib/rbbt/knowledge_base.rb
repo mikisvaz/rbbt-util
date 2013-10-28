@@ -226,15 +226,24 @@ class KnowledgeBase
   end
 
   #{{{ Query
+  
+  def setup(name, matches)
+    AssociationItem.setup matches, self, name, false
+  end
+
+  def all(name, options={})
+    repo = get_index name, options
+    setup name, repo.keys
+  end
 
   def children(name, entity)
     repo = get_index name
-    AssociationItem.setup repo.match(entity), self, name, false
+    setup(name, repo.match(entity))
   end
 
   def parents(name, entity)
     repo = get_index name
-    AssociationItem.setup repo.reverse.match(entity), self, name, true
+    setup(name, repo.reverse.match(entity))
   end
 
   def neighbours(name, entity)
@@ -256,7 +265,7 @@ class KnowledgeBase
       raise "Entities are not a Hash or an AnnotatedArray: #{Misc.fingerprint entities}"
     end
     repo = get_index name
-    AssociationItem.setup repo.subset_entities(entities), self, name, false
+    setup(name, repo.subset_entities(entities))
   end
 
   def translate(entities, type)

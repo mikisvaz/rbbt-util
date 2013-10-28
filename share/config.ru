@@ -3,9 +3,9 @@ require 'rbbt/resource'
 require 'rbbt'
 load Rbbt.etc['app.d/init.rb'].find
 
-class_name = File.basename(FileUtils.pwd)
+$class_name = class_name = File.basename(FileUtils.pwd)
 
-app = eval "class #{class_name} < Sinatra::Base; self end"
+$app = app = eval "class #{class_name} < Sinatra::Base; self end"
 
 app.class_eval do
   Log.info{"Loading: " << Rbbt.etc['app.d/base.rb'].find}

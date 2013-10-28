@@ -18,7 +18,7 @@ Rbbt.etc.entities.read.split("\n").each do |name|
   end
 end if Rbbt.etc.entities.exists?
 
-$annotation_repo = Rbbt.var.find(:lib).sinatra.annotation_repo.find
+$annotation_repo = Rbbt.var.find.sinatra.annotation_repo.find
 Rbbt.etc.persit_properties.yaml.each do |name,list|
   next if name.empty?
   mod = Kernel.const_get name

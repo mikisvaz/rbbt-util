@@ -37,8 +37,9 @@ module AssociationItem
   property :info => :array2single do
     fields = knowledge_base.index_fields(database)
     return [{}] * self.length if fields.nil? or fields.empty?
+
     value.collect{|v|
-      Hash[*v.zip(fields).flatten]
+      Hash[*fields.zip(v).flatten]
     }
   end
 end

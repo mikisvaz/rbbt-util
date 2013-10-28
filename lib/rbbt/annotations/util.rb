@@ -4,8 +4,13 @@ module Annotated
 
   def self.flatten(array)
     return array if array.nil?  or array.empty?
+    array.extend AnnotatedArray if Annotated === array
     return array.flatten if AnnotatedArray === array
-    return array if array.compact.collect{|e| e.info }.uniq.length > 1
+    begin
+      return array if array.compact.collect{|e| e.info }.uniq.length > 1
+    rescue
+      return array
+    end
     array.compact.first.annotate(array.flatten).tap{|a| a.extend AnnotatedArray }
   end
 

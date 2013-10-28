@@ -14,7 +14,7 @@ use Rack::Session::Cookie, :key => 'rack.session',
 
 
 #{{{ DIRECTORIES
-local_var = Rbbt.var.find
+local_var = Rbbt.var.find(:current)
 set :cache_dir           , local_var.sinatra.cache.find
 set :file_dir            , local_var.sinatra.files.find
 set :permalink_dir       , local_var.sinatra.permalink.find
