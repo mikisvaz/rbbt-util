@@ -161,7 +161,7 @@ end
 
 usage workflow, task if help
 
-name = options.delete(:name) || "Default"
+name = options.delete(:jobname) || "Default"
 
 # get job args
 sopt_option_string = SOPT_options(workflow, task)
