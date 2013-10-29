@@ -68,7 +68,7 @@ module Association
   
   def self.open_tsv(file, source, source_header, target, target_header, all_fields, options)
     fields = all_fields.dup
-    fields.delete source
+    fields.delete source 
     fields.delete target
     fields.unshift target
 
@@ -87,9 +87,11 @@ module Association
 
     tsv = case file
           when TSV
-            file.fields == field_headers ? 
-              file :
+            if file.fields == field_headers
+              file
+            else
               file.reorder(source, field_headers)
+            end
           else
             TSV.open(file, open_options)
           end
@@ -169,7 +171,7 @@ module Association
 
     target, target_header, orig_target_format = calculate_headers(key_field, fields, target_spec)
     target_format ||= orig_target_format 
-    target = (([key_field] + fields) - [source]).first if target.nil?
+    target = (key_field == source ? fields.first : (([key_field] + fields) - [source]).first) if target.nil?
     target = key_field if target == :key
     target_header ||= target
 
@@ -201,9 +203,9 @@ module Association
 
     source, source_header, source_format, target, target_header, target_format = specs(all_fields, options)
  
-    Log.info("Loading associations from: #{ Misc.fingerprint file }")
-    Log.info("sources: #{ [source, source_header, source_format].join(", ") }")
-    Log.info("targets: #{ [target, target_header, target_format].join(", ") }")
+    Log.low("Loading associations from: #{ Misc.fingerprint file }")
+    Log.low("sources: #{ [source, source_header, source_format].join(", ") }")
+    Log.low("targets: #{ [target, target_header, target_format].join(", ") }")
 
     tsv = open_tsv(file, source, source_header, target, target_header, all_fields, options)
 
@@ -229,8 +231,13 @@ module Association
 
       tsv.annotate(data)
       data.serializer = tsv.type if TokyoCabinet::HDB === data
-      data.merge! tsv
-      tsv.annotate data
+
+      tsv.with_unnamed do
+        tsv.each do |k,v|
+          next if v.nil?
+          data[k] = v
+        end
+      end
 
       data
     end
@@ -238,9 +245,9 @@ module Association
 
   #{{{ Index
 
-  def self.get_index(index_file, write = false)
-    Persist.open_tokyocabinet(index_file, write, :list, TokyoCabinet::BDB).tap{|r| r.unnamed = true; Association::Index.setup r }
-  end
+  #def self.get_index(index_file, write = false)
+  #  Persist.open_tokyocabinet(index_file, write, :list, TokyoCabinet::BDB).tap{|r| r.unnamed = true; Association::Index.setup r }
+  #end
 
   def self.index(file, options = {}, persist_options = {})
     options = {} if options.nil?

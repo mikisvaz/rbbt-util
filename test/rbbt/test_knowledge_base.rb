@@ -91,7 +91,6 @@ class TestKnowledgeBase < Test::Unit::TestCase
     found = Genomics.knowledge_base.identify :pina, gene
     p53_interactors = Misc.profile{ Genomics.knowledge_base.children(:pina, found).target_entity }
 
-    ddd p53_interactors.length
 
     Misc.profile do
       puts Genomics.knowledge_base.subset(:pina,{"Gene" => p53_interactors}).length
@@ -100,5 +99,13 @@ class TestKnowledgeBase < Test::Unit::TestCase
     #assert Genomics.knowledge_base.subset(:pina,{"Gene" => p53_interactors}).target_entities.name.include? "MDM2"
   end
 
+  def test_syndication
+    kb = KnowledgeBase.new Rbbt.tmp.test.kb2, "Hsa/jan2013"
+    kb.syndicate @kb, :genomics
+
+    gene = "TP53"
+    found = kb.identify "pina@genomics", gene
+    assert found =~ /ENSG/
+  end
 end
 

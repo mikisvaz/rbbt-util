@@ -45,6 +45,7 @@ class KnowledgeBase
  
   def register(name, file = nil, options = {}, &block)
     if block_given?
+      block.define_singleton_method(:filename) do name.to_s end
       Log.debug("Registering #{ name } from code block")
       @registry[name] = [block, options]
     else
@@ -53,9 +54,19 @@ class KnowledgeBase
     end
   end
 
+  def syndicate(kb, name)
+    kb.all_databases.each do |database|
+      db_name = [database, name] * "@"
+      register(db_name) do
+        kb.get_database(database)
+      end
+    end
+  end
+
   def all_databases
     (@indices.keys + @registry.keys).uniq
   end
+
 
   def description(name)
     @descriptions[name] ||= get_index(name).key_field.split("~")
@@ -100,6 +111,7 @@ class KnowledgeBase
   end
  
   def get_database(name, options = {})
+    options = Misc.add_defaults options, :persist_dir => dir.databases
     persist_options = Misc.pull_keys options, :persist
 
     file, registered_options = registry[name]
@@ -107,7 +119,7 @@ class KnowledgeBase
     raise "Repo #{ name } not found and not registered" if file.nil?
 
     @databases[name] ||= begin 
-                           Log.debug "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
+                           Log.low "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
                            Association.open(file, options, persist_options).
                              tap{|tsv| tsv.namespace = self.namespace}
                          end
@@ -115,6 +127,7 @@ class KnowledgeBase
 
  
   def get_index(name, options = {})
+    options = Misc.add_defaults options, :persist_dir => dir.indices
     persist_options = Misc.pull_keys options, :persist
 
     file, registered_options = registry[name]
@@ -122,7 +135,7 @@ class KnowledgeBase
     raise "Repo #{ name } not found and not registered" if file.nil?
 
     @indices[name] ||= begin 
-                           Log.debug "Opening index #{ name } from #{ Misc.fingerprint file }. #{options}"
+                           Log.low "Opening index #{ name } from #{ Misc.fingerprint file }. #{options}"
                            Association.index(file, options, persist_options).
                              tap{|tsv| tsv.namespace = self.namespace}
                          end

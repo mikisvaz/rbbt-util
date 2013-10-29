@@ -19,7 +19,7 @@ module Log
 
   WHITE, DARK, GREEN, YELLOW, RED = ["0;37m", "0m", "0;32m", "0;33m", "0;31m"].collect{|e| "\033[#{e}"}
 
-  SEVERITY_COLOR = [WHITE, GREEN, YELLOW, RED,WHITE, GREEN, YELLOW].collect{|e| "\033[#{e}"}
+  SEVERITY_COLOR = [WHITE, GREEN, YELLOW, RED, GREEN, YELLOW, ERROR].collect{|e| "\033[#{e}"}
 
   def self.log(message = nil, severity = MEDIUM, &block)
     message ||= block
