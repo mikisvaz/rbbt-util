@@ -118,7 +118,8 @@ class KnowledgeBase
     options = open_options.merge(registered_options || {}).merge(options)
     raise "Repo #{ name } not found and not registered" if file.nil?
 
-    @databases[name] ||= begin 
+    code = [name, Misc.hash2md5(options)] * "_"
+    @databases[code] ||= begin 
                            Log.low "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
                            Association.open(file, options, persist_options).
                              tap{|tsv| tsv.namespace = self.namespace}
