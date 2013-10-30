@@ -14,6 +14,12 @@ module Persist
     def self.cachedir
       @cachedir ||= Rbbt.var.cache.persistence 
     end
+
+    attr_accessor :lock_dir
+    
+    def lock_dir
+      @lock_dir ||= Rbbt.tmp.tsv_open_locks.find
+    end
   end
 
   MEMORY = {} unless defined? MEMORY
@@ -256,16 +262,24 @@ module Persist
           Log.low "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
           return nil if persist_options[:no_load]
           return load_file(path, type) 
-        else
-          Log.medium "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
         end
 
         begin
-          res = yield
-          Misc.lock(path) do
-            save_file(path, type, res)
+          lock_filename = Persist.persistence_path(path + '.persist', {:dir => Persist.lock_dir})
+          Misc.lock lock_filename  do
+            if is_persisted?(path, persist_options)
+              Log.low "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
+              return nil if persist_options[:no_load]
+              return load_file(path, type) 
+            end
+
+            Log.medium "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
+            res = yield
+            Misc.lock(path) do
+              save_file(path, type, res)
+            end
+            res
           end
-          res
         rescue
           Log.high "Error in persist. #{Open.exists?(path) ? "Erasing '#{ path }'" : ""}"
           FileUtils.rm path if Open.exists? path 
