@@ -118,8 +118,7 @@ module Association
 
     if source_final_format and source_field != source_final_format and
       Entity.formats[source_field] and
-      Entity.formats[source_field] == Entity.formats[source_final_format]
-
+      Entity.formats[source_final_format].all_formats.include? source_field
       Log.debug("Changing source format from #{tsv.key_field} to #{source_final_format}")
 
       tsv.with_unnamed do

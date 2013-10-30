@@ -6,12 +6,14 @@ module Entity
     attr_accessor :formats, :entity_property_cache
   end
 
+
   self.entity_property_cache = "var/entity_property"
   self.formats = {}
   
   UNPERSISTED_PREFIX = "entity_unpersisted_property_"
 
 
+  attr_accessor :all_formats
   def self.extended(base)
     base.extend Annotation
     Entity.formats[base.to_s] = base
@@ -27,6 +29,8 @@ module Entity
 
       def self.format=(formats)
         formats = [formats] unless Array === formats
+        self.all_formats ||= []
+        self.all_formats = self.all_formats.concat(formats).uniq
         formats.each do |format|
           Entity.formats[format] = self
         end

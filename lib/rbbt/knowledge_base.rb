@@ -57,14 +57,17 @@ class KnowledgeBase
   def syndicate(kb, name)
     kb.all_databases.each do |database|
       db_name = [database, name] * "@"
-      register(db_name) do
+      file, kb_options = kb.registry[database]
+      options = {}
+      options[:undirected] = true if kb_options and kb_options[:undirected]
+      register(db_name, nil, options) do
         kb.get_database(database)
       end
     end
   end
 
   def all_databases
-    (@indices.keys + @registry.keys).uniq
+    @registry.keys
   end
 
 
@@ -135,7 +138,8 @@ class KnowledgeBase
     options = open_options.merge(registered_options || {}).merge(options)
     raise "Repo #{ name } not found and not registered" if file.nil?
 
-    @indices[name] ||= begin 
+    code = [name, Misc.hash2md5(options)] * "_"
+    @indices[code] ||= begin 
                            Log.low "Opening index #{ name } from #{ Misc.fingerprint file }. #{options}"
                            Association.index(file, options, persist_options).
                              tap{|tsv| tsv.namespace = self.namespace}
