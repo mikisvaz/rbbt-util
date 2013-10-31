@@ -5,6 +5,14 @@ require 'rbbt/workflow/accessor'
 
 module Workflow
 
+  class << self
+    attr_accessor :autoinstall
+
+    def autoinstall
+      @autoload ||= ENV["RBBT_WORKFLOW_AUTOINSTALL"] == "true"
+    end
+  end
+
   def self.resolve_locals(inputs)
     inputs.each do |name, value|
       if value =~ /^local:(.*?):(.*)/ or 
@@ -78,9 +86,13 @@ module Workflow
       end
     end
 
-    return false if filename.nil? or not File.exists? filename
-    load_workflow_file filename
+    if filename and File.exists? filename
+      load_workflow_file filename
+    else
+      return false
+    end
   end
+
   def self.require_workflow(wf_name)
 
     # Already loaded
@@ -105,9 +117,11 @@ module Workflow
     # Load locally
 
     Log.info{"Loading workflow #{wf_name}"}
-    require_local_workflow(wf_name) || require_local_workflow(Misc.snake_case(wf_name)) || raise("Workflow not found or could not be loaded: #{ wf_name }")
+    require_local_workflow(wf_name) or 
+    require_local_workflow(Misc.snake_case(wf_name)) or 
+    (Workflow.autoinstall and `rbbt install workflow #{Misc.snake_case(wf_name)}` and require_local_workflow(Misc.snake_case(wf_name))) or
+    raise("Workflow not found or could not be loaded: #{ wf_name }")
   end
-
 
   attr_accessor :description
   attr_accessor :libdir, :workdir 

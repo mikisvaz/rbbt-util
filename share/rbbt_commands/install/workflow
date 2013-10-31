@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/workflow'
+
+workflow = ARGV[0]
+repo = ARGV[1]
+
+raise "No workflow specified" if workflow.nil?
+
+workflow_dir = Rbbt.etc.workflow_dir.exists? ? Rbbt.etc.workflow_dir.read.strip : Rbbt.workflows
+
+FileUtils.mkdir_p workflow_dir unless File.exists? workflow_dir
+
+Misc.in_dir(workflow_dir) do
+  if File.exists? workflow
+    `(cd #{ workflow }; git pull)`
+  else
+    if repo.nil?
+      repo_base_url = Rbbt.etc.workflow_repo.exists? ? Rbbt.etc.workflow_repo.read.strip : 'git@github.com:Rbbt-Workflows/'
+      repo = File.join(repo_base_url, Misc.snake_case(workflow) + '.git')
+    end
+    Log.warn "Cloning #{ repo }"
+    `git clone "#{repo}"`
+  end
+end
