@@ -60,8 +60,16 @@ class TestTSV < Test::Unit::TestCase
   end
 
   def test_libdir
-    assert File.exists? TestResource[].share.lib.R["util.R"].find :lib
-    assert File.exists? TestResource[].share.lib.R["util.R"].find 
+    assert File.exists? TestResource[].share.Rlib["util.R"].find :lib
+    assert File.exists? TestResource[].share.Rlib["util.R"].find 
+  end
+
+  def __test_server
+    require 'rbbt/sources/organism'
+    TmpFile.with_file do |tmp|
+      Organism.get_from_server("Hsa/jun2011/identifiers", tmp)
+      assert Open.read(tmp).length > 10000
+    end
   end
 
 end

@@ -3,19 +3,20 @@ require 'rbbt/util/log'
 require 'rbbt/resource/path'
  
 module Resource
-  def self.extended(base)
-    if not base.respond_to? :pkgdir
-      class << base
-        attr_accessor :pkgdir, :subdir, :resources, :rake_dirs
-      end
+  def self.remote_servers
+    @remote_servers = Rbbt.etc.file_servers.exists? ? Rbbt.etc.file_servers.yaml : {}
+  end
 
-      base.pkgdir = 'rbbt'
-      base.subdir = ''
-      base.resources = {}
-      base.rake_dirs = {}
-    end
+  def self.extended(base)
+    base.pkgdir = 'rbbt'
+    base.subdir = ''
+    base.resources = {}
+    base.rake_dirs = {}
+    base.remote_server = Resource.remote_servers[base.to_s]
     base
   end
+
+  attr_accessor :pkgdir, :subdir, :resources, :rake_dirs, :remote_server
 
   def root()
     Path.setup @subdir || "", @pkgdir, self
@@ -52,6 +53,20 @@ module Resource
     end
   end
 
+  def get_from_server(path, final_path)
+    url = File.join(remote_server, '/resource/', self.to_s, 'get_file')
+    url << "?" << Misc.hash2GET_params(:file => path, :create => false)
+    begin
+      Open.write(final_path, Open.read(url, :nocache => true))
+      return true
+    rescue
+      Log.warn "Could not retrieve (#{self.to_s}) #{ path } from #{ remote_server }"
+      Log.error $!.message
+      FileUtils.rm final_path if File.exists? final_path
+      return false
+    end
+  end
+
   def produce(path, force = false)
     case
     when @resources.include?(path)
@@ -68,6 +83,7 @@ module Resource
     if not File.exists? final_path or force
       Log.medium "Producing: #{ final_path }"
       Misc.lock final_path + '.produce' do
+        (remote_server and get_from_server(path, final_path)) or
         begin
           case type
           when :string

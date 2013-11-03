@@ -1,6 +1,7 @@
 require 'lockfile'
 require 'net/smtp'
 require 'digest/md5'
+require 'cgi'
 
 class Hash
   def chunked_values_at(keys, max = 5000)
