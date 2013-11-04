@@ -17,7 +17,7 @@ class KnowledgeBase
 
   attr_accessor :namespace, :dir, :indices, :registry, :format, :databases, :entity_options
   def initialize(dir, namespace = nil)
-    @dir = Path.setup dir
+    @dir = Path.setup(dir).find
 
     @namespace = namespace
     @format = IndiferentHash.setup({})
@@ -179,15 +179,18 @@ class KnowledgeBase
 
   #{{{ Annotate
   
-  def entity_options_for(type)
+  def entity_options_for(type, database_name = nil)
     options = entity_options[Entity.formats[type]] || {}
     options[:format] = @format[type] if @format.include? :type
     options = {:organism => namespace}.merge(options)
+    if database_name and (database = get_database(database_name)).entity_options
+      options = options.merge database.entity_options
+    end
     options
   end
 
-  def annotate(entities, type)
-    Misc.prepare_entity(entities, type, entity_options_for(type))
+  def annotate(entities, type, database = nil)
+    Misc.prepare_entity(entities, type, entity_options_for(type, database))
   end
 
   #{{{ Identify

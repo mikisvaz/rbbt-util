@@ -20,6 +20,7 @@ module Association
                      if File.exists?(reverse_filename)
                        new = Persist.open_tokyocabinet(reverse_filename, false, serializer, TokyoCabinet::BDB)
                      else
+                       FileUtils.mkdir_p File.basename(reverse_filename) unless File.exists?(File.basename(reverse_filename))
                        new = Persist.open_tokyocabinet(reverse_filename, true, serializer, TokyoCabinet::BDB)
                        new.write
                        through do |key, value|
@@ -28,7 +29,7 @@ module Association
                        end
                        annotate(new)
                        new.key_field = key_field.split("~").values_at(1,0,2).compact * "~"
-                       new.close
+                       new.read
                      end
 
                      new.unnamed = true
