@@ -18,7 +18,7 @@ Misc.in_dir(workflow_dir) do
   else
     if repo.nil?
       #repo_base_url = Rbbt.etc.workflow_repo.exists? ? Rbbt.etc.workflow_repo.read.strip : 'git@github.com:Rbbt-Workflows/'
-      repo_base_url = Rbbt.etc.workflow_repo.exists? ? Rbbt.etc.workflow_repo.read.strip : 'https://github.com/mikisvaz/'
+      repo_base_url = Rbbt.etc.workflow_repo.exists? ? Rbbt.etc.workflow_repo.read.strip : 'https://github.com/Rbbt-Workflows/'
       repo = File.join(repo_base_url, Misc.snake_case(workflow) + '.git')
     end
     Log.warn "Cloning #{ repo }"
