@@ -2,7 +2,7 @@
 register Sinatra::RbbtRESTMain
 register Sinatra::RbbtRESTEntity
 register Sinatra::RbbtRESTWorkflow
-register Sinatra::RbbtRESTFileServer
+register Sinatra::RbbtRESTFileServer # Remove to prevent serving files
 register Sinatra::RbbtRESTKnowledgeBase
 helpers Sinatra::RbbtMiscHelpers
 

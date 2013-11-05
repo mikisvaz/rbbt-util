@@ -67,10 +67,12 @@ module Association
   #{{{ Open
   
   def self.open_tsv(file, source, source_header, target, target_header, all_fields, options)
-    fields = all_fields.dup
+    fields = Misc.process_options options, :fields
+    fields ||= all_fields.dup
+
     fields.delete source 
     fields.delete target
-    fields.unshift target
+    fields.unshift target 
 
     open_options = options.merge({
       :persist => false,
@@ -156,21 +158,31 @@ module Association
     end
 
     if fields and all_fields
-      field_pos = fields.collect{|f| Fixnum === f ? f : fields.index(f) }
+      field_pos = fields.collect{|f| Fixnum === f ? f : all_fields.index(f) }
       fields = all_fields.values_at *field_pos
     else
-      fields = all_fields[1..-1] if all_fields
+      #fields = all_fields[1..-1] if all_fields
     end
 
-    source, source_header, orig_source_format = calculate_headers(key_field, fields, source_spec)
+    source, source_header, orig_source_format = calculate_headers(key_field, fields || all_fields, source_spec)
     source_format ||= orig_source_format 
     source = key_field if source.nil? 
     source = key_field if source == :key
     source_header ||= source
 
-    target, target_header, orig_target_format = calculate_headers(key_field, fields, target_spec)
+    target, target_header, orig_target_format = calculate_headers(key_field, fields || all_fields, target_spec)
     target_format ||= orig_target_format 
-    target = (key_field == source ? fields.first : (([key_field] + fields) - [source]).first) if target.nil?
+    if target.nil?
+      target = case
+               when fields
+                 fields.first
+               when key_field == source
+                 all_fields.first
+               else
+                 (([key_field] + all_fields) - [source]).first
+               end
+    end
+
     target = key_field if target == :key
     target_header ||= target
 
@@ -185,7 +197,7 @@ module Association
       target_format ||= format[_type] if format.include? _type 
     end
 
-    [source, source_header, source_format, target, target_header, target_format]
+    [source, source_header, source_format, target, target_header, target_format, fields || all_fields]
   end
 
   def self.load_tsv(file, options)
@@ -200,13 +212,13 @@ module Association
       key_field, *fields = all_fields = TSV.parse_header(file, options.merge(:fields => nil, :key_field => nil)).all_fields
     end
 
-    source, source_header, source_format, target, target_header, target_format = specs(all_fields, options)
+    source, source_header, source_format, target, target_header, target_format, fields = specs(all_fields, options)
  
     Log.low("Loading associations from: #{ Misc.fingerprint file }")
     Log.low("sources: #{ [source, source_header, source_format].join(", ") }")
     Log.low("targets: #{ [target, target_header, target_format].join(", ") }")
 
-    tsv = open_tsv(file, source, source_header, target, target_header, all_fields, options)
+    tsv = open_tsv(file, source, source_header, target, target_header, all_fields, options.merge(:fields => fields.dup))
 
     tsv = translate_tsv(tsv, source_format, target_format)
 

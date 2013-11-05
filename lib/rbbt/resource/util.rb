@@ -48,7 +48,7 @@ module Resource
 
       begin
         if not File.exists? File.join(opt_dir,'.post_install')
-          Open.write(File.join(opt_dir,'.post_install'),"#!/bin/bash\n")
+          #Open.write(File.join(opt_dir,'.post_install'),"#!/bin/bash\n")
         end
       rescue Exception
         Log.warn("Could not create default .post_install in #{ software_dir }")

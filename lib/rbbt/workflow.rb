@@ -71,7 +71,7 @@ module Workflow
     else
       case
         # Points to workflow file
-      when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb') or File.exists?(wf_name))
+      when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb'))
         filename = (wf_name =~ /\.?\//) ? wf_name : "./" << wf_name 
       when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
         dir = Rbbt.etc.workflow_dir.read.strip

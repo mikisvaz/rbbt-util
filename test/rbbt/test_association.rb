@@ -6,8 +6,8 @@ require 'rbbt/entity'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
 
-
-Workflow.require_workflow "TSVWorkflow"
+Workflow.require_workflow "Genomics"
+require 'rbbt/entity/gene'
 
 TEST_ASSOCIATIONS =<<-EOF
 #: :sep=" "#:namespace=Hsa/jan2013
