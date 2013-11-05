@@ -177,7 +177,7 @@ module Association
                when fields
                  fields.first
                when key_field == source
-                 all_fields.first
+                 all_fields[1]
                else
                  (([key_field] + all_fields) - [source]).first
                end
