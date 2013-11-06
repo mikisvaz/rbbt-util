@@ -9,6 +9,7 @@ Gem::Specification.new do |s|
   s.version = "5.5.17"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
+  s.require_paths = ["lib"]
   s.authors = ["Miguel Vazquez"]
   s.date = "2013-11-06"
   s.description = "Utilities for handling tsv files, caches, etc"
@@ -102,10 +103,9 @@ Gem::Specification.new do |s|
     "share/rbbt_commands/workflow/task"
   ]
   s.homepage = "http://github.com/mikisvaz/rbbt-util"
-  s.require_paths = ["lib"]
-  s.rubygems_version = "2.0.3"
+  s.rubygems_version = "2.2.0"
   s.summary = "Utilities for the Ruby Bioinformatics Toolkit (rbbt)"
-  s.test_files = ["test/rbbt/association/test_index.rb", "test/rbbt/resource/test_path.rb", "test/rbbt/test_annotations.rb", "test/rbbt/test_association.rb", "test/rbbt/test_entity.rb", "test/rbbt/test_fix_width_table.rb", "test/rbbt/test_knowledge_base.rb", "test/rbbt/test_persist.rb", "test/rbbt/test_resource.rb", "test/rbbt/test_tsv.rb", "test/rbbt/test_workflow.rb", "test/rbbt/tsv/test_accessor.rb", "test/rbbt/tsv/test_attach.rb", "test/rbbt/tsv/test_change_id.rb", "test/rbbt/tsv/test_filter.rb", "test/rbbt/tsv/test_index.rb", "test/rbbt/tsv/test_manipulate.rb", "test/rbbt/tsv/test_util.rb", "test/rbbt/util/test_chain_methods.rb", "test/rbbt/util/test_cmd.rb", "test/rbbt/util/test_colorize.rb", "test/rbbt/util/test_excel2tsv.rb", "test/rbbt/util/test_filecache.rb", "test/rbbt/util/test_misc.rb", "test/rbbt/util/test_open.rb", "test/rbbt/util/test_R.rb", "test/rbbt/util/test_simpleDSL.rb", "test/rbbt/util/test_simpleopt.rb", "test/rbbt/util/test_tmpfile.rb", "test/rbbt/workflow/test_soap.rb", "test/rbbt/workflow/test_step.rb", "test/rbbt/workflow/test_task.rb", "test/test_helper.rb", "test/test_rbbt.rb"]
+  s.test_files = ["test/rbbt/tsv/test_accessor.rb", "test/rbbt/tsv/test_index.rb", "test/rbbt/tsv/test_util.rb", "test/rbbt/tsv/test_filter.rb", "test/rbbt/tsv/test_attach.rb", "test/rbbt/tsv/test_manipulate.rb", "test/rbbt/tsv/test_change_id.rb", "test/rbbt/test_fix_width_table.rb", "test/rbbt/association/test_index.rb", "test/rbbt/test_association.rb", "test/rbbt/test_workflow.rb", "test/rbbt/workflow/test_step.rb", "test/rbbt/workflow/test_task.rb", "test/rbbt/workflow/test_soap.rb", "test/rbbt/resource/test_path.rb", "test/rbbt/test_tsv.rb", "test/rbbt/test_resource.rb", "test/rbbt/test_annotations.rb", "test/rbbt/test_entity.rb", "test/rbbt/test_knowledge_base.rb", "test/rbbt/test_persist.rb", "test/rbbt/util/test_filecache.rb", "test/rbbt/util/test_tmpfile.rb", "test/rbbt/util/test_excel2tsv.rb", "test/rbbt/util/test_simpleopt.rb", "test/rbbt/util/test_colorize.rb", "test/rbbt/util/test_misc.rb", "test/rbbt/util/test_open.rb", "test/rbbt/util/test_cmd.rb", "test/rbbt/util/test_chain_methods.rb", "test/rbbt/util/test_R.rb", "test/rbbt/util/test_simpleDSL.rb", "test/test_rbbt.rb", "test/test_helper.rb"]
 
   if s.respond_to? :specification_version then
     s.specification_version = 4
