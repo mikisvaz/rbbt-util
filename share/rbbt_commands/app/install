@@ -9,13 +9,15 @@ repo = ARGV[1]
 
 raise "No app specified" if app.nil?
 
-app_dir = Rbbt.etc.app_dir.exists? ? Rbbt.etc.app_dir.read.strip : Rbbt.apps
+app_dir = Rbbt.etc.app_dir.exists? ? Rbbt.etc.app_dir.read.strip : Rbbt.apps.find(:user)
 
 FileUtils.mkdir_p app_dir unless File.exists? app_dir
 
 Misc.in_dir(app_dir) do
   if File.exists? app
-    `(cd #{ app }; git pull)`
+    Misc.in_dir(app) do
+      `git pull`
+    end
   else
     if repo.nil?
       repo_base_url = Rbbt.etc.app_repo.exists? ? Rbbt.etc.app_repo.read.strip : 'https://github.com/Rbbt-Apps/'

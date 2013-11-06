@@ -192,9 +192,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    study=study{
     task
    }
-   install=install{
-    workflow
-   }
    file_server=file_server{
     list
     add
