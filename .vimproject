@@ -173,6 +173,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    workflow=workflow{
     task
     server
+    install
     remote=remote{
      list
      add
@@ -181,6 +182,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
    app=app{
     start
+    install
    }
    tsv=tsv{
     info
@@ -192,6 +194,11 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
    install=install{
     workflow
+   }
+   file_server=file_server{
+    list
+    add
+    remove
    }
   }
   Rlib=Rlib{

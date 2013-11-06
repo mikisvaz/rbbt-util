@@ -2,7 +2,7 @@
 
 require 'rbbt'
 
-url, workflow = ARGV
+workflow, url = ARGV
 url = File.join(url, workflow) unless url =~ /\/#{workflow}$/
 config_file = Rbbt.etc.remote_workflows
 remote_workflows = config_file.exists? ? config_file.yaml : {}

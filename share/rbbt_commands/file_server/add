@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+require 'rbbt'
+
+resource, url = ARGV
+
+config_file = Rbbt.etc.file_servers
+
+file_servers = config_file.exists? ? config_file.yaml : {}
+file_servers[resource] = url
+Open.write(config_file.find(:user), file_servers.to_yaml)
+

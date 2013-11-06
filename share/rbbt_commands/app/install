@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+require 'rbbt'
+require 'rbbt-util'
+require 'rbbt/workflow'
+
+app = ARGV[0]
+repo = ARGV[1]
+
+raise "No app specified" if app.nil?
+
+app_dir = Rbbt.etc.app_dir.exists? ? Rbbt.etc.app_dir.read.strip : Rbbt.apps
+
+FileUtils.mkdir_p app_dir unless File.exists? app_dir
+
+Misc.in_dir(app_dir) do
+  if File.exists? app
+    `(cd #{ app }; git pull)`
+  else
+    if repo.nil?
+      repo_base_url = Rbbt.etc.app_repo.exists? ? Rbbt.etc.app_repo.read.strip : 'https://github.com/Rbbt-Apps/'
+      repo = File.join(repo_base_url, app + '.git')
+    end
+    Log.warn "Cloning #{ repo }"
+    `git clone "#{repo}"`
+  end
+end

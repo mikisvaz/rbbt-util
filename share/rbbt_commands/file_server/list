@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+require 'rbbt'
+
+config_file = Rbbt.etc.file_servers
+raise "No file servers defined in #{Rbbt.etc.file_servers}" unless Rbbt.etc.file_servers.exists?
+config_file.yaml.sort_by{|k,v| k}.each do |resource, server|
+  puts [resource, server] * "\t"
+end
+
