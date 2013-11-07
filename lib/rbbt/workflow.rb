@@ -39,7 +39,7 @@ module Workflow
 
   def self.require_remote_workflow(wf_name, url)
     require 'rbbt/rest/client'
-    eval "Object::#{wf_name} = WorkflowRestClient.new '#{ url }', '#{wf_name}'"
+    eval "Object::#{wf_name} = WorkflowRESTWorkflowClient.new '#{ url }', '#{wf_name}'"
   end
 
   def self.load_workflow_file(filename)
