@@ -57,6 +57,20 @@ module Resource
     url = File.join(remote_server, '/resource/', self.to_s, 'get_file')
     url << "?" << Misc.hash2GET_params(:file => path, :create => false)
     begin
+      response = Net::HTTP.get_response(URI(url))
+
+      case response
+      when Net::HTTPSuccess then
+        Open.write(final_path, response.body)
+      when Net::HTTPRedirection then
+        location = response['location']
+        Log.debug("Feching directory from: #{location}. Into: #{final_path}")
+        Misc.in_dir final_path do
+          CMD.cmd('tar xvfz -', :in => Open.open(location))
+        end
+      else
+        raise "Response not understood: #{response.inspect}"
+      end
       Open.write(final_path, Open.read(url, :nocache => true))
       return true
     rescue

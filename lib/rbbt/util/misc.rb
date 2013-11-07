@@ -22,7 +22,6 @@ end
 module Misc
   class FieldNotFoundError < StandardError;end
 
-
   def self.correct_icgc_mutation(pos, ref, mut_str)
     mut = mut_str
     mut = '-' * (mut_str.length - 1) if mut =~/^-[ACGT]/

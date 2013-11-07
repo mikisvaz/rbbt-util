@@ -27,8 +27,13 @@ module Path
     Path.setup File.dirname(self), @pkgdir, @resource
   end
 
+  def directory?
+    return nil unless self.exists?
+    File.directory? self.find 
+  end
+
   def glob(pattern = '*')
-    exp = File.join(self.find, pattern)
+    exp = File.join(self.produce, pattern)
     Dir.glob(exp).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
   end
 
