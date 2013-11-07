@@ -67,6 +67,7 @@ module Resource
       when Net::HTTPRedirection then
         location = response['location']
         Log.debug("Feching directory from: #{location}. Into: #{final_path}")
+        FileUtils.mkdir_p final_path unless File.exists? final_path
         Misc.in_dir final_path do
           CMD.cmd('tar xvfz -', :in => Open.open(location))
         end
@@ -77,7 +78,7 @@ module Resource
     rescue
       Log.warn "Could not retrieve (#{self.to_s}) #{ path } from #{ remote_server }"
       Log.error $!.message
-      FileUtils.rm final_path if File.exists? final_path
+      FileUtils.rm_rf final_path if File.exists? final_path
       return false
     end
   end
