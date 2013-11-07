@@ -28,7 +28,8 @@ module Path
   end
 
   def glob(pattern = '*')
-    Dir.glob(File.join(Regexp.quote(self), pattern)).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
+    exp = File.join(self.find, pattern)
+    Dir.glob(exp).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
   end
 
   def [](name, orig = false)

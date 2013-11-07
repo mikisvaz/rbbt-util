@@ -1,0 +1,53 @@
+#!/usr/bin/env ruby
+
+require 'rbbt'
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow'
+
+workflow = ARGV.shift
+
+Workflow.require_workflow workflow
+dir = $command_dir = Kernel.const_get(workflow).libdir.share.rbbt_commands
+def commands(prev)
+    rbbt_command_dir = $command_dir
+
+    command_file_dirs = rbbt_command_dir.find_all
+    command_files = command_file_dirs.collect{|d| d.glob('*') }.flatten
+    command_files.collect{|p| File.basename(p) }.uniq.reject{|p| p =~ /\.desc$/}.sort
+end
+
+
+prev = []
+
+begin
+  while ARGV.any?
+    command = ARGV.shift
+    case
+    when File.directory?(dir[command].find)
+      prev << command
+      dir = dir[command]
+    when dir[command].exists?
+      load dir[command].find
+      exit 0
+    else
+      puts "Error: Command not understood"
+      puts
+      break
+    end
+  end
+end
+
+puts SOPT.doc
+
+puts "## COMMANDS"
+puts
+puts "Command:"
+puts 
+puts "  #{File.basename($0)} #{prev * " "}"
+puts 
+puts "Subcommands:"
+puts 
+commands(prev).each do |command|
+    puts "  " << command
+end
+    
