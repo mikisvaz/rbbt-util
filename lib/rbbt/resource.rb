@@ -1,6 +1,8 @@
 require 'rbbt/util/open'
 require 'rbbt/util/log'
 require 'rbbt/resource/path'
+require 'net/http'
+
  
 module Resource
   def self.remote_servers
