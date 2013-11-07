@@ -73,7 +73,6 @@ module Resource
       else
         raise "Response not understood: #{response.inspect}"
       end
-      Open.write(final_path, Open.read(url, :nocache => true))
       return true
     rescue
       Log.warn "Could not retrieve (#{self.to_s}) #{ path } from #{ remote_server }"
