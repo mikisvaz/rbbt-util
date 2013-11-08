@@ -32,7 +32,8 @@ module TSV
 
     identifiers, persist_input = Misc.process_options options, :identifiers, :persist
 
-    index = identifiers.index :target => format, :fields => [field], :persist => persist_input
+    fields = identifiers.all_fields.include?(field)? [field] : nil
+    index = identifiers.index :target => format, :fields => fields, :persist => persist_input
 
     orig_type = tsv.type 
     tsv = tsv.to_double if orig_type != :double

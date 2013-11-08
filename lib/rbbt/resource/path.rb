@@ -217,7 +217,9 @@ module Path
   end
 
   def all_fields
-    TSV.parse_header(self.open).all_fields
+    self.open do |stream|
+      TSV.parse_header(stream).all_fields
+    end
   end
 
   def identifier_file_path
