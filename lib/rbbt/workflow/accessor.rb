@@ -1,4 +1,4 @@
-require 'rbbt/util/open'
+require 'rbbt/util/open' 
 require 'yaml'
 
 class Step
@@ -20,11 +20,13 @@ class Step
   # {{{ INFO
 
   def info_file
-    @path + '.info'
+    @info_file ||= begin
+                     @path.nil? ? nil : @path + '.info'
+                   end
   end
 
   def info
-    return {} if not Open.exists? info_file
+    return {} if info_file.nil? or not Open.exists? info_file
     begin
       Misc.insist(2, 0.5) do
         Open.open(info_file) do |file|
@@ -38,7 +40,7 @@ class Step
   end
 
   def set_info(key, value)
-    return nil if @exec
+    return nil if @exec or info_file.nil?
     value = Annotated.purge value if defined? Annotated
     Open.lock(info_file) do
       i = info
@@ -57,7 +59,11 @@ class Step
   end
 
   def messages
-    info[:messages] || set_info(:messages, [])
+    if messages = info[:messages]
+      messages
+    else
+      set_info(:messages, []) if self.respond_to?(:set_info)
+    end
   end
 
   def message(message)
