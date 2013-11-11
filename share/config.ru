@@ -7,6 +7,12 @@ $class_name = class_name = File.basename(FileUtils.pwd)
 
 $app = app = eval "class #{class_name} < Sinatra::Base; self end"
 
+$LOAD_PATH.unshift('lib')
+
+#{{{ POST
+Log.info{"Loading: " << Rbbt.etc['app.d/pre.rb'].find if Rbbt.etc['app.d/pre.rb'].exists?}
+load Rbbt.etc['app.d/pre.rb'].find if Rbbt.etc['app.d/pre.rb'].exists?
+
 app.class_eval do
   Log.info{"Loading: " << Rbbt.etc['app.d/base.rb'].find}
   eval Rbbt.etc['app.d/base.rb'].read, nil, Rbbt.etc['app.d/base.rb'].find

@@ -1,7 +1,13 @@
 #{{{ MODULES AND HELPERS
+register Sinatra::RbbtRESTWorkflow
+if Rbbt.etc.workflows.find.exists?
+ Rbbt.etc.workflows.find.read.split("\n").each do |workflow|
+  Workflow.require_workflow workflow
+  add_workflow Kernel.const_get(workflow), true
+ end
+end
 register Sinatra::RbbtRESTMain
 register Sinatra::RbbtRESTEntity
-register Sinatra::RbbtRESTWorkflow
 register Sinatra::RbbtRESTFileServer # Remove to prevent serving files
 register Sinatra::RbbtRESTKnowledgeBase
 helpers Sinatra::RbbtMiscHelpers
@@ -24,11 +30,5 @@ set :favourite_maps_dir  , local_var.sinatra.favourite_maps
 
 #{{{ WORKFLOWS
 
-if Rbbt.etc.workflows.find.exists?
- Rbbt.etc.workflows.find.read.split("\n").each do |workflow|
-  Workflow.require_workflow workflow
-  add_workflow Kernel.const_get(workflow), true
- end
-end
 
 

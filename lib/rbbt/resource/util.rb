@@ -46,14 +46,6 @@ module Resource
         end
       end
 
-      begin
-        if not File.exists? File.join(opt_dir,'.post_install')
-          #Open.write(File.join(opt_dir,'.post_install'),"#!/bin/bash\n")
-        end
-      rescue Exception
-        Log.warn("Could not create default .post_install in #{ software_dir }")
-      end
-
       Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
         Misc.env_add('LD_LIBRARY_PATH',line.chomp)
         Misc.env_add('LD_RUN_PATH',line.chomp)
@@ -75,13 +67,18 @@ module Resource
         Misc.env_add('CLASSPATH', "#{File.expand_path(file)}")
       end
 
-      begin
-        File.chmod 0777, File.join(opt_dir, '.post_install')
-      rescue
-        Log.warn("Could not change permisions of .post_install in #{ software_dir }")
+      if File.exists?(File.join(opt_dir, '.post_install')) and File.directory?(File.join(opt_dir, '.post_install'))
+        Dir.glob(File.join(opt_dir, '.post_install','*')).each do |file|
+          begin
+            begin
+              File.chmod file
+              CMD.cmd(file) 
+            rescue
+              Log.warn("Could not execute #{ file }")
+            end
+          end
+        end
       end
-
-      CMD.cmd(File.join(opt_dir, '.post_install')) if File.exists? File.join(opt_dir, '.post_install')
     end
   end
 

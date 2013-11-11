@@ -92,7 +92,7 @@ module Resource
       rake_dir, content = rake_for(path)
       rake_dir = Path.setup(rake_dir.dup, self.pkgdir, self)
     else
-      raise "Resource #{ path } does not seem to be claimed: #{ self }"
+      raise "Resource is missing and does not seem to be claimed: #{ self } -- #{ path } "
     end
 
     final_path = path.respond_to?(:find) ? (force ? path.find(:user) : path.find) : path
