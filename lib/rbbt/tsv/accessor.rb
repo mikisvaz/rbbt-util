@@ -225,7 +225,7 @@ module TSV
   end
 
   def size
-    keys.length
+    super - ENTRY_KEYS.select{|k| self.include? k}.length
   end
 
   def length
@@ -550,6 +550,13 @@ end
   end
 
   def summary
+    key = nil
+    values = nil
+    self.each do |k, v|
+      key = k
+      values = v
+      break
+    end
     with_unnamed do
       <<-EOF
 Key field = #{key_field || "*No key field*"}
@@ -558,9 +565,8 @@ Type = #{type}
 Size = #{size}
 namespace = #{namespace}
 Example:
-  - #{key = keys.first}: #{Misc.fingerprint self[key] }
-
-  EOF
+  - #{key} -- #{Misc.fingerprint values }
+      EOF
     end
   end
 

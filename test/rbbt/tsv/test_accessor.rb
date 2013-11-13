@@ -85,6 +85,7 @@ row2    A    B    Id3
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/, :persist_serializer => :marshal, :persist => true)
+      assert_equal 2, tsv.size
       assert_equal filename, tsv.options[:filename]
     end
   end

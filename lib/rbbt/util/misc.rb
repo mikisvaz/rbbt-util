@@ -218,7 +218,7 @@ module Misc
       end
     when Array
       if (length = obj.length) > 10
-        "[#{length}-" <<  (obj.values_at(0,1, length / 2, -2, -1).collect{|e| fingerprint(e)} * ",") << "]"
+        "[#{length} --" <<  (obj.values_at(0,1, length / 2, -2, -1).collect{|e| fingerprint(e)} * ",") << "]"
       else
         "[" << (obj.collect{|e| fingerprint(e) } * ",") << "]"
       end
