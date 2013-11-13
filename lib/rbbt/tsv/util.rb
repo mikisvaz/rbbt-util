@@ -131,6 +131,29 @@ module TSV
     new
   end
 
+  def to_single
+    new = {}
+    case type
+    when :double
+      through do |k,v|
+        new[k] = v.first.first
+      end
+    when :flat
+      through do |k,v|
+        new[k] = v.first
+      end
+    when :single
+      self
+    when :list
+      through do |k,v|
+        new[k] = v.first
+      end
+    end
+    self.annotate(new)
+    new.type = :single
+    new
+  end
+
 
 
 end
