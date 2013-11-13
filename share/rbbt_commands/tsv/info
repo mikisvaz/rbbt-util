@@ -3,20 +3,26 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
+options = SOPT.get("-tc--tokyocabinet")
 
 file = ARGV.shift
 
-header = TSV.parse_header(Open.open(file))
+if options[:tokyocabinet]
+  tsv = Persist.open_tokyocabinet(file, false)
+  puts tsv.summary
+else
+  header = TSV.parse_header(Open.open(file))
 
-puts "File: #{ file }"
-puts "Key: #{header.key_field}"
-puts "Fields: "
-header.fields.each_with_index do |f,i|
-  puts "  - #{i + 1}: " << f
+  puts "File: #{ file }"
+  puts "Key: #{header.key_field}"
+  puts "Fields: "
+  header.fields.each_with_index do |f,i|
+    puts "  - #{i + 1}: " << f
+  end
+  puts "Rows: #{`wc -l #{ file }|cut -f 1 -d' '`}"
+  puts "First line:"
+  parts = []
+  header.first_line.split(header.sep).each_with_index{|p,i| parts << "(#{i}) #{p}"}
+  puts parts * "\t"
 end
-puts "Rows: #{`wc -l #{ file }|cut -f 1 -d' '`}"
-puts "First line:"
-parts = []
-header.first_line.split(header.sep).each_with_index{|p,i| parts << "(#{i}) #{p}"}
-puts parts * "\t"
 

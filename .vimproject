@@ -10,12 +10,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   rbbt_Rutil.rb
   rbbt_dangling_locks.rb
   rbbt_exec.rb
-  rbbt_monitor.rb
   rbbt_query.rb
-  run_workflow.rb
-  show_analysis.rb
-  tchash.rb
-  tsv.rb
  }
  lib=lib{
   rbbt.rb
@@ -175,6 +170,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     server
     install
     cmd
+    monitor
     remote=remote{
      list
      add
@@ -182,6 +178,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     }
    }
    app=app{
+    template
     start
     install
    }

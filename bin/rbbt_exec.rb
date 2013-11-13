@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 
-
 code_file = ARGV[0]
 output = ARGV[1]
 

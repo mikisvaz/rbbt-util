@@ -1,17 +1,31 @@
+#!/usr/bin/env ruby
+
 require 'rbbt'
 require 'rbbt/resource'
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-h--host*:-f--finder"
+options[:Port] ||= options[:port]
+
+file = ARGV.shift
 
 load Rbbt.etc['app.d/init.rb'].find
 
-$class_name = class_name = File.basename(FileUtils.pwd)
+$class_name = class_name = "SingleTemplate"
 
 $app = app = eval "class #{class_name} < Sinatra::Base; self end"
 
-$LOAD_PATH.unshift('lib')
+#$LOAD_PATH.unshift('lib')
 
 #{{{ PRE
 Log.info{"Loading: " << Rbbt.etc['app.d/pre.rb'].find if Rbbt.etc['app.d/pre.rb'].exists?}
 load Rbbt.etc['app.d/pre.rb'].find if Rbbt.etc['app.d/pre.rb'].exists?
+
+app.get '/' do
+  file = file.sub(/\.haml/,'')
+  template_render(file)
+end
 
 #{{{ BASE
 app.class_eval do
@@ -40,6 +54,13 @@ load Rbbt.etc['app.d/post.rb'].find if Rbbt.etc['app.d/post.rb'].exists?
 #{{{ RUN
 $title = class_name
 require 'rack'
-use Rack::Deflater
-run app
 
+ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
+ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
+
+RbbtRESTHelpers.template_resources.unshift Path.setup(File.expand_path(File.dirname(file)))
+
+app.port = options[:port] if options[:port]
+app.server = options[:server] if options[:server]
+app.environment = options[:environment] if options[:environment]
+app.run!
