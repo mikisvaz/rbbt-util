@@ -1,11 +1,14 @@
 #{{{ MODULES AND HELPERS
+
 register Sinatra::RbbtRESTWorkflow
+
 if Rbbt.etc.workflows.find.exists?
  Rbbt.etc.workflows.find.read.split("\n").each do |workflow|
   Workflow.require_workflow workflow
   add_workflow Kernel.const_get(workflow), true
  end
 end
+
 register Sinatra::RbbtRESTMain
 register Sinatra::RbbtRESTEntity
 register Sinatra::RbbtRESTFileServer # Remove to prevent serving files
@@ -13,6 +16,7 @@ register Sinatra::RbbtRESTKnowledgeBase
 helpers Sinatra::RbbtMiscHelpers
 
 #{{{ SESSIONS
+
 use Rack::Session::Cookie, :key => 'rack.session',
   :path => '/',
   :expire_after => 2592000,
