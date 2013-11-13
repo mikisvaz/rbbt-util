@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.date = "2013-11-13"
   s.description = "Utilities for handling tsv files, caches, etc"
   s.email = "miguel.vazquez@cnio.es"
-  s.executables = ["tsv.rb", "tchash.rb", "run_workflow.rb", "rbbt_query.rb", "rbbt_exec.rb", "rbbt_Rutil.rb", "rbbt_monitor.rb", "rbbt", "rbbt_dangling_locks.rb"]
+  s.executables = ["rbbt_query.rb", "rbbt_exec.rb", "rbbt_Rutil.rb", "rbbt", "rbbt_dangling_locks.rb"]
   s.extra_rdoc_files = [
     "LICENSE",
     "README.rdoc"
