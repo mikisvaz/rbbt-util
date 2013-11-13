@@ -14,7 +14,12 @@ workflow_dir = Rbbt.etc.workflow_dir.exists? ? Rbbt.etc.workflow_dir.read.strip 
 FileUtils.mkdir_p workflow_dir unless File.exists? workflow_dir
 
 Misc.in_dir(workflow_dir) do
-  if File.exists? workflow
+  case
+  when File.exists? Misc.snake_case(workflow)
+    Misc.in_dir(Misc.snake_case(workflow)) do
+      `git pull`
+    end
+  when File.exists? workflow
     Misc.in_dir(workflow) do
       `git pull`
     end

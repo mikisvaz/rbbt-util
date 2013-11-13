@@ -6,7 +6,7 @@ require 'rbbt/util/simpleopt'
 require 'rbbt/workflow/step'
 require 'rbbt/util/misc'
 
-options = SOPT.get("-l--list:-z--zombies:-e--errors:-c--clean:-n--name:-a--all:-w--wipe:-f--file*:-q--quick")
+options = SOPT.get("-l--list:-z--zombies:-e--errors:-c--clean:-n--name:-a--all:-w--wipe:-f--file*:-q--quick:-d--directory*")
 
 YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
 
@@ -105,22 +105,26 @@ def clean_jobs(options)
   end
 end
 
-
-
 $name = options.delete :name
 $quick = options.delete :quick
-case
-when (options[:clean] and not options[:list])
-  if options[:file]
-    remove_job options[:file]
+old_dir = Dir.pwd
+begin
+  Dir.chdir options[:directory] if options[:directory]
+  case
+  when (options[:clean] and not options[:list])
+    if options[:file]
+      remove_job options[:file]
+    else
+      clean_jobs options
+    end
   else
-    clean_jobs options
-  end
-else
-  if options[:file]
-    info = Step::INFO_SERIALIAZER.load(Open.read(options[:file], :mode => 'rb'))
-    print_job options[:file], info
+    if options[:file]
+      info = Step::INFO_SERIALIAZER.load(Open.read(options[:file], :mode => 'rb'))
+      print_job options[:file], info
   else
     list_jobs options
   end
+  end
+ensure
+  Dir.chdir old_dir
 end
