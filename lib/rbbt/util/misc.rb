@@ -84,36 +84,67 @@ module Misc
     [colors, used]
   end
 
+  #def self.collapse_ranges_old(ranges)
+  #  processed = []
+  #  last = nil
+  #  ranges.sort_by{|range| range.begin }.each do |range|
+  #    rbegin = range.begin
+  #    rend = range.end
+  #    if last.nil? or rbegin > last
+  #      processed << range
+  #      last = rend
+  #    else
+  #     new_processed = []
+  #      processed.each do |processed_range|
+  #        if processed_range.end < rbegin
+  #          new_processed << processed_range
+  #        else
+  #          eend = [rend, processed_range.end].max
+  #          new_processed << (processed_range.begin..eend)
+  #          break
+  #        end
+  #      end
+  #      processed = new_processed
+  #      last = rend if rend > last
+  #    end
+  #  end
+  #
+  #  processed
+  #end
+
   def self.collapse_ranges(ranges)
     processed = []
     last = nil
+    final = []
     ranges.sort_by{|range| range.begin }.each do |range|
-      if last.nil? or range.begin > last
-        processed << range
-        last = range.end
+      rbegin = range.begin
+      rend = range.end
+      if last.nil? or rbegin > last
+        processed << [rbegin, rend]
+        last = rend
       else
-        new_processed = []
-        processed.each do |processed_range|
-          if processed_range.end < range.begin
-            new_processed << processed_range
+       new_processed = []
+        processed.each do |pbegin,pend|
+          if pend < rbegin
+            final << [pbegin, pend]
           else
-            eend = [range.end, processed_range.end].max
-            new_processed << (processed_range.begin..eend)
+            eend = [rend, pend].max
+            new_processed << [pbegin, eend]
             break
           end
         end
         processed = new_processed
-        last = range.end if range.end > last
+        last = rend if rend > last
       end
     end
 
-    processed
+    final.concat processed
+    final.collect{|b,e| (b..e)}
   end
 
   def self.total_length(ranges)
     Misc.collapse_ranges(ranges).inject(0) do |total,range| total += range.end - range.begin + 1 end
   end
-
 
   def self.random_sample_in_range(total, size)
     p = Set.new
