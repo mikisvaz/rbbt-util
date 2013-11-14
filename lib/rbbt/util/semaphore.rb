@@ -66,8 +66,11 @@ void post_semaphore(char* name){
       pids = elems.collect do |elem| 
         Process.fork do 
           RbbtSemaphore.wait_semaphore(file)
-          yield elem
-          RbbtSemaphore.post_semaphore(file)
+          begin
+            yield elem
+          ensure
+            RbbtSemaphore.post_semaphore(file)
+          end
         end
       end
       pids.each do |pid| Process.waitpid pid end
