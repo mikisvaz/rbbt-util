@@ -3,12 +3,16 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("-tc--tokyocabinet")
+options = SOPT.get("-tch--tokyocabinet:-tcb--tokyocabinet_bd")
 
 file = ARGV.shift
 
-if options[:tokyocabinet]
+case
+when options[:tokyocabinet]
   tsv = Persist.open_tokyocabinet(file, false)
+  puts tsv.summary
+when options[:tokyocabinet_bd]
+  tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
   puts tsv.summary
 else
   header = TSV.parse_header(Open.open(file))
