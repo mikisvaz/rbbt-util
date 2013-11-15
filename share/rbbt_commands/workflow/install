@@ -15,17 +15,16 @@ FileUtils.mkdir_p workflow_dir unless File.exists? workflow_dir
 
 Misc.in_dir(workflow_dir) do
   case
-  when File.exists? Misc.snake_case(workflow)
+  when File.exists?(Misc.snake_case(workflow))
     Misc.in_dir(Misc.snake_case(workflow)) do
       `git pull`
     end
-  when File.exists? workflow
+  when File.exists?(workflow)
     Misc.in_dir(workflow) do
       `git pull`
     end
   else
     if repo.nil?
-      #repo_base_url = Rbbt.etc.workflow_repo.exists? ? Rbbt.etc.workflow_repo.read.strip : 'git@github.com:Rbbt-Workflows/'
       repo_base_url = Rbbt.etc.workflow_repo.exists? ? Rbbt.etc.workflow_repo.read.strip : 'https://github.com/Rbbt-Workflows/'
       repo = File.join(repo_base_url, Misc.snake_case(workflow) + '.git')
     end
