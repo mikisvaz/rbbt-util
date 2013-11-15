@@ -2,22 +2,27 @@ require 'rbbt/resource/util'
 require 'yaml'
 
 module Path
-  attr_accessor :resource, :pkgdir
+  attr_accessor :resource, :pkgdir, :search_paths
 
-  def self.setup(string, pkgdir = nil, resource = nil)
+  def self.setup(string, pkgdir = nil, resource = nil, search_paths = nil)
     string.extend Path
     string.pkgdir = pkgdir || 'rbbt'
     string.resource = resource
+    string.search_paths = search_paths
     string
   end
 
+  def sub(*args)
+    self.annotate super(*args)
+  end
+
   def annotate(name)
-    Path.setup name.to_s, @pkgdir, @resource
+    Path.setup name.to_s, @pkgdir, @resource, @search_paths
   end
 
   def join(name)
     if self.empty?
-      self.annotate name.to_s
+      self.annotate name.to_s.dup
     else
       self.annotate File.join(self, name.to_s)
     end
@@ -77,9 +82,9 @@ module Path
     end
   end
 
-  def find(where = nil, caller_lib = nil, search_paths = nil)
-    where = search_paths[:default] if where == :default
-    search_paths ||= SEARCH_PATHS
+  def find(where = nil, caller_lib = nil, paths = nil)
+    paths = (self.search_paths || SEARCH_PATHS).merge(paths || {})
+    where = paths[:default] if where == :default
     return self if located?
     if self.match(/(.*?)\/(.*)/)
       toplevel, subpath = self.match(/(.*?)\/(.*)/).values_at 1, 2
@@ -91,22 +96,28 @@ module Path
     if where.nil?
       %w(current user local global lib).each do |w| 
         w = w.to_sym
-        next unless search_paths.include? w
-        path = find(w, caller_lib, search_paths)
+        next unless paths.include? w
+        path = find(w, caller_lib, paths)
         return path if File.exists? path
       end
-      if search_paths.include? :default
-        find((search_paths[:default] || :user), caller_lib, search_paths)
+      if paths.include? :default
+        find((paths[:default] || :user), caller_lib, paths)
       else
-        raise "Path '#{ path }' not found, and no default specified in search paths: #{search_paths.inspect}"
+        raise "Path '#{ path }' not found, and no default specified in search paths: #{paths.inspect}"
       end
     else
       where = where.to_sym
-      raise "Did not recognize the 'where' tag: #{where}. Options: #{search_paths.keys}" unless search_paths.include? where
+      raise "Did not recognize the 'where' tag: #{where}. Options: #{paths.keys}" unless paths.include? where
       libdir = where == :lib ? Path.caller_lib_dir(caller_lib) : ""
       libdir ||= ""
       pwd = FileUtils.pwd
-      Path.setup search_paths[where].sub('{PKGDIR}', pkgdir).sub('{PWD}', pwd).sub('{TOPLEVEL}', toplevel).sub('{SUBPATH}', subpath).sub('{LIBDIR}', libdir), @pkgdir, @resource
+      self.annotate paths[where].
+        sub('{PKGDIR}', pkgdir).
+        sub('{PWD}', pwd).
+        sub('{TOPLEVEL}', toplevel).
+        sub('{SUBPATH}', subpath).
+        sub('{PATH}', self).
+        sub('{LIBDIR}', libdir) #, @pkgdir, @resource, @search_paths
     end
   end
 
