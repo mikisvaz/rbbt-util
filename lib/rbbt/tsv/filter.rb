@@ -269,7 +269,7 @@ module Filtered
   end
 
   def size
-    keys.length
+    filters.empty? ? super : filters.collect{|f| f.ids.length }.min
   end
 
 end
