@@ -2,12 +2,11 @@
 
 register Sinatra::RbbtRESTWorkflow
 
-if Rbbt.etc.workflows.find.exists?
- Rbbt.etc.workflows.find.read.split("\n").each do |workflow|
+Rbbt.etc.workflows.find.read.split("\n").each do |workflow|
+  next if workflow.empty?
   Workflow.require_workflow workflow
   add_workflow Kernel.const_get(workflow), true
- end
-end
+end if Rbbt.etc.workflows.find.exists?
 
 register Sinatra::RbbtRESTMain
 register Sinatra::RbbtRESTEntity

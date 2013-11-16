@@ -268,6 +268,10 @@ module Filtered
     filters.pop.add_unsaved if filters.any?
   end
 
+  def size
+    keys.length
+  end
+
 end
 
 module TSV

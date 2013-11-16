@@ -5,8 +5,8 @@ Rbbt.etc.requires.read.split("\n").each do |file|
 end if Rbbt.etc.requires.exists?
 
 
-Entity.entity_list_cache = Rbbt.var.find.sinatra.entity_lists
-Entity.entity_map_cache = Rbbt.var.find.sinatra.entity_maps
+Entity.entity_list_cache     = Rbbt.var.find.sinatra.entity_lists
+Entity.entity_map_cache      = Rbbt.var.find.sinatra.entity_maps
 Entity.entity_property_cache = Rbbt.var.find.sinatra.entity_properties
 
 Rbbt.etc.entities.read.split("\n").each do |name|
