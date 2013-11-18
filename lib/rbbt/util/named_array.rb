@@ -28,7 +28,7 @@ module NamedArray
     return entity unless defined? Entity
     template = entity_templates[field]
     entity_templates ||= {}
-    if template
+    if template and template.respond_to?(:annotate)
       entity = template.annotate(entity.frozen? ? entity.dup : entity)
       entity.extend AnnotatedArray if Array === entity
       entity
@@ -37,7 +37,7 @@ module NamedArray
         entity
       else
         template = Misc.prepare_entity("ENTITY_TEMPLATE", field, options)
-        if Annotated === template
+        if template.respond_to?(:annotate)
           entity_templates[field] = template
           entity = template.annotate(entity.frozen? ? entity.dup : entity)
           entity.extend AnnotatedArray if Array === entity

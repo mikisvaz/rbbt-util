@@ -77,7 +77,7 @@ void post_semaphore(char* name){
         pids.each do |pid| Process.waitpid pid end
       rescue Exception
         Log.error "Killing children: #{pids.sort * ", " }"
-        pids.each do |pid| begin Process.kill "INT", pid; rescue; end; RbbtSemaphore.post_semaphore(file) end
+        pids.each do |pid| begin Process.kill("INT", pid);  RbbtSemaphore.post_semaphore(file); rescue; end; end
         Log.error "Ensuring children are dead: #{pids.sort * ", " }"
         pids.each do |pid| begin Process.waitpid pid; rescue; end; end
       end
