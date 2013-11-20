@@ -154,7 +154,7 @@ module CMD
 
         STDOUT.sync = STDERR.sync = true
         
-        exec(cmd)
+        exec(ENV, cmd)
 
         exit(-1)
       rescue Exception

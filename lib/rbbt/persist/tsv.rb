@@ -182,7 +182,7 @@ module Persist
 
              if is_persisted? path and not persist_options[:update]
                Log.debug "TSV persistence up-to-date: #{ path }"
-               lock_filename = Persist.persistence_path(path, {:dir => Rbbt.tmp.tsv_open_locks.find})
+               lock_filename = Persist.persistence_path(path, {:dir => TSV.lock_dir})
                return Misc.lock(lock_filename) do open_tokyocabinet(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB); end
              else
                Log.medium "TSV persistence creating: #{ path }"

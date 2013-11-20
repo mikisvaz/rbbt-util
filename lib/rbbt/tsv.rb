@@ -123,9 +123,10 @@ module TSV
     if TokyoCabinet::HDB === data and parser.straight and
       data.close
       begin
-        CMD.cmd('tchmgr', :log => false)
+        bin = 'tchmgr'
+        CMD.cmd("#{bin} version", :log => false)
         FileUtils.mkdir_p File.dirname(data.persistence_path)
-        CMD.cmd("tchmgr importtsv '#{data.persistence_path}'", :in => stream, :log => false, :dont_close_in => true)
+        CMD.cmd("#{bin} importtsv '#{data.persistence_path}'", :in => stream, :log => false, :dont_close_in => true)
       rescue
         Log.debug("tchmgr importtsv failed for: #{data.persistence_path}")
       end
