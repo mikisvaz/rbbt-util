@@ -209,6 +209,7 @@ module Persist
         yield data
       end
     rescue Exception
+      Log.error "Captured error during persist_tsv. Erasing: #{path}"
       FileUtils.rm path if path and File.exists? path
       raise $!
     ensure
