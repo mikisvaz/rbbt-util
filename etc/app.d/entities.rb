@@ -35,6 +35,6 @@ $annotation_repo = Rbbt.var.find.sinatra.annotation_repo.find
      persist prop, type, options
    end
   end
-end if Rbbt.etc.persit_properties.exists?
+end if Rbbt.etc.persist_properties.exists?
 
 
