@@ -259,7 +259,7 @@ module Persist
       else
 
         if is_persisted?(path, persist_options)
-          Log.low "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
+          Log.low "Persist up-to-date: #{ path } - #{Misc.fingerprint persist_options}"
           return nil if persist_options[:no_load]
           return load_file(path, type) 
         end
@@ -268,7 +268,7 @@ module Persist
           lock_filename = Persist.persistence_path(path + '.persist', {:dir => Persist.lock_dir})
           Misc.lock lock_filename  do
             if is_persisted?(path, persist_options)
-              Log.low "Persist up-to-date: #{ path } - #{persist_options.inspect[0..100]}"
+              Log.low "Persist up-to-date (suddenly): #{ path } - #{Misc.fingerprint persist_options}"
               return nil if persist_options[:no_load]
               return load_file(path, type) 
             end

@@ -43,7 +43,7 @@ module AssociationItem
     }
   end
 
-  def self.incidence(pairs)
+  def self.incidence(pairs, key_field = nil)
     matrix = {}
     targets = []
     sources = []
@@ -64,6 +64,6 @@ module AssociationItem
       matrix[s] = hash.values_at(*targets)
     end
 
-    defined?(TSV)? TSV.setup(matrix, :fields => targets, :type => :list) : matrix
+    defined?(TSV)? TSV.setup(matrix, :key_field => (key_field || "Source") , :fields => targets, :type => :list) : matrix
   end
 end
