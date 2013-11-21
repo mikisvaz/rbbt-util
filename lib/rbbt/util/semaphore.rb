@@ -73,7 +73,7 @@ void post_semaphore(char* name){
               ensure
                 RbbtSemaphore.post_semaphore(file)
               end
-            rescue
+            rescue Interrupt
               Log.error "Process #{Process.pid} was aborted"
             end
           end
