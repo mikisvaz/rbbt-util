@@ -1372,18 +1372,19 @@ end
   end
 end
 
-class RBBTError < StandardError
-  attr_accessor :info
-
-  alias old_to_s to_s
-  def to_s
-    str = old_to_s.dup
-    if info
-      str << "\n" << "Additional Info:\n---\n" << info << "---"
-    end
-    str
-  end
-end
+#TODO: REMOVE
+#class RBBTError < StandardError
+#  attr_accessor :info
+#
+#  alias old_to_s to_s
+#  def to_s
+#    str = old_to_s.dup
+#    if info
+#      str << "\n" << "Additional Info:\n---\n" << info << "---"
+#    end
+#    str
+#  end
+#end
 
 module IndiferentHash
 

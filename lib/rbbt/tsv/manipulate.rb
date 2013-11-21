@@ -169,6 +169,7 @@ module TSV
 
     each do |key, value|
       progress_monitor.tick if progress_monitor
+      next if value.nil?
 
       keys, value = traverser.process(key, value)
       

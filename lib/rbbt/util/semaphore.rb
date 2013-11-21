@@ -66,18 +66,23 @@ void post_semaphore(char* name){
       begin
         pids = elems.collect do |elem| 
           Process.fork do 
-            RbbtSemaphore.wait_semaphore(file)
             begin
-              yield elem
-            ensure
-              RbbtSemaphore.post_semaphore(file)
+              RbbtSemaphore.wait_semaphore(file)
+              begin
+                yield elem
+              ensure
+                RbbtSemaphore.post_semaphore(file)
+              end
+            rescue
+              Log.error "Process #{Process.pid} was aborted"
             end
           end
         end
         pids.each do |pid| Process.waitpid pid end
       rescue Exception
         Log.error "Killing children: #{pids.sort * ", " }"
-        pids.each do |pid| begin Process.kill("INT", pid);  RbbtSemaphore.post_semaphore(file); rescue; end; end
+        pids.each do |pid| begin Process.kill("INT", pid); rescue; end; end
+        pids.each do |pid| begin RbbtSemaphore.post_semaphore(file); rescue; end; end
         Log.error "Ensuring children are dead: #{pids.sort * ", " }"
         pids.each do |pid| begin Process.waitpid pid; rescue; end; end
       end

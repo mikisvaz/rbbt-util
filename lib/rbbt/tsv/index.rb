@@ -31,7 +31,7 @@ module TSV
           new = {} 
 
           new_key_field, new_fields = through target, fields, true do |key, values|
-            next if key.empty?
+            next if key.empty? 
             if type == :single
               values = [values]
               values.unshift key
