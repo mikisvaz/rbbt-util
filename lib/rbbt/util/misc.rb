@@ -1,6 +1,7 @@
 require 'lockfile'
 require 'net/smtp'
 require 'digest/md5'
+require 'narray'
 require 'cgi'
 
 class Hash
@@ -477,7 +478,6 @@ end
   }
 
   def self.fast_align(reference, sequence)
-    require 'narray'
     init_gap = -1
     gap = -2
     diff = -2
@@ -487,7 +487,6 @@ end
     rows = reference.length + 1
 
     a = NArray.int(cols, rows)
-
 
     for spos in 0..cols-1 do a[spos, 0] = spos * init_gap end
     for rpos in 0..rows-1 do a[0, rpos] = rpos * init_gap end
@@ -905,7 +904,8 @@ end
 
     res = nil
 
-    lockfile = Lockfile.new(File.expand_path(file + '.lock'))
+    lock_path = File.expand_path(file + '.lock')
+    lockfile = Lockfile.new(lock_path)
 
     begin
       if File.exists? lockfile and
@@ -917,15 +917,21 @@ end
       end
     rescue
       Log.warn("Error checking lockfile #{lockfile}: #{$!.message}. Removing. Content: #{begin Open.read(lockfile) rescue "Could not open file" end}")
-      FileUtils.rm lockfile if File.exists? lockfile 
+      FileUtils.rm lockfile if File.exists?(lockfile)
     end
 
-    lockfile.lock do 
-      res = yield file, *args
+    begin
+      lockfile.lock do 
+        res = yield file, *args
+      end
+    rescue Interrupt
+      Log.error "Process #{Process.pid} interrupted while in lock: #{ lock_path }"
+      raise $!
     end
 
     res
   end
+  
 
   LOCK_REPO_SERIALIZER=Marshal
 
@@ -1011,31 +1017,31 @@ end
     end
   end
 
-  def self.sensiblewrite(path, content)
+  def self.sensiblewrite(path, content = nil)
+    return if File.exists? path
     Misc.lock path + '.sensible_write' do
       if not File.exists? path
         begin
           tmp_path = path + '.tmp'
+          content = yield if block_given?
           case
           when String === content
             File.open(tmp_path, 'w') do |f|  f.write content  end
           when (IO === content or StringIO === content)
-            File.open(tmp_path, 'w') do |f|  while l = content.gets; f.write l; end  end
-        else
-          File.open(tmp_path, 'w') do |f|  end
+            File.open(tmp_path, 'w') do |f|  
+              while l = content.gets; f.write l; end  
+            end
+          else
+            File.open(tmp_path, 'w') do |f|  end
+          end
+          FileUtils.mv tmp_path, path
+        rescue Exception
+          FileUtils.rm_f tmp_path if File.exists? tmp_path
+          FileUtils.rm_f path if File.exists? path
+          raise $!
         end
-        FileUtils.mv tmp_path, path
-      rescue Interrupt
-        FileUtils.rm_f tmp_path if File.exists? tmp_path
-        FileUtils.rm_f path if File.exists? path
-        raise "Interrupted (Ctrl-c)"
-      rescue Exception
-        FileUtils.rm_f tmp_path if File.exists? tmp_path
-        FileUtils.rm_f path if File.exists? path
-        raise $!
       end
     end
-  end
   end
 
   def self.add_defaults(options, defaults = {})

@@ -1,4 +1,5 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
+require 'rbbt/tsv'
 require 'rbbt/tsv/filter'
 
 class TestTSVFilters < Test::Unit::TestCase
@@ -129,9 +130,10 @@ row2    A    B
       tsv.filter
       tsv.add_filter "field:ValueA", ["A"], Rbbt.tmp.test.Filter.fieldValueA.find(:user)
 
+      puts tsv
       elem = []
       tsv.through do |k,v| elem << k end
-      assert_equal 2, elem.size
+      assert_equal 1, elem.size
     end
   end
 

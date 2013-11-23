@@ -2,20 +2,25 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '../..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'test/unit'
 require 'rbbt/knowledge_base'
+
+gem 'rbbt-sources'
+gem 'rbbt-phgx'
+gem 'rest-client'
+
 require 'rbbt/sources/pina'
+require 'rbbt/workflow'
+Workflow.require_workflow "Genomics"
+require 'genomics_kb'
 
 class TestKnowledgeBase < Test::Unit::TestCase
   def setup
-    require 'rbbt/workflow'
-    Workflow.require_workflow "Genomics"
-    require 'genomics_kb'
-
-
     KnowledgeBase.knowledge_base_dir = Rbbt.tmp.knowledge_base_test.find
     @kb = Genomics.knowledge_base
   end
 
   def test_register
+    require 'rbbt/sources/pina'
+
     TmpFile.with_file do |dir|
       kb = KnowledgeBase.new dir
 

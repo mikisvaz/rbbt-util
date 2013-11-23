@@ -449,18 +449,31 @@ module TSV
 
       when (String === method and method =~ /name:(.*)/)
         name = $1
+        old_unnamed = self.unnamed
+        self.unnamed = false
         if name.strip =~ /^\/(.*)\/$/
           regexp = Regexp.new $1
           through :key, key do |key, values|
-            values = [values] if type == :single
-            new[key] = self[key] if invert ^ (values.flatten.select{|v| v.name =~ regexp}.any?)
+            case type
+            when :single
+              values = values.annotate([values])
+            when :double
+              values = values[0]
+            end
+            new[key] = self[key] if invert ^ (values.select{|v| v.name =~ regexp}.any?)
           end
         else
           through :key, key do |key, values|
-            values = [values] if type == :single
-            new[key] = self[key] if invert ^ (values.flatten.select{|v| v.name == name}.any?)
+            case type
+            when :single
+              values = values.annotate([values])
+            when :double
+              values = values[0]
+            end
+            new[key] = self[key] if invert ^ (values.select{|v| v.name == name}.any?)
           end
         end
+        self.unnamed = old_unnamed
 
       when String === method
         with_unnamed do

@@ -1,11 +1,12 @@
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'rbbt'
+
 require 'test/unit'
-require 'rbbt/util/log'
-require 'rbbt/util/tmpfile'
-require 'rbbt/resource/path'
 require 'fileutils'
+require 'rubygems'
+
+require 'rbbt'
+require 'rbbt/resource/path'
 
 class Test::Unit::TestCase
   include FileUtils

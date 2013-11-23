@@ -112,13 +112,13 @@ row3    A    a|B    Id4
   def test_index_static
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
-row1    a|aa|aaa    b|A    Id1
-row2    A    a|B    Id3
-row3    A    a|B    Id4
+row1    a|aa|aaa    b|B    Id1
+row2    A    bb    Id3
+row3    AA    bb    Id4
     EOF
 
     TmpFile.with_file(content) do |filename|
-      index = TSV.index(filename, :target => "OtherID", :data_sep => /\s+/, :order => true, :persist => false)
+      index = TSV.index(filename, :target => "OtherID", :data_sep => /\s+/, :order => true, :persist => true, :data_persist => true)
       assert_equal "Id1", index['a']
       assert_equal "Id3", index['A']
       assert_equal "OtherID", index.fields.first

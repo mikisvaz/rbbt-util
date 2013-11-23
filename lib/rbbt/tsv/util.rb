@@ -81,6 +81,29 @@ module TSV
     TSV.identify_field(key_field, fields, field)
   end
 
+  def to_list
+    new = {}
+    case type
+    when :double
+      through do |k,v|
+        new[k] = v.collect{|e| e.first}
+      end
+    when :flat
+      through do |k,v|
+        new[k] = [v.first]
+      end
+    when :single
+      through do |k,v|
+        new[k] = [v]
+      end
+    when :list
+      self
+    end
+    self.annotate(new)
+    new.type = :list
+    new
+  end
+
   def to_double
     new = {}
     case type
@@ -153,7 +176,5 @@ module TSV
     new.type = :single
     new
   end
-
-
 
 end

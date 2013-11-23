@@ -63,7 +63,8 @@ module Resource
 
       case response
       when Net::HTTPSuccess then
-        Open.write(final_path, response.body)
+        #Misc.sensiblewrite(final_path, response.body)
+        Misc.sensiblewrite(final_path){ Net::HTTP.get_response(URI(url)).body }
       when Net::HTTPRedirection then
         location = response['location']
         Log.debug("Feching directory from: #{location}. Into: #{final_path}")

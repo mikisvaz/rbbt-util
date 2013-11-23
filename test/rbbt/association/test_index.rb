@@ -3,11 +3,13 @@ require 'rbbt/workflow'
 require 'rbbt/association'
 require 'rbbt/association/index'
 
+gem 'rbbt-sources'
+Workflow.require_workflow "Genomics"
+require 'rbbt/entity/gene'
+
 class TestAssociationIndex < Test::Unit::TestCase
 
   def setup
-    Workflow.require_workflow "Genomics"
-    require 'rbbt/entity/gene'
   end
 
   def teardown

@@ -41,7 +41,7 @@ class TestStep < Test::Unit::TestCase
       step2 = Step.new tmpfile + 'step2', task2, [], step1
 
       step1.clean
-      step2.run
+      step2.clean.run
       assert_equal "TEST2", Open.read(tmpfile + 'step2')
     end
   end

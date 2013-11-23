@@ -102,7 +102,6 @@ module Persist
           end
         end
 
-
         def write_and_close
           lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
           Misc.lock(lock_filename) do
@@ -190,7 +189,9 @@ module Persist
 
              FileUtils.rm path if File.exists? path
 
-             data = open_tokyocabinet(path, true, persist_options[:serializer], persist_options[:engine] || TokyoCabinet::HDB)
+             tmp_path = path + '.persist'
+
+             data = open_tokyocabinet(tmp_path, true, persist_options[:serializer], persist_options[:engine] || TokyoCabinet::HDB)
              data.serializer = :type if TSV === data and data.serializer.nil?
 
              data.close
@@ -210,13 +211,14 @@ module Persist
       end
     rescue Exception
       Log.error "Captured error during persist_tsv. Erasing: #{path}"
-      FileUtils.rm path if path and File.exists? path
+      FileUtils.rm tmp_path if tmp_path and File.exists? tmp_path
       raise $!
     ensure
-      begin
-        data.close if data.respond_to? :close
-      rescue
-        raise $!
+      data.close if data.respond_to? :close
+      if tmp_path 
+        FileUtils.mv tmp_path, path if File.exists? tmp_path and not File.exists? path
+        tsv = TC_CONNECTIONS[path] = TC_CONNECTIONS.delete tmp_path
+        tsv.persistence_path = path
       end
     end
 
@@ -224,5 +226,79 @@ module Persist
 
 
     data
+  end
+
+  def self.get_filename(source)
+    case
+    when Path === source
+      source
+    when (source.respond_to?(:filename) and source.filename)
+      source.filename
+    when source.respond_to?(:cmd)
+      "CMD-#{Misc.digest(source.cmd)}"
+    when TSV === source
+      "TSV[#{Misc.digest Misc.fingerprint(source)}]"
+    end || source.object_id.to_s
+  end
+
+  def self.persist_tsv(source, filename, options = {}, persist_options = {}, &block)
+    persist_options[:prefix] ||= "TSV"
+
+    if data = persist_options[:data]
+      yield data
+      return data 
+    end
+
+    filename ||= get_filename(source)
+
+    path = persistence_path(filename, persist_options, options)
+
+    lock_filename = Persist.persistence_path(path, {:dir => TSV.lock_dir})
+
+    if not persist_options[:persist]
+      data = {}
+
+      yield(data) 
+
+      return data 
+    end
+
+    if is_persisted? path and not persist_options[:update]
+      Log.debug "TSV persistence up-to-date: #{ path }"
+      return open_tokyocabinet(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
+    end
+
+    Misc.lock lock_filename do
+      begin
+        if is_persisted? path 
+          Log.debug "TSV persistence up-to-date: #{ path }"
+          return open_tokyocabinet(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
+        end
+
+        FileUtils.rm path if File.exists? path
+
+        Log.medium "TSV persistence creating: #{ path }"
+
+        tmp_path = path + '.persist'
+
+        data = open_tokyocabinet(tmp_path, true, persist_options[:serializer], persist_options[:engine] || TokyoCabinet::HDB)
+        data.serializer = :type if TSV === data and data.serializer.nil?
+
+        data.write_and_read do
+          yield data
+        end
+
+        FileUtils.mv tmp_path, path if File.exists? tmp_path and not File.exists? path
+        tsv = TC_CONNECTIONS[path] = TC_CONNECTIONS.delete tmp_path
+        tsv.persistence_path = path
+
+        data
+      rescue Exception
+        Log.error "Captured error during persist_tsv. Erasing: #{path}"
+        FileUtils.rm tmp_path if tmp_path and File.exists? tmp_path
+        FileUtils.rm path if path and File.exists? path
+        raise $!
+      end
+    end
   end
 end

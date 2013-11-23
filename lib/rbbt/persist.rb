@@ -129,16 +129,16 @@ module Persist
     when :nil
       nil
     when :boolean
-      Open.write(path, content ? "true" : "false")
+      Misc.sensiblewrite(path, content ? "true" : "false")
     when :fwt
       content.file.seek 0
-      Open.write(path, content.file.read)
+      Misc.sensiblewrite(path, content.file.read)
     when :tsv
-      Open.write(path, content.to_s)
+      Misc.sensiblewrite(path, content.to_s)
     when :annotations
-      Open.write(path, Annotated.tsv(content, :all).to_s)
+      Misc.sensiblewrite(path, Annotated.tsv(content, :all).to_s)
     when :string, :text
-      Open.write(path, content)
+      Misc.sensiblewrite(path, content)
     when :binary
       content.force_encoding("ASCII-8BIT") if content.respond_to? :force_encoding
       f = File.open(path, 'wb')
@@ -147,18 +147,18 @@ module Persist
       content
     when :array
       if content.empty?
-        Open.write(path, "")
+        Misc.sensiblewrite(path, "")
       else
-        Open.write(path, content * "\n" + "\n")
+        Misc.sensiblewrite(path, content * "\n" + "\n")
       end
     when :marshal_tsv
-      Open.write(path, Marshal.dump(content.dup))
+      Misc.sensiblewrite(path, Marshal.dump(content.dup))
     when :marshal
-      Open.write(path, Marshal.dump(content))
+      Misc.sensiblewrite(path, Marshal.dump(content))
     when :yaml
-      Open.write(path, YAML.dump(content))
+      Misc.sensiblewrite(path, YAML.dump(content))
     when :float, :integer, :tsv
-      Open.write(path, content.to_s)
+      Misc.sensiblewrite(path, content.to_s)
     else
       raise "Unknown persistence: #{ type }"
     end

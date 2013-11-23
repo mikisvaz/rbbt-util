@@ -1,7 +1,5 @@
 require 'yaml'
 module TSV
-  #extend ChainMethods
-  #self.chain_prefix = :tsv
 
   TSV_SERIALIZER = YAML
   SERIALIZED_NIL = TSV_SERIALIZER.dump nil

@@ -217,9 +217,9 @@ row2    E
     tsv1 = Rbbt.tmp.test.test1.data.tsv :double,  :sep => /\s+/
     tsv2 = Rbbt.tmp.test.test2.data.tsv :double,  :sep => /\s+/
 
-    tsv2.identifiers = Rbbt.tmp.test.test2.identifiers.produce.find.to_s
+    tsv2.identifiers = Rbbt.tmp.test.test2.identifiers.produce.find #.to_s
 
-    tsv1.attach tsv2, :fields => ["OtherID"], :persist_input => true
+    tsv1.attach tsv2, :fields => ["OtherID"] #, :persist_input => true
     
     assert_equal tsv1.fields, %w(ValueA ValueB OtherID)
     assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]

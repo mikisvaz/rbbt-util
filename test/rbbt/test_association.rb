@@ -1,13 +1,20 @@
 require File.expand_path(File.dirname(__FILE__) + '/../test_helper')
-require 'rbbt/workflow'
-require 'rbbt/association'
-require 'rbbt/knowledge_base'
-require 'rbbt/entity'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
 
+require 'rbbt/workflow'
+require 'rbbt/entity'
+
+require 'rbbt/association'
+require 'rbbt/knowledge_base'
+
+gem 'rbbt-sources'
+gem 'rbbt-phgx'
+
+Log.severity=0
 Workflow.require_workflow "Genomics"
 require 'rbbt/entity/gene'
+require 'rbbt/sources/pina'
 
 TEST_ASSOCIATIONS =<<-EOF
 #: :sep=" "#:namespace=Hsa/jan2013
@@ -51,7 +58,6 @@ class TestAssociations < Test::Unit::TestCase
   end
 
   def test_target_open
-    require 'rbbt/sources/pina'
 
     database = Association.open(Pina.protein_protein,{ 
                                 :undirected => false, 
