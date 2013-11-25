@@ -18,9 +18,11 @@ Misc.in_dir(app_dir) do
   ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
   ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
 
-  if File.exists? 'config.ru'
-    Rack::Server.start(options.merge(:config => 'config.ru'))
+  config_ru_file = File.exists?('config.ru') ? 'config.ru' : Rbbt.share['config.ru'].find
+
+  if server == 'unicorn'
+      `unicorn -c #{ Rbbt.share['unicorn.rb'].find } '#{config_ru_file}' -p #{options[:port] || "2887"}`
   else
-    Rack::Server.start(options.merge(:config => Rbbt.share['config.ru'].find))
+      Rack::Server.start(options.merge(:config => config_ru_file))
   end
 end

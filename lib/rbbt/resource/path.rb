@@ -122,13 +122,12 @@ module Path
   end
 
   def find_all(caller_lib = nil, search_paths = nil)
-    search_paths ||= SEARCH_PATHS
+    search_paths ||= self.search_paths || SEARCH_PATHS
     search_paths = search_paths.dup
 
     search_paths.keys.
-      collect{|where| find(where, Path.caller_lib_dir, search_paths)}.
-      compact.select{|file| file.exists?}.uniq
-
+      collect{|where| find(where, Path.caller_lib_dir, search_paths) }.
+      compact.select{|file| file.exists? }.uniq
   end
 
   #{{{ Methods
