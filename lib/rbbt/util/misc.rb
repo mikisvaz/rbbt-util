@@ -3,6 +3,9 @@ require 'net/smtp'
 require 'digest/md5'
 require 'narray'
 require 'cgi'
+require 'zlib'
+require 'rubygems/package'
+require 'rbbt/util/tar'
 
 class Hash
   def chunked_values_at(keys, max = 5000)
@@ -1017,16 +1020,17 @@ end
     end
   end
 
-  def self.sensiblewrite(path, content = nil)
+  def self.sensiblewrite(path, content = nil, &block)
     return if File.exists? path
     Misc.lock path + '.sensible_write' do
       if not File.exists? path
         begin
-          tmp_path = path + '.tmp'
-          content = yield if block_given?
+          tmp_path = path + '.sensible_write'
           case
+          when block_given?
+            File.open(tmp_path, 'w', &block)
           when String === content
-            File.open(tmp_path, 'w') do |f|  f.write content  end
+            File.open(tmp_path, 'w') do |f| f.write content end
           when (IO === content or StringIO === content)
             File.open(tmp_path, 'w') do |f|  
               while l = content.gets; f.write l; end  

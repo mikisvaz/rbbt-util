@@ -1,5 +1,6 @@
 worker_processes 4
 timeout 30
+preload_app true
 
 @app_path = Dir.pwd
 @port = "2887"

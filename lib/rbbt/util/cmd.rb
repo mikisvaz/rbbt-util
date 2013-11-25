@@ -67,13 +67,12 @@ module CMD
     end
 
     def read(*args)
-      data = original_read(*args)
+      data = original_read(*args) unless self.eof?
 
       self.close if self.eof?
 
       data
     end
-
   end
 
 

@@ -58,27 +58,34 @@ module Resource
   def get_from_server(path, final_path)
     url = File.join(remote_server, '/resource/', self.to_s, 'get_file')
     url << "?" << Misc.hash2GET_params(:file => path, :create => false)
-    begin
-      response = Net::HTTP.get_response(URI(url))
 
-      case response
-      when Net::HTTPSuccess then
-        #Misc.sensiblewrite(final_path, response.body)
-        Misc.sensiblewrite(final_path){ Net::HTTP.get_response(URI(url)).body }
-      when Net::HTTPRedirection then
-        location = response['location']
-        Log.debug("Feching directory from: #{location}. Into: #{final_path}")
-        FileUtils.mkdir_p final_path unless File.exists? final_path
-        Misc.in_dir final_path do
-          CMD.cmd('tar xvfz -', :in => Open.open(location))
-        end
-      else
-        raise "Response not understood: #{response.inspect}"
+    begin
+      Net::HTTP.get_response URI(url) do |response|
+          case response
+          when Net::HTTPSuccess, Net::HTTPOK
+
+            Misc.sensiblewrite(final_path) do |file|
+              response.read_body do |chunk|
+                file.write chunk
+              end
+            end
+
+            when Net::HTTPRedirection, Net::HTTPFound
+              location = response['location']
+              Log.debug("Feching directory from: #{location}. Into: #{final_path}")
+              FileUtils.mkdir_p final_path unless File.exists? final_path
+              Misc.in_dir final_path do
+                CMD.cmd('tar xvfz -', :in => Open.open(location))
+              end
+          else
+            exit
+            raise "Response not understood: #{response.inspect}"
+          end
       end
-      return true
     rescue
       Log.warn "Could not retrieve (#{self.to_s}) #{ path } from #{ remote_server }"
       Log.error $!.message
+      Log.error $!.backtrace * "\n"
       FileUtils.rm_rf final_path if File.exists? final_path
       return false
     end

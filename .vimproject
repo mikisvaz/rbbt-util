@@ -18,6 +18,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   rbbt=rbbt{
    util=util{
     misc.rb
+    tar.rb
     color.rb
     colorize.rb
     named_array.rb
@@ -144,6 +145,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   test_workflow.rb
  }
  etc=etc filter="*"{
+  allowed_biomart_archives
   app.d=app.d{
    base.rb
    entities.rb
@@ -154,6 +156,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
  }
  share=share{
   config.ru
+  unicorn.rb
   color=color filter="*"{
    diverging_colors.hex
   }
