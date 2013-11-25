@@ -2,6 +2,7 @@ require 'rbbt/util/open'
 require 'rbbt/util/log'
 require 'rbbt/resource/path'
 require 'net/http'
+require 'set'
 
  
 module Resource
@@ -55,11 +56,14 @@ module Resource
     end
   end
 
+  attr_accessor :server_missing_resource_cache
   def get_from_server(path, final_path)
     url = File.join(remote_server, '/resource/', self.to_s, 'get_file')
     url << "?" << Misc.hash2GET_params(:file => path, :create => false)
 
     begin
+      @server_missing_resource_cache ||= Set.new
+      raise "Resource Not Found" if @server_missing_resource_cache.include? url
       Net::HTTP.get_response URI(url) do |response|
           case response
           when Net::HTTPSuccess, Net::HTTPOK
@@ -70,22 +74,23 @@ module Resource
               end
             end
 
-            when Net::HTTPRedirection, Net::HTTPFound
-              location = response['location']
-              Log.debug("Feching directory from: #{location}. Into: #{final_path}")
-              FileUtils.mkdir_p final_path unless File.exists? final_path
-              Misc.in_dir final_path do
-                CMD.cmd('tar xvfz -', :in => Open.open(location))
-              end
+          when Net::HTTPRedirection, Net::HTTPFound
+            location = response['location']
+            Log.debug("Feching directory from: #{location}. Into: #{final_path}")
+            FileUtils.mkdir_p final_path unless File.exists? final_path
+            Misc.in_dir final_path do
+              CMD.cmd('tar xvfz -', :in => Open.open(location))
+            end
+          when Net::HTTPInternalServerError
+            @server_missing_resource_cache << url
+            raise "Resource Not Found"
           else
-            exit
             raise "Response not understood: #{response.inspect}"
           end
       end
     rescue
       Log.warn "Could not retrieve (#{self.to_s}) #{ path } from #{ remote_server }"
       Log.error $!.message
-      Log.error $!.backtrace * "\n"
       FileUtils.rm_rf final_path if File.exists? final_path
       return false
     end

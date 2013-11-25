@@ -28,13 +28,16 @@ class Step
   def info
     return {} if info_file.nil? or not Open.exists? info_file
     begin
-      Misc.insist(2, 0.5) do
-        Open.open(info_file) do |file|
-          INFO_SERIALIAZER.load(file) || {}
+      Misc.insist(2, 2) do
+        Misc.insist(2, 0.5) do
+          Open.open(info_file) do |file|
+            INFO_SERIALIAZER.load(file) || {}
+          end
         end
       end
     rescue Exception
       Log.debug{"Error loading info file: " + info_file}
+      Open.write(info_file, {:status => :error, :messages => ["Info file lost"]}.to_yaml)
       raise $!
     end
   end
