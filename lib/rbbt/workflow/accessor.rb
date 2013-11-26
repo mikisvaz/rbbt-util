@@ -37,7 +37,7 @@ class Step
       end
     rescue Exception
       Log.debug{"Error loading info file: " + info_file}
-      Open.write(info_file, {:status => :error, :messages => ["Info file lost"]}.to_yaml)
+      Open.write(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
       raise $!
     end
   end
