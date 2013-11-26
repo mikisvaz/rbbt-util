@@ -92,9 +92,9 @@ def fix_options(workflow, task, job_options)
               when TSV
                 value
               when '-'
-                TSV.open(STDIN)
+                TSV.open(STDIN, :unnamed => true)
               else
-                TSV.open(value)
+                TSV.open(value, :unnamed => true)
               end
             else
               value

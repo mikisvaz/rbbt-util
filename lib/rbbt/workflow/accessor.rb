@@ -28,8 +28,8 @@ class Step
   def info
     return {} if info_file.nil? or not Open.exists? info_file
     begin
-      Misc.insist(2, 2) do
-        Misc.insist(2, 0.5) do
+      Misc.insist(2, 2, info_file) do
+        Misc.insist(2, 0.5, info_file) do
           Open.open(info_file) do |file|
             INFO_SERIALIAZER.load(file) || {}
           end

@@ -300,6 +300,10 @@ module Misc
     end
   end
 
+  def self.remove_long_items(obj)
+    return fingerprint(obj)
+  end
+
   def self.ensembl_server(organism)
     date = organism.split("/")[1]
     if date.nil?
@@ -800,12 +804,16 @@ end
     $__did_once = false
   end
 
-  def self.insist(times = 3, sleep = nil)
+  def self.insist(times = 3, sleep = nil, msg = nil)
     try = 0
     begin
       yield
     rescue
-      Log.warn("Insisting after exception: #{$!.message}")
+      if msg
+        Log.warn("Insisting after exception: #{$!.message} -- #{msg}")
+      else
+        Log.warn("Insisting after exception: #{$!.message}")
+      end
       sleep sleep if sleep
       try += 1
       retry if try < times
