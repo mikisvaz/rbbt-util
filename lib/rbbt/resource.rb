@@ -111,44 +111,46 @@ module Resource
     if not File.exists? final_path or force
       Log.medium "Producing: #{ final_path }"
       Misc.lock final_path + '.produce' do
-        (remote_server and get_from_server(path, final_path)) or
-        begin
-          case type
-          when :string
-            Open.write(final_path, content)
-          when :url
-            Open.write(final_path, Open.open(content))
-          when :proc
-            data = case content.arity
-                   when 0
-                     content.call
-                   when 1
-                     content.call final_path
-                   end
-            Open.write(final_path, data) unless data.nil?
-          when :rake
-            run_rake(path, content, rake_dir)
-          when :install
-            Log.debug "Installing software: #{path}"
-            software_dir = path.resource.root.software.find :user
-            preamble = <<-EOF
+        if not File.exists? final_path or force
+          (remote_server and get_from_server(path, final_path)) or
+          begin
+            case type
+            when :string
+              Open.write(final_path, content)
+            when :url
+              Open.write(final_path, Open.open(content))
+            when :proc
+              data = case content.arity
+                     when 0
+                       content.call
+                     when 1
+                       content.call final_path
+                     end
+              Open.write(final_path, data) unless data.nil?
+            when :rake
+              run_rake(path, content, rake_dir)
+            when :install
+              Log.debug "Installing software: #{path}"
+              software_dir = path.resource.root.software.find :user
+              preamble = <<-EOF
 #!/bin/bash
 
 RBBT_SOFTWARE_DIR="#{software_dir}"
 
 INSTALL_HELPER_FILE="#{Rbbt.share.install.software.lib.install_helpers.find :lib, caller_lib_dir(__FILE__)}"
 source "$INSTALL_HELPER_FILE"
-            EOF
+              EOF
 
-            CMD.cmd('bash', :in => preamble + "\n" + Open.read(content))
+              CMD.cmd('bash', :in => preamble + "\n" + Open.read(content))
 
-            set_software_env(software_dir)
-          else
-            raise "Could not produce #{ resource }. (#{ type }, #{ content })"
+              set_software_env(software_dir)
+            else
+              raise "Could not produce #{ resource }. (#{ type }, #{ content })"
+            end
+          rescue
+            FileUtils.rm_rf final_path if File.exists? final_path
+            raise $!
           end
-        rescue
-          FileUtils.rm_rf final_path if File.exists? final_path
-          raise $!
         end
       end
     end

@@ -41,7 +41,7 @@ module CMD
     end
 
     def close
-      self.original_read unless self.eof?
+      self.original_read unless self.closed? or self.eof?
 
       wait_and_status
 
@@ -67,9 +67,9 @@ module CMD
     end
 
     def read(*args)
-      data = original_read(*args) unless self.eof?
+      data = original_read(*args) unless self.closed? or self.eof?
 
-      self.close if self.eof?
+      self.close if self.eof? and not self.closed?
 
       data
     end

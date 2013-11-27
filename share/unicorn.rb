@@ -1,5 +1,5 @@
 worker_processes 4
-timeout 30
+timeout 600
 preload_app true
 
 @app_path = Dir.pwd
