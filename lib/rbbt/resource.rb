@@ -57,7 +57,8 @@ module Resource
   end
 
   attr_accessor :server_missing_resource_cache
-  def get_from_server(path, final_path)
+  def get_from_server(path, final_path, remote_server = nil)
+    remote_server ||= self.remote_server
     url = File.join(remote_server, '/resource/', self.to_s, 'get_file')
     url << "?" << Misc.hash2GET_params(:file => path, :create => false)
 
@@ -67,19 +68,17 @@ module Resource
       Net::HTTP.get_response URI(url) do |response|
           case response
           when Net::HTTPSuccess, Net::HTTPOK
-
             Misc.sensiblewrite(final_path) do |file|
               response.read_body do |chunk|
                 file.write chunk
               end
             end
-
           when Net::HTTPRedirection, Net::HTTPFound
             location = response['location']
             Log.debug("Feching directory from: #{location}. Into: #{final_path}")
             FileUtils.mkdir_p final_path unless File.exists? final_path
             Misc.in_dir final_path do
-              CMD.cmd('tar xvfz -', :in => Open.open(location))
+              CMD.cmd('tar xvfz -', :in => Open.open(location, :nocache => true))
             end
           when Net::HTTPInternalServerError
             @server_missing_resource_cache << url

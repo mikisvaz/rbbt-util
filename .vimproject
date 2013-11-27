@@ -168,6 +168,12 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      remove
     }
    }
+   resource=resource{
+    find
+    exists
+    produce
+    get
+   }
    workflow=workflow{
     task
     server

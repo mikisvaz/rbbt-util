@@ -20,10 +20,10 @@ begin
     gem.add_dependency('lockfile')
     gem.add_dependency('spreadsheet')
     gem.add_dependency('highline')
+    gem.add_dependency('narray')
     #gem.add_dependency('simplews')
     #gem.add_dependency('ruby-prof')
     #gem.add_dependency('RubyInline')
-    #gem.add_dependency('narray')
 
     # I hate this...
     gem.add_dependency('ZenTest', '4.3')

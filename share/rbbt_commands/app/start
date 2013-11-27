@@ -12,7 +12,7 @@ app_dir = Rbbt.etc.app_dir.exists? ? Path.setup(Rbbt.etc.app_dir.read.strip) : R
 
 app_dir = app_dir[app]
 
-server = options[:server] || 'thin'
+server = options[:server] || 'puma'
 Misc.in_dir(app_dir) do
   require 'rack'
   ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
@@ -21,8 +21,8 @@ Misc.in_dir(app_dir) do
   config_ru_file = File.exists?('config.ru') ? 'config.ru' : Rbbt.share['config.ru'].find
 
   if server == 'unicorn'
-      `unicorn -c #{ Rbbt.share['unicorn.rb'].find } '#{config_ru_file}' -p #{options[:port] || "2887"}`
+    `unicorn -c #{ Rbbt.share['unicorn.rb'].find } '#{config_ru_file}' -p #{options[:port] || "2887"}`
   else
-      Rack::Server.start(options.merge(:config => config_ru_file))
+    Rack::Server.start(options.merge(:config => config_ru_file))
   end
 end
