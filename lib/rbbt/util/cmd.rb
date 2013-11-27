@@ -57,7 +57,7 @@ module CMD
           Process.kill("KILL", @pid)
           Process.waitpid(@pid)
         rescue
-          Log.low "Exception in forcing close of command [#{ @pid }, #{cmd}]: #{$!.message}"
+          Log.low{"Exception in forcing close of command [#{ @pid }, #{cmd}]: #{$!.message}"}
         end
       end
 
