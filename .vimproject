@@ -45,11 +45,13 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    workflow=workflow{
     annotate.rb
     definition.rb
-    accessor.rb
-    soap.rb
-    step.rb
+
     task.rb
+    step.rb
+    accessor.rb
+
     usage.rb
+    soap.rb
    }
 
    tsv.rb

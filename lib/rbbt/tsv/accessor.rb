@@ -1,4 +1,5 @@
 require 'yaml'
+require 'rbbt/annotations'
 module TSV
 
   TSV_SERIALIZER = YAML
@@ -248,6 +249,7 @@ module TSV
 
   def sort_by(field = nil, just_keys = false, &block)
     field = :all if field.nil?
+
     if field == :all
       elems = collect
     else
@@ -298,9 +300,8 @@ module TSV
           end
         end
         if just_keys
-          #keys = elems.sort_by{|key, value| value }.collect{|key, value| key}
           keys = sorted.collect{|key, value| key}
-          keys = prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
+          keys = prepare_entity(keys, key_field, entity_options.merge(:dup_array => true)) unless @unnamed
           keys
         else
           sorted.collect{|key, value| [key, self[key]]}
@@ -308,7 +309,9 @@ module TSV
       end
     else
       if just_keys
-        elems.sort_by(&block).collect{|key, value| key}
+        keys = elems.sort_by(&block).collect{|key, value| key}
+        keys = prepare_entity(keys, key_field, entity_options.merge(:dup_array => true)) unless @unnamed
+        keys
       else
         elems.sort_by(&block).collect{|key, value| [key, self[key]]}
       end

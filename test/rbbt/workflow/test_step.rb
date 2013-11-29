@@ -1,11 +1,12 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
 require 'rbbt/workflow/task'
 require 'rbbt/workflow/step'
+require 'rbbt/tsv'
 require 'rbbt'
 
 class TestStep < Test::Unit::TestCase
 
-  def test_step
+  def _test_step
     task  = Task.setup do "TEST" end
     task2  = Task.setup do raise "Persistence ignored" end
     TmpFile.with_file do |tmp|
@@ -17,7 +18,7 @@ class TestStep < Test::Unit::TestCase
     end
   end
 
-  def test_dependency
+  def _test_dependency
     str = "TEST"
     str2 = "TEST2"
     TmpFile.with_file do |tmpfile|
@@ -46,7 +47,7 @@ class TestStep < Test::Unit::TestCase
     end
   end
 
-  def test_dependency_log_relay
+  def _test_dependency_log_relay
     str = "TEST"
     TmpFile.with_file do |tmpfile|
       task1  = Task.setup :result_type => nil, :name => :task1 do 
@@ -65,7 +66,7 @@ class TestStep < Test::Unit::TestCase
     end
   end
 
-  def test_log_relay_step
+  def _test_log_relay_step
     str = "TEST"
     TmpFile.with_file do |tmpfile|
       task1  = Task.setup :result_type => nil, :name => :task1 do 
@@ -87,7 +88,7 @@ class TestStep < Test::Unit::TestCase
   end
 
 
-  def test_exec
+  def _test_exec
     TmpFile.with_file do |lock|
       task  = Task.setup do "TEST" end
       TmpFile.with_file do |tmp|
@@ -98,7 +99,7 @@ class TestStep < Test::Unit::TestCase
   end
 
 
-  def test_fork
+  def _test_fork
     TmpFile.with_file do |lock|
       task  = Task.setup do while not File.exists?(lock) do sleep 1; end; "TEST" end
       TmpFile.with_file do |tmp|
@@ -114,7 +115,7 @@ class TestStep < Test::Unit::TestCase
     end
   end
 
-  def test_abort
+  def _test_abort
     TmpFile.with_file do |lock|
       task  = Task.setup do while not File.exists?(lock) do sleep 1; end; "TEST" end
       TmpFile.with_file do |tmp|
@@ -131,7 +132,7 @@ class TestStep < Test::Unit::TestCase
     end
   end
 
-  def test_files
+  def _test_files
     TmpFile.with_file do |lock|
       task  = Task.setup do 
         Open.write(file("test"),"TEST")
@@ -145,7 +146,7 @@ class TestStep < Test::Unit::TestCase
     end
   end
 
-  def test_messages
+  def _test_messages
     TmpFile.with_file do |lock|
       task  = Task.setup do 
         message "WRITE"
@@ -161,7 +162,7 @@ class TestStep < Test::Unit::TestCase
     end
   end
 
-  def test_subdir
+  def _test_subdir
     TmpFile.with_file do |lock|
       task  = Task.setup do 
         message "WRITE"
@@ -178,7 +179,7 @@ class TestStep < Test::Unit::TestCase
     end
   end
 
-  def test_semaphore
+  def _test_semaphore
     TmpFile.with_file do |semaphore|
       begin
         semaphore = "/" << semaphore.gsub('/','_')
@@ -209,6 +210,5 @@ class TestStep < Test::Unit::TestCase
     end
 
   end
-
 
 end
