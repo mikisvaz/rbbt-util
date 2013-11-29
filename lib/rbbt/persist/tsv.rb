@@ -8,7 +8,7 @@ module Persist
   TC_CONNECTIONS = {}
 
   def self.open_tokyocabinet(path, write, serializer = nil, tokyocabinet_class = TokyoCabinet::HDB)
-    write = true if not File.exists?(path)
+    write = true unless File.exists? path
 
     tokyocabinet_class = TokyoCabinet::HDB if tokyocabinet_class == "HDB"
     tokyocabinet_class = TokyoCabinet::BDB if tokyocabinet_class == "BDB"
