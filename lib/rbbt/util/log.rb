@@ -36,7 +36,7 @@ module Log
     time = Time.now.strftime("%m/%d/%y-%H:%M:%S")
 
     prefix = time << "[" << severity_color << severity.to_s << SEVERITY_COLOR[0] << "]"
-    message = HIGHLIGHT << message << SEVERITY_COLOR[0] if severity >= INFO
+    message = "" << HIGHLIGHT << message << SEVERITY_COLOR[0] if severity >= INFO
     str = prefix << " " << message
 
     STDERR.puts str
