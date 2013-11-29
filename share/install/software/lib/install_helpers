@@ -43,6 +43,7 @@ uncompress_pkg(){
     local old_pwd="`expand_path $(pwd)`"
     clean_build
 
+    mkdir -p "$OPT_BUILD_DIR"
     cd "$OPT_BUILD_DIR"
 
     (tar xvfz $pkg || tar xvfj $pkg || unzip $pkg || echo "Error decompressing") 2> /dev/null
