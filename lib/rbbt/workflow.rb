@@ -5,33 +5,16 @@ require 'rbbt/workflow/accessor'
 
 module Workflow
 
-  class << self
-    attr_accessor :autoinstall
-
-    def autoinstall
-      @autoload ||= ENV["RBBT_WORKFLOW_AUTOINSTALL"] == "true"
-    end
-  end
-
-  def self.resolve_locals(inputs)
-    inputs.each do |name, value|
-      if value =~ /^local:(.*?):(.*)/ or 
-        (Array === value and value.length == 1 and value.first =~ /^local:(.*?):(.*)/) or
-        (TSV === value and value.size == 1 and value.keys.first =~ /^local:(.*?):(.*)/)
-        task_name = $1
-        jobname = $2
-        value = load_id(File.join(task_name, jobname)).load
-      end
-      inputs[name] = value
-    end 
-  end
-
   #{{{ WORKFLOW MANAGEMENT 
   class << self
-    attr_accessor :workflows
+    attr_accessor :workflows, :autoinstall
   end
+
   self.workflows = []
 
+  def self.autoinstall
+    @autoload ||= ENV["RBBT_WORKFLOW_AUTOINSTALL"] == "true"
+  end
   def self.extended(base)
     self.workflows << base
     base.libdir = Path.caller_lib_dir.tap{|p| p.resource = base}
@@ -185,10 +168,25 @@ module Workflow
   end
 
   # {{{ JOB MANAGEMENT
+  DEFAULT_NAME="Default"
+
+  def self.resolve_locals(inputs)
+    inputs.each do |name, value|
+      if value =~ /^local:(.*?):(.*)/ or 
+        (Array === value and value.length == 1 and value.first =~ /^local:(.*?):(.*)/) or
+        (TSV === value and value.size == 1 and value.keys.first =~ /^local:(.*?):(.*)/)
+        task_name = $1
+        jobname = $2
+        value = load_id(File.join(task_name, jobname)).load
+        inputs[name] = value
+      end
+    end 
+  end
 
   def job(taskname, jobname = nil, inputs = {})
     taskname = taskname.to_sym
-    jobname = "Default" if jobname.nil? or jobname.empty?
+    jobname = DEFAULT_NAME if jobname.nil? or jobname.empty?
+
     task = tasks[taskname]
     raise "Task not found: #{ taskname }" if task.nil?
 
@@ -244,6 +242,7 @@ module Workflow
     }
   end
 
+  #{{{ Make workflow resources local
   def local_persist_setup
     class << self
       include LocalPersist

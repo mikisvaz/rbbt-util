@@ -6,7 +6,7 @@ class Step
   INFO_SERIALIAZER = Marshal
 
   def name
-    @path.sub(/.*\/#{Regexp.quote task.name.to_s}\/(.*)/, '\1')
+    path.sub(/.*\/#{Regexp.quote task.name.to_s}\/(.*)/, '\1')
   end
 
   def clean_name
@@ -21,7 +21,7 @@ class Step
 
   def info_file
     @info_file ||= begin
-                     @path.nil? ? nil : @path + '.info'
+                     path.nil? ? nil : path + '.info'
                    end
   end
 
@@ -110,7 +110,7 @@ class Step
   # {{{ INFO
 
   def files_dir
-    @path + '.files'
+    path + '.files'
   end
 
   def files
@@ -275,19 +275,21 @@ module Workflow
 
   TAG = :hash
   def step_path(taskname, jobname, inputs, dependencies)
-    raise "Jobname makes an invalid path: #{ jobname }" if jobname =~ /\.\./
-    if inputs.any? or dependencies.any?
-      tagged_jobname = case TAG
-                       when :hash
-                         jobname + '_' + Misc.digest((inputs * "\n" + ";" + dependencies.collect{|dep| dep.name} * "\n"))
-                       else
-                         jobname
-                       end
-    else
-      tagged_jobname = jobname
-    end
+    Proc.new{
+      raise "Jobname makes an invalid path: #{ jobname }" if jobname =~ /\.\./
+      if inputs.any? or dependencies.any?
+        tagged_jobname = case TAG
+                         when :hash
+                           jobname + '_' + Misc.digest((inputs * "\n" + ";" + dependencies.collect{|dep| dep.name} * "\n"))
+                         else
+                           jobname
+                         end
+      else
+        tagged_jobname = jobname
+      end
 
-    workdir[taskname][tagged_jobname].find
+      workdir[taskname][tagged_jobname].find
+    }
   end
 
 

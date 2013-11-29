@@ -14,8 +14,8 @@ class Step
   class Aborted < Exception; end
 
   def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil)
-    path = Misc.sanitize_filename path
-    @path = Path.setup(path)
+    path = Path.setup(Misc.sanitize_filename(path)) if String === path
+    @path = path
     @task = task
     @bindings = bindings
     @dependencies = case
@@ -27,6 +27,11 @@ class Step
                       [dependencies]
                     end
     @inputs = inputs || []
+  end
+
+  def path
+    @path = Misc.sanitize_filename(Path.setup(@path.call)) if Proc === @path
+    @path
   end
 
   class << self
@@ -88,7 +93,7 @@ class Step
   end
 
   def run(no_load = false)
-    result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path }.uniq, :no_load => no_load do
+    result = Persist.persist "Job", @task.result_type, :file => path, :check => rec_dependencies.collect{|dependency| dependency.path }.uniq, :no_load => no_load do
       @exec = false
       if Step === Step.log_relay_step and not self == Step.log_relay_step
         relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
@@ -177,11 +182,11 @@ class Step
         begin
           run(true)
         rescue Step::Aborted
-          Log.debug{"Forked process aborted: #{@path}"}
+          Log.debug{"Forked process aborted: #{path}"}
           log :aborted, "Aborted"
           raise $!
         rescue Exception
-          Log.debug("Exception caught on forked process: #{@path}")
+          Log.debug("Exception caught on forked process: #{path}")
           raise $!
         end
 

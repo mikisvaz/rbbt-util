@@ -4,7 +4,6 @@ require 'rbbt/workflow/annotate'
 module Workflow
   include AnnotatedModule
 
-
   AnnotatedModule.add_consummable_annotation(self,
                                              :result_description => "",
                                              :result_type        => nil,
