@@ -1,4 +1,8 @@
+require 'term/ansicolor'
+require 'rbbt/util/color'
+
 module Log
+  extend Term::ANSIColor
 
   DEBUG    = 0
   LOW      = 1
@@ -17,21 +21,24 @@ module Log
     @logfile = nil
   end
 
-  WHITE, DARK, GREEN, YELLOW, RED = ["0;37m", "0m", "0;32m", "0;33m", "0;31m"].collect{|e| "\033[#{e}"}
+  WHITE, DARK, GREEN, YELLOW, RED = Color::SOLARIZED.values_at :base0, :base00, :green, :yellow, :magenta
 
-  SEVERITY_COLOR = [WHITE, GREEN, YELLOW, RED, GREEN, YELLOW, ERROR].collect{|e| "\033[#{e}"}
+  SEVERITY_COLOR = [reset, green, yellow, red, green, yellow, red] #.collect{|e| "\033[#{e}"}
+
+  HIGHLIGHT = "\033[1m"
 
   def self.log(message = nil, severity = MEDIUM, &block)
-    message ||= block
-    return if message.nil?
-    severity_color = SEVERITY_COLOR[severity]
-    font_color = {true => WHITE, false => DARK}[severity >= INFO]
-
     return if severity < self.severity
-    message = message.call if Proc === message
-    return if message.nil? or message.empty?
+    message ||= block.call if block_given?
+    return if message.nil?
 
-    str = "\033[0;37m#{Time.now.strftime("[%m/%d/%y-%H:%M:%S]")}#{severity_color}[#{severity.to_s}]\033[0m:#{font_color} " <<  message.strip  << "\033[0m"
+    severity_color = SEVERITY_COLOR[severity]
+    time = Time.now.strftime("%m/%d/%y-%H:%M:%S")
+
+    prefix = time << "[" << severity_color << severity.to_s << SEVERITY_COLOR[0] << "]"
+    message = HIGHLIGHT << message << SEVERITY_COLOR[0] if severity >= INFO
+    str = prefix << " " << message
+
     STDERR.puts str
     logfile.puts str unless logfile.nil?
   end
