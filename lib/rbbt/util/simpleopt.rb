@@ -1,74 +1,77 @@
 module SOPT
+
+  #{{{ ACCESSORS
+  
   class << self
     attr_accessor :command, :summary, :synopsys, :description
     attr_accessor :inputs, :input_shortcuts, :input_types, :input_descriptions, :input_defaults
-
-    def command
-      @command ||= File.basename($0)
-    end
-
-    def summary
-      @summary ||= ""
-    end
-
-    def synopsys
-      @synopsys ||= begin
-                      "#{command} " <<
-                      inputs.collect{|name|
-                        "[" << input_format(name, input_types[name] || :string, input_defaults[name], input_shortcuts[name]).sub(/:$/,'') << "]"
-                      } * " "
-                    end
-    end
-
-    def description
-      @description ||= "Missing"
-    end
-
-
-    def shortcuts
-      @shortcuts ||= []
-    end
-
-    def all
-      @all ||= {}
-    end
-    
-    def inputs 
-      @inputs ||= []
-    end
-  
-    def input_shortcuts 
-      @input_shortcuts ||= {}
-    end
-
-    def input_types 
-      @input_types ||= {}
-    end
- 
-    def input_descriptions 
-      @input_descriptions ||= {}
-    end
- 
-    def input_defaults 
-      @input_defaults ||= {}
-    end
-
-
-    def reset
-      @shortcuts = []
-      @all = {}
-    end
-
-    def record(info)
-      input = info[:long].sub("--", '')
-      inputs << input
-      input_types[input] = info[:arg] ? :string : :boolean
-      input_descriptions[input] = info[:description]
-      input_defaults[input] = info[:default]
-      input_shortcuts[input] = info[:short]? info[:short].sub("-",'') : nil
-    end
   end
 
+  def self.command
+    @command ||= File.basename($0)
+  end
+
+  def self.summary
+    @summary ||= ""
+  end
+
+  def self.synopsys
+    @synopsys ||= begin
+                    "#{command} " <<
+                    inputs.collect{|name|
+                      "[" << input_format(name, input_types[name] || :string, input_defaults[name], input_shortcuts[name]).sub(/:$/,'') << "]"
+                    } * " "
+                  end
+  end
+
+  def self.description
+    @description ||= "Missing"
+  end
+
+
+  def self.shortcuts
+    @shortcuts ||= []
+  end
+
+  def self.all
+    @all ||= {}
+  end
+  
+  def self.inputs 
+    @inputs ||= []
+  end
+
+  def self.input_shortcuts 
+    @input_shortcuts ||= {}
+  end
+
+  def self.input_types 
+    @input_types ||= {}
+  end
+
+  def self.input_descriptions 
+    @input_descriptions ||= {}
+  end
+
+  def self.input_defaults 
+    @input_defaults ||= {}
+  end
+
+  def self.reset
+    @shortcuts = []
+    @all = {}
+  end
+
+  #{{{ PARSING
+  
+  def self.record(info)
+    input = info[:long].sub("--", '')
+    inputs << input
+    input_types[input] = info[:arg] ? :string : :boolean
+    input_descriptions[input] = info[:description]
+    input_defaults[input] = info[:default]
+    input_shortcuts[input] = info[:short]? info[:short].sub("-",'') : nil
+  end
 
   def self.short_for(name)
     short = []
@@ -84,60 +87,6 @@ module SOPT
     short * ""
   end
 
-  def self.input_format(name, type = nil, default = nil, short = "")
-    short = short_for(name) if not short.nil? and short.empty?
-
-    input_str = short.nil? ? "--#{name}" : "-#{short}, --#{name}"
-    input_str << case type
-    when nil
-      "#{default != nil ? " (default '#{default}')" : ""}:"
-    when :boolean
-      "[=false]#{default != nil ? " (default '#{default}')" : ""}:"
-    when :tsv, :text
-      "=<filename.#{type}|->#{default != nil ? " (default '#{default}')" : ""}; Use '-' for STDIN:"
-    when :array
-      "=<string[,string]*|filename.list|->#{default != nil ? " (default '#{default}')" : ""}; Use '-' for STDIN:"
-    else
-      "=<#{ type }>#{default != nil ? " (default '#{default}')" : ""}:"
-    end
-  end
-
-  def self.input_doc(inputs, input_types = nil, input_descriptions = nil, input_defaults = nil, input_shortcuts = nil)
-    type = description = default = nil
-    shortcut = ""
-    inputs.collect do |name|
-
-      type = input_types[name] unless input_types.nil?
-      description = input_descriptions[name] unless input_descriptions.nil?
-      default = input_defaults[name] unless input_defaults.nil?
-      shortcut = input_shortcuts[name] unless input_shortcuts.nil?
-
-      type = :string if type.nil?
-
-      str  = "  * " << SOPT.input_format(name, type.to_sym, default, shortcut) << "\n"
-      str << "    " << description << "\n" if description and not description.empty?
-      str
-    end * "\n"
-  end
-
-  def self.doc
-    doc = <<-EOF
-#{command}(1) -- #{summary}
-#{"=" * (command.length + summary.length + 7)}
-
-## SYNOPSYS
-
-#{synopsys}
-
-## DESCRIPTION
-
-#{description}
-
-## OPTIONS
-
-#{input_doc(inputs, input_types, input_descriptions, input_defaults, input_shortcuts)}
-    EOF
-  end
 
   def self.name(info)
     (info[:long] || info[:short]).sub(/^-*/,'')
@@ -224,5 +173,62 @@ module SOPT
     rest.each do |e| ARGV << e end
 
     options
+  end
+
+  #{{{ DOCUMENTATION
+
+  def self.input_format(name, type = nil, default = nil, short = "")
+    short = short_for(name) if not short.nil? and short.empty?
+
+    input_str = short.nil? ? "--#{name}" : "-#{short}, --#{name}"
+    input_str << case type
+    when nil
+      "#{default != nil ? " (default '#{default}')" : ""}:"
+    when :boolean
+      "[=false]#{default != nil ? " (default '#{default}')" : ""}:"
+    when :tsv, :text
+      "=<filename.#{type}|->#{default != nil ? " (default '#{default}')" : ""}; Use '-' for STDIN:"
+    when :array
+      "=<string[,string]*|filename.list|->#{default != nil ? " (default '#{default}')" : ""}; Use '-' for STDIN:"
+    else
+      "=<#{ type }>#{default != nil ? " (default '#{default}')" : ""}:"
+    end
+  end
+
+  def self.input_doc(inputs, input_types = nil, input_descriptions = nil, input_defaults = nil, input_shortcuts = nil)
+    type = description = default = nil
+    shortcut = ""
+    inputs.collect do |name|
+
+      type = input_types[name] unless input_types.nil?
+      description = input_descriptions[name] unless input_descriptions.nil?
+      default = input_defaults[name] unless input_defaults.nil?
+      shortcut = input_shortcuts[name] unless input_shortcuts.nil?
+
+      type = :string if type.nil?
+
+      str  = "  * " << SOPT.input_format(name, type.to_sym, default, shortcut) << "\n"
+      str << "    " << description << "\n" if description and not description.empty?
+      str
+    end * "\n"
+  end
+
+  def self.doc
+    doc = <<-EOF
+#{command}(1) -- #{summary}
+#{"=" * (command.length + summary.length + 7)}
+
+## SYNOPSYS
+
+#{synopsys}
+
+## DESCRIPTION
+
+#{description}
+
+## OPTIONS
+
+#{input_doc(inputs, input_types, input_descriptions, input_defaults, input_shortcuts)}
+    EOF
   end
 end
