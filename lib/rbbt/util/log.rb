@@ -27,6 +27,10 @@ module Log
 
   HIGHLIGHT = "\033[1m"
 
+  def self.color(severity)
+    SEVERITY_COLOR[severity]
+  end
+
   def self.log(message = nil, severity = MEDIUM, &block)
     return if severity < self.severity
     message ||= block.call if block_given?
@@ -35,7 +39,10 @@ module Log
     severity_color = SEVERITY_COLOR[severity]
     time = Time.now.strftime("%m/%d/%y-%H:%M:%S")
 
-    prefix = time << "[" << severity_color << severity.to_s << SEVERITY_COLOR[0] << "]"
+    sev_str = severity.to_s
+    sev_str = "" << HIGHLIGHT << sev_str << SEVERITY_COLOR[0] if severity >= INFO
+
+    prefix = time << "[" << severity_color << sev_str << SEVERITY_COLOR[0] << "]"
     message = "" << HIGHLIGHT << message << SEVERITY_COLOR[0] if severity >= INFO
     str = prefix << " " << message
 

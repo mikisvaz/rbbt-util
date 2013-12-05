@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+options = SOPT.get("-a--app*")
+
+
+CMD.cmd("rbbt workflow monitor --quick -c -a -d #{Rbbt.var.jobs.find}").read
+CMD.cmd("rm -f  #{ Rbbt.tmp.tsv_open_locks.find.glob("*").collect{|f| "'#{f}'" } * " " }").read
+CMD.cmd("find #{Rbbt.share.find_all.collect{|f| "'#{f}'" } * " " } -name '*.lock' -delete").read 
+CMD.cmd("find #{Rbbt.var.find_all.collect{|f| "'#{f}'" } * " " } -name '*.lock' -delete").read 
+
+app_dir = Rbbt.etc.app_dir.exists? ? Rbbt.etc.app_dir.read.strip : Rbbt.apps.find
+Path.setup(app_dir)
+
+options[:app].split(/,|\s/).collect do |app|
+  d = app_dir[app].var.sinatra.cache.find 
+  CMD.cmd("rbbt workflow monitor --quick -c -a -d #{d}").read
+end if options[:app]

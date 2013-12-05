@@ -54,9 +54,9 @@ module Persist
     prefix = Misc.process_options persist_options, :prefix
 
     if prefix.nil?
-      perfile = file.gsub(/\//, '>') 
+      perfile = file.to_s.gsub(/\//, '>') 
     else
-      perfile = prefix.to_s + ":" + file.gsub(/\//, '>') 
+      perfile = prefix.to_s + ":" + file.to_s.gsub(/\//, '>') 
     end
 
     if options.include? :filters
@@ -290,6 +290,14 @@ module Persist
     else
       yield
     end
+  end
+
+  def self.memory(name, options = {}, &block)
+    file = name
+    file << "_" << Misc.hash2md5(options) if options.any?
+    options = Misc.add_defaults options, :persist => true, :file => file
+
+    persist name, :memory, options, &block
   end
 end
 

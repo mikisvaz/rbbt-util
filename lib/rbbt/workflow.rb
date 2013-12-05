@@ -17,7 +17,7 @@ module Workflow
   end
   def self.extended(base)
     self.workflows << base
-    base.libdir = Path.caller_lib_dir.tap{|p| p.resource = base}
+    base.libdir = Path.setup(Path.caller_lib_dir).tap{|p| p.resource = base}
   end
 
   def self.require_remote_workflow(wf_name, url)

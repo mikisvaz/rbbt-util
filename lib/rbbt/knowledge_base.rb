@@ -70,7 +70,6 @@ class KnowledgeBase
     @registry.keys
   end
 
-
   def description(name)
     @descriptions[name] ||= get_index(name).key_field.split("~")
   end
@@ -114,41 +113,45 @@ class KnowledgeBase
   end
  
   def get_database(name, options = {})
-    options = Misc.add_defaults options, :persist_dir => dir.databases
-    persist_options = Misc.pull_keys options, :persist
+    @databases[Misc.fingerprint([name, options])] ||= \
+      begin 
+        Persist.memory("Database:" <<[name, self.dir] * "@") do
+          options = Misc.add_defaults options, :persist_dir => dir.databases
+          persist_options = Misc.pull_keys options, :persist
 
-    file, registered_options = registry[name]
-    options = open_options.merge(registered_options || {}).merge(options)
-    raise "Repo #{ name } not found and not registered" if file.nil?
+          file, registered_options = registry[name]
+          options = open_options.merge(registered_options || {}).merge(options)
+          raise "Repo #{ name } not found and not registered" if file.nil?
 
-    code = [name, Misc.hash2md5(options)] * "_"
-    @databases[code] ||= begin 
-                           Log.low "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
-                           Association.open(file, options, persist_options).
-                             tap{|tsv| tsv.namespace = self.namespace}
-                         end
+          Log.low "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
+          Association.open(file, options, persist_options).
+            tap{|tsv| tsv.namespace = self.namespace}
+        end
+      end
   end
 
- 
+
   def get_index(name, options = {})
-    options = Misc.add_defaults options, :persist_dir => dir.indices
-    persist_options = Misc.pull_keys options, :persist
+    @indices[Misc.fingerprint([name, options])] ||= \
+      begin 
+        Persist.memory("Index:" <<[name, self.dir] * "@") do
+          options = Misc.add_defaults options, :persist_dir => dir.indices
+          persist_options = Misc.pull_keys options, :persist
 
-    file, registered_options = registry[name]
-    options = open_options.merge(registered_options || {}).merge(options)
-    raise "Repo #{ name } not found and not registered" if file.nil?
+          file, registered_options = registry[name]
+          options = open_options.merge(registered_options || {}).merge(options)
+          raise "Repo #{ name } not found and not registered" if file.nil?
 
-    code = [name, Misc.hash2md5(options)] * "_"
-    @indices[code] ||= begin 
-                           Log.low "Opening index #{ name } from #{ Misc.fingerprint file }. #{options}"
-                           Association.index(file, options, persist_options).
-                             tap{|tsv| tsv.namespace = self.namespace}
-                         end
+          Log.low "Opening index #{ name } from #{ Misc.fingerprint file }. #{options}"
+          Association.index(file, options, persist_options).
+            tap{|tsv| tsv.namespace = self.namespace}
+        end
+      end
   end
 
-  def index(name, file, options = {}, persist_options = {})
-    @indices[name] = Association.index(file, open_options.merge(options), persist_options)
-  end
+  #def index(name, file, options = {}, persist_options = {})
+  #  @indices[name] = Association.index(file, open_options.merge(options), persist_options)
+  #end
 
   #{{{ Add manual database
   

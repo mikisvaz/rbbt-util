@@ -1,41 +1,49 @@
 require 'rbbt'
 require 'rbbt/resource'
+$LOAD_PATH.unshift('lib') unless $LOAD_PATH.include?('lib')
 
-load Rbbt.etc['app.d/init.rb'].find
+def load_file(file)
+  if file.exists?
+    Log.info("Loading: " << file)
+    load file
+  end
+end
+
+def app_eval(app, file)
+  if file.exists?
+    app.class_eval do
+      Log.info("Loading: " << file)
+      eval file.read, nil, file
+    end
+  end
+end
+
+#{{{ INIT
+load_file Rbbt.etc['app.d/init.rb'].find
 
 $class_name = class_name = File.basename(FileUtils.pwd)
-
 $app = app = eval "class #{class_name} < Sinatra::Base; self end"
 
-$LOAD_PATH.unshift('lib')
-
 #{{{ PRE
-Log.info{"Loading: " << Rbbt.etc['app.d/pre.rb'].find if Rbbt.etc['app.d/pre.rb'].exists?}
-load Rbbt.etc['app.d/pre.rb'].find if Rbbt.etc['app.d/pre.rb'].exists?
+load_file Rbbt.etc['app.d/pre.rb'].find 
 
 #{{{ BASE
-app.class_eval do
-  Log.info{"Loading: " << Rbbt.etc['app.d/base.rb'].find}
-  eval Rbbt.etc['app.d/base.rb'].read, nil, Rbbt.etc['app.d/base.rb'].find
-end
+app_eval app, Rbbt.etc['app.d/base.rb'].find
 
 #{{{ RESOURCES
-Log.info{"Loading: " << Rbbt.etc['app.d/resources.rb'].find}
-load Rbbt.etc['app.d/resources.rb'].find
+load_file Rbbt.etc['app.d/resources.rb'].find
 
 #{{{ ENTITIES
-Log.info{"Loading: " << Rbbt.etc['app.d/entities.rb'].find}
-load Rbbt.etc['app.d/entities.rb'].find
+load_file Rbbt.etc['app.d/entities.rb'].find
 
 #{{{ FINDER
-app.class_eval do
-  Log.info{"Loading: " << Rbbt.etc['app.d/finder.rb'].find}
-  eval Rbbt.etc['app.d/finder.rb'].read
-end
+app_eval app, Rbbt.etc['app.d/finder.rb'].find
 
 #{{{ POST
-Log.info{"Loading: " << Rbbt.etc['app.d/post.rb'].find if Rbbt.etc['app.d/post.rb'].exists?}
-load Rbbt.etc['app.d/post.rb'].find if Rbbt.etc['app.d/post.rb'].exists?
+load_file Rbbt.etc['app.d/post.rb'].find if Rbbt.etc['app.d/post.rb'].exists?
+
+#{{{ PRELOAD
+load_file Rbbt.etc['app.d/preload.rb'].find if Rbbt.etc['app.d/preload.rb'].exists?
 
 #{{{ RUN
 $title = class_name

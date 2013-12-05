@@ -1,0 +1,67 @@
+#!/usr/bin/env ruby
+
+options = SOPT.get("-a--app*")
+
+workflow_dir = Rbbt.var.jobs.find
+
+def report_jobs(workflow_dir, title = "WORKFLOW")
+  error = {}
+  running = {}
+  dead = {}
+  CMD.cmd("rbbt workflow monitor --quick  -d '#{workflow_dir}'").read.split("\n").each do |line|
+    parts = line.split("/")
+    workflow, task, rest = parts[-3], parts[-2], parts[-1]
+    code = workflow.nil? ? nil : [workflow, task] * ":"
+    case
+    when rest =~ /error/
+      error[code] ||= 0
+      error[code] += 1
+    when rest =~ /dead/
+      dead[code] ||= 0
+      dead[code] += 1
+    when rest =~ /running/
+      running[code] ||= 0
+      running[code] += 1
+    when rest =~ /aborted/
+      dead[code] ||= 0
+      dead[code] += 1
+    else
+      raise rest
+    end
+  end
+
+  <<-EOF
+# #{title} JOBS
+Running jobs: #{ running.sort_by{|code,c| c}.reverse.collect{|code,c| [code, c].compact * " " } * ", " }
+Dead/aborted jobs: #{ dead.sort_by{|code,c| c}.reverse.collect{|code,c| [code, c].compact * " " } * ", " }#{Log.color(0)}
+Error jobs: #{ error.sort_by{|code,c| c}.reverse.collect{|code,c| [code, c].compact * " " } * ", " }#{Log.color(0)}
+  EOF
+end
+
+app_dir = Rbbt.etc.app_dir.exists? ? Rbbt.etc.app_dir.read.strip : Rbbt.apps.find
+Path.setup(app_dir)
+
+app_dirs = {}
+options[:app].split(/,|\s/).collect do |app|
+  d = app_dir[app].var.sinatra.cache.find 
+  report = report_jobs d, app
+  app_dirs[app] = report
+end if options[:app]
+
+puts <<EOF
+
+#{ report_jobs Rbbt.var.jobs.find}
+#{ app_dirs.collect{|d,report| report } * "\n" }
+
+# LOCKED TSV
+#{ Rbbt.var.tsv_open_locks.glob('*').collect{|f| "- " << File.basename(f) } * "\n" }
+
+# LOCKS
+#{ CMD.cmd("find #{Rbbt.share.find_all.collect{|f| "'#{f}'" } * " " } -name '*.lock'").read << CMD.cmd("find #{Rbbt.var.find_all.collect{|f| "'#{f}'" } * " " } -name '*.lock'").read }
+
+# PERSIST
+#{ CMD.cmd("find #{Rbbt.share.find_all.collect{|f| "'#{f}'" } * " " } -name '*.persist'").read << CMD.cmd("find #{Rbbt.var.find_all.collect{|f| "'#{f}'" } * " " } -name '*.persist'").read }
+EOF
+
+
+

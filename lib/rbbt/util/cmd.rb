@@ -71,7 +71,7 @@ module CMD
 
       self.close if self.eof? and not self.closed?
 
-      data
+      data || ""
     end
   end
 
