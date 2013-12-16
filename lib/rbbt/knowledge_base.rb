@@ -251,8 +251,8 @@ class KnowledgeBase
 
   #{{{ Query
   
-  def setup(name, matches)
-    AssociationItem.setup matches, self, name, false
+  def setup(name, matches, reverse = false)
+    AssociationItem.setup matches, self, name, reverse
   end
 
   def all(name, options={})
@@ -289,7 +289,11 @@ class KnowledgeBase
       raise "Entities are not a Hash or an AnnotatedArray: #{Misc.fingerprint entities}"
     end
     repo = get_index name
-    setup(name, repo.subset_entities(entities))
+    begin
+      setup(name, repo.subset_entities(entities))
+    rescue 
+      setup(name, repo.reverse.subset_entities(entities), true)
+    end
   end
 
   def translate(entities, type)

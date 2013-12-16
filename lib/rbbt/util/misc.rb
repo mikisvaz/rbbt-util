@@ -240,8 +240,6 @@ module Misc
   end
 
   def self.fingerprint(obj)
-    #DEBUG
-    return "nil" if obj.nil?
     case obj
     when nil
       "nil"

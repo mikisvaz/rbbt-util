@@ -35,6 +35,7 @@ module Association
                      new.unnamed = true
 
                      Association::Index.setup new
+
                      new
                    end
     end
@@ -69,9 +70,11 @@ module Association
     end
 
     def subset(source, target)
-      return [] if source.nil? or source.empty? or target.nil? or target.empty?
+      return [] if source.nil? or source.empty? or (target and target.empty?)
 
       matches = source.uniq.inject([]){|acc,e| acc.concat(match(e)) }
+
+      return matches if target.nil?
 
       target_matches = {}
 
@@ -87,6 +90,7 @@ module Association
 
     def subset_entities(entities)
       source, target = select_entities(entities)
+      raise "No source entities found" if source.nil? 
       subset source, target
     end
   end
