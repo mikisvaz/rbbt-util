@@ -186,7 +186,7 @@ class Step
           log :aborted, "Aborted"
           raise $!
         rescue Exception
-          Log.debug("Exception caught on forked process: #{path}")
+          Log.debug("Exception '#{$!.message}' caught on forked process: #{path}")
           raise $!
         end
 

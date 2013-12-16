@@ -70,11 +70,15 @@ module Association
     end
 
     def subset(source, target)
-      return [] if source.nil? or source.empty? or (target and target.empty?)
+      return [] if source.nil? or target.nil?
 
-      matches = source.uniq.inject([]){|acc,e| acc.concat(match(e)) }
+      if source == :all or source == "all"
+        matches = keys
+      else
+        matches = source.uniq.inject([]){|acc,e| acc.concat(match(e)) }
+      end
 
-      return matches if target.nil?
+      return matches if target == :all or target == "all"
 
       target_matches = {}
 
@@ -90,7 +94,6 @@ module Association
 
     def subset_entities(entities)
       source, target = select_entities(entities)
-      raise "No source entities found" if source.nil? 
       subset source, target
     end
   end

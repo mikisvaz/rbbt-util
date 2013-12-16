@@ -157,7 +157,7 @@ module Annotated
     when Array
       object.respond_to?(:clean_annotations) ?
         object.clean_annotations : 
-        object.collect{|e| Annotated.purge e}
+        object.inject([]){|acc,e| acc << Annotated.purge(e); acc}
     when Hash
       object.each do |key, value|
         object[key] = Annotated.purge value

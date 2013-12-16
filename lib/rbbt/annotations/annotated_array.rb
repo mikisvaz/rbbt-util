@@ -22,7 +22,7 @@ module AnnotatedArray
 
     value = annotate(value)
 
-    value.extend AnnotatedArray if Array === value
+    value.extend AnnotatedArray if Array === value and Annotated === value
 
     if value.respond_to? :container
       value.container       = self
@@ -46,7 +46,7 @@ module AnnotatedArray
 
         value = annotate(value)
 
-        value.extend AnnotatedArray if Array === value
+        value.extend AnnotatedArray if Array === value and Annotated === value
 
         value.container       = self
         value.container_index = pos
@@ -97,7 +97,7 @@ module AnnotatedArray
     end
 
     annotate(res)
-    res.extend AnnotatedArray
+    res.extend AnnotatedArray 
 
     res
   end

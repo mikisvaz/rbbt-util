@@ -3,7 +3,7 @@ require 'json'
 module Annotated
 
   def self.flatten(array)
-    return array if array.nil?  or array.empty?
+    return array unless Array === array and not array.empty?
     array.extend AnnotatedArray if Annotated === array
     return array.flatten if AnnotatedArray === array
     begin
@@ -33,7 +33,7 @@ module Annotated
 
     object.instance_variable_set(:@id, entity_id) if entity_id
 
-    object.extend AnnotatedArray if annotated_array
+    object.extend AnnotatedArray if annotated_array and Array === object
 
     object
   end

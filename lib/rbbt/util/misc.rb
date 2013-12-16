@@ -243,6 +243,10 @@ module Misc
     case obj
     when nil
       "nil"
+    when TrueClass
+      "true"
+    when FalseClass
+      "false"
     when Symbol
       ":" << obj.to_s
     when String
