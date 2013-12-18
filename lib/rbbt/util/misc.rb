@@ -256,7 +256,7 @@ module Misc
         "'" << obj << "'"
       end
     when AnnotatedArray
-      "<E: #{fingerprint Annotated.purge(obj)} #{fingerprint obj.info}>"
+      "<A: #{fingerprint Annotated.purge(obj)} #{fingerprint obj.info}>"
     when Array
       if (length = obj.length) > 10
         "[#{length} --" <<  (obj.values_at(0,1, length / 2, -2, -1).collect{|e| fingerprint(e)} * ",") << "]"

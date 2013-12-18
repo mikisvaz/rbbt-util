@@ -21,12 +21,12 @@ module AssociationItem
 
   property :target_entity => :array2single do
     type = reverse ? knowledge_base.source(database) : knowledge_base.target(database)
-    knowledge_base.annotate self.target, type, database if self.target.any?
+    knowledge_base.annotate self.target, type, database #if self.target.any?
   end
 
   property :source_entity => :array2single do
     type = reverse ? knowledge_base.target(database) : knowledge_base.source(database)
-    knowledge_base.annotate self.source, type if self.target.any?
+    knowledge_base.annotate self.source, type #if self.source.any?
   end
 
   property :value => :array2single do

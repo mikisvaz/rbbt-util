@@ -33,6 +33,11 @@ module Persist
           range(key, 1, key + 255.chr, 1)
         end
 
+        def get_prefix(key)
+          keys = prefix(key)
+          select(:key => keys)
+        end
+
         def closed?
           @closed
         end

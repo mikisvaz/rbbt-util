@@ -198,7 +198,7 @@ class Step
                 begin
                   Process.waitpid pid
                 rescue Errno::ECHILD
-                  Log.error "Waiting on #{ pid } failed: #{$!.message}"
+                  Log.low "Waiting on #{ pid } failed: #{$!.message}"
                 end
               end
             end

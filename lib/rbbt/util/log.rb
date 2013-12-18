@@ -23,7 +23,7 @@ module Log
 
   WHITE, DARK, GREEN, YELLOW, RED = Color::SOLARIZED.values_at :base0, :base00, :green, :yellow, :magenta
 
-  SEVERITY_COLOR = [reset, green, yellow, red, green, yellow, red] #.collect{|e| "\033[#{e}"}
+  SEVERITY_COLOR = [reset, cyan, green, magenta, blue, yellow, red] #.collect{|e| "\033[#{e}"}
 
   HIGHLIGHT = "\033[1m"
 
@@ -36,13 +36,11 @@ module Log
     message ||= block.call if block_given?
     return if message.nil?
 
-    severity_color = SEVERITY_COLOR[severity]
     time = Time.now.strftime("%m/%d/%y-%H:%M:%S")
 
     sev_str = severity.to_s
-    sev_str = "" << HIGHLIGHT << sev_str << SEVERITY_COLOR[0] if severity >= INFO
 
-    prefix = time << "[" << severity_color << sev_str << SEVERITY_COLOR[0] << "]"
+    prefix = time << "[" << SEVERITY_COLOR[severity] << sev_str << SEVERITY_COLOR[0] << "]"
     message = "" << HIGHLIGHT << message << SEVERITY_COLOR[0] if severity >= INFO
     str = prefix << " " << message
 
@@ -117,4 +115,13 @@ def fff(object)
   Log.debug{""}
   Log.debug{require 'rbbt/util/misc'; "=> " << Misc.fingerprint(object) }
   Log.debug{""}
+end
+
+
+if __FILE__ == $0
+  Log.severity = 0
+
+  (0..6).each do |level|
+    Log.log("Level #{level}", level)
+  end
 end
