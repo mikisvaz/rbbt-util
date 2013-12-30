@@ -65,7 +65,7 @@ module Persist
       end
     end
 
-    persistence_dir = Misc.process_options(persist_options, :dir) || Persist.cachedir
+    persistence_dir = Misc.process_options(persist_options, :dir) || Persist.cachedir 
     Path.setup(persistence_dir) unless Path === persistence_dir
 
     filename = perfile.gsub(/\s/,'_').gsub(/\//,'>')

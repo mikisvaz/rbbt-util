@@ -256,10 +256,6 @@ module Persist
 
     filename ||= get_filename(source)
 
-    path = persistence_path(filename, persist_options, options)
-
-    lock_filename = Persist.persistence_path(path, {:dir => TSV.lock_dir})
-
     if not persist_options[:persist]
       data = {}
 
@@ -267,6 +263,10 @@ module Persist
 
       return data 
     end
+
+    path = persistence_path(filename, persist_options, options)
+
+    lock_filename = Persist.persistence_path(path, {:dir => TSV.lock_dir})
 
     if is_persisted? path and not persist_options[:update]
       Log.debug "TSV persistence up-to-date: #{ path }"
