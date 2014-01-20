@@ -190,7 +190,7 @@ module Open
 
   def self.rm_rf(file)
     if (dir_sub_path = find_repo_dir(file))
-      remove_from_repo(*dir_sub_path, true)
+      remove_from_repo(dir_sub_path[0], dir_sub_path[1], true)
     else
       FileUtils.rm_rf(file)
     end

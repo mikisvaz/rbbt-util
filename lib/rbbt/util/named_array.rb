@@ -29,7 +29,8 @@ module NamedArray
     template = entity_templates[field]
     entity_templates ||= {}
     if template and template.respond_to?(:annotate)
-      entity = template.annotate(entity.frozen? ? entity.dup : entity)
+      begin entity = entity.dup if entity.frozen?;  rescue; end
+      entity = template.annotate(entity)
       entity.extend AnnotatedArray if Array === entity
       entity
     else
@@ -39,7 +40,8 @@ module NamedArray
         template = Misc.prepare_entity("ENTITY_TEMPLATE", field, options)
         if template.respond_to?(:annotate)
           entity_templates[field] = template
-          entity = template.annotate(entity.frozen? ? entity.dup : entity)
+          begin entity = entity.dup if entity.frozen?;  rescue; end
+          entity = template.annotate(entity)
           entity.extend AnnotatedArray if Array === entity
           entity
         else

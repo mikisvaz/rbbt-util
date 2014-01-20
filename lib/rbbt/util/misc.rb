@@ -1417,7 +1417,8 @@ module IndiferentHash
   end
 
   def [](key)
-    res = super(key) and return res
+    res = super(key) 
+    return res unless res.nil?
 
     case key
     when Symbol, Module
