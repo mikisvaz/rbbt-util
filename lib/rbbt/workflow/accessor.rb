@@ -27,14 +27,17 @@ class Step
 
   def info
     return {} if info_file.nil? or not Open.exists? info_file
+    return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
     begin
-      Misc.insist(2, 2, info_file) do
+      @info_cache = Misc.insist(2, 2, info_file) do
         Misc.insist(2, 0.5, info_file) do
           Open.open(info_file) do |file|
             INFO_SERIALIAZER.load(file) || {}
           end
         end
       end
+      @info_cache_time = Time.now
+      @info_cache
     rescue Exception
       Log.debug{"Error loading info file: " + info_file}
       Open.write(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
@@ -48,7 +51,9 @@ class Step
     Open.lock(info_file) do
       i = info
       i[key] = value
+      @info_cache = i
       Open.write(info_file, INFO_SERIALIAZER.dump(i))
+      @info_cache_time = Time.now
       value
     end
   end
