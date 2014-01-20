@@ -29,10 +29,12 @@ class Step
     return {} if info_file.nil? or not Open.exists? info_file
     return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
     begin
-      @info_cache = Misc.insist(2, 2, info_file) do
-        Misc.insist(2, 0.5, info_file) do
-          Open.open(info_file) do |file|
-            INFO_SERIALIAZER.load(file) || {}
+      @info_cache = Misc.insist(3, 5, info_file) do
+        Misc.insist(2, 2, info_file) do
+          Misc.insist(2, 0.5, info_file) do
+            Open.open(info_file) do |file|
+              INFO_SERIALIAZER.load(file) || {}
+            end
           end
         end
       end
