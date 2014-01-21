@@ -129,7 +129,7 @@ module TSV
     when :double, :list
       setup_array value, fields, key, entity_options, entity_templates
     when :flat, :single
-      value = value.dup if value.frozen?
+      begin value = value.dup; rescue; end if value.frozen?
 
       value = prepare_entity(value, fields.first, entity_options)
     end
