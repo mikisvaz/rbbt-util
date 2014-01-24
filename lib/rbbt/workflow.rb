@@ -196,9 +196,13 @@ module Workflow
 
     dependencies = real_dependencies(task, jobname, inputs, task_dependencies[taskname] || [])
 
-    input_values = task.take_input_values(inputs)
-
-    step_path = step_path taskname, jobname, input_values, dependencies
+    if inputs.empty?
+      step_path = step_path taskname, jobname, [], []
+      input_values = task.take_input_values(inputs)
+    else
+      input_values = task.take_input_values(inputs)
+      step_path = step_path taskname, jobname, input_values, dependencies
+    end
 
     step = Step.new step_path, task, input_values, dependencies
 
