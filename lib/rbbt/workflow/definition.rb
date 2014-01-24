@@ -7,6 +7,7 @@ module Workflow
   AnnotatedModule.add_consummable_annotation(self,
                                              :result_description => "",
                                              :result_type        => nil,
+                                             :extension          => '',
                                              :dependencies       => [])
   def helper(name, &block)
     helpers[name] = block
@@ -14,6 +15,10 @@ module Workflow
 
   def desc(description)
     @description = description
+  end
+
+  def extension(extension)
+    @extension = extension
   end
 
   def returns(description)
@@ -45,6 +50,7 @@ module Workflow
       :result_type        => (Array === type ? type.to_sym : type),
       :input_defaults     => consume_input_defaults,
       :input_descriptions => consume_input_descriptions,
+      :extension          => consume_extension,
       :input_options      => consume_input_options
     }
     
