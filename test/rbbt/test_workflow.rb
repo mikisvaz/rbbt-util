@@ -1,6 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '/../test_helper')
 require 'rbbt/workflow'
-require 'rbbt/workflow/soap'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
 

@@ -92,12 +92,18 @@ class Step
     self
   end
 
+  def checks
+    deps = rec_dependencies.collect{|dependency| dependency.path }.uniq
+    deps.select!{|p| p.exists? }
+  end
+
   def run(no_load = false)
-    result = Persist.persist "Job", @task.result_type, :file => path, :check => rec_dependencies.collect{|dependency| dependency.path }.uniq, :no_load => no_load do
-      @exec = false
+
+    result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load do
       if Step === Step.log_relay_step and not self == Step.log_relay_step
         relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
       end
+      @exec = false
 
       Open.rm info_file if Open.exists? info_file
 
@@ -149,7 +155,7 @@ class Step
               backtrace = $!.backtrace
 
               # HACK: This fixes an strange behaviour in 1.9.3 where some
-              # bactrace strings are coded in ASCII-8BIT
+              # backtrace strings are coded in ASCII-8BIT
               backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
 
               set_info :backtrace, backtrace 
@@ -251,7 +257,7 @@ class Step
 
   def load
     raise "Can not load: Step is waiting for proces #{@pid} to finish" if not done?
-    result = Persist.persist "Job", @task.result_type, :file => @path, :check => rec_dependencies.collect{|dependency| dependency.path} do
+    result = Persist.persist "Job", @task.result_type, :file => @path, :check => checks do
       exec
     end
     prepare_result result, @task.result_description, info

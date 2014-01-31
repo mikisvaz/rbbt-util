@@ -262,4 +262,14 @@ module Workflow
     local_persist_setup
     local_workdir_setup
   end
+
+  def with_workdir(workdir)
+    saved = self.workdir
+    begin
+      self.workdir = Path.setup(File.expand_path(workdir))
+      yield
+    ensure
+      self.workdir = saved
+    end
+  end
 end

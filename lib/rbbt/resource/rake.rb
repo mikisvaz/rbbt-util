@@ -47,7 +47,8 @@ module Rake
         Rake::FileTask.clear_files
       end
     rescue
-      raise "Error in rake: #{$!.message}"
+      Log.error "Error in rake: #{$!.message}"
+      raise $!
     end
     #}
     #Process.wait(pid)

@@ -85,8 +85,14 @@ module TSV
     new = {}
     case type
     when :double
-      through do |k,v|
-        new[k] = v.collect{|e| e.first}
+      if block_given?
+        through do |k,v|
+          new[k] = v.collect{|e| yield e}
+        end
+      else
+        through do |k,v|
+          new[k] = v.collect{|e| e.first}
+        end
       end
     when :flat
       through do |k,v|

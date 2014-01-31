@@ -97,7 +97,7 @@ module CMD
   end
 
   def self.cmd(cmd, options = {}, &block)
-    options[:stderr] ||= Log::DEBUG
+    options = Misc.add_defaults options, :stderr => Log::DEBUG
     in_content = options.delete(:in)
     stderr     = options.delete(:stderr)
     pipe       = options.delete(:pipe)

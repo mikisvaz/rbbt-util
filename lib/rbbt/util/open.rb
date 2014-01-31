@@ -80,11 +80,11 @@ module Open
              end
 
     begin
-      CMD.cmd("wget '#{ url }'", options.merge(
-        '-O' => '-', 
-        :pipe => pipe, 
-        :stderr => stderr
-      ))
+      wget_options = options.merge( '-O' => '-')
+      wget_options[:pipe] = pipe unless pipe.nil?
+      wget_options[:stderr] = stderr unless stderr.nil?
+
+      CMD.cmd("wget '#{ url }'", wget_options)
     rescue
      STDERR.puts $!.backtrace.inspect
      raise OpenURLError, "Error reading remote url: #{ url }.\n#{$!.message}"
@@ -384,7 +384,7 @@ module Open
 
     FileUtils.mkdir_p File.dirname(file)
     case
-    when content.nil?
+    when block_given?
       begin
         File.open(file, mode) do |f| 
           yield f
@@ -393,6 +393,8 @@ module Open
         FileUtils.rm file if File.exists? file
         raise $!
       end
+    when content.nil?
+      File.open(file, mode){|f| f.write "" }
     when String === content
       file_write(file, content, mode)
     else

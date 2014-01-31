@@ -259,7 +259,7 @@ module Misc
       "<A: #{fingerprint Annotated.purge(obj)} #{fingerprint obj.info}>"
     when Array
       if (length = obj.length) > 10
-        "[#{length} --" <<  (obj.values_at(0,1, length / 2, -2, -1).collect{|e| fingerprint(e)} * ",") << "]"
+        "[#{length}--" <<  (obj.values_at(0,1, length / 2, -2, -1).collect{|e| fingerprint(e)} * ",") << "]"
       else
         "[" << (obj.collect{|e| fingerprint(e) } * ",") << "]"
       end
@@ -1015,8 +1015,10 @@ end
   end
 
   def self.fixutf8(string)
+    return nil if string.nil?
     return string if (string.respond_to? :valid_encoding? and string.valid_encoding?) or
     (string.respond_to? :valid_encoding and string.valid_encoding)
+
     if string.respond_to?(:encode)
       string.encode("UTF-16BE", :invalid => :replace, :undef => :replace, :replace => "?").encode('UTF-8')
     else

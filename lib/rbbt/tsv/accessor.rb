@@ -565,6 +565,7 @@ Fields = #{fields ? Misc.fingerprint(fields) : "*No field info*"}
 Type = #{type}
 Size = #{size}
 namespace = #{namespace}
+identifiers = #{Misc.fingerprint identifiers}
 Example:
   - #{key} -- #{Misc.fingerprint values }
       EOF

@@ -112,6 +112,7 @@ options = SOPT.get <<EOF
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely:
 -jn--jobname* Job name to use. The name 'Default' is used by default:
 -pn--printname Print the name of the job and exit without starting it:
+-wd--workdir* Change the working directory of the workflow:
 --fork Run job asyncronously:
 EOF
 
@@ -168,6 +169,8 @@ name = options.delete(:jobname) || "Default"
 sopt_option_string = SOPT_options(workflow, task)
 job_options = SOPT.get sopt_option_string
 job_options = fix_options(workflow, task, job_options)
+
+workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if options[:workdir]
 
 #- get job
 
