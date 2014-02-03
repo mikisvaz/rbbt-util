@@ -1,11 +1,20 @@
+require 'rbbt/persist/tsv/lmdb'
+
 begin
   require 'rbbt/persist/tsv/tokyocabinet'
 rescue Exception
   Log.warn "The tokyocabinet gem could not be loaded: persistence over TSV files will fail"
 end
 
-require 'moneta'
+begin
+  require 'rbbt/persist/tsv/kyotocabinet'
+rescue Exception
+  Log.warn "The kyotocabinet gem could not be loaded: persistence over TSV files will fail"
+end
+
 module Persist
+  CONNECTIONS = {}
+
   def self.get_filename(source)
     case
     when Path === source
@@ -17,6 +26,17 @@ module Persist
     when TSV === source
       "TSV[#{Misc.digest Misc.fingerprint(source)}]"
     end || source.object_id.to_s
+  end
+
+  def self.open_database(path, write, serializer = nil, type = "HDB")
+    case type
+    when "LMDB"
+      Persist.open_lmdb(path, write, serializer)
+    when 'kch'
+      Persist.open_kyotocabinet(path, write, serializer, type)
+    else
+      Persist.open_tokyocabinet(path, write, serializer, type)
+    end
   end
 
   def self.persist_tsv(source, filename, options = {}, persist_options = {}, &block)
@@ -43,14 +63,14 @@ module Persist
 
     if is_persisted? path and not persist_options[:update]
       Log.debug "TSV persistence up-to-date: #{ path }"
-      return open_tokyocabinet(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
+      return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
     end
 
     Misc.lock lock_filename do
       begin
         if is_persisted? path 
           Log.debug "TSV persistence up-to-date: #{ path }"
-          return open_tokyocabinet(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
+          return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
         end
 
         FileUtils.rm path if File.exists? path
@@ -59,7 +79,7 @@ module Persist
 
         tmp_path = path + '.persist'
 
-        data = open_tokyocabinet(tmp_path, true, persist_options[:serializer], persist_options[:engine] || TokyoCabinet::HDB)
+        data = open_database(tmp_path, true, persist_options[:serializer], persist_options[:engine] || TokyoCabinet::HDB)
         data.serializer = :type if TSV === data and data.serializer.nil?
 
         data.write_and_read do
@@ -67,7 +87,7 @@ module Persist
         end
 
         FileUtils.mv tmp_path, path if File.exists? tmp_path and not File.exists? path
-        tsv = TC_CONNECTIONS[path] = TC_CONNECTIONS.delete tmp_path
+        tsv = CONNECTIONS[path] = CONNECTIONS.delete tmp_path
         tsv.persistence_path = path
 
         data

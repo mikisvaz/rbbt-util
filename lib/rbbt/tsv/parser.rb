@@ -164,17 +164,14 @@ module TSV
 
     def add_to_data_no_merge_double(data, keys, values)
       keys.each do |key|
-        data[key] = values unless data.include? key
+        next if data.include? key
+        data[key] = values 
       end
     end
 
     def add_to_data_merge(data, keys, values)
       keys.uniq.each do |key|
         if data.include? key
-          #data[key] = data[key].zip(values).collect do |old, new|
-          #  old.concat new
-          #  old
-          #end
           new = data[key]
           new.each_with_index do |old, i|
             old.concat values[i]

@@ -22,8 +22,8 @@ class Test::Unit::TestCase
   def teardown
     if defined? Persist
       FileUtils.rm_rf Path.setup("", 'rbbt').tmp.test.find :user
-      Persist::TC_CONNECTIONS.values.each do |c| c.close end
-      Persist::TC_CONNECTIONS.clear
+      Persist::CONNECTIONS.values.each do |c| c.close end
+      Persist::CONNECTIONS.clear
     end
   end
 

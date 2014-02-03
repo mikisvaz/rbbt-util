@@ -1,29 +1,33 @@
-require 'tokyocabinet'
+require 'kyotocabinet'
 
 module Persist
 
-  module TCAdapter
-    attr_accessor :persistence_path, :tokyocabinet_class, :closed, :writable
+  module KCAdapter
+    attr_accessor :persistence_path, :kyotocabinet_class, :closed, :writable
 
-    def self.open(path, write, tokyocabinet_class = TokyoCabinet::HDB)
-      tokyocabinet_class = TokyoCabinet::HDB if tokyocabinet_class == "HDB"
-      tokyocabinet_class = TokyoCabinet::BDB if tokyocabinet_class == "BDB"
+    def self.open(path, write, kyotocabinet_class = "kch")
+      real_path = path + ".#{kyotocabinet_class}"
 
-      database = CONNECTIONS[path] ||= tokyocabinet_class.new
+      @persistence_path = real_path
 
-      flags = (write ? tokyocabinet_class::OWRITER | tokyocabinet_class::OCREAT : tokyocabinet_class::OREADER)
-      database.close
+      flags = (write ? KyotoCabinet::DB::OWRITER | KyotoCabinet::DB::OCREATE : nil)
+      database = 
+        CONNECTIONS[path] ||= begin
+                                db = KyotoCabinet::DB.new
+                                db.open(real_path, flags)
+                                db
+                              end
 
-      if !database.open(path, flags)
-        ecode = database.ecode
-        raise "Open error: #{database.errmsg(ecode)}. Trying to open file #{path}"
-      end
-
-      database.extend Persist::TCAdapter unless Persist::TCAdapter === database
+      database.extend KCAdapter
       database.persistence_path ||= path
-      database.tokyocabinet_class = tokyocabinet_class
 
       database
+    end
+
+    def keys
+      keys = []
+      each_key{|k| keys << k}
+      keys
     end
 
     def prefix(key)
@@ -33,6 +37,11 @@ module Persist
     def get_prefix(key)
       keys = prefix(key)
       select(:key => keys)
+    end
+
+    def include?(key)
+      value = get(key)
+      ! value.nil?
     end
 
     def closed?
@@ -47,9 +56,8 @@ module Persist
     def read(force = false)
       return if not write? and not closed and not force
       self.close
-      if !self.open(@persistence_path, tokyocabinet_class::OREADER)
-        ecode = self.ecode
-        raise "Open error: #{self.errmsg(ecode)}. Trying to open file #{@persistence_path}"
+      if !self.open(@persistence_path, KyotoCabinet::DB::OREADER)
+        raise "Open error. Trying to open file #{@persistence_path}"
       end
       @writable = false
       @closed = false
@@ -60,9 +68,8 @@ module Persist
       return if write? and not closed and not force
       self.close
 
-      if !self.open(@persistence_path, tokyocabinet_class::OWRITER)
-        ecode = self.ecode
-        raise "Open error: #{self.errmsg(ecode)}. Trying to open file #{@persistence_path}"
+      if !self.open(@persistence_path, KyotoCabinet::DB::OWRITER)
+        raise "Open error. Trying to open file #{@persistence_path}"
       end
 
       @writable = true
@@ -139,12 +146,12 @@ module Persist
   end
 
 
-  def self.open_tokyocabinet(path, write, serializer = nil, tokyocabinet_class = TokyoCabinet::HDB)
+  def self.open_kyotocabinet(path, write, serializer = nil,  kyotocabinet_class= 'kch')
     write = true unless File.exists? path
 
     FileUtils.mkdir_p File.dirname(path) unless File.exists?(File.dirname(path))
 
-    database = Persist::TCAdapter.open(path, write, tokyocabinet_class)
+    database = Persist::KCAdapter.open(path, write, kyotocabinet_class)
 
     unless serializer == :clean
       TSV.setup database
