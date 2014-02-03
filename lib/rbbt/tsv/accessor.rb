@@ -112,9 +112,8 @@ module TSV
   end
 
   KEY_PREFIX = "__tsv_hash_"
-
   ENTRIES = []
-  ENTRY_KEYS = []
+  ENTRY_KEYS = Set.new
 
   #{{{ Chained Methods
   def empty?
@@ -142,7 +141,7 @@ module TSV
   end
 
   def keys
-    keys = super - ENTRY_KEYS
+    keys = super - ENTRY_KEYS.to_a
     return keys if @unnamed or key_field.nil?
 
     prepare_entity(keys, key_field, entity_options.merge(:dup_array => true))
@@ -417,7 +416,6 @@ end
     :serializer
 
   def fields
-    #@fields ||= TSV_SERIALIZER.load(self.tsv_clean_get_brackets("__tsv_hash_fields") || SERIALIZED_NIL)
     @fields ||= TSV_SERIALIZER.load(self.send(:[], "__tsv_hash_fields", :entry_key) || SERIALIZED_NIL)
     if true or @fields.nil? or @unnamed
       @fields
@@ -427,14 +425,12 @@ end
   end
 
   def namespace=(value)
-    #self.tsv_clean_set_brackets "__tsv_hash_namespace", value.nil? ? SERIALIZED_NIL : value.to_yaml
     self.send(:[]=, "__tsv_hash_namespace", value.nil? ? SERIALIZED_NIL : value.to_yaml, true)
     @namespace = value
     @entity_options = nil
   end
 
   def fields=(value)
-    #self.tsv_clean_set_brackets "__tsv_hash_fields", value.nil? ? SERIALIZED_NIL : value.to_yaml
     self.send(:[]=, "__tsv_hash_fields", value.nil? ? SERIALIZED_NIL : value.to_yaml, true)
     @fields = value
     @named_fields = nil
