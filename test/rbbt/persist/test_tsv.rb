@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/../test_helper')
+require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
 require 'rbbt/persist'
 require 'rbbt/annotations'
 require 'rbbt/util/tmpfile'
@@ -10,7 +10,7 @@ module TestAnnotation
   self.annotation :test_annotation
 end
 
-class TestPersist < Test::Unit::TestCase
+class TestPersistTSV < Test::Unit::TestCase
 
   def test_annotation_persist
     TmpFile.with_file do |tmp|
@@ -77,7 +77,6 @@ class TestPersist < Test::Unit::TestCase
       assert_equal "2", persisted_annotations.sort.last.test_annotation
     end
   end
-
 
   def test_bdb
     TmpFile.with_file do |tmp|

@@ -8,10 +8,12 @@ require 'rubygems'
 require 'rbbt'
 require 'rbbt/resource/path'
 
+
 class Test::Unit::TestCase
   include FileUtils
 
   def setup
+    Random.new
     if defined? Persist
       Persist.cachedir = Rbbt.tmp.test.persistence.find :user
     end
