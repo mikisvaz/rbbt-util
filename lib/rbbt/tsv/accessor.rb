@@ -144,11 +144,13 @@ module TSV
     :filename,
     :serializer
 
-  def empty?
-    length == 0
-  end
+  attr_reader :serializer_module
 
-  #{{{ GETTERS AND SETTERS
+  def serializer=(serializer)
+    @serializer = serializer
+    self.send(:[]=, KEY_PREFIX + 'serializer', (serializer.nil? ? SERIALIZED_NIL : TSV_SERIALIZER.dump(serializer)), :entry_key)
+    @serializar_module = serializer.nil? ? nil : SERIALIZER_ALIAS[serializer.to_sym]
+  end
 
   def serializer_module
     @serializar_module ||= begin
@@ -157,12 +159,19 @@ module TSV
                            end
   end
 
+  def empty?
+    length == 0
+  end
+
+  #{{{ GETTERS AND SETTERS
+
+
   def [](key, clean = false)
     value = super(key)
     return value if clean or value.nil?
 
     value = serializer_module.load(value) if serializer_module 
-    return value if value.nil? or @unnamed or fields.nil?
+    return value if @unnamed or fields.nil?
 
     case type
     when :double, :list

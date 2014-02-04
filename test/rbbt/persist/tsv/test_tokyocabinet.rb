@@ -12,6 +12,14 @@ end
 
 class TestPersistTSVTC < Test::Unit::TestCase
 
+  def test_organism
+    require 'rbbt/sources/organism'
+    TmpFile.with_file do |tmp_file|
+      tsv = Organism.identifiers("Hsa").tsv :key_field => "Associated Gene Name", :fields => ["Ensembl Gene ID"], :type => :single, :persist => true, :persist_engine => "HDB", :persist_dir => tmp_file
+      assert_equal "ENSG00000141510", tsv["TP53"]
+    end
+  end
+
   def test_annotation_persist
     TmpFile.with_file do |tmp|
       entity1 = "Entity 1"

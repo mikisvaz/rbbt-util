@@ -19,14 +19,14 @@ module Persist
                               end
 
       database.extend KCAdapter
-      database.persistence_path ||= path
+      database.persistence_path ||= real_path
 
       database
     end
 
     def keys
       keys = []
-      each_key{|k| keys << k}
+      each_key{|k| keys.concat k}
       keys
     end
 
@@ -57,7 +57,7 @@ module Persist
       return if not write? and not closed and not force
       self.close
       if !self.open(@persistence_path, KyotoCabinet::DB::OREADER)
-        raise "Open error. Trying to open file #{@persistence_path}"
+        raise "Open error #{ res }. Trying to open file #{@persistence_path}"
       end
       @writable = false
       @closed = false
@@ -138,6 +138,11 @@ module Persist
         self[key] = values
       end
     end
+
+    #def []=(key,value)
+    #  super(key,value)
+    #  self.synchronize
+    #end
 
 
     def range(*args)

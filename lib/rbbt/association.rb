@@ -242,7 +242,7 @@ module Association
       tsv = load_tsv(file, options)
 
       tsv.annotate(data)
-      data.serializer = tsv.type if TokyoCabinet::HDB === data
+      data.serializer = tsv.type if data.respond_to? :persistence_path
 
       tsv.with_unnamed do
         tsv.each do |k,v|

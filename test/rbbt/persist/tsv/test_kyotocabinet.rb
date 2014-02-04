@@ -14,37 +14,20 @@ module TestAnnotation
 end
 
 class TestPersistTSVKC < Test::Unit::TestCase
-  def test_persist_kc
-    Random.new
-    test=nil
-    TmpFile.with_file nil, false do |tmp_file|
-      db = nil
-      Misc.benchmark do
-        db = Organism.identifiers("Hsa").tsv :fields => ["Associated Gene Name"], :persist => true, :persist_engine => "kch", :persist_dir => tmp_file
-        db.write_and_read do
-          db["TEST"] = [["AARG"]]
-        end
-        ddd db["TEST"]
-        fff db
-      end
-      test = db.keys.sort{rand}[0..1000]
-      Misc.benchmark do
-        10.times do 
-          test.each do |k| db[k] end
-        end
-      end
+  def _test_organism_kch
+    require 'rbbt/sources/organism'
+    TmpFile.with_file do |tmp_file|
+      tsv = Organism.identifiers("Hsa").tsv :key_field => "Associated Gene Name", :fields => ["Ensembl Gene ID"], :type => :single, :persist => true, :persist_engine => "kch", :persist_dir => tmp_file
+      assert_equal "ENSG00000141510", tsv["TP53"]
     end
-    TmpFile.with_file nil, false do |tmp_file|
-      db = nil
-      Misc.benchmark do
-        db = Organism.identifiers("Hsa").tsv :fields => ["Associated Gene Name"], :persist => true, :persist_engine => "BDB", :persist_dir => tmp_file
-        fff db
-      end
-      Misc.benchmark do
-        10.times do 
-          test.each do |k| db[k] end
-        end
-      end
+  end
+
+
+  def test_organism_kct
+    require 'rbbt/sources/organism'
+    TmpFile.with_file do |tmp_file|
+      tsv = Organism.identifiers("Hsa").tsv :key_field => "Associated Gene Name", :fields => ["Ensembl Gene ID"], :type => :single, :persist => true, :persist_engine => "kct", :persist_dir => tmp_file
+      assert_equal "ENSG00000141510", tsv["TP53"]
     end
   end
 end

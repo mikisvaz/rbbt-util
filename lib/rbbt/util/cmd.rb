@@ -33,9 +33,12 @@ module CMD
 
         if $? and not $?.success?
           Log.debug{"Raising exception" if log}
-          exception = CMDError.new "Command [#{@pid}] #{@cmd} failed with error status #{$?.exitstatus}"
-          original_close
-          raise exception
+          exception = CMDError.new "Command [#{@pid}] '#{@cmd}' failed with error status #{$?.exitstatus}"
+          begin
+            original_close
+          ensure
+            raise exception
+          end
         end
       end
     end

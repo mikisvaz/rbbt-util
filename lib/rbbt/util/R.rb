@@ -68,6 +68,12 @@ source('#{UTIL}');
     end
   end
 
+  def self.tsv(file, options = {})
+    options = Misc.add_defaults :header_hash => '', :sep => / +/, :type => :list, :key_field => 'ID'
+    key_field = Misc.process_options options, :key_field
+    clean = CMD.cmd('grep -v WARNING', :in => file, :pipe => true)
+    TSV.open(clean, options).tap{|tsv| tsv.key_field = key_field }
+  end
 end
 
 module TSV

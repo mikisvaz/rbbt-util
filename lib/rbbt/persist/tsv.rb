@@ -1,5 +1,3 @@
-require 'rbbt/persist/tsv/lmdb'
-
 begin
   require 'rbbt/persist/tsv/tokyocabinet'
 rescue Exception
@@ -7,9 +5,27 @@ rescue Exception
 end
 
 begin
+  require 'rbbt/persist/tsv/lmdb'
+rescue Exception
+  Log.warn "The lmdb gem could not be loaded. Persistance using this engine will fail."
+end
+
+begin
+  require 'rbbt/persist/tsv/leveldb'
+rescue Exception
+  Log.warn "The LevelDB gem could not be loaded. Persistance using this engine will fail."
+end
+
+begin
+  require 'rbbt/persist/tsv/cdb'
+rescue Exception
+  Log.warn "The CDB gem could not be loaded. Persistance using this engine will fail."
+end
+
+begin
   require 'rbbt/persist/tsv/kyotocabinet'
 rescue Exception
-  Log.warn "The kyotocabinet gem could not be loaded: persistence over TSV files will fail"
+  Log.warn "The kyotocabinet gem could not be loaded. Persistance using this engine will fail."
 end
 
 module Persist
@@ -30,9 +46,13 @@ module Persist
 
   def self.open_database(path, write, serializer = nil, type = "HDB")
     case type
+    when "LevelDB"
+      Persist.open_leveldb(path, write, serializer)
+    when "CDB"
+      Persist.open_cdb(path, write, serializer)
     when "LMDB"
       Persist.open_lmdb(path, write, serializer)
-    when 'kch'
+    when 'kch', 'kct'
       Persist.open_kyotocabinet(path, write, serializer, type)
     else
       Persist.open_tokyocabinet(path, write, serializer, type)
@@ -86,15 +106,16 @@ module Persist
           yield data
         end
 
-        FileUtils.mv tmp_path, path if File.exists? tmp_path and not File.exists? path
+        FileUtils.mv data.persistence_path, path if File.exists? data.persistence_path and not File.exists? path
         tsv = CONNECTIONS[path] = CONNECTIONS.delete tmp_path
         tsv.persistence_path = path
+        tsv.fix_io if tsv.respond_to? :fix_io
 
         data
       rescue Exception
         Log.error "Captured error during persist_tsv. Erasing: #{path}"
-        FileUtils.rm tmp_path if tmp_path and File.exists? tmp_path
-        FileUtils.rm path if path and File.exists? path
+        FileUtils.rm_rf tmp_path if tmp_path and File.exists? tmp_path
+        FileUtils.rm_rf path if path and File.exists? path
         raise $!
       end
     end
