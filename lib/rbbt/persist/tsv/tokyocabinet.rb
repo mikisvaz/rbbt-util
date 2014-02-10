@@ -136,7 +136,7 @@ module Persist
 
 
     def range(*args)
-      super(*args) - TSV::ENTRY_KEYS.to_a
+      super(*args) #- TSV::ENTRY_KEYS.to_a
     end
   end
 
