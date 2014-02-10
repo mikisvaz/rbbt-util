@@ -7,7 +7,7 @@ require 'test/unit'
 
 
 class TestPersistTSV < Test::Unit::TestCase
-  MAX = 10_000_002
+  MAX = 100_002
 
   def tsv_path
     Random.new

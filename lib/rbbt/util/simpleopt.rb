@@ -95,7 +95,7 @@ module SOPT
   def self.parse(opts)
     info = {}
 
-    opts.split(/:/).each do |opt|
+    opts.split(/[:\n]/).each do |opt|
       next if opt.strip.empty?
 
       short, long = opt.strip.sub(/(^[^\s]*)\*/,'\1').split('--').values_at(0,1)
