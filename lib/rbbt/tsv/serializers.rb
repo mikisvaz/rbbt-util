@@ -1,4 +1,9 @@
 module TSV
+  class CleanSerializer
+    def self.dump(o); o end
+    def self.load(o); o end
+  end
+
   class IntegerSerializer
     def self.dump(i); [i].pack("l"); end
     def self.load(str); str.unpack("l").first; end
@@ -78,6 +83,7 @@ module TSV
     :list => StringArraySerializer,
     :flat => StringArraySerializer,
     :double => StringDoubleArraySerializer,
+    :clean => CleanSerializer,
     :tsv => TSVSerializer,
     :marshal_tsv => TSVMarshalSerializer
   }

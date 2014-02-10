@@ -117,6 +117,8 @@ module Entity
               Hash === res ? res[self] : res[0]
             end
           end
+        else 
+          raise "Type not undestood in property: #{ type }"
 
         end
       end

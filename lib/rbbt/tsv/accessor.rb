@@ -152,10 +152,11 @@ module TSV
     @serializar_module = serializer.nil? ? nil : SERIALIZER_ALIAS[serializer.to_sym]
   end
 
+
   def serializer_module
     @serializar_module ||= begin
                              serializer = self.serializer
-                             serializer.nil? ? nil : SERIALIZER_ALIAS[serializer.to_sym]
+                             serializer.nil? ? TSV::CleanSerializer : SERIALIZER_ALIAS[serializer.to_sym]
                            end
   end
 
@@ -170,7 +171,7 @@ module TSV
     value = super(key)
     return value if clean or value.nil?
 
-    value = serializer_module.load(value) if serializer_module 
+    value = serializer_module.load(value) if serializer_module and not TSV::CleanSerializer === serializer_module
     return value if @unnamed or fields.nil?
 
     case type
@@ -185,7 +186,7 @@ module TSV
   end
 
   def []=(key, value, clean = false)
-    if clean or serializer_module.nil? or value.nil?
+    if clean or serializer_module.nil? or  TSV::CleanSerializer === serializer_module or value.nil? 
        return super(key, value)
     else
       return super(key, serializer_module.dump(value))
@@ -219,12 +220,12 @@ module TSV
     fields = self.fields
 
     serializer = self.serializer
-    serializer_module = SERIALIZER_ALIAS[serializer] unless serializer.nil?
+    serializer_module = self.serializer_module
     super do |key, value|
       next if ENTRY_KEYS.include? key
 
       # TODO Update this to be more efficient
-      value = serializer_module.load(value) unless serializer.nil? or FalseClass === serializer
+      value = serializer_module.load(value) unless serializer_module.nil? or TSV::CleanSerializer === serializer_module
 
       # Annotated with Entity and NamedArray
       if not @unnamed
@@ -246,12 +247,12 @@ module TSV
 
   def collect
     serializer = self.serializer
-    serializer_module = SERIALIZER_ALIAS[serializer] unless serializer.nil?
+    serializer_module = self.serializer_module
     super do |key, value|
       next if ENTRY_KEYS.include? key
 
       # TODO Update this to be more efficient
-      value = serializer_module.load(value) unless serializer.nil?
+      value = serializer_module.load(value) unless serializer_module.nil? or TSV::CleanSerializer === serializer_module
 
       # Annotated with Entity and NamedArray
       if not @unnamed
@@ -533,6 +534,7 @@ module TSV
 Key field = #{key_field || "*No key field*"}
 Fields = #{fields ? Misc.fingerprint(fields) : "*No field info*"}
 Type = #{type}
+Serializer = #{serializer.inspect}
 Size = #{size}
 namespace = #{namespace}
 identifiers = #{Misc.fingerprint identifiers}

@@ -26,8 +26,10 @@ module Persist
       database
     end
 
+    MAX_CHAR = 255.chr
+
     def prefix(key)
-      range(key, 1, key + 255.chr, 1)
+      range(key, 1, key + MAX_CHAR, 1)
     end
 
     def get_prefix(key)

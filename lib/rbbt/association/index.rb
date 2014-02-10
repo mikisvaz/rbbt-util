@@ -11,6 +11,7 @@ module Association
       repo.extend Association::Index
       repo.parse_key_field
       repo.unnamed = true
+      repo
     end
 
     def reverse
@@ -56,7 +57,7 @@ module Association
         acc
       end
     end
- 
+
     #{{{ Subset
 
     def select_entities(entities)
