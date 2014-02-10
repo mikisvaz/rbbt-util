@@ -113,6 +113,7 @@ options = SOPT.get <<EOF
 -jn--jobname* Job name to use. The name 'Default' is used by default:
 -pn--printname Print the name of the job and exit without starting it:
 -wd--workdir* Change the working directory of the workflow:
+-O--output* Save job result into file:
 --fork Run job asyncronously:
 EOF
 
@@ -229,10 +230,12 @@ rescue ParameterException
     usage(workflow, task, $!.message)
 end
 
+out = options.include?(:output) ? File.open(options[:output], 'wb') : STDOUT
+
 if Step === res
-  puts Open.read(res.path) if File.exists? res.path
+  out.puts Open.read(res.path) if File.exists? res.path
 else
-  puts res
+  out.puts res
 end
 
 exit 0
