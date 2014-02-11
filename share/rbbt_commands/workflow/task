@@ -6,7 +6,7 @@ require 'rbbt/workflow/usage'
 
 YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
 
-def usage(workflow = nil, task = nil, error = nil)
+def usage(workflow = nil, task = nil, error = nil, backtrace = nil)
   puts SOPT.doc
   puts "## WORKFLOW"
   puts
@@ -27,7 +27,8 @@ def usage(workflow = nil, task = nil, error = nil)
     workflow.doc(task)
     if error
         puts
-        puts "Error: " << error 
+        puts Term::ANSIColor.red("Error: ") << error
+        puts Term::ANSIColor.red("Backtrace: ") << backtrace * "\n"
     end
   end
 
@@ -112,8 +113,10 @@ options = SOPT.get <<EOF
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely:
 -jn--jobname* Job name to use. The name 'Default' is used by default:
 -pn--printname Print the name of the job and exit without starting it:
+-jf--job_file* Output one of the job produced files:
 -wd--workdir* Change the working directory of the workflow:
 -O--output* Save job result into file:
+--provenance Report the jobs provenance:
 --fork Run job asyncronously:
 EOF
 
@@ -178,13 +181,13 @@ workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if opt
 job = workflow.job(task.name, name, job_options)
 
 # clean job
-if clean and job.done? != false
+if clean 
   job.clean 
   sleep 1
   job = workflow.job(task.name, name, job_options)
 end
 
-if recursive_clean and job.done?
+if recursive_clean 
   job.recursive_clean 
   sleep 1
   job = workflow.job(task.name, name, job_options)
@@ -192,45 +195,58 @@ end
 
 # run
 begin
-if do_exec
-  res = job.exec
-  case
-  when Array === res
-    puts res * "\n"
-  when TSV === res
-    puts res
-  when Hash === res
-    puts res.to_yaml
+  if do_exec
+    res = job.exec
+    case
+    when Array === res
+      puts res * "\n"
+    when TSV === res
+      puts res
+    when Hash === res
+      puts res.to_yaml
+    else
+      puts res
+    end
+    exit 0
+  end
+
+  if do_fork
+    job.fork
+    while not job.done?
+      message = job.messages ? job.messages.last : "no message"
+      Log.debug "#{job.status}: #{message}"
+      sleep 2
+    end
+    raise job.messages.last if job.error?
+    res = job.load
   else
-    puts res
+    res = job.run(true)
   end
-  exit 0
-end
 
-if do_fork
-  job.fork
-  while not job.done?
-    message = job.messages ? job.messages.last : "no message"
-    Log.debug "#{job.status}: #{message}"
-    sleep 2
+
+  if options.delete(:provenance)
+    require 'pp'
+    pp job.provenance
+    exit 0
   end
-  raise job.messages.last if job.error?
-  res = job.load
-else
-  res = job.run(true)
-end
 
-if options.delete(:printname)
-  puts job.name
-  exit 0
-else
-  Log.low "Job name: #{job.name}" 
-end
+  if options.delete(:printname)
+    puts job.name
+    exit 0
+  else
+    Log.low "Job name: #{job.name}" 
+  end
 rescue ParameterException
-    usage(workflow, task, $!.message)
+  SOPT.delete_inputs(workflow.rec_inputs(task.name))
+  usage(workflow, task, $!.message, $!.backtrace)
 end
 
 out = options.include?(:output) ? File.open(options[:output], 'wb') : STDOUT
+
+if job_file = options.delete(:job_file)
+  out.puts res.file(job_file).read
+  exit 0
+end
 
 if Step === res
   out.puts Open.read(res.path) if File.exists? res.path

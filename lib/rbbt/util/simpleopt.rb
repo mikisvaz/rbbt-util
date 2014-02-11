@@ -28,9 +28,19 @@ module SOPT
     @description ||= "Missing"
   end
 
-
   def self.shortcuts
     @shortcuts ||= []
+  end
+
+  def self.delete_inputs(inputs)
+    inputs.each do |input|
+      input = input.to_s
+      self.shortcuts.delete self.input_shortcuts.delete(input)
+      self.inputs.delete input
+      self.input_types.delete input
+      self.input_defaults.delete input
+      self.input_descriptions.delete input
+    end
   end
 
   def self.all

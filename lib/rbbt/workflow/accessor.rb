@@ -184,7 +184,18 @@ class Step
     end
   end
 
-
+  def provenance
+    provenance = {}
+    dependencies.each do |dep|
+      next unless dep.path.exists?
+      if File.exists? dep.info_file
+        provenance[dep.path] = dep.provenance if File.exists? dep.path
+      else
+        provenance[dep.path] = nil
+      end
+    end
+    {:inputs => info[:inputs], :provenance => provenance}
+  end
 end
 
 module Workflow
@@ -264,16 +275,15 @@ module Workflow
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn.to_sym].input_options}
   end
 
-
   def real_dependencies(task, jobname, inputs, dependencies)
     real_dependencies = []
     dependencies.each do |dependency|
-      real_dependencies << case
-      when Step === dependency
+      real_dependencies << case dependency
+      when Step
         dependency
-      when Symbol === dependency
+      when Symbol
         job(dependency, jobname, inputs)
-      when Proc === dependency
+      when Proc
         dependency.call jobname, inputs
       end
     end
@@ -303,7 +313,6 @@ module Workflow
     }
   end
 
-
   def id_for(path)
     if workdir.respond_to? :find
       workdir_find = workdir.find 
@@ -322,4 +331,5 @@ module Workflow
  
     Misc.path_relative_to(workdir_find, File.dirname(path)).sub(/([^\/]+)\/.*/,'\1')
   end
+
 end

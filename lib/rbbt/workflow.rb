@@ -28,7 +28,7 @@ module Workflow
   def self.load_workflow_file(filename)
     begin
       $LOAD_PATH.unshift(File.join(File.dirname(File.expand_path(filename)), 'lib'))
-      require filename
+      require File.expand_path(filename)
       Log.debug{"Workflow loaded from: #{ filename }"}
       return true
     rescue Exception
@@ -98,6 +98,12 @@ module Workflow
     end
 
     # Load locally
+
+    if wf_name =~ /::\w+$/
+      clean_name = wf_name.sub(/::.*/,'')  
+      Log.info{"Looking for '#{wf_name}' in '#{clean_name}'"}
+      wf_name = clean_name
+    end
 
     Log.info{"Loading workflow #{wf_name}"}
     require_local_workflow(wf_name) or 

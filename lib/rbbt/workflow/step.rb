@@ -281,7 +281,11 @@ class Step
   end
 
   def recursive_clean
-    rec_dependencies.each{|step| step.clean }
+    rec_dependencies.each do |step| 
+      if File.exists?(step.info_file) 
+        step.clean 
+      end
+    end
     clean
   end
 
