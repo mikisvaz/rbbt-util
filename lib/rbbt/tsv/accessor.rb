@@ -484,10 +484,8 @@ module TSV
 
     str = ""
 
-    str << "#: " << Misc.hash2string((ENTRIES - ["key_field", "fields"]).collect{|key| [key.to_sym, self.send(key)]}) << "\n" unless no_options
-    if fields
-      str << "#" << key_field << "\t" << fields * "\t" << "\n"
-    end
+    entry_hash = no_options ? {} : (ENTRIES - ["key_field", "fields"]).collect{|key| [key.to_sym, self.send(key)]}
+    str = TSV.header_lines(key_field, fields, entry_hash)
 
     with_unnamed do
       if keys.nil?

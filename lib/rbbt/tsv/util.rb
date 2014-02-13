@@ -76,6 +76,18 @@ module TSV
       Log.medium "Field #{ field } was not found. Options: (#{key_field}), #{fields * ", "}"
     end
   end
+  
+  def self.header_lines(key_field, fields, entry_hash = {})
+    sep = (Hash === entry_hash and entry_hash[:sep]) ? entry_hash[:sep] : "\t"
+
+    str = "" 
+    str << "#: " << Misc.hash2string(entry_hash) << "\n" if entry_hash and entry_hash.any?
+    if fields
+      str << "#" << key_field << sep << fields * sep << "\n"
+    end
+
+    str
+  end
 
   def identify_field(field)
     TSV.identify_field(key_field, fields, field)
