@@ -3,7 +3,11 @@ require 'rbbt/tsv/attach/util'
 module TSV
 
   # Merge columns from different rows of a file
-  def self.merge_row_fields(input, output, sep = "\t")
+  def self.merge_row_fields(input, output, options = {})
+    options = Misc.add_defaults options, :sep => "\t"
+    key_field, fields = Misc.process_options options, :key_field, :fields
+    sep = options[:sep]
+
     is = case
          when (String === input and not input.index("\n") and input.length < 250 and File.exists?(input))
            CMD.cmd("sort -k1,1 -t'#{sep}' #{ input } | grep -v '^#{sep}' ", :pipe => true)
@@ -12,16 +16,25 @@ module TSV
          else
            input
          end
+
+    if key_field.nil? or fields.nil?
+      parser = TSV::Parser.new(is, options.dup)
+      fields ||= parser.fields
+      key_field ||= parser.key_field
+      line = parser.first_line
+    else
+      line = is.gets
+    end
  
     current_key  = nil
     current_parts = []
 
     done = false
     Open.write(output) do |os|
+      os.puts TSV.header_lines(key_field, fields, options)
 
-      done = is.eof?
-      while not done
-        key, *parts = is.gets.sub("\n",'').split(sep, -1)
+      while line
+        key, *parts = line.sub("\n",'').split(sep, -1)
         current_key ||= key
         case
         when key.nil?
@@ -39,7 +52,7 @@ module TSV
           current_parts = parts
         end
 
-        done = is.eof?
+        line = is.gets
       end
 
       os.puts [current_key, current_parts].flatten * sep unless current_key.nil?
@@ -48,10 +61,14 @@ module TSV
   end
 
   # Merge two files with the same keys and different fields
-  def self.merge_different_fields(file1, file2, output, sep = "\t", monitor = false)
+  def self.merge_different_fields(file1, file2, output, options = {})
+    options = Misc.add_defaults options, :sep => "\t"
+    monitor, key_field, fields = Misc.process_options options, :monitor, :key_field, :fields
+    sep = options[:sep] || "\t"
+
     case
     when (String === file1 and not file1 =~ /\n/ and file1.length < 250 and File.exists?(file1))
-      size = CMD.cmd("wc -l '#{file1}'").read.to_f if monitor
+      size = CMD.cmd("wc -c '#{file1}'").read.to_f if monitor
       file1 = CMD.cmd("sort -k1,1 -t'#{sep}' #{ file1 } | grep -v '^#{sep}' ", :pipe => true)
     when (String === file1 or StringIO === file1)
       size = file1.length if monitor
@@ -80,18 +97,26 @@ module TSV
 
     key1 = key2 = nil
     while key1.nil?
-      while (line1 = file1.gets) =~ /#/; end
+      while (line1 = file1.gets) =~ /^#/
+        key_field1, *fields1 = line1.strip.sub('#','').split(sep)
+      end
       key1, *parts1 = line1.sub("\n",'').split(sep, -1)
       cols1 = parts1.length
     end
 
     while key2.nil?
-      while (line2 = file2.gets) =~ /#/; end
+      while (line2 = file2.gets) =~ /^#/
+        key_field2, *fields2 = line2.strip.sub('#','').split(sep)
+      end
       key2, *parts2 = line2.sub("\n",'').split(sep, -1)
       cols2 = parts2.length
     end
 
     progress_monitor = Progress::Bar.new(size, 0, 100, "Merging fields") if monitor
+
+    entry_hash = options
+    entry_hash.delete :sep if entry_hash[:sep] == "\t"
+    output.puts TSV.header_lines key_field1, fields1 + fields2, entry_hash if key_field1 and fields1 and fields2
 
     key = key1 < key2 ? key1 : key2
     parts = [""] * (cols1 + cols2)
@@ -189,7 +214,7 @@ module TSV
 
   def merge_different_fields(other, options = {})
     TmpFile.with_file do |output|
-      TSV.merge_different_fields(self, other, output, options[:sep] || "\t")
+      TSV.merge_different_fields(self, other, output, options)
       tsv = TSV.open output, options
       tsv.key_field = self.key_field unless self.key_field.nil?
       tsv.fields = self.fields + other.fields unless self.fields.nil? or other.fields.nil?
