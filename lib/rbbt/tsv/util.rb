@@ -1,6 +1,40 @@
 require 'rbbt/resource/path'
 module TSV
 
+  def self.reorder_stream(stream, positions, sep = "\t")
+    Misc.open_pipe do |sin|
+      line = stream.gets
+      while line =~ /^#\:/
+        sin.puts line
+        line = stream.gets
+      end
+      while line  =~ /^#/
+        if Hash === positions
+          new = (0..line.split(sep).length-1).to_a
+          positions.each do |k,v|
+            new[k] = v
+            new[v] = k
+          end
+          positions = new
+        end
+        sin.puts "#" + line.sub!(/^#/,'').strip.split(sep).values_at(*positions).compact * sep
+        line = stream.gets
+      end
+      while line
+        if Hash === positions
+          new = (0..line.split(sep).length-1).to_a
+          positions.each do |k,v|
+            new[k] = v
+            new[v] = k
+          end
+          positions = new
+        end
+        sin.puts line.strip.split(sep).values_at(*positions) * sep
+        line = stream.gets
+      end
+    end
+  end
+
   def self.field_match_counts(file, values, options = {})
     options = Misc.add_defaults options, :persist_prefix => "Field_Matches"
     persist_options = Misc.pull_keys options, :persist
@@ -52,6 +86,7 @@ module TSV
     when String === file
       Open.open(file, open_options)
     when file.respond_to?(:gets)
+      file.rewind if file.respond_to?(:rewind) and file.eof?
       file
     else
       raise "Cannot get stream from: #{file.inspect}"
