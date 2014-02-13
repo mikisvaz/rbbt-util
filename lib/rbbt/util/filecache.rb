@@ -55,4 +55,36 @@ module FileCache
 
     FileUtils.rm path if File.exist? path
   end
+
+  def self.cache_online_elements(ids, pattern = nil, &block)
+    ids = [ids] unless Array === ids
+
+    result_files = {}
+    missing = []
+    ids.each do |id|
+      filename = pattern ? pattern.sub("{ID}", id.to_s) : id.to_s
+
+      if FileCache.found(filename)
+        result_files[id] = FileCache.path(filename)
+      else
+        missing << id
+      end
+    end
+
+    yield(missing).each do |id, content|
+      filename = pattern ? pattern.sub("{ID}", id.to_s) : id.to_s
+      path = FileCache.path(filename)
+      Open.write(path, content)
+      result_files[id] = content
+    end
+
+    missing.each do |id|
+      filename = pattern ? pattern.sub("{ID}", id.to_s) : id.to_s
+      result = yield id
+      File.open{|f| f.write(path = FileCache.path(filename)) }
+      result_files[id] = path
+    end
+
+    result_files
+  end
 end
