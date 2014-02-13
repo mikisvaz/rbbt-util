@@ -34,7 +34,7 @@ module TSV
 
       # Process fields line
 
-      if line and Misc.fixutf8(line) =~ /^#{@header_hash}/
+      while line and Misc.fixutf8(line) =~ /^#{@header_hash}/
         line.chomp!
         @fields = line.split(@sep)
         @key_field = @fields.shift
