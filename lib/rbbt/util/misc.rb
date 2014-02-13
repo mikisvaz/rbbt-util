@@ -1318,6 +1318,7 @@ end
   # Divides the array into +num+ chunks of the same size by placing one
   # element in each chunk iteratively.
   def self.divide(array, num)
+    num = 1 if num == 0
     chunks = []
     num.to_i.times do chunks << [] end
     array.each_with_index{|e, i|
@@ -1340,6 +1341,23 @@ end
     end
     chunks
   end
+
+  def self.open_pipe
+    sout, sin = IO.pipe
+    raise "No block given" unless block_given?
+    Thread.new{
+      begin
+        yield sin
+      rescue
+        Log.exception $!
+        raise $!
+      ensure
+        sin.close
+      end
+    }
+    sout
+  end
+
 
   def self.zip_fields(array)
     return [] if array.empty?
