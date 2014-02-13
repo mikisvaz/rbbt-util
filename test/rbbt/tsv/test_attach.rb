@@ -87,7 +87,6 @@ B    Id3
 
     tsv1.attach_source_key tsv2, "ValueB"
 
-
     assert_equal %w(ValueA ValueB OtherID), tsv1.fields
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
@@ -290,7 +289,7 @@ row6 dd dd ee
     EOF
 
     TmpFile.with_file do |f|
-      TSV.merge_different_fields(StringIO.new(file1), StringIO.new(file2), f, " ")
+      TSV.merge_different_fields(StringIO.new(file1), StringIO.new(file2), f, :sep => " ")
       assert_equal result, Open.read(f)
     end
   end
@@ -327,6 +326,7 @@ row6 dd dd ee
 
   def test_merge_different_rows_split_lines
     file1 =<<-EOF
+#ID,letterA,letterB,letterC
 row6,dd,dd,ee
 row1,a,b,c
 row1,aa,bb,cc
@@ -334,6 +334,7 @@ row2,A,B,C
 row3,1,2,3
    EOF
     file2 =<<-EOF
+#ID,letterD,letterE
 row20,rr,rr
 row1,d,e
 row2,D,E
@@ -342,6 +343,8 @@ row4,x,y
 
     # Might be slightly different ...
     result1 =<<-EOF
+#: :sep=,
+#ID,letterA,letterB,letterC,letterD,letterE
 row1,aa|a,bb|b,cc|c,d,e
 row2,A,B,C,D,E
 row20,,,,rr,rr
@@ -350,6 +353,8 @@ row4,,,,x,y
 row6,dd,dd,ee,,
     EOF
     result2 =<<-EOF
+#: :sep=,
+#ID,letterA,letterB,letterC,letterD,letterE
 row1,a|aa,b|bb,c|cc,d,e
 row2,A,B,C,D,E
 row20,,,,rr,rr
@@ -359,8 +364,7 @@ row6,dd,dd,ee,,
     EOF
 
     TmpFile.with_file do |f|
-      TSV.merge_different_fields StringIO.new(file1), StringIO.new(file2), f, ','
-
+      TSV.merge_different_fields StringIO.new(file1), StringIO.new(file2), f, :sep => ','
       # ... so check for either
       assert(Open.read(f) == result1 || Open.read(f) == result2)
     end
@@ -403,6 +407,7 @@ row6,dd,dd,ee,,
 
   def test_merge_rows
     file1 =<<-EOF
+#ID,letterA,letterB,letterC
 row1,a,b,c
 row1,aa,bb,cc
 row2,A,B,C
@@ -410,8 +415,9 @@ row3,1,2,3
     EOF
     TmpFile.with_file(file1) do |input|
       TmpFile.with_file() do |output|
-        TSV.merge_row_fields Open.open(input), output
-        assert Open.read(output) =~ /a|aa/
+        TSV.merge_row_fields Open.open(input), output, :sep => ','
+        assert Open.read(output) =~ /^#ID,letterA,letterB,letterC$/
+        assert Open.read(output).index "a|aa"
       end
     end
 

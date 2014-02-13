@@ -70,6 +70,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     filter.rb
     change_id.rb
    }
+
    fix_width_table.rb
 
    persist.rb
@@ -97,7 +98,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     util.rb
     annotated_array.rb
    }
-
    entity.rb
 
    association.rb

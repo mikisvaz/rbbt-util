@@ -29,7 +29,7 @@ class TestAssociationIndex < Test::Unit::TestCase
     genes = tp53.pina_interactors.ensembl
     genes << tp53
 
-    Misc.benchmark(10) do
+    Misc.benchmark(100) do
       index.subset_entities("Ensembl Gene ID" => genes).length
     end
 
