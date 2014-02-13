@@ -76,6 +76,10 @@ module Log
     log(message, ERROR, &block)
   end
 
+  def self.exception(e)
+    error(e.message)
+    error("BACKTRACE:\n" + e.backtrace * "\n") 
+  end
 
   case ENV['RBBT_LOG']
   when 'DEBUG' 
