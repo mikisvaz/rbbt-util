@@ -21,7 +21,7 @@ module FileCache
     filename.match(/(.+)\.(.+)/)
 
     base = filename.sub(/\..+/,'')
-    dirs = base.scan(/./).values_at(0,1,2,3,4).compact.reverse
+    dirs = base.scan(/./).reverse.values_at(0,1,2,3,4).compact
 
     File.join(File.join(CACHEDIR, *dirs), filename) 
   end
@@ -75,13 +75,6 @@ module FileCache
       filename = pattern ? pattern.sub("{ID}", id.to_s) : id.to_s
       path = FileCache.path(filename)
       Open.write(path, content)
-      result_files[id] = content
-    end
-
-    missing.each do |id|
-      filename = pattern ? pattern.sub("{ID}", id.to_s) : id.to_s
-      result = yield id
-      File.open{|f| f.write(path = FileCache.path(filename)) }
       result_files[id] = path
     end
 
