@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+options = SOPT.get("-tch--tokyocabinet:-tcb--tokyocabinet_bd")
+
+file = ARGV.shift
+
+file = STDIN if file == '-'
+
+case
+when options[:tokyocabinet]
+  tsv = Persist.open_tokyocabinet(file, false)
+when options[:tokyocabinet_bd]
+  tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
+else
+  if String === file
+    file = file.dup
+    Path.setup(File.expand_path(file))
+  end
+  tsv = TSV.open(file)
+end
+
+puts tsv.unzip.to_s

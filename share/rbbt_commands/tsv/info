@@ -7,6 +7,8 @@ options = SOPT.get("-tch--tokyocabinet:-tcb--tokyocabinet_bd")
 
 file = ARGV.shift
 
+file = STDIN if file == '-'
+
 case
 when options[:tokyocabinet]
   tsv = Persist.open_tokyocabinet(file, false)
@@ -18,6 +20,7 @@ else
   header = TSV.parse_header(Open.open(file))
 
   puts "File: #{ file }"
+  puts "Type: #{header.type}"
   puts "Key: #{header.key_field}"
   puts "Fields: "
   header.fields.each_with_index do |f,i|

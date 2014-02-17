@@ -25,7 +25,7 @@ module TSV
 
       if line and line =~ /^#{@header_hash}: (.*)/
         options = Misc.string2hash $1
-        line = stream.gets
+        line = Misc.fixutf8 stream.gets
       end
 
       # Determine separator
@@ -34,13 +34,16 @@ module TSV
 
       # Process fields line
 
-      while line and Misc.fixutf8(line) =~ /^#{@header_hash}/
+      while line and Misc.fixutf8(line) =~ /^#{@header_hash}/ 
         line.chomp!
         @fields = line.split(@sep)
         @key_field = @fields.shift
         @key_field = @key_field[(0 + header_hash.length)..-1] # Remove initial hash character
-        line = stream.gets
+
+        line = @header_hash != "" ?  Misc.fixutf8(stream.gets) : nil
       end
+
+      line ||= stream.gets
 
       @first_line = line
 

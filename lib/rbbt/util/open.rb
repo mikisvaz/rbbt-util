@@ -216,9 +216,13 @@ module Open
       save_content_in_repo(*dir_sub_path)
     else
       File.open(file, mode) do |f|
-        f.flock(File::LOCK_EX)
-        f.write content 
-        f.flock(File::LOCK_UN)
+        begin
+          f.flock(File::LOCK_EX)
+          f.write content 
+          f.flock(File::LOCK_UN)
+        ensure
+          f.close unless f.closed?
+        end
       end
     end
   end
@@ -359,21 +363,18 @@ module Open
   end
 
   def self.read(file, options = {}, &block)
-    f = open(file, options)
-
-    if block_given?
-      res = []
-      while not f.eof?
-        l = f.gets
-        l = Misc.fixutf8(l) 
-        res << yield(l)
+    open(file, options) do |f|
+      if block_given?
+        res = []
+        while not f.eof?
+          l = f.gets
+          l = Misc.fixutf8(l) 
+          res << yield(l)
+        end
+        res
+      else
+        Misc.fixutf8(f.read)
       end
-      f.close
-      res
-    else
-      text = Misc.fixutf8(f.read)
-      f.close unless f.closed?
-      text 
     end
   end
 

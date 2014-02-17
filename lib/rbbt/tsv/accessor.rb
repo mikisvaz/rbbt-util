@@ -547,5 +547,28 @@ Example:
     ENTRY_KEYS.each{|entry| new.delete entry}
     new
   end
+
+  def unzip(field = 0)
+    new = {}
+    field_pos = self.identify_field field
+
+    self.through do |key,values|
+      field_values = values.delete_at field_pos
+      zipped = values.zip_fields
+      field_values.zip(zipped) do |value, *rest|
+        new[[key,value]*":"] = Misc.zip_fields(rest)
+      end
+    end
+
+    self.annotate new
+    new.type = :list
+
+    new.key_field = [self.key_field, self.fields[field_pos]] * ":"
+    new_fields = self.fields.dup
+    new_fields.delete_at field_pos
+    new.fields = new_fields
+
+    new
+  end
 end
 

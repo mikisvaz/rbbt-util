@@ -199,7 +199,9 @@ module Path
   end
 
   def yaml
-    YAML.load self.open
+    self.open do |f|
+      YAML.load f
+    end
   end
 
   def pipe_to(cmd, options = {})

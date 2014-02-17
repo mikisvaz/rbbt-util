@@ -112,10 +112,11 @@ options = SOPT.get <<EOF
 -cl--clean Clean the last step of the job so that it gets recomputed:
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely:
 -jn--jobname* Job name to use. The name 'Default' is used by default:
--pn--printname Print the name of the job and exit without starting it:
--jf--job_file* Output one of the job produced files:
 -wd--workdir* Change the working directory of the workflow:
 -O--output* Save job result into file:
+-pn--printname Print the name of the job and exit without starting it:
+-jf--job_file* Output one of the job produced files:
+--info Show the job info:
 --provenance Report the jobs provenance:
 --fork Run job asyncronously:
 EOF
@@ -193,8 +194,14 @@ if recursive_clean
   job = workflow.job(task.name, name, job_options)
 end
 
+require 'pp'
+
 # run
 begin
+  if options[:info]
+    pp job.info
+    exit 0
+  end
   if do_exec
     res = job.exec
     case
@@ -225,7 +232,6 @@ begin
 
 
   if options.delete(:provenance)
-    require 'pp'
     pp job.provenance
     exit 0
   end

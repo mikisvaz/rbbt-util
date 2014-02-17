@@ -1,6 +1,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
 require 'rbbt/util/open'
 require 'rbbt/util/tmpfile'
+require 'rbbt/persist'
 require 'test/unit'
 require 'iconv'
 
