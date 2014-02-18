@@ -5,6 +5,7 @@ require 'test/unit'
 class TestSOPT < Test::Unit::TestCase
 
   def test_cmd_option_string
-    assert_equal("--tsv-options", SOPT.parse("-h--help:-to--tsv-options")["tsv-options"][:long])
+    SOPT.parse("-h--help:-to--tsv-options")
+    assert_equal "tsv-options", SOPT.shortcuts["to"]
   end
 end

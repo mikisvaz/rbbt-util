@@ -4,8 +4,7 @@ module Task
   def doc(deps = nil)
     puts "## #{ name }:"
     puts "\n" << description if description and not description.empty?
-    puts
-    puts SOPT.input_doc(inputs, input_types, input_descriptions, input_defaults)
+    puts SOPT.input_doc(inputs, input_types, input_descriptions, input_defaults, true)
 
     if deps and deps.any?
       puts
@@ -14,7 +13,7 @@ module Task
       deps.each do |dep|
         puts "  #{dep.name}:"
         puts
-        puts SOPT.input_doc(dep.inputs, dep.input_types, dep.input_descriptions, dep.input_defaults)
+        puts SOPT.input_doc(dep.inputs, dep.input_types, dep.input_descriptions, dep.input_defaults, true)
         puts
       end
     end

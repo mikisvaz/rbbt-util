@@ -88,5 +88,54 @@ void post_semaphore(char* name){
       end
     end
   end
-end if continue
+
+  def self.thread_each_on_semaphore(elems, size)
+    mutex = Mutex.new
+    count = 0
+    cv = ConditionVariable.new
+    wait_mutex = Mutex.new
+
+    begin
+
+      threads = []
+      wait_mutex.synchronize do
+        threads = elems.collect do |elem| 
+          Thread.new(elem) do |elem|
+
+            continue = false
+            mutex.synchronize do
+              while not continue do
+                if count < size 
+                  continue = true
+                  count += 1
+                end
+                mutex.sleep 1 unless continue
+              end
+            end
+
+            begin
+              yield elem
+            rescue Interrupt
+              Log.error "Thread was aborted while processing: #{Misc.fingerprint elem}"
+              raise $!
+            ensure
+              mutex.synchronize do
+                count -= 1
+                cv.signal if mutex.locked?
+              end
+            end
+          end
+        end
+      end
+
+      threads.each do |thread| 
+        thread.join 
+      end
+    rescue Exception
+      Log.exception $!
+      Log.info "Ensuring threads are dead: #{threads.length}"
+      threads.each do |thread| thread.kill end
+    end
+  end
+end 
 

@@ -57,11 +57,13 @@ begin
       load dir[command].find
       exit 0
     else
-      puts "Error: Command not understood"
-      puts
+      error = "Command '#{command }' not understood"
       break
     end
   end
+rescue ParameterException
+  error = $!.message
+  backtrace = $!.backtrace
 ensure
   if options[:profile]
     result = RubyProf.stop
@@ -82,5 +84,19 @@ puts "Subcommands:"
 puts 
 commands(prev).each do |command|
     puts "  " << command
+end
+
+if error
+  puts
+  puts Term::ANSIColor.red("Error executing '#{ [File.basename($0), prev, command].compact.flatten * " " }':")
+  puts
+  puts error
+  if backtrace
+    puts
+    puts Term::ANSIColor.red("Backtrace:")
+    puts
+    puts backtrace * "\n"
+  end
+  puts
 end
     

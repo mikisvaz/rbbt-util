@@ -108,17 +108,19 @@ end
 
 options = SOPT.get <<EOF
 -h--help Show this help:
+-wd--workdir* Change the working directory of the workflow:
 -as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default:
+-jn--jobname* Job name to use. The name 'Default' is used by default:
+-pn--printname Print the name of the job and exit without starting it:
 -cl--clean Clean the last step of the job so that it gets recomputed:
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely:
--jn--jobname* Job name to use. The name 'Default' is used by default:
--wd--workdir* Change the working directory of the workflow:
+--fork Run job asyncronously:
+--exec Run job with no persistence:
 -O--output* Save job result into file:
--pn--printname Print the name of the job and exit without starting it:
 -jf--job_file* Output one of the job produced files:
+-ljf--list_job_files List all the files produced in that step:
 --info Show the job info:
 --provenance Report the jobs provenance:
---fork Run job asyncronously:
 EOF
 
 workflow = ARGV.shift
@@ -132,6 +134,8 @@ do_fork = !!options.delete(:fork)
 do_exec = !!options.delete(:exec)
 clean = !!options.delete(:clean)
 recursive_clean = !!options.delete(:recursive_clean)
+out = options.include?(:output) ? File.open(options[:output], 'wb') : STDOUT
+
 $array_separator = options.delete(:array_separator)
 
 # Get workflow
@@ -157,13 +161,14 @@ namespace = nil, nil
 case 
 when task.nil?
   usage workflow
-when (task =~ /\./)
-  namespace, task = options.delete(:task).split('.')
-  namespace = Misc.string2const(namespace)
+  # Can not remember what this was
+#when (task =~ /\./)
+#  namespace, task = options.delete(:task).split('.')
+#  namespace = Misc.string2const(namespace)
 else
   task_name = task.to_sym
   task = workflow.tasks[task_name]
-  raise "Task not found: #{ task_name }" if task.nil?
+  raise ParameterException, "Task not found: #{ task_name }" if task.nil?
 end
 
 usage workflow, task if help
@@ -206,13 +211,13 @@ begin
     res = job.exec
     case
     when Array === res
-      puts res * "\n"
+      out.puts res * "\n"
     when TSV === res
-      puts res
+      out.puts res
     when Hash === res
-      puts res.to_yaml
+      out.puts res.to_yaml
     else
-      puts res
+      out.puts res
     end
     exit 0
   end
@@ -247,10 +252,14 @@ rescue ParameterException
   usage(workflow, task, $!.message, $!.backtrace)
 end
 
-out = options.include?(:output) ? File.open(options[:output], 'wb') : STDOUT
+
+if options.delete(:list_job_files)
+  out.puts job.files * "\n"
+  exit 0
+end
 
 if job_file = options.delete(:job_file)
-  out.puts res.file(job_file).read
+  out.puts job.file(job_file).read
   exit 0
 end
 

@@ -12,7 +12,7 @@ module Persist
       database = CONNECTIONS[path] ||= tokyocabinet_class.new
 
       flags = (write ? tokyocabinet_class::OWRITER | tokyocabinet_class::OCREAT : tokyocabinet_class::OREADER)
-      database.close
+      database.close 
 
       if !database.open(path, flags)
         ecode = database.ecode
@@ -93,7 +93,7 @@ module Persist
     end
 
     def write_and_read
-      lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
+      lock_filename = Persist.persistence_path(persistence_path + '.write', {:dir => TSV.lock_dir})
       Misc.lock(lock_filename) do
         write if @closed or not write?
         res = begin
@@ -106,7 +106,7 @@ module Persist
     end
 
     def write_and_close
-      lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
+      lock_filename = Persist.persistence_path(persistence_path + '.write', {:dir => TSV.lock_dir})
       Misc.lock(lock_filename) do
         write if @closed or not write?
         res = begin
