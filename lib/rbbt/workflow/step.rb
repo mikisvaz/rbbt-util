@@ -4,7 +4,6 @@ require 'rbbt/util/log'
 require 'rbbt/util/semaphore'
 require 'rbbt/workflow/accessor'
 
-class ParameterException < Exception; end
 
 class Step
   attr_accessor :path, :task, :inputs, :dependencies, :bindings

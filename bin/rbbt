@@ -25,10 +25,9 @@ SOPT.summary = "Ruby bioinformatics toolkit"
 SOPT.description = <<-EOF
 This command controls many aspects of the Rbbt framework, from configuration tasks to running applications. 
 
-Commands are implemented in separate files under the Rbbt path#{
-} '#{$rbbt_command_dir}'. Known locations are: #{
-([$rbbt_command_dir] + $rbbt_command_dir.find_all) * ", "
-}. You can place your own commads at #{$rbbt_command_dir.find(:user)}.
+Commands are implemented in separate files under the Rbbt path '#{$rbbt_command_dir}'. 
+Known locations are: #{([$rbbt_command_dir] + $rbbt_command_dir.find_all) * ", " }. 
+You can place your own commads at #{$rbbt_command_dir.find(:user)}.
 EOF
 
 def commands(prev)
@@ -43,6 +42,38 @@ def commands(prev)
     command_files.collect{|p| File.basename(p) }.uniq.reject{|p| p =~ /\.desc$/}.sort
 end
 
+def rbbt_usage(prev = nil)
+  puts SOPT.doc
+
+  if prev
+    puts "## COMMANDS"
+    puts
+    puts "Command:"
+    puts 
+    puts "  #{File.basename($0)} #{prev * " "}"
+    puts 
+    puts "Subcommands:"
+    puts 
+    commands(prev).each do |command|
+      puts "  " << command
+    end
+  end
+end
+
+def print_error(error, backtrace = nil)
+  puts
+  puts Term::ANSIColor.red("Error:")
+  puts
+  puts error
+  if backtrace
+    puts
+    puts Term::ANSIColor.red("Backtrace:")
+    puts
+    puts backtrace * "\n"
+  end
+  puts
+end
+    
 dir = $rbbt_command_dir
 prev = []
 
@@ -58,12 +89,15 @@ begin
       exit 0
     else
       error = "Command '#{command }' not understood"
-      break
+      rbbt_usage(prev)
+      print_error(error)
+      exit -1
     end
   end
 rescue ParameterException
-  error = $!.message
-  backtrace = $!.backtrace
+  rbbt_usage
+  print_error($!.message, $!.backtrace)
+  exit -1
 ensure
   if options[:profile]
     result = RubyProf.stop
@@ -72,31 +106,3 @@ ensure
   end
 end
 
-puts SOPT.doc
-
-puts "## COMMANDS"
-puts
-puts "Command:"
-puts 
-puts "  #{File.basename($0)} #{prev * " "}"
-puts 
-puts "Subcommands:"
-puts 
-commands(prev).each do |command|
-    puts "  " << command
-end
-
-if error
-  puts
-  puts Term::ANSIColor.red("Error executing '#{ [File.basename($0), prev, command].compact.flatten * " " }':")
-  puts
-  puts error
-  if backtrace
-    puts
-    puts Term::ANSIColor.red("Backtrace:")
-    puts
-    puts backtrace * "\n"
-  end
-  puts
-end
-    

@@ -6,7 +6,7 @@ require 'rbbt/workflow/usage'
 
 YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
 
-def usage(workflow = nil, task = nil, error = nil, backtrace = nil)
+def usage(workflow = nil, task = nil, exception=nil)
   puts SOPT.doc
   puts "## WORKFLOW"
   puts
@@ -25,13 +25,9 @@ def usage(workflow = nil, task = nil, error = nil, backtrace = nil)
     puts workflow.workflow_description
     puts
     workflow.doc(task)
-    if error
-        puts
-        puts Term::ANSIColor.red("Error: ") << error
-        puts Term::ANSIColor.red("Backtrace: ") << backtrace * "\n"
-    end
   end
 
+  raise exception if exception
   exit 0
 end
 
@@ -249,7 +245,7 @@ begin
   end
 rescue ParameterException
   SOPT.delete_inputs(workflow.rec_inputs(task.name))
-  usage(workflow, task, $!.message, $!.backtrace)
+  usage(workflow, task, $!)
 end
 
 

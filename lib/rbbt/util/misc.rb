@@ -17,6 +17,9 @@ class Hash
   end
 end
 
+class ParameterException < Exception; end
+class FieldNotFoundError < StandardError;end
+
 module LaterString
   def to_s
     yield
@@ -24,7 +27,6 @@ module LaterString
 end
 
 module Misc
-  class FieldNotFoundError < StandardError;end
 
   def self.correct_icgc_mutation(pos, ref, mut_str)
     mut = mut_str
