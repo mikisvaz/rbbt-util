@@ -9,6 +9,8 @@ file = ARGV.shift
 
 file = STDIN if file == '-'
 
+raise ParameterException, "Please specify the tsv file as argument" if file.nil?
+
 case
 when options[:tokyocabinet]
   tsv = Persist.open_tokyocabinet(file, false)

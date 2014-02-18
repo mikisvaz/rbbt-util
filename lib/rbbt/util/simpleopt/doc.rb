@@ -63,8 +63,8 @@ module SOPT
       type = :string if type.nil?
       register(shortcut, name, type, description) unless self.inputs.include? name
 
-      str  = "  * " << SOPT.input_format(name, type.to_sym, default, shortcut) << "\n"
-      str << "    " << description << "\n" if description and not description.empty?
+      str  = "  * " << SOPT.input_format(name, type.to_sym, default, shortcut) 
+      str << "\n     " << description << "\n" if description and not description.empty?
       str
     end * "\n"
   end

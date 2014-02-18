@@ -43,6 +43,7 @@ def commands(prev)
 end
 
 def rbbt_usage(prev = nil)
+  puts
   puts SOPT.doc
 
   if prev
@@ -58,10 +59,10 @@ def rbbt_usage(prev = nil)
       puts "  " << command
     end
   end
+  puts
 end
 
 def print_error(error, backtrace = nil)
-  puts
   puts Term::ANSIColor.red("Error:")
   puts
   puts error
@@ -94,9 +95,15 @@ begin
       exit -1
     end
   end
+
+  rbbt_usage(prev)
+  exit 0
+
 rescue ParameterException
+  puts
   rbbt_usage
   print_error($!.message, $!.backtrace)
+  puts
   exit -1
 ensure
   if options[:profile]

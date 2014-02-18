@@ -7,10 +7,18 @@ module SOPT
     current = [chars.shift]
     short = current * ""
 
+    if shortcuts.include? short and long.index "-" or long.index "_"
+      parts = long.split(/[_-]/)
+      acc = parts.collect{|s| s[0] } * ""
+      return acc unless shortcuts.include? acc
+    end
+
     while shortcuts.include? short
-      next_letter = chars.shift
-      return nil if next_letter.nil?
-      current << next_letter
+      while shortcuts[short].index current * ""
+        next_letter = chars.shift
+        return nil if next_letter.nil?
+        current << next_letter
+      end
       short = current * ""
     end
 
