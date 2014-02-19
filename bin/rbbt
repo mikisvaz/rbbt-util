@@ -3,7 +3,7 @@
 require 'rbbt'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("--log* Log level from 0 (debug) 6 (errors):--command_dir* Directory from where to load commands:--profile Profile execution")
+options = SOPT.get("--log* Log level from 0 (debug) 6 (errors):-cd--command_dir* Directory from where to load commands:--profile Profile execution")
 
 if options[:log]
   Log.severity = options[:log].to_i
