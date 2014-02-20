@@ -41,7 +41,6 @@ module Workflow
     case
     when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
       dir = Rbbt.etc.workflow_dir.read.strip
-      dir = File.join(dir, wf_name)
       Path.setup(dir)
     when defined?(Rbbt)
       Rbbt.workflows
