@@ -276,12 +276,10 @@ module TSV
         end
 
         data.extend TSV unless TSV === data
+        self.annotate(data)
+
         data.key_field = new_key_field_name
         data.fields = new_field_names
-        data.filename = filename
-        data.namespace = namespace
-        data.entity_options = entity_options
-        data.entity_templates = {}
         data.fields.each do |field|
           data.entity_templates[field] = entity_templates[field] if entity_templates.include? field
         end

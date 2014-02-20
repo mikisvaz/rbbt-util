@@ -75,6 +75,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     }
     excel.rb
     filter.rb
+    field_index.rb
     change_id.rb
    }
 

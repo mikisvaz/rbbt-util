@@ -76,6 +76,13 @@ module Persist
       @writable
     end
 
+    #def each
+    #  iterinit
+    #  while key = iternext
+    #    yield key, get(key)
+    #  end
+    #end
+
     def collect
       res = []
       each do |key, value|

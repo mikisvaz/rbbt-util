@@ -13,6 +13,7 @@ require 'rbbt/tsv/manipulate'
 require 'rbbt/tsv/index'
 require 'rbbt/tsv/attach'
 require 'rbbt/tsv/filter'
+require 'rbbt/tsv/field_index'
 
 module TSV
   class << self

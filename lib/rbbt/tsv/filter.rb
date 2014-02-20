@@ -57,6 +57,8 @@ module Filtered
             value == @value or (Array === value and value.include? @value)
           end
         EOC
+      else
+        raise "Unknown match: #{ @match }"
       end
     end
 

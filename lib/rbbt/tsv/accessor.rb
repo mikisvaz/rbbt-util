@@ -8,7 +8,7 @@ module TSV
   attr_accessor :unnamed, :serializer_module, :entity_options, :entity_templates
 
   def annotate(tsv)
-    TSV.setup(tsv, :key_field => key_field, :fields => fields, :namespace => namespace, :entity_options => entity_options, :type => type, :filename => filename, :identifiers => identifiers)
+    TSV.setup(tsv, :key_field => key_field, :fields => fields, :namespace => namespace, :entity_options => entity_options, :type => type, :filename => filename, :identifiers => identifiers, :unnamed => unnamed)
   end
 
   def entity_options

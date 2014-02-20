@@ -54,6 +54,7 @@ row3    A    C
       elem = []
       tsv.through do |k,v| elem << k end
       assert_equal 2, elem.size
+      assert_equal ["row2", "row3"], elem.sort
 
       tsv.add_filter "field:ValueB", ["C"]
 
