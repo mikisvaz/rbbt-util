@@ -3,7 +3,10 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("-tch--tokyocabinet:-tcb--tokyocabinet_bd")
+options = SOPT.get("-tch--tokyocabinet:-tcb--tokyocabinet_bd:-t--type*:-h--header_hash*:-k--key_field*:-f--fields*")
+
+options[:fields] = options[:fields].split(/,\|/) if options[:fields]
+options[:header_hash] = options["header_hash"]
 
 file = ARGV.shift
 
@@ -19,16 +22,19 @@ when options[:tokyocabinet_bd]
   tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
   puts tsv.summary
 else
-  header = TSV.parse_header(Open.open(file))
+  header = TSV.parse_header(Open.open(file), options)
 
   puts "File: #{ file }"
   puts "Type: #{header.type}"
   puts "Key: #{header.key_field}"
   puts "Fields: "
-  header.fields.each_with_index do |f,i|
-    puts "  - #{i + 1}: " << f
+  if header.fields.nil?
+  else
+    header.fields.each_with_index do |f,i|
+      puts "  - #{i + 1}: " << f
+    end
   end
-  puts "Rows: #{`wc -l #{ file }|cut -f 1 -d' '`}"
+  puts "Rows: #{`wc -l #{ file }|cut -f 1 -d' '`}" unless Open.remote? file
   puts "First line:"
   parts = []
   header.first_line.split(header.sep).each_with_index{|p,i| parts << "(#{i}) #{p}"}

@@ -37,6 +37,20 @@ module Workflow
     end
   end
 
+  def self.workflow_dir
+    case
+    when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
+      dir = Rbbt.etc.workflow_dir.read.strip
+      dir = File.join(dir, wf_name)
+      Path.setup(dir)
+    when defined?(Rbbt)
+      Rbbt.workflows
+    else
+      dir = File.join(ENV['HOME'], '.workflows')
+      Path.setup(dir)
+    end
+  end
+
   def self.require_local_workflow(wf_name)
     filename = nil
 
@@ -52,21 +66,27 @@ module Workflow
       end
 
     else
-      case
-        # Points to workflow file
-      when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb'))
+      if ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb'))
         filename = (wf_name =~ /\.?\//) ? wf_name : "./" << wf_name 
-      when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
-        dir = Rbbt.etc.workflow_dir.read.strip
-        dir = File.join(dir, wf_name)
-        filename = File.join(dir, 'workflow.rb')
-      when defined?(Rbbt)
-        path = Rbbt.workflows[wf_name].find
-        filename = File.join(path, 'workflow.rb')
       else
-        path = File.join(ENV['HOME'], '.workflows', wf_name)
-        filename = File.join(dir, 'workflow.rb')
+        filename = workflow_dir[wf_name]['workflow.rb'].find
       end
+
+      #case
+      #  # Points to workflow file
+      #when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb'))
+      #  filename = (wf_name =~ /\.?\//) ? wf_name : "./" << wf_name 
+      #when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
+      #  dir = Rbbt.etc.workflow_dir.read.strip
+      #  dir = File.join(dir, wf_name)
+      #  filename = File.join(dir, 'workflow.rb')
+      #when defined?(Rbbt)
+      #  path = Rbbt.workflows[wf_name].find
+      #  filename = File.join(path, 'workflow.rb')
+      #else
+      #  path = File.join(ENV['HOME'], '.workflows', wf_name)
+      #  filename = File.join(dir, 'workflow.rb')
+      #end
     end
 
     if filename and File.exists? filename
