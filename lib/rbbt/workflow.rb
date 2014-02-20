@@ -119,6 +119,11 @@ module Workflow
   attr_accessor :asynchronous_exports, :synchronous_exports, :exec_exports
 
   #{{{ ATTR DEFAULTS
+  
+  def workdir=(path)
+    path = Path.setup path.dup unless Path === path
+    @workdir = path
+  end
 
   def workdir
     @workdir ||= if defined? Rbbt
@@ -239,16 +244,19 @@ module Workflow
     step
   end
 
-  def jobs(task, query = nil)
-    task_dir = File.join(workdir.find, task.to_s)
-    if query.nil?
-      path = File.join(task_dir, "**/*.info")
-    else
-      path = File.join(task_dir, query + "*.info")
-    end
+  def load_name(task, name)
+    task = tasks[task.to_sym] if String === task or Symbol === task
+    path = step_path task.name, name, [], [], task.extension
+    Step.new path, task
+  end
 
-    Dir.glob(path).collect{|f|
-      Misc.path_relative_to(task_dir, f).sub(".info",'')
+  def jobs(taskname, query = nil)
+    task_dir = File.join(workdir.find, taskname.to_s)
+    pattern = File.join(task_dir, '**/*')
+    job_info_files = Dir.glob(Step.info_file(pattern)).collect{|f| Misc.path_relative_to task_dir, f }
+    job_info_files = job_info_files.select{|f| f.index(query) == 0 } if query
+    job_info_files.collect{|f|
+      job_name = Step.job_name_for_info_file(f, tasks[taskname].extension)
     }
   end
 

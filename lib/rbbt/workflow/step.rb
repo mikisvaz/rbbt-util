@@ -92,8 +92,7 @@ class Step
   end
 
   def checks
-    deps = rec_dependencies.collect{|dependency| dependency.path }.uniq
-    deps.select!{|p| p.exists? }
+    rec_dependencies.collect{|dependency| dependency.path }.uniq
   end
 
   def run(no_load = false)
@@ -276,7 +275,14 @@ class Step
   end
 
   def rec_dependencies
-    @dependencies.collect{|step| step.rec_dependencies}.flatten.concat  @dependencies
+
+    # A step result with no info_file means that it was manually
+    # placed. In that case, do not consider its dependencies
+    return [] if self.done? and not Open.exists? self.info_file
+
+    @dependencies.collect{|step| 
+      step.rec_dependencies 
+    }.flatten.concat  @dependencies
   end
 
   def recursive_clean

@@ -1,8 +1,13 @@
 #!/usr/bin/env ruby
 
-options = SOPT.get("-a--app*")
+options = SOPT.get("-a--app* Apps to add:-wd--workdir* Workflow workdir:-h--help Help")
 
-workflow_dir = Rbbt.var.jobs.find
+if options[:help]
+  puts SOPT.doc
+  exit 0
+end
+
+workflow_dir = options[:workdir] || Rbbt.var.jobs.find
 
 def report_jobs(workflow_dir, title = "WORKFLOW")
   error = {}
@@ -50,7 +55,7 @@ end if options[:app]
 
 puts <<EOF
 
-#{ report_jobs Rbbt.var.jobs.find}
+#{ report_jobs workflow_dir}
 #{ app_dirs.collect{|d,report| report } * "\n" }
 
 # LOCKED TSV

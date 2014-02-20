@@ -5,6 +5,22 @@ class Step
    
   INFO_SERIALIAZER = Marshal
 
+  def self.files_dir(path)
+    path.nil? ? nil : path + '.files'
+  end
+
+  def self.info_file(path)
+    path.nil? ? nil : path + '.info'
+  end
+
+  def self.job_name_for_info_file(info_file, extension = nil)
+    if extension and not extension.empty?
+      info_file.sub(/\.#{extension}\.info$/,'')
+    else
+      info_file.sub(/\.info$/,'')
+    end
+  end
+
   def name
     path.sub(/.*\/#{Regexp.quote task.name.to_s}\/(.*)/, '\1')
   end
@@ -20,9 +36,7 @@ class Step
   # {{{ INFO
 
   def info_file
-    @info_file ||= begin
-                     path.nil? ? nil : path + '.info'
-                   end
+    @info_file ||= Step.info_file(path)
   end
 
   def info
@@ -117,7 +131,7 @@ class Step
   # {{{ INFO
 
   def files_dir
-    path + '.files'
+    @files_dir ||= Step.files_dir path
   end
 
   def files

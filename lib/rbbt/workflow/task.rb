@@ -72,5 +72,4 @@ module Task
       exec_in *args
     end
   end
-
 end

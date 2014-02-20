@@ -8,6 +8,7 @@ file = ARGV.shift
 identifiers = ARGV.shift
 format = ARGV.shift
 
+file = STDIN if file == '-'
 
 puts TSV.open(file).attach identifiers, :fields => [format]
 
