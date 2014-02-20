@@ -1366,6 +1366,19 @@ end
     array[0].zip(*array[1..-1])
   end
 
+  def self.camel_case(string)
+    return string if string !~ /_/ && string =~ /[A-Z]+.*/
+      string.split(/_|(\d+)/).map{|e| 
+        (e =~ /^[A-Z]{2,}$/ ? e : e.capitalize) 
+      }.join
+  end
+
+  def self.camel_case_lower(string)
+      string.split('_').inject([]){ |buffer,e| 
+        buffer.push(buffer.empty? ? e.downcase : (e =~ /^[A-Z]{2,}$/ ? e : e.capitalize)) 
+      }.join
+  end
+
   def self.snake_case(string)
     return nil if string.nil?
     string = string.to_s if Symbol === string

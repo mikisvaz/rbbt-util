@@ -254,6 +254,14 @@ class TestMisc < Test::Unit::TestCase
     end
   end
 
+  def test_camel_case
+    assert_equal "DbSNP", Misc.camel_case("db_SNP")
+    assert_equal "D3Js", Misc.camel_case("D3Js")
+    assert_equal "Structure", Misc.camel_case("Structure")
+    assert_equal "MutEval", Misc.camel_case("mut_eval")
+    assert_equal "COSMIC", Misc.camel_case("COSMIC")
+  end
+
   def test_pipe
     t = 5
     stream = Misc.open_pipe do |sin|

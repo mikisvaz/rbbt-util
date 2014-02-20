@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/workflow'
+require 'rbbt/util/simpleopt'
+
+options = SOPT.get('-wd--workflow_dir*:-d--describe')
+
+workflow_dir = options[:workflow_dir] || Workflow.workflow_dir
+
+Path.setup(workflow_dir) unless Path === workflow_dir
+
+files = workflow_dir.find_all.collect{|p| p.glob("*") }.flatten.select{|f| File.directory? f }
+
+puts defined? COSMIC
+if options[:describe]
+  files.each do |file|
+    workflow = File.basename(file)
+    Workflow.require_workflow workflow
+    ddd Workflow.workflows
+    workflow = Workflow.workflows.select{|w| Misc.camel_case(w.to_s) == Misc.camel_case(workflow)}.first
+    ddd workflow
+    puts [Misc.camel_case(workflow.to_s), workflow.description] * ":"
+    puts defined? COSMIC
+  end
+else
+  files.each do |file|
+    workflow = File.basename(file)
+    puts Misc.camel_case(workflow.to_s)
+  end
+end
