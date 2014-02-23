@@ -70,22 +70,6 @@ module Workflow
       else
         filename = workflow_dir[wf_name]['workflow.rb'].find
       end
-
-      #case
-      #  # Points to workflow file
-      #when ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb'))
-      #  filename = (wf_name =~ /\.?\//) ? wf_name : "./" << wf_name 
-      #when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
-      #  dir = Rbbt.etc.workflow_dir.read.strip
-      #  dir = File.join(dir, wf_name)
-      #  filename = File.join(dir, 'workflow.rb')
-      #when defined?(Rbbt)
-      #  path = Rbbt.workflows[wf_name].find
-      #  filename = File.join(path, 'workflow.rb')
-      #else
-      #  path = File.join(ENV['HOME'], '.workflows', wf_name)
-      #  filename = File.join(dir, 'workflow.rb')
-      #end
     end
 
     if filename and File.exists? filename
@@ -99,9 +83,9 @@ module Workflow
 
     # Already loaded
     begin
-      Misc.string2const wf_name
+      workflow = Misc.string2const wf_name
       Log.debug{"Workflow #{ wf_name } already loaded"}
-      return true
+      return workflow
     rescue Exception
     end
 
@@ -129,6 +113,11 @@ module Workflow
     require_local_workflow(Misc.snake_case(wf_name)) or 
     (Workflow.autoinstall and `rbbt workflow install #{Misc.snake_case(wf_name)}` and require_local_workflow(Misc.snake_case(wf_name))) or
     raise("Workflow not found or could not be loaded: #{ wf_name }")
+    begin
+      Misc.string2const Misc.camel_case(wf_name)
+    rescue
+      Workflow.workflows.last || true
+    end
   end
 
   attr_accessor :description

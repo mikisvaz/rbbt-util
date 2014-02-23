@@ -3,7 +3,10 @@
 require 'rbbt'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("--log* Log level from 0 (debug) 6 (errors):-cd--command_dir* Directory from where to load commands:--profile Profile execution")
+options = SOPT.get("--log* Log level from 0 (debug) 6 (errors):-cd--command_dir* Directory from where to load commands:--profile Profile execution:--no_color Disable colored output:--locate_file Locate file been executed")
+
+ENV["RBBT_NOCOLOR"] = "true" if options[:no_color]
+locate = options.delete :locate_file
 
 if options[:log]
   Log.severity = options[:log].to_i
@@ -47,13 +50,14 @@ def rbbt_usage(prev = nil)
   puts SOPT.doc
 
   if prev
-    puts "## COMMANDS"
     puts
-    puts "Command:"
+    puts Log.color :magenta, "## COMMANDS"
+    puts
+    puts Log.color :magenta, "Command:"
     puts 
     puts "  #{File.basename($0)} #{prev * " "}"
     puts 
-    puts "Subcommands:"
+    puts Log.color :magenta, "Subcommands:"
     puts 
     commands(prev).each do |command|
       puts "  " << command
@@ -86,8 +90,13 @@ begin
       prev << command
       dir = dir[command]
     when dir[command].exists?
-      load dir[command].find
-      exit 0
+      if locate
+        puts dir[command].find
+        exit 0
+      else
+        load dir[command].find
+        exit 0
+      end
     else
       error = "Command '#{command }' not understood"
       rbbt_usage(prev)

@@ -1,0 +1,80 @@
+#!/usr/bin/env ruby
+
+require 'rbbt/workflow'
+
+
+
+require 'rbbt-util'
+require 'fileutils'
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow/step'
+require 'rbbt/util/misc'
+
+$workdir = Path.setup(File.expand_path(ARGV[0] || '.'))
+
+
+YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
+
+def info_files
+  $workdir.glob(Step.info_file('**/*'))
+end
+
+def running?(info)
+  Misc.pid_exists? info[:pid]
+end
+
+def job_str(file, info, severity_color = nil)
+  clean_file = file.sub('./','').sub('.info','').gsub('/', Term::ANSIColor.blue(' => '))
+  if $name
+    clean_file
+  else
+    info ||= {:status => :missing_info_file}
+    str = [clean_file, info[:status].to_s] * "\t\t\t[ STATUS = " + " ]" 
+    if info[:status] != :error and info[:status] != :aborted and not info[:status] == :done
+      str += " (#{running?(info)? :running : :dead} #{info[:pid]})" if info[:pid]
+      str += " (children: #{info[:children_pids].collect{|pid| [pid, Misc.pid_exists?(pid) ? "R" : "D"] * ":"} * ", "})" if info.include? :children_pids
+    end
+
+    if severity_color
+      "#{severity_color}" <<  str  << "\033[0m" 
+    else
+      str
+    end
+  end
+end
+
+file = ARGV[0]
+
+deps = {}
+
+$done = []
+def print(file, offset = 1)
+  if not $done.include? file
+    putc "*"
+  end
+
+  step = Step.new file.sub('.info','')
+  
+  info = step.info
+  dependencies = info[:dependencies] || []
+  color = case
+          when (not info)
+            Log::SEVERITY_COLOR[3]
+          when info[:status] == :error 
+            Log::SEVERITY_COLOR[3]
+          when info[:status] == :aborted 
+            Log::SEVERITY_COLOR[2]
+          when (info[:status] != :done and info[:pid] and not running? info)
+            Log::SEVERITY_COLOR[2]
+          end
+
+  puts (" " * offset * 2) << job_str(step.path, step.info, color)
+  $done << file
+  root = File.dirname(File.dirname(file))
+  dependencies.each do |task,new_file|
+    new_file = File.join(root, task.to_s, new_file)
+    print(new_file, offset+1)
+  end
+end
+
+print(file)

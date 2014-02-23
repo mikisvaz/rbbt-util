@@ -23,12 +23,31 @@ module Log
 
   WHITE, DARK, GREEN, YELLOW, RED = Color::SOLARIZED.values_at :base0, :base00, :green, :yellow, :magenta
 
-  SEVERITY_COLOR = [reset, cyan, green, magenta, blue, yellow, red] #.collect{|e| "\033[#{e}"}
+  if ENV["RBBT_NOCOLOR"] == "true"
+    SEVERITY_COLOR = [reset, "", "", "", "", "", ""] #.collect{|e| "\033[#{e}"}
+  else
+    SEVERITY_COLOR = [reset, cyan, green, magenta, blue, yellow, red] #.collect{|e| "\033[#{e}"}
+  end
 
   HIGHLIGHT = "\033[1m"
 
-  def self.color(severity)
-    SEVERITY_COLOR[severity]
+  def self.color(severity, str = nil)
+    return str || "" if ENV["RBBT_NOCOLOR"] == "true"
+    color = SEVERITY_COLOR[severity] if Fixnum === severity
+    color = Term::ANSIColor.send(severity) if Symbol === severity and Term::ANSIColor.respond_to? severity 
+    if str.nil?
+      color
+    else
+      color + str + color(0)
+    end
+  end
+
+  def self.highlight(str = nil)
+    if str.nil?
+      HIGHLIGHT
+    else
+      HIGHLIGHT + str + color(0)
+    end
   end
 
   def self.log(message = nil, severity = MEDIUM, &block)
@@ -40,8 +59,8 @@ module Log
 
     sev_str = severity.to_s
 
-    prefix = time << "[" << SEVERITY_COLOR[severity] << sev_str << SEVERITY_COLOR[0] << "]"
-    message = "" << HIGHLIGHT << message << SEVERITY_COLOR[0] if severity >= INFO
+    prefix = time << "[" << color(severity) << sev_str << color(0) << "]"
+    message = "" << highlight << message << color(0) if severity >= INFO
     str = prefix << " " << message
 
     STDERR.puts str

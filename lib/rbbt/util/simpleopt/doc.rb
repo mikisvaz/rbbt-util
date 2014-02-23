@@ -26,7 +26,8 @@ module SOPT
   end
 
   def self.input_format(name, type = nil, default = nil, short = nil)
-    input_str = (short.nil? or short.empty?) ? "--#{name}" : "-#{short}, --#{name}"
+    input_str = (short.nil? or short.empty?) ? Log.color(:blue,"--#{name}") : Log.color(:blue, "-#{short}") << ", " << Log.color(:blue, "--#{name}")
+    input_str = Log.color(:blue, input_str)
     input_str << case type
     when nil
       "#{default != nil ? " (default '#{default}')" : ""}:"
@@ -71,18 +72,20 @@ module SOPT
 
   def self.doc
     doc = <<-EOF
+#{Log.color :magenta}
 #{command}(1) -- #{summary}
 #{"=" * (command.length + summary.length + 7)}
+#{Log.color :reset}
 
-## SYNOPSYS
+#{ Log.color :magenta, "## SYNOPSYS"}
 
 #{synopsys}
 
-## DESCRIPTION
+#{ Log.color :magenta, "## DESCRIPTION"}
 
 #{description}
 
-## OPTIONS
+#{ Log.color :magenta, "## OPTIONS"}
 
 #{input_doc(inputs, input_types, input_descriptions, input_defaults, input_shortcuts)}
     EOF

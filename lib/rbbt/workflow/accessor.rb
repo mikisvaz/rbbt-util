@@ -347,7 +347,9 @@ module Workflow
       workdir_find = workdir
     end
  
-    Misc.path_relative_to(workdir_find, File.dirname(path)).sub(/([^\/]+)\/.*/,'\1')
+    workdir_find = File.expand_path(workdir_find)
+    path = File.expand_path(path)
+    dir = File.dirname(path)
+    Misc.path_relative_to(workdir_find, dir).sub(/([^\/]+)\/.*/,'\1')
   end
-
 end

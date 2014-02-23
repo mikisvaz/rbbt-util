@@ -6,9 +6,25 @@ require 'rbbt/workflow/usage'
 
 YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
 
+def load_inputs(dir, task)
+  inputs = {}
+  dir = Path.setup(dir.dup)
+  task.inputs.each do |input|
+    file = dir[input].find
+    next unless file.exists?
+    case task.input_types[input]
+    when :tsv, :array, :text
+      inputs[input.to_sym]  = file
+    else
+      inputs[input.to_sym]  = file.read
+    end
+  end
+  inputs
+end
+
 def usage(workflow = nil, task = nil, exception=nil)
   puts SOPT.doc
-  puts "## WORKFLOW"
+  puts Log.color :magenta, "## WORKFLOW"
   puts
   if workflow.nil?
     puts "No workflow specified"
@@ -19,8 +35,8 @@ def usage(workflow = nil, task = nil, exception=nil)
     workflow.load_tasks if workflow.respond_to? :load_tasks
     workflow.doc
   else
-    puts workflow.to_s
-    puts "=" * workflow.to_s.length
+    puts Log.color :magenta, workflow.to_s
+    puts Log.color :magenta, "=" * workflow.to_s.length
     puts
     puts workflow.workflow_description
     puts
@@ -115,6 +131,7 @@ options = SOPT.get <<EOF
 -O--output* Save job result into file:
 -jf--job_file* Output one of the job produced files:
 -ljf--list_job_files List all the files produced in that step:
+--load_inputs* Load inputs from a directory
 --info Show the job info:
 --provenance Report the jobs provenance:
 EOF
@@ -173,7 +190,11 @@ name = options.delete(:jobname) || "Default"
 
 # get job args
 sopt_option_string = SOPT_options(workflow, task)
-job_options = SOPT.get sopt_option_string
+if options[:load_inputs]
+  job_options = load_inputs(options[:load_inputs], task)
+else
+  job_options = SOPT.get sopt_option_string
+end
 job_options = fix_options(workflow, task, job_options)
 
 workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if options[:workdir]
