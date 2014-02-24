@@ -8,8 +8,6 @@ require 'rbbt/util/misc'
 
 options = SOPT.get("-l--list:-z--zombies:-e--errors:-c--clean:-n--name:-a--all:-w--wipe:-f--file*:-q--quick:-d--directory*")
 
-YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
-
 def info_files
   Dir.glob('**/*.info')
 end

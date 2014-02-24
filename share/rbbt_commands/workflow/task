@@ -4,8 +4,6 @@ require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
 require 'rbbt/workflow/usage'
 
-YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
-
 def load_inputs(dir, task)
   inputs = {}
   dir = Path.setup(dir.dup)

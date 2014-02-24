@@ -12,9 +12,6 @@ require 'rbbt/util/misc'
 
 $workdir = Path.setup(File.expand_path(ARGV[0] || '.'))
 
-
-YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
-
 def info_files
   $workdir.glob(Step.info_file('**/*'))
 end

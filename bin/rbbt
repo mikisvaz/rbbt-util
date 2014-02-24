@@ -3,9 +3,9 @@
 require 'rbbt'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("--log* Log level from 0 (debug) 6 (errors):-cd--command_dir* Directory from where to load commands:--profile Profile execution:--no_color Disable colored output:--locate_file Locate file been executed")
+options = SOPT.get("--log* Log level from 0 (debug) 6 (errors):-cd--command_dir* Directory from where to load commands:--profile Profile execution:--nocolor Disable colored output:--locate_file Locate file been executed")
 
-ENV["RBBT_NOCOLOR"] = "true" if options[:no_color]
+Log.nocolor = true if options[:nocolor]
 locate = options.delete :locate_file
 
 if options[:log]
@@ -67,12 +67,12 @@ def rbbt_usage(prev = nil)
 end
 
 def print_error(error, backtrace = nil)
-  puts Term::ANSIColor.red("Error:")
+  puts Log.color :red, "Error:"
   puts
   puts error
   if backtrace
     puts
-    puts Term::ANSIColor.red("Backtrace:")
+    puts Log.color :red, "Backtrace:"
     puts
     puts backtrace * "\n"
   end

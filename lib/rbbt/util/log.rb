@@ -13,8 +13,9 @@ module Log
   ERROR    = 6
 
   class << self
-    attr_accessor :logfile, :severity
+    attr_accessor :logfile, :severity, :nocolor
   end
+  self.nocolor = ENV["RBBT_NOCOLOR"] == 'true'
 
 
   def self.logfile
@@ -23,16 +24,11 @@ module Log
 
   WHITE, DARK, GREEN, YELLOW, RED = Color::SOLARIZED.values_at :base0, :base00, :green, :yellow, :magenta
 
-  if ENV["RBBT_NOCOLOR"] == "true"
-    SEVERITY_COLOR = [reset, "", "", "", "", "", ""] #.collect{|e| "\033[#{e}"}
-  else
-    SEVERITY_COLOR = [reset, cyan, green, magenta, blue, yellow, red] #.collect{|e| "\033[#{e}"}
-  end
-
+  SEVERITY_COLOR = [reset, cyan, green, magenta, blue, yellow, red] #.collect{|e| "\033[#{e}"}
   HIGHLIGHT = "\033[1m"
 
   def self.color(severity, str = nil)
-    return str || "" if ENV["RBBT_NOCOLOR"] == "true"
+    return str || "" if nocolor 
     color = SEVERITY_COLOR[severity] if Fixnum === severity
     color = Term::ANSIColor.send(severity) if Symbol === severity and Term::ANSIColor.respond_to? severity 
     if str.nil?
@@ -44,8 +40,10 @@ module Log
 
   def self.highlight(str = nil)
     if str.nil?
+      return "" if nocolor
       HIGHLIGHT
     else
+      return str if nocolor
       HIGHLIGHT + str + color(0)
     end
   end
@@ -118,7 +116,7 @@ end
 
 def ppp(message)
   stack = caller
-  puts "#{Log::SEVERITY_COLOR[1]}PRINT:#{Log::SEVERITY_COLOR[0]} " << stack.first
+  puts "#{Log.color :cyan, "PRINT:"} " << stack.first
   puts ""
   puts "=> " << message
   puts ""
@@ -126,7 +124,7 @@ end
 
 def ddd(message, file = $stdout)
   stack = caller
-  Log.debug{"#{Log::SEVERITY_COLOR[1]}DEVEL:#{Log::SEVERITY_COLOR[0]} " << stack.first}
+  Log.debug{"#{Log.color :cyan, "DEBUG:"} " << stack.first}
   Log.debug{""}
   Log.debug{"=> " << message.inspect}
   Log.debug{""}
@@ -134,7 +132,7 @@ end
 
 def fff(object)
   stack = caller
-  Log.debug{"#{Log::SEVERITY_COLOR[1]}FINGERPRINT:#{Log::SEVERITY_COLOR[0]} " << stack.first}
+  Log.debug{"#{Log.color :cyan, "FINGERPRINT:"} " << stack.first}
   Log.debug{""}
   Log.debug{require 'rbbt/util/misc'; "=> " << Misc.fingerprint(object) }
   Log.debug{""}
