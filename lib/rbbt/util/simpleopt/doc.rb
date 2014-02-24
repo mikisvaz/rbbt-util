@@ -46,11 +46,12 @@ module SOPT
     type = description = default = nil
     shortcut = ""
     inputs.collect do |name|
-      name = name.to_s
 
       type = input_types[name] unless input_types.nil?
       description = input_descriptions[name] unless input_descriptions.nil?
       default = input_defaults[name] unless input_defaults.nil?
+
+      name = name.to_s
 
       case input_shortcuts
       when nil, FalseClass

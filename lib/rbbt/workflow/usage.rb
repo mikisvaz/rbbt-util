@@ -6,7 +6,7 @@ module Task
     puts "\n" << description  << "\n" if description and not description.empty?
     puts "Returns: " << Log.color(:blue, result_type.to_s) << "\n"
     puts SOPT.input_doc(inputs, input_types, input_descriptions, input_defaults, true)
-      puts
+    puts
 
 
     if deps and deps.any?
