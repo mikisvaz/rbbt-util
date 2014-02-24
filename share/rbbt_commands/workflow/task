@@ -41,8 +41,8 @@ def usage(workflow = nil, task = nil, exception=nil)
     workflow.doc(task)
   end
 
-  raise exception if exception
-  exit 0
+  print_error($!.message, $!.backtrace)
+  exit -1
 end
 
 def SOPT_options(workflow, task)
