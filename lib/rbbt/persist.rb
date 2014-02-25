@@ -275,9 +275,11 @@ module Persist
 
             Log.medium "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
             res = yield
+
             Misc.lock(path) do
               save_file(path, type, res)
             end
+
             res
           end
         rescue

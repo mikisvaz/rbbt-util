@@ -280,7 +280,7 @@ module Workflow
 
   def rec_input_types(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn.to_sym].input_types}.
-      tap{|h| IndiferentHash.setup(h)}
+      tap{|h| IndiferentHash.setup(h) }
   end
 
   def rec_input_descriptions(taskname)

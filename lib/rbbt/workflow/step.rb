@@ -166,6 +166,7 @@ class Step
       set_info :done, (done_time = Time.now)
       set_info :time_elapsed, done_time - start_time
       Log.medium("Completed task #{task.name || ""} [#{Process.pid}]: #{ path }")
+
       res
     end
 

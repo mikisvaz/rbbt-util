@@ -1,5 +1,3 @@
-#ENV['LOCKFILE_DEBUG'] = "true";; require 'lockfile'
-
 require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
 require 'rbbt/util/misc'
 require 'test/unit'

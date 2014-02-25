@@ -42,7 +42,6 @@ module Misc
     tar.rewind
 
     string = tar.string
-    ddd string.size
 
     #chunk_size = 1024
     #Zlib::GzipWriter.wrap(gz) do |writer|

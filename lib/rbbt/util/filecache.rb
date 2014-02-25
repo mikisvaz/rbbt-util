@@ -76,7 +76,7 @@ module FileCache
       path = FileCache.path(filename)
       Open.write(path, content)
       result_files[id] = path
-    end
+    end if missing.any?
 
     result_files
   end

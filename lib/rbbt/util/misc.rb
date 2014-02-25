@@ -26,6 +26,7 @@ module LaterString
   end
 end
 
+Lockfile.refresh = false if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
 module Misc
 
   def self.correct_icgc_mutation(pos, ref, mut_str)
@@ -945,12 +946,11 @@ end
 
     begin
       lockfile.lock do 
-        yield file, *args
+        res = yield file, *args
       end
     rescue Interrupt
       Log.error "Process #{Process.pid} interrupted while in lock: #{ lock_path }"
       raise $!
-    ensure
     end
 
     res

@@ -109,7 +109,6 @@ begin
   exit 0
 
 rescue ParameterException
-  ddd "EXCEPTION"
   puts
   rbbt_usage
   print_error($!.message, $!.backtrace)

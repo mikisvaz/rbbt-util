@@ -13,7 +13,6 @@ module Persist
 
       database.extend Persist::LevelDBAdapter unless Persist::LevelDBAdapter === database
       database.persistence_path ||= path
-      ddd database
 
       database
     end
