@@ -41,7 +41,7 @@ def usage(workflow = nil, task = nil, exception=nil)
     workflow.doc(task)
   end
 
-  print_error($!.message, $!.backtrace)
+  print_error(exception.message, exception.backtrace) if exception
   exit -1
 end
 

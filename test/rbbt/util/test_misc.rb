@@ -1,3 +1,5 @@
+#ENV['LOCKFILE_DEBUG'] = "true";; require 'lockfile'
+
 require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
 require 'rbbt/util/misc'
 require 'test/unit'
@@ -282,5 +284,15 @@ class TestMisc < Test::Unit::TestCase
     assert time_spent >= t * 0.5
     assert time_spent <= (t+1) * 0.5
     assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }"}, lines
+  end
+
+  def __test_lock_fd
+    require 'rbbt/workflow'
+    Rbbt.var.jobs.Structure.neighbour_map.glob("*")[0..1000].each do |file|
+      next if file =~ /\.info$/
+      step = Step.new file
+      TSV.open step.path
+    end
+    puts `ls -l /proc/#{ Process.pid }/fd`
   end
 end

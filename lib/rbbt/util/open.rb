@@ -330,9 +330,7 @@ module Open
            # What about grep?
            wget(url, wget_options)
          when (options[:nocache] != :update and in_cache(url, wget_options))
-           Misc.lock(in_cache(url, wget_options)) do
-             file_open(in_cache(url, wget_options), options[:grep], mode, options[:invert_grep])
-           end
+           file_open(in_cache(url, wget_options), options[:grep], mode, options[:invert_grep])
          else
            io = wget(url, wget_options)
            add_cache(url, io, wget_options)

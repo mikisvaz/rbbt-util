@@ -932,7 +932,7 @@ end
 
     begin
       if File.exists? lockfile and
-        Misc.hostname == (info = YAML.load_file(lockfile))["host"] and 
+        Misc.hostname == (info = Open.open(lockfile){|f| YAML.load(f) })["host"] and 
         info["pid"] and not Misc.pid_exists?(info["pid"])
 
         Log.info("Removing lockfile: #{lockfile}. This pid #{Process.pid}. Content: #{info.inspect}")
@@ -945,11 +945,12 @@ end
 
     begin
       lockfile.lock do 
-        res = yield file, *args
+        yield file, *args
       end
     rescue Interrupt
       Log.error "Process #{Process.pid} interrupted while in lock: #{ lock_path }"
       raise $!
+    ensure
     end
 
     res
@@ -1362,8 +1363,8 @@ end
 
 
   def self.zip_fields(array)
-    return [] if array.empty?
-    array[0].zip(*array[1..-1])
+    return [] if array.empty? or (first = array.first).nil?
+    first.zip(*array[1..-1])
   end
 
   def self.camel_case(string)

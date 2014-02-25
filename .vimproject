@@ -35,7 +35,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      parse.rb
      get.rb
     }
-    simpleopt.rb.old
+
     simpleDSL.rb
 
     chain_methods.rb
@@ -115,13 +115,10 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
 
    knowledge_base.rb
-
-   link.rb
   }
  }
  test=test {
   test_helper.rb
-  test_rbbt.rb
   rbbt=rbbt{
    test_annotations.rb
    test_entity.rb
@@ -153,16 +150,12 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   }
  }
  integration_test=integration_test{
-  data=data{
-   genes.txt
-   Metastasis.tsv
-  }
   test_bed.rb
+  test_helper.rb
   test_namespaces.rb
   test_workflow.rb
  }
  etc=etc filter="*"{
-  allowed_biomart_archives
   app.d=app.d{
    base.rb
    entities.rb
