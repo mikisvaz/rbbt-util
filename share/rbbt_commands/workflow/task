@@ -275,7 +275,7 @@ end
 
 if job_file = options.delete(:job_file)
   file = job.file(job_file)
-  out.puts IO === file ? file.read : file
+  out.puts Path === file ? file.read : file
   exit 0
 end
 
