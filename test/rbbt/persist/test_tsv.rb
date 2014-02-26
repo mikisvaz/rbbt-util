@@ -12,8 +12,7 @@ class TestPersistTSV < Test::Unit::TestCase
   def tsv_path
     Random.new
     require 'rbbt/workflow'
-    Workflow.require_workflow "Genomics"
-    require 'rbbt/entity/gene'
+    Workflow.require_workflow "Genomes1000"
     require 'rbbt/sources/genomes1000'
     CMD.cmd("grep -v '^\\.\t' | head -n #{MAX}", :in => Genomes1000.mutations.open, :pipe => true)
   end

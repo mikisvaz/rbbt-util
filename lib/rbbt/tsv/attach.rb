@@ -31,7 +31,8 @@ module TSV
 
     done = false
     Open.write(output) do |os|
-      os.puts TSV.header_lines(key_field, fields, options)
+      options.delete :sep if options[:sep] == "\t"
+      os.puts TSV.header_lines(key_field, fields, options) 
 
       while line
         key, *parts = line.sub("\n",'').split(sep, -1)

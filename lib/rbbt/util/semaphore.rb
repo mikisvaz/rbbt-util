@@ -64,6 +64,7 @@ void post_semaphore(char* name){
   def self.fork_each_on_semaphore(elems, size, file = nil)
     with_semaphore(size, file) do |file|
       begin
+
         pids = elems.collect do |elem| 
           Process.fork do 
             begin
@@ -78,7 +79,13 @@ void post_semaphore(char* name){
             end
           end
         end
-        pids.each do |pid| Process.waitpid pid end
+
+        while pids.any?
+          pid = Process.wait -1
+          pids.delete pid
+        end
+        #pids.each do |pid| Process.waitpid pid end
+        
       rescue Exception
         Log.error "Killing children: #{pids.sort * ", " }"
         pids.each do |pid| begin Process.kill("INT", pid); rescue; end; end
