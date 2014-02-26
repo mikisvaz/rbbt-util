@@ -278,7 +278,8 @@ module Misc
         obj.each do |k,v|
           new << k.to_s << '=>' << fingerprint(v) << ' '
         end
-        new << "}"
+        new[-1] =  "}"
+        new
       end
     else
       obj.to_s
