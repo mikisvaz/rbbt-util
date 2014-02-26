@@ -171,33 +171,38 @@ module TSV
     end
 
     line_num = 1
-    while not line.nil? 
-      begin
-        progress_monitor.tick(stream.pos) if progress_monitor 
-
-        raise Parser::SKIP_LINE if line.empty?
-
-        line = Misc.fixutf8(line)
-        line = parser.process line
-        parts = parser.chop_line line
-        key, values = parser.get_values parts
-        values = parser.cast_values values if parser.cast?
-        parser.add_to_data data, key, values
-        line = stream.gets
-        line_num += 1
-        raise Parser::END_PARSING if head and line_num > head.to_i
-      rescue Parser::SKIP_LINE
+    begin
+      while not line.nil? 
         begin
+          progress_monitor.tick(stream.pos) if progress_monitor 
+
+          raise Parser::SKIP_LINE if line.empty?
+
+          line = Misc.fixutf8(line)
+          line = parser.process line
+          parts = parser.chop_line line
+          key, values = parser.get_values parts
+          values = parser.cast_values values if parser.cast?
+          parser.add_to_data data, key, values
           line = stream.gets
-          next
+          line_num += 1
+          raise Parser::END_PARSING if head and line_num > head.to_i
+        rescue Parser::SKIP_LINE
+          begin
+            line = stream.gets
+            next
+          rescue IOError
+            break
+          end
+        rescue Parser::END_PARSING
+          break
         rescue IOError
+          Log.exception $!
           break
         end
-      rescue Parser::END_PARSING
-        break
-      rescue IOError
-        break
       end
+    ensure
+      stream.close unless stream.closed?
     end
 
     parser.setup data
