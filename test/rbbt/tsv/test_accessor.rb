@@ -185,4 +185,16 @@ row3    A|AA|AAA|AAA    B    Id3    3
     assert_equal (0..10-1).to_a, pos
   end
 
+  def test_unzip
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|A    b|B    Id1|Id2
+row2    aa|aa|AA|AA    b1|b2|B1|B2    Id1|Id1|Id2|Id2
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+    end
+  end
+
 end

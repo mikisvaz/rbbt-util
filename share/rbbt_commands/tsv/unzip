@@ -3,11 +3,14 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("-tch--tokyocabinet:-tcb--tokyocabinet_bd")
+options = SOPT.get("-tch--tokyocabinet:-tcb--tokyocabinet_bd:-f--field Field to append to key:-m--merge Consider multiple values even after unzip")
 
 file = ARGV.shift
 
 file = STDIN if file == '-'
+
+field = options[:field] || 0
+merge = options[:merge] || false
 
 case
 when options[:tokyocabinet]
@@ -22,4 +25,4 @@ else
   tsv = TSV.open(file)
 end
 
-puts tsv.unzip.to_s
+puts tsv.unzip(field, merge).to_s
