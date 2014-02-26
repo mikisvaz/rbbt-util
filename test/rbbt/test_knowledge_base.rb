@@ -3,17 +3,15 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'test/unit'
 require 'rbbt/knowledge_base'
 
-gem 'rbbt-sources'
-gem 'rbbt-phgx'
-gem 'rest-client'
-
 require 'rbbt/sources/pina'
 require 'rbbt/workflow'
-Workflow.require_workflow "Genomics"
-require 'genomics_kb'
 
 class TestKnowledgeBase < Test::Unit::TestCase
   def setup
+    if not defined? Genomics
+      Workflow.require_workflow "Genomics"
+      require 'genomics_kb'
+    end
     KnowledgeBase.knowledge_base_dir = Rbbt.tmp.knowledge_base_test.find
     @kb = Genomics.knowledge_base
   end

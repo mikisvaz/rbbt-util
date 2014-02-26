@@ -3,7 +3,7 @@ require 'rbbt/util/log'
 
 class TestLog < Test::Unit::TestCase
   def test_color
-    puts Log.color(:green, "green")
+    assert Log.color(:green, "green")
   end
 end
 

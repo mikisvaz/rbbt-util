@@ -38,6 +38,6 @@ aa xx
 
   def test_change_id
     @f1.identifiers = @id
-    puts @f1.change_key "X"
+    assert @f1.change_key("X").include? "x"
   end
 end

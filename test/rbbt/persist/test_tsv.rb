@@ -11,8 +11,6 @@ class TestPersistTSV < Test::Unit::TestCase
 
   def tsv_path
     Random.new
-    #require 'rbbt/sources/organism'
-    #Organism.identifiers("Hsa")
     require 'rbbt/workflow'
     Workflow.require_workflow "Genomics"
     require 'rbbt/entity/gene'
@@ -26,7 +24,6 @@ class TestPersistTSV < Test::Unit::TestCase
       db= nil
       Misc.benchmark(1, "Build database with #{MAX - 2} entries") do
         db = TSV.open(file, :fields => [1], :persist => true, :persist_engine => engine, :persist_dir => tmp_file, :type => :single, :unnamed => true)
-        fff db
       end
       test = db.keys.sort{rand}[1..100000]
       Misc.benchmark(5, "Access #{test.length} random entries") do
@@ -40,32 +37,32 @@ class TestPersistTSV < Test::Unit::TestCase
     end
   end
 
-  def test_benchmark_tch
+  def _test_benchmark_tch
     engine = "HDB"
     run_bechmark(tsv_path, engine)
   end
 
-  def test_benchmark_tcb
+  def _test_benchmark_tcb
     engine = "BDB"
     run_bechmark(tsv_path, engine)
   end
 
-  def test_benchmark_kch
+  def _test_benchmark_kch
     engine = "kch"
     run_bechmark(tsv_path, engine)
   end
 
-  def test_benchmark_kcb
+  def _test_benchmark_kcb
     engine = "kct"
     run_bechmark(tsv_path, engine)
   end
 
-  def test_benchmark_cdb
+  def _test_benchmark_cdb
     engine = "CDB"
     run_bechmark(tsv_path, engine)
   end
 
-  def test_benchmark_leveldb
+  def _test_benchmark_leveldb
     engine = "LevelDB"
     run_bechmark(tsv_path, engine)
   end

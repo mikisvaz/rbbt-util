@@ -6,9 +6,6 @@ require 'rbbt/entity'
 
 class TestMisc < Test::Unit::TestCase
 
-  def test_humanize
-    assert_equal "mutation_enrichment", Misc.humanize("MutationEnrichment")
-  end
 
   def test_fixutf8
     string = "abc\xffdef"
@@ -84,13 +81,6 @@ class TestMisc < Test::Unit::TestCase
     assert_equal('d', Misc.string2hash("a=b#c=d#:h='j'")["c"])
     assert_equal('j', Misc.string2hash("a=b#c=d#:h='j'")[:h])
     assert_equal(:j, Misc.string2hash("a=b#c=d#:h=:j")[:h])
-
-    Misc.benchmark(1000) do
-      Misc.string2hash_old("a=b#c=d#:h=:j#test='1'#:num=1#:sep=/#/")
-    end
-    Misc.benchmark(1000) do
-      Misc.string2hash("a=b#c=d#:h=:j#test='1'#:num=1#:sep=/#/")
-    end
   end
   
   def test_named_array
@@ -227,6 +217,8 @@ class TestMisc < Test::Unit::TestCase
     assert_equal "Test string", Misc.humanize(str1)
     assert_equal "TEST string", Misc.humanize(str2)
     assert_equal "Test", Misc.humanize(str3)
+
+    assert_equal "mutation_enrichment", Misc.snake_case("MutationEnrichment")
   end
 
   def test_snake_case
@@ -241,7 +233,7 @@ class TestMisc < Test::Unit::TestCase
   end
 
   def test_fingerprint
-    puts Misc.fingerprint({:a => 1})
+    assert_equal '{a=>1}', Misc.fingerprint({:a => 1})
   end
 
   def test_tarize
@@ -266,7 +258,6 @@ class TestMisc < Test::Unit::TestCase
     t = 5
     stream = Misc.open_pipe do |sin|
       t.times do |i|
-        puts "Calculating line #{ i }"
         sleep 0.5
         sin.puts "LINE #{ i }"
       end

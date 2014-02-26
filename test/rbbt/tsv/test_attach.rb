@@ -469,7 +469,6 @@ A    Id3
     tsv1 = tsv2 = index = nil
     TmpFile.with_file(content1) do |filename|
       tsv1 = TSV.open(File.open(filename), :flat, :fields => ["ValueA"], :sep => /\s+/)
-      puts tsv1
     end
 
     TmpFile.with_file(content2) do |filename|
@@ -477,8 +476,7 @@ A    Id3
     end
 
     res = tsv1.attach tsv2, :fields => ["OtherID"]
-    puts res
-
+    assert_equal "Id3", res["row2"]["OtherID"]
   end
 end
 

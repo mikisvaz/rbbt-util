@@ -57,7 +57,6 @@ row2    A    B    Id3
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/)
-      puts tsv.to_s
       assert tsv.to_s =~ /row1\ta|aa|aaa/
       assert tsv.to_s =~ /:type=:double/
     end

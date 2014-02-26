@@ -167,55 +167,12 @@ class TestEntity < Test::Unit::TestCase
     assert_equal string.length, string.annotation_list.length
   end
 
-  def __test_performance
-    require 'rbbt/entity/gene'
-    Misc.profile(:min_percent => 2) do
-      1000.times do
-        TestA.new "foo", "bar"
-      end
-    end
+  def test_clean_annotations
 
-    Misc.profile(:min_percent => 2) do
-      1000.times do
-        Gene.setup_positional("", "foo", "bar")
-      end
-    end
+    string = "test_string"
+    ReversableString.setup string
+    assert string.respond_to?(:reverse_text_single)
+    assert ! string.clean_annotations.respond_to?(:reverse_text_single)
 
-    Misc.benchmark(100000) do
-      Gene.setup("", :foo => "foo", :bar => "bar")
-    end
-
-    Misc.benchmark(100000) do
-      TestA.new "foo", "bar"
-    end
-  end
-
-  def __test_clean_annotations
-    Workflow.require_workflow "StudyExplorer"
-
-    s = Study.setup("CLL")
-    mutations = s.cohort.metagenotype
-
-    mis = mutations.mutated_isoforms.compact.flatten
-
-    Misc.profile(:min_percent => 1) do
-      mis.each{|m| m}
-    end
-
-
-    Misc.benchmark(10) do
-      mis.each{|m| m}
-    end
-
-    Misc.benchmark(10) do
-      mis.clean_annotations.each{|m| m}
-    end
-
-    m = mutations.first
-
-    assert_equal m.split(":")[1], m.position.to_s
-    assert_raise NoMethodError do 
-      m.clean_annotations.position
-    end
   end
 end

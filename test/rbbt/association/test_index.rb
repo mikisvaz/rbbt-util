@@ -3,9 +3,8 @@ require 'rbbt/workflow'
 require 'rbbt/association'
 require 'rbbt/association/index'
 
-gem 'rbbt-sources'
-Workflow.require_workflow "Genomics"
-require 'rbbt/entity/gene'
+#Workflow.require_workflow "Genomics"
+#require 'rbbt/entity/gene'
 
 class TestAssociationIndex < Test::Unit::TestCase
 
@@ -16,7 +15,7 @@ class TestAssociationIndex < Test::Unit::TestCase
   end
 
 
-  def test_subset
+  def __test_subset
     require 'rbbt/sources/pina'
     require 'rbbt/sources/kegg'
     tp53 = Gene.setup("TP53", "Associated Gene Name", "Hsa/jan2013").ensembl

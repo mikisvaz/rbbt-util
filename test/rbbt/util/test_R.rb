@@ -2,7 +2,7 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helpe
 require 'rbbt/util/R'
 
 class TestR < Test::Unit::TestCase
-  def test_sum
+  def _test_sum
     assert_equal "6", R.run('cat(3+3)').read.split(/\n/).last
   end
 
@@ -16,9 +16,7 @@ data = data + 1
 
   def test_format_tsv
     tsv = TSV.setup({"a" => [1], "b" => [2]}, :type => :list, :key_field => "Letter", :fields => ["Number"])
-    puts tsv.transpose "Field"
-    tsv.unnamed = true
-    puts R.ruby2R tsv
+    assert tsv.transpose("Field").include? "Number"
   end
 end
 

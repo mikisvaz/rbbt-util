@@ -121,15 +121,26 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   test_helper.rb
   rbbt=rbbt{
    test_annotations.rb
+   test_association.rb
    test_entity.rb
    test_fix_width_table.rb
+   test_knowledge_base.rb
    test_persist.rb
    test_resource.rb
    test_tsv.rb
    test_workflow.rb
+   association=association{
+    test_index.rb
+    test_item.rb
+   }
+   persist=persist{
+    test_tsv.rb
+   }
    tsv=tsv{
     test_accessor.rb
     test_attach.rb
+    test_change_id.rb
+    test_field_index.rb
     test_filter.rb
     test_index.rb
     test_manipulate.rb
@@ -139,10 +150,13 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     test_R.rb
     test_chain_methods.rb
     test_cmd.rb
+    test_colorize.rb
     test_excel2tsv.rb
     test_filecache.rb
+    test_log.rb
     test_misc.rb
     test_open.rb
+    test_semaphore.rb
     test_simpleDSL.rb
     test_simpleopt.rb
     test_tmpfile.rb

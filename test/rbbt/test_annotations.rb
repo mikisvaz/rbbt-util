@@ -17,7 +17,6 @@ module AnnotatedString2
   include AnnotatedString
   self.annotation :annotation_str2
 end
-puts AnnotatedString.annotations.inspect
 
 class TestAnnotations < Test::Unit::TestCase
 

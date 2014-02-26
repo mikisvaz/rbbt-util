@@ -5,8 +5,6 @@ require 'rbbt/annotations'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
 
-require 'rbbt/sources/organism'
-
 module TestAnnotation
   extend Annotation
 
@@ -23,7 +21,7 @@ class TestPersistTSVKC < Test::Unit::TestCase
   end
 
 
-  def test_organism_kct
+  def _test_organism_kct
     require 'rbbt/sources/organism'
     TmpFile.with_file do |tmp_file|
       tsv = Organism.identifiers("Hsa").tsv :key_field => "Associated Gene Name", :fields => ["Ensembl Gene ID"], :type => :single, :persist => true, :persist_engine => "kct", :persist_dir => tmp_file
