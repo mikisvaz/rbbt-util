@@ -9,15 +9,28 @@ def load_inputs(dir, task)
   dir = Path.setup(dir.dup)
   task.inputs.each do |input|
     file = dir[input].find
+    Log.debug "Trying #{ input }: #{file}"
     next unless file.exists?
     case task.input_types[input]
     when :tsv, :array, :text
+      Log.debug "Pointing #{ input } to #{file}"
       inputs[input.to_sym]  = file
     else
+      Log.debug "Loading #{ input } from #{file}"
       inputs[input.to_sym]  = file.read
     end
   end
   inputs
+end
+
+def report_options(options)
+  if options.nil? or options.empty?
+    puts "No options"
+  else
+    options.each do |key, value|
+      puts [Log.color(:cyan, key), Misc.fingerprint(value)] * ": "
+    end
+  end
 end
 
 def usage(workflow = nil, task = nil, exception=nil)
@@ -42,7 +55,8 @@ def usage(workflow = nil, task = nil, exception=nil)
   end
 
   print_error(exception.message, exception.backtrace) if exception
-  exit -1
+
+  true
 end
 
 def SOPT_options(workflow, task)
@@ -135,7 +149,7 @@ options = SOPT.get <<EOF
 EOF
 
 workflow = ARGV.shift
-usage if workflow.nil?
+usage and exit -1 if workflow.nil?
 
 task     = ARGV.shift
 
@@ -171,7 +185,7 @@ namespace = nil, nil
 
 case 
 when task.nil?
-  usage workflow
+  usage workflow and exit 0
   # Can not remember what this was
 #when (task =~ /\./)
 #  namespace, task = options.delete(:task).split('.')
@@ -182,7 +196,7 @@ else
   raise ParameterException, "Task not found: #{ task_name }" if task.nil?
 end
 
-usage workflow, task if help
+usage workflow, task and exit 0 if help
 
 name = options.delete(:jobname) || "Default"
 
@@ -194,6 +208,7 @@ else
   job_options = SOPT.get sopt_option_string
 end
 job_options = fix_options(workflow, task, job_options)
+saved_job_options = job_options
 
 workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if options[:workdir]
 
@@ -222,6 +237,7 @@ begin
     pp job.info
     exit 0
   end
+
   if do_exec
     res = job.exec
     case
@@ -265,6 +281,11 @@ begin
 rescue ParameterException
   SOPT.delete_inputs(workflow.rec_inputs(task.name))
   usage(workflow, task, $!)
+  puts Log.color :magenta, "Options:"
+  puts
+  report_options saved_job_options
+  puts
+  exit -1
 end
 
 

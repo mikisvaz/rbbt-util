@@ -19,6 +19,18 @@ row2    A    B    Id3
     end
   end
 
+  def test_zip_new
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b|bb|bbb    Id1|Id2|Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+      tsv.zip_new("row1", %w(aaaa bbbb Id4))
+      assert_equal %w(b bb bbb bbbb), tsv["row1"]["ValueB"]
+    end
+  end
 
   def test_tsv
     content =<<-EOF

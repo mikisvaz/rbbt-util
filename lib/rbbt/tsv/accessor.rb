@@ -193,6 +193,18 @@ module TSV
     end
   end
 
+  def zip_new(key, values)
+    if self.include? key
+      new = []
+      self[key, true].each_with_index do |v,i|
+        new << (v << values[i])
+      end
+      self[key] == new
+    else
+      self[key] = values.collect{|v| [v] }
+    end
+  end
+
   def keys
     keys = super - ENTRY_KEYS.to_a
     return keys if @unnamed or key_field.nil?

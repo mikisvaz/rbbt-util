@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow'
+require 'rbbt/workflow/usage'
+
+def run_task(workflow, task, name)
+  Log.info "Running example #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
+
+  example_dir = workflow.libdir.examples[task][name].find
+  Log.debug "Using #{example_dir}"
+
+  ARGV.replace([workflow.to_s, task, '--load_inputs', example_dir, '--jobname', name,'--O','/dev/null'] + $saved_args)
+
+  @pid = Process.fork{
+    load Rbbt.share.rbbt_commands.workflow.task.find
+  }
+  Signal.trap(:INT) do
+    begin
+      Process.kill "INT", @pid
+    ensure
+      exit -1
+    end
+  end
+  Process.wait @pid
+
+  if $?.success?
+    Log.info "#{Log.color :green, "SUCCESS"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
+  else
+    Log.info "#{Log.color :red, "ERROR"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
+  end
+end
+
+workflow = ARGV.shift
+raise ParameterException if workflow.nil?
+
+task = ARGV.shift
+task = nil if task == '--'
+
+name = ARGV.shift if task
+name = nil if name == '--'
+
+$saved_args = ARGV.dup
+
+
+workflow = Workflow.require_workflow workflow
+
+tasks = task ? [task] : workflow.libdir.examples.glob('*').collect{|file| File.basename file }
+
+tasks.each do |task|
+  names = name ? [name] : workflow.libdir.examples[task].glob('*').collect{|file| File.basename file }
+  names.each do |name|
+    run_task workflow, task, name
+  end
+end

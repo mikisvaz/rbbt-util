@@ -81,15 +81,15 @@ module Persist
 
     lock_filename = Persist.persistence_path(path, {:dir => TSV.lock_dir})
 
-    if is_persisted? path and not persist_options[:update]
+    if is_persisted?(path) and not persist_options[:update]
       Log.debug "TSV persistence up-to-date: #{ path }"
       return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
     end
 
     Misc.lock lock_filename do
       begin
-        if is_persisted? path 
-          Log.debug "TSV persistence up-to-date: #{ path }"
+        if is_persisted?(path) and not persist_options[:update]
+          Log.debug "TSV persistence (suddenly) up-to-date: #{ path }"
           return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
         end
 
