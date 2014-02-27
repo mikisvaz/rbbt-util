@@ -29,6 +29,14 @@ end
 Lockfile.refresh = false if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
 module Misc
 
+  def self.parse_cmd_params(str)
+    return str if Array === str
+    str.scan(/
+      (?:["']([^"']*?)["']) |
+      ([^"'\s]+)
+    /x).flatten.compact
+  end
+
   def self.correct_icgc_mutation(pos, ref, mut_str)
     mut = mut_str
     mut = '-' * (mut_str.length - 1) if mut =~/^-[ACGT]/

@@ -6,6 +6,10 @@ require 'rbbt/entity'
 
 class TestMisc < Test::Unit::TestCase
 
+  def test_parse_cmd_params
+    ddd Misc.parse_cmd_params("workflow task Translation translate -f 'Associated Gene Name' -l -")
+  end
+
 
   def test_fixutf8
     string = "abc\xffdef"

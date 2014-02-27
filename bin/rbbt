@@ -78,9 +78,21 @@ def print_error(error, backtrace = nil)
   end
   puts
 end
+
+def aliases
+  @aliases ||= Rbbt.etc.cmd_alias.exists? ? Rbbt.etc.cmd_alias.yaml : {}
+end
+
+def cmd_alias
+  while aliases.include? ARGV[0]
+    ARGV.replace Misc.parse_cmd_params(aliases[ARGV[0]]) + ARGV[1..-1]
+  end
+end
     
 dir = $rbbt_command_dir
 prev = []
+
+cmd_alias
 
 begin
   while ARGV.any?

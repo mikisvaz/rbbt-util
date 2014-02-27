@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+require 'rbbt'
+
+
+cmd, *rest = ARGV
+
+aliases ||= Rbbt.etc.cmd_alias.exists? ? Rbbt.etc.cmd_alias.yaml : {}
+
+if cmd.nil?
+  require 'pp'
+  pp aliases
+  exit 0
+end
+
+if rest.empty?
+  aliases.delete cmd
+else
+  aliases[cmd] = rest
+end
+
+Open.write(Rbbt.etc.cmd_alias.find,(aliases.to_yaml))
+
