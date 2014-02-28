@@ -259,8 +259,8 @@ module Workflow
   end
 
   def jobs(taskname, query = nil)
-    task_dir = File.join(workdir.find, taskname.to_s)
-    pattern = File.join(task_dir, '**/*')
+    task_dir = File.join(File.expand_path(workdir.find), taskname.to_s)
+    pattern = File.join(File.expand_path(task_dir), '**/*')
     job_info_files = Dir.glob(Step.info_file(pattern)).collect{|f| Misc.path_relative_to task_dir, f }
     job_info_files = job_info_files.select{|f| f.index(query) == 0 } if query
     job_info_files.collect{|f|

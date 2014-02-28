@@ -33,12 +33,18 @@ Known locations are: #{([$rbbt_command_dir] + $rbbt_command_dir.find_all) * ", "
 You can place your own commads at #{$rbbt_command_dir.find(:user)}.
 EOF
 
-def commands(prev)
+def prev_dir(prev)
     rbbt_command_dir = $rbbt_command_dir
 
     prev.each do |previous_command|
         rbbt_command_dir = rbbt_command_dir[previous_command]
     end
+
+    rbbt_command_dir
+end
+
+def commands(prev)
+    rbbt_command_dir = prev_dir(prev)
 
     command_file_dirs = rbbt_command_dir.find_all
     command_files = command_file_dirs.collect{|d| d.glob('*') }.flatten
@@ -59,8 +65,14 @@ def rbbt_usage(prev = nil)
     puts 
     puts Log.color :magenta, "Subcommands:"
     puts 
+    prev_dir = prev_dir(prev)
     commands(prev).each do |command|
-      puts "  " << command
+      directory = File.directory? prev_dir[command].find
+      if directory
+        puts "  " << Log.color(:blue, command)
+      else
+        puts "  " << command
+      end
     end
   end
   puts

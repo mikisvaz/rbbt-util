@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+
+require 'rbbt/workflow'
+
+dir = ARGV.shift || '.'
+
+all_files = Dir.glob(File.join(dir, '*'))
+info_files = Dir.glob(File.join(dir, Step.info_file('*')))
+file_dirs = Dir.glob(File.join(dir, Step.files_dir('*')))
+
+jobs = (all_files - info_files - file_dirs)
+
+jobs.reject!{|j| j =~ /\.lock/ }
+
+puts jobs * "\n"

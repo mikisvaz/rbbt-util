@@ -917,15 +917,32 @@ end
     html
   end
 
-  def self.path_relative_to(basedir, path)
-    path = File.expand_path(path)
-    basedir = File.expand_path(basedir)
+  #def self.path_relative_to(basedir, path)
+  #  path = File.expand_path(path) unless path[0] == "/"
+  #  basedir = File.expand_path(basedir) unless basedir[0] == "/"
 
-    case
-    when path == basedir
-      "."
-    when path =~ /#{Regexp.quote basedir}\/(.*)/
-      return $1
+  #  basedir << "/" unless basedir[-1] == "/"
+  #  case
+  #  when path == basedir
+  #    "."
+  #  #when path =~ /#{Regexp.quote basedir}\/(.*)/
+  #  when path.index(basedir) == 0
+  #    return path[basedir.length..-1]
+  #  else
+  #    return nil
+  #  end
+  #end
+
+  def self.path_relative_to(basedir, path)
+    path = File.expand_path(path) unless path[0] == "/"
+    basedir = File.expand_path(basedir) unless basedir[0] == "/"
+
+    if path.index(basedir) == 0
+      if basedir[-1] == "/"
+        return path[basedir.length..-1]
+      else
+        return path[basedir.length+1..-1]
+      end
     else
       return nil
     end

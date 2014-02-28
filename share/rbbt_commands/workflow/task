@@ -84,7 +84,7 @@ def fix_options(workflow, task, job_options)
               value.to_f
             when :integer
               value.to_i
-            when :string, :text
+            when :text
               case
               when value == '-'
                 STDIN.read
