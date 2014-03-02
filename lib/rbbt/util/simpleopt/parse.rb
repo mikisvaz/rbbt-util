@@ -1,4 +1,5 @@
 require 'rbbt/util/simpleopt/accessor'
+
 module SOPT
   def self.fix_shortcut(short, long)
     return short unless short and shortcuts.include?(short)

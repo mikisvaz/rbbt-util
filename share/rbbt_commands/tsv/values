@@ -3,7 +3,22 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("-tch--tokyocabinet:-tcb--tokyocabinet_bd")
+options = SOPT.setup <<EOF
+
+Pulls the values from a tsv colum
+
+$ rbbt tsv values [options] <filename.tsv|->
+
+Use - to read from STDIN
+
+-tch--tokyocabinet File is a tokyocabinet hash database
+-tcb--tokyocabinet_bd File is a tokyocabinet B database
+-f--field* Limit to a particular field
+-h--help Print this help
+
+EOF
+rbbt_usage and exit 0 if options[:help]
+
 
 file = ARGV.shift
 
@@ -21,5 +36,7 @@ else
   end
   tsv = TSV.open(file)
 end
+
+tsv = tsv.slice(field) if field
 
 tsv.each{|k,v| puts (Array === v ? v.flatten*"\t" : v.to_s ) }

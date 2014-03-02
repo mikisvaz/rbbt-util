@@ -12,7 +12,11 @@ module TSV
       orig_type = tsv.type 
       tsv = tsv.to_double if orig_type != :double
 
-      tsv = tsv.attach identifiers, :fields => [format], :persist_input => true
+      if Array === identifiers
+        tsv = tsv.attach identifiers.first, :fields => [format], :persist_input => true, :identifiers => identifiers.last
+      else
+        tsv = tsv.attach identifiers, :fields => [format], :persist_input => true
+      end
       tsv = tsv.reorder(format, tsv.fields - [format])
 
       tsv = tsv.to_flat  if orig_type == :flat
@@ -23,8 +27,9 @@ module TSV
     end
   end
 
-  def change_key(*args)
-    TSV.change_key(self, *args)
+  def change_key(format, options = {})
+    options = Misc.add_defaults options, :identifiers => self.identifiers
+    TSV.change_key(self, format, options)
   end
 
   def self.swap_id(tsv, field, format, options = {})

@@ -38,6 +38,10 @@ module Log
     end
   end
 
+  def self.return_line
+    "\033[1A"
+  end
+
   def self.highlight(str = nil)
     if str.nil?
       return "" if nocolor

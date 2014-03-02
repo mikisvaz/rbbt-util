@@ -17,7 +17,7 @@ require 'rbbt/tsv/field_index'
 
 module TSV
   class << self
-    attr_accessor :lock_dir
+    attr_accessor :lock_dir, :unnamed
     
     def lock_dir
       @lock_dir ||= Rbbt.tmp.tsv_open_locks.find
@@ -25,7 +25,7 @@ module TSV
   end
 
   def self.setup(hash, options = {})
-    options = Misc.add_defaults options, :default_value => []
+    options = Misc.add_defaults options, :default_value => [], :unnamed => TSV.unnamed
     default_value = Misc.process_options options, :default_value
     hash = Misc.array2hash(hash, default_value) if Array === hash
     hash.extend TSV
@@ -48,6 +48,8 @@ module TSV
     options[:type] ||= type unless type.nil?
 
     persist_options = Misc.pull_keys options, :persist
+
+    raise "TSV source is nil" if source.nil?
 
     filename = get_filename source
     serializer = Misc.process_options options, :serializer

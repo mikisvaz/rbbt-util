@@ -322,9 +322,9 @@ module Misc
     end
   end
 
-  def self.remove_long_items(obj)
-    return fingerprint(obj)
-  end
+  #def self.remove_long_items(obj)
+  #  return fingerprint(obj)
+  #end
 
   def self.ensembl_server(organism)
     date = organism.split("/")[1]

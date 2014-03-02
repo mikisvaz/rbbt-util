@@ -2,13 +2,29 @@
 
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
+
+options = SOPT.setup <<EOF
+
+Change the ID format of a column in a tsv file
+
+$ rbbt command command [options] -f file
+
+Use - to read from STDIN. The `field` is the tsv column to change.
+the `target` is the target format, as appearing in the `identifiers`
+file or in `Organism.identifiers("Hsa")`.
+
+-f--file* File to process
+-f--field* Field to change
+-t--target* Target format
+-i--identifiers* Identifier file to use
+-h--help Help
+
+EOF
+rbbt_usage and exit 0 if options[:help]
+
+SOPT.require options, :file, :field, :target
+
 require 'rbbt/sources/organism'
-
-options = SOPT.get("-f--file* File to process:-f--field* Field to change:-t--target* Target format:-i--identifiers* Identifier file to use")
-
-raise ParameterException, "No file given" unless file = options[:file]
-raise ParameterException, "No field given" unless field = options[:field]
-raise ParameterException, "No target given" unless target = options[:target]
 
 identifiers = options[:identifiers] || Organism.identifiers("Hsa").find
 
@@ -32,20 +48,3 @@ tsv.fields = tsv.fields.collect{|f| f == field ? target : f}
 
 puts tsv
 
-exit
-
-#stream = Open.open file
-#header = TSV.parse_header stream
-#field_pos = header.all_fields.index field
-#raise ParameterException, "Unknown field: #{ field }" unless field_pos
-#
-#out = STDOUT
-#out.puts TSV.header_lines :fields => header.fields, :key_field =
-#while line = stream.gets do
-#  if line =~ /^#/
-#    out.puts line
-#    next
-#  else
-#  end
-#end
-#

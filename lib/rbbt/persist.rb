@@ -260,7 +260,7 @@ module Persist
 
         if is_persisted?(path, persist_options)
           Log.low "Persist up-to-date: #{ path } - #{Misc.fingerprint persist_options}"
-          return nil if persist_options[:no_load]
+          return path if persist_options[:no_load]
           return load_file(path, type) 
         end
 
@@ -269,7 +269,7 @@ module Persist
           Misc.lock lock_filename  do
             if is_persisted?(path, persist_options)
               Log.low "Persist up-to-date (suddenly): #{ path } - #{Misc.fingerprint persist_options}"
-              return nil if persist_options[:no_load]
+              return path if persist_options[:no_load]
               return load_file(path, type) 
             end
 

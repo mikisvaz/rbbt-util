@@ -3,7 +3,18 @@
 require 'rbbt'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("--log* Log level from 0 (debug) 6 (errors):-cd--command_dir* Directory from where to load commands:--profile Profile execution:--nocolor Disable colored output:--locate_file Locate file been executed")
+options = SOPT.setup <<EOF
+This command controls many aspects of the Rbbt framework, from configuration tasks to running applications. 
+
+$ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value'"
+
+
+--log*                  #{Log.color :yellow, "Log level from 0 (debug) 6 (errors)"}
+-cd--command_dir*       #{Log.color :yellow, "Directory from where to load commands"}
+--profile               #{Log.color :yellow, "Profile execution"}
+--nocolor               #{Log.color :yellow, "Disable colored output"}
+--locate_file           #{Log.color :yellow, "Locate file been executed"}
+EOF
 
 Log.nocolor = true if options[:nocolor]
 locate = options.delete :locate_file
@@ -18,20 +29,17 @@ else
   $rbbt_command_dir = Rbbt.share.rbbt_commands
 end
 
+SOPT.description =<<EOF
+Commands are implemented in separate files under the Rbbt path '#{$rbbt_command_dir}'. 
+Known locations are: #{([$rbbt_command_dir] + $rbbt_command_dir.find_all) * ", " }. 
+You can place your own commads at #{$rbbt_command_dir.find(:user)}.
+EOF
+
 if options[:profile]
   require 'ruby-prof'
   RubyProf.start
 end
 
-SOPT.synopsys = "rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value'"
-SOPT.summary = "Ruby bioinformatics toolkit"
-SOPT.description = <<-EOF
-This command controls many aspects of the Rbbt framework, from configuration tasks to running applications. 
-
-Commands are implemented in separate files under the Rbbt path '#{$rbbt_command_dir}'. 
-Known locations are: #{([$rbbt_command_dir] + $rbbt_command_dir.find_all) * ", " }. 
-You can place your own commads at #{$rbbt_command_dir.find(:user)}.
-EOF
 
 def prev_dir(prev)
     rbbt_command_dir = $rbbt_command_dir
@@ -76,6 +84,7 @@ def rbbt_usage(prev = nil)
     end
   end
   puts
+  true
 end
 
 def print_error(error, backtrace = nil)
@@ -102,34 +111,34 @@ def cmd_alias
 end
     
 dir = $rbbt_command_dir
-prev = []
+$previous_commands = []
 
 cmd_alias
 
 begin
   while ARGV.any?
-    command = ARGV.shift
+    $command = ARGV.shift
     case
-    when File.directory?(dir[command].find)
-      prev << command
-      dir = dir[command]
-    when dir[command].exists?
+    when File.directory?(dir[$command].find)
+      $previous_commands << $command
+      dir = dir[$command]
+    when dir[$command].exists?
       if locate
-        puts dir[command].find
+        puts dir[$command].find
         exit 0
       else
-        load dir[command].find
+        load dir[$command].find
         exit 0
       end
     else
-      error = "Command '#{command }' not understood"
-      rbbt_usage(prev)
+      error = "Command '#{$command }' not understood"
+      rbbt_usage($previous_commands)
       print_error(error)
       exit -1
     end
   end
 
-  rbbt_usage(prev)
+  rbbt_usage($previous_commands)
   exit 0
 
 rescue ParameterException
@@ -145,4 +154,3 @@ ensure
     printer.print(STDOUT, :min_percent => 10)
   end
 end
-

@@ -38,4 +38,10 @@ module SOPT
     SOPT.parse(opt_str)
     SOPT.consume(ARGV)
   end
+
+  def self.require(options, *parameters)
+    parameters.flatten.each do |parameter|
+      raise ParameterException, "Parameter '#{ parameter }' not given" if options[parameter].nil?
+    end
+  end
 end

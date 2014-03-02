@@ -65,7 +65,7 @@ def SOPT_options(workflow, task)
     short = name.to_s.chars.first
     boolean = workflow.rec_input_types(task.name)[name].to_sym == :boolean
     
-    sopt_options << "-#{short}--#{name}*"
+    sopt_options << "-#{short}--#{name}#{boolean ? "" : "*"}"
   end
 
   sopt_options * ":"
@@ -79,7 +79,7 @@ def fix_options(workflow, task, job_options)
   job_options.each do |name, value|
     value = case option_types[name].to_sym
             when :boolean
-              %w(true TRUE T yes).include? value
+              TrueClass === true or %w(true TRUE T yes).include? value
             when :float
               value.to_f
             when :integer
@@ -255,11 +255,15 @@ begin
 
   if do_fork
     job.fork
+    puts 
     while not job.done?
       message = job.messages ? job.messages.last : "no message"
-      Log.debug "#{job.status}: #{message}"
+      status = job.status
+      puts("No status yet") and next if status.nil?
+      puts Log.return_line + "Waiting on #{job.pid} " + [Log.color(:magenta, status.to_s),message]*" " + " " * 100
       sleep 2
     end
+    Signal.trap(:INT){ job.abort }
     raise job.messages.last if job.error?
     res = job.load
   else
