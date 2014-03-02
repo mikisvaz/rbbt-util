@@ -4,16 +4,16 @@ require 'rbbt'
 require 'rbbt/util/simpleopt'
 
 options = SOPT.setup <<EOF
-This command controls many aspects of the Rbbt framework, from configuration tasks to running applications. 
+Ruby bioinformatics toolkit
 
 $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value'"
 
 
 --log*                  #{Log.color :yellow, "Log level from 0 (debug) 6 (errors)"}
--cd--command_dir*       #{Log.color :yellow, "Directory from where to load commands"}
+-cd--command_dir*       #{Log.color :yellow, "Directory from where to load command scripts"}
 --profile               #{Log.color :yellow, "Profile execution"}
 --nocolor               #{Log.color :yellow, "Disable colored output"}
---locate_file           #{Log.color :yellow, "Locate file been executed"}
+--locate_file           #{Log.color :yellow, "Report the location of the script instead of executing it"}
 EOF
 
 Log.nocolor = true if options[:nocolor]
@@ -30,6 +30,8 @@ else
 end
 
 SOPT.description =<<EOF
+This command controls many aspects of the Rbbt framework, from configuration tasks to running applications. 
+
 Commands are implemented in separate files under the Rbbt path '#{$rbbt_command_dir}'. 
 Known locations are: #{([$rbbt_command_dir] + $rbbt_command_dir.find_all) * ", " }. 
 You can place your own commads at #{$rbbt_command_dir.find(:user)}.

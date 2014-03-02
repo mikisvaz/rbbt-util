@@ -34,6 +34,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      doc.rb
      parse.rb
      get.rb
+     setup.rb
     }
 
     simpleDSL.rb
