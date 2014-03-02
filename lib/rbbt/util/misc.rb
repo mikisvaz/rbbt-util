@@ -1,7 +1,6 @@
 require 'lockfile'
 require 'net/smtp'
 require 'digest/md5'
-require 'narray'
 require 'cgi'
 require 'zlib'
 require 'rubygems/package'
@@ -506,80 +505,82 @@ end
     "val" =>   "V"
   }
 
-  def self.fast_align(reference, sequence)
-    init_gap = -1
-    gap = -2
-    diff = -2
-    same = 2
+  #def self.fast_align(reference, sequence)
+  #
+  #require 'narray'
+  #  init_gap = -1
+  #  gap = -2
+  #  diff = -2
+  #  same = 2
 
-    cols = sequence.length + 1
-    rows = reference.length + 1
+  #  cols = sequence.length + 1
+  #  rows = reference.length + 1
 
-    a = NArray.int(cols, rows)
+  #  a = NArray.int(cols, rows)
 
-    for spos in 0..cols-1 do a[spos, 0] = spos * init_gap end
-    for rpos in 0..rows-1 do a[0, rpos] = rpos * init_gap end
+  #  for spos in 0..cols-1 do a[spos, 0] = spos * init_gap end
+  #  for rpos in 0..rows-1 do a[0, rpos] = rpos * init_gap end
 
-    spos = 1
-    while spos < cols do
-      rpos = 1
-      while rpos < rows do
-        match = a[spos-1,rpos-1] + (sequence[spos-1] != reference[rpos-1] ? diff : same)
-        skip_sequence = a[spos-1,rpos] + gap
-        skip_reference = a[spos,rpos-1] + gap
-        a[spos,rpos] = [match, skip_sequence, skip_reference].max
-        rpos += 1
-      end
-      spos += 1
-    end
+  #  spos = 1
+  #  while spos < cols do
+  #    rpos = 1
+  #    while rpos < rows do
+  #      match = a[spos-1,rpos-1] + (sequence[spos-1] != reference[rpos-1] ? diff : same)
+  #      skip_sequence = a[spos-1,rpos] + gap
+  #      skip_reference = a[spos,rpos-1] + gap
+  #      a[spos,rpos] = [match, skip_sequence, skip_reference].max
+  #      rpos += 1
+  #    end
+  #    spos += 1
+  #  end
 
-    start = Misc.max(a[-1,0..rows-1])
-    start_pos = a[-1,0..rows-1].to_a.index start
+  #  start = Misc.max(a[-1,0..rows-1])
+  #  start_pos = a[-1,0..rows-1].to_a.index start
 
-    ref = ''
-    seq = ''
-    rpos = start_pos
-    spos = cols - 1
+  #  ref = ''
+  #  seq = ''
+  #  rpos = start_pos
+  #  spos = cols - 1
 
-    while spos > 0 and rpos > 0
-      score = a[spos,rpos]
-      score_match = a[spos-1,rpos-1]
-      score_skip_reference = a[spos,rpos-1]
-      score_skip_sequence = a[spos-1,rpos]
+  #  while spos > 0 and rpos > 0
+  #    score = a[spos,rpos]
+  #    score_match = a[spos-1,rpos-1]
+  #    score_skip_reference = a[spos,rpos-1]
+  #    score_skip_sequence = a[spos-1,rpos]
 
-      case
-      when score == score_match + (sequence[spos-1] != reference[rpos-1] ? diff : same)
-        ref << reference[rpos-1]
-        seq << sequence[spos-1]
-        spos -= 1
-        rpos -= 1
-      when score == score_skip_reference + gap
-        ref << reference[rpos-1]
-        seq << '-'
-        rpos -= 1
-      when score == score_skip_sequence + gap
-        seq << sequence[spos-1]
-        ref << '-'
-        spos -= 1
-      else
-        raise "stop"
-      end
-    end
+  #    case
+  #    when score == score_match + (sequence[spos-1] != reference[rpos-1] ? diff : same)
+  #      ref << reference[rpos-1]
+  #      seq << sequence[spos-1]
+  #      spos -= 1
+  #      rpos -= 1
+  #    when score == score_skip_reference + gap
+  #      ref << reference[rpos-1]
+  #      seq << '-'
+  #      rpos -= 1
+  #    when score == score_skip_sequence + gap
+  #      seq << sequence[spos-1]
+  #      ref << '-'
+  #      spos -= 1
+  #    else
+  #      raise "stop"
+  #    end
+  #  end
 
-    while (rpos > 0)
-      ref << reference[rpos-1]
-      seq = seq << '-'
-      rpos -= 1    
-    end
+  #  while (rpos > 0)
+  #    ref << reference[rpos-1]
+  #    seq = seq << '-'
+  #    rpos -= 1    
+  #  end
 
-    while (spos > 0)
-      seq << sequence[spos-1]
-      ref = ref + '-'
-      spos -= 1
-    end
-    
-    [ref.reverse + reference[start_pos..-1], seq.reverse + '-' * (rows - start_pos - 1)]
-  end
+  #  while (spos > 0)
+  #    seq << sequence[spos-1]
+  #    ref = ref + '-'
+  #    spos -= 1
+  #  end
+  #  
+  #  [ref.reverse + reference[start_pos..-1], seq.reverse + '-' * (rows - start_pos - 1)]
+  #end
 
   def self.IUPAC_to_base(iupac)
     IUPAC2BASE[iupac]
@@ -972,6 +973,8 @@ end
     rescue
       Log.warn("Error checking lockfile #{lockfile}: #{$!.message}. Removing. Content: #{begin Open.read(lockfile) rescue "Could not open file" end}")
       FileUtils.rm lockfile if File.exists?(lockfile)
+      lockfile = Lockfile.new(lock_path)
+      retry
     end
 
     begin
