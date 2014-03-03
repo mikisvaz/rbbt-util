@@ -172,29 +172,28 @@ module TSV
       next if value.nil?
 
       keys, value = traverser.process(key, value)
+
+      next if keys.nil?
       
       keys = [keys].compact unless Array === keys
 
       # Annotated with Entity and NamedArray
-      if not @unnamed
-        if not traverser.new_field_names.nil? 
-          case type
-          when :double, :list
-            if value.frozen?
-              Log.warn "Value frozen: #{ value }"
-            end
-            if value.nil?
-              nil
-            else
-              NamedArray.setup value, traverser.new_field_names, key, entity_options, entity_templates
-            end
-          when :flat, :single
-            prepare_entity(value, traverser.new_field_names.first, entity_options)
-          end
+      if not @unnamed and not traverser.new_field_names.nil? 
+
+        case type
+        when :double, :list
+          Log.warn "Value frozen: #{ value }" if value.frozen?
+
+          value.nil? ?
+            nil :
+            NamedArray.setup(value, traverser.new_field_names, key, entity_options, entity_templates)
+
+        when :flat, :single
+          prepare_entity(value, traverser.new_field_names.first, entity_options)
         end
+
       end
 
-      next if keys.nil?
 
       if zipped
 
@@ -214,6 +213,7 @@ module TSV
         end
 
       else
+
         keys.each do |key|
           if not @unnamed
             k = Misc.prepare_entity(k, traverser.new_key_field_name, entity_options)
@@ -221,6 +221,7 @@ module TSV
           value.key = key if NamedArray === value
           yield key, value
         end
+
       end
     end
 
@@ -239,6 +240,7 @@ module TSV
         data = {}
       end
 
+      new_key_field_name, new_field_names = nil, nil
       with_unnamed do
         if zipped or (type != :double and type != :flat)
           new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
@@ -268,23 +270,23 @@ module TSV
             end
           end
         end
-
-        if real_data and real_data.respond_to? :persistence_path
-          real_data.serializer = type if real_data.respond_to? :serializer
-          real_data.merge!(data)
-          data = real_data
-        end
-
-        data.extend TSV unless TSV === data
-        self.annotate(data)
-
-        data.key_field = new_key_field_name
-        data.fields = new_field_names
-        data.fields.each do |field|
-          data.entity_templates[field] = entity_templates[field] if entity_templates.include? field
-        end
-        data.type = zipped ? :list : type
       end
+
+      if real_data and real_data.respond_to? :persistence_path
+        real_data.serializer = type if real_data.respond_to? :serializer
+        real_data.merge!(data)
+        data = real_data
+      end
+
+      data.extend TSV unless TSV === data
+      self.annotate(data)
+
+      data.key_field = new_key_field_name
+      data.fields = new_field_names
+      data.fields.each do |field|
+        data.entity_templates[field] = entity_templates[field] if entity_templates.include? field
+      end
+      data.type = zipped ? :list : type
     end
   end
 

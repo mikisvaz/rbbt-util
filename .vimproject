@@ -78,6 +78,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     filter.rb
     field_index.rb
     change_id.rb
+    parallel.rb
    }
 
    fix_width_table.rb
@@ -145,9 +146,15 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     test_filter.rb
     test_index.rb
     test_manipulate.rb
+    test_parallel.rb
     test_util.rb
     }
    util=util{
+    simpleopt=simpleopt{
+     test_get.rb
+     test_parse.rb
+     test_setup.rb
+    }
     test_R.rb
     test_chain_methods.rb
     test_cmd.rb

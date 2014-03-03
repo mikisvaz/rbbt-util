@@ -97,9 +97,9 @@ class Step
   def log(status, message = nil, do_log = true)
 
     if message
-      Log.low "[#{ status }] #{ message }: #{path}"
+      Log.medium "[#{ status }] #{ message }: #{path}"
     else
-      Log.low "[#{ status }]: #{path}"
+      Log.medium "[#{ status }]: #{path}"
     end if do_log
 
     self.status = status

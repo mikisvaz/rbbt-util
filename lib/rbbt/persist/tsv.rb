@@ -7,25 +7,25 @@ end
 begin
   require 'rbbt/persist/tsv/lmdb'
 rescue Exception
-  Log.warn "The lmdb gem could not be loaded. Persistance using this engine will fail."
+  Log.debug "The lmdb gem could not be loaded. Persistance using this engine will fail."
 end
 
 begin
   require 'rbbt/persist/tsv/leveldb'
 rescue Exception
-  Log.warn "The LevelDB gem could not be loaded. Persistance using this engine will fail."
+  Log.debug "The LevelDB gem could not be loaded. Persistance using this engine will fail."
 end
 
 begin
   require 'rbbt/persist/tsv/cdb'
 rescue Exception
-  Log.warn "The CDB gem could not be loaded. Persistance using this engine will fail."
+  Log.debug "The CDB gem could not be loaded. Persistance using this engine will fail."
 end
 
 begin
   require 'rbbt/persist/tsv/kyotocabinet'
 rescue Exception
-  Log.warn "The kyotocabinet gem could not be loaded. Persistance using this engine will fail."
+  Log.debug "The kyotocabinet gem could not be loaded. Persistance using this engine will fail."
 end
 
 module Persist

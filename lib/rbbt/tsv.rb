@@ -14,6 +14,7 @@ require 'rbbt/tsv/index'
 require 'rbbt/tsv/attach'
 require 'rbbt/tsv/filter'
 require 'rbbt/tsv/field_index'
+require 'rbbt/tsv/parallel'
 
 module TSV
   class << self
@@ -123,7 +124,7 @@ module TSV
 
     line = parser.rescue_first_line
 
-    if TokyoCabinet::HDB === data and parser.straight and
+    if defined? TokyoCabinet and TokyoCabinet::HDB === data and parser.straight and
       data.close
       begin
         bin = 'tchmgr'

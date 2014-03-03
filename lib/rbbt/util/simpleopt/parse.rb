@@ -15,13 +15,15 @@ module SOPT
     end
 
     while shortcuts.include?(short) and not shortcuts[short] == long
-      while (long.length - current.length > 2) and shortcuts[short].index current * ""
+      while shortcuts[short].index current * ""
         next_letter = chars.shift
         return nil if next_letter.nil?
         current << next_letter
       end
       short = current * ""
     end
+
+    return nil if shortcuts.include? short
 
     short
   end

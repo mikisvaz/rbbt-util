@@ -28,7 +28,10 @@ module Workflow
   def self.load_workflow_file(filename)
     begin
       $LOAD_PATH.unshift(File.join(File.dirname(File.expand_path(filename)), 'lib'))
-      require File.expand_path(filename)
+
+      filename = File.expand_path(filename)
+
+      require filename
       Log.debug{"Workflow loaded from: #{ filename }"}
       return true
     rescue Exception
@@ -80,7 +83,6 @@ module Workflow
   end
 
   def self.require_workflow(wf_name)
-
     # Already loaded
     begin
       workflow = Misc.string2const wf_name

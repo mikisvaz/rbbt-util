@@ -108,16 +108,21 @@ module Path
     else
       where = where.to_sym
       raise "Did not recognize the 'where' tag: #{where}. Options: #{paths.keys}" unless paths.include? where
-      libdir = where == :lib ? Path.caller_lib_dir(caller_lib) : ""
-      libdir ||= ""
+
+      if where == :lib
+        libdir = Path.caller_lib_dir(caller_lib) || "NOLIBDIR"
+      else
+        libdir = "NOLIBDIR"
+      end
       pwd = FileUtils.pwd
-      self.annotate paths[where].
+      path = paths[where].
         sub('{PKGDIR}', pkgdir).
         sub('{PWD}', pwd).
         sub('{TOPLEVEL}', toplevel).
         sub('{SUBPATH}', subpath).
         sub('{PATH}', self).
         sub('{LIBDIR}', libdir) #, @pkgdir, @resource, @search_paths
+      self.annotate path
     end
   end
 
