@@ -159,9 +159,12 @@ module Annotated
         object.clean_annotations : 
         object.inject([]){|acc,e| acc << Annotated.purge(e); acc}
     when Hash
+      new = {}
       object.each do |key, value|
-        object[key] = Annotated.purge value
+        Annotated.purge key
+        new[key] = Annotated.purge value
       end
+      new
     else
       object
     end

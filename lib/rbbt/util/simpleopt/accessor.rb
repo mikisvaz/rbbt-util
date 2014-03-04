@@ -47,4 +47,9 @@ module SOPT
       self.input_descriptions.delete input
     end
   end
+
+  def self.usage
+    puts SOPT.doc
+    exit 0
+  end
 end

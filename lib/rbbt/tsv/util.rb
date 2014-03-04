@@ -230,4 +230,15 @@ module TSV
     new
   end
 
+  def marshal_dump
+    [info, to_hash]
+  end
+end
+
+class Hash
+  def marshal_load(array)
+    info, to_hash = array
+    self.merge! to_hash
+    TSV.setup(self)
+  end
 end

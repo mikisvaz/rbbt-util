@@ -73,10 +73,8 @@ module SOPT
 
   def self.doc
     doc = <<-EOF
-#{Log.color :magenta}
-#{command}(1) -- #{summary}
-#{"=" * (command.length + summary.length + 7)}
-#{Log.color :reset}
+#{Log.color :magenta}#{command}(1) -- #{summary}
+#{"=" * (command.length + summary.length + 7)}#{Log.color :reset}
 
 #{ Log.color :magenta, "## SYNOPSYS"}
 

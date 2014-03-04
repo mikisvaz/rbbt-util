@@ -209,6 +209,17 @@ module Annotated
     end
   end
 
-
+  def marshal_dump(depth)
+   clean_annotations
   end
+end
+
+class String
+  def marshal_load(str)
+    self.replace str
+  end
+end
+
+
+
 

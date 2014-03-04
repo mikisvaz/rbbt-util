@@ -10,8 +10,6 @@ class Step
   attr_accessor :pid
   attr_accessor :exec
 
-  class Aborted < Exception; end
-
   def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil)
     path = Path.setup(Misc.sanitize_filename(path)) if String === path
     @path = path
@@ -132,7 +130,7 @@ class Step
 
       res = begin
               exec
-            rescue Step::Aborted
+            rescue Aborted
               log(:error, "Aborted")
 
               children_pids = info[:children_pids]
@@ -180,13 +178,13 @@ class Step
   def fork(semaphore = nil)
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil?
     @pid = Process.fork do
-      trap(:INT) { raise Step::Aborted.new "INT signal recieved" }
+      trap(:INT) { raise Aborted.new "INT signal recieved" }
       begin
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
         begin
           run(true)
-        rescue Step::Aborted
+        rescue Aborted
           Log.debug{"Forked process aborted: #{path}"}
           log :aborted, "Aborted"
           raise $!

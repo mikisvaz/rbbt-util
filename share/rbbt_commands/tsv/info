@@ -3,16 +3,34 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("-tch--tokyocabinet:-tcb--tokyocabinet_bd:-t--type*:-h--header_hash*:-k--key_field*:-f--fields*")
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
-options[:fields] = options[:fields].split(/,\|/) if options[:fields]
-options[:header_hash] = options["header_hash"]
+options = SOPT.setup <<EOF
+Inspect a TSV file 
+
+$ rbbt tsv info [options] file.tsv
+
+Display summary informations. Works with Tokyocabinet HDB and DBD as well.
+
+-tch--tokyocabinet File is a TC HDB
+-tcb--tokyocabinet_bd File is a TC BDB
+-t--type* Type of tsv (single, list, double, flat)
+-h--header_hash* Change the character used to mark the header line (defaults to #)
+-k--key_field* Change the key field
+-f--fields* Change the fields to load
+-h--help Help
+EOF
+
+SOPT.usage if options[:help]
 
 file = ARGV.shift
 
 file = STDIN if file == '-'
 
 raise ParameterException, "Please specify the tsv file as argument" if file.nil?
+
+options[:fields] = options[:fields].split(/,\|/) if options[:fields]
+options[:header_hash] = options["header_hash"]
 
 case
 when options[:tokyocabinet]

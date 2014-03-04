@@ -16,8 +16,10 @@ class Hash
   end
 end
 
-class ParameterException < Exception; end
+class ParameterException < StandardError; end
 class FieldNotFoundError < StandardError;end
+class Aborted < Exception; end
+class TryAgain < Exception; end
 
 module LaterString
   def to_s
