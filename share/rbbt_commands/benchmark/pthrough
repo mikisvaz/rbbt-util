@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+
+file, *sizes = ARGV
+
+sizes.each do |size|
+  size = size.to_i
+
+  %w(--parallel=cpu --parallel=thr --noparallel).each do |parallel|
+    Log.info Log.color(:red, parallel) + " " + Log.color(:blue, size.to_s)
+
+    start = Time.now
+    `head -n #{ size } "#{file}" | drbbt task Structure mutated_isoform_neighbour_annotation -g - -cl --log 10 -pn #{parallel}`
+    Log.info Log.color(:red, parallel) + " " + Log.color(:blue, size.to_s) + " " + Log.color(:yellow, (Time.now - start).to_s)
+  end
+end
+

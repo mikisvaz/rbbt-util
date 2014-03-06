@@ -50,6 +50,15 @@ void post_semaphore(char* name){
     EOF
   end
 
+  def self.synchronize(sem)
+    RbbtSemaphore.wait_semaphore(sem)
+    begin
+      yield
+    ensure
+      RbbtSemaphore.post_semaphore(sem)
+    end
+  end
+
   def self.with_semaphore(size, file = nil)
     file = Misc.digest(rand.to_s) if file.nil?
     file.gsub!('/', '_')
@@ -68,11 +77,8 @@ void post_semaphore(char* name){
         pids = elems.collect do |elem| 
           Process.fork do 
             begin
-              RbbtSemaphore.wait_semaphore(file)
-              begin
+              RbbtSemaphore.synchronize(file) do
                 yield elem
-              ensure
-                RbbtSemaphore.post_semaphore(file)
               end
             rescue Interrupt
               Log.error "Process #{Process.pid} was aborted"

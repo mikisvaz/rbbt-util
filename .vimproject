@@ -55,7 +55,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      processes=processes{
       worker.rb
       socket.rb
-      socket_old.rb
      }
     }
    }
@@ -259,6 +258,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     list
     add
     remove
+   }
+   benchmark=benchmark{
+    pthrough
    }
   }
   Rlib=Rlib{

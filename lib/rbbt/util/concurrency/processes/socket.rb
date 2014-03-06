@@ -2,143 +2,92 @@ require 'rbbt/util/semaphore'
 
 class RbbtProcessQueue
   class RbbtProcessSocket
-
     class ClosedSocket < Exception; end
 
-    attr_accessor :sin, :sout, :in_lockfile, :out_lockfile
-    def initialize(lockfile = nil)
-      @sout, @sin = File.pipe
+    Serializer = Marshal
 
-      lockfile ||= TmpFile.tmp_file
+    attr_accessor :sread, :swrite, :write_sem, :read_sem
+    def initialize
+      @sread, @swrite = IO.pipe
 
-      @lockfile = lockfile
-      @in_lockfile = lockfile + '.in'
-      @out_lockfile = lockfile + '.out'
-      RbbtSemaphore.create_semaphore @in_lockfile
-      RbbtSemaphore.create_semaphore @out_lockfile
-    end
-
-    def self.serialize(obj)
-      dump = nil
-      begin
-        case obj
-        when TSV
-          type = "T"
-          info = obj.info
-          info.delete_if{|k,v| v.nil?}
-          dump = Marshal.dump([info, {}.merge(obj)])
-        else
-          type = "M"
-          dump = Marshal.dump(obj)
-        end
-        payload = [type, dump].pack('A1a*')
-        length = payload.bytesize
-        #Log.info "Writing #{ length }"
-        [length].pack('L') << payload
-      rescue Exception
-        Log.error "Serialize error for: #{Misc.fingerprint obj} - #{Misc.fingerprint dump}"
-        raise $!
-      end
-    end
-
-    def self.unserialize(str)
-      begin
-        c, dump = str.unpack("A1a*")
-        case c
-        when "M"
-          return Marshal.load(dump)
-        when "T"
-          info, hash = Marshal.load(dump)
-          return TSV.setup(hash, info)
-        end
-      rescue Exception
-        Log.error "Unserialize error for: #{Misc.fingerprint str}"
-        raise $!
-      end
-    end
-
-    def read_sout(length)
-      str = ""
-      str << sout.readpartial(length-str.length) while str.length < length
-      str
-    end
-
-    def write_sin(str)
-      str_length = str.length
-      wrote = 0
-      wrote += sin.write_nonblock(str[wrote..-1]) while wrote < str_length
-    end
-
-    def push(obj)
-      Filelock in_lockfile do
-        payload = RbbtProcessSocket.serialize(obj)
-        sin << payload
-      end
-    end
-
-
-    def pop
-      r = []
-
-      payload = begin
-                  Filelock out_lockfile do
-                    raise ClosedQueue if sout.eof?
-                    r,w,e = IO.select([sout], [], [], 1)
-                    raise TryAgain if r.empty?
-
-                    first_char = read_sout(4)
-                    length = first_char.unpack('L').first
-                    #Log.info "Reading #{ length }"
-                    read_sout(length)
-                  end
-                rescue TryAgain
-                  sleep 1
-                end
-
-      RbbtProcessSocket.unserialize(payload)
-    end
-
-    def pop
-      loop do
-        r,w,e = IO.select([sout], [], [], 1)
-        next if r.empty?
-        break
-      end
-
-      first_char = read_sout(4)
-      length = first_char.unpack('L').first
-      #Log.info "Reading #{ length }"
-      read_sout(length)
-    end
-  rescue TryAgain
-    sleep 1
-  end
-
-      RbbtProcessSocket.unserialize(payload)
-    end
-
-    def rest
-      sin.close
-      str = sout.read
-      res = []
-
-      while not str.empty?
-        first_char = str[0]
-        next if first_char.nil?
-        length = first_char.unpack("C").first
-        dump = str[1..length]
-        res << Marshal.load(dump)
-        str = str[length+1..-1]
-      end
-
-      res
+      key = rand(100000).to_s;
+      @write_sem = key + '.in'
+      @read_sem = key + '.out'
+      RbbtSemaphore.create_semaphore(@write_sem,1)
+      RbbtSemaphore.create_semaphore(@read_sem,1)
     end
 
     def clean
-      RbbtSemaphore.delete_semaphore @in_lockfile
-      RbbtSemaphore.delete_semaphore @out_lockfile
-      sin.close unless sin.closed?
-      sout.close unless sout.closed?
+      @sread.close unless @sread.closed?
+      @swrite.close unless @swrite.closed?
+      RbbtSemaphore.delete_semaphore(@write_sem)
+      RbbtSemaphore.delete_semaphore(@read_sem)
     end
+
+
+    def dump(obj, stream)
+      payload = Serializer.dump(obj)
+      size_head = [payload.bytesize].pack 'L'
+      str = size_head << payload
+
+      write_length = str.length
+      IO.select(nil, [stream])
+      wrote = stream.write(str) 
+      while wrote < write_length
+        wrote += stream.write(str[wrote..-1]) 
+      end
+    end
+
+    def read_stream(stream, size)
+      str = nil
+      while not str = stream.read(size)
+        IO.select([stream],nil,nil,1) 
+        raise ClosedSocket if stream.eof?
+      end
+
+      while str.length < size
+        raise ClosedSocket if stream.eof?
+        IO.select([stream],nil,nil,1)
+        if new = stream.read(size-str.length)
+          str << new
+        end
+      end
+      str
+    end
+
+    def load(stream)
+      size_head = read_stream stream, 4
+
+      size = size_head.unpack('L').first
+
+      begin
+        payload = read_stream stream, size
+        Serializer.load(payload)
+      rescue TryAgain
+        retry
+      end
+    end
+
+
+    def push(obj)
+      begin
+        RbbtSemaphore.synchronize(@write_sem) do
+          self.dump(obj, @swrite)
+        end
+      rescue
+        return ClosedSocket.new
+      end
+    end
+
+    def pop
+      begin
+        RbbtSemaphore.synchronize(@read_sem) do
+          self.load(@sread)
+        end
+      rescue IOError, ClosedSocket
+        return ClosedSocket.new
+      end
+    end
+
   end
 end

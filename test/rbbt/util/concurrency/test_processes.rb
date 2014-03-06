@@ -6,8 +6,8 @@ require 'rbbt/util/concurrency/processes'
 
 class TestConcurrency < Test::Unit::TestCase
 
-  def test_thread_queue
-    q = RbbtProcessQueue.new 10
+  def test_process
+    q = RbbtProcessQueue.new 1
 
     res = []
 
@@ -19,16 +19,17 @@ class TestConcurrency < Test::Unit::TestCase
       i * 2
     end
 
-    times = 5_000
+    times = 500
     t = TSV.setup({"a" => 1}, :type => :single)
+
     Misc.benchmark do
     times.times do |i|
       q.process [i]
     end
-    end
 
     q.join
     q.clean
+    end
 
     assert_equal times, res.length
     assert_equal [0, 2, 4], res.sort[0..2]

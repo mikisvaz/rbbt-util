@@ -1,4 +1,4 @@
-
+require 'rbbt/util/concurrency/processes/socket'
 class RbbtProcessQueue
   class RbbtProcessQueueWorker
     attr_accessor :pid, :queue, :callback_queue, :block
@@ -7,28 +7,37 @@ class RbbtProcessQueue
 
       @pid = Process.fork do
         begin
-          @queue.sin.close
-          @callback_queue.sout.close if @callback_queue
-          Signal.trap(:INT){ raise Aborted }
+          @queue.swrite.close
+          @callback_queue.sread.close if @callback_queue
+
+          Signal.trap(:INT){ raise Aborted; }
           loop do
             p = @queue.pop
+            raise p if Exception === p
             res = @block.call *p
             @callback_queue.push(Array === res ? res : [res]) if @callback_queue
           end
-        rescue ClosedQueue, Aborted
+
+          exit 0
+        rescue RbbtProcessQueue::RbbtProcessSocket::ClosedSocket
+          exit 0
+        rescue Aborted
+          exit -1
         rescue Exception
           Log.exception $!
           @callback_queue.push($!) if @callback_queue
           exit -1
-        ensure
-          @queue.sout.close
-          @callback_queue.sin.close if @callback_queue
         end
+
       end
     end
 
     def join
       Process.waitpid @pid
+    end
+
+    def abort
+      Process.kill :INT, @pid
     end
 
     def done?
@@ -39,10 +48,6 @@ class RbbtProcessQueue
       rescue
         false
       end
-    end
-
-    def abort
-      Process.kill :INT, @pid
     end
   end
 end

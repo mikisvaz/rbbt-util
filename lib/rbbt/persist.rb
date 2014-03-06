@@ -280,6 +280,8 @@ module Persist
               save_file(path, type, res)
             end
 
+            return path if persist_options[:no_load]
+
             res
           end
         rescue

@@ -6,8 +6,8 @@ require 'rbbt/util/concurrency/processes/socket'
 
 class TestConcurrency < Test::Unit::TestCase
   def test_socket_push_pop
-    obj1 = [1,[2,3,4]] * 1000
-    obj2 = ["1",["2","3","4"]] * 1000
+    obj1 = [1,[2,3,4]] #* 1000
+    obj2 = ["1",["2","3","4"]] #* 1000
     obj3 = "some string"
     obj4 = TSV.setup({1 => 1})
 
@@ -23,7 +23,12 @@ class TestConcurrency < Test::Unit::TestCase
       assert_equal obj2, socket.pop 
       assert_equal obj3, socket.pop 
       assert_equal obj4, socket.pop 
+
+
     end
+
+    socket.swrite.close
+    assert RbbtProcessQueue::RbbtProcessSocket::ClosedSocket  === socket.pop
 
     socket.clean
   end

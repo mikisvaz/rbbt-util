@@ -174,8 +174,10 @@ module TSV
   def [](key, clean = false)
     value = super(key)
     return value if clean or value.nil?
+    @serializer_module ||= self.serializer_module
 
-    value = serializer_module.load(value) if serializer_module and not TSV::CleanSerializer === serializer_module
+    value = @serializer_module.load(value) if @serializer_module and not TSV::CleanSerializer === @serializer_module
+
     return value if @unnamed or fields.nil?
 
     case type
@@ -190,10 +192,10 @@ module TSV
   end
 
   def []=(key, value, clean = false)
-    if clean or serializer_module.nil? or  TSV::CleanSerializer === serializer_module or value.nil? 
+    if clean or @serializer_module.nil? or  TSV::CleanSerializer === @serializer_module or value.nil? 
        return super(key, value)
     else
-      return super(key, serializer_module.dump(value))
+      return super(key, @serializer_module.dump(value))
     end
   end
 
@@ -235,7 +237,6 @@ module TSV
   def each
     fields = self.fields
 
-    serializer = self.serializer
     serializer_module = self.serializer_module
     super do |key, value|
       next if ENTRY_KEYS.include? key
@@ -262,7 +263,6 @@ module TSV
   end
 
   def collect
-    serializer = self.serializer
     serializer_module = self.serializer_module
     super do |key, value|
       next if ENTRY_KEYS.include? key

@@ -53,7 +53,6 @@ source('#{UTIL}');
     when nil
       "NULL"
     when TSV
-      #"as.matrix(data.frame(c(#{object.transpose("Field").collect{|k,v| "#{k}=" << R.ruby2R(v)}.flatten * ", "}), row.names=#{R.ruby2R object.keys}))"
       "matrix(#{R.ruby2R object.values},dimnames=list(#{R.ruby2R object.keys}, #{R.ruby2R object.fields}))"
     when Symbol
       "#{ object }"

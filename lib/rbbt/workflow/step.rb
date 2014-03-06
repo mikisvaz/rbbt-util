@@ -121,7 +121,7 @@ class Step
         end
       }
       
-      Log.medium("Starting task #{task.name || ""} [#{Process.pid}]: #{ path }")
+      Log.medium{"#{Log.color :magenta, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]: #{ path }"}
       set_info :status, :started
 
       set_info :started, (start_time = Time.now)
@@ -163,7 +163,7 @@ class Step
       set_info :status, :done
       set_info :done, (done_time = Time.now)
       set_info :time_elapsed, done_time - start_time
-      Log.medium("Completed task #{task.name || ""} [#{Process.pid}]: #{ path }")
+      Log.medium{"#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]: #{ path }"}
 
       res
     end

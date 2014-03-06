@@ -35,7 +35,7 @@ class TestTSVParallel < Test::Unit::TestCase
     tsv.unnamed = true
     tsv.monitor = true
     Misc.benchmark do
-    tsv.ppthrough(10) do |k,v|
+    tsv.ppthrough(3) do |k,v|
       [k,v.first]
     end
     end

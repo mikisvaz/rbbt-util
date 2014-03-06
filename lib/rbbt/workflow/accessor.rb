@@ -94,16 +94,27 @@ class Step
     set_info(:messages, (messages || []) << message)
   end
 
-  def log(status, message = nil, do_log = true)
+  attr_accessor :last_log
+  def last_log
+    @last_log ||= Time.now
+  end
 
+  def log(status, message = nil)
     if message
-      Log.medium "[#{ status }] #{ message }: #{path}"
-    else
-      Log.medium "[#{ status }]: #{path}"
-    end if do_log
-
-    self.status = status
-    message(message) unless message.nil?
+      Log.medium do 
+        now = Time.now
+        str = "+#{(now - last_log).to_i}#{ Log.color :cyan, status.to_s }: #{ message } -- #{path}"
+        @last_log = now
+        str
+      end
+    else                                                                      
+      Log.medium do
+        now = Time.now
+        str = "+#{(now - last_log).to_i}#{ Log.color :cyan, status.to_s } -- #{path}"
+        @last_log = now
+        str
+      end
+    end
   end
 
   def started?
@@ -213,11 +224,27 @@ class Step
 end
 
 module Workflow
+
+  attr_accessor :last_log
+  def last_log
+    @@last_log ||= Time.now
+  end
+
   def log(status, message = nil)
     if message
-      Log.low "#{ status }: #{ message }"
-    else
-      Log.low "#{ status }"
+      Log.medium do 
+        now = Time.now
+        str = "+#{(now - last_log).to_i} #{ Log.color :cyan, status.to_s }: #{ message }"
+        @@last_log = now
+        str
+      end
+    else                                                                      
+      Log.medium do
+        now = Time.now
+        str = "+#{(now - last_log).to_i} #{ Log.color :cyan, status.to_s }"
+        @@last_log = now
+        str
+      end
     end
   end
 

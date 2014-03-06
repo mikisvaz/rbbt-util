@@ -1,20 +1,17 @@
-require 'filelock'
 require 'rbbt/util/concurrency/processes/worker'
 require 'rbbt/util/concurrency/processes/socket'
 
 
 class RbbtProcessQueue
-  class ClosedQueue < Exception; end
   class Waiting < Exception; end
 
   #{{{ RbbtProcessQueue
 
-  attr_accessor :num_processes, :processes, :queue, :lockfile, :process_monitor
-  def initialize(num_processes, lockfile = TmpFile.tmp_file)
+  attr_accessor :num_processes, :processes, :queue, :process_monitor
+  def initialize(num_processes)
     @num_processes = num_processes
     @processes = []
-    @lockfile = lockfile
-    @queue = RbbtProcessSocket.new @lockfile
+    @queue = RbbtProcessSocket.new
   end
 
   attr_accessor :callback, :callback_queue, :callback_thread
@@ -22,7 +19,7 @@ class RbbtProcessQueue
     if block_given?
       @callback = block
 
-      @callback_queue = RbbtProcessSocket.new @lockfile + '.callback'
+      @callback_queue = RbbtProcessSocket.new
 
       @callback_thread = Thread.new(Thread.current) do |parent|
         begin
@@ -31,8 +28,8 @@ class RbbtProcessQueue
             raise p if Exception === p
             @callback.call *p
           end
-        rescue ClosedQueue
-        rescue
+        rescue RbbtProcessQueue::RbbtProcessSocket::ClosedSocket
+        rescue Exception
           Log.debug $!
           parent.raise $!
           Thread.exit
@@ -43,12 +40,12 @@ class RbbtProcessQueue
     end
   end
 
-  def init(use_mutex = false, &block)
+  def init(&block)
     num_processes.times do |i|
       @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, &block)
     end
-    queue.sout.close
-    @callback_queue.sin.close if @callback_queue
+    @queue.sread.close
+    @callback_queue.swrite.close if @callback_queue
 
     @process_monitor = Thread.new(Thread.current) do |parent|
       begin
@@ -58,11 +55,12 @@ class RbbtProcessQueue
             @processes.delete_if{|p| p.pid == pid}
             raise "Process #{pid} failed" unless $?.success?
           else
-            Thread.pass
+            sleep 1
           end
         end
       rescue
         parent.raise $!
+      ensure
         Thread.exit
       end
     end
@@ -73,20 +71,18 @@ class RbbtProcessQueue
   end
 
   def join
-    queue.sin.close
+    @queue.push RbbtProcessQueue::RbbtProcessSocket::ClosedSocket.new
+    @queue.swrite.close
     begin
       @process_monitor.join
     ensure
-      clean
       close_callback if @callback
     end
   end
 
   def clean
     @processes.each{|p| p.abort }.clear
-    @queue.clean
     @callback_thread.raise Aborted if @callback_thread and @callback_thread.alive?
-    @callback_queue.clean if @callback_queue
   end
 
   def process(e)

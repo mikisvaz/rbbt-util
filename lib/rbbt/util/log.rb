@@ -160,7 +160,7 @@ end
 
 def hhh(message, file = $stdout)
   stack = caller
-  Log.high{"#{Log.color :cyan, "MEDIUM:"} " << stack.first}
+  Log.high{"#{Log.color :cyan, "HIGH:"} " << stack.first}
   Log.high{""}
   Log.high{"=> " << message.inspect}
   Log.high{""}
@@ -168,19 +168,12 @@ end
 
 def iii(message, file = $stdout)
   stack = caller
-  Log.info{"#{Log.color :cyan, "MEDIUM:"} " << stack.first}
+  Log.info{"#{Log.color :cyan, "INFO:"} " << stack.first}
   Log.info{""}
   Log.info{"=> " << message.inspect}
   Log.info{""}
 end
 
-def www(message, file = $stdout)
-  stack = caller
-  Log.warn{"#{Log.color :cyan, "MEDIUM:"} " << stack.first}
-  Log.warn{""}
-  Log.warn{"=> " << message.inspect}
-  Log.warn{""}
-end
 
 if __FILE__ == $0
   Log.severity = 0
