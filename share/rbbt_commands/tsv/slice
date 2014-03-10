@@ -1,0 +1,46 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Slice column from tsv
+
+$ rbbt tsv slice [options] file.tsv -f "Field 1"
+
+Display summary informations. Works with Tokyocabinet HDB and DBD as well.
+
+-tch--tokyocabinet File is a TC HDB
+-tcb--tokyocabinet_bd File is a TC BDB
+-hh--header_hash* Change the character used to mark the header line (defaults to #)
+-f--fields* Field to slice (comma-separated)
+-h--help Help
+EOF
+
+SOPT.usage if options[:help]
+
+file = ARGV.shift
+
+file = STDIN if file == '-'
+
+raise ParameterException, "Please specify the tsv file as argument" if file.nil?
+
+fields = options[:fields]
+raise ParameterException, "Please specify the fields to slice" if fields.nil?
+
+options[:header_hash] = options["header_hash"]
+
+case
+when options[:tokyocabinet]
+  tsv = Persist.open_tokyocabinet(file, false)
+  puts tsv.summary
+when options[:tokyocabinet_bd]
+  tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
+  puts tsv.summary
+else
+  tsv = TSV.open(file, options)
+end
+
+puts tsv.slice(fields.split(","))

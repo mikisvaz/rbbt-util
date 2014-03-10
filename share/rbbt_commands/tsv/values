@@ -15,6 +15,7 @@ Use - to read from STDIN
 -tcb--tokyocabinet_bd File is a tokyocabinet B database
 -f--field* Limit to a particular field
 -h--help Print this help
+-l--lines Separate in lines
 
 EOF
 rbbt_usage and exit 0 if options[:help]
@@ -37,6 +38,11 @@ else
   tsv = TSV.open(file)
 end
 
+field = options[:field]
 tsv = tsv.slice(field) if field
 
-tsv.each{|k,v| puts (Array === v ? v.flatten*"\t" : v.to_s ) }
+if options[:lines]
+  tsv.each{|k,v| puts (Array === v ? v.flatten*"\n" : v.to_s ) }
+else
+  tsv.each{|k,v| puts (Array === v ? v.flatten*"\t" : v.to_s ) }
+end

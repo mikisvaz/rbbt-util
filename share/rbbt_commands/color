@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Matches text and colors it.
+
+$ rbbt color <file|-> (<color> <pattern>)+
+
+Use - to read from STDIN. Example: `rbbt color - red "/.*rbbt.*/"`
+
+-h--help Print help
+
+EOF
+rbbt_usage and exit 0 if options[:help]
+
+file, *rest = ARGV
+
+if file == '-'
+  text = STDIN.read
+else
+  text = Open.read(file)
+end
+
+Hash[*rest].each do |color, pattern|
+  color = color.to_sym
+  if pattern =~ /^\/(.*)\/$/
+    text.gsub!(Regexp.compile($1)){|match| Log.color color, match }
+  else
+    text.gsub!(pattern){|match| Log.color color, match }
+  end
+end
+
+puts text
+
+
