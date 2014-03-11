@@ -6,7 +6,7 @@ require 'rbbt/util/concurrency/processes'
 
 class TestConcurrency < Test::Unit::TestCase
 
-  def test_process
+  def _test_process
     q = RbbtProcessQueue.new 1
 
     res = []
@@ -24,7 +24,7 @@ class TestConcurrency < Test::Unit::TestCase
 
     Misc.benchmark do
     times.times do |i|
-      q.process [i]
+      q.process i
     end
 
     q.join
@@ -34,6 +34,19 @@ class TestConcurrency < Test::Unit::TestCase
     assert_equal times, res.length
     assert_equal [0, 2, 4], res.sort[0..2]
     
+  end
+
+  def test_each
+    times = 50000
+    elems = (0..times-1).to_a
+
+    TmpFile.with_file do |dir|
+      RbbtProcessQueue.each(elems) do |elem|
+        Open.write(File.join(dir, elem.to_s), "DONE")
+      end
+
+      assert_equal times, Dir.glob(File.join(dir, '*')).length
+    end
   end
 end
 

@@ -26,9 +26,16 @@ class RbbtProcessQueue
 
 
     def dump(obj, stream)
-      payload = Serializer.dump(obj)
-      size_head = [payload.bytesize].pack 'L'
-      str = size_head << payload
+      case obj
+      when String
+        payload = obj
+        size_head = [payload.bytesize,"S"].pack 'La'
+        str = size_head << payload
+      else
+        payload = Serializer.dump(obj)
+        size_head = [payload.bytesize,"M"].pack 'La'
+        str = size_head << payload
+      end
 
       write_length = str.length
       IO.select(nil, [stream])
@@ -56,13 +63,18 @@ class RbbtProcessQueue
     end
 
     def load(stream)
-      size_head = read_stream stream, 4
+      size_head = read_stream stream, 5
 
-      size = size_head.unpack('L').first
+      size, type = size_head.unpack('La')
 
       begin
         payload = read_stream stream, size
-        Serializer.load(payload)
+        case type
+        when "M"
+          Serializer.load(payload)
+        when "S"
+          payload
+        end
       rescue TryAgain
         retry
       end
@@ -88,6 +100,5 @@ class RbbtProcessQueue
         return ClosedSocket.new
       end
     end
-
   end
 end

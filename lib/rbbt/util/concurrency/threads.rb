@@ -65,4 +65,12 @@ class RbbtThreadQueue
   def process(e)
     queue << e
   end
+
+
+  def self.each(list, num = 3, &block)
+    q = RbbtThreadQueue.new num
+    q.init(&block)
+    list.each do |elem| q.process elem end
+    q.join
+  end
 end

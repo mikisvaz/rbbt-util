@@ -14,8 +14,8 @@ class RbbtProcessQueue
           loop do
             p = @queue.pop
             raise p if Exception === p
-            res = @block.call *p
-            @callback_queue.push(Array === res ? res : [res]) if @callback_queue
+            res = @block.call p
+            @callback_queue.push res if @callback_queue
           end
 
           exit 0

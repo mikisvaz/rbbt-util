@@ -26,7 +26,7 @@ class RbbtProcessQueue
           loop do
             p = @callback_queue.pop
             raise p if Exception === p
-            @callback.call *p
+            @callback.call p
           end
         rescue RbbtProcessQueue::RbbtProcessSocket::ClosedSocket
         rescue Exception
@@ -86,6 +86,13 @@ class RbbtProcessQueue
   end
 
   def process(e)
-    @queue.push(Array === e ? e : [e])
+    @queue.push e
+  end
+
+  def self.each(list, num = 3, &block)
+    q = RbbtProcessQueue.new num
+    q.init(&block)
+    list.each do |elem| q.process elem end
+    q.join
   end
 end

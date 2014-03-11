@@ -276,8 +276,12 @@ module Persist
             Log.medium "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
             res = yield
 
-            Misc.lock(path) do
-              save_file(path, type, res)
+            if res.nil?
+              res = load_file(path) unless persist_options[:no_load]
+            else
+              Misc.lock(path) do
+                save_file(path, type, res)
+              end
             end
 
             return path if persist_options[:no_load]

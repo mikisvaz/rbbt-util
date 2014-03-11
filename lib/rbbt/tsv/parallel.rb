@@ -32,7 +32,8 @@ module TSV
     q.init(&block)
 
     begin
-      res = through(new_key_field, new_fields, uniq, zipped) do |*p|
+      res = pthrough(3, new_key_field, new_fields, uniq, zipped) do |*p|
+        mutex = p.pop
         q.process p
       end
       q.join
@@ -41,9 +42,5 @@ module TSV
     end
 
     res
-  end
-
-  def _pthrough(num_threads = 1, new_key_field = nil, new_fields = nil, uniq = false, zipped = false, &block)
-    through(new_key_field, new_fields, uniq, zipped, &block) 
   end
 end

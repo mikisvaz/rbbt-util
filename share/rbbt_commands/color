@@ -25,7 +25,9 @@ else
   text = Open.read(file)
 end
 
-Hash[*rest].each do |color, pattern|
+while rest.any?
+  color = rest.shift
+  pattern = rest.shift
   color = color.to_sym
   if pattern =~ /^\/(.*)\/$/
     text.gsub!(Regexp.compile($1)){|match| Log.color color, match }

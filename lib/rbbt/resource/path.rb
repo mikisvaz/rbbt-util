@@ -21,6 +21,7 @@ module Path
   end
 
   def join(name)
+    raise "Invalid path: #{ self }" if self.nil?
     if self.empty?
       self.annotate name.to_s.dup
     else

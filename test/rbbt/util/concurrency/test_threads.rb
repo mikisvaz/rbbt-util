@@ -25,5 +25,19 @@ class TestConcurrencyThreads < Test::Unit::TestCase
     assert_equal [0, 2, 4], res.sort[0..2]
     
   end
+
+  def test_each
+    times = 50000
+    elems = (0..times-1).to_a
+
+    TmpFile.with_file do |dir|
+      #RbbtThreadQueue.each(elems) do |elem|
+      elems.each do |elem|
+        Open.write(File.join(dir, elem.to_s), "DONE")
+      end
+
+      assert_equal times, Dir.glob(File.join(dir, '*')).length
+    end
+  end
 end
 

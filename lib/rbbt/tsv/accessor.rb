@@ -153,14 +153,16 @@ module TSV
   def serializer=(serializer)
     @serializer = serializer
     self.send(:[]=, KEY_PREFIX + 'serializer', (serializer.nil? ? SERIALIZED_NIL : TSV_SERIALIZER.dump(serializer)), :entry_key)
-    @serializar_module = serializer.nil? ? nil : SERIALIZER_ALIAS[serializer.to_sym]
+    @serializar_module = serializer.nil? ? TSV::CleanSerializer : SERIALIZER_ALIAS[serializer.to_sym]
   end
 
 
   def serializer_module
-    @serializar_module ||= begin
+    @serializer_module ||= begin
                              serializer = self.serializer
-                             serializer.nil? ? TSV::CleanSerializer : SERIALIZER_ALIAS[serializer.to_sym]
+                             mod = serializer.nil? ? TSV::CleanSerializer : SERIALIZER_ALIAS[serializer.to_sym]
+                             raise "No serializer_module for: #{ serializer.inspect }" if mod.nil?
+                             mod
                            end
   end
 
@@ -176,7 +178,7 @@ module TSV
     return value if clean or value.nil?
     @serializer_module ||= self.serializer_module
 
-    value = @serializer_module.load(value) if @serializer_module and not TSV::CleanSerializer === @serializer_module
+    value = @serializer_module.load(value) if @serializer_module and not TSV::CleanSerializer == @serializer_module
 
     return value if @unnamed or fields.nil?
 
@@ -192,11 +194,8 @@ module TSV
   end
 
   def []=(key, value, clean = false)
-    if clean or @serializer_module.nil? or  TSV::CleanSerializer === @serializer_module or value.nil? 
-       return super(key, value)
-    else
-      return super(key, @serializer_module.dump(value))
-    end
+    return super(key, value) if clean or value.nil? or TSV::CleanSerializer == self.serializer_module 
+    super(key, @serializer_module.dump(value))
   end
 
   def zip_new(key, values)
@@ -242,14 +241,14 @@ module TSV
       next if ENTRY_KEYS.include? key
 
       # TODO Update this to be more efficient
-      value = serializer_module.load(value) unless serializer_module.nil? or TSV::CleanSerializer === serializer_module
+      value = serializer_module.load(value) unless serializer_module.nil? or TSV::CleanSerializer == serializer_module
 
       # Annotated with Entity and NamedArray
       if not @unnamed
         if not fields.nil? 
           case type
           when :double, :list
-            setup_array value, fields, key, entity_options, entity_templates if Array === value
+            setup_array value, fields, key, entity_options, entity_templates if Array == value
           when :flat, :single
             prepare_entity(value, fields.first, entity_options)
           end
@@ -268,7 +267,7 @@ module TSV
       next if ENTRY_KEYS.include? key
 
       # TODO Update this to be more efficient
-      value = serializer_module.load(value) unless serializer_module.nil? or TSV::CleanSerializer === serializer_module
+      value = serializer_module.load(value) unless serializer_module.nil? or TSV::CleanSerializer == serializer_module
 
       # Annotated with Entity and NamedArray
       if not @unnamed

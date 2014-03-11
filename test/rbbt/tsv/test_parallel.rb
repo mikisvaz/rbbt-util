@@ -4,7 +4,7 @@ require 'rbbt/tsv/parallel'
 
 class TestTSVParallel < Test::Unit::TestCase
 
-  def _test_pthrough
+  def test_pthrough
     require 'rbbt/sources/organism'
     tsv = Organism.identifiers("Hsa").tsv :unnamed => true, :persist => true
 
