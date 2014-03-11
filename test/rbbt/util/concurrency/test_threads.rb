@@ -31,7 +31,6 @@ class TestConcurrencyThreads < Test::Unit::TestCase
     elems = (0..times-1).to_a
 
     TmpFile.with_file do |dir|
-      #RbbtThreadQueue.each(elems) do |elem|
       elems.each do |elem|
         Open.write(File.join(dir, elem.to_s), "DONE")
       end

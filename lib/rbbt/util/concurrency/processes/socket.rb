@@ -2,7 +2,6 @@ require 'rbbt/util/semaphore'
 
 class RbbtProcessQueue
   class RbbtProcessSocket
-    class ClosedSocket < Exception; end
 
     Serializer = Marshal
 
@@ -45,30 +44,13 @@ class RbbtProcessQueue
       end
     end
 
-    def read_stream(stream, size)
-      str = nil
-      while not str = stream.read(size)
-        IO.select([stream],nil,nil,1) 
-        raise ClosedSocket if stream.eof?
-      end
-
-      while str.length < size
-        raise ClosedSocket if stream.eof?
-        IO.select([stream],nil,nil,1)
-        if new = stream.read(size-str.length)
-          str << new
-        end
-      end
-      str
-    end
-
     def load(stream)
-      size_head = read_stream stream, 5
+      size_head = Misc.read_stream stream, 5
 
       size, type = size_head.unpack('La')
 
       begin
-        payload = read_stream stream, size
+        payload = Misc.read_stream stream, size
         case type
         when "M"
           Serializer.load(payload)
@@ -80,14 +62,15 @@ class RbbtProcessQueue
       end
     end
 
-
+    #{{{ ACCESSOR
+    
     def push(obj)
       begin
         RbbtSemaphore.synchronize(@write_sem) do
           self.dump(obj, @swrite)
         end
       rescue
-        return ClosedSocket.new
+        return ClosedStream.new
       end
     end
 
@@ -96,8 +79,8 @@ class RbbtProcessQueue
         RbbtSemaphore.synchronize(@read_sem) do
           self.load(@sread)
         end
-      rescue IOError, ClosedSocket
-        return ClosedSocket.new
+      rescue IOError, ClosedStream
+        return ClosedStream.new
       end
     end
   end

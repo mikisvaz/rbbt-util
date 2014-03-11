@@ -4,9 +4,9 @@ require 'rbbt-util'
 require 'rbbt/util/log'
 require 'rbbt/util/concurrency/processes'
 
-class TestConcurrency < Test::Unit::TestCase
+class TestConcurrencyProcess < Test::Unit::TestCase
 
-  def _test_process
+  def test_process
     q = RbbtProcessQueue.new 1
 
     res = []
@@ -37,7 +37,7 @@ class TestConcurrency < Test::Unit::TestCase
   end
 
   def test_each
-    times = 50000
+    times = 5000
     elems = (0..times-1).to_a
 
     TmpFile.with_file do |dir|

@@ -19,7 +19,7 @@ class RbbtProcessQueue
           end
 
           exit 0
-        rescue RbbtProcessQueue::RbbtProcessSocket::ClosedSocket
+        rescue ClosedStream
           exit 0
         rescue Aborted
           exit -1

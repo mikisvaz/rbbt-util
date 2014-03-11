@@ -20,6 +20,7 @@ class ParameterException < StandardError; end
 class FieldNotFoundError < StandardError;end
 class Aborted < Exception; end
 class TryAgain < Exception; end
+class ClosedStream < Exception; end
 
 module LaterString
   def to_s
@@ -30,18 +31,34 @@ end
 Lockfile.refresh = false if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
 module Misc
 
+  def self.read_stream(stream, size)
+    str = nil
+    while not str = stream.read(size)
+      IO.select([stream],nil,nil,1) 
+      raise ClosedStream if stream.eof?
+    end
+
+    while str.length < size
+      raise ClosedStream if stream.eof?
+      IO.select([stream],nil,nil,1)
+      if new = stream.read(size-str.length)
+        str << new
+      end
+    end
+    str
+  end
   def self.parse_cmd_params(str)
     return str if Array === str
     str.scan(/
-      (?:["']([^"']*?)["']) |
-      ([^"'\s]+)
+             (?:["']([^"']*?)["']) |
+             ([^"'\s]+)
     /x).flatten.compact
   end
 
   def self.correct_icgc_mutation(pos, ref, mut_str)
     mut = mut_str
     mut = '-' * (mut_str.length - 1) if mut =~/^-[ACGT]/
-    mut = "+" << mut if ref == '-'
+      mut = "+" << mut if ref == '-'
     [pos, [mut]]
   end
 

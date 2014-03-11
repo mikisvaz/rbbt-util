@@ -4,17 +4,15 @@ require 'rbbt/tsv/parallel'
 
 class TestTSVParallel < Test::Unit::TestCase
 
-  def test_pthrough
+  def _test_pthrough
     require 'rbbt/sources/organism'
-    tsv = Organism.identifiers("Hsa").tsv :unnamed => true, :persist => true
+    tsv = Organism.identifiers("Hsa").tsv :unnamed => true, :persist => false, :fields => ["Associated Gene Name"]
 
     h = {}
     tsv.monitor = true
     tsv.unnamed = true
-    Misc.benchmark do
     tsv.pthrough do |k,v|
       h[k] = v.first
-    end
     end
 
     assert_equal tsv.size, h.size
@@ -34,10 +32,8 @@ class TestTSVParallel < Test::Unit::TestCase
 
     tsv.unnamed = true
     tsv.monitor = true
-    Misc.benchmark do
     tsv.ppthrough(3) do |k,v|
       [k,v.first]
-    end
     end
 
     assert_equal tsv.size, h.size

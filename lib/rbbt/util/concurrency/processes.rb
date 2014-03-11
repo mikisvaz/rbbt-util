@@ -3,8 +3,6 @@ require 'rbbt/util/concurrency/processes/socket'
 
 
 class RbbtProcessQueue
-  class Waiting < Exception; end
-
   #{{{ RbbtProcessQueue
 
   attr_accessor :num_processes, :processes, :queue, :process_monitor
@@ -28,7 +26,7 @@ class RbbtProcessQueue
             raise p if Exception === p
             @callback.call p
           end
-        rescue RbbtProcessQueue::RbbtProcessSocket::ClosedSocket
+        rescue ClosedStream
         rescue Exception
           Log.debug $!
           parent.raise $!
@@ -71,7 +69,7 @@ class RbbtProcessQueue
   end
 
   def join
-    @queue.push RbbtProcessQueue::RbbtProcessSocket::ClosedSocket.new
+    @queue.push ClosedStream.new
     @queue.swrite.close
     begin
       @process_monitor.join

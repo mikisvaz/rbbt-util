@@ -103,14 +103,14 @@ class Step
     if message
       Log.medium do 
         now = Time.now
-        str = "+#{(now - last_log).to_i}#{ Log.color :cyan, status.to_s }: #{ message } -- #{path}"
+        str = "+#{(now - last_log).to_i} #{ Log.color :cyan, status.to_s }: #{ message } -- #{path}"
         @last_log = now
         str
       end
     else                                                                      
       Log.medium do
         now = Time.now
-        str = "+#{(now - last_log).to_i}#{ Log.color :cyan, status.to_s } -- #{path}"
+        str = "+#{(now - last_log).to_i} #{ Log.color :cyan, status.to_s } -- #{path}"
         @last_log = now
         str
       end

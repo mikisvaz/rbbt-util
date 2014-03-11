@@ -28,7 +28,7 @@ class TestConcurrency < Test::Unit::TestCase
     end
 
     socket.swrite.close
-    assert RbbtProcessQueue::RbbtProcessSocket::ClosedSocket  === socket.pop
+    assert ClosedStream  === socket.pop
 
     socket.clean
   end
