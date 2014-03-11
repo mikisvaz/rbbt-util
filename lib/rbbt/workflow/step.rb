@@ -41,9 +41,9 @@ class Step
       class << self
         attr_accessor :relay_step
         alias original_log log 
-        def log(status, message = nil, do_log = true)
-          original_log(status, message, do_log)
-          relay_step.log([task.name.to_s, status.to_s] * ">", message.nil? ? nil : [task.name.to_s, message] * ">", false)
+        def log(status, message = nil)
+          original_log(status, message)
+          relay_step.log([task.name.to_s, status.to_s] * ">", message.nil? ? nil : [task.name.to_s, message] * ">")
         end
       end
     end
@@ -117,6 +117,7 @@ class Step
           log(:error, "Exception processing dependency #{dependency.path}")
           log(:error, "#{$!.class}: #{$!.message}")
           log(:error, "backtrace: #{$!.backtrace.first}")
+          Log.exception $!
           raise "Exception processing dependency #{dependency.path}"
         end
       }

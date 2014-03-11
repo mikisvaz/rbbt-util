@@ -56,21 +56,6 @@ row2    A    B    Id3
 
   def test_headerless_fields
     content =<<-EOF
-#Id    ValueA    ValueB    OtherID
-row1    a|aa|aaa    b    Id1|Id2
-row2    A    B    Id3
-    EOF
-
-    TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :sep => /\s+/, :fields => 1)
-      assert_equal ["a", "aa", "aaa"], tsv["row1"][0]
-      assert_equal :double, tsv.type
-      assert_equal [%w(a aa aaa)], tsv["row1"]
-    end
-  end
-
-  def test_headerless_fields
-    content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
     EOF

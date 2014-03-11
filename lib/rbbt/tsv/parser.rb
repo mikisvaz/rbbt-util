@@ -52,9 +52,9 @@ module TSV
 
     def process(line)
       l = line.chomp
-      raise Parser::SKIP_LINE if l[0] == "#"[0] or (Proc === @select and not @select.call l)
+      raise SKIP_LINE if l[0] == "#"[0] or (Proc === @select and not @select.call l)
       l = @fix.call l if Proc === @fix
-      raise Parser::END_PARSING unless l
+      raise END_PARSING unless l
       l
     end
 
@@ -387,6 +387,85 @@ module TSV
       data.namespace = @namespace
       data.cast = @cast if Symbol === @cast
       data
+    end
+
+
+    def self.traverse(stream, options = {})
+      monitor, grep, invert_grep, head = Misc.process_options options, :monitor, :grep, :invert_grep, :head
+
+      raise "No block given in TSV::Parser#traverse" unless block_given?
+
+      # get parser
+      parser = Parser.new stream, options
+
+      # grep
+      if grep
+        stream.rewind
+        stream = Open.grep(stream, grep, invert_grep)
+        parser.first_line = stream.gets
+      end
+
+      # first line
+      line = parser.rescue_first_line
+
+      # setup monitor
+      if monitor and (stream.respond_to?(:size) or (stream.respond_to?(:stat) and stream.stat.respond_to? :size)) and stream.respond_to?(:pos)
+        size = case
+               when stream.respond_to?(:size)
+                 stream.size
+               else
+                 stream.stat.size
+               end
+        desc = "Parsing Stream"
+        step = 100
+        if Hash === monitor
+          desc = monitor[:desc] if monitor.include? :desc 
+          step = monitor[:step] if monitor.include? :step 
+        end
+        progress_monitor = Progress::Bar.new(size, 0, step, desc)
+      else
+        progress_monitor = nil
+      end
+
+      # parser 
+      line_num = 1
+      begin
+        while not line.nil? 
+          begin
+            progress_monitor.tick(stream.pos) if progress_monitor 
+
+            raise SKIP_LINE if line.empty?
+
+            line = Misc.fixutf8(line)
+            line = parser.process line
+            parts = parser.chop_line line
+            key, values = parser.get_values parts
+            values = parser.cast_values values if parser.cast?
+            
+            yield key, values, parser
+
+            line = stream.gets
+            line_num += 1
+            raise END_PARSING if head and line_num > head.to_i
+          rescue SKIP_LINE
+            begin
+              line = stream.gets
+              next
+            rescue IOError
+              break
+            end
+          rescue END_PARSING
+            break
+          rescue IOError
+            Log.exception $!
+            break
+          end
+        end
+      ensure
+        stream.close unless stream.closed?
+      end
+
+      parser
     end
   end
 end

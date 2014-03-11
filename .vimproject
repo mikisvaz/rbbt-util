@@ -74,10 +74,11 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
    tsv.rb
    tsv=tsv{
+    parser.rb
+
     accessor.rb
     util.rb
     serializers.rb
-    parser.rb
     manipulate.rb
     index.rb
     attach.rb
@@ -267,6 +268,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
    benchmark=benchmark{
     pthrough
+    tsv
    }
   }
   Rlib=Rlib{
