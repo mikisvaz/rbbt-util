@@ -8,7 +8,7 @@ require 'rbbt/util/R'
 $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
 options = SOPT.setup <<EOF
-Calculate density 
+Take absolute value
 
 $ rbbt stat density <file>
 
@@ -16,6 +16,9 @@ Display summary information. Works with Tokyocabinet HDB and DBD as well.
 
 -tch--tokyocabinet File is a TC HDB
 -tcb--tokyocabinet_bd File is a TC BDB
+-t--type* Type of tsv (single, list, double, flat)
+-h--header_hash* Change the character used to mark the header line (defaults to #)
+-f--field Field to change
 -h--help Help
 EOF
 
@@ -29,17 +32,12 @@ else
   file = Open.open file
 end
 
-values = file.read.split("\n").collect{|v| v.to_f}
+parser = TSV::Parser.new file, options
 
-res = TmpFile.with_file do |tmp|
-  R.run <<-EOF
-values = #{R.ruby2R values}
-d = density(values)
-df = data.frame(x=d$x, y=d$y)
-rbbt.tsv.write(file='#{ tmp }', df)
-  EOF
-
-  Open.read(tmp)
+options[:fields] = [options.delete(:field) || 0]
+puts TSV.header_lines(parser.key_field, parser.fields)
+parser.traverse(options.merge(:type => :list)) do |k,v|
+  v = v.first
+  v = Array === v ? v.collect{|e| e.to_f.abs } : [v.to_f.abs]
+  puts [k,v].flatten * "\t"
 end
-
-puts res.split("\n")[1..-1].collect{|l| l.split("\t")[1,2] * "\t"} * "\n"

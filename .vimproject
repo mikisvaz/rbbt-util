@@ -256,6 +256,8 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     slice
    }
    stat=stat{
+    abs
+    log
     density
    }
    study=study{

@@ -1,7 +1,7 @@
 require 'rbbt/tsv'
 
 module TSV
-  def self.change_key(tsv, format, options = {})
+  def self.change_key(tsv, format, options = {}, &block)
     options = Misc.add_defaults options, :persist => false, :identifiers => tsv.identifiers
 
     identifiers, persist_input = Misc.process_options options, :identifiers, :persist_input
@@ -21,18 +21,20 @@ module TSV
 
       tsv = tsv.to_flat  if orig_type == :flat
 
+      tsv = tsv.to_list(&block)  if orig_type == :list
+
       tsv
     else
       tsv.reorder(format)
     end
   end
 
-  def change_key(format, options = {})
+  def change_key(format, options = {}, &block)
     options = Misc.add_defaults options, :identifiers => self.identifiers
-    TSV.change_key(self, format, options)
+    TSV.change_key(self, format, options, &block)
   end
 
-  def self.swap_id(tsv, field, format, options = {})
+  def self.swap_id(tsv, field, format, options = {}, &block)
     options = Misc.add_defaults options, :persist => false, :identifiers => tsv.identifiers
 
     identifiers, persist_input = Misc.process_options options, :identifiers, :persist
@@ -61,6 +63,8 @@ module TSV
     end
 
     tsv = tsv.to_flat  if orig_type == :flat
+
+    tsv = tsv.to_list(&block)  if orig_type == :list
 
     tsv
   end

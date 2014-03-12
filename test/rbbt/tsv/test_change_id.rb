@@ -33,10 +33,17 @@ aa xx
   def setup
     @f1 = tsv(FILE1)
     @f2 = tsv(FILE2)
+    @f3 = tsv(FILE2, :key_field => "Y")
     @id = tsv(IDENTIFIERS)
   end
 
-  def test_change_id
+  def test_swap_id
+    @f3.identifiers = @id
+    assert_equal "a", @f3.swap_id("X","A")["y"]["A"]
+  end
+
+
+  def test_change_key
     @f1.identifiers = @id
     assert @f1.change_key("X").include? "x"
   end
