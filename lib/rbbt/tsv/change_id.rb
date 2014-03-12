@@ -17,6 +17,7 @@ module TSV
       else
         tsv = tsv.attach identifiers, :fields => [format], :persist_input => true
       end
+
       tsv = tsv.reorder(format, tsv.fields - [format])
 
       tsv = tsv.to_flat  if orig_type == :flat
@@ -35,9 +36,9 @@ module TSV
   end
 
   def self.swap_id(tsv, field, format, options = {}, &block)
-    options = Misc.add_defaults options, :persist => false, :identifiers => tsv.identifiers
+    options = Misc.add_defaults options, :persist => false, :identifiers => tsv.identifiers, :compact => true
 
-    identifiers, persist_input = Misc.process_options options, :identifiers, :persist
+    identifiers, persist_input, compact = Misc.process_options options, :identifiers, :persist, :compact
 
     fields = identifiers.all_fields.include?(field)? [field] : nil
     index = identifiers.index :target => format, :fields => fields, :persist => persist_input
@@ -54,7 +55,9 @@ module TSV
         end
       else
         tsv.through do |k,v|
-          v[pos] = index.values_at(*v[pos])
+          _values = index.values_at(*v[pos])
+          _values.compact! if compact
+          v[pos] = _values
           tsv[k] = v
         end
       end

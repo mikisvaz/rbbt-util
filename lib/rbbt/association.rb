@@ -78,12 +78,11 @@ module Association
       :persist => false,
       :key_field => all_fields.index(source), 
       :fields => fields.collect{|f| String === f ? all_fields.index(f): f },
-      :type => options[:type].to_s == :flat ? :flat : :double,
+      :type => (options[:type] and options[:type].to_sym == :flat) ? :flat : :double,
       :unnamed => true,
-      :merge => options[:type].to_s == :flat ? false : true
+      :merge => (options[:type] and options[:type].to_sym == :flat) ? false : true
     })
 
-    # Preserve first line, which would have been considered a header otherwise
     open_options["header_hash"] = "#" if options["header_hash"] == ""
 
     field_headers = all_fields.values_at *open_options[:fields]
@@ -129,6 +128,7 @@ module Association
       end
     end
 
+
     # Translate target 
     if target_final_format and target_field != target_final_format and
       Entity.formats[target_field] and
@@ -140,11 +140,12 @@ module Association
       tsv.key_field = "MASKED"
 
       tsv.with_unnamed do
-        tsv = tsv.swap_id tsv.fields.first, target_final_format, :identifiers => Organism.identifiers(tsv.namespace), :persist => true
+        tsv = tsv.swap_id tsv.fields.first, target_final_format, :identifiers => Organism.identifiers(tsv.namespace), :persist => true, :compact => true
       end
 
       tsv.key_field = save_key_field 
     end
+
     tsv
   end
 
