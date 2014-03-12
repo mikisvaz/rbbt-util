@@ -94,27 +94,38 @@ class Step
     set_info(:messages, (messages || []) << message)
   end
 
-  attr_accessor :last_log
-  def last_log
-    @last_log ||= Time.now
-  end
-
-  def log(status, message = nil)
-    if message
+  def self.log(status, message, path, &block)
+    if block_given?
+      start = Time.now
       Log.medium do 
         now = Time.now
-        str = "+#{(now - last_log).to_i} #{ Log.color :cyan, status.to_s }: #{ message } -- #{path}"
-        @last_log = now
+        str = "#{ Log.color :cyan, status.to_s }"
+        str << ": #{ message }" if message
+        str << " -- #{Log.color :blue, path.to_s}" if path
         str
       end
-    else                                                                      
-      Log.medium do
+      res = yield
+      eend = Time.now
+      Log.medium do 
         now = Time.now
-        str = "+#{(now - last_log).to_i} #{ Log.color :cyan, status.to_s } -- #{path}"
-        @last_log = now
+        str = "#{ Log.color :cyan, status.to_s } +#{Log.color :green, "%.1g" % (eend - start)}"
+        str << " -- #{Log.color :blue, path.to_s}" if path
+        str
+      end
+      res
+    else
+      Log.medium do 
+        now = Time.now
+        str = "#{ Log.color :cyan, status.to_s }"
+        str << ": #{ message }" if message
+        str << " -- #{Log.color :blue, path.to_s}" if path
         str
       end
     end
+  end
+
+  def log(status, message = nil, &block)
+    Step.log(status, message, path, &block)
   end
 
   def started?
@@ -225,27 +236,8 @@ end
 
 module Workflow
 
-  attr_accessor :last_log
-  def last_log
-    @@last_log ||= Time.now
-  end
-
-  def log(status, message = nil)
-    if message
-      Log.medium do 
-        now = Time.now
-        str = "+#{(now - last_log).to_i} #{ Log.color :cyan, status.to_s }: #{ message }"
-        @@last_log = now
-        str
-      end
-    else                                                                      
-      Log.medium do
-        now = Time.now
-        str = "+#{(now - last_log).to_i} #{ Log.color :cyan, status.to_s }"
-        @@last_log = now
-        str
-      end
-    end
+  def log(status, message = nil, &block)
+    Step.log(status, message, nil, &block)
   end
 
   def task_info(name)

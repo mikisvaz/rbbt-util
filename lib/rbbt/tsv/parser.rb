@@ -1,7 +1,7 @@
 require 'rbbt/util/cmd'
 module TSV
   class Parser
-    attr_accessor :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace, :first_line
+    attr_accessor :stream, :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace, :first_line, :stream
 
     class SKIP_LINE < Exception; end
     class END_PARSING < Exception; end
@@ -123,46 +123,66 @@ module TSV
     def get_values_flat(parts)
       if key_position and key_position != 0 and field_positions.nil?
         value = parts.shift
-        keys = parts
+        keys = parts.dup
         return [keys, [value]]
       end
 
-      return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)} if 
+      return parts.shift.split(@sep2, -1).first, parts.collect{|value| value.split(@sep2, -1)}.flatten if 
         field_positions.nil? and (key_position.nil? or key_position == 0)
 
       keys = parts[key_position].split(@sep2, -1)
 
       if @take_all
-        values = parts.collect{|value| value.split(@sep2, -1)}
+        values = parts.collect{|e| e.split(@sep2, -1) }.flatten
       else
+        if field_positions.nil?
+          parts.delete_at key_position
+          values = parts.first
+        else
+          values = parts[field_positions.first]
+        end
 
-        values = if field_positions.nil?
-                   parts.tap{|o| o.delete_at key_position}
-                 else
-                   parts.values_at *field_positions
-                 end.collect{|value| value.split(@sep2, -1)}
+        values = values.split(@sep2, -1)
       end
-      [keys, values]
+
+      [keys.first, values]
     end
 
     def add_to_data_no_merge_list(data, key, values)
       data[key] = values unless data.include? key
+      nil
     end
 
-    def add_to_data_flat(data, keys, values)
+    def add_to_data_flat_keys(data, keys, values)
       keys.each do |key|
-        data[key] = values.flatten unless data.include? key
+        data[key] = values unless data.include? key
       end
+      nil
     end
 
-    def add_to_data_flat_merge(data, keys, values)
+    def add_to_data_flat(data, key, values)
+      data[key] = values unless data.include? key
+      nil
+    end
+
+    def add_to_data_flat_merge(data, key, values)
+      if data.include? key
+        data[key] = data[key].concat values
+      else
+        data[key] = values
+      end
+      nil
+    end
+
+    def add_to_data_flat_merge_keys(data, keys, values)
       keys.each do |key|
         if data.include? key
-          data[key] = data[key].concat values.flatten 
+          data[key] = data[key].concat values
         else
-          data[key] = values.flatten
+          data[key] = values.dup
         end
       end
+      nil
     end
 
     def add_to_data_no_merge_double(data, keys, values)
@@ -170,6 +190,7 @@ module TSV
         next if data.include? key
         data[key] = values 
       end
+      nil
     end
 
     def add_to_data_merge(data, keys, values)
@@ -184,6 +205,7 @@ module TSV
           data[key] = values
         end
       end
+      nil
     end
 
     def add_to_data_merge_zipped(data, keys, values)
@@ -207,6 +229,7 @@ module TSV
           data[key] = values.collect{|v| [v]}
         end
       end
+      nil
     end
 
     def add_to_data_zipped(data, keys, values)
@@ -224,6 +247,7 @@ module TSV
         next if data.include? key
         data[key] = values.collect{|v| [v]}
       end
+      nil
     end
 
 
@@ -317,6 +341,7 @@ module TSV
     def initialize(stream = nil, options = {})
       @header_hash = Misc.process_options(options, :header_hash) || "#"
       @sep = Misc.process_options(options, :sep) || "\t"
+      @stream = stream
 
       header_options = parse_header(stream)
       options = header_options.merge options
@@ -333,6 +358,9 @@ module TSV
       merge = Misc.process_options(options, :merge)
       merge = @zipped if merge.nil?
       merge = false if merge.nil?
+
+      fields = options[:fields]
+      fix_fields(options)
 
       case @type
       when :double 
@@ -363,18 +391,24 @@ module TSV
         self.instance_eval do alias cast_values cast_values_list end
         self.instance_eval do alias add_to_data add_to_data_no_merge_list end
       when :flat
-        @take_all = true if options[:fields].nil?
+        @take_all = true if field_positions.nil?
         self.instance_eval do alias get_values get_values_flat end
         self.instance_eval do alias cast_values cast_values_double end
         if merge
-          self.instance_eval do alias add_to_data add_to_data_flat_merge end
+          if key_position and key_position != 0 and field_positions.nil?
+            self.instance_eval do alias add_to_data add_to_data_flat_merge_keys end
+          else
+            self.instance_eval do alias add_to_data add_to_data_flat_merge end
+          end
         else
-          self.instance_eval do alias add_to_data add_to_data_flat end
+          if key_position and key_position != 0 and field_positions.nil?
+            self.instance_eval do alias add_to_data add_to_data_flat_keys end
+          else
+            self.instance_eval do alias add_to_data add_to_data_flat end
+          end
         end
       end
 
-      fields = options[:fields]
-      fix_fields(options)
 
       @straight = false if @sep != "\t" or not @cast.nil? or merge or (@type == :flat and fields)
     end
@@ -389,24 +423,22 @@ module TSV
       data
     end
 
-
-    def self.traverse(stream, options = {})
+    def traverse(options = {})
       monitor, grep, invert_grep, head = Misc.process_options options, :monitor, :grep, :invert_grep, :head
-
       raise "No block given in TSV::Parser#traverse" unless block_given?
 
+      stream = @stream
       # get parser
-      parser = Parser.new stream, options
 
       # grep
       if grep
         stream.rewind
         stream = Open.grep(stream, grep, invert_grep)
-        parser.first_line = stream.gets
+        self.first_line = stream.gets
       end
 
       # first line
-      line = parser.rescue_first_line
+      line = self.rescue_first_line
 
       # setup monitor
       if monitor and (stream.respond_to?(:size) or (stream.respond_to?(:stat) and stream.stat.respond_to? :size)) and stream.respond_to?(:pos)
@@ -437,12 +469,12 @@ module TSV
             raise SKIP_LINE if line.empty?
 
             line = Misc.fixutf8(line)
-            line = parser.process line
-            parts = parser.chop_line line
-            key, values = parser.get_values parts
-            values = parser.cast_values values if parser.cast?
+            line = self.process line
+            parts = self.chop_line line
+            key, values = self.get_values parts
+            values = self.cast_values values if self.cast?
             
-            yield key, values, parser
+            yield key, values, self
 
             line = stream.gets
             line_num += 1
@@ -465,7 +497,12 @@ module TSV
         stream.close unless stream.closed?
       end
 
-      parser
+      self
+    end
+
+    def self.traverse(stream, options = {}, &block)
+      parser = Parser.new(stream, options)
+      parser.traverse(options, &block)
     end
   end
 end

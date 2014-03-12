@@ -31,10 +31,11 @@ module Log
     return str || "" if nocolor 
     color = SEVERITY_COLOR[severity] if Fixnum === severity
     color = Term::ANSIColor.send(severity) if Symbol === severity and Term::ANSIColor.respond_to? severity 
+    color ||= ""
     if str.nil?
       color
     else
-      color + str + color(0)
+      color + str + self.color(0)
     end
   end
 

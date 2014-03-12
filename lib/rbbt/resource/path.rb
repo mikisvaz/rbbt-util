@@ -196,6 +196,10 @@ module Path
     TSV.open(self.produce, *args)
   end
 
+  def traverse(options = {}, &block)
+    TSV::Parser.traverse(self.open, options, &block)
+  end
+
   def list
     Open.read(self.produce.find).split "\n"
   end

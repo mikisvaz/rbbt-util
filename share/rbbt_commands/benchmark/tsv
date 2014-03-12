@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+
+require 'rbbt/sources/organism'
+
+Misc.benchmark(10) do
+  Organism.identifiers("Hsa").tsv
+end
+
