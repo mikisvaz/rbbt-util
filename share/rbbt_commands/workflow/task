@@ -35,7 +35,6 @@ end
 
 def usage(workflow = nil, task = nil, exception=nil)
   puts SOPT.doc
-  puts Log.color :magenta, "## WORKFLOW"
   puts
   if workflow.nil?
     puts "No workflow specified"
@@ -45,11 +44,13 @@ def usage(workflow = nil, task = nil, exception=nil)
   if task.nil?
     workflow.load_tasks if workflow.respond_to? :load_tasks
     workflow.doc
+    puts
+    puts "E.g. rbbt workflow task #{workflow.to_s} #{workflow.tasks.keys.first.to_s} -h"
   else
     puts Log.color :magenta, workflow.to_s
     puts Log.color :magenta, "=" * workflow.to_s.length
     puts
-    puts workflow.workflow_description
+    puts workflow.documentation[:description]
     puts
     workflow.doc(task)
   end

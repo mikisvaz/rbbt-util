@@ -27,6 +27,10 @@ module Log
   SEVERITY_COLOR = [reset, cyan, green, magenta, blue, yellow, red] #.collect{|e| "\033[#{e}"}
   HIGHLIGHT = "\033[1m"
 
+  def self.uncolor(str)
+    Term::ANSIColor.uncolor(str)
+  end
+
   def self.color(severity, str = nil)
     return str || "" if nocolor 
     color = SEVERITY_COLOR[severity] if Fixnum === severity

@@ -26,20 +26,22 @@ module SOPT
   end
 
   def self.input_format(name, type = nil, default = nil, short = nil)
-    input_str = (short.nil? or short.empty?) ? Log.color(:blue,"--#{name}") : Log.color(:blue, "-#{short}") << ", " << Log.color(:blue, "--#{name}")
+    input_str = (short.nil? or short.empty?) ? "--#{name}" : "-#{short},--#{name}"
     input_str = Log.color(:blue, input_str)
-    input_str << case type
+    extra = case type
     when nil
-      "#{default != nil ? " (default '#{default}')" : ""}:"
+      ""
     when :boolean
-      "[=false]#{default != nil ? " (default '#{default}')" : ""}:"
+      "[=false]" 
     when :tsv, :text
-      "=<filename.#{type}|->#{default != nil ? " (default '#{default}')" : ""}; Use '-' for STDIN:"
+      "=<file|->"
     when :array
-      "=<string[,string]*|filename.list|->#{default != nil ? " (default '#{default}')" : ""}; Use '-' for STDIN:"
+      "=<list|file|->"
     else
-      "=<#{ type }>#{default != nil ? " (default '#{default}')" : ""}:"
+      "=<#{ type }>"
     end
+    extra << " (default '#{default}')" if default != nil
+    input_str << Log.color(:green, extra)
   end
 
   def self.input_doc(inputs, input_types = nil, input_descriptions = nil, input_defaults = nil, input_shortcuts = nil)
@@ -65,9 +67,9 @@ module SOPT
       type = :string if type.nil?
       register(shortcut, name, type, description) unless self.inputs.include? name
 
-      str  = "  * " << SOPT.input_format(name, type.to_sym, default, shortcut) 
-      str << "\n     " << description << "\n" if description and not description.empty?
-      str
+      name  = SOPT.input_format(name, type.to_sym, default, shortcut) 
+      description 
+      Misc.format_definition_list_item(name, description, 80, 31, nil)
     end * "\n"
   end
 
@@ -82,7 +84,7 @@ module SOPT
 
 #{ Log.color :magenta, "## DESCRIPTION"}
 
-#{description}
+#{Misc.format_paragraph description}
 
 #{ Log.color :magenta, "## OPTIONS"}
 

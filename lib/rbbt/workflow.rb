@@ -2,6 +2,7 @@ require 'rbbt/workflow/definition'
 require 'rbbt/workflow/task'
 require 'rbbt/workflow/step'
 require 'rbbt/workflow/accessor'
+require 'rbbt/workflow/doc'
 
 module Workflow
 
@@ -149,16 +150,6 @@ module Workflow
     @libdir 
   end
   
-  def workflow_description
-    @workflow_description ||= begin
-                       file = @libdir['workflow.md']
-                       if file.exists?
-                         file.read
-                       else
-                         ""
-                       end
-                     end
-  end
 
   def helpers
     @helpers ||= {}

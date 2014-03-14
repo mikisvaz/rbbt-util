@@ -31,6 +31,48 @@ end
 Lockfile.refresh = false if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
 module Misc
 
+  def self.format_paragraph(text, size = 80, indent = 0, offset = 0)
+    words = text.gsub(/\s+/, "\s").split(" ")
+    lines = []
+    line = " "*offset
+    word = words.shift
+    while word
+      while word and line.length + word.length < size
+        line << word << " "
+        word = words.shift
+      end
+      lines << ((" " * indent) << line[0..-2])
+      line = ""
+    end
+    (lines * "\n")
+  end
+
+  def self.format_definition_list_item(dt, dd, size = 80, indent = 20, color = :yellow)
+    dt = dt.to_s + ":" unless dd.empty?
+    dt = Log.color color, dt if color
+    len = Log.uncolor(dt).length
+
+    if indent < 0
+      text = format_paragraph(dd, size, indent.abs+1, 0)
+      text = dt << "\n" << text
+    else
+      offset = len - indent
+      offset = 0 if offset < 0
+      text = format_paragraph(dd, size, indent.abs+1, offset)
+      text[0..len-1] = dt
+    end
+    text
+  end
+
+  def self.format_definition_list(defs, size = 80, indent = 20, color = :yellow)
+    entries = []
+    defs.each do |dt,dd|
+      text = format_definition_list_item(dt,dd,size,indent, color)
+      entries << text
+    end
+    entries * "\n\n"
+  end
+
   def self.read_stream(stream, size)
     str = nil
     while not str = stream.read(size)

@@ -4,10 +4,26 @@ module Task
   def doc(deps = nil)
     puts Log.color :magenta, "## #{ name }:"
     puts "\n" << description  << "\n" if description and not description.empty?
-    puts "Returns: " << Log.color(:blue, result_type.to_s) << "\n"
+    puts
+
+    case
+    when (input_types.values & [:array]).any?
+      puts Log.color(:green, Misc.format_paragraph("Lists are specified as arguments using ',' or '|'. When specified as files the '\\n'
+      also works in addition to the others. You may use the '--array_separator' option
+      the change this default. Whenever a file is specified it may also accept STDIN using
+      the '-' character."))
+      puts
+
+    when (input_types.values & [:text, :tsv]).any?
+      puts Log.color(:green, Misc.format_paragraph("Whenever a file is specified it may also accept STDIN using the '-' character."))
+      puts
+    end
+
     puts SOPT.input_doc(inputs, input_types, input_descriptions, input_defaults, true)
     puts
 
+    puts "Returns: " << Log.color(:blue, result_type.to_s) << "\n"
+    puts
 
     if deps and deps.any?
       puts "From dependencies:"
@@ -28,17 +44,23 @@ module Workflow
     if task.nil?
       puts Log.color :magenta, self.to_s 
       puts Log.color :magenta, "=" * self.to_s.length
-      puts
-      puts "\n" << workflow_description if workflow_description and not workflow_description.empty?
+      if self.documentation[:description] and not self.documentation[:description].empty?
+        puts
+        puts Misc.format_paragraph self.documentation[:description] 
+      end
       puts
 
       puts Log.color :magenta, "## TASKS"
-      puts
-      tasks.each do |name,task|
-        puts "  * #{ Log.color :green, name.to_s }:"
-        puts "    " << task.description.split(/\n\s*\n/).first if task.description and not task.description.empty?
+      if self.documentation[:task_description] and not self.documentation[:task_description].empty?
         puts
+        puts Misc.format_paragraph self.documentation[:task_description] 
       end
+      puts
+
+      tasks.each do |name,task|
+        puts Misc.format_definition_list_item(name.to_s, task.description || "", 80, 30, :yellow)
+      end
+
     else
 
       if Task === task
