@@ -342,7 +342,7 @@ module Open
 
     if block_given?
       res = yield(io)
-      io.close
+      io.close unless io.closed?
       return res
     else
       io

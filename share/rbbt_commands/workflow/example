@@ -10,24 +10,35 @@ def run_task(workflow, task, name)
   example_dir = workflow.libdir.examples[task][name].find
   Log.debug "Using #{example_dir}"
 
-  ARGV.replace([workflow.to_s, task, '--load_inputs', example_dir, '--jobname', name,'--pf'] + $saved_args)
+  ARGV.replace([workflow.to_s, task, '--load_inputs', example_dir, '--jobname', name,'-pf'] + $saved_args)
 
-  @pid = Process.fork{
-    load Rbbt.share.rbbt_commands.workflow.task.find
-  }
-  Signal.trap(:INT) do
-    begin
-      Process.kill "INT", @pid
-    ensure
-      exit -1
+  path = nil
+  TmpFile.with_file do |res|
+    Open.open(res, :mode => 'w') do |file|
+      @pid = Process.fork{
+        STDOUT.reopen res
+        load Rbbt.share.rbbt_commands.workflow.task.find
+      }
+      file.close
+      Signal.trap(:INT) do
+        begin
+          Process.kill "INT", @pid
+        ensure
+          exit -1
+        end
+      end
+      Process.wait @pid
     end
+    path = Open.read(res) if File.exists? res
   end
-  Process.wait @pid
+  path = "NO RESULT" if path.nil? or path.empty?
 
   if $?.success?
     Log.info "#{Log.color :green, "SUCCESS"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
+    return [path, true]
   else
     Log.info "#{Log.color :red, "ERROR"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
+    return [path, false]
   end
 end
 
@@ -42,14 +53,27 @@ name = nil if name == '--'
 
 $saved_args = ARGV.dup
 
-
 workflow = Workflow.require_workflow workflow
 
 tasks = task ? [task] : workflow.libdir.examples.glob('*').collect{|file| File.basename file }
 
+task_result = {}
 tasks.each do |task|
   names = name ? [name] : workflow.libdir.examples[task].glob('*').collect{|file| File.basename file }
   names.each do |name|
-    run_task workflow, task, name
+    success = run_task workflow, task, name
+    task_result[[task, name]] = success
+  end
+end
+
+task_result.each do |code,res|
+  task, name = code
+  path, success = res
+  if success
+    puts "#{Log.color :green, "SUCCESS"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
+    puts path
+  else
+    puts "#{Log.color :red, "ERROR"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
+    puts path
   end
 end
