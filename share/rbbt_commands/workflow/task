@@ -17,10 +17,10 @@ def load_inputs(dir, task)
       inputs[input.to_sym]  = file
     else
       Log.debug "Loading #{ input } from #{file}"
-      inputs[input.to_sym]  = file.read
+      inputs[input.to_sym]  = file.read.strip
     end
   end
-  inputs
+  IndiferentHash.setup(inputs)
 end
 
 def report_options(options)
@@ -136,6 +136,7 @@ options = SOPT.get <<EOF
 -as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default:
 -jn--jobname* Job name to use. The name 'Default' is used by default:
 -pn--printname Print the name of the job and exit without starting it:
+-pf--printpath Print the path of the job result:
 -cl--clean Clean the last step of the job so that it gets recomputed:
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely:
 --fork Run job asyncronously:
@@ -203,7 +204,7 @@ name = options.delete(:jobname) || "Default"
 # get job args
 sopt_option_string = SOPT_options(workflow, task)
 if options[:load_inputs]
-  job_options = load_inputs(options[:load_inputs], task)
+  job_options = load_inputs(options[:load_inputs], task).merge(SOPT.get(sopt_option_string))
 else
   job_options = SOPT.get sopt_option_string
 end
@@ -278,6 +279,13 @@ begin
 
   if options.delete(:printname)
     puts job.name
+    exit 0
+  else
+    Log.low "Job name: #{job.name}" 
+  end
+
+  if options.delete(:printpath)
+    puts job.path
     exit 0
   else
     Log.low "Job name: #{job.name}" 

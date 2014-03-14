@@ -10,7 +10,7 @@ def run_task(workflow, task, name)
   example_dir = workflow.libdir.examples[task][name].find
   Log.debug "Using #{example_dir}"
 
-  ARGV.replace([workflow.to_s, task, '--load_inputs', example_dir, '--jobname', name,'--O','/dev/null'] + $saved_args)
+  ARGV.replace([workflow.to_s, task, '--load_inputs', example_dir, '--jobname', name,'--pf'] + $saved_args)
 
   @pid = Process.fork{
     load Rbbt.share.rbbt_commands.workflow.task.find

@@ -1479,6 +1479,17 @@ end
     sout
   end
 
+  def self.append_zipped(current, new)
+    current.each do |v|
+      n = new.shift
+      if Array === n
+        v.concat new
+      else
+        v << n
+      end
+    end
+    current
+  end
 
   def self.zip_fields(array)
     return [] if array.empty? or (first = array.first).nil?
@@ -1572,6 +1583,16 @@ module IndiferentHash
 
   def self.setup(hash)
     hash.extend IndiferentHash 
+  end
+
+  def merge(other)
+    new = self.dup
+    IndiferentHash.setup(new)
+    other.each do |k,value|
+      new.delete k
+      new[k] = value
+    end
+    new
   end
 
   def [](key)
