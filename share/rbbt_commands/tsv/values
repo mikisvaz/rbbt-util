@@ -35,14 +35,15 @@ else
     file = file.dup
     Path.setup(File.expand_path(file))
   end
-  tsv = TSV.open(file)
+  tsv = file
 end
 
 field = options[:field]
-tsv = tsv.slice(field) if field
 
-if options[:lines]
-  tsv.each{|k,v| puts (Array === v ? v.flatten*"\n" : v.to_s ) }
-else
-  tsv.each{|k,v| puts (Array === v ? v.flatten*"\t" : v.to_s ) }
+TSV.traverse(tsv, :fields => [field]) do |k,v|
+  if options[:lines]
+    puts (Array === v ? v.flatten*"\n" : v.to_s ) 
+  else
+    puts (Array === v ? v.flatten*"\t" : v.to_s ) 
+  end
 end

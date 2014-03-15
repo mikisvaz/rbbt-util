@@ -37,7 +37,7 @@ module Misc
     line = " "*offset
     word = words.shift
     while word
-      while word and line.length + word.length < size
+      while word and line.length + word.length < size - indent
         line << word << " "
         word = words.shift
       end
