@@ -41,7 +41,7 @@ module SOPT
 
   def self.require(options, *parameters)
     parameters.flatten.each do |parameter|
-      raise ParameterException, "Parameter '#{ parameter }' not given" if options[parameter].nil?
+      raise ParameterException, "Parameter '#{ Log.color :blue, parameter }' not given" if options[parameter].nil?
     end
   end
 end

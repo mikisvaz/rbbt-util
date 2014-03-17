@@ -131,7 +131,27 @@ def fix_options(workflow, task, job_options)
   job_options_cleaned
 end
 
-options = SOPT.get <<EOF
+options = SOPT.setup <<EOF
+Enact workflow tasks
+
+$ rbbt workflow task <workflow> [<task>] [<options>]
+
+Examine workflows and enact tasks from them. If no `task` is specified, a list
+of available tasks is shown. If a `task` is given it will be enacted with the
+parameters specified in `options`. Use *-h* option to display the description
+of a task, including the parameters it accepts; and some examples, if
+available. Examples can be enacted using `rbbt workflow example <workflow>
+[<task>] [<example>]`.
+
+When a task is enacted a job is instantiated. This job is identified by the
+`jobname` (which is *Default* unless specified otherwise) and the values of the
+parameters. If the same taks is enacted using the same `jobname` and
+parameters, then the same job will be the same. 
+
+The first time a job is executed it will save the result. Once the job is done
+you can re-doit using the `clean` parameter. The `recursive_clean` cleans all
+the job dependencies recursively.
+
 -h--help Show this help:
 -wd--workdir* Change the working directory of the workflow:
 -as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default:

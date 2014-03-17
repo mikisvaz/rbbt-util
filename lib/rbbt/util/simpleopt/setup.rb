@@ -2,21 +2,20 @@ require 'rbbt/util/simpleopt/parse'
 require 'rbbt/util/simpleopt/get'
 require 'rbbt/util/simpleopt/doc'
 module SOPT
+
   def self.setup(str)
-    summary, synopsys, description, options = str.split(/\n\n+/)
+    parts = str.split(/\n\n+/)
 
-    if summary[0]=="-"
-      summary, synopsys, description, options = nil, nil, nil, summary
-    end
+    summary = parts.shift unless parts.first =~ /^\s*\$-/
+    synopsys = parts.shift if parts.first =~ /^\s*\$/
 
-    if synopsys and synopsys[0] != "$"
-      description, options = synopsys, description
-      synopsys = nil
+    description = []
+    while parts.first and parts.first !~ /^\s*-/
+      description << parts.shift
     end
+    description = description * "\n\n"
 
-    if description and description[0] == "-"
-      description, options = nil, description
-    end
+    options = parts.collect{|part| part.split("\n").select{|l| l=~ /^\s*-/ }  }.flatten.compact * "\n"
 
     synopsys.sub!(/^\$\s+/,'') if synopsys
 
