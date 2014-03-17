@@ -32,19 +32,30 @@ Lockfile.refresh = false if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
 module Misc
 
   def self.format_paragraph(text, size = 80, indent = 0, offset = 0)
-    words = text.gsub(/\s+/, "\s").split(" ")
-    lines = []
-    line = " "*offset
-    word = words.shift
-    while word
-      while word and line.length + word.length < size - indent
-        line << word << " "
-        word = words.shift
-      end
-      lines << ((" " * indent) << line[0..-2])
-      line = ""
-    end
-    (lines * "\n")
+    i = 0
+    re = /((?:\n\s*\n\s*)|(?:\n\s*(?=\*)))/
+    text.split(re).collect do |paragraph|
+      i += 1
+      str = if i % 2 == 1
+              words = paragraph.gsub(/\s+/, "\s").split(" ")
+              lines = []
+              line = " "*offset
+              word = words.shift
+              while word
+                while word and line.length + word.length < size - indent
+                  line << word << " "
+                  word = words.shift
+                end
+                lines << ((" " * indent) << line[0..-2])
+                line = ""
+              end
+              (lines * "\n")
+            else
+              paragraph
+            end
+      offset = 0
+      str
+    end*""
   end
 
   def self.format_definition_list_item(dt, dd, size = 80, indent = 20, color = :yellow)
