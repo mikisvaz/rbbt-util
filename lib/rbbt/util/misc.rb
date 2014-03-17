@@ -42,7 +42,8 @@ module Misc
               line = " "*offset
               word = words.shift
               while word
-                while word and line.length + word.length < size - indent
+                word = word[0..size-indent-offset-4] + '...' if word.length >= size - indent - offset
+                while word and line.length + word.length <= size - indent
                   line << word << " "
                   word = words.shift
                 end
@@ -78,7 +79,7 @@ module Misc
   def self.format_definition_list(defs, size = 80, indent = 20, color = :yellow)
     entries = []
     defs.each do |dt,dd|
-      text = format_definition_list_item(dt,dd,size,indent, color)
+      text = format_definition_list_item(dt,dd,size,indent,color)
       entries << text
     end
     entries * "\n\n"

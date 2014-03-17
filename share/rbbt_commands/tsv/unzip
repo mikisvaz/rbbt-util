@@ -22,7 +22,7 @@ else
     file = file.dup
     Path.setup(File.expand_path(file))
   end
-  tsv = TSV.open(file)
+  tsv = TSV.open(file, :type => :double)
 end
 
 puts tsv.unzip(field, merge).to_s

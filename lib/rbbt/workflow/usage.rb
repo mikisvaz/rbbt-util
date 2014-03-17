@@ -72,6 +72,32 @@ module Workflow
       dependencies = self.rec_dependencies(task_name).collect{|dep_name| self.tasks[dep_name.to_sym]}
 
       task.doc(dependencies)
+
+      if self.libdir.examples[task_name].exists?
+        self.libdir.examples[task_name].glob("*").each do |example_dir|
+          example = File.basename(example_dir)
+
+          puts Log.color(:magenta, "Example " << example) + " -- " + Log.color(:blue, example_dir)
+
+          inputs = {}
+
+          task.input_types.each do |input,type|
+            if example_dir[input].exists?
+              case type
+              when :tsv, :array, :text
+                head = example_dir[input].read.split("\n")[0..5].compact * "\n\n"
+                head = head[0..500]
+                puts Misc.format_definition_list_item(input, head).gsub("\n\n","\n")
+              else
+                puts Misc.format_definition_list_item(input, example_dir[input].read)
+              end
+            end
+          end
+
+          puts
+        end
+
+      end
     end
   end
 end

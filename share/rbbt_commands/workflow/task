@@ -37,7 +37,7 @@ def usage(workflow = nil, task = nil, exception=nil)
   puts SOPT.doc
   puts
   if workflow.nil?
-    puts "No workflow specified"
+    puts "No workflow specified. Use `rbbt workflow list` to list available workflows."
     exit -1 
   end
 
@@ -118,9 +118,9 @@ def fix_options(workflow, task, job_options)
               when TSV
                 value
               when '-'
-                TSV.open(STDIN, :unnamed => true)
+                TSV.open(STDIN, :unnamed => true, :sep => $field_separator, :sep2 => $array_separator || "|")
               else
-                TSV.open(value, :unnamed => true)
+                TSV.open(value, :unnamed => true, :sep => $field_separator, :sep2 => $array_separator || "|")
               end
             else
               value
@@ -135,6 +135,7 @@ options = SOPT.get <<EOF
 -h--help Show this help:
 -wd--workdir* Change the working directory of the workflow:
 -as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default:
+-fs--field_separator* Change the character that separates fields of TSV files '\\t' by default:
 -jn--jobname* Job name to use. The name 'Default' is used by default:
 -pn--printname Print the name of the job and exit without starting it:
 -pf--printpath Print the path of the job result:
@@ -164,6 +165,7 @@ recursive_clean = !!options.delete(:recursive_clean)
 out = options.include?(:output) ? File.open(options[:output], 'wb') : STDOUT
 
 $array_separator = options.delete(:array_separator)
+$field_separator = options.delete(:field_separator) || "\t"
 
 # Get workflow
 
