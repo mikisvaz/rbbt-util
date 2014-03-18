@@ -6,6 +6,16 @@ require 'rbbt/workflow/doc'
 
 module Workflow
 
+  class TaskNotFoundException < Exception 
+    def initialize(workflow, task = nil)
+      if task
+        super "Task '#{ task }' not found in #{ workflow } workflow"
+      else
+        super workflow
+      end
+    end
+  end
+
   #{{{ WORKFLOW MANAGEMENT 
   class << self
     attr_accessor :workflows, :autoinstall

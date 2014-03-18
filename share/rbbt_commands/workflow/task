@@ -210,14 +210,22 @@ namespace = nil, nil
 case 
 when task.nil?
   usage workflow and exit 0
-  # Can not remember what this was
-#when (task =~ /\./)
-#  namespace, task = options.delete(:task).split('.')
-#  namespace = Misc.string2const(namespace)
 else
   task_name = task.to_sym
-  task = workflow.tasks[task_name]
-  raise ParameterException, "Task not found: #{ task_name }" if task.nil?
+  begin
+    task = workflow.tasks[task_name]
+    raise Workflow::TaskNotFoundException.new workflow, task_name if task.nil?
+  rescue Workflow::TaskNotFoundException
+    usage workflow 
+
+    puts
+    puts Log.color :red, "Error:"
+    puts
+    puts $!.message
+    puts
+    
+    exit 0
+  end
 end
 
 usage workflow, task and exit 0 if help

@@ -12,7 +12,7 @@ require 'rbbt/rest/workflow'
 require 'rbbt/rest/file_server'
 require 'rbbt/rest/helpers'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*"
 
 workflow = ARGV.first
 
@@ -64,6 +64,6 @@ WorkflowRest.add_workflow Workflow.workflows.last, true
 
 WorkflowRest.port = options[:port] || 4567
 WorkflowRest.bind = options[:bind] || "0.0.0.0"
-WorkflowRest.environment = options[:environment] || "0.0.0.0"
+WorkflowRest.environment = options[:environment] || "development"
 WorkflowRest.server = options[:server] if options[:server]
 WorkflowRest.run!
