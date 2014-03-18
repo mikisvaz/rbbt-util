@@ -209,8 +209,8 @@ module Annotated
     end
   end
 
-  def marshal_dump(depth)
-   clean_annotations
+  def marshal_dump
+    Annotated.purge(self).to_sym.to_s
   end
 end
 

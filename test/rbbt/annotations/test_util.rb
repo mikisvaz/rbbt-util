@@ -6,9 +6,8 @@ class TestClass < Test::Unit::TestCase
     a = "STRING"
     a.extend Annotated
 
+    assert !(Annotated === Marshal.load(Marshal.dump(a)))
     assert_equal a, Marshal.load(Marshal.dump(a))
-    assert_equal Marshal.dump("STRING"), Marshal.dump(a)
-
   end
 end
 

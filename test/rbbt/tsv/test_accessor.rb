@@ -3,7 +3,7 @@ require 'rbbt/tsv'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
 
-class TestTSV < Test::Unit::TestCase
+class TestTSVAccessor < Test::Unit::TestCase
 
   def test_to_hash
     content =<<-EOF

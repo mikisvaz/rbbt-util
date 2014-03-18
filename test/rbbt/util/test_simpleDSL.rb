@@ -2,7 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
 require 'rbbt/util/simpleDSL'
 require 'test/unit'
 
-class TestClass 
+class TestSimpleDSLClass 
   include SimpleDSL
 
   def action(name, *args, &block)
@@ -18,7 +18,7 @@ end
 
 class TestDSL < Test::Unit::TestCase
   def setup 
-    @parser = TestClass.new
+    @parser = TestSimpleDSLClass.new
     @parser.load_config(:action) do
       action1 "Hello"
       action2 "Good bye"

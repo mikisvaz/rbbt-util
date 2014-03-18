@@ -125,6 +125,8 @@ class Step
   end
 
   def log(status, message = nil, &block)
+    self.status = status
+    self.message Log.uncolor(message)
     Step.log(status, message, path, &block)
   end
 

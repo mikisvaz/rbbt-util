@@ -476,7 +476,8 @@ A    Id3
     end
 
     res = tsv1.attach tsv2, :fields => ["OtherID"]
-    assert_equal "Id3", res["row2"]["OtherID"]
+    assert res["row2"].include? "Id3"
+    assert ! res["row2"].include?("b")
   end
 end
 

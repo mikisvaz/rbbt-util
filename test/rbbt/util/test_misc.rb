@@ -145,29 +145,7 @@ eum fugiat quo voluptas nulla pariatur?"
 
   def test_path_relative_to
     assert_equal "test/foo", Misc.path_relative_to('/test', '/test/test/foo')
-
-    Misc.profile do
-    Misc.benchmark(45_000) do
-      Misc.path_relative_to('/test', '/test/test/foo')
-    end
-    end
   end
-
-#  def test_chunk
-#    test =<<-EOF
-#This is an example file. Entries are separated by Entry
-#-- Entry
-#1
-#2
-#3
-#-- Entry
-#4
-#5
-#6
-#    EOF
-#
-#    assert_equal "1\n2\n3", Misc.chunk(test, /^-- Entry/).first.strip
-#  end
 
   def test_hash2string
     hash = {}

@@ -143,6 +143,12 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    test_resource.rb
    test_tsv.rb
    test_workflow.rb
+   workflow=workflow{
+    _test_soap.rb
+    test_doc.rb
+    test_step.rb
+    test_task.rb
+   }
    association=association{
     test_index.rb
     test_item.rb
@@ -159,6 +165,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     test_index.rb
     test_manipulate.rb
     test_parallel.rb
+    test_parser.rb
     test_util.rb
     }
    util=util{
@@ -167,6 +174,10 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      test_parse.rb
      test_setup.rb
     }
+    concurrency=concurrency{
+     test_processes.rb
+     test_threads.rb
+     }
     test_R.rb
     test_chain_methods.rb
     test_cmd.rb

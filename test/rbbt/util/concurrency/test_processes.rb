@@ -33,7 +33,6 @@ class TestConcurrencyProcess < Test::Unit::TestCase
 
     assert_equal times, res.length
     assert_equal [0, 2, 4], res.sort[0..2]
-    
   end
 
   def test_each

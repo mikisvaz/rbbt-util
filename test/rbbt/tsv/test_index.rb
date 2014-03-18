@@ -190,8 +190,8 @@ row2    A    B    30   35
 
   def test_range_index2
     data =<<-EOF
+# 012345678901234567890
 #ID:Range
-#:012345678901234567890
 a:   ______
 b: ______
 c:    _______
@@ -215,8 +215,8 @@ g:         ____
 
   def test_range_index_persistent
     data =<<-EOF
+# 012345678901234567890
 #ID:Range
-#:012345678901234567890
 a:   ______
 b: ______
 c:    _______
@@ -259,8 +259,8 @@ g:         ____
 
   def test_range_index_persistent_with_filter
     data =<<-EOF
+# 012345678901234567890
 #ID:Range
-#:012345678901234567890
 a:   ______
 b: ______
 c:    _______

@@ -12,20 +12,22 @@ module TestAnnotation
 end
 
 class TestPersistTSVKC < Test::Unit::TestCase
-  def _test_organism_kch
-    require 'rbbt/sources/organism'
-    TmpFile.with_file do |tmp_file|
-      tsv = Organism.identifiers("Hsa").tsv :key_field => "Associated Gene Name", :fields => ["Ensembl Gene ID"], :type => :single, :persist => true, :persist_engine => "kch", :persist_dir => tmp_file
-      assert_equal "ENSG00000141510", tsv["TP53"]
+  if Persist.respond_to? :open_kyotocabinet
+    def _test_organism_kch
+      require 'rbbt/sources/organism'
+      TmpFile.with_file do |tmp_file|
+        tsv = Organism.identifiers("Hsa").tsv :key_field => "Associated Gene Name", :fields => ["Ensembl Gene ID"], :type => :single, :persist => true, :persist_engine => "kch", :persist_dir => tmp_file
+        assert_equal "ENSG00000141510", tsv["TP53"]
+      end
     end
-  end
 
 
-  def _test_organism_kct
-    require 'rbbt/sources/organism'
-    TmpFile.with_file do |tmp_file|
-      tsv = Organism.identifiers("Hsa").tsv :key_field => "Associated Gene Name", :fields => ["Ensembl Gene ID"], :type => :single, :persist => true, :persist_engine => "kct", :persist_dir => tmp_file
-      assert_equal "ENSG00000141510", tsv["TP53"]
+    def _test_organism_kct
+      require 'rbbt/sources/organism'
+      TmpFile.with_file do |tmp_file|
+        tsv = Organism.identifiers("Hsa").tsv :key_field => "Associated Gene Name", :fields => ["Ensembl Gene ID"], :type => :single, :persist => true, :persist_engine => "kct", :persist_dir => tmp_file
+        assert_equal "ENSG00000141510", tsv["TP53"]
+      end
     end
   end
 end

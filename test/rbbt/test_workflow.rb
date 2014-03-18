@@ -106,7 +106,7 @@ class TestWorkflow < Test::Unit::TestCase
     assert TestWF.jobs(:repeat2).include?(job1.name)
     assert TestWF.jobs(:repeat2).include?(job2.name)
     assert TestWF.jobs(:repeat2).include?(job3.name)
-    assert TestWF.load_name(:repeat2, TestWF.jobs(:repeat2).first).done?
+    assert TestWF.load_name(:repeat2, job3.name).done?
     assert_equal "TEST\nTEST\nTEST\nTEST\nTEST\nTEST", TestWF.load_name(:repeat2, TestWF.jobs(:repeat2).first).load
   end
 

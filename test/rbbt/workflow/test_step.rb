@@ -210,7 +210,5 @@ class TestStep < Test::Unit::TestCase
         RbbtSemaphore.delete_semaphore(semaphore)
       end
     end
-
   end
-
 end

@@ -42,19 +42,6 @@ class TestAnnotations < Test::Unit::TestCase
     assert_equal annotation_str, ary[0].annotation_str
   end
 
-  def test_double_array
-    ary = ["string"]
-    annotation_str = "Annotation String"
-    ary.extend AnnotatedArray
-    ary_ary = [ary]
-    ary_ary.extend AnnotatedArray
-    AnnotatedString.setup(ary, annotation_str)
-    AnnotatedString.setup(ary_ary, annotation_str)
-    assert_equal [AnnotatedString], ary.annotation_types
-    assert_equal annotation_str, ary.annotation_str
-    assert_equal annotation_str, ary[0].annotation_str
-  end
-
 
   def test_info
     ary = ["string"]
@@ -145,7 +132,20 @@ class TestAnnotations < Test::Unit::TestCase
     assert_equal str + annotation_str, str.add_annot
   end
 
-  def test_double_array
+  def test_double_array_1
+    ary = ["string"]
+    annotation_str = "Annotation String"
+    ary.extend AnnotatedArray
+    ary_ary = [ary]
+    ary_ary.extend AnnotatedArray
+    AnnotatedString.setup(ary, annotation_str)
+    AnnotatedString.setup(ary_ary, annotation_str)
+    assert_equal [AnnotatedString], ary.annotation_types
+    assert_equal annotation_str, ary.annotation_str
+    assert_equal annotation_str, ary[0].annotation_str
+  end
+
+  def test_double_array_2
     a = ["a"]
     b = AnnotatedString.setup([AnnotatedString.setup(["a"])])
     AnnotatedString.setup(a)
