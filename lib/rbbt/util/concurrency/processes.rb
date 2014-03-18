@@ -50,6 +50,7 @@ class RbbtProcessQueue
         while @processes.any? do
           pid = Process.wait -1, Process::WNOHANG
           if pid
+            next unless @processes.collect{|p| p.pid }.include? pid
             @processes.delete_if{|p| p.pid == pid}
             raise "Process #{pid} failed" unless $?.success?
           else

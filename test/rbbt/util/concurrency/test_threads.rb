@@ -11,11 +11,9 @@ class TestConcurrencyThreads < Test::Unit::TestCase
       res << v
     end
 
-    times = 5_000_000
-    Misc.benchmark do
+    times = 1_000_000
     times.times do |i|
       q.process [i*2]
-    end
     end
 
     q.join
@@ -27,7 +25,7 @@ class TestConcurrencyThreads < Test::Unit::TestCase
   end
 
   def test_each
-    times = 50000
+    times = 10000
     elems = (0..times-1).to_a
 
     TmpFile.with_file do |dir|
