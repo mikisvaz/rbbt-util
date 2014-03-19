@@ -981,7 +981,11 @@ end
       else
         Log.warn("Insisting after exception: #{$!.message}")
       end
-      sleep sleep if sleep
+      if sleep and try > 0
+        sleep sleep
+      else
+        Thread.pass
+      end
       try += 1
       retry if try < times
       raise $!
@@ -1103,12 +1107,14 @@ end
     lockfile = Lockfile.new(lock_path)
 
     begin
-      if File.exists? lockfile and
-        Misc.hostname == (info = Open.open(lockfile){|f| YAML.load(f) })["host"] and 
-        info["pid"] and not Misc.pid_exists?(info["pid"])
+      Misc.insist 3 do
+        if File.exists? lockfile and
+          Misc.hostname == (info = Open.open(lockfile){|f| YAML.load(f) })["host"] and 
+          info["pid"] and not Misc.pid_exists?(info["pid"])
 
-        Log.info("Removing lockfile: #{lockfile}. This pid #{Process.pid}. Content: #{info.inspect}")
-        FileUtils.rm lockfile 
+          Log.info("Removing lockfile: #{lockfile}. This pid #{Process.pid}. Content: #{info.inspect}")
+          FileUtils.rm lockfile 
+        end
       end
     rescue
       Log.warn("Error checking lockfile #{lockfile}: #{$!.message}. Removing. Content: #{begin Open.read(lockfile) rescue "Could not open file" end}")

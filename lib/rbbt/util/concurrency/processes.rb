@@ -84,7 +84,7 @@ class RbbtProcessQueue
     @callback_thread.raise Aborted if @callback_thread and @callback_thread.alive?
   end
 
-  def process(e)
+  def process(*e)
     @queue.push e
   end
 

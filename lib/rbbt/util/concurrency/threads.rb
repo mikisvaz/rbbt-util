@@ -20,7 +20,6 @@ class RbbtThreadQueue
             loop do
               p = queue.pop
               p = Array === p ? p << mutex : [p,mutex]
-              p = [p, mutex].flatten(1) 
               block.call *p
             end
           rescue Exception

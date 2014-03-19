@@ -4,7 +4,7 @@ require 'rbbt/tsv/parallel'
 
 class TestTSVParallelThrough < Test::Unit::TestCase
 
-  def _test_traverse_tsv
+  def test_traverse_tsv
     require 'rbbt/sources/organism'
 
     head = 100
@@ -23,7 +23,29 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.keys.compact.sort.length
   end
 
-  def _test_traverse_stream
+  def test_traverse_tsv_cpus
+    require 'rbbt/sources/organism'
+
+    head = 100
+
+    tsv = Organism.identifiers("Hsa").tsv :head => head
+    res = {}
+    TSV.traverse tsv do |k,v|
+       res[k] = v
+    end
+    assert_equal head, res.keys.compact.sort.length
+    assert res.values.compact.flatten.uniq.length > 0
+
+    tsv = Organism.identifiers("Hsa").tsv :head => head
+    TSV.traverse tsv, :into => res, :cpus => 5 do |k,v|
+      [k,v]
+    end
+
+    assert_equal head, res.keys.compact.sort.length
+    assert res.values.compact.flatten.uniq.length > 0
+  end
+
+  def test_traverse_stream
     require 'rbbt/sources/organism'
 
     head = 100
@@ -44,7 +66,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.keys.compact.sort.length
   end
 
-  def _test_traverse_stream_keys
+  def test_traverse_stream_keys
     require 'rbbt/sources/organism'
 
     head = 100
@@ -68,7 +90,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal res, Organism.identifiers("Hsa").tsv(:head => 100).keys
   end
   
-  def _test_traverse_array
+  def test_traverse_array
     require 'rbbt/sources/organism'
 
     array = []
@@ -90,7 +112,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal array, res
   end
 
-  def _test_traverse_array_threads
+  def test_traverse_array_threads
     require 'rbbt/sources/organism'
 
     array = []
@@ -111,7 +133,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal array.sort, res.sort
   end
 
-  def _test_traverse_array_cpus
+  def test_traverse_array_cpus
     require 'rbbt/sources/organism'
 
     array = []
@@ -129,7 +151,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
   def test_traverse_benchmark
     require 'rbbt/sources/organism'
 
-    head = 80_000
+    head = 8_000
 
     tsv = Organism.identifiers("Hsa").open
     Misc.benchmark do

@@ -14,7 +14,8 @@ class RbbtProcessQueue
           loop do
             p = @queue.pop
             raise p if Exception === p
-            res = @block.call p
+            raise p.first if Exception === p.first
+            res = @block.call *p
             @callback_queue.push res if @callback_queue
           end
 

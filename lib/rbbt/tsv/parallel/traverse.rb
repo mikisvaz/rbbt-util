@@ -91,7 +91,7 @@ module TSV
     q.init &block
 
     traverse_obj(obj, options) do |*p|
-      q.process p
+      q.process *p
     end
 
     q.join
@@ -119,8 +119,8 @@ module TSV
     into = Misc.process_options options, :into
 
     if into
-      callback = Proc.new do |*v|
-        store_into into, *v
+      callback = Proc.new do |e|
+        store_into into, e
       end
       options[:callback] = callback
     end
