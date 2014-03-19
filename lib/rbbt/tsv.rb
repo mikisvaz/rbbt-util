@@ -159,10 +159,4 @@ module TSV
 
     data
   end
-
-  def self.traverse_old(file, options, &block)
-    return file.through(options[:key_field], options[:fields], &block) if TSV === file
-
-    TSV::Parser.traverse(TSV.get_stream(file), options, &block)
-  end
 end

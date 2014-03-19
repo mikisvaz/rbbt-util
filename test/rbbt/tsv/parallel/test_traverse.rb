@@ -66,6 +66,20 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.keys.compact.sort.length
   end
 
+  def test_traverse_stream_cpus
+    require 'rbbt/sources/organism'
+
+    head = 100
+
+    tsv = Organism.identifiers("Hsa")
+    res = {}
+    TSV.traverse tsv, :head => head, :cpus => 5, :into => res do |k,v|
+      [k,v]
+    end
+
+    assert_equal head, res.keys.compact.sort.length
+  end
+
   def test_traverse_stream_keys
     require 'rbbt/sources/organism'
 

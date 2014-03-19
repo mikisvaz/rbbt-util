@@ -14,6 +14,20 @@ module TSV
     end
   end
 
+  def self.traverse_hash(hash, options = {}, &block)
+    callback = Misc.process_options options, :callback
+
+    if callback
+      hash.each do |k,v|
+        callback.call yield(k,v)
+      end
+    else
+      hash.each do |k,v|
+        yield k,v 
+      end
+    end
+  end
+
   def self.traverse_array(array, options = {}, &block)
     callback = Misc.process_options options, :callback
 
@@ -38,6 +52,8 @@ module TSV
     case obj
     when TSV
       traverse_tsv(obj, options, &block)
+    when Hash
+      traverse_hash(obj, options, &block)
     when IO
       callback = Misc.process_options options, :callback
       if callback
@@ -47,6 +63,10 @@ module TSV
         end
       else
         TSV::Parser.traverse(obj, options, &block)
+      end
+    when Path
+      obj.open do |stream|
+        traverse_obj(stream, options, &block)
       end
     when Array
       traverse_array(obj, options, &block)
@@ -102,12 +122,20 @@ module TSV
   def self.store_into(obj, value)
     case obj
     when Hash
+      return if value.nil?
       if Hash === value
-        obj.merge! value
+        if TSV === obj and obj.type == :double
+          obj.merge_zip value
+        else
+          obj.merge! value
+        end
       else
         k,v = value
         obj[k] = v
       end
+    when IO
+      return if value.nil?
+      obj << value
     else
       obj << value
     end 

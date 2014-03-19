@@ -474,7 +474,7 @@ module TSV
             key, values = self.get_values parts
             values = self.cast_values values if self.cast?
             
-            yield key, values, self
+            yield key, values
 
             line = stream.gets
             line_num += 1
