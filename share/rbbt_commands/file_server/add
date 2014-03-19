@@ -1,6 +1,23 @@
 #!/usr/bin/env ruby
 
-require 'rbbt'
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Sets a file server for a particular resource
+
+$ rbbt file_server add <Resource> <URL>
+
+It sets the entry in #{Rbbt.etc.file_servers.find}
+
+E.g. rbbt file_server add Organism http://<server>:<port>
+
+-h--help Print this help
+
+EOF
+rbbt_usage and exit 0 if options[:help]
 
 resource, url = ARGV
 
