@@ -58,7 +58,9 @@ module Workflow
       puts
 
       tasks.each do |name,task|
-        puts Misc.format_definition_list_item(name.to_s, task.description || "", 80, 30, :yellow)
+        description = task.description || ""
+        description = description.split("\n\n").first
+        puts Misc.format_definition_list_item(name.to_s, description, 80, 30, :yellow)
       end
 
     else

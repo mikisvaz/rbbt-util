@@ -46,6 +46,7 @@ module Workflow
   def load_documentation
     @documentation = Workflow.parse_workflow_doc documentation_markdown
     @documentation[:tasks].each do |task, description|
+      raise "Documentation for #{ task }, but not a #{ self.to_s } task" unless tasks.include? task.to_sym
       tasks[task.to_sym].description = description
     end
   end
