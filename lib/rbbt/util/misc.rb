@@ -101,6 +101,7 @@ module Misc
     end
     str
   end
+
   def self.parse_cmd_params(str)
     return str if Array === str
     str.scan(/

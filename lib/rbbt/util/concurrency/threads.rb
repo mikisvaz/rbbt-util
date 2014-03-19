@@ -19,7 +19,8 @@ class RbbtThreadQueue
           begin
             loop do
               p = queue.pop
-              p << mutex 
+              p = Array === p ? p << mutex : [p,mutex]
+              p = [p, mutex].flatten(1) 
               block.call *p
             end
           rescue Exception
@@ -65,7 +66,6 @@ class RbbtThreadQueue
   def process(e)
     queue << e
   end
-
 
   def self.each(list, num = 3, &block)
     q = RbbtThreadQueue.new num
