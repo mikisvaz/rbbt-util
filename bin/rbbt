@@ -16,11 +16,15 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 --locate_file           #{Log.color :yellow, "Report the location of the script instead of executing it"}
 EOF
 
-Log.nocolor = true if options[:nocolor]
+if options[:nocolor]
+  Log.nocolor = true 
+end
+
 locate = options.delete :locate_file
 
 if options[:log]
   Log.severity = options[:log].to_i
+  SOPT.input_descriptions.each{|t,d| d.replace Log.uncolor(d) }
 end
 
 if options[:command_dir]
