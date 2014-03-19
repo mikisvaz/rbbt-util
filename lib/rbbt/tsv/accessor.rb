@@ -199,6 +199,7 @@ module TSV
   end
 
   def zip_new(key, values)
+    values = [values] unless Array === values
     if self.include? key
       new = []
       self[key, true].each_with_index do |v,i|

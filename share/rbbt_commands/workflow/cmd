@@ -38,14 +38,14 @@ begin
 end
 
 puts SOPT.doc
-
-puts "## COMMANDS"
 puts
-puts "Command:"
+puts Log.color :magenta, "## COMMANDS"
+puts
+puts Log.color :magenta, "Command:"
 puts 
-puts "  #{File.basename($0)} #{prev * " "}"
+puts "  #{File.basename($0)} #{$previous_commands * " "} cmd"
 puts 
-puts "Subcommands:"
+puts Log.color :magenta, "Subcommands:"
 puts 
 commands(prev).each do |command|
     puts "  " << command

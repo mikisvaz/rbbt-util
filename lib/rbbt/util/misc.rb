@@ -43,7 +43,7 @@ module Misc
               word = words.shift
               while word
                 word = word[0..size-indent-offset-4] + '...' if word.length >= size - indent - offset
-                while word and line.length + word.length <= size - indent
+                while word and Log.uncolor(line).length + Log.uncolor(word).length <= size - indent
                   line << word << " "
                   word = words.shift
                 end
