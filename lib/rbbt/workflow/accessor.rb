@@ -238,6 +238,29 @@ end
 
 module Workflow
 
+  def self.load_inputs(dir, input_names, input_types)
+    inputs = {}
+    dir = Path.setup(dir.dup)
+    input_names.each do |input|
+      file = dir[input].find
+      Log.debug "Trying #{ input }: #{file}"
+      next unless file.exists?
+
+      case input_types[input]
+      when :tsv, :array, :text
+        Log.debug "Pointing #{ input } to #{file}"
+        inputs[input.to_sym]  = file
+      when :boolean
+        inputs[input.to_sym]  = (file.read.strip == 'true')
+      else
+        Log.debug "Loading #{ input } from #{file}"
+        inputs[input.to_sym]  = file.read.strip
+      end
+
+    end
+    IndiferentHash.setup(inputs)
+  end
+
   def log(status, message = nil, &block)
     Step.log(status, message, nil, &block)
   end
@@ -264,7 +287,7 @@ module Workflow
                :none
              end
 
-    
+
     dependencies = task_dependencies[name].select{|dep| String === dep or Symbol === dep}
     { :id => File.join(self.to_s, name.to_s),
       :description => description,

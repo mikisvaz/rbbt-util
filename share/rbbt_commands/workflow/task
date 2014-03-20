@@ -4,25 +4,6 @@ require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
 require 'rbbt/workflow/usage'
 
-def load_inputs(dir, task)
-  inputs = {}
-  dir = Path.setup(dir.dup)
-  task.inputs.each do |input|
-    file = dir[input].find
-    Log.debug "Trying #{ input }: #{file}"
-    next unless file.exists?
-    case task.input_types[input]
-    when :tsv, :array, :text
-      Log.debug "Pointing #{ input } to #{file}"
-      inputs[input.to_sym]  = file
-    else
-      Log.debug "Loading #{ input } from #{file}"
-      inputs[input.to_sym]  = file.read.strip
-    end
-  end
-  IndiferentHash.setup(inputs)
-end
-
 def report_options(options)
   if options.nil? or options.empty?
     puts "No options"
@@ -73,14 +54,14 @@ def SOPT_options(workflow, task)
 end
 
 def fix_options(workflow, task, job_options)
-  option_types = workflow.rec_input_types(task.name)
+  option_types = IndiferentHash.setup workflow.rec_input_types(task.name)
 
   job_options_cleaned = {}
 
   job_options.each do |name, value|
     value = case option_types[name].to_sym
             when :boolean
-              TrueClass === true or %w(true TRUE T yes).include? value
+              TrueClass === value or %w(true TRUE T yes).include? value
             when :float
               value.to_f
             when :integer
@@ -195,14 +176,7 @@ else
   remote_workflows = {}
 end
 
-if remote_workflows.include? workflow
-  require 'rbbt/rest/client'
-  workflow = WorkflowRESTClient.new remote_workflows[workflow], workflow
-else
-  Workflow.require_workflow workflow
-  workflow = Workflow.workflows.select{|mod| Misc.snake_case(mod.to_s) == Misc.snake_case(workflow)}.first
-  workflow = Workflow.workflows.last if workflow.nil?
-end
+workflow = Workflow.require_workflow workflow
 
 # Set task
 namespace = nil, nil
@@ -235,7 +209,8 @@ name = options.delete(:jobname) || "Default"
 # get job args
 sopt_option_string = SOPT_options(workflow, task)
 if options[:load_inputs]
-  job_options = load_inputs(options[:load_inputs], task).merge(SOPT.get(sopt_option_string))
+  task_info = workflow.task_info(task_name)
+  job_options = Workflow.load_inputs(options[:load_inputs], task_info[:inputs], task_info[:input_types]).merge(SOPT.get(sopt_option_string))
 else
   job_options = SOPT.get sopt_option_string
 end

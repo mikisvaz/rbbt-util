@@ -107,9 +107,21 @@ module Workflow
       remote_workflows = Rbbt.etc.remote_workflows.yaml
       if Hash === remote_workflows and remote_workflows.include?(wf_name)
         url = remote_workflows[wf_name]
-        require_remote_workflow(wf_name, url)
+        begin
+          return require_remote_workflow(wf_name, url)
+        ensure
+          Log.debug{"Workflow #{ wf_name } loaded remotely: #{ url }"}
+        end
+      end
+    end
+
+    if Open.remote? wf_name
+      url = wf_name
+      wf_name = File.basename(url)
+      begin
+        return require_remote_workflow(wf_name, url)
+      ensure
         Log.debug{"Workflow #{ wf_name } loaded remotely: #{ url }"}
-        return
       end
     end
 
