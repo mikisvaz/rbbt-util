@@ -13,10 +13,20 @@ module Log
   ERROR    = 6
 
   class << self
-    attr_accessor :logfile, :severity, :nocolor
+    attr_accessor :logfile, :severity, :nocolor, :tty_size
   end
   self.nocolor = ENV["RBBT_NOCOLOR"] == 'true'
 
+
+  def self.with_severity(level)
+    orig = Log.severity
+    begin
+      Log.severity = level
+      yield
+    ensure
+      Log.severity = orig
+    end
+  end
 
   def self.logfile
     @logfile = nil
@@ -39,7 +49,7 @@ module Log
     if str.nil?
       color
     else
-      color + str + self.color(0)
+      color + str.to_s + self.color(0)
     end
   end
 
@@ -103,7 +113,7 @@ module Log
   end
 
   def self.exception(e)
-    error(e.message)
+    error([e.class.to_s, e.message].compact * ": ")
     error("BACKTRACE:\n" + e.backtrace * "\n") 
   end
 

@@ -22,19 +22,19 @@ module Task
     puts SOPT.input_doc(inputs, input_types, input_descriptions, input_defaults, true)
     puts
 
-    puts "Returns: " << Log.color(:blue, result_type.to_s) << "\n"
-    puts
-
     if deps and deps.any?
       puts "From dependencies:"
       puts
       deps.each do |dep|
-        puts "  #{dep.name}:"
+        puts "  #{Log.color :magenta, dep.name.to_s}:"
         puts
         puts SOPT.input_doc((dep.inputs - self.inputs), dep.input_types, dep.input_descriptions, dep.input_defaults, true)
         puts
       end
     end
+
+    puts "Returns: " << Log.color(:blue, result_type.to_s) << "\n"
+    puts
   end
 end
 

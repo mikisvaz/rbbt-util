@@ -289,7 +289,7 @@ module Persist
             res
           end
         rescue
-          Log.high "Error in persist. #{Open.exists?(path) ? "Erasing '#{ path }'" : ""}"
+          Log.high "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"
           FileUtils.rm path if Open.exists? path 
           raise $!
         end

@@ -307,7 +307,7 @@ module TSV
     in_namespace = options[:in_namespace]
 
     identifiers1 = tsv1.identifier_files || []
-    identifiers1 += options[:identifiers] if options[:identifiers]
+    identifiers1 += [options[:identifiers]].flatten if options[:identifiers]
     identifiers2 = tsv2.identifier_files || []
 
     identifiers1.unshift tsv1

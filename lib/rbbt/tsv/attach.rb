@@ -197,7 +197,7 @@ module TSV
       attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
     else
       index = TSV.find_traversal(self, other, options)
-      raise "Cannot traverse identifiers" if index.nil?
+      raise FieldNotFoundError, "Cannot traverse identifiers" if index.nil?
       Log.debug "Attachment with index: #{other.key_field}"
       attach_index other, index, fields
     end

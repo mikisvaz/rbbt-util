@@ -142,7 +142,8 @@ the job dependencies recursively.
 -pf--printpath Print the path of the job result:
 -cl--clean Clean the last step of the job so that it gets recomputed:
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely:
---fork Run job asyncronously:
+--fork Run job asyncronously and monitor progress. It monitors detached processes as well:
+--detach Run job asyncronously and detach process:
 --exec Run job with no persistence:
 -O--output* Save job result into file:
 -jf--job_file* Output one of the job produced files:
@@ -160,6 +161,7 @@ task     = ARGV.shift
 # Set log, fork, clean, recursive_clean and help
 help = !!options.delete(:help)
 do_fork = !!options.delete(:fork)
+detach = !!options.delete(:detach)
 do_exec = !!options.delete(:exec)
 clean = !!options.delete(:clean)
 recursive_clean = !!options.delete(:recursive_clean)
@@ -221,10 +223,12 @@ workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if opt
 
 #- get job
 
+
 job = workflow.job(task.name, name, job_options)
 
 # clean job
 if clean 
+  job.abort if job.running?
   job.clean 
   sleep 1
   job = workflow.job(task.name, name, job_options)
@@ -262,21 +266,33 @@ begin
 
   if do_fork
     job.fork
+    if detach
+      Process.detach job.pid
+      puts Log.color(:magenta, "Issued: ") + Log.color(:magenta, job.pid.to_s) + ' -- ' + job.path
+      exit 0
+    end
     puts 
+    puts
     while not job.done?
-      message = job.messages ? job.messages.last : "no message"
-      status = job.status
-      puts("No status yet") and next if status.nil?
-      puts Log.return_line + "Waiting on #{job.pid} " + [Log.color(:magenta, status.to_s),message]*" " + " " * 100
+      message = (job.messages and job.messages.any?) ? job.messages.last.strip : "no message"
+      status = job.status || "no status"
+      time = Time.now - job.info[:issued] if job.info and job.info.include? :issued
+      size = Log.tty_size
+      size = 100 if size.nil?
+      puts Log.return_line << " " * size << Log.return_line 
+      puts Log.return_line << " " * size << Log.return_line 
+      puts "#{Log.color :blue, job.path}"
+      puts "Waiting on #{Log.color :blue, job.info[:pid] || job.pid} (+#{time.to_i if time}) " << [Log.color(:cyan, status.to_s),message.strip].compact*" " 
       sleep 2
     end
-    Signal.trap(:INT){ job.abort }
+    #Signal.trap(:INT){ job.abort }
     raise job.messages.last if job.error?
     res = job.load
   else
     res = job.run(true)
   end
 
+  puts res
 
   if options.delete(:provenance)
     pp job.provenance
@@ -306,7 +322,6 @@ rescue ParameterException
   exit -1
 end
 
-
 if options.delete(:list_job_files)
   out.puts job.files * "\n"
   exit 0
@@ -317,8 +332,9 @@ if job_file = options.delete(:job_file)
   out.puts Path === file ? file.read : file
   exit 0
 end
+ddd 1
 
-if Step === res
+if Step === res and not res.exec
   out.puts Open.read(res.path) if File.exists? res.path
 else
   out.puts res

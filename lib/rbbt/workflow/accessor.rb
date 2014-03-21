@@ -97,16 +97,17 @@ class Step
   def self.log(status, message, path, &block)
     if block_given?
       start = Time.now
-      Log.medium do 
+      Log.info do 
         now = Time.now
-        str = "#{ Log.color :cyan, status.to_s }"
+        str = Log.color :reset
+        str << "#{ Log.color :cyan, status.to_s }"
         str << ": #{ message }" if message
         str << " -- #{Log.color :blue, path.to_s}" if path
         str
       end
       res = yield
       eend = Time.now
-      Log.medium do 
+      Log.info do 
         now = Time.now
         str = "#{ Log.color :cyan, status.to_s } +#{Log.color :green, "%.1g" % (eend - start)}"
         str << " -- #{Log.color :blue, path.to_s}" if path
@@ -114,9 +115,10 @@ class Step
       end
       res
     else
-      Log.medium do 
+      Log.info do 
         now = Time.now
-        str = "#{ Log.color :cyan, status.to_s }"
+        str = Log.color :reset
+        str << "#{ Log.color :cyan, status.to_s }"
         str << ": #{ message }" if message
         str << " -- #{Log.color :blue, path.to_s}" if path
         str

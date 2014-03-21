@@ -42,7 +42,9 @@ class Step
         attr_accessor :relay_step
         alias original_log log 
         def log(status, message = nil)
-          original_log(status, message)
+          Log.with_severity 10 do
+            original_log(status, message)
+          end
           relay_step.log([task.name.to_s, status.to_s] * ">", message.nil? ? nil : [task.name.to_s, message] * ">")
         end
       end
@@ -104,9 +106,12 @@ class Step
       Open.rm info_file if Open.exists? info_file
 
       set_info :pid, Process.pid
+      set_info :issued, Time.now
 
       set_info :dependencies, dependencies.collect{|dep| [dep.task.name, dep.name]}
+      log(:preparing, "Preparing job")
       dependencies.each{|dependency| 
+        Log.info "#{Log.color :magenta, "Checking dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task.name.to_s || ""}"
         begin
           dependency.relay_log self
           dependency.clean if not dependency.done? and dependency.error?
@@ -114,15 +119,12 @@ class Step
         rescue Exception
           backtrace = $!.backtrace
           set_info :backtrace, backtrace 
-          log(:error, "Exception processing dependency #{dependency.path}")
-          log(:error, "#{$!.class}: #{$!.message}")
-          log(:error, "backtrace: #{$!.backtrace.first}")
-          Log.exception $!
-          raise "Exception processing dependency #{dependency.path}"
+          log(:error, "Exception processing dependency #{Log.color :yellow, dependency.task.name.to_s} -- #{$!.class}: #{$!.message}")
+          raise $!
         end
       }
       
-      Log.medium{"#{Log.color :magenta, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]: #{ path }"}
+      Log.info{"#{Log.color :magenta, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]: #{ Log.color :blue, path }"}
       set_info :status, :started
 
       set_info :started, (start_time = Time.now)
@@ -157,14 +159,13 @@ class Step
 
               set_info :backtrace, backtrace 
               log(:error, "#{$!.class}: #{$!.message}")
-              log(:error, "backtrace: #{$!.backtrace.first}")
               raise $!
             end
 
       set_info :status, :done
       set_info :done, (done_time = Time.now)
       set_info :time_elapsed, done_time - start_time
-      Log.medium{"#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]: #{ path }"}
+      Log.info{"#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]: #{ Log.color :blue, path }"}
 
       res
     end

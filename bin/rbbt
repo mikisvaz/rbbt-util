@@ -2,6 +2,9 @@
 
 require 'rbbt'
 require 'rbbt/util/simpleopt'
+require 'highline'
+
+Log.tty_size = HighLine::SystemExtensions.terminal_size.first
 
 options = SOPT.setup <<EOF
 Ruby bioinformatics toolkit
@@ -96,13 +99,13 @@ end
 def print_error(error, backtrace = nil)
   puts Log.color :red, "Error:"
   puts
-  puts error
   if backtrace
-    puts
     puts Log.color :red, "Backtrace:"
     puts
-    puts backtrace * "\n"
+    puts backtrace.reverse * "\n"
+    puts
   end
+  puts Log.color :red, error
   puts
 end
 

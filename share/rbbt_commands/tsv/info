@@ -44,18 +44,18 @@ else
 
   puts "File: #{ file }"
   puts "Type: #{header.type}"
-  puts "Key: #{header.key_field}"
+  puts "Key: #{Log.color :yellow, header.key_field}"
   puts "Fields: "
   if header.fields.nil?
   else
     header.fields.each_with_index do |f,i|
-      puts "  - #{i + 1}: " << f
+      puts "  - #{Log.color :cyan, i + 1}: " << Log.color(:yellow, f)
     end
   end
-  puts "Rows: #{`wc -l #{ file }|cut -f 1 -d' '`}" unless Open.remote? file
-  puts "First line:"
+  puts "Rows: #{Log.color :blue, `wc -l #{ file }|cut -f 1 -d' '`}" unless Open.remote? file
   parts = []
-  header.first_line.split(header.sep).each_with_index{|p,i| parts << "(#{i}) #{p}"}
+  header.first_line.split(header.sep).each_with_index{|p,i| parts << (Log.color(:cyan, "(#{i}) ") << p.strip) }
   puts parts * "\t"
+  puts
 end
 
