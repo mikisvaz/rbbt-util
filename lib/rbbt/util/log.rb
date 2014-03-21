@@ -16,7 +16,7 @@ module Log
     attr_accessor :logfile, :severity, :nocolor, :tty_size
   end
   self.nocolor = ENV["RBBT_NOCOLOR"] == 'true'
-  require 'highline'
+  require "highline/system_extensions.rb"
   self.tty_size = HighLine::SystemExtensions.terminal_size.first
 
 
