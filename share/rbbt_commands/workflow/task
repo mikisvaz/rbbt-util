@@ -196,7 +196,7 @@ else
     usage workflow 
 
     puts
-    puts Log.color :red, "Error:"
+    puts Log.color :magenta, "## Error"
     puts
     puts $!.message
     puts

@@ -94,10 +94,10 @@ def rbbt_usage(prev = nil)
 end
 
 def print_error(error, backtrace = nil)
-  puts Log.color :red, "Error:"
+  puts Log.color :magenta, "## ERROR"
   puts
   if backtrace
-    puts Log.color :red, "Backtrace:"
+    puts Log.color :red, "Backtrace: "
     puts
     puts backtrace.reverse * "\n"
     puts
