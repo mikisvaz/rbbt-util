@@ -62,7 +62,7 @@ def fix_options(workflow, task, job_options)
   job_options.each do |name, value|
     value = case option_types[name].to_sym
             when :boolean
-              TrueClass === value or %w(true TRUE T yes).include? value
+              TrueClass == value or %w(true TRUE T yes).include? value
             when :float
               value.to_f
             when :integer
@@ -224,6 +224,7 @@ workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if opt
 
 #- get job
 
+ddd job_options["watson"]
 
 job = workflow.job(task.name, name, job_options)
 
