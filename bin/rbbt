@@ -2,9 +2,6 @@
 
 require 'rbbt'
 require 'rbbt/util/simpleopt'
-require 'highline'
-
-Log.tty_size = HighLine::SystemExtensions.terminal_size.first
 
 options = SOPT.setup <<EOF
 Ruby bioinformatics toolkit

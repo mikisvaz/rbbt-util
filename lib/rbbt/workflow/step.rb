@@ -232,8 +232,6 @@ class Step
     else
       Log.medium "Aborting #{path}: #{ @pid }"
       begin
-        Process.kill("TERM", @pid)
-        sleep 1
         Process.kill("KILL", @pid)
         Process.waitpid @pid
       rescue Exception
@@ -284,9 +282,9 @@ class Step
     # placed. In that case, do not consider its dependencies
     return [] if self.done? and not Open.exists? self.info_file
 
-    @dependencies.collect{|step| 
+    dependencies.collect{|step| 
       step.rec_dependencies 
-    }.flatten.concat  @dependencies
+    }.flatten.concat  dependencies
   end
 
   def recursive_clean

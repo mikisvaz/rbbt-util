@@ -16,6 +16,8 @@ module Log
     attr_accessor :logfile, :severity, :nocolor, :tty_size
   end
   self.nocolor = ENV["RBBT_NOCOLOR"] == 'true'
+  require 'highline'
+  self.tty_size = HighLine::SystemExtensions.terminal_size.first
 
 
   def self.with_severity(level)
@@ -54,7 +56,11 @@ module Log
   end
 
   def self.return_line
-    "\033[1A"
+    nocolor ? "" : "\033[1A"
+  end
+
+  def self.clear_line(out = STDOUT)
+    out.puts Log.return_line << " " * Log.tty_size << Log.return_line unless nocolor
   end
 
   def self.highlight(str = nil)

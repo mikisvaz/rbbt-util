@@ -250,7 +250,7 @@ begin
     exit 0
   end
 
-  if do_exec
+  if do_exec or (job.respond_to?(:is_exec) and job.is_exec)
     res = job.exec
     case
     when Array === res
@@ -283,36 +283,6 @@ begin
 
     job.fork
 
-    puts 
-    puts
-    size = Log.tty_size
-    size = 100 if size.nil?
-
-    while not job.done?
-      message = (job.messages and job.messages.any?) ? job.messages.last.strip : "no message"
-      status = job.status || "no status"
-      if job.info and job.info.include? :issued
-        issued = job.info[:issued]
-        issued = Time.parse(issued) unless Time === issued
-        time = Time.now - issued
-      end
-      puts Log.return_line << " " * size << Log.return_line 
-      puts Log.return_line << " " * size << Log.return_line 
-      puts "#{Log.color :blue, job.path}"
-      puts "Waiting on #{Log.color :blue, job.info[:pid] || job.pid} (#{time ? time.to_i : '?'} sec. ago) " << [Log.color(:cyan, status.to_s),message.strip].compact*" " 
-      sleep 2
-    end
-    raise job.messages.last if job.error?
-
-    if job.info and job.info.include? :issued
-      issued = job.info[:issued]
-      issued = Time.parse(issued) unless Time === issued
-      time = Time.now - issued
-    end
-    puts Log.return_line << " " * size << Log.return_line 
-    puts Log.return_line << " " * size << Log.return_line 
-    puts job.path
-    exit 0
   else
     job.run(true)
     res = job
@@ -336,6 +306,47 @@ begin
     exit 0
   else
     Log.low "Job name: #{job.name}" 
+  end
+
+  if do_fork
+    puts
+    space = 1
+    Log.tty_size ||= 100
+
+    while not job.done?
+      message = (job.messages and job.messages.any?) ? job.messages.last.strip : "no message"
+      status = job.status || "no status"
+      if job.info and job.info.include? :issued
+        issued = job.info[:issued]
+        issued = Time.parse(issued) unless Time === issued
+        time = Time.now - issued
+      end
+
+
+      space.times do
+        Log.clear_line 
+      end
+
+      puts "#{Log.color :blue, job.path}"
+      str = "Waiting on #{Log.color :blue, job.info[:pid] || job.pid} (#{time ? time.to_i : '?'} sec. ago) " << [Log.color(:cyan, status.to_s),message.strip].compact*" "
+      puts Misc.format_paragraph str, Log.tty_size
+
+      space = 2 + Log.uncolor(str).length / Log.tty_size
+      sleep 2
+    end
+    raise job.messages.last if job.error?
+
+    if job.info and job.info.include? :issued
+      issued = job.info[:issued]
+      issued = Time.parse(issued) unless Time === issued
+      time = Time.now - issued
+    end
+
+    space.times do
+      Log.clear_line 
+    end
+    out.puts job.path
+    exit 0
   end
 rescue ParameterException
   SOPT.delete_inputs(workflow.rec_inputs(task.name))

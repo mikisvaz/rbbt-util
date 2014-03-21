@@ -16,8 +16,8 @@ class Hash
   end
 end
 
-class ParameterException < StandardError; end
-class FieldNotFoundError < StandardError;end
+class ParameterException < Exception; end
+class FieldNotFoundError < Exception;end
 class Aborted < Exception; end
 class TryAgain < Exception; end
 class ClosedStream < Exception; end
@@ -172,34 +172,6 @@ module Misc
 
     [colors, used]
   end
-
-  #def self.collapse_ranges_old(ranges)
-  #  processed = []
-  #  last = nil
-  #  ranges.sort_by{|range| range.begin }.each do |range|
-  #    rbegin = range.begin
-  #    rend = range.end
-  #    if last.nil? or rbegin > last
-  #      processed << range
-  #      last = rend
-  #    else
-  #     new_processed = []
-  #      processed.each do |processed_range|
-  #        if processed_range.end < rbegin
-  #          new_processed << processed_range
-  #        else
-  #          eend = [rend, processed_range.end].max
-  #          new_processed << (processed_range.begin..eend)
-  #          break
-  #        end
-  #      end
-  #      processed = new_processed
-  #      last = rend if rend > last
-  #    end
-  #  end
-  #
-  #  processed
-  #end
 
   def self.collapse_ranges(ranges)
     processed = []
