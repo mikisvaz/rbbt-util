@@ -3,6 +3,7 @@
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
 require 'rbbt/workflow/usage'
+require 'time'
 
 def report_options(options)
   if options.nil? or options.empty?
@@ -265,34 +266,58 @@ begin
   end
 
   if do_fork
-    job.fork
     if detach
-      Process.detach job.pid
-      puts Log.color(:magenta, "Issued: ") + Log.color(:magenta, job.pid.to_s) + ' -- ' + job.path
+      job.fork
+      Process.detach job.pid if job.pid
+      puts Log.color(:magenta, "Issued: ") + Log.color(:magenta, job.pid ? job.pid.to_s : 'no pid') + ' -- ' + job.path
       exit 0
     end
+
+    Signal.trap(:INT) do
+      begin
+        job.abort if job.info[:pid] == job.pid
+      rescue
+      end
+      exit 0
+    end
+
+    job.fork
+
     puts 
     puts
+    size = Log.tty_size
+    size = 100 if size.nil?
+
     while not job.done?
       message = (job.messages and job.messages.any?) ? job.messages.last.strip : "no message"
       status = job.status || "no status"
-      time = Time.now - job.info[:issued] if job.info and job.info.include? :issued
-      size = Log.tty_size
-      size = 100 if size.nil?
+      if job.info and job.info.include? :issued
+        issued = job.info[:issued]
+        issued = Time.parse(issued) unless Time === issued
+        time = Time.now - issued
+      end
       puts Log.return_line << " " * size << Log.return_line 
       puts Log.return_line << " " * size << Log.return_line 
       puts "#{Log.color :blue, job.path}"
-      puts "Waiting on #{Log.color :blue, job.info[:pid] || job.pid} (+#{time.to_i if time}) " << [Log.color(:cyan, status.to_s),message.strip].compact*" " 
+      puts "Waiting on #{Log.color :blue, job.info[:pid] || job.pid} (#{time ? time.to_i : '?'} sec. ago) " << [Log.color(:cyan, status.to_s),message.strip].compact*" " 
       sleep 2
     end
-    #Signal.trap(:INT){ job.abort }
     raise job.messages.last if job.error?
-    res = job.load
+
+    if job.info and job.info.include? :issued
+      issued = job.info[:issued]
+      issued = Time.parse(issued) unless Time === issued
+      time = Time.now - issued
+    end
+    puts Log.return_line << " " * size << Log.return_line 
+    puts Log.return_line << " " * size << Log.return_line 
+    puts job.path
+    exit 0
   else
-    res = job.run(true)
+    job.run(true)
+    res = job
   end
 
-  puts res
 
   if options.delete(:provenance)
     pp job.provenance
@@ -332,12 +357,14 @@ if job_file = options.delete(:job_file)
   out.puts Path === file ? file.read : file
   exit 0
 end
-ddd 1
 
-if Step === res and not res.exec
+case res
+when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
+  out.puts res.load
+when Step
   out.puts Open.read(res.path) if File.exists? res.path
 else
-  out.puts res
+  out.puts res.to_s
 end
 
 exit 0

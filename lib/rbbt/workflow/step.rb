@@ -180,8 +180,8 @@ class Step
   def fork(semaphore = nil)
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil?
     @pid = Process.fork do
-      trap(:INT) { raise Aborted.new "INT signal recieved" }
       begin
+        #trap(:INT) { raise Aborted.new "INT signal recieved" }
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
         begin
@@ -219,19 +219,22 @@ class Step
         RbbtSemaphore.post_semaphore(semaphore) if semaphore
       end
     end
+    set_info :forked, true
     Process.detach(@pid)
     self
   end
 
   def abort
     @pid ||= info[:pid]
-    if @pid.nil?
+    if @pid.nil? and info[:forked]
       Log.medium "Could not abort #{path}: no pid"
       false
     else
       Log.medium "Aborting #{path}: #{ @pid }"
       begin
-        Process.kill("INT", @pid)
+        Process.kill("TERM", @pid)
+        sleep 1
+        Process.kill("KILL", @pid)
         Process.waitpid @pid
       rescue Exception
         Log.debug("Aborted job #{@pid} was not killed: #{$!.message}")
