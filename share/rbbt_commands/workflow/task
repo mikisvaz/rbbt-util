@@ -224,8 +224,6 @@ workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if opt
 
 #- get job
 
-ddd job_options["watson"]
-
 job = workflow.job(task.name, name, job_options)
 
 # clean job
