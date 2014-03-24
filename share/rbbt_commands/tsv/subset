@@ -10,7 +10,7 @@ Subset entries in a tsv
 
 $ rbbt tsv subset [options] file.tsv --subset key1,key2,key3
 
-Subsets entries from a TSV file from a given list. Works with Tokyocabinet HDB and DBD as well.
+Subsets entries from a TSV file from a given list. Works with Tokyocabinet HDB and BDB as well.
 
 -tch--tokyocabinet File is a TC HDB
 -tcb--tokyocabinet_bd File is a TC BDB

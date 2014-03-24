@@ -10,7 +10,7 @@ Slice column from tsv
 
 $ rbbt tsv slice [options] file.tsv -f "Field 1"
 
-Display summary informations. Works with Tokyocabinet HDB and DBD as well.
+Display summary informations. Works with Tokyocabinet HDB and BDB as well.
 
 -tch--tokyocabinet File is a TC HDB
 -tcb--tokyocabinet_bd File is a TC BDB
