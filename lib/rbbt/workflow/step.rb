@@ -123,13 +123,12 @@ class Step
           raise $!
         end
       }
-      
-      Log.info{"#{Log.color :magenta, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]: #{ Log.color :blue, path }"}
-      set_info :status, :started
 
-      set_info :started, (start_time = Time.now)
-      
       set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
+
+      #Log.info{"#{Log.color :magenta, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]: #{ Log.color :blue, path }"}
+      set_info :started, (start_time = Time.now)
+      log :started, "#{Log.color :magenta, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
 
       res = begin
               exec
@@ -162,10 +161,9 @@ class Step
               raise $!
             end
 
-      set_info :status, :done
       set_info :done, (done_time = Time.now)
-      set_info :time_elapsed, done_time - start_time
-      Log.info{"#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]: #{ Log.color :blue, path }"}
+      set_info :time_elapsed, (time_elapsed = done_time - start_time)
+      log :done, "#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
 
       res
     end

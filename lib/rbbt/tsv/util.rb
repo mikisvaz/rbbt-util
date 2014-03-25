@@ -83,11 +83,25 @@ module TSV
     case
     when Path === file
       file.open(open_options)
-    when String === file
-      Open.open(file, open_options)
     when file.respond_to?(:gets)
       file.rewind if file.respond_to?(:rewind) and file.eof?
       file
+    when String === file
+      Open.open(file, open_options)
+    else
+      raise "Cannot get stream from: #{file.inspect}"
+    end
+  end
+  def self.get_stream(file, open_options = {})
+    case file
+    when Path
+      file.open(open_options)
+    when IO, StringIO
+      file.rewind if file.respond_to?(:rewind) and file.eof?
+      file
+    when String
+      raise "Could not open file given by String: #{Misc.fingerprint file}" unless File.exists? file
+      Open.open(file, open_options)
     else
       raise "Cannot get stream from: #{file.inspect}"
     end

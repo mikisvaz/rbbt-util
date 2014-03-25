@@ -162,5 +162,6 @@ module TSV
         traverse_cpus cpus, obj, options, &block
       end
     end
+    into
   end
 end
