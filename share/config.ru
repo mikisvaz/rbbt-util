@@ -36,14 +36,17 @@ load_file Rbbt.etc['app.d/resources.rb'].find
 #{{{ ENTITIES
 load_file Rbbt.etc['app.d/entities.rb'].find
 
+#{{{ ROUTES
+app_eval app, Rbbt.etc['app.d/routes.rb'].find
+
 #{{{ FINDER
 app_eval app, Rbbt.etc['app.d/finder.rb'].find
 
 #{{{ POST
-load_file Rbbt.etc['app.d/post.rb'].find if Rbbt.etc['app.d/post.rb'].exists?
+load_file Rbbt.etc['app.d/post.rb'].find 
 
 #{{{ PRELOAD
-load_file Rbbt.etc['app.d/preload.rb'].find if Rbbt.etc['app.d/preload.rb'].exists?
+load_file Rbbt.etc['app.d/preload.rb'].find 
 
 #{{{ RUN
 $title = class_name
