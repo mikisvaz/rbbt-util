@@ -18,7 +18,7 @@ module Workflow
 
   #{{{ WORKFLOW MANAGEMENT 
   class << self
-    attr_accessor :workflows, :autoinstall
+    attr_accessor :workflows, :autoinstall, :workflow_dir
   end
 
   self.workflows = []
@@ -52,16 +52,18 @@ module Workflow
   end
 
   def self.workflow_dir
-    case
-    when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
-      dir = Rbbt.etc.workflow_dir.read.strip
-      Path.setup(dir)
-    when defined?(Rbbt)
-      Rbbt.workflows
-    else
-      dir = File.join(ENV['HOME'], '.workflows')
-      Path.setup(dir)
-    end
+    @workflow_dir ||= begin
+                        case
+                        when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
+                          dir = Rbbt.etc.workflow_dir.read.strip
+                          Path.setup(dir)
+                        when defined?(Rbbt)
+                          Rbbt.workflows
+                        else
+                          dir = File.join(ENV['HOME'], '.workflows')
+                          Path.setup(dir)
+                        end
+                      end
   end
 
   def self.require_local_workflow(wf_name)
