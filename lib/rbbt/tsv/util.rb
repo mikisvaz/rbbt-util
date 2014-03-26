@@ -100,7 +100,7 @@ module TSV
       file.rewind if file.respond_to?(:rewind) and file.eof?
       file
     when String
-      raise "Could not open file given by String: #{Misc.fingerprint file}" unless File.exists? file
+      raise "Could not open file given by String: #{Misc.fingerprint file}" unless Open.remote?(file) or File.exists? file
       Open.open(file, open_options)
     else
       raise "Cannot get stream from: #{file.inspect}"
