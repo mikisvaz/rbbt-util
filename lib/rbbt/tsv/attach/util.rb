@@ -23,7 +23,10 @@ module TSV
             when other.type == :single
               new_values = [other[key]]
             else
-              new_values = other[key].values_at *field_positions
+              other_values = other[key]
+              new_values = field_positions.collect do |pos|
+                pos == :key ? key : other_values[pos]
+              end
             end
 
             new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
