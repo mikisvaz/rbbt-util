@@ -321,7 +321,6 @@ begin
         time = Time.now - issued
       end
 
-
       space.times do
         Log.clear_line 
       end

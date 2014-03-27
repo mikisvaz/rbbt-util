@@ -51,6 +51,12 @@ module Workflow
     end
   end
 
+  def self.installed_workflows
+    self.workflow_dir.glob('**/workflow.rb').collect do |file|
+      File.basename(File.dirname(file))
+    end
+  end
+
   def self.workflow_dir
     @workflow_dir ||= begin
                         case

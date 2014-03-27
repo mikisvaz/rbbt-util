@@ -10,11 +10,10 @@ workflow_dir = options[:workflow_dir] || Workflow.workflow_dir
 
 Path.setup(workflow_dir) unless Path === workflow_dir
 
-files = workflow_dir.find_all.collect{|p| p.glob("*") }.flatten.select{|f| File.directory? f }
+workflows = Workflow.installed_workflows
 
 if options[:describe]
-  files.each do |file|
-    workflow = File.basename(file)
+  workflows.each do |workflow|
     Workflow.require_workflow workflow
     workflow = Workflow.workflows.select{|w| Misc.camel_case(w.to_s) == Misc.camel_case(workflow)}.first
     puts "# "<<[Misc.camel_case(workflow.to_s), workflow.description] * ": "
@@ -25,8 +24,7 @@ if options[:describe]
 
   end
 else
-  files.each do |file|
-    workflow = File.basename(file)
+  workflows.each do |workflow|
     puts Misc.camel_case(workflow.to_s)
   end
 end
