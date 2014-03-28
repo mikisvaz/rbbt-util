@@ -9,6 +9,7 @@ class Step
   attr_accessor :path, :task, :inputs, :dependencies, :bindings
   attr_accessor :pid
   attr_accessor :exec
+  attr_accessor :result
 
   def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil)
     path = Path.setup(Misc.sanitize_filename(path)) if String === path
@@ -54,20 +55,20 @@ class Step
   end
 
   def prepare_result(value, description = nil, info = {})
-    case
-    when (not defined? Entity or description.nil? or not Entity.formats.include? description)
-      value
-    when (Annotated === value and info.empty?)
-      value
-    when Annotated === value
-      annotations = value.annotations
-      info.each do |k,v|
-        value.send("#{h}=", v) if annotations.include? k
-      end
-      value
-    else
-      Entity.formats[description].setup(value, info.merge(:format => description))
-    end
+    @result ||= case
+                when (not defined? Entity or description.nil? or not Entity.formats.include? description)
+                  value
+                when (Annotated === value and info.empty?)
+                  value
+                when Annotated === value
+                  annotations = value.annotations
+                  info.each do |k,v|
+                    value.send("#{h}=", v) if annotations.include? k
+                  end
+                  value
+                else
+                  Entity.formats[description].setup(value, info.merge(:format => description))
+                end
   end
 
   def exec
@@ -254,11 +255,10 @@ class Step
   end
 
   def load
-    raise "Can not load: Step is waiting for proces #{@pid} to finish" if not done?
-    result = Persist.persist "Job", @task.result_type, :file => @path, :check => checks do
-      exec
-    end
-    prepare_result result, @task.result_description, info
+    return @result if @result
+    join if not done?
+    return Persist.load_file(@path, @task.result_type) if @path.exists?
+    exec
   end
 
   def clean
