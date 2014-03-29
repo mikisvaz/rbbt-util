@@ -37,4 +37,28 @@ class TestPersist < Test::Unit::TestCase
       end
     end
   end
+
+  def test_tsv_dumper
+    TmpFile.with_file do |tmpdir|
+      stream = Persist.persist("Dumper", :tsv, :dir => tmpdir) do
+        dumper = TSV::Dumper.new :key_field => "Field 1", :fields => ["Field 2"], :type => :single
+
+        dumper.init
+        Thread.new do
+          10.times do |i|
+            key = i.to_s
+            dumper.add key, key + " - 2"
+          end
+          dumper.close
+          Thread.exit
+        end
+        dumper
+      end
+
+      while line = stream.gets do
+        puts line
+      end
+
+    end
+  end
 end

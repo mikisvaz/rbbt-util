@@ -77,6 +77,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    tsv.rb
    tsv=tsv{
     parser.rb
+    dumper.rb
 
     accessor.rb
     util.rb

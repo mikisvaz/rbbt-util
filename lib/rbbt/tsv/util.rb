@@ -92,6 +92,7 @@ module TSV
       raise "Cannot get stream from: #{file.inspect}"
     end
   end
+
   def self.get_stream(file, open_options = {})
     case file
     when Path

@@ -55,26 +55,33 @@ class Step
   end
 
   def prepare_result(value, description = nil, info = {})
-    @result ||= case
-                when (not defined? Entity or description.nil? or not Entity.formats.include? description)
-                  value
-                when (Annotated === value and info.empty?)
-                  value
-                when Annotated === value
-                  annotations = value.annotations
-                  info.each do |k,v|
-                    value.send("#{h}=", v) if annotations.include? k
-                  end
-                  value
-                else
-                  Entity.formats[description].setup(value, info.merge(:format => description))
-                end
+    case 
+    when IO === value
+      TSV.open(value)
+    when (not defined? Entity or description.nil? or not Entity.formats.include? description)
+      value
+    when (Annotated === value and info.empty?)
+      value
+    when Annotated === value
+      annotations = value.annotations
+      info.each do |k,v|
+        value.send("#{h}=", v) if annotations.include? k
+      end
+      value
+    else
+      Entity.formats[description].setup(value, info.merge(:format => description))
+    end
   end
 
-  def exec
+  def _exec
     @exec = true if @exec.nil?
-    result = @task.exec_in((bindings ? bindings : self), *@inputs)
-    prepare_result result, @task.result_description
+    @task.exec_in((bindings ? bindings : self), *@inputs)
+  end
+
+  def exec(no_load=false)
+    @result = _exec
+    @result = @result.stream if TSV::Dumper === @result
+    no_load ? @result : prepare_result(@result, @task.result_description)
   end
 
   def join
@@ -98,7 +105,7 @@ class Step
 
   def run(no_load = false)
 
-    result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load do
+    result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => false do
       if Step === Step.log_relay_step and not self == Step.log_relay_step
         relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
       end
@@ -131,48 +138,49 @@ class Step
       set_info :started, (start_time = Time.now)
       log :started, "#{Log.color :magenta, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
 
-      res = begin
-              exec
-            rescue Aborted
-              log(:error, "Aborted")
+      begin
+        result = _exec
+      rescue Aborted
+        log(:error, "Aborted")
 
-              children_pids = info[:children_pids]
-              if children_pids and children_pids.any?
-                Log.medium("Killing children: #{ children_pids * ", " }")
-                children_pids.each do |pid|
-                  Log.medium("Killing child #{ pid }")
-                  begin
-                    Process.kill "INT", pid
-                  rescue Exception
-                    Log.medium("Exception killing child #{ pid }: #{$!.message}")
-                  end
-                end
-              end
-
-              raise $!
+        children_pids = info[:children_pids]
+        if children_pids and children_pids.any?
+          Log.medium("Killing children: #{ children_pids * ", " }")
+          children_pids.each do |pid|
+            Log.medium("Killing child #{ pid }")
+            begin
+              Process.kill "INT", pid
             rescue Exception
-              backtrace = $!.backtrace
-
-              # HACK: This fixes an strange behaviour in 1.9.3 where some
-              # backtrace strings are coded in ASCII-8BIT
-              backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
-
-              set_info :backtrace, backtrace 
-              log(:error, "#{$!.class}: #{$!.message}")
-              raise $!
+              Log.medium("Exception killing child #{ pid }: #{$!.message}")
             end
+          end
+        end
+
+        raise $!
+      rescue Exception
+        backtrace = $!.backtrace
+
+        # HACK: This fixes an strange behaviour in 1.9.3 where some
+        # backtrace strings are coded in ASCII-8BIT
+        backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
+
+        set_info :backtrace, backtrace 
+        log(:error, "#{$!.class}: #{$!.message}")
+        raise $!
+      end
 
       set_info :done, (done_time = Time.now)
       set_info :time_elapsed, (time_elapsed = done_time - start_time)
       log :done, "#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
 
-      res
+      result
     end
 
     if no_load
+      @result = result
       self
     else
-      prepare_result result, @task.result_description, info
+      @result = prepare_result @result, @task.result_description, info
     end
   end
 
@@ -255,7 +263,7 @@ class Step
   end
 
   def load
-    return @result if @result
+    return prepare_result @result, @task.result_description if @result
     join if not done?
     return Persist.load_file(@path, @task.result_type) if @path.exists?
     exec

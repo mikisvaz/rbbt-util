@@ -1,7 +1,7 @@
 require 'rbbt/util/cmd'
 module TSV
   class Parser
-    attr_accessor :stream, :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace, :first_line, :stream
+    attr_accessor :stream, :filename, :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace, :first_line, :stream
 
     class SKIP_LINE < Exception; end
     class END_PARSING < Exception; end
@@ -343,10 +343,14 @@ module TSV
       @sep = Misc.process_options(options, :sep) || "\t"
       @stream = stream
 
+
       header_options = parse_header(stream)
       options = header_options.merge options
 
       @type = Misc.process_options(options, :type) || :double
+
+      @filename = Misc.process_options(options, :filename) 
+      @filename ||= stream.filename if stream.respond_to? :filename
 
       @sep2 = Misc.process_options(options, :sep2) || "|"
       @cast = Misc.process_options options, :cast; @cast = @cast.to_sym if String === @cast
@@ -419,8 +423,21 @@ module TSV
       data.key_field = @key_field
       data.fields = @fields
       data.namespace = @namespace
+      data.filename = @filename
       data.cast = @cast if Symbol === @cast
       data
+    end
+
+    def annotate(data)
+      setup(data)
+    end
+
+    def options
+      options = {}
+      TSV::ENTRIES.each do |entry|
+        options[entry.to_sym] = self.send(entry) if self.respond_to? entry
+      end
+      IndiferentHash.setup options
     end
 
     def traverse(options = {})

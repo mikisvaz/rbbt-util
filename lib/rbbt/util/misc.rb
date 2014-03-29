@@ -314,6 +314,8 @@ module Misc
       end
     when AnnotatedArray
       "<A: #{fingerprint Annotated.purge(obj)} #{fingerprint obj.info}>"
+    when TSV::Parser
+      "<TSVStream:" + obj.filename + "--" << Misc.fingerprint(obj.options) << ">"
     when Array
       if (length = obj.length) > 10
         "[#{length}--" <<  (obj.values_at(0,1, length / 2, -2, -1).collect{|e| fingerprint(e)} * ",") << "]"
@@ -347,6 +349,8 @@ module Misc
 
   def self.remove_long_items(obj)
     case
+    when TSV::Parser === obj
+      remove_long_items("TSV Stream: " + obj.filename + " -- " << Misc.fingerprint(obj.options))
     when TSV === obj
       remove_long_items((obj.all_fields || []) + obj.keys.sort)
     when (Array === obj and obj.length > ARRAY_MAX_LENGTH)
@@ -1276,6 +1280,8 @@ end
         str << k.to_s << "=>" << v
       when (Array === v and v.length > HASH2MD5_MAX_ARRAY_LENGTH)
         str << k.to_s << "=>[" << v[0..HASH2MD5_MAX_ARRAY_LENGTH] * "," << "; #{ v.length }]"
+      when TSV::Parser === v
+        str << remove_long_items(v)
       when Array === v
         str << k.to_s << "=>[" << v * "," << "]"
       else

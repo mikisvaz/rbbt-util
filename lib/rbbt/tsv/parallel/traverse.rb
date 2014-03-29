@@ -54,6 +54,19 @@ module TSV
       traverse_tsv(obj, options, &block)
     when Hash
       traverse_hash(obj, options, &block)
+    when TSV::Parser
+      callback = Misc.process_options options, :callback
+      Thread.new do
+        if callback
+          obj.traverse(options) do |k,v|
+            res = yield k, v
+            callback.call res
+          end
+        else
+          obj.traverse(options, &block)
+        end
+        options[:into].close and options[:into] and options[:into].respond_to?(:close)
+      end
     when IO
       callback = Misc.process_options options, :callback
       if callback
@@ -72,6 +85,9 @@ module TSV
       traverse_array(obj, options, &block)
     else
       raise "Unknown object for traversal: #{Misc.fingerprint obj }"
+    end
+    if not TSV::Parser === obj and options[:into] and options[:into].respond_to?(:close)
+      options[:into].close 
     end
   end
 
@@ -133,6 +149,8 @@ module TSV
         k,v = value
         obj[k] = v
       end
+    when TSV::Dumper
+      obj.add *value
     when IO
       return if value.nil?
       obj << value
@@ -144,7 +162,7 @@ module TSV
   def self.traverse(obj, options = {}, &block)
     threads = Misc.process_options options, :threads
     cpus = Misc.process_options options, :cpus
-    into = Misc.process_options options, :into
+    into = options[:into]
 
     if into
       callback = Proc.new do |e|

@@ -55,12 +55,13 @@ def SOPT_options(workflow, task)
 end
 
 def fix_options(workflow, task, job_options)
-  option_types = IndiferentHash.setup workflow.rec_input_types(task.name)
+  input_types = IndiferentHash.setup workflow.rec_input_types(task.name)
+  input_options = IndiferentHash.setup workflow.rec_input_options(task.name)
 
   job_options_cleaned = {}
 
   job_options.each do |name, value|
-    value = case option_types[name].to_sym
+    value = case input_types[name].to_sym
             when :boolean
               TrueClass == value or %w(true TRUE T yes).include? value
             when :float
@@ -76,6 +77,8 @@ def fix_options(workflow, task, job_options)
               else
                 value
               end
+            when :tsv_stream
+              TSV::Parser.new(value == '-' ? STDIN : Open.open(value), :filename => value )
             when :array
               if Array === value
                 value
@@ -96,13 +99,17 @@ def fix_options(workflow, task, job_options)
                 end
               end
             when :tsv
-              case value
-              when TSV
-                value
-              when '-'
-                TSV.open(STDIN, :unnamed => true, :sep => $field_separator, :sep2 => $array_separator || "|")
+              if input_options[name][:stream] and String === value
+                TSV::Parser.new(value == '-' ? STDIN : Open.open(value), :filename => value )
               else
-                TSV.open(value, :unnamed => true, :sep => $field_separator, :sep2 => $array_separator || "|")
+                case value
+                when TSV
+                  value
+                when '-'
+                  TSV.open(STDIN, :unnamed => true, :sep => $field_separator, :sep2 => $array_separator || "|")
+                else
+                  TSV.open(value, :unnamed => true, :sep => $field_separator, :sep2 => $array_separator || "|")
+                end
               end
             else
               value
@@ -250,7 +257,7 @@ begin
   end
 
   if do_exec or (job.respond_to?(:is_exec) and job.is_exec)
-    res = job.exec
+    res = job.exec(true)
     case
     when Array === res
       out.puts res * "\n"
@@ -258,6 +265,10 @@ begin
       out.puts res
     when Hash === res
       out.puts res.to_yaml
+    when IO === res
+      while block = res.read(2048)
+        out.write line
+      end
     else
       out.puts res
     end
@@ -296,15 +307,11 @@ begin
   if options.delete(:printname)
     puts job.name
     exit 0
-  else
-    Log.low "Job name: #{job.name}" 
   end
 
   if options.delete(:printpath)
     puts job.path
     exit 0
-  else
-    Log.low "Job name: #{job.name}" 
   end
 
   if do_fork
@@ -371,7 +378,14 @@ case res
 when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
   out.puts res.load
 when Step
-  out.puts Open.read(res.path) if File.exists? res.path
+  if IO === res.result
+    while line = res.result.gets do
+      out.puts line
+    end
+    res.result.close
+  else
+    out.puts Open.read(res.path) if File.exists? res.path
+  end
 else
   out.puts res.to_s
 end

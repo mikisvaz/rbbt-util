@@ -1,5 +1,6 @@
 require 'yaml'
 require 'rbbt/annotations'
+require 'rbbt/tsv/dumper'
 module TSV
 
   TSV_SERIALIZER = YAML
@@ -460,7 +461,7 @@ module TSV
   def options
     options = {}
     ENTRIES.each do |entry|
-      options[entry] = self.send(entry)
+      options[entry.to_sym] = self.send(entry)
     end
     IndiferentHash.setup options
   end
@@ -498,27 +499,19 @@ module TSV
       end
     end
 
-    str = ""
+    dumper = TSV::Dumper.new self
 
-    entry_hash = no_options ? {} : (ENTRIES - ["key_field", "fields"]).collect{|key| [key.to_sym, self.send(key)]}
-    str = TSV.header_lines(key_field, fields, entry_hash)
+    dumper.init
 
     with_unnamed do
-      if keys.nil?
-        each do |key, values|
-          key = key.to_s if Symbol === key
-          str << key.to_s
-          str << values_to_s(values)
-        end
-      else
-        keys.zip(values_at(*keys)).each do |key, values|
-          key = key.to_s if Symbol === key
-          str << key.to_s << values_to_s(values)
-        end
+      each do |k,v|
+        dumper.add k, v
       end
-
     end
-    str
+
+    dumper.close
+
+    dumper.stream.read
   end
 
   def value_peek

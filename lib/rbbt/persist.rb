@@ -134,7 +134,8 @@ module Persist
       content.file.seek 0
       Misc.sensiblewrite(path, content.file.read)
     when :tsv
-      Misc.sensiblewrite(path, content.to_s)
+      content = content.to_s if TSV === content
+      Misc.sensiblewrite(path, content)
     when :annotations
       Misc.sensiblewrite(path, Annotated.tsv(content, :all).to_s)
     when :string, :text
@@ -276,8 +277,49 @@ module Persist
             Log.medium "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
             res = yield
 
-            if res.nil?
+            case res
+            when nil
               res = load_file(path) unless persist_options[:no_load]
+            when TSV::Dumper
+              file_out, file_in = IO.pipe
+              stream_out, stream_in = IO.pipe
+              stream = res.stream
+
+              saver_thread = Thread.new do
+                Misc.lock(path) do
+                  save_file(path, type, file_out)
+                end
+                Thread.exit
+              end
+
+              splitter_thread = Thread.new do
+                while block = stream.read(2048)
+                  begin stream_in.write block; rescue Exception; Log.exception $! end
+                  begin file_in.write block; rescue Exception;  Log.exception $! end
+                end
+                file_in.close
+                stream_in.close
+                Thread.exit
+              end
+
+              class << stream_out
+                attr_accessor :threads
+                def close
+                  @threads.each{|t| t.join }
+                  @threads = []
+                  super
+                end
+
+                def read
+                  res = super
+                  close unless closed?
+                  res
+                end
+              end
+
+              stream_out.threads = [splitter_thread, saver_thread]
+
+              res = stream_out
             else
               Misc.lock(path) do
                 save_file(path, type, res)
