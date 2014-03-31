@@ -56,18 +56,27 @@ module TSV
       traverse_hash(obj, options, &block)
     when TSV::Parser
       callback = Misc.process_options options, :callback
-      Thread.new do
-        if callback
-          obj.traverse(options) do |k,v|
-            res = yield k, v
-            callback.call res
-          end
-        else
-          obj.traverse(options, &block)
+      if callback
+        obj.traverse(options) do |k,v|
+          res = yield k, v
+          callback.call res
         end
-        options[:into].close and options[:into] and options[:into].respond_to?(:close)
+      else
+        obj.traverse(options, &block)
       end
-    when IO
+    when (options[:type] == :array and IO)
+      callback = Misc.process_options options, :callback
+      if callback
+        while not obj.eof?
+          res = yield obj.gets.strip
+          callback.call res
+        end
+      else
+        while not obj.eof?
+          yield obj.gets.strip
+        end
+      end
+    when IO, File
       callback = Misc.process_options options, :callback
       if callback
         TSV::Parser.traverse(obj, options) do |k,v|
@@ -81,13 +90,22 @@ module TSV
       obj.open do |stream|
         traverse_obj(stream, options, &block)
       end
+    when (defined? Step and Step)
+      case obj.result
+      when IO
+        traverse_obj(obj.result, options, &block)
+      when TSV::Dumper
+        traverse_obj(obj.stream, options, &block)
+      else
+        obj.join
+        traverse_obj(obj.path.open, options, &block)
+      end
     when Array
       traverse_array(obj, options, &block)
+    when nil
+      raise "Can not traverse nil object"
     else
       raise "Unknown object for traversal: #{Misc.fingerprint obj }"
-    end
-    if not TSV::Parser === obj and options[:into] and options[:into].respond_to?(:close)
-      options[:into].close 
     end
   end
 
@@ -95,7 +113,6 @@ module TSV
     callback = Misc.process_options options, :callback
 
     q = RbbtThreadQueue.new num
-
 
     if callback
       block = Proc.new do |k,v,mutex|
@@ -150,28 +167,18 @@ module TSV
         obj[k] = v
       end
     when TSV::Dumper
-      obj.add *value
-    when IO
       return if value.nil?
-      obj << value
+      obj.add *value
+    when IO, StringIO
+      return if value.nil?
+      obj.puts value
     else
       obj << value
     end 
   end
 
-  def self.traverse(obj, options = {}, &block)
-    threads = Misc.process_options options, :threads
-    cpus = Misc.process_options options, :cpus
-    into = options[:into]
-
-    if into
-      callback = Proc.new do |e|
-        store_into into, e
-      end
-      options[:callback] = callback
-    end
-
-    if threads.nil? and cpus.nil?
+  def self.traverse_run(obj, threads, cpus, options = {}, &block)
+    if threads.nil? and cpus.nil? 
       traverse_obj obj, options, &block
     else
       if threads
@@ -180,6 +187,39 @@ module TSV
         traverse_cpus cpus, obj, options, &block
       end
     end
-    into
+  end
+
+  def self.traverse(obj, options = {}, &block)
+    threads = Misc.process_options options, :threads
+    cpus = Misc.process_options options, :cpus
+    into = options[:into]
+
+    threads = nil if threads and threads.to_i <= 1
+    cpus = nil if cpus and cpus.to_i <= 1
+
+    if into
+      callback = Proc.new do |e|
+        store_into into, e
+      end
+      options[:callback] = callback
+
+      case into
+      when TSV::Dumper, IO, StringIO
+        Thread.new(Thread.current) do |parent|
+          begin
+            traverse_run(obj, threads, cpus, options, &block)
+            into.close 
+          rescue Exception
+            parent.raise $!
+          end
+        end
+      else
+        traverse_run(obj, threads, cpus, options, &block)
+      end
+
+      into
+    else
+      traverse_run(obj, threads, cpus, options, &block)
+    end
   end
 end

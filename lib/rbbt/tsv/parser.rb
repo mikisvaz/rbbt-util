@@ -24,7 +24,7 @@ module TSV
       # Process options line
 
       if line and line =~ /^#{@header_hash}: (.*)/
-        options = Misc.string2hash $1
+        options = Misc.string2hash $1.strip
         line = Misc.fixutf8 stream.gets
       end
 
@@ -345,6 +345,7 @@ module TSV
 
 
       header_options = parse_header(stream)
+
       options = header_options.merge options
 
       @type = Misc.process_options(options, :type) || :double
@@ -366,6 +367,7 @@ module TSV
       fields = options[:fields]
       fix_fields(options)
 
+      @type = @type.strip.to_sym if String === @type
       case @type
       when :double 
         self.instance_eval do alias get_values get_values_double end
@@ -411,6 +413,8 @@ module TSV
             self.instance_eval do alias add_to_data add_to_data_flat end
           end
         end
+      else
+        raise "Unknown TSV type: #{@type.inspect}"
       end
 
 
@@ -510,8 +514,8 @@ module TSV
             break
           end
         end
-      ensure
-        stream.close unless stream.closed?
+      #ensure
+      #  stream.close unless stream.closed?
       end
 
       self

@@ -54,6 +54,24 @@ def SOPT_options(workflow, task)
   sopt_options * ":"
 end
 
+def get_value_stream(value)
+  if value == "-"
+    io = Misc.open_pipe do |sin|
+      while not STDIN.eof? 
+        sin.write STDIN.read(2048)
+      end
+      sin.close
+    end
+  else
+    io = Open.open(value)
+  end
+  class << io
+    attr_accessor :filename
+  end
+  io.filename = value
+  io
+end
+
 def fix_options(workflow, task, job_options)
   input_types = IndiferentHash.setup workflow.rec_input_types(task.name)
   input_options = IndiferentHash.setup workflow.rec_input_options(task.name)
@@ -69,37 +87,43 @@ def fix_options(workflow, task, job_options)
             when :integer
               value.to_i
             when :text
-              case
-              when value == '-'
-                STDIN.read
-              when (String === value and File.exists?(value) and not File.directory?(value))
-                Open.read(value)
+              if input_options[name] and input_options[name][:stream] and String === value
+                get_value_stream(value)
               else
-                value
-              end
-            when :tsv_stream
-              TSV::Parser.new(value == '-' ? STDIN : Open.open(value), :filename => value )
-            when :array
-              if Array === value
-                value
-              else
-                str = case
+                case
                 when value == '-'
                   STDIN.read
-                when (String === value and File.exists?(value))
+                when (String === value and File.exists?(value) and not File.directory?(value))
                   Open.read(value)
                 else
                   value
                 end
-                
-                if $array_separator
-                  str.split(/#{$array_separator}/)
+              end
+            when :array
+              if input_options[name] and input_options[name][:stream] and String === value
+                get_value_stream(value)
+              else
+                if Array === value
+                  value
                 else
-                  str.split(/[,|\s]/)
+                  str = case
+                        when value == '-'
+                          STDIN.read
+                        when (String === value and File.exists?(value))
+                          Open.read(value)
+                        else
+                          value
+                        end
+
+                  if $array_separator
+                    str.split(/#{$array_separator}/)
+                  else
+                    str.split(/[,|\s]/)
+                  end
                 end
               end
             when :tsv
-              if input_options[name][:stream] and String === value
+              if input_options[name] and input_options[name][:stream] and String === value
                 TSV::Parser.new(value == '-' ? STDIN : Open.open(value), :filename => value )
               else
                 case value
@@ -235,10 +259,8 @@ job = workflow.job(task.name, name, job_options)
 
 # clean job
 if clean 
-  job.abort if job.running?
   job.clean 
   sleep 1
-  job = workflow.job(task.name, name, job_options)
 end
 
 if recursive_clean 
@@ -267,7 +289,7 @@ begin
       out.puts res.to_yaml
     when IO === res
       while block = res.read(2048)
-        out.write line
+        out.write block
       end
     else
       out.puts res
@@ -292,7 +314,6 @@ begin
     end
 
     job.fork
-
   else
     job.run(true)
     res = job
@@ -300,16 +321,19 @@ begin
 
 
   if options.delete(:provenance)
+    job.join
     pp job.provenance
     exit 0
   end
 
   if options.delete(:printname)
+    job.join if IO === job.result
     puts job.name
     exit 0
   end
 
   if options.delete(:printpath)
+    job.join
     puts job.path
     exit 0
   end
@@ -379,11 +403,13 @@ when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
   out.puts res.load
 when Step
   if IO === res.result
-    while line = res.result.gets do
+    io = res.result
+    while line = io.gets do
       out.puts line
     end
-    res.result.close
+    io.close
   else
+    res.join
     out.puts Open.read(res.path) if File.exists? res.path
   end
 else

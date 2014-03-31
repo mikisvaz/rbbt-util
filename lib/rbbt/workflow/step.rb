@@ -57,7 +57,22 @@ class Step
   def prepare_result(value, description = nil, info = {})
     case 
     when IO === value
-      TSV.open(value)
+      begin
+        case @task.result_type
+        when :array
+          array = []
+          while line = value.gets
+            array << line
+          end
+          array
+        when :tsv
+          TSV.open(value)
+        else
+          value.read
+        end
+      ensure
+        value.join if value.respond_to? :join
+      end
     when (not defined? Entity or description.nil? or not Entity.formats.include? description)
       value
     when (Annotated === value and info.empty?)
@@ -85,6 +100,12 @@ class Step
   end
 
   def join
+    case @result
+    when IO
+      while @result.read 2048; end
+      @result = nil
+    end
+
     if @pid.nil?
       self
     else
@@ -134,7 +155,6 @@ class Step
 
       set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 
-      #Log.info{"#{Log.color :magenta, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]: #{ Log.color :blue, path }"}
       set_info :started, (start_time = Time.now)
       log :started, "#{Log.color :magenta, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
 
@@ -169,9 +189,22 @@ class Step
         raise $!
       end
 
-      set_info :done, (done_time = Time.now)
-      set_info :time_elapsed, (time_elapsed = done_time - start_time)
-      log :done, "#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
+      case result
+      when IO, TSV::Dumper
+        log :streaming, "#{Log.color :magenta, "Streaming task result"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
+        class << result
+          attr_accessor :callback
+        end
+        result.callback = Proc.new do
+          set_info :done, (done_time = Time.now)
+          set_info :time_elapsed, (time_elapsed = done_time - start_time)
+          log :done, "#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
+        end
+      else
+        set_info :done, (done_time = Time.now)
+        set_info :time_elapsed, (time_elapsed = done_time - start_time)
+        log :done, "#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
+      end
 
       result
     end
@@ -180,7 +213,7 @@ class Step
       @result = result
       self
     else
-      @result = prepare_result @result, @task.result_description, info
+      @result = prepare_result result, @task.result_description, info
     end
   end
 
@@ -188,11 +221,13 @@ class Step
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil?
     @pid = Process.fork do
       begin
-        #trap(:INT) { raise Aborted.new "INT signal recieved" }
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
         begin
-          run(true)
+          res = run(true)
+          io = res.result  if IO === res.result
+          io = res.result.stream  if TSV::Dumper === res.result
+          while not io.eof?; io.read(2048); end if io
         rescue Aborted
           Log.debug{"Forked process aborted: #{path}"}
           log :aborted, "Aborted"
@@ -221,7 +256,6 @@ class Step
           exit -1
         end
         set_info :pid, nil
-        exit 0
       ensure
         RbbtSemaphore.post_semaphore(semaphore) if semaphore
       end
@@ -233,13 +267,13 @@ class Step
 
   def abort
     @pid ||= info[:pid]
-    if @pid.nil? and info[:forked]
+    if @pid.nil? and info[:forked] 
       Log.medium "Could not abort #{path}: no pid"
       false
     else
       Log.medium "Aborting #{path}: #{ @pid }"
       begin
-        Process.kill("KILL", @pid)
+        Process.kill("KILL", @pid) unless Process.pid == @pid
         Process.waitpid @pid
       rescue Exception
         Log.debug("Aborted job #{@pid} was not killed: #{$!.message}")
@@ -271,6 +305,11 @@ class Step
 
   def clean
     if Open.exists?(path) or Open.exists?(info_file)
+      begin
+        self.abort if self.running?
+      rescue Exception
+      end
+
       begin
         Open.rm info_file if Open.exists? info_file
         Open.rm info_file + '.lock' if Open.exists? info_file + '.lock'

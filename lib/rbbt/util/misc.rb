@@ -31,10 +31,11 @@ end
 Lockfile.refresh = false if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
 module Misc
 
+
   def self.format_paragraph(text, size = 80, indent = 0, offset = 0)
     i = 0
     re = /((?:\n\s*\n\s*)|(?:\n\s*(?=\*)))/
-    text.split(re).collect do |paragraph|
+      text.split(re).collect do |paragraph|
       i += 1
       str = if i % 2 == 1
               words = paragraph.gsub(/\s+/, "\s").split(" ")
@@ -56,7 +57,7 @@ module Misc
             end
       offset = 0
       str
-    end*""
+      end*""
   end
 
   def self.format_definition_list_item(dt, dd, size = 80, indent = 20, color = :yellow)
@@ -316,6 +317,10 @@ module Misc
       "<A: #{fingerprint Annotated.purge(obj)} #{fingerprint obj.info}>"
     when TSV::Parser
       "<TSVStream:" + obj.filename + "--" << Misc.fingerprint(obj.options) << ">"
+    when IO
+      "<IO:" + (obj.respond_to?(:filename) ? obj.filename : obj.inspect) + ">"
+    when File
+      "<File:" + obj.path + ">"
     when Array
       if (length = obj.length) > 10
         "[#{length}--" <<  (obj.values_at(0,1, length / 2, -2, -1).collect{|e| fingerprint(e)} * ",") << "]"
@@ -349,6 +354,10 @@ module Misc
 
   def self.remove_long_items(obj)
     case
+    when IO === obj
+      remove_long_items("IO: " + obj.filename)
+    when obj.respond_to?(:path)
+      remove_long_items("File: " + obj.path)
     when TSV::Parser === obj
       remove_long_items("TSV Stream: " + obj.filename + " -- " << Misc.fingerprint(obj.options))
     when TSV === obj

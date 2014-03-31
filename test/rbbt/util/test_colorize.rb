@@ -4,9 +4,9 @@ require 'test/unit'
 
 class TestColorize < Test::Unit::TestCase
   def test_color_array
-    a = [:red, :red, :blue, :blue, :yellow]
-    a = (0..16).to_a
+    a = (1..16).to_a
 
-    ddd Colorize.distinct(a)
+    assert_equal 16, Colorize.distinct(a).length
+    assert_equal 16, Colorize.distinct(a).compact.uniq.length
   end
 end

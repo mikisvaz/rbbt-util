@@ -41,7 +41,10 @@ class Step
 
   def info
     return {} if info_file.nil? or not Open.exists? info_file
-    return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
+    begin
+      return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
+    rescue Exception
+    end
     begin
       @info_cache = Misc.insist(3, 5, info_file) do
         Misc.insist(2, 2, info_file) do
@@ -66,7 +69,7 @@ class Step
     value = Annotated.purge value if defined? Annotated
     Open.lock(info_file) do
       i = info
-      i[key] = value
+      i[key] = value #File === value ? value.filename : value
       @info_cache = i
       Open.write(info_file, INFO_SERIALIAZER.dump(i))
       @info_cache_time = Time.now
@@ -143,7 +146,7 @@ class Step
   def running?
     return nil if not Open.exists? info_file
     return nil if info[:pid].nil?
-    return Misc.pid_exists? info[:pid]
+    return Misc.pid_exists?(p = info[:pid]) && Process.pid != p
   end
 
   def error?

@@ -159,7 +159,7 @@ class TestStep < Test::Unit::TestCase
         step.run
         while not job.done? do sleep 1 end
         assert_equal "TEST", Open.read(job.file("test"))
-        assert_equal "WRITE", job.messages.last
+        assert job.messages.include? "WRITE"
       end
     end
   end
@@ -176,7 +176,7 @@ class TestStep < Test::Unit::TestCase
         job = step.fork
         while not job.done? do sleep 1 end
         assert_equal "TEST", Open.read(job.file("test"))
-        assert_equal "WRITE", job.messages.last
+        assert job.messages.include? "WRITE"
       end
     end
   end

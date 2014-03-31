@@ -1,6 +1,15 @@
 module TSV
   class Dumper
     attr_accessor :in_stream, :stream, :options, :filename
+    def self.stream(options = {}, filename = nil, &block)
+      dumper = TSV::Dumper.new options, filename
+      Thread.new do
+        yield dumper
+        dumper.close
+      end
+      dumper.stream
+    end
+
     def initialize(options, filename = nil)
       if TSV  === options
         @options = options.options.merge(:key_field => options.key_field, :fields => options.fields)
@@ -13,15 +22,7 @@ module TSV
       @stream, @in_stream = IO.pipe
     end
 
-    def init
-      options = @options.dup
-      key_field, fields = Misc.process_options options, :key_field, :fields
-
-      str = TSV.header_lines(key_field, fields, options)
-      @in_stream.puts str
-    end
-
-    def values_to_s(values)
+    def self.values_to_s(values, fields = nil)
       case values
       when nil
         if fields.nil? or fields.empty?
@@ -36,9 +37,16 @@ module TSV
       end
     end
 
+    def init
+      options = @options.dup
+      key_field, fields = Misc.process_options options, :key_field, :fields
+
+      str = TSV.header_lines(key_field, fields, options)
+      @in_stream.puts str
+    end
+
     def add(k,v)
-      str = [k,values_to_s(v)] * "\t"
-      @in_stream.puts str 
+      @in_stream << k << TSV::Dumper.values_to_s(v, @options[:fields])
     end
 
     def close

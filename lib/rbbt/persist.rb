@@ -83,7 +83,7 @@ module Persist
 
   TRUE_STRINGS = Set.new ["true", "True", "TRUE", "t", "T", "1", "yes", "Yes", "YES", "y", "Y", "ON", "on"] unless defined? TRUE_STRINGS
   def self.load_file(path, type)
-    case (type || "nil").to_sym
+    case (type || :marshal).to_sym
     when :nil
       nil
     when :boolean
@@ -125,7 +125,7 @@ module Persist
 
     return if content.nil?
     
-    case (type || "nil").to_sym
+    case (type || :marshal).to_sym
     when :nil
       nil
     when :boolean
@@ -147,10 +147,21 @@ module Persist
       f.close
       content
     when :array
-      if content.empty?
-        Misc.sensiblewrite(path, "")
+      case content
+      when Array
+        if content.empty?
+          Misc.sensiblewrite(path, "")
+        else
+          Misc.sensiblewrite(path, content * "\n" + "\n")
+        end
+      when IO
+        Misc.sensiblewrite(path) do |file|
+          while block = content.read(2048)
+            file.write block
+          end
+        end
       else
-        Misc.sensiblewrite(path, content * "\n" + "\n")
+        Misc.sensiblewrite(path, content.to_s)
       end
     when :marshal_tsv
       Misc.sensiblewrite(path, Marshal.dump(content.dup))
@@ -165,12 +176,67 @@ module Persist
     end
   end
 
+  def self.tee_stream(stream, path, type, callback = nil)
+    file_out, file_in = IO.pipe
+    stream_out, stream_in = IO.pipe
+
+    saver_thread = Thread.new(Thread.current) do |parent|
+      begin
+        Misc.lock(path) do
+          save_file(path, type, file_out)
+        end
+      rescue Exception
+        Log.exception $!
+        parent.raise $!
+      end
+    end
+
+    splitter_thread = Thread.new(Thread.current) do |parent|
+      begin
+        while block = stream.read(2048)
+          begin stream_in.write block; rescue Exception; Log.exception $! end
+        begin file_in.write block; rescue Exception;  Log.exception $! end
+        end
+        file_in.close
+        stream_in.close
+        callback.call if callback
+      rescue Exception
+        Log.exception $!
+        parent.raise $!
+      end
+    end
+
+    class << stream_out
+      attr_accessor :threads
+
+      def join
+        @threads.each{|t| t.join }
+        @threads = []
+      end
+
+      def close
+        join
+        super
+      end
+
+      def read(*args)
+        res = super(*args)
+        join if eof?
+        res
+      end
+    end
+
+    stream_out.threads = [splitter_thread, saver_thread]
+
+    stream_out
+  end
+
   def self.persist(name, type = nil, persist_options = {})
     type ||= :marshal
     persist_options = Misc.add_defaults persist_options, :persist => true
-    other_options = Misc.process_options persist_options, :other
 
     if persist_options[:persist]
+      other_options = Misc.process_options persist_options, :other
       path = persistence_path(name, persist_options, other_options || {})
 
       case 
@@ -280,46 +346,10 @@ module Persist
             case res
             when nil
               res = load_file(path) unless persist_options[:no_load]
+            when IO
+              res = tee_stream(res, path, type, res.respond_to?(:callback)? res.callback : nil)
             when TSV::Dumper
-              file_out, file_in = IO.pipe
-              stream_out, stream_in = IO.pipe
-              stream = res.stream
-
-              saver_thread = Thread.new do
-                Misc.lock(path) do
-                  save_file(path, type, file_out)
-                end
-                Thread.exit
-              end
-
-              splitter_thread = Thread.new do
-                while block = stream.read(2048)
-                  begin stream_in.write block; rescue Exception; Log.exception $! end
-                  begin file_in.write block; rescue Exception;  Log.exception $! end
-                end
-                file_in.close
-                stream_in.close
-                Thread.exit
-              end
-
-              class << stream_out
-                attr_accessor :threads
-                def close
-                  @threads.each{|t| t.join }
-                  @threads = []
-                  super
-                end
-
-                def read
-                  res = super
-                  close unless closed?
-                  res
-                end
-              end
-
-              stream_out.threads = [splitter_thread, saver_thread]
-
-              res = stream_out
+              res = tee_stream(res.stream, path, type, res.respond_to?(:callback)? res.callback : nil)
             else
               Misc.lock(path) do
                 save_file(path, type, res)

@@ -20,11 +20,11 @@ class Test::Unit::TestCase
   end
 
   def teardown
-    if defined? Persist
-      FileUtils.rm_rf Path.setup("", 'rbbt').tmp.test.find :user
-      Persist::CONNECTIONS.values.each do |c| c.close end
-      Persist::CONNECTIONS.clear
-    end
+    #if defined? Persist
+    #  FileUtils.rm_rf Path.setup("", 'rbbt').tmp.test.find :user
+    #  Persist::CONNECTIONS.values.each do |c| c.close end
+    #  Persist::CONNECTIONS.clear
+    #end
   end
 
   def datafile_test(file)

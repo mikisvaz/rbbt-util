@@ -499,19 +499,32 @@ module TSV
       end
     end
 
-    dumper = TSV::Dumper.new self
-
-    dumper.init
-
-    with_unnamed do
-      each do |k,v|
-        dumper.add k, v
+    io = TSV::Dumper.stream self do |dumper|
+      dumper.init unless no_options
+      begin
+        if keys
+          keys.each do |key|
+            dumper.add key, self[key]
+          end
+        else
+          with_unnamed do
+            each do |k,v|
+              dumper.add k, v
+            end
+          end
+        end
+      rescue
+        Log.exception $!
+        parent.raise $!
       end
     end
 
-    dumper.close
+    str = ''
+    while block = io.read(2048)
+      str << block
+    end
 
-    dumper.stream.read
+    str
   end
 
   def value_peek
