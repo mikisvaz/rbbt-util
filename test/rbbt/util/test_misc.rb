@@ -115,17 +115,154 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal 4, Misc.process_to_hash(list){|l| l.collect{|e| e * 2}}[2]
   end
 
-#  def test_pdf2text_example
-#    assert PDF2Text.pdf2text(datafile_test('example.pdf')).read =~ /An Example Paper/i
-#  end
-#
-#  def test_pdf2text_EPAR
-#    assert PDF2Text.pdf2text("http://www.ema.europa.eu/docs/en_GB/document_library/EPAR_-_Scientific_Discussion/human/000402/WC500033103.pdf").read =~ /Tamiflu/i
-#  end
-#
-#  def test_pdf2text_wrong
-#    assert_raise CMD::CMDError do PDF2Text.pdf2text("http://www.ema.europa.eu/docs/en_GB#").read end
-#  end
+  def test_pipe
+    sout, sin = Misc.pipe
+    assert_equal 1, Misc::OPEN_PIPE_IN.length
+    sin.close
+    assert sout.eof?
+    Misc.purge_pipes
+    assert_equal 0, Misc::OPEN_PIPE_IN.length
+  end
+
+  def test_pipe_fork
+    sout, sin = Misc.pipe
+    pid = Process.fork do
+      Misc.purge_pipes(sin)
+      sleep 2
+      sin.close
+    end
+    sin.close
+    assert sout.eof?
+    Process.kill :INT, pid
+  end
+
+  def test_open_pipe
+    t = 5
+    stream = Misc.open_pipe do |sin|
+      t.times do |i|
+        sleep 0.5
+        sin.puts "LINE #{ i }"
+      end
+    end
+
+    time = Time.now
+    lines = []
+    while line = stream.gets
+      lines << line.strip
+    end
+    time_spent = Time.new - time
+
+    assert time_spent >= t * 0.5
+    assert time_spent <= (t+1) * 0.5
+    assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }"}, lines
+  end
+
+  def test_open_pipe_fork
+    t = 5
+    stream = Misc.open_pipe(true) do |sin|
+      t.times do |i|
+        sleep 0.5
+        sin.puts "LINE #{ i }"
+      end
+    end
+
+    time = Time.now
+    lines = []
+    while line = stream.gets
+      lines << line.strip
+    end
+    time_spent = Time.new - time
+
+    assert time_spent >= t * 0.5
+    assert time_spent <= (t+1) * 0.5
+    assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }"}, lines
+  end
+
+  def test_open_pipe_fork_cascade
+    t = 500
+    sleep_time = 2.0 / t
+    time = Time.now
+
+    stream1 = Misc.open_pipe(true) do |sin|
+      t.times do |i|
+        sleep sleep_time 
+        sin.puts "LINE #{ i }"
+      end
+    end
+
+    stream2 = Misc.open_pipe(true) do |sin|
+      while line = stream1.gets
+        sin.puts line.strip.reverse
+      end
+    end
+
+    stream3 = Misc.open_pipe(true) do |sin|
+      while line = stream2.gets
+        sin.puts line.downcase
+      end
+    end
+
+    lines = []
+    while line = stream3.gets
+      lines << line.strip
+    end
+
+    time_spent = Time.new - time
+
+    assert time_spent >= t * sleep_time
+    assert time_spent <= t * 1.2 * sleep_time
+    assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }".reverse.downcase}, lines
+  end
+
+  def test_tee_stream
+    t = 500
+    sleep_time = 2.0 / t
+    time = Time.now
+
+    stream1 = Misc.open_pipe(true) do |sin|
+      t.times do |i|
+        sleep sleep_time 
+        sin.puts "LINE #{ i }"
+      end
+    end
+
+    stream2, stream3 = Misc.tee_stream stream1
+
+    stream4 = Misc.open_pipe(true) do |sin|
+      while line = stream2.gets
+        sin.puts line.strip.reverse
+      end
+    end
+
+    stream5 = Misc.open_pipe(true) do |sin|
+      while line = stream3.gets
+        sin.puts line.strip.downcase
+      end
+    end
+
+    lines1 = []
+    th1 = Thread.new do
+      while line = stream4.gets
+        lines1 << line.strip
+      end
+    end
+    
+    lines2 = [] 
+    th2 = Thread.new do
+      while line = stream5.gets
+        lines2 << line.strip
+      end
+    end
+    th1.join and th2.join
+
+    time_spent = Time.new - time
+
+    assert time_spent >= t * sleep_time
+    assert time_spent <= t * 1.2 * sleep_time
+    assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }".reverse}, lines1
+    assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }".downcase}, lines2
+  end
+
 
   def test_string2hash
     assert(Misc.string2hash("--user-agent=firefox").include? "--user-agent")
@@ -294,26 +431,6 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal "COSMIC", Misc.camel_case("COSMIC")
   end
 
-  def test_pipe
-    t = 5
-    stream = Misc.open_pipe do |sin|
-      t.times do |i|
-        sleep 0.5
-        sin.puts "LINE #{ i }"
-      end
-    end
-
-    time = Time.now
-    lines = []
-    while line = stream.gets
-      lines << line.strip
-    end
-    time_spent = Time.new - time
-
-    assert time_spent >= t * 0.5
-    assert time_spent <= (t+1) * 0.5
-    assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }"}, lines
-  end
 
   def __test_lock_fd
     require 'rbbt/workflow'

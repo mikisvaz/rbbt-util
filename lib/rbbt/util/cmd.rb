@@ -124,7 +124,7 @@ module CMD
 
     in_content = StringIO.new in_content if String === in_content
 
-    sout, serr, sin = IO.pipe, IO.pipe, IO.pipe
+    sout, serr, sin = Misc.pipe, Misc.pipe, Misc.pipe
 
     pid = fork {
       begin

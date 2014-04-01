@@ -98,7 +98,10 @@ module TSV
     when Path
       file.open(open_options)
     when IO, StringIO
-      file.rewind if file.respond_to?(:rewind) and file.eof?
+      begin
+        file.rewind if file.respond_to?(:rewind) and file.eof?
+      rescue
+      end
       file
     when String
       raise "Could not open file given by String: #{Misc.fingerprint file}" unless Open.remote?(file) or File.exists? file

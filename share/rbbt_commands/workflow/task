@@ -404,10 +404,11 @@ when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
 when Step
   if IO === res.result
     io = res.result
-    while line = io.gets do
-      out.puts line
-    end
-    io.close
+    Thread.pass while IO.select([io]).nil?
+    while block = io.read(2048) do
+      out.write block
+    end unless io.closed? 
+    io.join if io.respond_to? :join
   else
     res.join
     out.puts Open.read(res.path) if File.exists? res.path

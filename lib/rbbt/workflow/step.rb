@@ -102,7 +102,7 @@ class Step
   def join
     case @result
     when IO
-      while @result.read 2048; end
+      while @result.read 2048; Thread.pass end unless @result.closed? or @result.eof?
       @result = nil
     end
 
@@ -126,7 +126,7 @@ class Step
 
   def run(no_load = false)
 
-    result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => false do
+    result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load ? :stream : false do
       if Step === Step.log_relay_step and not self == Step.log_relay_step
         relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
       end
@@ -190,12 +190,18 @@ class Step
       end
 
       case result
-      when IO, TSV::Dumper
-        log :streaming, "#{Log.color :magenta, "Streaming task result"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
-        class << result
-          attr_accessor :callback
+      when IO, StringIO
+        log :streaming, "#{Log.color :magenta, "Streaming task result IO"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
+        ConcurrentStream.setup result do
+          eee 1
+          set_info :done, (done_time = Time.now)
+          set_info :time_elapsed, (time_elapsed = done_time - start_time)
+          log :done, "#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
         end
-        result.callback = Proc.new do
+      when TSV::Dumper
+        log :streaming, "#{Log.color :magenta, "Streaming task result TSV::Dumper"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
+        ConcurrentStream.setup result.stream do
+          set_info :done, (done_time = Time.now)
           set_info :done, (done_time = Time.now)
           set_info :time_elapsed, (time_elapsed = done_time - start_time)
           log :done, "#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
@@ -256,6 +262,7 @@ class Step
           exit -1
         end
         set_info :pid, nil
+        exit 0
       ensure
         RbbtSemaphore.post_semaphore(semaphore) if semaphore
       end
@@ -297,7 +304,7 @@ class Step
   end
 
   def load
-    return prepare_result @result, @task.result_description if @result
+    return prepare_result @result, @task.result_description if @result and not @path == @result
     join if not done?
     return Persist.load_file(@path, @task.result_type) if @path.exists?
     exec

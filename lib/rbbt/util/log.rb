@@ -17,8 +17,7 @@ module Log
   end
   self.nocolor = ENV["RBBT_NOCOLOR"] == 'true'
   require "highline/system_extensions.rb"
-  self.tty_size = HighLine::SystemExtensions.terminal_size.first
-
+  self.tty_size = HighLine::SystemExtensions.terminal_size.first 
 
   def self.with_severity(level)
     orig = Log.severity
@@ -60,7 +59,7 @@ module Log
   end
 
   def self.clear_line(out = STDOUT)
-    out.puts Log.return_line << " " * Log.tty_size << Log.return_line unless nocolor
+    out.puts Log.return_line << " " * (Log.tty_size || 80) << Log.return_line unless nocolor
   end
 
   def self.highlight(str = nil)
@@ -74,7 +73,7 @@ module Log
   end
 
   def self.log(message = nil, severity = MEDIUM, &block)
-    return if severity < self.severity
+    return if severity < self.severity 
     message ||= block.call if block_given?
     return if message.nil?
 
@@ -195,6 +194,21 @@ def iii(message, file = $stdout)
   Log.info{""}
 end
 
+def www(message, file = $stdout)
+  stack = caller
+  Log.warn{"#{Log.color :cyan, "INFO:"} " << stack.first}
+  Log.warn{""}
+  Log.warn{"=> " << message.inspect}
+  Log.warn{""}
+end
+
+def eee(message, file = $stdout)
+  stack = caller
+  Log.error{"#{Log.color :cyan, "INFO:"} " << stack.first}
+  Log.error{""}
+  Log.error{"=> " << message.inspect}
+  Log.error{""}
+end
 
 if __FILE__ == $0
   Log.severity = 0

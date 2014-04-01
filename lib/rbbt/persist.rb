@@ -177,71 +177,42 @@ module Persist
   end
 
   def self.tee_stream(stream, path, type, callback = nil)
-    file_out, file_in = IO.pipe
-    stream_out, stream_in = IO.pipe
+    file, out = Misc.tee_stream(stream)
 
-    saver_thread = Thread.new(Thread.current) do |parent|
-      begin
-        Misc.lock(path) do
-          save_file(path, type, file_out)
+    Misc::PIPE_MUTEX.synchronize do
+      saver_thread = Thread.new(Thread.current, path, file) do |parent,path,file|
+        begin
+          Log.warn "Saver thread: #{ path }"
+          Thread.current["name"] = "file saver: " + path
+          Misc.lock(path) do
+            Log.warn "Saver thread lock: #{ path }"
+            save_file(path, type, file)
+          end
+          Log.warn "SAVER THREAD DONE: #{ path }"
+        rescue Exception
+          Log.warn "Saver thread ERROR: #{ path }"
+          Log.exception $!
+          parent.raise $!
         end
-      rescue Exception
-        Log.exception $!
-        parent.raise $!
       end
+      Log.warn "Setup concurrent stream: #{ path }"
+      ConcurrentStream.setup(out, :threads => saver_thread, :filename => path)
     end
-
-    splitter_thread = Thread.new(Thread.current) do |parent|
-      begin
-        while block = stream.read(2048)
-          begin stream_in.write block; rescue Exception; Log.exception $! end
-        begin file_in.write block; rescue Exception;  Log.exception $! end
-        end
-        file_in.close
-        stream_in.close
-        callback.call if callback
-      rescue Exception
-        Log.exception $!
-        parent.raise $!
-      end
-    end
-
-    class << stream_out
-      attr_accessor :threads
-
-      def join
-        @threads.each{|t| t.join }
-        @threads = []
-      end
-
-      def close
-        join
-        super
-      end
-
-      def read(*args)
-        res = super(*args)
-        join if eof?
-        res
-      end
-    end
-
-    stream_out.threads = [splitter_thread, saver_thread]
-
-    stream_out
   end
 
   def self.persist(name, type = nil, persist_options = {})
     type ||= :marshal
-    persist_options = Misc.add_defaults persist_options, :persist => true
 
-    if persist_options[:persist]
+    return (persist_options[:repo] || Persist::MEMORY)[persist_options[:file]] ||= yield if type ==:memory and persist_options[:file]
+
+    if FalseClass != persist_options[:persist]
       other_options = Misc.process_options persist_options, :other
       path = persistence_path(name, persist_options, other_options || {})
 
       case 
       when type.to_sym === :memory
-        Persist::MEMORY[path] ||= yield
+        repo = persist_options[:repo] || Persist::MEMORY
+        repo[path] ||= yield
 
       when (type.to_sym == :annotations and persist_options.include? :annotation_repo)
 
@@ -346,10 +317,12 @@ module Persist
             case res
             when nil
               res = load_file(path) unless persist_options[:no_load]
-            when IO
+            when IO, StringIO
               res = tee_stream(res, path, type, res.respond_to?(:callback)? res.callback : nil)
+              return res if persist_options[:no_load] == :stream
             when TSV::Dumper
               res = tee_stream(res.stream, path, type, res.respond_to?(:callback)? res.callback : nil)
+              return res if persist_options[:no_load] == :stream
             else
               Misc.lock(path) do
                 save_file(path, type, res)
@@ -373,11 +346,17 @@ module Persist
   end
 
   def self.memory(name, options = {}, &block)
-    file = name
-    file << "_" << Misc.hash2md5(options) if options.any?
-    options = Misc.add_defaults options, :persist => true, :file => file
-
-    persist name, :memory, options, &block
+    case options
+    when nil
+      persist name, :memory, :file => name, &block
+    when String
+      persist name, :memory, :file => name + "_" << options, &block
+    else
+      file = name
+      repo = options.delete :repo if options and options.any?
+      file << "_" << (options[:key] ? options[:key] : Misc.hash2md5(options)) if options and options.any?
+      persist name, :memory, options.merge(:repo => repo, :persist => true, :file => file), &block
+    end
   end
 end
 

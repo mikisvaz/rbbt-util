@@ -16,6 +16,7 @@ module TSV
 
       # Get line
 
+      Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
       line = stream.gets
       raise "Empty content" if line.nil?
       line = Misc.fixutf8 line
@@ -40,6 +41,7 @@ module TSV
         @key_field = @fields.shift
         @key_field = @key_field[(0 + header_hash.length)..-1] # Remove initial hash character
 
+        Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
         line = @header_hash != "" ?  Misc.fixutf8(stream.gets) : nil
       end
 
@@ -348,7 +350,8 @@ module TSV
 
       options = header_options.merge options
 
-      @type = Misc.process_options(options, :type) || :double
+      @type ||= Misc.process_options(options, :type) || :double
+      @type ||= :double
 
       @filename = Misc.process_options(options, :filename) 
       @filename ||= stream.filename if stream.respond_to? :filename
@@ -497,7 +500,10 @@ module TSV
             
             yield key, values
 
+            Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
+
             line = stream.gets
+
             line_num += 1
             raise END_PARSING if head and line_num > head.to_i
           rescue SKIP_LINE
@@ -514,8 +520,6 @@ module TSV
             break
           end
         end
-      #ensure
-      #  stream.close unless stream.closed?
       end
 
       self

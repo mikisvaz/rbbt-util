@@ -1,14 +1,21 @@
 require 'rbbt/util/concurrency/processes/socket'
 class RbbtProcessQueue
   class RbbtProcessQueueWorker
-    attr_accessor :pid, :queue, :callback_queue, :block
-    def initialize(queue, callback_queue = nil, &block)
-      @queue, @callback_queue, @block = queue, callback_queue, block
+    attr_reader :pid, :queue, :callback_queue, :cleanup, :block
+    def initialize(queue, callback_queue = nil, cleanup = nil, &block)
+      @queue, @callback_queue, @cleanup, @block = queue, callback_queue, cleanup, block
 
       @pid = Process.fork do
         begin
-          @queue.swrite.close
-          @callback_queue.sread.close if @callback_queue
+          @cleanup.call if @cleanup
+          @queue.close_write 
+
+          if @callback_queue
+            Misc.purge_pipes(@callback_queue.swrite) 
+            @callback_queue.close_read 
+          else
+            Misc.purge_pipes
+          end
 
           Signal.trap(:INT){ raise Aborted; }
           loop do
@@ -19,26 +26,29 @@ class RbbtProcessQueue
             @callback_queue.push res if @callback_queue
           end
 
-          exit 0
         rescue ClosedStream
-          exit 0
         rescue Aborted
-          exit -1
-        rescue Exception
           Log.exception $!
+        rescue Exception
           @callback_queue.push($!) if @callback_queue
-          exit -1
+        ensure
+          @callback_queue.close_write if @callback_queue 
         end
-
       end
     end
 
     def join
-      Process.waitpid @pid
+      begin
+        joined_pid = Process.waitpid @pid
+      rescue
+      end
     end
 
     def abort
-      Process.kill :INT, @pid
+      begin
+        Process.kill :INT, @pid
+      rescue
+      end
     end
 
     def done?

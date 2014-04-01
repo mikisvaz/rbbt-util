@@ -26,6 +26,8 @@ module Workflow
   end
 
   def dep(*dependency_list, &block)
+    @dependency_list ||= []
+    @dependencies ||= []
     dependency_list << block if block_given?
     dependencies.concat dependency_list
   end

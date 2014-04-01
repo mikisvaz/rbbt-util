@@ -53,20 +53,25 @@ options[:app].split(/,|\s/).collect do |app|
   app_dirs[app] = report
 end if options[:app]
 
+
 puts <<EOF
-
-#{ report_jobs workflow_dir}
-#{ app_dirs.collect{|d,report| report } * "\n" }
-
-# LOCKED TSV
-#{ Rbbt.var.tsv_open_locks.glob('*').collect{|f| "- " << File.basename(f) } * "\n" }
-
 # LOCKS
 #{ CMD.cmd("find #{Rbbt.share.find_all.collect{|f| "'#{f}'" } * " " } -name '*.lock'").read << CMD.cmd("find #{Rbbt.var.find_all.collect{|f| "'#{f}'" } * " " } -name '*.lock'").read }
+EOF
 
+puts <<EOF
+# LOCKED TSV
+#{ Rbbt.var.tsv_open_locks.glob('*').collect{|f| "- " << File.basename(f) } * "\n" }
+EOF
+
+puts <<EOF
 # PERSIST
 #{ CMD.cmd("find #{Rbbt.share.find_all.collect{|f| "'#{f}'" } * " " } -name '*.persist'").read << CMD.cmd("find #{Rbbt.var.find_all.collect{|f| "'#{f}'" } * " " } -name '*.persist'").read }
 EOF
 
-
+puts <<EOF
+# JOBS
+#{ report_jobs workflow_dir}
+#{ app_dirs.collect{|d,report| report } * "\n" }
+EOF
 

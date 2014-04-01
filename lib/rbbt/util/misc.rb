@@ -28,9 +28,181 @@ module LaterString
   end
 end
 
+module ConcurrentStream
+  attr_accessor :threads, :pids, :callback, :filename
+
+  def consume
+    Thread.pass while IO.select([self], nil, nil).nil? #if IO === self
+    while block = self.read(2048)
+      Thread.pass while IO.select([self], nil, nil).nil? # if IO === self
+    end
+  end
+
+  def join
+    filename = self.respond_to?(:filename)? self.filename : :none
+    if @callback
+      @callback.call
+    end
+    @threads.each{|t| 
+      if t['name']
+        iii [:threads, t['name']]
+      else
+        iii [:threads, t]
+      end
+      t.join 
+    } if false and @threads
+    
+    @pids.each do |pid| 
+      begin
+        Process.waitpid(pid, Process::WUNTRACED)
+        raise "Error joining process #{pid} in #{self.inspect}" unless $?.success?
+        Log.warn "Process #{pid} success"
+      rescue Errno::ECHILD
+        Log.warn "No child process #{pid}"
+      end
+    end if @pids
+    iii [:joined, @filename]
+  end
+
+  def self.setup(stream, options = {}, &block)
+    threads, pids, callback, filename = Misc.process_options options, :threads, :pids, :callback, :filename
+    stream.extend ConcurrentStream unless ConcurrentStream === stream
+
+    stream.threads ||= []
+    stream.pids ||= []
+    stream.threads.concat(Array === threads ? threads : [threads]) unless threads.nil? 
+    stream.pids.concat(Array === pids ? pids : [pids]) unless pids.nil? or pids.empty?
+
+    callback = block if block_given?
+    if stream.callback and callback
+      old_callback = stream.callback
+      stream.callback = Proc.new do
+        old_callback.call
+        callback.call
+      end
+    else
+      stream.callback = callback
+    end
+
+    stream.filename = filename unless filename.nil?
+
+    stream
+  end
+end
+
+
 Lockfile.refresh = false if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
 module Misc
 
+
+  PIPE_MUTEX = Mutex.new
+
+  OPEN_PIPE_IN = []
+  def self.pipe
+    PIPE_MUTEX.synchronize do
+      sout, sin = IO.pipe
+      OPEN_PIPE_IN << sin
+      eee [:pipe, sin, sout]
+
+      [sout, sin]
+    end
+  end
+  
+  def self.release_pipes(*pipes)
+    PIPE_MUTEX.synchronize do
+      pipes.flatten.each do |pipe|
+        eee [:pipe_release, pipe]
+        pipe.close unless pipe.closed?
+        #OPEN_PIPE_IN.delete(pipe) 
+      end
+    end
+  end
+
+
+  def self.purge_pipes(*save)
+    PIPE_MUTEX.synchronize do
+      OPEN_PIPE_IN.each do |pipe|
+        eee [:pipe_check, pipe,save]
+        next if save.include? pipe
+        eee [:pipe_close, pipe,save]
+        pipe.close unless pipe.closed?
+        #OPEN_PIPE_IN.delete(pipe)
+      end
+    end
+  end
+
+  def self.open_pipe(do_fork = false, other_stream = nil)
+    Log.error "OPEN PIPE"
+    raise "No block given" unless block_given?
+    sout, sin = Misc.pipe
+    if do_fork
+      parent_pid = Process.pid
+      pid = Process.fork {
+        purge_pipes(sin)
+        sout.close
+        begin
+          yield sin
+        rescue
+          Log.exception $!
+          Process.kill :INT, parent_pid
+          Kernel.exit! -1
+        ensure
+          Misc.release_pipes(sin)
+        end
+        Kernel.exit! 0
+      }
+      Misc.release_pipes(sin)
+    else
+      thread = Thread.new(Thread.current) do |parent|
+        begin
+          yield sin
+        rescue
+          Log.exception $!
+          parent.raise $!
+        ensure
+          Misc.release_pipes(sin)
+        end
+      end
+    end
+    sout
+  end
+
+  def self.tee_stream(stream)
+    stream_out1, stream_in1 = Misc.pipe
+    stream_out2, stream_in2 = Misc.pipe
+
+    splitter_thread = Thread.new(Thread.current, stream_in1, stream_in2) do |parent,stream_in1,stream_in2|
+      Log.error "Tee #{stream.inspect} into #{[stream_in1.inspect, stream_out1.inspect] * "=>"} and #{[stream_in2.inspect, stream_out2.inspect] * "=>"}"
+      begin
+        Thread.current['name'] = "splitter"
+        filename = stream.respond_to?(:filename)? stream.filename : nil
+        Log.warn "TEE: #{ filename }"
+        while block = stream.read(2048)
+          begin stream_in1.write block; rescue Exception;  Log.exception $! end #if IO.select(nil,[stream_in1])
+          begin stream_in2.write block; rescue Exception;  Log.exception $! end #if IO.select(nil,[stream_in2])
+        end
+        Log.error "TEE DONE: #{ stream.inspect }"
+      rescue IOError
+        Log.exception $!
+      rescue Exception
+        Log.exception $!
+        parent.raise $!
+      ensure
+        if stream.respond_to? :join
+          Log.error "TEE Join: #{ stream.inspect }"
+          stream.join
+          Log.error "TEE Joined: #{ stream.inspect }"
+        end
+        Misc.release_pipes(stream_in1)
+        Misc.release_pipes(stream_in2)
+      end
+    end
+
+    ConcurrentStream.setup stream_out1, :threads => splitter_thread
+    ConcurrentStream.setup stream_out2, :threads => splitter_thread
+
+    [stream_out1, stream_out2]
+  end
 
   def self.format_paragraph(text, size = 80, indent = 0, offset = 0)
     i = 0
@@ -89,8 +261,10 @@ module Misc
 
   def self.read_stream(stream, size)
     str = nil
+    Thread.pass while IO.select([stream],nil,nil,1).nil?
     while not str = stream.read(size)
       IO.select([stream],nil,nil,1) 
+      Thread.pass
       raise ClosedStream if stream.eof?
     end
 
@@ -1209,19 +1383,32 @@ end
   end
 
   def self.sensiblewrite(path, content = nil, &block)
+    iii [:sensible_write, path]
     return if File.exists? path
     Misc.lock path + '.sensible_write' do
       if not File.exists? path
         begin
           tmp_path = path + '.sensible_write'
+          iii [:sensible_tmp, tmp_path]
           case
           when block_given?
             File.open(tmp_path, 'w', &block)
           when String === content
             File.open(tmp_path, 'w') do |f| f.write content end
-          when (IO === content or StringIO === content)
+          when (IO === content or StringIO === content or File === content)
+            iii [:IO, path]
+            #Thread.pass while IO.select([content], nil, nil, 1) if IO === content
             File.open(tmp_path, 'w') do |f|  
-              while l = content.gets; f.write l; end  
+              while block = content.read(2048); 
+                f.write block
+                #begin 
+                #  Thread.pass while IO.select([content], nil, nil, 1) if IO === content
+                #  break if content.eof?
+                #rescue IOError 
+                #  Log.exception $!
+                #  break
+                #end if IO === content 
+              end  
             end
           else
             File.open(tmp_path, 'w') do |f|  end
@@ -1512,21 +1699,6 @@ end
     chunks
   end
 
-  def self.open_pipe
-    sout, sin = IO.pipe
-    raise "No block given" unless block_given?
-    Thread.new{
-      begin
-        yield sin
-      rescue
-        Log.exception $!
-        raise $!
-      ensure
-        sin.close
-      end
-    }
-    sout
-  end
 
   def self.append_zipped(current, new)
     current.each do |v|

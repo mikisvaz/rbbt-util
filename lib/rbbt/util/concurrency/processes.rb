@@ -1,14 +1,14 @@
 require 'rbbt/util/concurrency/processes/worker'
 require 'rbbt/util/concurrency/processes/socket'
 
-
 class RbbtProcessQueue
   #{{{ RbbtProcessQueue
 
-  attr_accessor :num_processes, :processes, :queue, :process_monitor
-  def initialize(num_processes)
+  attr_accessor :num_processes, :processes, :queue, :process_monitor, :cleanup
+  def initialize(num_processes, cleanup = nil)
     @num_processes = num_processes
     @processes = []
+    @cleanup = cleanup
     @queue = RbbtProcessSocket.new
   end
 
@@ -24,13 +24,17 @@ class RbbtProcessQueue
           loop do
             p = @callback_queue.pop
             raise p if Exception === p
+            raise p.first if Array === p and Exception === p.first
             @callback.call p
           end
         rescue ClosedStream
         rescue Exception
-          Log.debug $!
+          Log.exception $!
+          sleep 1
           parent.raise $!
-          Thread.exit
+        ensure
+          Log.warn "Callback thread ended"
+          @callback_queue.sread.close unless @callback_queue.sread.closed?
         end
       end
     else
@@ -39,48 +43,61 @@ class RbbtProcessQueue
   end
 
   def init(&block)
+    Log.warn "Initiating process: #{num_processes}"
     num_processes.times do |i|
-      @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, &block)
+      @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, &block)
     end
-    @queue.sread.close
-    @callback_queue.swrite.close if @callback_queue
+    Log.warn "Initiated process: #{@processes.length} -- #{@processes.collect{|p| p.pid} * ", "}"
+    @queue.close_read
 
     @process_monitor = Thread.new(Thread.current) do |parent|
       begin
-        while @processes.any? do
-          pid = Process.wait -1, Process::WNOHANG
-          if pid
-            next unless @processes.collect{|p| p.pid }.include? pid
-            @processes.delete_if{|p| p.pid == pid}
-            raise "Process #{pid} failed" unless $?.success?
-          else
-            sleep 1
+        while @processes.any?
+          @processes[0].join 
+          @processes.shift
+        end
+        Log.warn "All processes found: #{@processes.length}"
+      rescue Exception
+        @processes.each do |p|
+          begin
+            Log.warn "Forcing kill of #{ pid }"
+            Process.kill :INT, p
+          rescue
           end
         end
-      rescue
+        Log.exception $!
         parent.raise $!
-      ensure
-        Thread.exit
       end
     end
   end
 
   def close_callback
-    @callback_thread.join if @callback_thread and @callback_thread.alive?
+    Log.warn "Closing callback"
+    @callback_queue.push ClosedStream.new if  @callback_thread.alive?
+    @callback_queue.swrite.close 
+    Log.warn "Joining callback"
+    @callback_thread.join 
   end
 
   def join
-    @queue.push ClosedStream.new
-    @queue.swrite.close
+    Log.warn "Sending Closed Stream: #{@processes.length} - #{@processes.collect{|p| p.pid}}"
+    @processes.length.times do 
+      @queue.push ClosedStream.new
+    end
     begin
+      Log.warn "Waiting for processes: #{@processes.length} - #{@processes.collect{|p| p.pid}}"
       @process_monitor.join
-    ensure
+      Log.warn "Closing queue: #{@processes.length}"
       close_callback if @callback
+    rescue Exception
+      Log.exception $!
+    ensure
+      @queue.swrite.close
     end
   end
 
   def clean
-    @processes.each{|p| p.abort }.clear
+    @processes.each{|p| p.abort }
     @callback_thread.raise Aborted if @callback_thread and @callback_thread.alive?
   end
 

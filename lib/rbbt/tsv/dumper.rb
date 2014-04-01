@@ -3,9 +3,14 @@ module TSV
     attr_accessor :in_stream, :stream, :options, :filename
     def self.stream(options = {}, filename = nil, &block)
       dumper = TSV::Dumper.new options, filename
-      Thread.new do
-        yield dumper
-        dumper.close
+      Thread.new(Thread.current) do |parent|
+        begin
+          yield dumper
+          dumper.close
+        rescue Exception
+          Log.exception $!
+          parent.raise $!
+        end
       end
       dumper.stream
     end
@@ -19,7 +24,7 @@ module TSV
         @filename = filename
       end
       @filename ||= Misc.fingerprint options
-      @stream, @in_stream = IO.pipe
+      @stream, @in_stream = Misc.pipe
     end
 
     def self.values_to_s(values, fields = nil)
@@ -42,15 +47,33 @@ module TSV
       key_field, fields = Misc.process_options options, :key_field, :fields
 
       str = TSV.header_lines(key_field, fields, options)
+
+      Thread.pass while IO.select(nil, [@in_stream],nil,1).nil?
       @in_stream.puts str
     end
 
     def add(k,v)
-      @in_stream << k << TSV::Dumper.values_to_s(v, @options[:fields])
+      @fields ||= @options[:fields]
+      begin
+        Thread.pass while IO.select(nil, [@in_stream],nil,1).nil?
+        @in_stream << k << TSV::Dumper.values_to_s(v, @fields)
+      rescue IOError
+      rescue Exception
+        Log.exception $!
+      end
+    end
+
+    def close_out
+      Log.debug "Close out #{@stream.inspect}"
+      @stream.close
+    end
+
+    def close_in
+      @in_stream.close unless @in_stream.closed?
     end
 
     def close
-      @in_stream.close
+      close_in
     end
   end
 end

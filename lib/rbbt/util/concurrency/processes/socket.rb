@@ -7,7 +7,7 @@ class RbbtProcessQueue
 
     attr_accessor :sread, :swrite, :write_sem, :read_sem
     def initialize
-      @sread, @swrite = IO.pipe
+      @sread, @swrite = Misc.pipe
 
       key = rand(100000).to_s;
       @write_sem = key + '.in'
@@ -62,25 +62,33 @@ class RbbtProcessQueue
       end
     end
 
+    def closed_read?
+      @sread.closed?
+    end
+
+    def closed_write?
+      @swrite.closed?
+    end
+
+    def close_write
+      @swrite.close
+    end
+
+    def close_read
+      @sread.close 
+    end
     #{{{ ACCESSOR
+  
     
     def push(obj)
-      begin
-        RbbtSemaphore.synchronize(@write_sem) do
-          self.dump(obj, @swrite)
-        end
-      rescue
-        return ClosedStream.new
+      RbbtSemaphore.synchronize(@write_sem) do
+        self.dump(obj, @swrite)
       end
     end
 
     def pop
-      begin
-        RbbtSemaphore.synchronize(@read_sem) do
-          self.load(@sread)
-        end
-      rescue IOError, ClosedStream
-        return ClosedStream.new
+      RbbtSemaphore.synchronize(@read_sem) do
+        self.load(@sread)
       end
     end
   end

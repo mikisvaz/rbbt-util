@@ -27,7 +27,6 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     end
 
     q.join
-    q.clean
 
     assert_equal times, res.length
     assert_equal [0, 2, 4], res.sort[0..2]
