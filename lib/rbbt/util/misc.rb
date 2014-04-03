@@ -43,25 +43,15 @@ module ConcurrentStream
     if @callback
       @callback.call
     end
-    @threads.each{|t| 
-      if t['name']
-        iii [:threads, t['name']]
-      else
-        iii [:threads, t]
-      end
-      t.join 
-    } if false and @threads
+    @threads.each{|t| t.join } if @threads
     
     @pids.each do |pid| 
       begin
         Process.waitpid(pid, Process::WUNTRACED)
         raise "Error joining process #{pid} in #{self.inspect}" unless $?.success?
-        Log.warn "Process #{pid} success"
       rescue Errno::ECHILD
-        Log.warn "No child process #{pid}"
       end
     end if @pids
-    iii [:joined, @filename]
   end
 
   def self.setup(stream, options = {}, &block)
@@ -99,10 +89,10 @@ module Misc
 
   OPEN_PIPE_IN = []
   def self.pipe
+    OPEN_PIPE_IN.delete_if{|pipe| pipe.closed? }
     PIPE_MUTEX.synchronize do
       sout, sin = IO.pipe
       OPEN_PIPE_IN << sin
-      eee [:pipe, sin, sout]
 
       [sout, sin]
     end
@@ -111,9 +101,7 @@ module Misc
   def self.release_pipes(*pipes)
     PIPE_MUTEX.synchronize do
       pipes.flatten.each do |pipe|
-        eee [:pipe_release, pipe]
         pipe.close unless pipe.closed?
-        #OPEN_PIPE_IN.delete(pipe) 
       end
     end
   end
@@ -122,17 +110,13 @@ module Misc
   def self.purge_pipes(*save)
     PIPE_MUTEX.synchronize do
       OPEN_PIPE_IN.each do |pipe|
-        eee [:pipe_check, pipe,save]
         next if save.include? pipe
-        eee [:pipe_close, pipe,save]
         pipe.close unless pipe.closed?
-        #OPEN_PIPE_IN.delete(pipe)
       end
     end
   end
 
   def self.open_pipe(do_fork = false, other_stream = nil)
-    Log.error "OPEN PIPE"
     raise "No block given" unless block_given?
     sout, sin = Misc.pipe
     if do_fork
@@ -167,21 +151,54 @@ module Misc
     sout
   end
 
-  def self.tee_stream(stream)
+  def self.tee_stream_fork(stream)
+    stream_out1, stream_in1 = Misc.pipe
+    stream_out2, stream_in2 = Misc.pipe
+
+    splitter_pid = Process.fork do
+      Misc.purge_pipes(stream_in1, stream_in2)
+      stream_out1.close
+      stream_out2.close
+      begin
+        filename = stream.respond_to?(:filename)? stream.filename : nil
+        while block = stream.read(2048)
+          begin stream_in1.write block; rescue Exception;  Log.exception $! end 
+          begin stream_in2.write block; rescue Exception;  Log.exception $! end 
+        end
+      rescue IOError
+        Log.exception $!
+      rescue Exception
+        Log.exception $!
+      ensure
+        if stream.respond_to? :join
+          stream.join
+        end
+        Misc.release_pipes(stream_in1)
+        Misc.release_pipes(stream_in2)
+      end
+    end
+    stream.close
+    stream_in1.close
+    stream_in2.close
+    #stream.join if stream.respond_to? :join
+
+    ConcurrentStream.setup stream_out1, :pids => [splitter_pid]
+    ConcurrentStream.setup stream_out2, :pids => [splitter_pid]
+
+    [stream_out1, stream_out2]
+  end
+
+  def self.tee_stream_thread(stream)
     stream_out1, stream_in1 = Misc.pipe
     stream_out2, stream_in2 = Misc.pipe
 
     splitter_thread = Thread.new(Thread.current, stream_in1, stream_in2) do |parent,stream_in1,stream_in2|
-      Log.error "Tee #{stream.inspect} into #{[stream_in1.inspect, stream_out1.inspect] * "=>"} and #{[stream_in2.inspect, stream_out2.inspect] * "=>"}"
       begin
-        Thread.current['name'] = "splitter"
         filename = stream.respond_to?(:filename)? stream.filename : nil
-        Log.warn "TEE: #{ filename }"
         while block = stream.read(2048)
-          begin stream_in1.write block; rescue Exception;  Log.exception $! end #if IO.select(nil,[stream_in1])
-          begin stream_in2.write block; rescue Exception;  Log.exception $! end #if IO.select(nil,[stream_in2])
+          begin stream_in1.write block; rescue Exception;  Log.exception $! end 
+          begin stream_in2.write block; rescue Exception;  Log.exception $! end 
         end
-        Log.error "TEE DONE: #{ stream.inspect }"
       rescue IOError
         Log.exception $!
       rescue Exception
@@ -189,9 +206,7 @@ module Misc
         parent.raise $!
       ensure
         if stream.respond_to? :join
-          Log.error "TEE Join: #{ stream.inspect }"
           stream.join
-          Log.error "TEE Joined: #{ stream.inspect }"
         end
         Misc.release_pipes(stream_in1)
         Misc.release_pipes(stream_in2)
@@ -202,6 +217,10 @@ module Misc
     ConcurrentStream.setup stream_out2, :threads => splitter_thread
 
     [stream_out1, stream_out2]
+  end
+
+  class << self
+    alias tee_stream tee_stream_fork 
   end
 
   def self.format_paragraph(text, size = 80, indent = 0, offset = 0)
@@ -1288,7 +1307,6 @@ end
         res = yield file, *args
       end
     rescue Interrupt
-      Log.error "Process #{Process.pid} interrupted while in lock: #{ lock_path }"
       raise $!
     end
 
@@ -1383,31 +1401,21 @@ end
   end
 
   def self.sensiblewrite(path, content = nil, &block)
-    iii [:sensible_write, path]
     return if File.exists? path
     Misc.lock path + '.sensible_write' do
       if not File.exists? path
         begin
           tmp_path = path + '.sensible_write'
-          iii [:sensible_tmp, tmp_path]
           case
           when block_given?
             File.open(tmp_path, 'w', &block)
           when String === content
             File.open(tmp_path, 'w') do |f| f.write content end
           when (IO === content or StringIO === content or File === content)
-            iii [:IO, path]
             #Thread.pass while IO.select([content], nil, nil, 1) if IO === content
             File.open(tmp_path, 'w') do |f|  
               while block = content.read(2048); 
                 f.write block
-                #begin 
-                #  Thread.pass while IO.select([content], nil, nil, 1) if IO === content
-                #  break if content.eof?
-                #rescue IOError 
-                #  Log.exception $!
-                #  break
-                #end if IO === content 
               end  
             end
           else

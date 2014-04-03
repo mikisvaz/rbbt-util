@@ -4,7 +4,7 @@ require 'rbbt/tsv/parallel'
 
 class TestTSVParallelThrough < Test::Unit::TestCase
 
-  def _test_traverse_tsv
+  def test_traverse_tsv
     require 'rbbt/sources/organism'
 
     head = 100
@@ -23,7 +23,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.keys.compact.sort.length
   end
 
-  def _test_traverse_tsv_cpus
+  def test_traverse_tsv_cpus
     require 'rbbt/sources/organism'
 
     head = 100
@@ -45,7 +45,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert res.values.compact.flatten.uniq.length > 0
   end
 
-  def _test_traverse_stream
+  def test_traverse_stream
     require 'rbbt/sources/organism'
 
     head = 1000
@@ -59,7 +59,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.keys.compact.sort.length
   end
 
-  def _test_traverse_stream_cpus
+  def test_traverse_stream_cpus
     require 'rbbt/sources/organism'
 
     head = 1000
@@ -73,7 +73,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.keys.compact.sort.length
   end
 
-  def _test_traverse_stream_keys
+  def test_traverse_stream_keys
     require 'rbbt/sources/organism'
 
     head = 1000
@@ -97,7 +97,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal res.sort, Organism.identifiers("Hsa").tsv(:head => head).keys.sort
   end
   
-  def _test_traverse_array
+  def test_traverse_array
     require 'rbbt/sources/organism'
 
     array = []
@@ -119,7 +119,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal array, res
   end
 
-  def _test_traverse_array_threads
+  def test_traverse_array_threads
     require 'rbbt/sources/organism'
 
     array = []
@@ -140,7 +140,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal array.sort, res.sort
   end
 
-  def _test_traverse_array_cpus
+  def test_traverse_array_cpus
     require 'rbbt/sources/organism'
 
     array = []
@@ -155,7 +155,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal array.sort, res.sort
   end
 
-  def _test_traverse_benchmark
+  def test_traverse_benchmark
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -177,7 +177,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     end
   end
 
-  def _test_traverse_into_dumper
+  def test_traverse_into_dumper
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -195,7 +195,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.size
   end
 
-  def _test_traverse_into_dumper_threads
+  def test_traverse_into_dumper_threads
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -215,7 +215,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.size
   end
 
-  def _test_traverse_into_dumper_cpus
+  def test_traverse_into_dumper_cpus
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -236,7 +236,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
   #{{{ TRAVERSE DUMPER
 
-  def _test_traverse_dumper
+  def test_traverse_dumper
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -257,7 +257,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.size
   end
 
-  def _test_traverse_dumper_threads
+  def test_traverse_dumper_threads
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -301,7 +301,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.size
   end
 
-  def _test_traverse_dumper_cpus_exception
+  def test_traverse_dumper_cpus_exception
     require 'rbbt/sources/organism'
 
     head = 2_000

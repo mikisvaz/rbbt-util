@@ -176,28 +176,43 @@ module Persist
     end
   end
 
-  def self.tee_stream(stream, path, type, callback = nil)
+  def self.tee_stream_fork(stream, path, type, callback = nil)
     file, out = Misc.tee_stream(stream)
 
-    Misc::PIPE_MUTEX.synchronize do
-      saver_thread = Thread.new(Thread.current, path, file) do |parent,path,file|
-        begin
-          Log.warn "Saver thread: #{ path }"
-          Thread.current["name"] = "file saver: " + path
-          Misc.lock(path) do
-            Log.warn "Saver thread lock: #{ path }"
-            save_file(path, type, file)
-          end
-          Log.warn "SAVER THREAD DONE: #{ path }"
-        rescue Exception
-          Log.warn "Saver thread ERROR: #{ path }"
-          Log.exception $!
-          parent.raise $!
+    saver_pid = Process.fork do
+      out.close
+      Misc.purge_pipes(stream)
+      begin
+        Misc.lock(path) do
+          save_file(path, type, file)
         end
+      rescue Exception
+        Log.exception $!
       end
-      Log.warn "Setup concurrent stream: #{ path }"
-      ConcurrentStream.setup(out, :threads => saver_thread, :filename => path)
     end
+    file.close
+    ConcurrentStream.setup(out, :pids => [saver_pid], :filename => path)
+  end
+
+  def self.tee_stream_thread(stream, path, type, callback = nil)
+    file, out = Misc.tee_stream(stream)
+
+    saver_thread = Thread.new(Thread.current, path, file) do |parent,path,file|
+      begin
+        Thread.current["name"] = "file saver: " + path
+        Misc.lock(path) do
+          save_file(path, type, file)
+        end
+      rescue Exception
+        Log.exception $!
+        parent.raise $!
+      end
+    end
+    ConcurrentStream.setup(out, :threads => saver_thread, :filename => path)
+  end
+
+  class << self
+    alias tee_stream tee_stream_thread 
   end
 
   def self.persist(name, type = nil, persist_options = {})

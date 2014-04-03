@@ -55,7 +55,6 @@ module TSV
 
   def self.traverse_io_array(io, options = {}, &block)
     callback = Misc.process_options options, :callback
-    report "Traversing IO Array", io, options
     if callback
       while not io.eof?
         res = yield io.gets.strip
@@ -70,7 +69,6 @@ module TSV
 
   def self.traverse_io(io, options = {}, &block)
     filename = io.filename if io.respond_to? :filename
-    report "Traversing IO", io, options
     callback = Misc.process_options options, :callback
     if callback
       TSV::Parser.traverse(io, options) do |k,v|
@@ -112,17 +110,8 @@ module TSV
       end
 
       io = obj
-      if io.respond_to? :join
-        report "Joining IO", io, options
-        obj.join 
-        report "Joined IO", io, options
-      else
-        report "Not joining IO", io, options
-      end
-      if io.respond_to? :close and not io.closed?
-        report "Closing IO #{io.inspect}", io, options
-        io.close 
-      end
+      obj.join if io.respond_to? :join
+      io.close if io.respond_to? :close and not io.closed?
     when Path
       obj.open do |stream|
         traverse_obj(stream, options, &block)
@@ -179,9 +168,7 @@ module TSV
     q = RbbtProcessQueue.new num, cleanup
 
     q.callback &callback
-    Log.warn "CPUS" + ": " + filename
     q.init &block
-    Log.warn "CPUS INIT" + ": " + filename
 
     traverse_obj(obj, options) do |*p|
       q.process *p
@@ -189,9 +176,7 @@ module TSV
 
     into = options[:into]
 
-    Log.warn "CPUS JOIN" + ": " + filename
     q.join
-    Log.warn "CPUS JOINED" + ": " + filename
   end
 
   def self.store_into(store, value)
@@ -259,8 +244,6 @@ module TSV
 
         options[:cleanup] = Proc.new do
           close_streams.uniq.each do |s|
-            #filename = s.respond_to?(:filename) ? s.filename : :none
-            #Log.warn "Cleaning up #{ s }: #{ filename }"
             s.close unless s.closed?
           end
         end if close_streams and close_streams.any?

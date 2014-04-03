@@ -33,7 +33,6 @@ class RbbtProcessQueue
           sleep 1
           parent.raise $!
         ensure
-          Log.warn "Callback thread ended"
           @callback_queue.sread.close unless @callback_queue.sread.closed?
         end
       end
@@ -43,11 +42,9 @@ class RbbtProcessQueue
   end
 
   def init(&block)
-    Log.warn "Initiating process: #{num_processes}"
     num_processes.times do |i|
       @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, &block)
     end
-    Log.warn "Initiated process: #{@processes.length} -- #{@processes.collect{|p| p.pid} * ", "}"
     @queue.close_read
 
     @process_monitor = Thread.new(Thread.current) do |parent|
@@ -56,11 +53,9 @@ class RbbtProcessQueue
           @processes[0].join 
           @processes.shift
         end
-        Log.warn "All processes found: #{@processes.length}"
       rescue Exception
         @processes.each do |p|
           begin
-            Log.warn "Forcing kill of #{ pid }"
             Process.kill :INT, p
           rescue
           end
@@ -72,22 +67,17 @@ class RbbtProcessQueue
   end
 
   def close_callback
-    Log.warn "Closing callback"
     @callback_queue.push ClosedStream.new if  @callback_thread.alive?
     @callback_queue.swrite.close 
-    Log.warn "Joining callback"
     @callback_thread.join 
   end
 
   def join
-    Log.warn "Sending Closed Stream: #{@processes.length} - #{@processes.collect{|p| p.pid}}"
     @processes.length.times do 
       @queue.push ClosedStream.new
     end
     begin
-      Log.warn "Waiting for processes: #{@processes.length} - #{@processes.collect{|p| p.pid}}"
       @process_monitor.join
-      Log.warn "Closing queue: #{@processes.length}"
       close_callback if @callback
     rescue Exception
       Log.exception $!

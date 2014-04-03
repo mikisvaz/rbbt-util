@@ -103,6 +103,7 @@ class Step
     case @result
     when IO
       while @result.read 2048; Thread.pass end unless @result.closed? or @result.eof?
+      @result.join if @result.respond_to? :join
       @result = nil
     end
 
