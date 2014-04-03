@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Monitor throughput
+
+$ rbbt tsv throughput 
+
+Display summary information. Works with Tokyocabinet HDB and BDB as well.
+
+-h--help Help
+EOF
+
+SOPT.usage if options[:help]
+
+last = start = Time.now
+count = 0
+max = 0
+avg = 0
+all = []
+scale = 5
+while line = STDIN.gets
+  count += 1
+  if Time.now - last >= 1.0 / scale
+    Log.clear_line
+    puts "#{ count*scale } per second. Max #{max*scale}. Average #{avg*scale}"
+    last = Time.now
+    max = count > max ? count : max
+    all << count
+    avg = Misc.mean(all).to_i if all.length > 3
+    count = 0
+  end
+end
+
+all << count
+
+puts "Total #{Misc.sum(all).to_i} in #{(Time.now - start).to_i} seconds -- #{(Misc.sum(all).to_f / (Time.now - start)).to_i } per second. Max #{max*scale}. Average #{avg*scale}"
