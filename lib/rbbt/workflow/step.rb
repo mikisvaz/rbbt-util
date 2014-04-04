@@ -102,7 +102,8 @@ class Step
   def join
     case @result
     when IO
-      while @result.read 2048; Thread.pass end unless @result.closed? or @result.eof?
+      #while @result.read 2048; Thread.pass end unless @result.closed? or @result.eof?
+      @result.read
       @result.join if @result.respond_to? :join
       @result = nil
     end
@@ -157,7 +158,7 @@ class Step
       set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 
       set_info :started, (start_time = Time.now)
-      log :started, "#{Log.color :magenta, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
+      log :started, "#{Log.color :green, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
 
       begin
         result = _exec
@@ -197,7 +198,7 @@ class Step
           eee 1
           set_info :done, (done_time = Time.now)
           set_info :time_elapsed, (time_elapsed = done_time - start_time)
-          log :done, "#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
+          log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
         end
       when TSV::Dumper
         log :streaming, "#{Log.color :magenta, "Streaming task result TSV::Dumper"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
@@ -205,12 +206,12 @@ class Step
           set_info :done, (done_time = Time.now)
           set_info :done, (done_time = Time.now)
           set_info :time_elapsed, (time_elapsed = done_time - start_time)
-          log :done, "#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
+          log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
         end
       else
         set_info :done, (done_time = Time.now)
         set_info :time_elapsed, (time_elapsed = done_time - start_time)
-        log :done, "#{Log.color :magenta, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
+        log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
       end
 
       result
@@ -234,7 +235,8 @@ class Step
           res = run(true)
           io = res.result  if IO === res.result
           io = res.result.stream  if TSV::Dumper === res.result
-          while not io.eof?; io.read(2048); end if io
+          io.read
+          io.join if io.respond_to? :join
         rescue Aborted
           Log.debug{"Forked process aborted: #{path}"}
           log :aborted, "Aborted"
