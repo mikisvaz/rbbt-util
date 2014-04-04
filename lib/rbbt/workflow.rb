@@ -138,7 +138,8 @@ module Workflow
     if wf_name =~ /::\w+$/
       clean_name = wf_name.sub(/::.*/,'')  
       Log.info{"Looking for '#{wf_name}' in '#{clean_name}'"}
-      wf_name = clean_name
+      require_workflow clean_name
+      return Misc.string2const Misc.camel_case(wf_name)
     end
 
     Log.info{"Loading workflow #{wf_name}"}
