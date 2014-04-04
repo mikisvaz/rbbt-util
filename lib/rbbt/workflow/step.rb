@@ -277,13 +277,20 @@ class Step
 
   def abort
     @pid ||= info[:pid]
-    if @pid.nil? and info[:forked] 
+
+    return true unless info[:forked]
+
+    case @pid
+    when nil
       Log.medium "Could not abort #{path}: no pid"
+      false
+    when Process.pid
+      Log.medium "Could not abort #{path}: same process"
       false
     else
       Log.medium "Aborting #{path}: #{ @pid }"
       begin
-        Process.kill("KILL", @pid) unless Process.pid == @pid
+        Process.kill("KILL", @pid)
         Process.waitpid @pid
       rescue Exception
         Log.debug("Aborted job #{@pid} was not killed: #{$!.message}")
