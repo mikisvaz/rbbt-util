@@ -116,11 +116,12 @@ module Misc
     end
   end
 
-  def self.open_pipe(do_fork = false, other_stream = nil)
+  def self.open_pipe(do_fork = false, close = true)
     raise "No block given" unless block_given?
+
     sout, sin = Misc.pipe
+
     if do_fork
-      parent_pid = Process.pid
       pid = Process.fork {
         purge_pipes(sin)
         sout.close
@@ -128,14 +129,14 @@ module Misc
           yield sin
         rescue
           Log.exception $!
-          Process.kill :INT, parent_pid
           Kernel.exit! -1
         ensure
-          Misc.release_pipes(sin)
+          sin.close if close
         end
         Kernel.exit! 0
       }
-      Misc.release_pipes(sin)
+      sin.close if close
+      ConcurrentStream.setup sout, :pids => [pid]
     else
       thread = Thread.new(Thread.current) do |parent|
         begin
@@ -144,9 +145,10 @@ module Misc
           Log.exception $!
           parent.raise $!
         ensure
-          Misc.release_pipes(sin)
+          sin.close if close
         end
       end
+      ConcurrentStream.setup sout, :threads => [thread]
     end
     sout
   end

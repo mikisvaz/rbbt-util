@@ -188,8 +188,9 @@ module Persist
         end
       rescue Exception
         Log.exception $!
-        exit -1
+        Kernel.exit! -1
       end
+      Kernel.exit! 0
     end
     file.close
     ConcurrentStream.setup(out, :pids => [saver_pid], :filename => path)

@@ -10,6 +10,19 @@ module TSV
     end
   end
 
+  def self.stream_name(obj)
+    filename_obj   = obj.respond_to?(:filename) ? obj.filename : nil
+    filename_obj ||= obj.respond_to?(:path) ? obj.path : nil
+    stream_obj = obj_stream(obj)
+    filename_obj.nil? ? stream_obj.inspect : filename_obj + "(#{stream_obj.inspect})"
+  end
+
+  def self.report(msg, obj, into)
+    into = into[:into] if Hash === into and into.include? :into
+
+    Log.error "#{ msg } #{stream_name(obj)} -> #{stream_name(into)}"
+  end
+
   def self.traverse_tsv(tsv, options = {}, &block)
     callback = Misc.process_options options, :callback
 
@@ -268,30 +281,6 @@ module TSV
     ConcurrentStream.setup(obj_stream(into), :threads => thread)
   end
 
-  def self.stream_name(obj)
-    filename_obj   = obj.respond_to?(:filename) ? obj.filename : nil
-    filename_obj ||= obj.respond_to?(:path) ? obj.path : nil
-    stream_obj = obj_stream(obj)
-    filename_obj.nil? ? stream_obj.inspect : filename_obj + "(#{stream_obj.inspect})"
-  end
-
-  def self.report(msg, obj, into)
-    into = into[:into] if Hash === into and into.include? :into
-
-    #filename_into = into.respond_to?(:filename) ? into.filename : nil
-    #filename_into ||= into.respond_to?(:path) ? into.path : nil
-    #stream_into = obj_stream(into)
-    #str_into = filename_into.nil? ? stream_into.inspect : filename_into + "(#{stream_into.inspect})"
-
-    #filename_obj   = obj.respond_to?(:filename) ? obj.filename : nil
-    #filename_obj ||= obj.respond_to?(:path) ? obj.path : nil
-    #stream_obj = obj_stream(obj)
-    #str_obj = filename_obj.nil? ? stream_obj.inspect : filename_obj + "(#{stream_obj.inspect})"
-
-    #Log.error "#{ msg } #{filename_obj} - #{filename_into}"
-    Log.error "#{ msg } #{stream_name(obj)} -> #{stream_name(into)}"
-  end
-
   def self.traverse(obj, options = {}, &block)
     threads = Misc.process_options options, :threads
     cpus = Misc.process_options options, :cpus
@@ -299,6 +288,14 @@ module TSV
 
     threads = nil if threads and threads.to_i <= 1
     cpus = nil if cpus and cpus.to_i <= 1
+
+    if into == :stream
+      sout = Misc.open_pipe false, false do |sin|                                                                                                                                           
+        traverse(obj, options.merge(:into => sin), &block)                                                                                                                                  
+      end                                                                                                                                                                                   
+      return sout                                                                                                                                                                           
+    end
+
 
     if into
       options[:callback] = Proc.new do |e|
