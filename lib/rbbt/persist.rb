@@ -188,6 +188,7 @@ module Persist
         end
       rescue Exception
         Log.exception $!
+        exit -1
       end
     end
     file.close

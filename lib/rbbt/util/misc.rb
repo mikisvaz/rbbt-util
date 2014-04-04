@@ -39,10 +39,6 @@ module ConcurrentStream
   end
 
   def join
-    filename = self.respond_to?(:filename)? self.filename : :none
-    if @callback
-      @callback.call
-    end
     @threads.each{|t| t.join } if @threads
     
     @pids.each do |pid| 
@@ -52,6 +48,10 @@ module ConcurrentStream
       rescue Errno::ECHILD
       end
     end if @pids
+
+    if @callback
+      @callback.call
+    end
   end
 
   def self.setup(stream, options = {}, &block)
