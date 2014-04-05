@@ -197,14 +197,6 @@ def iii(message, file = $stdout)
   Log.info{""}
 end
 
-def www(message, file = $stdout)
-  stack = caller
-  Log.warn{"#{Log.color :cyan, "INFO:"} " << stack.first}
-  Log.warn{""}
-  Log.warn{"=> " << message.inspect}
-  Log.warn{""}
-end
-
 def eee(message, file = $stdout)
   stack = caller
   Log.error{"#{Log.color :cyan, "INFO:"} " << stack.first}

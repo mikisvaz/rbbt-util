@@ -127,7 +127,6 @@ class Step
         str
       end
     end
-    res
   end
 
   def log(status, message = nil, &block)

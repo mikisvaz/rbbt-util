@@ -28,6 +28,10 @@ class Step
     @inputs = inputs || []
   end
 
+  def task_name
+    @task.name
+  end
+
   def path
     @path = Misc.sanitize_filename(Path.setup(@path.call)) if Proc === @path
     @path
@@ -376,11 +380,12 @@ class Step
     # placed. In that case, do not consider its dependencies
     return [] if self.done? and not Open.exists? self.info_file
 
-    deps = dependencies.collect{|step| 
+    return [] if dependencies.nil? or dependencies.empty?
+    new_dependencies = dependencies.collect{|step| 
       step.rec_dependencies 
-    }.flatten.concat  dependencies
+    }.flatten
 
-    deps
+    dependencies + new_dependencies
   end
 
   def recursive_clean
@@ -393,6 +398,8 @@ class Step
   end
 
   def step(name)
-    rec_dependencies.select{|step| step.task.name.to_sym == name.to_sym}.first
+    rec_dependencies.select do |step| 
+      step.task_name.to_sym == name.to_sym
+    end.first
   end
 end

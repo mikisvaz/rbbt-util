@@ -23,9 +23,14 @@ SOPT.usage if options[:help]
 
 file = ARGV.shift
 
-file = STDIN if file == '-'
-
-raise ParameterException, "Please specify the tsv file as argument" if file.nil?
+file = case file
+       when "-"
+         STDIN
+       when String
+         Open.open(file)
+       else
+         raise ParameterException, "Please specify the tsv file as argument" if file.nil?
+       end
 
 fields = options[:fields]
 raise ParameterException, "Please specify the fields to slice" if fields.nil?
@@ -40,7 +45,11 @@ when options[:tokyocabinet_bd]
   tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
   puts tsv.summary
 else
-  tsv = TSV.open(file, options)
+  stream = TSV.traverse file, options.merge(:into => :stream, :type => :list, :keys => fields, :unnamed => true) do |*p|
+    p * "\t"
+  end
+  puts stream.read
+  exit 0
 end
 
 puts tsv.slice(fields.split(","))

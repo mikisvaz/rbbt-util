@@ -6,7 +6,7 @@ require 'rbbt/util/concurrency/processes'
 
 class TestConcurrencyProcess < Test::Unit::TestCase
 
-  def _test_process
+  def test_process
     q = RbbtProcessQueue.new 10
 
     res = []
@@ -32,7 +32,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     assert_equal [0, 2, 4], res.sort[0..2]
   end
 
-  def _test_each
+  def test_each
     times = 5000
     elems = (0..times-1).to_a
 
