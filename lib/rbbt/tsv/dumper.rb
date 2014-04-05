@@ -7,8 +7,8 @@ module TSV
         begin
           yield dumper
           dumper.close
+        rescue Aborted
         rescue Exception
-          Log.exception $!
           parent.raise $!
         end
       end

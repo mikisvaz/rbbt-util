@@ -27,10 +27,11 @@ class RbbtProcessQueue
             raise p.first if Array === p and Exception === p.first
             @callback.call p
           end
+        rescue Aborted
+          Log.error "Callback thread aborted"
         rescue ClosedStream
         rescue Exception
           Log.exception $!
-          sleep 1
           parent.raise $!
         ensure
           @callback_queue.sread.close unless @callback_queue.sread.closed?
@@ -53,14 +54,13 @@ class RbbtProcessQueue
           @processes[0].join 
           @processes.shift
         end
+      rescue Aborted
+        @processes.each{|p| p.abort }
+        Log.error "Process monitor aborted"
       rescue Exception
-        @processes.each do |p|
-          begin
-            Process.kill :INT, p
-          rescue
-          end
-        end
-        Log.exception $!
+        Log.error "Process monitor exception: #{$!.message}"
+        @processes.each{|p| p.abort }
+        @callback_thread.raise Aborted.new if @callback_thread
         parent.raise $!
       end
     end
@@ -87,8 +87,21 @@ class RbbtProcessQueue
   end
 
   def clean
-    @processes.each{|p| p.abort }
-    @callback_thread.raise Aborted if @callback_thread and @callback_thread.alive?
+    if @process_monitor.alive?
+     @process_monitor.raise Aborted.new
+     aborted = true
+    end
+
+    if @callback_thread and @callback_thread.alive?
+     @callback_thread.raise Aborted.new
+     aborted = true
+    end
+    raise Aborted.new if aborted
+  end
+
+  def abort
+    @process_monitor.raise Aborted.new if @process_monitor.alive?
+    @callback_thread.raise Aborted.new if @callback_thread and @callback_thread.alive?
   end
 
   def process(*e)

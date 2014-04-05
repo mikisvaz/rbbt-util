@@ -72,6 +72,7 @@ module Log
     end
   end
 
+  LOG_MUTEX = Mutex.new
   def self.log(message = nil, severity = MEDIUM, &block)
     return if severity < self.severity 
     message ||= block.call if block_given?
@@ -85,8 +86,10 @@ module Log
     message = "" << highlight << message << color(0) if severity >= INFO
     str = prefix << " " << message
 
-    STDERR.puts str
-    logfile.puts str unless logfile.nil?
+    LOG_MUTEX.synchronize do
+      STDERR.puts str
+      logfile.puts str unless logfile.nil?
+    end
   end
 
   def self.debug(message = nil, &block)

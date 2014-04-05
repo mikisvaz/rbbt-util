@@ -24,6 +24,7 @@ class Step
                     else
                       [dependencies]
                     end
+    @mutex = Mutex.new
     @inputs = inputs || []
   end
 
@@ -43,10 +44,9 @@ class Step
         attr_accessor :relay_step
         alias original_log log 
         def log(status, message = nil)
-          Log.with_severity 10 do
-            original_log(status, message)
-          end
-          relay_step.log([task.name.to_s, status.to_s] * ">", message.nil? ? nil : [task.name.to_s, message] * ">")
+          self.status = status
+          message message
+          relay_step.log([task.name.to_s, status.to_s] * ">", message.nil? ? nil : message )
         end
       end
     end
@@ -70,7 +70,10 @@ class Step
         else
           value.read
         end
+      rescue Exception
+        value.abort if value.respond_to? :abort
       ensure
+        value.close unless value.closed?
         value.join if value.respond_to? :join
       end
     when (not defined? Entity or description.nil? or not Entity.formats.include? description)
@@ -88,6 +91,17 @@ class Step
     end
   end
 
+  def get_stream
+    @mutex.synchronize do
+      begin
+        res = @result
+        IO === res ? res : nil
+      ensure
+        @result = nil
+      end
+    end
+  end
+
   def _exec
     @exec = true if @exec.nil?
     @task.exec_in((bindings ? bindings : self), *@inputs)
@@ -100,13 +114,17 @@ class Step
   end
 
   def join
-    case @result
-    when IO
-      #while @result.read 2048; Thread.pass end unless @result.closed? or @result.eof?
-      @result.read
-      @result.join if @result.respond_to? :join
-      @result = nil
+    stream = get_stream
+    begin
+      stream.read if stream
+    rescue
+      stream.abort if stream.respond_to? :abort
+      raise $!
+    ensure
+      stream.join if stream.respond_to? :join
     end
+
+    dependencies.each{|dep| dep.join }
 
     if @pid.nil?
       self
@@ -141,12 +159,15 @@ class Step
 
       set_info :dependencies, dependencies.collect{|dep| [dep.task.name, dep.name]}
       log(:preparing, "Preparing job")
+      seen_deps = []
       dependencies.each{|dependency| 
         Log.info "#{Log.color :magenta, "Checking dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task.name.to_s || ""}"
         begin
+          next if seen_deps.include? dependency.path
           dependency.relay_log self
           dependency.clean if not dependency.done? and dependency.error?
-          dependency.run true
+          dependency.run true unless dependency.done?
+          seen_deps.concat dependency.rec_dependencies.collect{|d| d.path} 
         rescue Exception
           backtrace = $!.backtrace
           set_info :backtrace, backtrace 
@@ -192,21 +213,28 @@ class Step
       end
 
       case result
-      when IO, StringIO
+      when IO
         log :streaming, "#{Log.color :magenta, "Streaming task result IO"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
         ConcurrentStream.setup result do
-          eee 1
-          set_info :done, (done_time = Time.now)
-          set_info :time_elapsed, (time_elapsed = done_time - start_time)
-          log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
+          begin
+            set_info :done, (done_time = Time.now)
+            set_info :time_elapsed, (time_elapsed = done_time - start_time)
+            log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
+          rescue
+            Log.exception $!
+          end
         end
       when TSV::Dumper
         log :streaming, "#{Log.color :magenta, "Streaming task result TSV::Dumper"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
         ConcurrentStream.setup result.stream do
-          set_info :done, (done_time = Time.now)
-          set_info :done, (done_time = Time.now)
-          set_info :time_elapsed, (time_elapsed = done_time - start_time)
-          log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
+          begin
+            set_info :done, (done_time = Time.now)
+            set_info :done, (done_time = Time.now)
+            set_info :time_elapsed, (time_elapsed = done_time - start_time)
+            log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
+          rescue
+            Log.exception $!
+          end
         end
       else
         set_info :done, (done_time = Time.now)
@@ -233,10 +261,13 @@ class Step
         FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
         begin
           res = run(true)
-          io = res.result  if IO === res.result
-          io = res.result.stream  if TSV::Dumper === res.result
-          io.read
-          io.join if io.respond_to? :join
+          io = get_stream
+          #io = res.result  if IO === res.result
+          #io = res.result.stream  if TSV::Dumper === res.result
+          if IO === io
+            io.read 
+            io.join if io.respond_to? :join
+          end
         rescue Aborted
           Log.debug{"Forked process aborted: #{path}"}
           log :aborted, "Aborted"
@@ -298,6 +329,7 @@ class Step
       log(:aborted, "Job aborted by user")
       true
     end
+    log(:aborted, "Job aborted by user")
   end
 
   def child(&block)
@@ -344,9 +376,11 @@ class Step
     # placed. In that case, do not consider its dependencies
     return [] if self.done? and not Open.exists? self.info_file
 
-    dependencies.collect{|step| 
+    deps = dependencies.collect{|step| 
       step.rec_dependencies 
     }.flatten.concat  dependencies
+
+    deps
   end
 
   def recursive_clean

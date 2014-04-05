@@ -122,7 +122,7 @@ class TestStep < Test::Unit::TestCase
         step = Step.new tmp, task
         job = step.fork
         assert !job.done?
-        assert_raise RuntimeError do step.fork end
+        assert_raise RuntimeError do step.clean.fork end
         sleep 1
         while not job.abort do sleep 1 end
         Open.write(lock, "open")

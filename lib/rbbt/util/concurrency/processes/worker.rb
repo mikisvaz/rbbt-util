@@ -28,9 +28,11 @@ class RbbtProcessQueue
 
         rescue ClosedStream
         rescue Aborted
-          Log.exception $!
+          Log.error "Worker #{Process.pid} aborted"
+          Kernel.exit! -1
         rescue Exception
           @callback_queue.push($!) if @callback_queue
+          Kernel.exit! -1
         ensure
           @callback_queue.close_write if @callback_queue 
         end

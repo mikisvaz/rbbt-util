@@ -116,15 +116,21 @@ module TSV
         obj.traverse(options, &block)
       end
     when IO, File, StringIO
-      if options[:type] == :array
-        traverse_io_array(obj, options, &block)
-      else
-        traverse_io(obj, options, &block)
+      begin
+        if options[:type] == :array
+          traverse_io_array(obj, options, &block)
+        else
+          traverse_io(obj, options, &block)
+        end
+      rescue Exception
+        raise Aborted
+      ensure
+        begin
+          obj.close if obj.respond_to? :close and not obj.closed?
+        ensure
+          obj.join if obj.respond_to? :join
+        end
       end
-
-      io = obj
-      obj.join if io.respond_to? :join
-      io.close if io.respond_to? :close and not io.closed?
     when Path
       obj.open do |stream|
         traverse_obj(stream, options, &block)
@@ -133,12 +139,13 @@ module TSV
       traverse_obj(obj.stream, options, &block)
     when (defined? Step and Step)
 
-      case obj.result
-      when IO, TSV::Dumper, TSV
-        traverse_obj(obj.result, options, &block)
+      stream = obj.get_stream
+
+      if stream
+        traverse_obj(stream, options, &block)
       else
         obj.join
-        traverse_obj(obj.path.open, options, &block)
+        traverse_obj(obj.path, options, &block)
       end
     when Array
       traverse_array(obj, options, &block)
@@ -176,45 +183,55 @@ module TSV
   end
 
   def self.traverse_cpus(num, obj, options, &block)
-    filename = obj.respond_to?(:filename)? obj.filename : "none"
-    callback, cleanup = Misc.process_options options, :callback, :cleanup
-    q = RbbtProcessQueue.new num, cleanup
+    begin
+      filename = obj.respond_to?(:filename)? obj.filename : "none"
+      callback, cleanup = Misc.process_options options, :callback, :cleanup
+      q = RbbtProcessQueue.new num, cleanup
 
-    q.callback &callback
-    q.init &block
+      q.callback &callback
+      q.init &block
 
-    traverse_obj(obj, options) do |*p|
-      q.process *p
+      traverse_obj(obj, options) do |*p|
+        q.process *p
+      end
+
+      into = options[:into]
+    rescue Exception
+      q.abort
+      raise $!
+    ensure
+      q.join
     end
 
-    into = options[:into]
-
-    q.join
   end
 
   def self.store_into(store, value)
-    case store
-    when Hash
-      return if value.nil?
-      if Hash === value
-        if TSV === store and store.type == :double
-          store.merge_zip value
+    begin
+      case store
+      when Hash
+        return if value.nil?
+        if Hash === value
+          if TSV === store and store.type == :double
+            store.merge_zip value
+          else
+            store.merge! value
+          end
         else
-          store.merge! value
+          k,v = value
+          store[k] = v
         end
+      when TSV::Dumper
+        return if value.nil?
+        store.add *value
+      when IO
+        return if value.nil?
+        store.puts value.strip
       else
-        k,v = value
-        store[k] = v
-      end
-    when TSV::Dumper
-      return if value.nil?
-      store.add *value
-    when IO
-      return if value.nil?
-      store.puts value.strip
-    else
-      store << value
-    end 
+        store << value
+      end 
+    rescue
+      raise "Error storing into #{store.inspect}: #{$!.message}"
+    end
   end
 
   def self.get_streams_to_close(obj)
@@ -291,11 +308,14 @@ module TSV
 
     if into == :stream
       sout = Misc.open_pipe false, false do |sin|                                                                                                                                           
-        traverse(obj, options.merge(:into => sin), &block)                                                                                                                                  
+        begin
+          traverse(obj, options.merge(:into => sin), &block)                                                                                                                                  
+        rescue Exception
+          sin.abort if sin.respond_to? :abort
+        end
       end                                                                                                                                                                                   
-      return sout                                                                                                                                                                           
+      return sout
     end
-
 
     if into
       options[:callback] = Proc.new do |e|
@@ -303,6 +323,7 @@ module TSV
           store_into into, e
         rescue Exception
           Log.exception $!
+          raise $!
         end
       end
 

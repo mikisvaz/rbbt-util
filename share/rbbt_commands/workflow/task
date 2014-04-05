@@ -333,7 +333,7 @@ begin
   end
 
   if options.delete(:printpath)
-    job.join
+    job.join.load
     puts job.path
     exit 0
   end
@@ -403,12 +403,18 @@ when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
   out.puts res.load
 when Step
   if IO === res.result
-    io = res.result
-    Thread.pass while IO.select([io]).nil?
-    while block = io.read(2048) do
-      out.write block
-    end unless io.closed? 
-    io.join if io.respond_to? :join
+    begin
+      io = res.result
+      Thread.pass while IO.select([io]).nil?
+      while block = io.read(2048) do
+        out.write block
+      end unless io.closed? 
+      io.join if io.respond_to? :join
+    rescue Exception
+      io.abort if io.respond_to? :abort
+    ensure
+      io.join if io.respond_to? :join
+    end
   else
     res.join
     out.puts Open.read(res.path) if File.exists? res.path

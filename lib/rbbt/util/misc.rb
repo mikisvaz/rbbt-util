@@ -21,6 +21,12 @@ class FieldNotFoundError < Exception;end
 class Aborted < Exception; end
 class TryAgain < Exception; end
 class ClosedStream < Exception; end
+class KeepLocked < Exception
+  attr_accessor :payload
+  def initialize(payload)
+    @payload = payload
+  end
+end
 
 module LaterString
   def to_s
@@ -31,27 +37,35 @@ end
 module ConcurrentStream
   attr_accessor :threads, :pids, :callback, :filename
 
-  def consume
-    Thread.pass while IO.select([self], nil, nil).nil? #if IO === self
-    while block = self.read(2048)
-      Thread.pass while IO.select([self], nil, nil).nil? # if IO === self
-    end
-  end
-
   def join
-    @threads.each{|t| t.join } if @threads
-    
-    @pids.each do |pid| 
-      begin
-        Process.waitpid(pid, Process::WUNTRACED)
-        raise "Error joining process #{pid} in #{self.inspect}" unless $?.success?
-      rescue Errno::ECHILD
+
+    if @threads and @threads.any?
+      @threads.each do |t| 
+        t.join 
       end
-    end if @pids
+      @threads = []
+    end
+
+    if @pids and @pids.any?
+      @pids.each do |pid| 
+        begin
+          Process.waitpid(pid, Process::WUNTRACED)
+          raise "Error joining process #{pid} in #{self.inspect}" unless $?.success?
+        rescue Errno::ECHILD
+        end
+      end 
+      @pids = []
+    end
 
     if @callback
       @callback.call
+      @callback = nil
     end
+  end
+
+  def abort
+    @threads.each{|t| t.raise Aborted.new } if @threads
+    @pids.each{|pid| Process.kill :INT, pid } if @pids
   end
 
   def self.setup(stream, options = {}, &block)
@@ -122,6 +136,7 @@ module Misc
     sout, sin = Misc.pipe
 
     if do_fork
+      parent_pid = Process.pid
       pid = Process.fork {
         purge_pipes(sin)
         sout.close
@@ -129,9 +144,10 @@ module Misc
           yield sin
         rescue
           Log.exception $!
+          Process.kill :INT, parent_pid
           Kernel.exit! -1
         ensure
-          sin.close if close
+          sin.close unless sin.closed? 
         end
         Kernel.exit! 0
       }
@@ -142,10 +158,9 @@ module Misc
         begin
           yield sin
         rescue
-          Log.exception $!
           parent.raise $!
         ensure
-          sin.close if close
+          sin.close if close 
         end
       end
       ConcurrentStream.setup sout, :threads => [thread]
@@ -163,20 +178,24 @@ module Misc
       stream_out2.close
       begin
         filename = stream.respond_to?(:filename)? stream.filename : nil
+        skip1 = skip2 = false
         while block = stream.read(2048)
-          begin stream_in1.write block; rescue Exception;  Log.exception $! end 
-          begin stream_in2.write block; rescue Exception;  Log.exception $! end 
+          begin stream_in1.write block; rescue Exception;  Log.exception $!; skip1 = true end unless skip1 
+          begin stream_in2.write block; rescue Exception;  Log.exception $!; skip2 = true end unless skip2 
         end
+        raise "Error writing in stream_in2" if skip2
+        raise "Error writing in stream_in2" if skip2
+      rescue Aborted
+        stream.abort if stream.respond_to? :abort
+        raise $!
       rescue IOError
         Log.exception $!
       rescue Exception
         Log.exception $!
       ensure
-        if stream.respond_to? :join
-          stream.join
-        end
-        Misc.release_pipes(stream_in1)
-        Misc.release_pipes(stream_in2)
+        stream_in1.close 
+        stream_in2.close 
+        stream.join if stream.respond_to? :join
       end
     end
     stream.close
@@ -197,21 +216,23 @@ module Misc
     splitter_thread = Thread.new(Thread.current, stream_in1, stream_in2) do |parent,stream_in1,stream_in2|
       begin
         filename = stream.respond_to?(:filename)? stream.filename : nil
+        skip1 = skip2 = false
         while block = stream.read(2048)
-          begin stream_in1.write block; rescue Exception;  Log.exception $! end 
-          begin stream_in2.write block; rescue Exception;  Log.exception $! end 
+          begin stream_in1.write block; rescue Exception; Aborted === $! ? raise($!): Log.exception($!); skip1 = true end unless skip1 
+          begin stream_in2.write block; rescue Exception; Aborted === $! ? raise($!): Log.exception($!); skip2 = true end unless skip2 
         end
+      rescue Aborted
+        stream.abort if stream.respond_to? :abort
+        raise $!
       rescue IOError
         Log.exception $!
       rescue Exception
         Log.exception $!
         parent.raise $!
       ensure
-        if stream.respond_to? :join
-          stream.join
-        end
-        Misc.release_pipes(stream_in1)
-        Misc.release_pipes(stream_in2)
+        stream_in1.close 
+        stream_in2.close 
+        stream.join if stream.respond_to? :join
       end
     end
 
@@ -222,7 +243,7 @@ module Misc
   end
 
   class << self
-    alias tee_stream tee_stream_fork 
+    alias tee_stream tee_stream_thread 
   end
 
   def self.format_paragraph(text, size = 80, indent = 0, offset = 0)
@@ -496,6 +517,8 @@ module Misc
     case obj
     when nil
       "nil"
+    when (defined? Step and Step)
+      obj.path || Misc.fingerprint([obj.task.name, obj.inputs])
     when TrueClass
       "true"
     when FalseClass
@@ -1278,8 +1301,8 @@ end
     @hostanem ||= `hostname`.strip
   end
 
-  def self.lock(file, *args)
-    return yield file, *args if file.nil?
+  def self.lock(file, unlock = true)
+    return yield if file.nil?
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
 
     res = nil
@@ -1289,27 +1312,34 @@ end
 
     begin
       Misc.insist 3 do
-        if File.exists? lockfile and
-          Misc.hostname == (info = Open.open(lockfile){|f| YAML.load(f) })["host"] and 
+        if File.exists? lock_path and
+          Misc.hostname == (info = Open.open(lock_path){|f| YAML.load(f) })["host"] and 
           info["pid"] and not Misc.pid_exists?(info["pid"])
 
-          Log.info("Removing lockfile: #{lockfile}. This pid #{Process.pid}. Content: #{info.inspect}")
-          FileUtils.rm lockfile 
+          Log.info("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
+          FileUtils.rm lock_path 
         end
       end
     rescue
-      Log.warn("Error checking lockfile #{lockfile}: #{$!.message}. Removing. Content: #{begin Open.read(lockfile) rescue "Could not open file" end}")
-      FileUtils.rm lockfile if File.exists?(lockfile)
+      Log.warn("Error checking lockfile #{lock_path}: #{$!.message}. Removing. Content: #{begin Open.read(lock_path) rescue "Could not open file" end}")
+      FileUtils.rm lock_path if File.exists?(lock_path)
       lockfile = Lockfile.new(lock_path)
       retry
     end
 
     begin
-      lockfile.lock do 
-        res = yield file, *args
+      lockfile.lock 
+      res = yield lockfile
+    rescue Lockfile::StolenLockError
+      unlock = false
+    rescue KeepLocked
+      unlock = false
+      res = $!.payload
+    ensure
+      if unlock and lockfile.locked?
+        lockfile.unlock
+        FileUtils.rm lock_path if File.exists? lock_path
       end
-    rescue Interrupt
-      raise $!
     end
 
     res
@@ -1317,7 +1347,6 @@ end
   
 
   LOCK_REPO_SERIALIZER=Marshal
-
   def self.lock_in_repo(repo, key, *args)
     return yield file, *args if repo.nil? or key.nil?
 
@@ -1404,17 +1433,17 @@ end
 
   def self.sensiblewrite(path, content = nil, &block)
     return if File.exists? path
-    Misc.lock path + '.sensible_write' do
+    tmp_path = path + '.sensible_write'
+    Misc.lock tmp_path  do
       if not File.exists? path
+        FileUtils.rm_f tmp_path if File.exists? tmp_path
         begin
-          tmp_path = path + '.sensible_write'
           case
           when block_given?
             File.open(tmp_path, 'w', &block)
           when String === content
             File.open(tmp_path, 'w') do |f| f.write content end
           when (IO === content or StringIO === content or File === content)
-            #Thread.pass while IO.select([content], nil, nil, 1) if IO === content
             File.open(tmp_path, 'w') do |f|  
               while block = content.read(2048); 
                 f.write block
@@ -1490,6 +1519,8 @@ end
         str << remove_long_items(v)
       when Array === v
         str << k.to_s << "=>[" << v * "," << "]"
+      when File === v
+        str << k.to_s << "=>[File:" << v.path << "]"
       else
         v_ins = v.inspect
 

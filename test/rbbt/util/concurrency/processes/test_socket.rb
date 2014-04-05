@@ -28,7 +28,9 @@ class TestConcurrency < Test::Unit::TestCase
     end
 
     socket.swrite.close
-    assert ClosedStream  === socket.pop
+    assert_raise ClosedStream do 
+      socket.pop
+    end
 
     socket.clean
   end

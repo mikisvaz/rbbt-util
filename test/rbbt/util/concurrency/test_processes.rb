@@ -6,7 +6,7 @@ require 'rbbt/util/concurrency/processes'
 
 class TestConcurrencyProcess < Test::Unit::TestCase
 
-  def test_process
+  def _test_process
     q = RbbtProcessQueue.new 10
 
     res = []
@@ -32,7 +32,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     assert_equal [0, 2, 4], res.sort[0..2]
   end
 
-  def test_each
+  def _test_each
     times = 5000
     elems = (0..times-1).to_a
 
@@ -42,6 +42,35 @@ class TestConcurrencyProcess < Test::Unit::TestCase
       end
 
       assert_equal times, Dir.glob(File.join(dir, '*')).length
+    end
+  end
+
+  def test_process_abort
+    assert_raise Aborted do
+      q = RbbtProcessQueue.new 10
+
+      res = []
+
+      q.callback do |v|
+        res << v
+      end
+
+      q.init do |i|
+        sleep 1 while true
+      end
+
+      times = 500
+      t = TSV.setup({"a" => 1}, :type => :single)
+
+      times.times do |i|
+        q.process i
+      end
+
+      sleep 2
+      q.clean
+
+      q.join
+
     end
   end
 end

@@ -117,11 +117,11 @@ eum fugiat quo voluptas nulla pariatur?"
 
   def test_pipe
     sout, sin = Misc.pipe
-    assert_equal 1, Misc::OPEN_PIPE_IN.length
+    assert_equal 1, Misc::OPEN_PIPE_IN.reject{|p| p.closed? }.length
     sin.close
     assert sout.eof?
     Misc.purge_pipes
-    assert_equal 0, Misc::OPEN_PIPE_IN.length
+    assert_equal 0, Misc::OPEN_PIPE_IN.reject{|p| p.closed? }.length
   end
 
   def test_pipe_fork
@@ -325,10 +325,10 @@ eum fugiat quo voluptas nulla pariatur?"
       pids = []
       4.times do |i|
         pids << Process.fork do 
-          pid = Process.pid().to_s
-          status = Misc.lock(tmpfile, pid) do |f, val|
-            Open.write(f, val)
-            sleep rand * 2
+          status = Misc.lock(tmpfile) do 
+            pid = Process.pid.to_s
+            Open.write(tmpfile, pid)
+            sleep rand * 1
             if pid == Open.read(tmpfile)
               0
             else

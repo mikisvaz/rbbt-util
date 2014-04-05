@@ -12,7 +12,7 @@ end
 
 class TestPersist < Test::Unit::TestCase
 
-  def _test_array_persist
+  def test_array_persist
     TmpFile.with_file do |tmp|
       10.times do
         assert_equal ["1", "2"],(Persist.persist("Test", :array, :file => tmp) do
@@ -40,7 +40,7 @@ class TestPersist < Test::Unit::TestCase
 
   def test_tsv_dumper
     TmpFile.with_file do |tmpdir|
-      stream = Persist.persist("Dumper", :tsv, :dir => tmpdir) do
+      tsv = Persist.persist("Dumper", :tsv, :dir => tmpdir) do
         dumper = TSV::Dumper.new :key_field => "Field 1", :fields => ["Field 2"], :type => :single
 
         dumper.init
@@ -54,10 +54,27 @@ class TestPersist < Test::Unit::TestCase
         dumper
       end
 
-      while line = stream.gets do
-        puts line
+      assert_equal 10, tsv.size
+    end
+  end
+
+  def test_tsv_dumper_stream
+    TmpFile.with_file do |tmpdir|
+      stream = Persist.persist("Dumper", :tsv, :dir => tmpdir, :no_load => :stream) do
+        dumper = TSV::Dumper.new :key_field => "Field 1", :fields => ["Field 2"], :type => :single
+
+        Thread.new do
+          10.times do |i|
+            key = i.to_s
+            dumper.add key, key + " - 2"
+          end
+          dumper.close
+        end
+
+        dumper
       end
 
+      assert_equal 10, stream.read.split("\n").length
     end
   end
 end

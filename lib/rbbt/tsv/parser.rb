@@ -16,9 +16,9 @@ module TSV
 
       # Get line
 
-      Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
+      #Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
       line = stream.gets
-      raise "Empty content" if line.nil?
+      raise "Empty content: #{ stream.inspect }" if line.nil?
       line = Misc.fixutf8 line
       line.chomp!
 
@@ -41,7 +41,7 @@ module TSV
         @key_field = @fields.shift
         @key_field = @key_field[(0 + header_hash.length)..-1] # Remove initial hash character
 
-        Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
+        #Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
         line = @header_hash != "" ?  Misc.fixutf8(stream.gets) : nil
       end
 
@@ -123,14 +123,20 @@ module TSV
     end
 
     def get_values_flat(parts)
+      begin
+        orig = parts
       if key_position and key_position != 0 and field_positions.nil?
         value = parts.shift
         keys = parts.dup
         return [keys, [value]]
       end
 
-      return parts.shift.split(@sep2, -1).first, parts.collect{|value| value.split(@sep2, -1)}.flatten if 
+        return parts.shift.split(@sep2, -1).first, parts.collect{|value| value.split(@sep2, -1)}.flatten if 
         field_positions.nil? and (key_position.nil? or key_position == 0)
+      rescue
+        eee [:rescue, orig]
+        raise $!
+      end
 
       keys = parts[key_position].split(@sep2, -1)
 
@@ -486,6 +492,7 @@ module TSV
       # parser 
       line_num = 1
       begin
+
         while not line.nil? 
           begin
             progress_monitor.tick(stream.pos) if progress_monitor 
@@ -494,13 +501,14 @@ module TSV
 
             line = Misc.fixutf8(line)
             line = self.process line
+            raise SKIP_LINE if line.empty?
             parts = self.chop_line line
             key, values = self.get_values parts
             values = self.cast_values values if self.cast?
             
             yield key, values
 
-            Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
+            #Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
 
             line = stream.gets
 
@@ -515,11 +523,18 @@ module TSV
             end
           rescue END_PARSING
             break
-          rescue IOError
-            Log.exception $!
-            break
+          #rescue IOError
+          #  Log.exception $!
+          #  break
+          rescue Exception
+            stream.abort if stream.respond_to? :abort
+            raise $!
           end
         end
+
+      ensure
+        stream.close
+        stream.join if stream.respond_to? :join
       end
 
       self

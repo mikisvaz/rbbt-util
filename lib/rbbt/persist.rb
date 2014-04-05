@@ -155,11 +155,7 @@ module Persist
           Misc.sensiblewrite(path, content * "\n" + "\n")
         end
       when IO
-        Misc.sensiblewrite(path) do |file|
-          while block = content.read(2048)
-            file.write block
-          end
-        end
+        Misc.sensiblewrite(path, content)
       else
         Misc.sensiblewrite(path, content.to_s)
       end
@@ -181,11 +177,15 @@ module Persist
 
     saver_pid = Process.fork do
       out.close
-      Misc.purge_pipes(stream)
+      stream.close
+      Misc.purge_pipes
       begin
         Misc.lock(path) do
           save_file(path, type, file)
         end
+      rescue Aborted
+        stream.abort if stream.respond_to? :abort
+        raise $!
       rescue Exception
         Log.exception $!
         Kernel.exit! -1
@@ -205,7 +205,11 @@ module Persist
         Misc.lock(path) do
           save_file(path, type, file)
         end
+      rescue Aborted
+        Log.error "Tee stream thread aborted"
+        stream.abort if stream.respond_to? :abort
       rescue Exception
+        stream.abort if stream.respond_to? :abort
         Log.exception $!
         parent.raise $!
       end
@@ -320,36 +324,70 @@ module Persist
         end
 
         begin
+
           lock_filename = Persist.persistence_path(path + '.persist', {:dir => Persist.lock_dir})
-          Misc.lock lock_filename  do
+          Misc.lock lock_filename  do |lockfile|
             if is_persisted?(path, persist_options)
               Log.low "Persist up-to-date (suddenly): #{ path } - #{Misc.fingerprint persist_options}"
               return path if persist_options[:no_load]
               return load_file(path, type) 
             end
 
-            Log.medium "Persist create: #{ path } - #{persist_options.inspect[0..100]}"
+            Log.medium "Persist create: #{ path } - #{Misc.fingerprint persist_options}"
+
             res = yield
 
-            case res
-            when nil
-              res = load_file(path) unless persist_options[:no_load]
-            when IO, StringIO
-              res = tee_stream(res, path, type, res.respond_to?(:callback)? res.callback : nil)
-              return res if persist_options[:no_load] == :stream
-            when TSV::Dumper
-              res = tee_stream(res.stream, path, type, res.respond_to?(:callback)? res.callback : nil)
-              return res if persist_options[:no_load] == :stream
-            else
-              Misc.lock(path) do
-                save_file(path, type, res)
+            if persist_options[:no_load] == :stream
+              case res
+              when IO
+                res = tee_stream(res, path, type, res.respond_to?(:callback)? res.callback : nil)
+                ConcurrentStream.setup res do
+                  lockfile.unlock
+                end
+                raise KeepLocked.new res 
+              when TSV::Dumper
+                res = tee_stream(res.stream, path, type, res.respond_to?(:callback)? res.callback : nil)
+                ConcurrentStream.setup res do
+                  lockfile.unlock
+                end
+                raise KeepLocked.new res 
               end
             end
 
-            return path if persist_options[:no_load]
+            case res
+            when IO
+              begin
+                res = case
+                      when :array
+                        res.read.split "\n"
+                      when :tsv
+                        TSV.open(res)
+                      else
+                        res.read
+                      end
+              rescue
+                res.abort if res.respond_to? :abort
+              ensure
+                res.join if res.respond_to? :join
+              end
+            when TSV::Dumper
+              begin
+                io = res.stream
+                res = TSV.open(io)
+              rescue
+                io.abort if io.respond_to? :abort
+              ensure
+                io.join if io.respond_to? :join
+              end
+            end
 
-            res
+            Misc.lock(path) do
+              save_file(path, type, res)
+            end
+
+            persist_options[:no_load] ? path : res
           end
+
         rescue
           Log.high "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"
           FileUtils.rm path if Open.exists? path 

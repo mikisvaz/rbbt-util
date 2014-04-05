@@ -324,4 +324,13 @@ class TestTSVParallelThrough < Test::Unit::TestCase
       end
     end
   end
+
+  def test_traverse_into_stream
+    size = 100
+    array = (1..size).to_a.collect{|n| n.to_s}
+    stream = TSV.traverse array, :into => :stream do |e|
+      e
+    end
+    assert_equal size, stream.read.split("\n").length
+  end
 end
