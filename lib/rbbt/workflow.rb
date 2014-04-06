@@ -159,6 +159,7 @@ module Workflow
   attr_accessor :helpers, :tasks
   attr_accessor :task_dependencies, :task_description, :last_task 
   attr_accessor :asynchronous_exports, :synchronous_exports, :exec_exports
+  attr_accessor :step_cache
 
   #{{{ ATTR DEFAULTS
   
@@ -179,6 +180,10 @@ module Workflow
   def libdir
     @libdir = Path.caller_lib_dir if @libdir.nil?
     @libdir 
+  end
+
+  def step_cache
+    @step_cache ||= {}
   end
   
 
@@ -226,6 +231,28 @@ module Workflow
     end 
   end
 
+  def get_job_step(step_path, task = nil, input_values = nil, dependencies = nil)
+    step_path = step_path.call if Proc === step_path
+    persist = input_values.nil? ? false : true
+    step = Persist.memory("Step", :key => step_path, :repo => step_cache, :persist => persist ) do
+      step = Step.new step_path, task, input_values, dependencies
+
+      helpers.each do |name, block|
+        (class << step; self; end).instance_eval do
+          define_method name, &block
+        end
+      end
+      step
+
+    end
+
+    step.task ||= task
+    step.inputs ||= input_values
+    step.dependencies = dependencies if dependencies and (step.dependencies.nil? or step.dependencies.length < dependencies.length)
+
+    step
+  end
+
   def job(taskname, jobname = nil, inputs = {})
     taskname = taskname.to_sym
     jobname = DEFAULT_NAME if jobname.nil? or jobname.empty?
@@ -247,20 +274,12 @@ module Workflow
       step_path = step_path taskname, jobname, input_values, dependencies, task.extension
     end
 
-    step = Step.new step_path, task, input_values, dependencies
-
-    helpers.each do |name, block|
-      (class << step; self; end).instance_eval do
-        define_method name, &block
-      end
-    end
-
-    step
+    get_job_step step_path, task, input_values, dependencies
   end
 
   def load_step(path)
     task = task_for path
-    Step.new path, tasks[task.to_sym]
+    get_job_step path, tasks[task.to_sym]
   end
 
   def load_id(id)
@@ -279,7 +298,7 @@ module Workflow
   def load_name(task, name)
     task = tasks[task.to_sym] if String === task or Symbol === task
     path = step_path task.name, name, [], [], task.extension
-    Step.new path, task
+    get_job_step path, task
   end
 
   def jobs(taskname, query = nil)

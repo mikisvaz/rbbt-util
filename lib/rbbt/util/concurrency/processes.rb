@@ -31,6 +31,7 @@ class RbbtProcessQueue
           Log.error "Callback thread aborted"
         rescue ClosedStream
         rescue Exception
+          eee :callback
           Log.exception $!
           parent.raise $!
         ensure
@@ -68,7 +69,6 @@ class RbbtProcessQueue
 
   def close_callback
     @callback_queue.push ClosedStream.new if  @callback_thread.alive?
-    @callback_queue.swrite.close 
     @callback_thread.join 
   end
 
@@ -80,6 +80,7 @@ class RbbtProcessQueue
       @process_monitor.join
       close_callback if @callback
     rescue Exception
+      eee :join
       Log.exception $!
     ensure
       @queue.swrite.close
@@ -100,7 +101,7 @@ class RbbtProcessQueue
   end
 
   def abort
-    @process_monitor.raise Aborted.new if @process_monitor.alive?
+    @process_monitor.raise Aborted.new if @process_monitor and @process_monitor.alive?
     @callback_thread.raise Aborted.new if @callback_thread and @callback_thread.alive?
   end
 

@@ -81,7 +81,7 @@ def fix_options(workflow, task, job_options)
   job_options.each do |name, value|
     value = case input_types[name].to_sym
             when :boolean
-              TrueClass == value or %w(true TRUE T yes).include? value
+              TrueClass === value or %w(true TRUE T yes).include? value
             when :float
               value.to_f
             when :integer
@@ -322,7 +322,7 @@ begin
 
   if options.delete(:provenance)
     job.join
-    pp job.provenance
+    pp job.provenance_paths
     exit 0
   end
 

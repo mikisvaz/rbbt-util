@@ -37,7 +37,7 @@ class RbbtProcessQueue
       end
 
       write_length = str.length
-      IO.select(nil, [stream])
+      #IO.select(nil, [stream])
       wrote = stream.write(str) 
       while wrote < write_length
         wrote += stream.write(str[wrote..-1]) 

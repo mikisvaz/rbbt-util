@@ -115,7 +115,7 @@ module TSV
       else
         obj.traverse(options, &block)
       end
-    when IO, File, StringIO
+    when IO, File
       begin
         if options[:type] == :array
           traverse_io_array(obj, options, &block)
@@ -123,7 +123,8 @@ module TSV
           traverse_io(obj, options, &block)
         end
       rescue Exception
-        raise Aborted
+        obj.abort if obj.respond_to? :abort
+        raise $!
       ensure
         begin
           obj.close if obj.respond_to? :close and not obj.closed?
@@ -150,7 +151,7 @@ module TSV
     when Array
       traverse_array(obj, options, &block)
     when nil
-      raise "Can not traverse nil object"
+      raise "Can not traverse nil object into #{stream_name(options)}"
     else
       raise "Unknown object for traversal: #{Misc.fingerprint obj }"
     end
@@ -191,18 +192,24 @@ module TSV
       q.callback &callback
       q.init &block
 
-      traverse_obj(obj, options) do |*p|
-        q.process *p
+      pid = Process.fork do 
+        Misc.purge_pipes(q.queue.swrite)
+        traverse_obj(obj, options) do |*p|
+          q.process *p
+        end
       end
 
-      into = options[:into]
+      #stream = obj_stream(obj)
+      #stream.close if stream
+
+      Process.waitpid pid
     rescue Exception
+      Log.exception $!
       q.abort
       raise $!
     ensure
       q.join
     end
-
   end
 
   def self.store_into(store, value)
@@ -243,11 +250,13 @@ module TSV
     when TSV::Dumper
       close_streams << obj.result.in_stream
     when (defined? Step and Step)
-      case obj.result
-      when IO
-        close_streams << obj.result
-      when TSV::Dumper
-        close_streams << obj.result.in_stream
+      obj.mutex.synchronize do
+        case obj.result
+        when IO
+          close_streams << obj.result
+        when TSV::Dumper
+          close_streams << obj.result.in_stream
+        end
       end
       obj.inputs.each do |input|
         close_streams = get_streams_to_close(input) + close_streams
@@ -294,7 +303,6 @@ module TSV
         parent.raise $!
       end
     end
-    thread.wakeup
     ConcurrentStream.setup(obj_stream(into), :threads => thread)
   end
 
@@ -311,7 +319,8 @@ module TSV
         begin
           traverse(obj, options.merge(:into => sin), &block)                                                                                                                                  
         rescue Exception
-          sin.abort if sin.respond_to? :abort
+          sout.abort if sout.respond_to? :abort
+          sout.join if sout.respond_to? :join
         end
       end                                                                                                                                                                                   
       return sout
@@ -328,11 +337,10 @@ module TSV
       end
 
       case into
-      when TSV::Dumper, IO, StringIO
+      when TSV::Dumper, IO
         traverse_stream(obj, threads, cpus, options, &block)
       else
         traverse_run(obj, threads, cpus, options, &block)
-        into.join if into.respond_to? :join
         into.close if into.respond_to? :close
       end
 

@@ -4,13 +4,29 @@ require 'rbbt/util/color'
 module Log
   extend Term::ANSIColor
 
-  DEBUG    = 0
-  LOW      = 1
-  MEDIUM   = 2
-  HIGH     = 3
-  INFO     = 4
-  WARN     = 5
-  ERROR    = 6
+
+  SEVERITY_NAMES ||= begin
+                     names = %w(DEBUG LOW MEDIUM HIGH INFO WARN ERROR ) 
+                     names.each_with_index do |name,i|
+                       eval "#{ name } = #{ i }" 
+                     end
+                     names
+                   end
+
+  def self.get_level(level)
+    case level
+    when Fixnum
+      level
+    when String
+      begin
+        Log.const_get(level.upcase)
+      rescue
+        Log.exception $!
+      end
+    when Symbol
+      get_level(level.to_s)
+    end || 0
+  end
 
   class << self
     attr_accessor :logfile, :severity, :nocolor, :tty_size
@@ -42,11 +58,15 @@ module Log
     Term::ANSIColor.uncolor(str)
   end
 
-  def self.color(severity, str = nil)
+  def self.reset_color
+    reset
+  end
+
+  def self.color(severity, str = nil, reset = false)
     return str || "" if nocolor 
-    color = SEVERITY_COLOR[severity] if Fixnum === severity
-    color = Term::ANSIColor.send(severity) if Symbol === severity and Term::ANSIColor.respond_to? severity 
-    color ||= ""
+    color = reset ? Term::ANSIColor.reset : ""
+    color << SEVERITY_COLOR[severity] if Fixnum === severity
+    color << Term::ANSIColor.send(severity) if Symbol === severity and Term::ANSIColor.respond_to? severity 
     if str.nil?
       color
     else
@@ -90,6 +110,40 @@ module Log
       STDERR.puts str
       logfile.puts str unless logfile.nil?
     end
+  end
+
+  def self.log_obj_inspect(obj, level, file = $stdout)
+    stack = caller
+
+    line = nil
+    while line.nil? or line =~ /util\/log\.rb/ and stack.any?
+      line = stack.shift 
+    end
+    line ||= caller.first
+
+    level = Log.get_level level
+    name = Log::SEVERITY_NAMES[level] + ": "
+    Log.log Log.color(level, name, true) << line, level
+    Log.log "", level
+    Log.log Log.color(level, "=> ", true) << obj.inspect, level
+    Log.log "", level
+  end
+
+  def self.log_obj_fingerprint(obj, level, file = $stdout)
+    stack = caller
+
+    line = nil
+    while line.nil? or line =~ /util\/log\.rb/ and stack.any?
+      line = stack.shift 
+    end
+    line ||= caller.first
+
+    level = Log.get_level level
+    name = Log::SEVERITY_NAMES[level] + ": "
+    Log.log Log.color(level, name, true) << line, level
+    Log.log "", level
+    Log.log Log.color(level, "=> ", true) << Misc.fingerprint(obj), level
+    Log.log "", level
   end
 
   def self.debug(message = nil, &block)
@@ -157,52 +211,52 @@ def fff(object)
   Log.debug{""}
 end
 
-def ddd(message, file = $stdout)
-  stack = caller
-  Log.debug{"#{Log.color :cyan, "DEBUG:"} " << stack.first}
-  Log.debug{""}
-  Log.debug{"=> " << message.inspect}
-  Log.debug{""}
+def ddd(obj, file = $stdout)
+  Log.log_obj_inspect(obj, :debug, file)
 end
 
-def lll(message, file = $stdout)
-  stack = caller
-  Log.low{"#{Log.color :cyan, "LOW:"} " << stack.first}
-  Log.low{""}
-  Log.low{"=> " << message.inspect}
-  Log.low{""}
+def lll(obj, file = $stdout)
+  Log.log_obj_inspect(obj, :low, file)
 end
 
-def mmm(message, file = $stdout)
-  stack = caller
-  Log.low{"#{Log.color :cyan, "MEDIUM:"} " << stack.first}
-  Log.low{""}
-  Log.low{"=> " << message.inspect}
-  Log.low{""}
+def mmm(obj, file = $stdout)
+  Log.log_obj_inspect(obj, :medium, file)
 end
 
-def hhh(message, file = $stdout)
-  stack = caller
-  Log.high{"#{Log.color :cyan, "HIGH:"} " << stack.first}
-  Log.high{""}
-  Log.high{"=> " << message.inspect}
-  Log.high{""}
+def iii(obj, file = $stdout)
+  Log.log_obj_inspect(obj, :info, file)
 end
 
-def iii(message, file = $stdout)
-  stack = caller
-  Log.info{"#{Log.color :cyan, "INFO:"} " << stack.first}
-  Log.info{""}
-  Log.info{"=> " << message.inspect}
-  Log.info{""}
+def wwww(obj, file = $stdout)
+  Log.log_obj_inspect(obj, :warn, file)
 end
 
-def eee(message, file = $stdout)
-  stack = caller
-  Log.error{"#{Log.color :cyan, "INFO:"} " << stack.first}
-  Log.error{""}
-  Log.error{"=> " << message.inspect}
-  Log.error{""}
+def eee(obj, file = $stdout)
+  Log.log_obj_inspect(obj, :error, file)
+end
+
+def ddf(obj, file = $stdout)
+  Log.log_obj_fingerprint(obj, :debug, file)
+end
+
+def llf(obj, file = $stdout)
+  Log.log_obj_fingerprint(obj, :low, file)
+end
+
+def mmf(obj, file = $stdout)
+  Log.log_obj_fingerprint(obj, :medium, file)
+end
+
+def iif(obj, file = $stdout)
+  Log.log_obj_fingerprint(obj, :info, file)
+end
+
+def wwwf(obj, file = $stdout)
+  Log.log_obj_fingerprint(obj, :warn, file)
+end
+
+def eef(obj, file = $stdout)
+  Log.log_obj_fingerprint(obj, :error, file)
 end
 
 if __FILE__ == $0
@@ -211,4 +265,8 @@ if __FILE__ == $0
   (0..6).each do |level|
     Log.log("Level #{level}", level)
   end
+
+  require 'rbbt/util/misc'
+  eee [1,2,3]
+  eef [1,2,3]
 end

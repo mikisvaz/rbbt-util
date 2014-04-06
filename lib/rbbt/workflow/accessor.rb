@@ -42,24 +42,29 @@ class Step
   def info
     return {} if info_file.nil? or not Open.exists? info_file
     begin
-      return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
-    rescue Exception
-    end
-    begin
-      @info_cache = Misc.insist(3, 5, info_file) do
-        Misc.insist(2, 2, info_file) do
-          Misc.insist(2, 0.5, info_file) do
-            Open.open(info_file) do |file|
-              INFO_SERIALIAZER.load(file) || {}
+      @info_mutex.synchronize do
+        begin
+          return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
+        rescue Exception
+        end
+        begin
+          @info_cache = Misc.insist(2, 1, info_file) do
+            Misc.insist(2, 0.5, info_file) do
+              Misc.insist(3, 0.1, info_file) do
+                Open.open(info_file) do |file|
+                  INFO_SERIALIAZER.load(file) || {}
+                end
+              end
             end
           end
+          @info_cache_time = Time.now
+          @info_cache
         end
       end
-      @info_cache_time = Time.now
-      @info_cache
     rescue Exception
       Log.debug{"Error loading info file: " + info_file}
       Open.write(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
+      self.abort
       raise $!
     end
   end
@@ -69,7 +74,7 @@ class Step
     value = Annotated.purge value if defined? Annotated
     Open.lock(info_file) do
       i = info
-      i[key] = value #File === value ? value.filename : value
+      i[key] = value 
       @info_cache = i
       Open.write(info_file, INFO_SERIALIAZER.dump(i))
       @info_cache_time = Time.now
@@ -141,6 +146,10 @@ class Step
 
   def done?
     path and path.exists?
+  end
+
+  def streaming?
+    IO === @result or status == :streaming
   end
 
   def running?
@@ -238,6 +247,14 @@ class Step
       end
     end
     {:inputs => info[:inputs], :provenance => provenance}
+  end
+
+  def provenance_paths
+    provenance = {}
+    dependencies.each do |dep|
+      provenance[dep.path] = dep.provenance_paths if File.exists? dep.path
+    end
+    provenance
   end
 end
 

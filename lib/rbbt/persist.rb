@@ -217,14 +217,70 @@ module Persist
     ConcurrentStream.setup(out, :threads => saver_thread, :filename => path)
   end
 
+  def self.tee_stream_pipe(stream, path, type, callback = nil)
+    parent_pid = Process.pid
+    out = Misc.open_pipe true, false do |sin|
+      begin
+        file, out = Misc.tee_stream(stream)
+
+        saver_th = Thread.new(Thread.current, path, file) do |parent,path,file|
+          begin
+            Misc.lock(path) do
+              save_file(path, type, file)
+            end
+          rescue Aborted
+            Log.error "Saver stream thread aborted"
+            stream.abort if stream.respond_to? :abort
+          rescue Exception
+            stream.abort if stream.respond_to? :abort
+            Log.exception $!
+            parent.raise $!
+          end
+        end
+
+        tee_th = Thread.new(Thread.current) do |parent|
+          begin
+            while block = out.read(2028)
+              sin.write block
+            end
+          rescue Aborted
+            Log.error "Tee stream thread aborted"
+            stream.abort if stream.respond_to? :abort
+          rescue Exception
+            stream.abort if stream.respond_to? :abort
+            Log.exception $!
+            parent.raise $!
+          ensure
+            sin.close unless sin.closed?
+          end
+        end
+        saver_th.join
+        tee_th.join
+      rescue Aborted
+        tee_th.raise Aborted.new if tee_th and tee_th.alive?
+        saver_th.raise Aborted.new if saver_th and saver_th.alive?
+        Kernel.exit! -1
+      rescue Exception
+        tee_th.raise Aborted.new if tee_th and tee_th.alive?
+        saver_th.raise Aborted.new if saver_th and saver_th.alive?
+        Log.exception $!
+        Process.kill :INT, parent_pid
+        Kernel.exit! -1
+      end
+    end
+    stream.close
+    out
+  end
+
   class << self
     alias tee_stream tee_stream_thread 
   end
 
+
   def self.persist(name, type = nil, persist_options = {})
     type ||= :marshal
 
-    return (persist_options[:repo] || Persist::MEMORY)[persist_options[:file]] ||= yield if type ==:memory and persist_options[:file]
+    return (persist_options[:repo] || Persist::MEMORY)[persist_options[:file]] ||= yield if type ==:memory and persist_options[:file] and persist_options[:persist] and persist_options[:persist] != :update
 
     if FalseClass != persist_options[:persist]
       other_options = Misc.process_options persist_options, :other
@@ -327,6 +383,7 @@ module Persist
 
           lock_filename = Persist.persistence_path(path + '.persist', {:dir => Persist.lock_dir})
           Misc.lock lock_filename  do |lockfile|
+
             if is_persisted?(path, persist_options)
               Log.low "Persist up-to-date (suddenly): #{ path } - #{Misc.fingerprint persist_options}"
               return path if persist_options[:no_load]
@@ -342,13 +399,21 @@ module Persist
               when IO
                 res = tee_stream(res, path, type, res.respond_to?(:callback)? res.callback : nil)
                 ConcurrentStream.setup res do
-                  lockfile.unlock
+                  begin
+                    lockfile.unlock
+                  rescue
+                    Log.warn "Lockfile exception: " << $!.message
+                  end
                 end
                 raise KeepLocked.new res 
               when TSV::Dumper
                 res = tee_stream(res.stream, path, type, res.respond_to?(:callback)? res.callback : nil)
                 ConcurrentStream.setup res do
-                  lockfile.unlock
+                  begin
+                    lockfile.unlock
+                  rescue
+                    Log.warn "Lockfile exception: " << $!.message
+                  end
                 end
                 raise KeepLocked.new res 
               end
@@ -410,7 +475,7 @@ module Persist
       file = name
       repo = options.delete :repo if options and options.any?
       file << "_" << (options[:key] ? options[:key] : Misc.hash2md5(options)) if options and options.any?
-      persist name, :memory, options.merge(:repo => repo, :persist => true, :file => file), &block
+      persist name, :memory, {:repo => repo, :persist => true, :file => file}.merge(options), &block
     end
   end
 end

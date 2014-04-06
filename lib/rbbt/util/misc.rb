@@ -35,7 +35,11 @@ module LaterString
 end
 
 module ConcurrentStream
-  attr_accessor :threads, :pids, :callback, :filename
+  attr_accessor :threads, :pids, :callback, :filename, :joined
+
+  def joined?
+    @joined
+  end
 
   def join
 
@@ -57,10 +61,12 @@ module ConcurrentStream
       @pids = []
     end
 
-    if @callback
+    if @callback and not joined?
       @callback.call
       @callback = nil
     end
+
+    @joined = true
   end
 
   def abort
@@ -147,11 +153,11 @@ module Misc
           Process.kill :INT, parent_pid
           Kernel.exit! -1
         ensure
-          sin.close unless sin.closed? 
+          sin.close if close and not sin.closed? 
         end
         Kernel.exit! 0
       }
-      sin.close if close
+      sin.close #if close
       ConcurrentStream.setup sout, :pids => [pid]
     else
       thread = Thread.new(Thread.current) do |parent|
@@ -160,7 +166,7 @@ module Misc
         rescue
           parent.raise $!
         ensure
-          sin.close if close 
+          sin.close if close and not sin.closed?
         end
       end
       ConcurrentStream.setup sout, :threads => [thread]
@@ -246,6 +252,10 @@ module Misc
     alias tee_stream tee_stream_thread 
   end
 
+  def self.consume_stream(io)
+    Thread.pass while block = io.read(2048)
+  end
+
   def self.format_paragraph(text, size = 80, indent = 0, offset = 0)
     i = 0
     re = /((?:\n\s*\n\s*)|(?:\n\s*(?=\*)))/
@@ -316,6 +326,14 @@ module Misc
       if new = stream.read(size-str.length)
         str << new
       end
+    end
+    str
+  end
+
+  def self.read_stream(stream, size)
+    str = ""
+    while (len=str.length) < size
+      str << stream.read(size-len)
     end
     str
   end
@@ -531,9 +549,9 @@ module Misc
       else 
         "'" << obj << "'"
       end
-    when AnnotatedArray
+    when (defined? AnnotatedArray and AnnotatedArray)
       "<A: #{fingerprint Annotated.purge(obj)} #{fingerprint obj.info}>"
-    when TSV::Parser
+    when (defined? TSV and TSV::Parser)
       "<TSVStream:" + obj.filename + "--" << Misc.fingerprint(obj.options) << ">"
     when IO
       "<IO:" + (obj.respond_to?(:filename) ? obj.filename : obj.inspect) + ">"
@@ -545,7 +563,7 @@ module Misc
       else
         "[" << (obj.collect{|e| fingerprint(e) } * ",") << "]"
       end
-    when TSV
+    when (defined? TSV and TSV)
       obj.with_unnamed do
         "TSV:{"<< fingerprint(obj.all_fields|| []).inspect << ";" << fingerprint(obj.keys).inspect << "}"
       end
@@ -1185,6 +1203,7 @@ end
       else
         Log.warn("Insisting after exception: #{$!.message}")
       end
+      Log.exception $!
       if sleep and try > 0
         sleep sleep
       else
@@ -1301,6 +1320,7 @@ end
     @hostanem ||= `hostname`.strip
   end
 
+  LOCK_MUTEX = Mutex.new
   def self.lock(file, unlock = true)
     return yield if file.nil?
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
@@ -1310,24 +1330,48 @@ end
     lock_path = File.expand_path(file + '.lock')
     lockfile = Lockfile.new(lock_path)
 
-    begin
-      Misc.insist 3 do
-        if File.exists? lock_path and
-          Misc.hostname == (info = Open.open(lock_path){|f| YAML.load(f) })["host"] and 
-          info["pid"] and not Misc.pid_exists?(info["pid"])
+    hostname = Misc.hostname
+    LOCK_MUTEX.synchronize do
+      begin
+        Misc.insist 3, 0.1 do
+          if File.exists? lock_path
+            info = Open.open(lock_path){|f| YAML.load(f) }
 
-          Log.info("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
-          FileUtils.rm lock_path 
+            if hostname == info["host"] and not Misc.pid_exists?(info["pid"])
+              Log.info("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
+              FileUtils.rm lock_path
+            end
+          end
         end
+      rescue Exception
+        Log.exception $!
+        FileUtils.rm lock_path if File.exists? lock_path
+      ensure
+        lockfile = Lockfile.new(lock_path) unless File.exists? lock_path
       end
-    rescue
-      Log.warn("Error checking lockfile #{lock_path}: #{$!.message}. Removing. Content: #{begin Open.read(lock_path) rescue "Could not open file" end}")
-      FileUtils.rm lock_path if File.exists?(lock_path)
-      lockfile = Lockfile.new(lock_path)
-      retry
     end
 
+    #begin
+    #  Misc.insist 3 do
+    #    LOCK_MUTEX.synchronize do
+    #      if File.exists? lock_path and
+    #        Misc.hostname == (info = Open.open(lock_path){|f| YAML.load(f) })["host"] and 
+    #        info["pid"] and not Misc.pid_exists?(info["pid"])
+
+    #        Log.info("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
+    #        FileUtils.rm lock_path 
+    #      end
+    #    end
+    #  end
+    #rescue
+    #  Log.warn("Error checking lockfile #{lock_path}: #{$!.message}. Removing. Content: #{begin Open.read(lock_path) rescue "Could not open file" end}")
+    #  FileUtils.rm lock_path if File.exists?(lock_path)
+    #  lockfile = Lockfile.new(lock_path)
+    #  retry
+    #end
+
     begin
+      
       lockfile.lock 
       res = yield lockfile
     rescue Lockfile::StolenLockError
@@ -1338,7 +1382,6 @@ end
     ensure
       if unlock and lockfile.locked?
         lockfile.unlock
-        FileUtils.rm lock_path if File.exists? lock_path
       end
     end
 
