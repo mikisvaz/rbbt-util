@@ -1203,7 +1203,6 @@ end
       else
         Log.warn("Insisting after exception: #{$!.message}")
       end
-      Log.exception $!
       if sleep and try > 0
         sleep sleep
       else
@@ -1332,22 +1331,23 @@ end
 
     hostname = Misc.hostname
     LOCK_MUTEX.synchronize do
-      begin
-        Misc.insist 3, 0.1 do
+      Misc.insist 3, 0.1 do
+        begin
           if File.exists? lock_path
             info = Open.open(lock_path){|f| YAML.load(f) }
+            raise "No info" unless info
 
             if hostname == info["host"] and not Misc.pid_exists?(info["pid"])
               Log.info("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
               FileUtils.rm lock_path
             end
           end
+        rescue Exception
+          FileUtils.rm lock_path if File.exists? lock_path
+          raise $!
+        ensure
+          lockfile = Lockfile.new(lock_path) unless File.exists? lock_path
         end
-      rescue Exception
-        Log.exception $!
-        FileUtils.rm lock_path if File.exists? lock_path
-      ensure
-        lockfile = Lockfile.new(lock_path) unless File.exists? lock_path
       end
     end
 

@@ -80,8 +80,8 @@ class RbbtProcessQueue
       @process_monitor.join
       close_callback if @callback
     rescue Exception
-      eee :join
       Log.exception $!
+      raise $!
     ensure
       @queue.swrite.close
     end
