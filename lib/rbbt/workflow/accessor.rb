@@ -105,10 +105,21 @@ class Step
   def self.log(status, message, path, &block)
     if block_given?
       start = Time.now
+      status = status.to_s
+      status_color = case status
+                     when "starting"
+                       :yellow
+                     when "error"
+                       :red
+                     when "done"
+                       :green
+                     else
+                       :cyan
+                     end
       Log.info do 
         now = Time.now
         str = Log.color :reset
-        str << "#{ Log.color :cyan, status.to_s }"
+        str << "#{ Log.color status_color, status}"
         str << ": #{ message }" if message
         str << " -- #{Log.color :blue, path.to_s}" if path
         str
@@ -123,10 +134,21 @@ class Step
       end
       res
     else
+      status = status.to_s
+      status_color = case status
+                     when "starting"
+                       :yellow
+                     when "error"
+                       :red
+                     when "done"
+                       :green
+                     else
+                       :cyan
+                     end
       Log.info do 
         now = Time.now
         str = Log.color :reset
-        str << "#{ Log.color :cyan, status.to_s }"
+        str << "#{ Log.color status_color, status}"
         str << ": #{ message }" if message
         str << " -- #{Log.color :blue, path.to_s}" if path
         str

@@ -234,7 +234,8 @@ module Workflow
   def get_job_step(step_path, task = nil, input_values = nil, dependencies = nil)
     step_path = step_path.call if Proc === step_path
     persist = input_values.nil? ? false : true
-    step = Persist.memory("Step", :key => step_path, :repo => step_cache, :persist => persist ) do
+    key = Path === step_path ? step_path.find : step_path
+    step = Persist.memory("Step", :key => key, :repo => step_cache, :persist => persist ) do
       step = Step.new step_path, task, input_values, dependencies
 
       helpers.each do |name, block|

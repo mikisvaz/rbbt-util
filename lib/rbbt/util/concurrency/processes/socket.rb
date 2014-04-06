@@ -9,7 +9,7 @@ class RbbtProcessQueue
     def initialize
       @sread, @swrite = Misc.pipe
 
-      key = rand(100000).to_s;
+      key = rand(100000000).to_s;
       @write_sem = key + '.in'
       @read_sem = key + '.out'
       RbbtSemaphore.create_semaphore(@write_sem,1)

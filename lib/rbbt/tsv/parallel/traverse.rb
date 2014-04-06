@@ -199,12 +199,9 @@ module TSV
         end
       end
 
-      #stream = obj_stream(obj)
-      #stream.close if stream
-
       Process.waitpid pid
     rescue Exception
-      Log.exception $!
+      Log.error "Exception traversin in cpus: #{$!.message}"
       q.abort
       raise $!
     ensure

@@ -52,7 +52,7 @@ class Step
         def log(status, message = nil)
           self.status = status
           message message
-          relay_step.log([task.name.to_s, status.to_s] * ">", message.nil? ? nil : message )
+          relay_step.log([task.name.to_s, status.to_s] * ">", message.nil? ? nil : message ) unless relay_step.done? or relay_step.error? or relay_step.aborted?
         end
       end
     end
@@ -80,8 +80,8 @@ class Step
       rescue Exception
         value.abort if value.respond_to? :abort
       ensure
-        value.close unless value.closed?
         value.join if value.respond_to? :join
+        value.close unless value.closed?
       end
     when (not defined? Entity or description.nil? or not Entity.formats.include? description)
       value
@@ -152,10 +152,26 @@ class Step
     rec_dependencies.collect{|dependency| dependency.path }.uniq
   end
 
+  def kill_children
+    children_pids = info[:children_pids]
+    if children_pids and children_pids.any?
+      Log.medium("Killing children: #{ children_pids * ", " }")
+      children_pids.each do |pid|
+        Log.medium("Killing child #{ pid }")
+        begin
+          Process.kill "INT", pid
+        rescue Exception
+          Log.medium("Exception killing child #{ pid }: #{$!.message}")
+        end
+      end
+    end
+  end
+
   def run(no_load = false)
 
     @mutex.synchronize do
-      result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load ? :stream : false do
+      no_load = no_load ? :stream : false
+      result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load do |lockfile|
         if Step === Step.log_relay_step and not self == Step.log_relay_step
           relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
         end
@@ -176,7 +192,8 @@ class Step
             dependency.relay_log self
             dependency.clean if not dependency.done? and dependency.error?
             dependency.clean if dependency.streaming? and not dependency.running?
-            dependency.run true unless dependency.result 
+            dependency.run true unless dependency.result or dependency.done?
+            seen_deps << dependency.path
             seen_deps.concat dependency.rec_dependencies.collect{|d| d.path} 
           rescue Exception
             backtrace = $!.backtrace
@@ -196,29 +213,30 @@ class Step
         rescue Aborted
           log(:error, "Aborted")
 
-          children_pids = info[:children_pids]
-          if children_pids and children_pids.any?
-            Log.medium("Killing children: #{ children_pids * ", " }")
-            children_pids.each do |pid|
-              Log.medium("Killing child #{ pid }")
-              begin
-                Process.kill "INT", pid
-              rescue Exception
-                Log.medium("Exception killing child #{ pid }: #{$!.message}")
-              end
-            end
-          end
-
+          #          children_pids = info[:children_pids]
+          #          if children_pids and children_pids.any?
+          #            Log.medium("Killing children: #{ children_pids * ", " }")
+          #            children_pids.each do |pid|
+          #              Log.medium("Killing child #{ pid }")
+          #              begin
+          #                Process.kill "INT", pid
+          #              rescue Exception
+          #                Log.medium("Exception killing child #{ pid }: #{$!.message}")
+          #              end
+          #            end
+          #          end
+          
+          kill_children
           raise $!
         rescue Exception
           backtrace = $!.backtrace
 
           # HACK: This fixes an strange behaviour in 1.9.3 where some
           # backtrace strings are coded in ASCII-8BIT
-          backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
-
+          kill_children
           set_info :backtrace, backtrace 
           log(:error, "#{$!.class}: #{$!.message}")
+          backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
           raise $!
         end
 
@@ -234,6 +252,13 @@ class Step
               Log.exception $!
             end
           end
+          result.abort_callback = Proc.new do
+            begin
+              log :error, "#{Log.color :red, "ERROR -- streamming aborted"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] -- #{path}"
+            rescue
+              Log.exception $!
+            end
+          end
         when TSV::Dumper
           log :streaming, "#{Log.color :magenta, "Streaming task result TSV::Dumper"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
           ConcurrentStream.setup result.stream do
@@ -242,6 +267,13 @@ class Step
               set_info :done, (done_time = Time.now)
               set_info :time_elapsed, (time_elapsed = done_time - start_time)
               log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i} -- #{path}"
+            rescue
+              Log.exception $!
+            end
+          end
+          result.stream.abort_callback = Proc.new do
+            begin
+              log :error, "#{Log.color :red, "ERROR -- streamming aborted"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] -- #{path}"
             rescue
               Log.exception $!
             end

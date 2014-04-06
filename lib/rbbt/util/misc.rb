@@ -35,7 +35,7 @@ module LaterString
 end
 
 module ConcurrentStream
-  attr_accessor :threads, :pids, :callback, :filename, :joined
+  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined
 
   def joined?
     @joined
@@ -72,6 +72,7 @@ module ConcurrentStream
   def abort
     @threads.each{|t| t.raise Aborted.new } if @threads
     @pids.each{|pid| Process.kill :INT, pid } if @pids
+    @abort_callback.call if @abort_callback
   end
 
   def self.setup(stream, options = {}, &block)

@@ -83,48 +83,53 @@ module Persist
 
   TRUE_STRINGS = Set.new ["true", "True", "TRUE", "t", "T", "1", "yes", "Yes", "YES", "y", "Y", "ON", "on"] unless defined? TRUE_STRINGS
   def self.load_file(path, type)
-    case (type || :marshal).to_sym
-    when :nil
-      nil
-    when :boolean
-      TRUE_STRINGS.include? Open.read(path).chomp.strip
-    when :annotations
-      Annotated.load_tsv TSV.open(path)
-    when :tsv
-      TSV.open(path)
-    when :marshal_tsv
-      TSV.setup(Marshal.load(Open.open(path)))
-    when :fwt
-      FixWidthTable.get(path) 
-    when :string, :text
-      Open.read(path)
-    when :binary
-      f = File.open(path, 'rb')
-      res = f.read
-      f.close
-      res.force_encoding("ASCII-8BIT") if res.respond_to? :force_encoding
-      res
-    when :array
-      res = Open.read(path).split("\n", -1)
-      res.pop
-      res
-    when :marshal
-      Marshal.load(Open.open(path))
-    when :yaml
-      YAML.load(Open.open(path))
-    when :float
-      Open.read(path).to_f
-    when :integer
-      Open.read(path).to_i
-    else
-      raise "Unknown persistence: #{ type }"
+    begin
+      case (type || :marshal).to_sym
+      when :nil
+        nil
+      when :boolean
+        TRUE_STRINGS.include? Open.read(path).chomp.strip
+      when :annotations
+        Annotated.load_tsv TSV.open(path)
+      when :tsv
+        TSV.open(path)
+      when :marshal_tsv
+        TSV.setup(Marshal.load(Open.open(path)))
+      when :fwt
+        FixWidthTable.get(path) 
+      when :string, :text
+        Open.read(path)
+      when :binary
+        f = File.open(path, 'rb')
+        res = f.read
+        f.close
+        res.force_encoding("ASCII-8BIT") if res.respond_to? :force_encoding
+        res
+      when :array
+        res = Open.read(path).split("\n", -1)
+        res.pop
+        res
+      when :marshal
+        Marshal.load(Open.open(path))
+      when :yaml
+        YAML.load(Open.open(path))
+      when :float
+        Open.read(path).to_f
+      when :integer
+        Open.read(path).to_i
+      else
+        raise "Unknown persistence: #{ type }"
+      end
+    rescue
+      Log.error "Exception loading #{ type } #{ path }: #{$!.message}"
+      raise $!
     end
   end
 
   def self.save_file(path, type, content)
 
     return if content.nil?
-    
+
     case (type || :marshal).to_sym
     when :nil
       nil
@@ -248,9 +253,11 @@ module Persist
             end
           rescue Aborted
             Log.error "Tee stream thread aborted"
-            stream.abort if stream.respond_to? :abort
+            sout.abort if sout.respond_to? :abort
+            sin.abort if sin.respond_to? :abort
           rescue Exception
-            stream.abort if stream.respond_to? :abort
+            sin.abort if sin.respond_to? :abort
+            sout.abort if sout.respond_to? :abort
             Log.exception $!
             parent.raise $!
           ensure
@@ -413,6 +420,7 @@ module Persist
                 res = tee_stream(res.stream, path, type, res.respond_to?(:callback)? res.callback : nil)
                 ConcurrentStream.setup res do
                   begin
+                    iii [:unlock, lockfile.path]
                     lockfile.unlock
                   rescue
                     Log.warn "Lockfile exception: " << $!.message
