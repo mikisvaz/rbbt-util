@@ -31,8 +31,7 @@ class RbbtProcessQueue
           Log.error "Callback thread aborted"
         rescue ClosedStream
         rescue Exception
-          eee :callback
-          Log.exception $!
+          Log.error "Callback thread exception"
           parent.raise $!
         ensure
           @callback_queue.sread.close unless @callback_queue.sread.closed?
