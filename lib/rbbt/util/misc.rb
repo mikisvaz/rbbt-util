@@ -71,8 +71,11 @@ module ConcurrentStream
 
   def abort
     @threads.each{|t| t.raise Aborted.new } if @threads
+    @threads.each{|t| t.join } if @threads
     @pids.each{|pid| Process.kill :INT, pid } if @pids
+    @pids.each{|pid| Process.waitpid pid } if @pids
     @abort_callback.call if @abort_callback
+    @abort_callback = nil
   end
 
   def self.setup(stream, options = {}, &block)
@@ -253,8 +256,30 @@ module Misc
     alias tee_stream tee_stream_thread 
   end
 
+  def self.read_full_stream(io)
+    str = ""
+    begin
+      while block = io.read(2048)
+        str << block
+      end
+    rescue
+      io.abort if io.respond_to? :abort
+    ensure
+      io.join if io.respond_to? :join
+      io.close if io.respond_to? :close
+    end
+    str
+  end
+
   def self.consume_stream(io)
-    Thread.pass while block = io.read(2048)
+    begin
+      Thread.pass while block = io.read(2048)
+    rescue
+      io.abort if io.respond_to? :abort
+    ensure
+      io.join if io.respond_to? :join
+      io.close if io.respond_to? :close
+    end
   end
 
   def self.format_paragraph(text, size = 80, indent = 0, offset = 0)
@@ -332,9 +357,27 @@ module Misc
   end
 
   def self.read_stream(stream, size)
+    str = nil
+    Thread.pass while IO.select([stream],nil,nil,1).nil?
+    while not str = stream.read(size)
+      IO.select([stream],nil,nil,1) 
+      Thread.pass
+      raise ClosedStream if stream.eof?
+    end
+
+    while str.length < size
+      raise ClosedStream if stream.eof?
+      IO.select([stream],nil,nil,1)
+      if new = stream.read(size-str.length)
+        str << new
+      end
+    end
+    str
+  end
+  def self._read_stream(stream, size)
     str = ""
     while (len=str.length) < size
-      str << stream.read(size-len)
+      str << (stream.read(size-len) or break)
     end
     str
   end
@@ -1332,47 +1375,28 @@ end
 
     hostname = Misc.hostname
     LOCK_MUTEX.synchronize do
-      Misc.insist 3, 0.1 do
-        begin
-          if File.exists? lock_path
-            info = Open.open(lock_path){|f| YAML.load(f) }
-            raise "No info" unless info
+      Misc.insist 2, 0.1 do
+        Misc.insist 3, 0.1 do
+          begin
+            if File.exists? lock_path
+              info = Open.open(lock_path){|f| YAML.load(f) }
+              raise "No info" unless info
 
-            if hostname == info["host"] and not Misc.pid_exists?(info["pid"])
-              Log.info("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
-              FileUtils.rm lock_path
+              if hostname == info["host"] and not Misc.pid_exists?(info["pid"])
+                Log.info("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
+                FileUtils.rm lock_path
+              end
             end
+          rescue Exception
+            FileUtils.rm lock_path if File.exists? lock_path
+            lockfile = Lockfile.new(lock_path) unless File.exists? lock_path
+            raise $!
           end
-        rescue Exception
-          FileUtils.rm lock_path if File.exists? lock_path
-          raise $!
-        ensure
-          lockfile = Lockfile.new(lock_path) unless File.exists? lock_path
         end
       end
     end
 
-    #begin
-    #  Misc.insist 3 do
-    #    LOCK_MUTEX.synchronize do
-    #      if File.exists? lock_path and
-    #        Misc.hostname == (info = Open.open(lock_path){|f| YAML.load(f) })["host"] and 
-    #        info["pid"] and not Misc.pid_exists?(info["pid"])
-
-    #        Log.info("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
-    #        FileUtils.rm lock_path 
-    #      end
-    #    end
-    #  end
-    #rescue
-    #  Log.warn("Error checking lockfile #{lock_path}: #{$!.message}. Removing. Content: #{begin Open.read(lock_path) rescue "Could not open file" end}")
-    #  FileUtils.rm lock_path if File.exists?(lock_path)
-    #  lockfile = Lockfile.new(lock_path)
-    #  retry
-    #end
-
     begin
-      
       lockfile.lock 
       res = yield lockfile
     rescue Lockfile::StolenLockError
@@ -1498,6 +1522,7 @@ end
           end
           FileUtils.mv tmp_path, path
         rescue Exception
+          Log.error "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
           FileUtils.rm_f tmp_path if File.exists? tmp_path
           FileUtils.rm_f path if File.exists? path
           raise $!

@@ -60,15 +60,19 @@ class RbbtProcessQueue
       rescue Exception
         Log.error "Process monitor exception: #{$!.message}"
         @processes.each{|p| p.abort }
-        @callback_thread.raise Aborted.new if @callback_thread
+        @callback_thread.raise $! if @callback_thread
         parent.raise $!
       end
     end
   end
 
   def close_callback
-    @callback_queue.push ClosedStream.new if  @callback_thread.alive?
-    @callback_thread.join 
+    begin
+      @callback_queue.push ClosedStream.new if @callback_thread.alive?
+    rescue
+      Log.error "Error closing callback: #{$!.message}"
+    end
+    @callback_thread.join  if @callback_thread.alive?
   end
 
   def join

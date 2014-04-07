@@ -404,7 +404,7 @@ module Persist
 
             res = yield
 
-            if persist_options[:no_load] == :stream
+            if persist_options[:no_load] == :stream 
               case res
               when IO
                 res = tee_stream(res, path, type, res.respond_to?(:callback)? res.callback : nil)
@@ -420,7 +420,6 @@ module Persist
                 res = tee_stream(res.stream, path, type, res.respond_to?(:callback)? res.callback : nil)
                 ConcurrentStream.setup res do
                   begin
-                    iii [:unlock, lockfile.path]
                     lockfile.unlock
                   rescue
                     Log.warn "Lockfile exception: " << $!.message

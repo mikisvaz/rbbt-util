@@ -40,135 +40,137 @@ class Step
   end
 
   class << self
-    attr_accessor :log_relay_step
-  end
+  attr_accessor :log_relay_step
+end
 
-  def relay_log(step)
-    return self unless Task === self.task and not self.task.name.nil?
-    if not self.respond_to? :original_log
-      class << self
-        attr_accessor :relay_step
-        alias original_log log 
-        def log(status, message = nil)
-          self.status = status
-          message message
-          relay_step.log([task.name.to_s, status.to_s] * ">", message.nil? ? nil : message ) unless relay_step.done? or relay_step.error? or relay_step.aborted?
-        end
+def relay_log(step)
+  return self unless Task === self.task and not self.task.name.nil?
+  if not self.respond_to? :original_log
+    class << self
+      attr_accessor :relay_step
+      alias original_log log 
+      def log(status, message = nil)
+        self.status = status
+        message Log.uncolor message
+        relay_step.log([task.name.to_s, status.to_s] * ">", message.nil? ? nil : message ) unless (relay_step.done? or relay_step.error? or relay_step.aborted?)
       end
     end
-    @relay_step = step
+  end
+  @relay_step = step
+  self
+end
+
+def prepare_result(value, description = nil, info = {})
+  #info = self.info
+  case 
+  when IO === value
+    begin
+      case @task.result_type
+      when :array
+        array = []
+        while line = value.gets
+          array << line
+        end
+        array
+      when :tsv
+        TSV.open(value)
+      else
+        value.read
+      end
+    rescue Exception
+      value.abort if value.respond_to? :abort
+    ensure
+      value.join if value.respond_to? :join
+      value.close unless value.closed?
+    end
+  when (not defined? Entity or description.nil? or not Entity.formats.include? description)
+    value
+  when (Annotated === value and info.empty?)
+    value
+  when Annotated === value
+    annotations = value.annotations
+    info.each do |k,v|
+      value.send("#{h}=", v) if annotations.include? k
+    end
+    value
+  else
+    Entity.formats[description].setup(value, info.merge(:format => description))
+  end
+end
+
+def get_stream
+  @mutex.synchronize do
+    begin
+      IO === @result ? @result : nil
+    ensure
+      @result = nil
+    end
+  end
+end
+
+def _exec
+  @exec = true if @exec.nil?
+  @task.exec_in((bindings ? bindings : self), *@inputs)
+end
+
+def exec(no_load=false)
+  dependencies.each{|dependency| dependency.exec(no_load) }
+  @result = _exec
+  @result = @result.stream if TSV::Dumper === @result
+  no_load ? @result : prepare_result(@result, @task.result_description)
+end
+
+def join
+  stream = get_stream if @result
+  begin
+    Misc.consume_stream stream if stream
+  rescue
+    stream.abort if stream.respond_to? :abort
+    raise $!
+  ensure
+    stream.join if stream.respond_to? :join and not stream.joined?
+  end
+
+
+  if @pid.nil?
+    dependencies.each{|dep| dep.join }
+    self
+  else
+    begin
+      Log.debug{"Waiting for pid: #{@pid}"}
+      Process.waitpid @pid 
+    rescue Errno::ECHILD
+      Log.debug{"Process #{ @pid } already finished: #{ path }"}
+    end if Misc.pid_exists? @pid
+    @pid = nil
+    dependencies.each{|dep| dep.join }
     self
   end
+end
 
-  def prepare_result(value, description = nil, info = {})
-    #info = self.info
-    case 
-    when IO === value
+def checks
+  rec_dependencies.collect{|dependency| dependency.path }.uniq
+end
+
+def kill_children
+  children_pids = info[:children_pids]
+  if children_pids and children_pids.any?
+    Log.medium("Killing children: #{ children_pids * ", " }")
+    children_pids.each do |pid|
+      Log.medium("Killing child #{ pid }")
       begin
-        case @task.result_type
-        when :array
-          array = []
-          while line = value.gets
-            array << line
-          end
-          array
-        when :tsv
-          TSV.open(value)
-        else
-          value.read
-        end
+        Process.kill "INT", pid
       rescue Exception
-        value.abort if value.respond_to? :abort
-      ensure
-        value.join if value.respond_to? :join
-        value.close unless value.closed?
-      end
-    when (not defined? Entity or description.nil? or not Entity.formats.include? description)
-      value
-    when (Annotated === value and info.empty?)
-      value
-    when Annotated === value
-      annotations = value.annotations
-      info.each do |k,v|
-        value.send("#{h}=", v) if annotations.include? k
-      end
-      value
-    else
-      Entity.formats[description].setup(value, info.merge(:format => description))
-    end
-  end
-
-  def get_stream
-    @mutex.synchronize do
-      begin
-        IO === @result ? @result : nil
-      ensure
-        @result = nil
+        Log.medium("Exception killing child #{ pid }: #{$!.message}")
       end
     end
   end
+end
 
-  def _exec
-    @exec = true if @exec.nil?
-    @task.exec_in((bindings ? bindings : self), *@inputs)
-  end
+def run(no_load = false)
 
-  def exec(no_load=false)
-    dependencies.each{|dependency| dependency.exec(no_load) }
-    @result = _exec
-    @result = @result.stream if TSV::Dumper === @result
-    no_load ? @result : prepare_result(@result, @task.result_description)
-  end
-
-  def join
-    stream = get_stream
-    begin
-      Misc.consume_stream stream if stream
-    rescue
-      stream.abort if stream.respond_to? :abort
-      raise $!
-    ensure
-      stream.join if stream.respond_to? :join and not stream.joined?
-    end
-
-
-    if @pid.nil?
-      dependencies.each{|dep| dep.join }
-      self
-    else
-      begin
-        Log.debug{"Waiting for pid: #{@pid}"}
-        Process.waitpid @pid 
-      rescue Errno::ECHILD
-        Log.debug{"Process #{ @pid } already finished: #{ path }"}
-      end if Misc.pid_exists? @pid
-      @pid = nil
-      dependencies.each{|dep| dep.join }
-      self
-    end
-  end
-
-  def checks
-    rec_dependencies.collect{|dependency| dependency.path }.uniq
-  end
-
-  def kill_children
-    children_pids = info[:children_pids]
-    if children_pids and children_pids.any?
-      Log.medium("Killing children: #{ children_pids * ", " }")
-      children_pids.each do |pid|
-        Log.medium("Killing child #{ pid }")
-        begin
-          Process.kill "INT", pid
-        rescue Exception
-          Log.medium("Exception killing child #{ pid }: #{$!.message}")
-        end
-      end
-    end
-  end
-
-  def run(no_load = false)
-
+  result = nil
+  begin
     @mutex.synchronize do
       no_load = no_load ? :stream : false
       result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load do |lockfile|
@@ -190,7 +192,7 @@ class Step
           begin
             next if seen_deps.include? dependency.path
             dependency.relay_log self
-            dependency.clean if not dependency.done? and dependency.error?
+            dependency.clean if not dependency.done? and dependency.error? or dependency.aborted?
             dependency.clean if dependency.streaming? and not dependency.running?
             dependency.run true unless dependency.result or dependency.done?
             seen_deps << dependency.path
@@ -213,19 +215,6 @@ class Step
         rescue Aborted
           log(:error, "Aborted")
 
-          #          children_pids = info[:children_pids]
-          #          if children_pids and children_pids.any?
-          #            Log.medium("Killing children: #{ children_pids * ", " }")
-          #            children_pids.each do |pid|
-          #              Log.medium("Killing child #{ pid }")
-          #              begin
-          #                Process.kill "INT", pid
-          #              rescue Exception
-          #                Log.medium("Exception killing child #{ pid }: #{$!.message}")
-          #              end
-          #            end
-          #          end
-          
           kill_children
           raise $!
         rescue Exception
@@ -240,8 +229,13 @@ class Step
           raise $!
         end
 
+        result = prepare_result result, @task.description, info if IO === result and ENV["RBBT_NO_STREAM"]
+        result = prepare_result result.stream, @task.description, info if TSV::Dumper === result and ENV["RBBT_NO_STREAM"]
+
         case result
         when IO
+          result = Misc.read_stream(result) if ENV["RBBT_NO_STREAM"]
+
           log :streaming, "#{Log.color :magenta, "Streaming task result IO"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
           ConcurrentStream.setup result do
             begin
@@ -250,6 +244,8 @@ class Step
               log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i} -- #{path}"
             rescue
               Log.exception $!
+            ensure
+              join
             end
           end
           result.abort_callback = Proc.new do
@@ -257,6 +253,8 @@ class Step
               log :error, "#{Log.color :red, "ERROR -- streamming aborted"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] -- #{path}"
             rescue
               Log.exception $!
+            ensure
+              join
             end
           end
         when TSV::Dumper
@@ -269,6 +267,8 @@ class Step
               log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i} -- #{path}"
             rescue
               Log.exception $!
+            ensure
+              join
             end
           end
           result.stream.abort_callback = Proc.new do
@@ -294,6 +294,9 @@ class Step
         @result = prepare_result result, @task.result_description
       end
     end
+  ensure
+    join unless no_load
+  end
   end
 
   def fork(semaphore = nil)
@@ -351,7 +354,7 @@ class Step
   def abort
     @pid ||= info[:pid]
 
-    return true unless info[:forked]
+    #return true unless info[:forked]
 
     case @pid
     when nil

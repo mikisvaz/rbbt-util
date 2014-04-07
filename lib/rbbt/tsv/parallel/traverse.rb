@@ -126,11 +126,8 @@ module TSV
         obj.abort if obj.respond_to? :abort
         raise $!
       ensure
-        begin
-          obj.close if obj.respond_to? :close and not obj.closed?
-        ensure
-          obj.join if obj.respond_to? :join
-        end
+        obj.close if obj.respond_to? :close and not obj.closed?
+        obj.join if obj.respond_to? :join
       end
     when Path
       obj.open do |stream|
@@ -193,15 +190,24 @@ module TSV
       q.init &block
 
       pid = Process.fork do 
+      #thread = Thread.new do 
         Misc.purge_pipes(q.queue.swrite)
         traverse_obj(obj, options) do |*p|
           q.process *p
         end
       end
 
+      #thread.join
       Process.waitpid pid
+      raise "Traversal process ended with error status" unless $?.success?
     rescue Exception
-      Log.error "Exception traversin in cpus: #{$!.message}"
+      Log.error "Exception traversing in cpus: #{$!.message}"
+      Log.exception $!
+
+      stream = obj_stream(obj)
+      stream.abort if stream.respond_to? :abort
+      stream = obj_stream(options[:into])
+      stream.abort if stream.respond_to? :abort
       q.abort
       raise $!
     ensure

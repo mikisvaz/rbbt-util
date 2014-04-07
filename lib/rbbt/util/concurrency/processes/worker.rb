@@ -20,6 +20,7 @@ class RbbtProcessQueue
           Signal.trap(:INT){ raise Aborted; }
           loop do
             p = @queue.pop
+            next if p.nil?
             raise p if Exception === p
             raise p.first if Exception === p.first
             res = @block.call *p
