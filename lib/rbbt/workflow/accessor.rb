@@ -167,7 +167,7 @@ class Step
   end
 
   def done?
-    path and path.exists?
+    path and File.exists? path
   end
 
   def streaming?

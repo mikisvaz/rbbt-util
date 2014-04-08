@@ -1238,6 +1238,11 @@ end
   end
 
   def self.insist(times = 3, sleep = nil, msg = nil)
+    if Array === times
+      sleep_array = times
+      times = sleep_array.length
+      sleep = sleep_array.shift
+    end
     try = 0
     begin
       yield
@@ -1249,6 +1254,7 @@ end
       end
       if sleep and try > 0
         sleep sleep
+        sleep = sleep_array.shift if sleep_array
       else
         Thread.pass
       end

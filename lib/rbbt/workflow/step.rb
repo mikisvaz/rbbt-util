@@ -131,6 +131,20 @@ def join
     stream.join if stream.respond_to? :join and not stream.joined?
   end
 
+  return if not Open.exists? info_file
+  @pid ||= info[:pid]
+
+  #while not done?
+  #  Misc.insist 2, 0.5 do
+  #    raise "Job error while joining: #{info[:messages].last}" if error?
+  #    raise "Job aborted  while joining: #{info[:messages].last}" if aborted?
+  #    raise "Job vanished  while joining: #{@pid}" if @pid and not Misc.pid_exists? @pid
+  #  end
+  #end
+
+  Misc.insist [0.1, 0.2, 0.5, 1] do
+    @pid ||= info[:pid]
+  end
 
   if @pid.nil?
     dependencies.each{|dep| dep.join }
@@ -167,6 +181,28 @@ def kill_children
   end
 end
 
+def run_dependencies(seen = [])
+  seen << self.path
+  dependencies.uniq.each{|dependency| 
+    Log.info "#{Log.color :magenta, "Checking dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""}"
+    begin
+      next if seen.include? dependency.path
+      dependency.relay_log self
+      dependency.clean if not dependency.done? and dependency.error? or dependency.aborted?
+      dependency.clean if dependency.streaming? and not dependency.running?
+      dependency.run_dependencies(seen)
+      dependency.run true unless dependency.result or dependency.done?
+      seen << dependency.path
+      seen.concat dependency.rec_dependencies.collect{|d| d.path} 
+    rescue Exception
+      backtrace = $!.backtrace
+      set_info :backtrace, backtrace 
+      log(:error, "Exception processing dependency #{Log.color :yellow, dependency.task.name.to_s} -- #{$!.class}: #{$!.message}")
+      raise $!
+    end
+  }
+end
+
 def run(no_load = false)
 
   result = nil
@@ -186,24 +222,8 @@ def run(no_load = false)
 
         log(:preparing, "Preparing job: #{Misc.fingerprint dependencies}")
         set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name]}
-        seen_deps = []
-        dependencies.uniq.each{|dependency| 
-          Log.info "#{Log.color :magenta, "Checking dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""}"
-          begin
-            next if seen_deps.include? dependency.path
-            dependency.relay_log self
-            dependency.clean if not dependency.done? and dependency.error? or dependency.aborted?
-            dependency.clean if dependency.streaming? and not dependency.running?
-            dependency.run true unless dependency.result or dependency.done?
-            seen_deps << dependency.path
-            seen_deps.concat dependency.rec_dependencies.collect{|d| d.path} 
-          rescue Exception
-            backtrace = $!.backtrace
-            set_info :backtrace, backtrace 
-            log(:error, "Exception processing dependency #{Log.color :yellow, dependency.task.name.to_s} -- #{$!.class}: #{$!.message}")
-            raise $!
-          end
-        }
+
+        run_dependencies
 
         set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 
@@ -300,19 +320,15 @@ def run(no_load = false)
   end
 
   def fork(semaphore = nil)
-    raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil?
+    raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil? and not Process.pid == @pid
+    iii :forking
     @pid = Process.fork do
       begin
+        iii :forked
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
         begin
-          res = run(true)
-          io = get_stream
-          if IO === io
-            Misc.consume_stream(io)
-            io.close unless io.closed?
-            io.join if io.respond_to? :join and not io.joined?
-          end
+          res = run
         rescue Aborted
           Log.debug{"Forked process aborted: #{path}"}
           log :aborted, "Aborted"
@@ -320,6 +336,8 @@ def run(no_load = false)
         rescue Exception
           Log.debug("Exception '#{$!.message}' caught on forked process: #{path}")
           raise $!
+        ensure
+          join
         end
 
         begin
@@ -371,10 +389,9 @@ def run(no_load = false)
       rescue Exception
         Log.debug("Aborted job #{@pid} was not killed: #{$!.message}")
       end
-      log(:aborted, "Job aborted by user")
+      log(:aborted, "Job aborted")
       true
     end
-    log(:aborted, "Job aborted by user")
   end
 
   def child(&block)
