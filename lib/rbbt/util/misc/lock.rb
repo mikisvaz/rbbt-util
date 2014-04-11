@@ -3,14 +3,14 @@ Lockfile.refresh = false if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
 module Misc
 
   LOCK_MUTEX = Mutex.new
-  def self.lock(file, unlock = true)
+  def self.lock(file, unlock = true, options = {})
     return yield if file.nil?
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
 
     res = nil
 
     lock_path = File.expand_path(file + '.lock')
-    lockfile = Lockfile.new(lock_path)
+    lockfile = Lockfile.new(lock_path, options)
 
     hostname = Misc.hostname
     LOCK_MUTEX.synchronize do
@@ -28,7 +28,7 @@ module Misc
             end
           rescue Exception
             FileUtils.rm lock_path if File.exists? lock_path
-            lockfile = Lockfile.new(lock_path) unless File.exists? lock_path
+            lockfile = Lockfile.new(lock_path, options) unless File.exists? lock_path
             raise $!
           end
         end
@@ -43,6 +43,11 @@ module Misc
     rescue KeepLocked
       unlock = false
       res = $!.payload
+    rescue Exception
+      eee [:UNLOCKING, lock_path]
+
+      lockfile.unlock if lockfile.locked?
+      raise $!
     ensure
       if unlock and lockfile.locked?
         lockfile.unlock

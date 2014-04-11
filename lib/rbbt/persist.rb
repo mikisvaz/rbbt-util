@@ -292,12 +292,14 @@ module Persist
 
     return (persist_options[:repo] || Persist::MEMORY)[persist_options[:file]] ||= yield if type ==:memory and persist_options[:file] and persist_options[:persist] and persist_options[:persist] != :update
 
-    if FalseClass != persist_options[:persist]
+    if FalseClass == persist_options[:persist]
+      yield
+    else
       other_options = Misc.process_options persist_options, :other
       path = persistence_path(name, persist_options, other_options || {})
 
       case 
-      when type.to_sym === :memory
+      when type.to_sym == :memory
         repo = persist_options[:repo] || Persist::MEMORY
         repo[path] ||= yield
 
@@ -415,10 +417,24 @@ module Persist
                     Log.warn "Lockfile exception: " << $!.message
                   end
                 end
+                res.abort_callback = Proc.new do
+                  begin
+                    lockfile.unlock
+                  rescue
+                    Log.warn "Lockfile exception: " << $!.message
+                  end
+                end
                 raise KeepLocked.new res 
               when TSV::Dumper
                 res = tee_stream(res.stream, path, type, res.respond_to?(:callback)? res.callback : nil)
                 ConcurrentStream.setup res do
+                  begin
+                    lockfile.unlock
+                  rescue
+                    Log.warn "Lockfile exception: " << $!.message
+                  end
+                end
+                res.abort_callback = Proc.new do
                   begin
                     lockfile.unlock
                   rescue
@@ -440,21 +456,19 @@ module Persist
                       else
                         res.read
                       end
+                res.join if res.respond_to? :join
               rescue
                 res.abort if res.respond_to? :abort
                 raise $!
-              ensure
-                res.join if res.respond_to? :join
               end
             when TSV::Dumper
               begin
                 io = res.stream
                 res = TSV.open(io)
+                io.join if io.respond_to? :join
               rescue
                 io.abort if io.respond_to? :abort
                 raise $!
-              ensure
-                io.join if io.respond_to? :join
               end
             end
 
@@ -472,8 +486,6 @@ module Persist
         end
       end
 
-    else
-      yield
     end
   end
 

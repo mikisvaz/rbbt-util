@@ -546,37 +546,6 @@ end
     res
   end
 
-  def self.sensiblewrite(path, content = nil, &block)
-    return if File.exists? path
-    tmp_path = path + '.sensible_write'
-    Misc.lock tmp_path  do
-      if not File.exists? path
-        FileUtils.rm_f tmp_path if File.exists? tmp_path
-        begin
-          case
-          when block_given?
-            File.open(tmp_path, 'w', &block)
-          when String === content
-            File.open(tmp_path, 'w') do |f| f.write content end
-          when (IO === content or StringIO === content or File === content)
-            File.open(tmp_path, 'w') do |f|  
-              while block = content.read(2048); 
-                f.write block
-              end  
-            end
-          else
-            File.open(tmp_path, 'w') do |f|  end
-          end
-          FileUtils.mv tmp_path, path
-        rescue Exception
-          Log.error "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
-          FileUtils.rm_f tmp_path if File.exists? tmp_path
-          FileUtils.rm_f path if File.exists? path
-          raise $!
-        end
-      end
-    end
-  end
 
   def self.add_defaults(options, defaults = {})
     case

@@ -413,9 +413,13 @@ when Step
       end unless io.closed? 
       io.join if io.respond_to? :join
     rescue Exception
-      io.abort if io.respond_to? :abort
-    ensure
-      io.join if io.respond_to? :join
+      Log.exception $!
+      begin
+        io.abort if io.respond_to? :abort
+        io.join
+      ensure
+        exit -1
+      end
     end
   else
     res.join

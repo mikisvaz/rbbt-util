@@ -236,13 +236,13 @@ module Open
     end
   end
 
-  def self.lock(file, &block)
+  def self.lock(file, options = {}, &block)
     if (dir_sub_path = find_repo_dir(file))
       dir, sub_path = dir_sub_path
       repo = get_repo_from_dir(dir)
       Misc.lock_in_repo(repo, sub_path, &block)
     else
-      Misc.lock(file, &block)
+      Misc.lock(file, true, options, &block)
     end
   end
 

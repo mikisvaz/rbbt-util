@@ -1,47 +1,6 @@
 module ConcurrentStream
   attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined
 
-  def joined?
-    @joined
-  end
-
-  def join
-
-    if @threads and @threads.any?
-      @threads.each do |t| 
-        t.join unless t == Thread.current
-      end
-      @threads = []
-    end
-
-    if @pids and @pids.any?
-      @pids.each do |pid| 
-        begin
-          Process.waitpid(pid, Process::WUNTRACED)
-          raise "Error joining process #{pid} in #{self.inspect}" unless $?.success?
-        rescue Errno::ECHILD
-        end
-      end 
-      @pids = []
-    end
-
-    if @callback and not joined?
-      @callback.call
-      @callback = nil
-    end
-
-    @joined = true
-  end
-
-  def abort
-    @threads.each{|t| t.raise Aborted.new unless t = Thread.current } if @threads
-    @threads.each{|t| t.join unless t = Thread.current } if @threads
-    @pids.each{|pid| Process.kill :INT, pid } if @pids
-    @pids.each{|pid| Process.waitpid pid } if @pids
-    @abort_callback.call if @abort_callback
-    @abort_callback = nil
-  end
-
   def self.setup(stream, options = {}, &block)
     threads, pids, callback, filename = Misc.process_options options, :threads, :pids, :callback, :filename
     stream.extend ConcurrentStream unless ConcurrentStream === stream
@@ -66,4 +25,66 @@ module ConcurrentStream
 
     stream
   end
+
+  def joined?
+    @joined
+  end
+
+  def join_threads
+    if @threads and @threads.any?
+      @threads.each do |t| 
+        begin
+        ensure
+          t.join unless t == Thread.current
+        end
+      end
+      @threads = []
+    end
+  end
+
+  def join_pids
+    if @pids and @pids.any?
+      @pids.each do |pid| 
+        begin
+          Process.waitpid(pid, Process::WUNTRACED)
+          raise "Error joining process #{pid} in #{self.inspect}" unless $?.success?
+        rescue Errno::ECHILD
+        end
+      end 
+      @pids = []
+    end
+  end
+
+  def join_callback
+    if @callback and not joined?
+      @callback.call
+      @callback = nil
+    end
+  end
+
+  def join
+    join_threads
+    join_pids
+
+    join_callback
+
+    @joined = true
+  end
+
+  def abort_threads
+    @threads.each{|t| t.raise Aborted.new unless t == Thread.current } if @threads
+  end
+
+  def abort_pids
+    @pids.each{|pid| Process.kill :INT, pid } if @pids
+  end
+
+  def abort
+    abort_threads
+    abort_pids
+    @abort_callback.call if @abort_callback
+    @abort_callback = nil
+    @callback = nil
+  end
+
 end

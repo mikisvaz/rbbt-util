@@ -80,6 +80,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
     task.rb
     step.rb
+    step=step{
+     run.rb
+    }
     accessor.rb
 
     usage.rb

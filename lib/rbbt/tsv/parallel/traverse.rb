@@ -83,13 +83,18 @@ module TSV
   def self.traverse_io(io, options = {}, &block)
     filename = io.filename if io.respond_to? :filename
     callback = Misc.process_options options, :callback
-    if callback
-      TSV::Parser.traverse(io, options) do |k,v|
-        res = yield k, v
-        callback.call res
+    begin
+      if callback
+        TSV::Parser.traverse(io, options) do |k,v|
+          res = yield k, v
+          callback.call res
+        end
+      else
+        TSV::Parser.traverse(io, options, &block)
       end
-    else
-      TSV::Parser.traverse(io, options, &block)
+    rescue
+      Log.error "Traverse IO error"
+      raise $!
     end
   end
 

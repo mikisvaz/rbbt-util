@@ -75,6 +75,7 @@ class TestPersist < Test::Unit::TestCase
       end
 
       assert_equal 10, stream.read.split("\n").length
+      stream.join
     end
   end
 end

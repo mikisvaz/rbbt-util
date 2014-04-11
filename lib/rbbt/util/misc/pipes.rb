@@ -1,5 +1,12 @@
 module Misc
 
+  class << self
+    attr_accessor :sensiblewrite_dir
+    def sensiblewrite_dir
+      @sensiblewrite_dir = Rbbt.tmp.sensiblewrite
+    end
+  end
+
   PIPE_MUTEX = Mutex.new
 
   OPEN_PIPE_IN = []
@@ -20,7 +27,6 @@ module Misc
       end
     end
   end
-
 
   def self.purge_pipes(*save)
     PIPE_MUTEX.synchronize do
@@ -43,12 +49,11 @@ module Misc
         sout.close
         begin
           yield sin
+          sin.close if close and not sin.closed? 
         rescue
           Log.exception $!
           Process.kill :INT, parent_pid
           Kernel.exit! -1
-        ensure
-          sin.close if close and not sin.closed? 
         end
         Kernel.exit! 0
       }
@@ -58,10 +63,9 @@ module Misc
       thread = Thread.new(Thread.current) do |parent|
         begin
           yield sin
+          sin.close if close and not sin.closed?
         rescue
           parent.raise $!
-        ensure
-          sin.close if close and not sin.closed?
         end
       end
       ConcurrentStream.setup sout, :threads => [thread]
@@ -84,8 +88,11 @@ module Misc
           begin stream_in1.write block; rescue Exception;  Log.exception $!; skip1 = true end unless skip1 
           begin stream_in2.write block; rescue Exception;  Log.exception $!; skip2 = true end unless skip2 
         end
+        raise "Error writing in stream_in1" if skip1
         raise "Error writing in stream_in2" if skip2
-        raise "Error writing in stream_in2" if skip2
+        stream.join if stream.respond_to? :join
+        stream_in1.close 
+        stream_in2.close 
       rescue Aborted
         stream.abort if stream.respond_to? :abort
         raise $!
@@ -93,16 +100,11 @@ module Misc
         Log.exception $!
       rescue Exception
         Log.exception $!
-      ensure
-        stream_in1.close 
-        stream_in2.close 
-        stream.join if stream.respond_to? :join
       end
     end
     stream.close
     stream_in1.close
     stream_in2.close
-    #stream.join if stream.respond_to? :join
 
     ConcurrentStream.setup stream_out1, :pids => [splitter_pid]
     ConcurrentStream.setup stream_out2, :pids => [splitter_pid]
@@ -122,18 +124,17 @@ module Misc
           begin stream_in1.write block; rescue Exception; Aborted === $! ? raise($!): Log.exception($!); skip1 = true end unless skip1 
           begin stream_in2.write block; rescue Exception; Aborted === $! ? raise($!): Log.exception($!); skip2 = true end unless skip2 
         end
+        stream_in1.close 
+        stream_in2.close 
+        stream.join if stream.respond_to? :join
       rescue Aborted
         stream.abort if stream.respond_to? :abort
-        raise $!
+        parent.raise $!
       rescue IOError
         Log.exception $!
       rescue Exception
         Log.exception $!
         parent.raise $!
-      ensure
-        stream_in1.close 
-        stream_in2.close 
-        stream.join if stream.respond_to? :join
       end
     end
 
@@ -153,11 +154,9 @@ module Misc
       while block = io.read(2048)
         str << block
       end
+      io.join if io.respond_to? :join
     rescue
       io.abort if io.respond_to? :abort
-    ensure
-      io.join if io.respond_to? :join
-      io.close if io.respond_to? :close
     end
     str
   end
@@ -167,12 +166,10 @@ module Misc
       while block = io.read(2048)
         return if io.eof?
         Thread.pass 
-     end
+      end
+      io.join if io.respond_to? :join
     rescue
       io.abort if io.respond_to? :abort
-    ensure
-      io.join if io.respond_to? :join
-      io.close if io.respond_to? :close
     end
   end
 
@@ -213,12 +210,38 @@ module Misc
     end
     str
   end
-  def self._read_stream(stream, size)
-    str = ""
-    while (len=str.length) < size
-      str << (stream.read(size-len) or break)
-    end
-    str
-  end
 
+  def self.sensiblewrite(path, content = nil, &block)
+    return if File.exists? path
+    #tmp_path = path + '.sensible_write'
+    tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
+    Misc.lock tmp_path do
+      if not File.exists? path
+        FileUtils.rm_f tmp_path if File.exists? tmp_path
+        begin
+          case
+          when block_given?
+            File.open(tmp_path, 'w', &block)
+          when String === content
+            File.open(tmp_path, 'w') do |f| f.write content end
+          when (IO === content or StringIO === content or File === content)
+            File.open(tmp_path, 'w') do |f|  
+              while block = content.read(2048); 
+                f.write block
+              end  
+            end
+          else
+            File.open(tmp_path, 'w') do |f|  end
+          end
+          FileUtils.mv tmp_path, path
+        rescue Exception
+          Log.error "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
+          FileUtils.rm_f path if File.exists? path
+          raise $!
+        ensure
+          FileUtils.rm_f tmp_path if File.exists? tmp_path
+        end
+      end
+    end
+  end
 end
