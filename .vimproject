@@ -19,6 +19,19 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   rbbt=rbbt{
    util=util{
     misc.rb
+    misc=misc{
+     exceptions.rb
+     concurrent_stream.rb
+     indiferent_hash.rb
+     pipes.rb
+     format.rb
+     omics.rb
+     inspect.rb
+     math.rb
+     development.rb
+     lock.rb
+     objects.rb
+    }
     tar.rb
     color.rb
     colorize.rb
