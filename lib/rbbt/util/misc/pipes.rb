@@ -164,7 +164,10 @@ module Misc
 
   def self.consume_stream(io)
     begin
-      Thread.pass while block = io.read(2048)
+      while block = io.read(2048)
+        return if io.eof?
+        Thread.pass 
+     end
     rescue
       io.abort if io.respond_to? :abort
     ensure

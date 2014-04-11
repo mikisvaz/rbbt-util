@@ -149,8 +149,35 @@ module Misc
     [pos, muts]
   end
 
-
   def self.IUPAC_to_base(iupac)
     IUPAC2BASE[iupac]
+  end
+
+
+  def self.sort_mutations(mutations)
+    mutations.collect do |mutation|
+      chr,pos,mut = mutation.split ":"
+      chr.sub!(/^chr/i,'')
+      chr = 22 if chr == "Y"
+      chr = 23 if chr == "X"
+      chr = 24 if chr == "MT" or chr == "M"
+      [chr.to_i, pos.to_i, mut, mutation]
+    end.sort do |a,b|
+      case a[0] <=> b[0]
+      when -1
+        -1
+      when 1
+        1
+      when 0
+        case a[1] <=> b[1]
+        when -1
+          -1
+        when 1
+          1
+        when 0
+          a[2] <=> b[2]
+        end
+      end
+    end.collect{|p| p.last }
   end
 end

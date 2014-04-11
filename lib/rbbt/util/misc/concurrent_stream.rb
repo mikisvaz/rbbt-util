@@ -9,7 +9,7 @@ module ConcurrentStream
 
     if @threads and @threads.any?
       @threads.each do |t| 
-        t.join 
+        t.join unless t == Thread.current
       end
       @threads = []
     end
@@ -34,8 +34,8 @@ module ConcurrentStream
   end
 
   def abort
-    @threads.each{|t| t.raise Aborted.new } if @threads
-    @threads.each{|t| t.join } if @threads
+    @threads.each{|t| t.raise Aborted.new unless t = Thread.current } if @threads
+    @threads.each{|t| t.join unless t = Thread.current } if @threads
     @pids.each{|pid| Process.kill :INT, pid } if @pids
     @pids.each{|pid| Process.waitpid pid } if @pids
     @abort_callback.call if @abort_callback
