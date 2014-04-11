@@ -72,6 +72,7 @@ class Step
   def set_info(key, value)
     return nil if @exec or info_file.nil?
     value = Annotated.purge value if defined? Annotated
+    lock_filename = Persist.persistence_path(info_file, {:dir => Step.lock_dir})
     Open.lock(info_file) do
       i = info
       i[key] = value 

@@ -235,7 +235,8 @@ module TSV
         store.add *value
       when IO
         return if value.nil?
-        store.puts value.strip
+        value.strip!
+        store.puts value
       else
         store << value
       end 

@@ -11,6 +11,14 @@ class Step
   attr_accessor :exec
   attr_accessor :result, :mutex
 
+  class << self
+    attr_accessor :lock_dir
+    
+    def lock_dir
+      @lock_dir ||= Rbbt.tmp.step_info_locks.find
+    end
+  end
+
   def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil)
     path = Path.setup(Misc.sanitize_filename(path)) if String === path
     pat = path.call if Proc === path
@@ -61,7 +69,6 @@ def relay_log(step)
 end
 
 def prepare_result(value, description = nil, info = {})
-  #info = self.info
   case 
   when IO === value
     begin
@@ -69,7 +76,7 @@ def prepare_result(value, description = nil, info = {})
       when :array
         array = []
         while line = value.gets
-          array << line
+          array << line.strip
         end
         array
       when :tsv
@@ -160,6 +167,7 @@ def join
     dependencies.each{|dep| dep.join }
     self
   end
+  self
 end
 
 def checks
@@ -184,14 +192,14 @@ end
 def run_dependencies(seen = [])
   seen << self.path
   dependencies.uniq.each{|dependency| 
-    Log.info "#{Log.color :magenta, "Checking dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""}"
+    next if seen.include? dependency.path
+    Log.info "#{Log.color :magenta, "Checking dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} -- #{Log.color :blue, dependency.path}"
     begin
-      next if seen.include? dependency.path
       dependency.relay_log self
-      dependency.clean if not dependency.done? and dependency.error? or dependency.aborted?
+      dependency.clean if not dependency.done? and (dependency.error? or dependency.aborted?)
       dependency.clean if dependency.streaming? and not dependency.running?
-      dependency.run_dependencies(seen)
-      dependency.run true unless dependency.result or dependency.done?
+      #dependency.run_dependencies(seen)
+      dependency.run(ENV["RBBT_NO_STREAM"] != 'true') unless dependency.result or dependency.done?
       seen << dependency.path
       seen.concat dependency.rec_dependencies.collect{|d| d.path} 
     rescue Exception
@@ -321,10 +329,8 @@ def run(no_load = false)
 
   def fork(semaphore = nil)
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil? and not Process.pid == @pid
-    iii :forking
     @pid = Process.fork do
       begin
-        iii :forked
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
         begin

@@ -108,8 +108,10 @@ def fix_options(workflow, task, job_options)
                 else
                   str = case
                         when value == '-'
+                          $array_separator ||= "\n"
                           STDIN.read
                         when (String === value and File.exists?(value))
+                          $array_separator ||= "\n"
                           Open.read(value)
                         else
                           value

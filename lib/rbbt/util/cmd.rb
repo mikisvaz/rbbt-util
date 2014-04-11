@@ -72,7 +72,7 @@ module CMD
     def read(*args)
       data = original_read(*args) unless self.closed? or self.eof?
 
-      self.close if self.eof? and not self.closed?
+      self.close if not self.closed? and self.eof?
 
       data || ""
     end
