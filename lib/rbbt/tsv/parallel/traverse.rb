@@ -310,6 +310,8 @@ module TSV
       rescue Exception
         Log.exception $!
         parent.raise $!
+        stream = obj_stream(into)
+        stream.abort if stream and stream.respond_to? :abort
       end
     end
     ConcurrentStream.setup(obj_stream(into), :threads => thread)

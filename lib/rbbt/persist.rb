@@ -412,14 +412,14 @@ module Persist
                 res = tee_stream(res, path, type, res.respond_to?(:callback)? res.callback : nil)
                 ConcurrentStream.setup res do
                   begin
-                    lockfile.unlock
+                    lockfile.unlock if lockfile.locked?
                   rescue
                     Log.warn "Lockfile exception: " << $!.message
                   end
                 end
                 res.abort_callback = Proc.new do
                   begin
-                    lockfile.unlock
+                    lockfile.unlock if lockfile.locked?
                   rescue
                     Log.warn "Lockfile exception: " << $!.message
                   end

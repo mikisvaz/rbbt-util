@@ -44,8 +44,6 @@ module Misc
       unlock = false
       res = $!.payload
     rescue Exception
-      eee [:UNLOCKING, lock_path]
-
       lockfile.unlock if lockfile.locked?
       raise $!
     ensure
