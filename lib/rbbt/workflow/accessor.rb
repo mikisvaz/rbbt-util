@@ -47,6 +47,7 @@ class Step
           return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
         rescue Exception
         end
+
         begin
           @info_cache = Misc.insist(2, 1, info_file) do
             Misc.insist(2, 0.5, info_file) do
