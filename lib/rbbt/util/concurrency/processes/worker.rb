@@ -26,7 +26,7 @@ class RbbtProcessQueue
             res = @block.call *p
             @callback_queue.push res if @callback_queue
           end
-
+          Kernel.exit! 0
         rescue ClosedStream
         rescue Aborted
           Log.error "Worker #{Process.pid} aborted"

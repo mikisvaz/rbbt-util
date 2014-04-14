@@ -414,6 +414,7 @@ module Persist
                   begin
                     lockfile.unlock if lockfile.locked?
                   rescue
+                    Log.exception $!
                     Log.warn "Lockfile exception: " << $!.message
                   end
                 end
@@ -421,6 +422,7 @@ module Persist
                   begin
                     lockfile.unlock if lockfile.locked?
                   rescue
+                    Log.exception $!
                     Log.warn "Lockfile exception: " << $!.message
                   end
                 end
@@ -431,6 +433,7 @@ module Persist
                   begin
                     lockfile.unlock
                   rescue
+                    Log.exception $!
                     Log.warn "Lockfile exception: " << $!.message
                   end
                 end
@@ -438,6 +441,7 @@ module Persist
                   begin
                     lockfile.unlock
                   rescue
+                    Log.exception $!
                     Log.warn "Lockfile exception: " << $!.message
                   end
                 end

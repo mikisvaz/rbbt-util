@@ -169,7 +169,7 @@ module TSV
         v, mutex = nil, v if mutex.nil?
         res = yield k, v, mutex
         mutex.synchronize do
-          callback.call res
+          callback.call res 
         end
       end
     end
@@ -194,17 +194,13 @@ module TSV
       q.callback &callback
       q.init &block
 
-      pid = Process.fork do 
-      #thread = Thread.new do 
-        Misc.purge_pipes(q.queue.swrite)
+      thread = Thread.new do 
         traverse_obj(obj, options) do |*p|
           q.process *p
         end
       end
 
-      #thread.join
-      Process.waitpid pid
-      raise "Traversal process ended with error status" unless $?.success?
+      thread.join
     rescue Exception
       Log.error "Exception traversing in cpus: #{$!.message}"
       Log.exception $!
@@ -224,7 +220,7 @@ module TSV
     begin
       case store
       when Hash
-        return if value.nil?
+        return false if value.nil?
         if Hash === value
           if TSV === store and store.type == :double
             store.merge_zip value
@@ -236,15 +232,16 @@ module TSV
           store[k] = v
         end
       when TSV::Dumper
-        return if value.nil?
+        return false if value.nil?
         store.add *value
       when IO
-        return if value.nil?
+        return false if value.nil?
         value.strip!
         store.puts value
       else
         store << value
       end 
+      true
     rescue
       raise "Error storing into #{store.inspect}: #{$!.message}"
     end
