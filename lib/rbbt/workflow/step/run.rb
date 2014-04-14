@@ -19,7 +19,7 @@ class Step
 
   def exec(no_load=false)
     dependencies.each{|dependency| dependency.exec(no_load) }
-    @result = _exec
+    @result = self._exec
     @result = @result.stream if TSV::Dumper === @result
     no_load ? @result : prepare_result(@result, @task.result_description)
   end
@@ -188,7 +188,7 @@ class Step
   end
 
   def fork(semaphore = nil)
-    raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil? and not Process.pid == @pid
+    raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil? and not Process.pid == @pid and Misc.pid_exists?(@pid) and not done? and info[:forked]
     @pid = Process.fork do
       begin
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
@@ -300,23 +300,23 @@ class Step
     join_stream
 
     return if not Open.exists? info_file
-    @pid ||= info[:pid]
+    pid = @pid 
 
     Misc.insist [0.1, 0.2, 0.5, 1] do
-      @pid ||= info[:pid]
+      pid ||= info[:pid]
     end
 
-    if @pid.nil?
+    if pid.nil?
       dependencies.each{|dep| dep.join }
       self
     else
       begin
-        Log.debug{"Waiting for pid: #{@pid}"}
-        Process.waitpid @pid 
+        Log.debug{"Waiting for pid: #{pid}"}
+        Process.waitpid pid 
       rescue Errno::ECHILD
-        Log.debug{"Process #{ @pid } already finished: #{ path }"}
-      end if Misc.pid_exists? @pid
-      @pid = nil
+        Log.debug{"Process #{ pid } already finished: #{ path }"}
+      end if Misc.pid_exists? pid
+      pid = nil
       dependencies.each{|dep| dep.join }
       self
     end

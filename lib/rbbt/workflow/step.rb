@@ -3,7 +3,6 @@ require 'rbbt/persist/tsv'
 require 'rbbt/util/log'
 require 'rbbt/util/semaphore'
 require 'rbbt/workflow/accessor'
-require 'rbbt/workflow/step/run'
 
 class Step
   attr_accessor :path, :task, :inputs, :dependencies, :bindings
@@ -180,3 +179,5 @@ class Step
     end.first
   end
 end
+
+require 'rbbt/workflow/step/run'

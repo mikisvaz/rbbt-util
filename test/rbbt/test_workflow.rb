@@ -121,7 +121,8 @@ class TestWorkflow < Test::Unit::TestCase
       "bar"
     end
     
-    assert_equal 'bar', a.job(:foo).exec
+    job = a.job(:foo)
+    assert_equal 'bar', job.exec
   end
 
 end
