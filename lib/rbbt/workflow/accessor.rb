@@ -49,9 +49,9 @@ class Step
         end
 
         begin
-          @info_cache = Misc.insist(2, 1, info_file) do
+          @info_cache = Misc.insist(2, 2, info_file) do
             Misc.insist(2, 0.5, info_file) do
-              Misc.insist(3, 0.1, info_file) do
+              Misc.insist(3, 0.2, info_file) do
                 Open.open(info_file) do |file|
                   INFO_SERIALIAZER.load(file) || {}
                 end
