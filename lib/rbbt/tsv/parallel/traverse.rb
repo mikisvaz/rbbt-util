@@ -69,8 +69,8 @@ module TSV
   def self.traverse_io_array(io, options = {}, &block)
     callback = Misc.process_options options, :callback
     if callback
-      while not io.eof?
-        res = yield io.gets.strip
+      while line = io.gets
+        res = yield line.strip
         callback.call res
       end
     else

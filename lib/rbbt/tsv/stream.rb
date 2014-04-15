@@ -27,9 +27,12 @@ module TSV
     input_key_fields = []
     input_options = []
 
-    inputs.each do |input|
+    input_source_streams = inputs.collect do |input|
       stream = TSV.get_stream input
       stream = sort ? Misc.sort_stream(stream) : stream
+    end
+
+    input_source_streams.each do |stream|
       parser = TSV::Parser.new stream, options
       input_streams << parser.stream
       input_lines << parser.first_line

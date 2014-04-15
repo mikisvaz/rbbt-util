@@ -18,12 +18,10 @@ row2    A    B    Id3
 
       assert_equal 2, TSV.field_match_counts(tsv, ["a","A","a","b","Id3"])["ValueA"]
       assert_equal nil, TSV.field_match_counts(tsv, ["ValueA"])["ValueA"]
-
     end
-  
   end
 
-  def test_marshal
+  def _test_marshal
    content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2

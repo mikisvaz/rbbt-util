@@ -162,6 +162,7 @@ module Misc
   end
 
   def self.consume_stream(io)
+    return unless io.respond_to? :read
     begin
       while block = io.read(2048)
         return if io.eof?
@@ -237,30 +238,35 @@ module Misc
 
   def self.sort_stream(stream, header_hash = "#")
     Misc.open_pipe do |sin|
-      Misc.process_stream(stream) do
+      line = stream.gets
+      while line =~ /^#{header_hash}/ do
+        sin.puts line
         line = stream.gets
-        while line =~ /^#{header_hash}/ do
-          sin.puts line
-          line = stream.gets
-        end
+      end
 
-        line_stream = Misc.open_pipe do |line_stream_in|
+      line_stream = Misc.open_pipe do |line_stream_in|
+        begin
           while line
             line_stream_in.puts line
             line = stream.gets
           end
+          stream.join if stream.respond_to? :join
+        rescue
+          stream.abort if stream.respond_to? :abort
+          raise $!
         end
-        sorted = CMD.cmd("sort", :in => line_stream, :pipe => true)
+      end
 
-        while block = sorted.read(2048)
-          sin.write block
-        end
-        sorted.close
+      sorted = CMD.cmd("sort", :in => line_stream, :pipe => true)
+
+      while block = sorted.read(2048)
+        sin.write block
       end
     end
   end
 
   def self.collapse_stream(s, line = nil, sep = "\t", header = nil)
+    sep ||= "\t"
     Misc.open_pipe do |sin|
       sin.puts header if header
       process_stream(s) do |s|
@@ -294,6 +300,7 @@ module Misc
   end
 
   def self.paste_streams(streams, lines = nil, sep = "\t", header = nil)
+    sep ||= "\t"
     num_streams = streams.length
     Misc.open_pipe do |sin|
       sin.puts header if header
@@ -309,13 +316,12 @@ module Misc
         end
         sizes = parts.collect{|p| p.length }
         last_min = nil
+        count ||= 0
         while lines.compact.any?
           min = keys.compact.sort.first
           str = []
           keys.each_with_index do |key,i|
             case key
-            when nil
-              str << [([""] * sizes[i]) * sep]
             when min
               str << [parts[i] * sep]
               line = lines[i] = streams[i].gets
@@ -327,6 +333,9 @@ module Misc
                 keys[i] = k
                 parts[i] = p
               end
+            else
+              count += 1
+              str << [sep * (sizes[i]-1)] if sizes[i] > 0
             end
           end
 
@@ -339,8 +348,20 @@ module Misc
         streams.each do |stream|
           stream.abort if stream.respond_to? :abort
         end
+        raise $!
       end
     end
+  end
+
+  def self.dup_stream(stream)
+    stream_dup = stream.dup
+    if stream.respond_to? :annotate
+      stream.annotate stream_dup
+      stream.clear
+    end
+    tee1, tee2 = Misc.tee_stream stream_dup
+    stream.reopen(tee1)
+    tee2
   end
 
 end

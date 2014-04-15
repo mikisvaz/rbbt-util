@@ -65,7 +65,7 @@ module TSV
     end
 
     def chop_line(line)
-      line.split(@sep, -1)
+      @sep == " " ? line.split(/ /, -1) : line.split(@sep, -1)
     end
 
     def get_values_single_from_flat(parts)

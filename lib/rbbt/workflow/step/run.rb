@@ -2,6 +2,47 @@ class Step
 
   attr_reader :stream
 
+  STREAM_CACHE = {}
+  STREAM_CACHE_MUTEX = Mutex.new
+  def self.dup_stream(stream)
+    case stream
+    when IO, File
+      return stream if stream.closed?
+      STREAM_CACHE_MUTEX.synchronize do
+        if STREAM_CACHE[stream].nil?
+          STREAM_CACHE[stream] = stream
+        else
+          Misc.dup_stream(STREAM_CACHE[stream])
+        end
+      end
+    when TSV::Dumper, TSV::Parser
+      stream = stream.stream
+      return stream if stream.closed?
+
+      STREAM_CACHE_MUTEX.synchronize do
+        if STREAM_CACHE[stream].nil?
+          STREAM_CACHE[stream] = stream
+        else
+          Misc.dup_stream(STREAM_CACHE[stream])
+        end
+      end
+    else
+      stream
+    end
+  end
+
+  def self.purge_stream_cache
+    return
+    STREAM_CACHE_MUTEX.synchronize do
+      STREAM_CACHE.collect{|k,s| 
+        Thread.new do
+          Misc.consume_stream s
+        end
+      }
+      STREAM_CACHE.clear
+    end
+  end
+
   def get_stream
     @mutex.synchronize do
       @stream = begin
@@ -12,9 +53,16 @@ class Step
     end
   end
 
+  def dup_inputs
+    @inputs.collect do |input|
+      Step.dup_stream input
+    end
+  end
+
   def _exec
     @exec = true if @exec.nil?
-    @task.exec_in((bindings ? bindings : self), *@inputs)
+    #@task.exec_in((bindings ? bindings : self), *@inputs)
+    @task.exec_in((bindings ? bindings : self), *dup_inputs)
   end
 
   def exec(no_load=false)
@@ -299,26 +347,32 @@ class Step
 
     join_stream
 
-    return if not Open.exists? info_file
+    return self if not Open.exists? info_file
+
+    return self if info[:joined]
     pid = @pid 
 
     Misc.insist [0.1, 0.2, 0.5, 1] do
       pid ||= info[:pid]
     end
 
-    if pid.nil?
-      dependencies.each{|dep| dep.join }
-      self
-    else
-      begin
-        Log.debug{"Waiting for pid: #{pid}"}
-        Process.waitpid pid 
-      rescue Errno::ECHILD
-        Log.debug{"Process #{ pid } already finished: #{ path }"}
-      end if Misc.pid_exists? pid
-      pid = nil
-      dependencies.each{|dep| dep.join }
-      self
+    begin
+      if pid.nil?
+        dependencies.each{|dep| dep.join }
+        self
+      else
+        begin
+          Log.debug{"Waiting for pid: #{pid}"}
+          Process.waitpid pid 
+        rescue Errno::ECHILD
+          Log.debug{"Process #{ pid } already finished: #{ path }"}
+        end if Misc.pid_exists? pid
+        pid = nil
+        dependencies.each{|dep| dep.join }
+        self
+      end
+    ensure
+      set_info :joined, true
     end
     self
   end

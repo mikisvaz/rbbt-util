@@ -15,6 +15,7 @@ require 'rbbt/tsv/attach'
 require 'rbbt/tsv/filter'
 require 'rbbt/tsv/field_index'
 require 'rbbt/tsv/parallel'
+require 'rbbt/tsv/stream'
 
 module TSV
   class << self

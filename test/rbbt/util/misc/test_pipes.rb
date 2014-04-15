@@ -29,7 +29,6 @@ row3 AAA BBB CCC
     text2=<<-EOF
 row1 a b
 row2 aa bb
-row3 aaa bbb
     EOF
 
     text3=<<-EOF
@@ -44,7 +43,7 @@ row3 ccc
     tsv = TSV.open Misc.paste_streams([s1,s2,s3],nil, " "), :sep => " ", :type => :list
     assert_equal ["A", "B", "C", "a", "b", "c"], tsv["row1"]
     assert_equal ["AA", "BB", "CC", "aa", "bb", "cc"], tsv["row2"]
-    assert_equal ["AAA", "BBB", "CCC", "aaa", "bbb", "ccc"], tsv["row3"]
+    assert_equal ["AAA", "BBB", "CCC", "", "", "ccc"], tsv["row3"]
   end
 
   def test_sort_stream
@@ -59,5 +58,22 @@ row1 A B C
     sorted = Misc.sort_stream(s)
     assert_equal %w(#: #Row row2 row3 row1), text.split("\n").collect{|l| l.split(" ").first}
     assert_equal %w(#: #Row row1 row2 row3), sorted.read.split("\n").collect{|l| l.split(" ").first}
+  end
+
+  def test_dup_stream
+    text =<<-EOF
+#: :sep=" "
+#Row LabelA LabelB LabelC
+row2 AA BB CC
+row3 AAA BBB CCC
+row1 A B C
+    EOF
+
+    TmpFile.with_file(text) do |tmp|
+      io = Open.open(tmp)
+      dup = Misc.dup_stream(io)
+      assert_equal text, dup.read
+      assert_equal text, io.read
+    end
   end
 end

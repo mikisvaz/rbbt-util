@@ -1,5 +1,6 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
 require 'rbbt/workflow/task'
+require 'rbbt/tsv'
 require 'rbbt'
 
 class TEST

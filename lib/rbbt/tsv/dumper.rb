@@ -64,8 +64,7 @@ module TSV
     end
 
     def close_out
-      Log.debug "Close out #{@stream.inspect}"
-      @stream.close
+      @stream.close unless @stream.closed?
     end
 
     def close_in

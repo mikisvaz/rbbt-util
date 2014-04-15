@@ -26,6 +26,20 @@ module ConcurrentStream
     stream
   end
 
+  def annotate(stream)
+    ConcurrentStream.setup stream
+    stream.threads = threads
+    stream.pids = pids
+    stream.callback = callback
+    stream.abort_callback = abort_callback
+    stream.filename = filename
+    stream.joined = joined
+  end
+
+  def clear
+    threads, pids, callback, abort_callback = nil
+  end
+
   def joined?
     @joined
   end

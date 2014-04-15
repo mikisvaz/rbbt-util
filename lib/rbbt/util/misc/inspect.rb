@@ -42,7 +42,7 @@ module Misc
     when (defined? TSV and TSV::Parser)
       "<TSVStream:" + (obj.filename || "NOFILENAME") + "--" << Misc.fingerprint(obj.options) << ">"
     when IO
-      "<IO:" + (obj.respond_to?(:filename) ? obj.filename : obj.inspect) + ">"
+      "<IO:" + (obj.respond_to?(:filename) ? obj.filename || obj.inspect : obj.inspect) + ">"
     when File
       "<File:" + obj.path + ">"
     when Array
@@ -79,7 +79,7 @@ module Misc
   def self.remove_long_items(obj)
     case
     when IO === obj
-      remove_long_items("IO: " + obj.filename)
+      remove_long_items("IO: " + (obj.respond_to?(:filename) ? (obj.filename || obj.inspect) : obj.inspect ))
     when obj.respond_to?(:path)
       remove_long_items("File: " + obj.path)
     when TSV::Parser === obj

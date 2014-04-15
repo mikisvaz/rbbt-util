@@ -61,6 +61,7 @@ module TSV
       begin
         TSV.open(CMD.cmd(cmd), :key_field => 1, :type => :single, :cast => :to_i)
       rescue
+        Log.exception $!
         TSV.setup({}, :type => :single, :cast => :to_i)
       end
     end
@@ -106,6 +107,9 @@ module TSV
     when String
       raise "Could not open file given by String: #{Misc.fingerprint file}" unless Open.remote?(file) or File.exists? file
       Open.open(file, open_options)
+    when (defined? Step and Step)
+      stream = file.get_stream
+      stream || get_stream(file.join.path)
     when TSV::Dumper
       file.stream
     else

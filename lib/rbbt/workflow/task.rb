@@ -29,15 +29,13 @@ module Task
     end
   end
 
-  def param_options
-  end
-
   def take_input_values(input_values)
     return [] if @inputs.nil?
     values = []
+    defaults = IndiferentHash.setup(@input_defaults || {})
     @inputs.each do |input|
       value = input_values[input]
-      value = IndiferentHash.setup(@input_defaults || {})[input] if value.nil?
+      value = defaults[input] if value.nil?
       values << value
     end
     values
@@ -46,7 +44,11 @@ module Task
   def exec(*args)
     case
     when (args.length == 1 and not inputs.nil? and inputs.length > 1 and Hash === args.first)
-      self.call *take_input_values(IndiferentHash.setup(args.first))
+      begin
+        self.call *take_input_values(IndiferentHash.setup(args.first))
+      ensure
+        purge_stream_cache
+      end
     else
       self.call *args
     end

@@ -465,7 +465,7 @@ module Persist
                 res.abort if res.respond_to? :abort
                 raise $!
               end
-            when TSV::Dumper
+            when (defined? TSV and TSV::Dumper)
               begin
                 io = res.stream
                 res = TSV.open(io)
