@@ -1,4 +1,16 @@
 module Misc
+
+  def self.string2const(string)
+    return nil if string.nil?
+    mod = Kernel
+
+    string.to_s.split('::').each do |str|
+      mod = mod.const_get str
+    end
+
+    mod
+  end
+
   def self.benchmark(repeats = 1, message = nil)
     require 'benchmark'
     res = nil
@@ -133,17 +145,6 @@ module Misc
 
   def self.try3times(&block)
     insist(3, &block)
-  end
-
-  def self.string2const(string)
-    return nil if string.nil?
-    mod = Kernel
-
-    string.to_s.split('::').each do |str|
-      mod = mod.const_get str
-    end
-
-    mod
   end
 
   # Divides the array into +num+ chunks of the same size by placing one

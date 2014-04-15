@@ -30,7 +30,7 @@ module Misc
   end
 
   def self.total_length(ranges)
-    Misc.collapse_ranges(ranges).inject(0) do |total,range| total += range.end - range.begin + 1 end
+    self.collapse_ranges(ranges).inject(0) do |total,range| total += range.end - range.begin + 1 end
   end
 
   def self.sorted_array_hits(a1, a2)

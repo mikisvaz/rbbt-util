@@ -180,4 +180,14 @@ module Misc
       end
     end.collect{|p| p.last }
   end
+
+  def self.ensembl_server(organism)
+    date = organism.split("/")[1]
+    if date.nil?
+      "www.ensembl.org"
+    else
+      "#{ date }.archive.ensembl.org"
+    end
+  end
+
 end

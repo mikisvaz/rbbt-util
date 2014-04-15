@@ -56,4 +56,27 @@ module Misc
 
     proportions
   end
+
+  def self.google_venn(list1, list2, list3, name1 = nil, name2 = nil, name3 = nil, total = nil)
+    name1 ||= "list 1"
+    name2 ||= "list 2"
+    name3 ||= "list 3"
+
+    sizes = [list1, list2, list3, list1 & list2, list1 & list3, list2 & list3, list1 & list2 & list3].collect{|l| l.length}
+
+    total = total.length if Array === total
+
+    label = "#{name1}: #{sizes[0]} (#{name2}: #{sizes[3]}, #{name3}: #{sizes[4]})"
+    label << "|#{name2}: #{sizes[1]} (#{name1}: #{sizes[3]}, #{name3}: #{sizes[5]})"
+      label << "|#{name3}: #{sizes[2]} (#{name1}: #{sizes[4]}, #{name2}: #{sizes[5]})"
+      if total
+        label << "| INTERSECTION: #{sizes[6]} TOTAL: #{total}"
+      else
+        label << "| INTERSECTION: #{sizes[6]}"
+      end
+
+    max = total || sizes.max
+    sizes = sizes.collect{|v| (v.to_f/max * 100).to_i.to_f / 100}
+    url = "https://chart.googleapis.com/chart?cht=v&chs=500x300&chd=t:#{sizes * ","}&chco=FF6342,ADDE63,63C6DE,FFFFFF&chdl=#{label}"
+  end
 end

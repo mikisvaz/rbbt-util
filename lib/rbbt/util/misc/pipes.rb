@@ -192,28 +192,8 @@ module Misc
     str
   end
 
-  def self.read_stream(stream, size)
-    str = nil
-    Thread.pass while IO.select([stream],nil,nil,1).nil?
-    while not str = stream.read(size)
-      IO.select([stream],nil,nil,1) 
-      Thread.pass
-      raise ClosedStream if stream.eof?
-    end
-
-    while str.length < size
-      raise ClosedStream if stream.eof?
-      IO.select([stream],nil,nil,1)
-      if new = stream.read(size-str.length)
-        str << new
-      end
-    end
-    str
-  end
-
   def self.sensiblewrite(path, content = nil, &block)
     return if File.exists? path
-    #tmp_path = path + '.sensible_write'
     tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
     Misc.lock tmp_path do
       if not File.exists? path
