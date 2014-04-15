@@ -106,6 +106,8 @@ module TSV
     when String
       raise "Could not open file given by String: #{Misc.fingerprint file}" unless Open.remote?(file) or File.exists? file
       Open.open(file, open_options)
+    when TSV::Dumper
+      file.stream
     else
       raise "Cannot get stream from: #{file.inspect}"
     end
@@ -134,7 +136,7 @@ module TSV
     sep = (Hash === entry_hash and entry_hash[:sep]) ? entry_hash[:sep] : "\t"
 
     str = "" 
-    str << "#: " << Misc.hash2string(entry_hash) << "\n" if entry_hash and entry_hash.any?
+    str << "#: " << Misc.hash2string(entry_hash.merge(:key_field => nil, :fields => nil)) << "\n" if entry_hash and entry_hash.any?
     if fields
       str << "#" << key_field << sep << fields * sep << "\n"
     end

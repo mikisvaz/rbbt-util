@@ -69,6 +69,7 @@ module ConcurrentStream
     join_callback
 
     @joined = true
+    close unless closed?
   end
 
   def abort_threads

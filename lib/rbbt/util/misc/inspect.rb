@@ -40,7 +40,7 @@ module Misc
     when (defined? AnnotatedArray and AnnotatedArray)
       "<A: #{fingerprint Annotated.purge(obj)} #{fingerprint obj.info}>"
     when (defined? TSV and TSV::Parser)
-      "<TSVStream:" + obj.filename + "--" << Misc.fingerprint(obj.options) << ">"
+      "<TSVStream:" + (obj.filename || "NOFILENAME") + "--" << Misc.fingerprint(obj.options) << ">"
     when IO
       "<IO:" + (obj.respond_to?(:filename) ? obj.filename : obj.inspect) + ">"
     when File

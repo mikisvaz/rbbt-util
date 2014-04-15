@@ -448,8 +448,12 @@ module TSV
     def options
       options = {}
       TSV::ENTRIES.each do |entry|
-        options[entry.to_sym] = self.send(entry) if self.respond_to? entry
+        if self.respond_to? entry
+          value = self.send(entry) 
+          options[entry.to_sym] = value unless value.nil?
+        end
       end
+      options[:sep] = @sep if @sep and @sep != "\t" and @sep != /\t/
       IndiferentHash.setup options
     end
 
