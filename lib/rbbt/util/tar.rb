@@ -43,13 +43,6 @@ module Misc
 
     string = tar.string
 
-    #chunk_size = 1024
-    #Zlib::GzipWriter.wrap(gz) do |writer|
-    #  while chunk = tar.read(chunk_size) do
-    #    writer.write chunk
-    #  end
-    #  writer.close
-    #end
     z = Zlib::GzipWriter.new(gz)
     z.write string
     z.close

@@ -1,9 +1,9 @@
 require 'lockfile'
-require 'net/smtp'
 require 'digest/md5'
 require 'cgi'
 require 'zlib'
 require 'rubygems/package'
+
 require 'rbbt/util/tar'
 require 'rbbt/util/misc/exceptions'
 require 'rbbt/util/misc/concurrent_stream'
@@ -21,7 +21,6 @@ require 'rbbt/util/misc/objects'
 require 'rbbt/util/misc/manipulation'
 
 module Misc
-
 end
 
 module PDF2Text

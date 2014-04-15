@@ -224,4 +224,123 @@ module Misc
       end
     end
   end
+
+  def self.process_stream(s)
+    begin
+      yield s
+      s.join if s.respond_to? :join
+    rescue
+      s.abort if s.respond_to? :abort
+      raise $!
+    end
+  end
+
+  def self.collapse_stream(s, line = nil, sep = "\t")
+    Misc.open_pipe do |sin|
+      process_stream(s) do |s|
+        line ||= s.gets
+
+        current_parts = []
+        while line 
+          key, *parts = line.strip.split(sep, -1)
+          current_key ||= key
+          case
+          when key.nil?
+          when current_key == key
+            parts.each_with_index do |part,i|
+              if current_parts[i].nil?
+                current_parts[i] = part
+              else
+                current_parts[i] = current_parts[i] << "|" << part
+              end
+            end
+          when current_key != key
+            sin.puts [current_key, current_parts].flatten * sep
+            current_key = key
+            current_parts = parts
+          end
+          line = s.gets
+        end
+
+        sin.puts [current_key, current_parts].flatten * sep unless current_key.nil?
+      end
+    end
+  end
+
+  def self.paste_streams(streams, lines = nil, sep = "\t")
+    num_streams = streams.length
+    Misc.open_pipe do |sin|
+      begin
+        done_streams = []
+        lines ||= streams.collect{|s| s.gets }
+        keys = []
+        parts = []
+        lines.each_with_index do |line,i|
+          key, *p = line.strip.split(sep, -1) 
+          keys[i] = key
+          parts[i] = p
+        end
+        sizes = parts.collect{|p| p.length }
+        last_min = nil
+        while lines.compact.any?
+          min = keys.compact.sort.first
+          str = []
+          keys.each_with_index do |key,i|
+            case key
+            when nil
+              str << [([""] * sizes[i]) * sep]
+            when min
+              str << [parts[i] * sep]
+              line = lines[i] = streams[i].gets
+              if line.nil?
+                keys[i] = nil
+                parts[i] = nil
+              else
+                k, *p = line.strip.split(sep, -1)
+                keys[i] = k
+                parts[i] = p
+              end
+            end
+          end
+
+          sin.puts [min, str*sep] * sep
+        end
+        streams.each do |stream|
+          stream.join if stream.respond_to? :join
+        end
+      rescue 
+        streams.each do |stream|
+          stream.abort if stream.respond_to? :abort
+        end
+      end
+    end
+  end
+
+  def self.sort_stream(stream, header_hash = "#")
+    Misc.open_pipe do |sin|
+      begin
+        line = stream.gets
+        while line =~ /^#{header_hash}/ do
+          sin.puts line
+          line = stream.gets
+        end
+
+        line_stream = Misc.open_pipe do |line_stream_in|
+          while line
+            line_stream_in.puts line
+            line = stream.gets
+          end
+        end
+        sorted = CMD.cmd("sort", :in => line_stream, :pipe => true)
+
+        while block = sorted.read(2048)
+          sin.write block
+        end
+        sorted.close
+        stream.join if stream.respond_to? :join
+      rescue
+        stream.abort if stream.respond_to? :abort
+      end
+    end
+  end
 end
