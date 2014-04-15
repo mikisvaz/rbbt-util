@@ -92,4 +92,125 @@ module Misc
 
     res
   end
+
+  def self.do_once(&block)
+    return nil if $__did_once
+    $__did_once = true
+    yield
+    nil
+  end
+
+  def self.reset_do_once
+    $__did_once = false
+  end
+
+  def self.insist(times = 3, sleep = nil, msg = nil)
+    if Array === times
+      sleep_array = times
+      times = sleep_array.length
+      sleep = sleep_array.shift
+    end
+    try = 0
+    begin
+      yield
+    rescue
+      if msg
+        Log.warn("Insisting after exception: #{$!.message} -- #{msg}")
+      else
+        Log.warn("Insisting after exception: #{$!.message}")
+      end
+      if sleep and try > 0
+        sleep sleep
+        sleep = sleep_array.shift if sleep_array
+      else
+        Thread.pass
+      end
+      try += 1
+      retry if try < times
+      raise $!
+    end
+  end
+
+  def self.try3times(&block)
+    insist(3, &block)
+  end
+
+  def self.string2const(string)
+    return nil if string.nil?
+    mod = Kernel
+
+    string.to_s.split('::').each do |str|
+      mod = mod.const_get str
+    end
+
+    mod
+  end
+
+  # Divides the array into +num+ chunks of the same size by placing one
+  # element in each chunk iteratively.
+  def self.divide(array, num)
+    num = 1 if num == 0
+    chunks = []
+    num.to_i.times do chunks << [] end
+    array.each_with_index{|e, i|
+      c = i % num
+      chunks[c] << e
+    }
+    chunks
+  end
+
+  # Divides the array into chunks of +num+ same size by placing one
+  # element in each chunk iteratively.
+  def self.ordered_divide(array, num)
+    last = array.length - 1
+    chunks = []
+    current = 0
+    while current <= last
+      next_current = [last, current + num - 1].min
+      chunks << array[current..next_current]
+      current = next_current + 1
+    end
+    chunks
+  end
+
+  def self.random_sample_in_range(total, size)
+    p = Set.new
+
+    if size > total / 10
+      template = (0..total - 1).to_a
+      size.times do |i|
+        pos = (rand * (total - i)).floor
+        if pos == template.length - 1
+          v = template.pop
+        else
+          v, n = template[pos], template[-1]
+          template.pop
+          template[pos] = n 
+        end
+        p << v
+      end
+    else
+      size.times do 
+        pos = nil
+        while pos.nil? 
+          pos = (rand * total).floor
+          if p.include? pos
+            pos = nil
+          end
+        end
+        p << pos
+      end
+    end
+    p
+  end
+
+  def self.sample(ary, size, replacement = false)
+    if ary.respond_to? :sample
+      ary.sample size
+    else
+      total = ary.length
+      p = random_sample_in_range(total, size)
+      ary.values_at *p
+    end
+  end
 end
