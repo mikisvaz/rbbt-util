@@ -75,31 +75,26 @@ module Workflow
 
       task.doc(dependencies)
 
-      if self.libdir.examples[task_name].exists?
-        self.libdir.examples[task_name].glob("*").each do |example_dir|
-          example = File.basename(example_dir)
+      if self.examples.include? task_name
+          self.examples[task_name].each do |example|
 
-          puts Log.color(:magenta, "Example " << example) + " -- " + Log.color(:blue, example_dir)
+            puts Log.color(:magenta, "Example " << example) + " -- " + Log.color(:blue, example_dir[task_name][example])
 
-          inputs = {}
+            inputs = self.example(task_name, example)
 
-          task.input_types.each do |input,type|
-            if example_dir[input].exists?
-              case type
-              when :tsv, :array, :text
-                head = example_dir[input].read.split("\n")[0..5].compact * "\n\n"
-                head = head[0..500]
-                puts Misc.format_definition_list_item(input, head).gsub("\n\n","\n")
-              else
-                puts Misc.format_definition_list_item(input, example_dir[input].read)
-              end
+            inputs.each do |input, type, file|
+                case type
+                when :tsv, :array, :text
+                  head = file.read.split("\n")[0..5].compact * "\n\n"
+                  head = head[0..500]
+                  puts Misc.format_definition_list_item(input, head, 100, -1).gsub(/\n\s*\n/,"\n")
+                else
+                  puts Misc.format_definition_list_item(input, file.read)
+                end
             end
+            puts
           end
-
-          puts
         end
-
       end
-    end
   end
 end

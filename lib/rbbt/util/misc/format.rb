@@ -53,7 +53,7 @@ module Misc
     len = Log.uncolor(dt).length
 
     if indent < 0
-      text = format_paragraph(dd, size, indent.abs+1, 0)
+      text = format_paragraph(dd, size, indent.abs-1, 0)
       text = dt << "\n" << text
     else
       offset = len - indent

@@ -174,6 +174,7 @@ module Misc
           Thread.pass 
         end
         io.join if io.respond_to? :join
+        io.close if io.respond_to? :close
       rescue
         io.abort if io.respond_to? :abort
       end
@@ -181,22 +182,28 @@ module Misc
   end
 
   def self.read_stream(stream, size)
-    str = nil
-    Thread.pass while IO.select([stream],nil,nil,1).nil?
-    while not str = stream.read(size)
-      IO.select([stream],nil,nil,1) 
-      Thread.pass
-      raise ClosedStream if stream.eof?
-    end
-
-    while str.length < size
-      raise ClosedStream if stream.eof?
-      IO.select([stream],nil,nil,1)
-      if new = stream.read(size-str.length)
-        str << new
+    begin
+      str = nil
+      Thread.pass while IO.select([stream],nil,nil,1).nil?
+      while not str = stream.read(size)
+        IO.select([stream],nil,nil,1) 
+        Thread.pass
+        raise ClosedStream if stream.eof?
       end
+
+      while str.length < size
+        raise ClosedStream if stream.eof?
+        IO.select([stream],nil,nil,1)
+        if new = stream.read(size-str.length)
+          str << new
+        end
+      end
+      stream.join if stream.respond_to? :join
+      stream.close if stream.respond_to? :close
+      str
+    rescue
+      stream.abort if stream.respond_to? :abort
     end
-    str
   end
 
   def self.sensiblewrite(path, content = nil, &block)
