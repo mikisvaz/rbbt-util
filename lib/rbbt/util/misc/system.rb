@@ -87,4 +87,14 @@ end
     res
   end
 
+  def self.filename?(string)
+    String === string and string.length > 0 and string.length < 250 and File.exists?(string)
+  end
+
+  def self.is_filename?(string)
+    return true if string.respond_to? :exists
+    return true if String === string and string.length < 265 and File.exists? string
+    return false
+  end
+
 end

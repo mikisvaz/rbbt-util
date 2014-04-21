@@ -152,6 +152,14 @@ module TSV
       end
     when Array
       traverse_array(obj, options, &block)
+    when String
+      if Open.remote? obj or Misc.is_filename? obj
+        Open.open(obj) do |s|
+          traverse_obj(s, options, &block)
+        end
+      else
+        raise "Can not open obj for traversal #{Misc.fingerprint obj}"
+      end
     when nil
       raise "Can not traverse nil object into #{stream_name(options)}"
     else

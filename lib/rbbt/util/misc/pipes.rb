@@ -161,16 +161,22 @@ module Misc
     str
   end
 
-  def self.consume_stream(io)
+  def self.consume_stream(io, in_thread = false)
     return unless io.respond_to? :read
-    begin
-      while block = io.read(2048)
-        return if io.eof?
-        Thread.pass 
+    if in_thread
+      Thread.new do
+        consume_stream(io, false)
       end
-      io.join if io.respond_to? :join
-    rescue
-      io.abort if io.respond_to? :abort
+    else
+      begin
+        while block = io.read(2048)
+          return if io.eof?
+          Thread.pass 
+        end
+        io.join if io.respond_to? :join
+      rescue
+        io.abort if io.respond_to? :abort
+      end
     end
   end
 
@@ -316,7 +322,6 @@ module Misc
         end
         sizes = parts.collect{|p| p.length }
         last_min = nil
-        count ||= 0
         while lines.compact.any?
           min = keys.compact.sort.first
           str = []
@@ -334,7 +339,6 @@ module Misc
                 parts[i] = p
               end
             else
-              count += 1
               str << [sep * (sizes[i]-1)] if sizes[i] > 0
             end
           end
