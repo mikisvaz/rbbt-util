@@ -162,6 +162,7 @@ module Misc
   end
 
   def self.consume_stream(io, in_thread = false)
+    return if Path === io
     return unless io.respond_to? :read 
     if io.respond_to? :closed? and io.closed?
       io.join if io.respond_to? :join
@@ -180,6 +181,7 @@ module Misc
         io.join if io.respond_to? :join
       rescue
         Log.error "Exception consuming stream: #{io.inspect}"
+        ddd caller
         Log.exception $!
         io.abort if io.respond_to? :abort
       end

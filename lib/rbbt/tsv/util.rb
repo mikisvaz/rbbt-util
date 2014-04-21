@@ -69,6 +69,8 @@ module TSV
 
   def self.get_filename(file)
     case
+    when (defined? Step and Step === file)
+      file.path
     when String === file
       file
     when file.respond_to?(:filename)
@@ -112,6 +114,12 @@ module TSV
       stream || get_stream(file.join.path)
     when TSV::Dumper
       file.stream
+    when Array
+      Misc.open_pipe do |sin|
+        file.each do |l|
+          sin.puts l
+        end
+      end
     else
       raise "Cannot get stream from: #{file.inspect}"
     end
