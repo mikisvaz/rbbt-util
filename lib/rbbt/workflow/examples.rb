@@ -19,7 +19,7 @@ module Workflow
   end
 
   def example(task_name, example)
-    tasks[task_name].input_types.collect do |input,type|
+    tasks[task_name.to_sym].input_types.collect do |input,type|
       next unless example_dir[task_name][example][input].exists?
       [input, type, example_dir[task_name][example][input].find]
     end.compact
@@ -46,5 +46,23 @@ module Workflow
 
     end
     IndiferentHash.setup(inputs)
+  end
+
+  def example_step(task_name, example)
+    inputs = {}
+    example(task_name, example).each do |input,type,file|
+
+      case type
+      when :tsv, :array, :text
+        Log.debug "Pointing #{ input } to #{file}"
+        inputs[input.to_sym]  = file
+      when :boolean
+        inputs[input.to_sym]  = (file.read.strip == 'true')
+      else
+        Log.debug "Loading #{ input } from #{file}"
+        inputs[input.to_sym]  = file.read.strip
+      end
+    end
+    Sequence.job(task_name, example, inputs)
   end
 end

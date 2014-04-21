@@ -250,7 +250,8 @@ class Step
     when :tsv
       TSV.open Open.open(file(name)), options
     when :array
-      Open.read(file(name)).split /\n|,\s*/
+      #Open.read(file(name)).split /\n|,\s*/
+      Open.read(file(name)).split "\n"
     when :yaml
       YAML.load(Open.open(file(name)))
     when :marshal

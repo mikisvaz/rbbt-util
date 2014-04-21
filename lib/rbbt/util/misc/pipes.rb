@@ -162,7 +162,11 @@ module Misc
   end
 
   def self.consume_stream(io, in_thread = false)
-    return unless io.respond_to? :read
+    return unless io.respond_to? :read 
+    if io.respond_to? :closed? and io.closed?
+      io.join if io.respond_to? :join
+      return
+    end
     if in_thread
       Thread.new do
         consume_stream(io, false)
@@ -175,6 +179,7 @@ module Misc
         end
         io.join if io.respond_to? :join
       rescue
+        Log.error "Exception consuming stream: #{io.inspect}"
         Log.exception $!
         io.abort if io.respond_to? :abort
       end
