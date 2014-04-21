@@ -251,7 +251,6 @@ else
   job_options = SOPT.get sopt_option_string
 end
 job_options = fix_options(workflow, task, job_options)
-ddd job_options
 saved_job_options = job_options
 
 workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if options[:workdir]
