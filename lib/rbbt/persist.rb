@@ -110,9 +110,13 @@ module Persist
         res.pop
         res
       when :marshal
-        Marshal.load(Open.open(path))
+        Open.open(path) do |stream|
+          Marshal.load(stream)
+        end
       when :yaml
-        YAML.load(Open.open(path))
+        Open.open(path) do |stream|
+          YAML.load(stream)
+        end
       when :float
         Open.read(path).to_f
       when :integer

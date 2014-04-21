@@ -174,8 +174,8 @@ module Misc
           Thread.pass 
         end
         io.join if io.respond_to? :join
-        io.close if io.respond_to? :close
       rescue
+        Log.exception $!
         io.abort if io.respond_to? :abort
       end
     end
