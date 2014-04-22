@@ -15,7 +15,7 @@ Display summary information. Works with Tokyocabinet HDB and BDB as well.
 -tch--tokyocabinet File is a TC HDB
 -tcb--tokyocabinet_bd File is a TC BDB
 -t--type* Type of tsv (single, list, double, flat)
--h--header_hash* Change the character used to mark the header line (defaults to #)
+-hh--header_hash* Change the character used to mark the header line (defaults to #)
 -k--key_field* Change the key field
 -f--fields* Change the fields to load
 -h--help Help

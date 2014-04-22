@@ -57,7 +57,7 @@ module Misc
         end
         Kernel.exit! 0
       }
-      sin.close #if close
+      sin.close 
       ConcurrentStream.setup sout, :pids => [pid]
     else
       thread = Thread.new(Thread.current) do |parent|
@@ -181,7 +181,6 @@ module Misc
         io.join if io.respond_to? :join
       rescue
         Log.error "Exception consuming stream: #{io.inspect}"
-        ddd caller
         Log.exception $!
         io.abort if io.respond_to? :abort
       end

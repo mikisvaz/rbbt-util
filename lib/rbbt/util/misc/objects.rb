@@ -35,12 +35,16 @@ module Misc
   end
 
   def self.append_zipped(current, new)
-    current.each do |v|
-      n = new.shift
-      if Array === n
-        v.concat new
-      else
-        v << n
+    if current.empty?
+      current.replace new.collect{|e| [e]}
+    else
+      current.each do |v|
+        n = new.shift
+        if Array === n
+          v.concat new
+        else
+          v << n
+        end
       end
     end
     current

@@ -29,7 +29,7 @@ def run_task(workflow, task, name)
       end
       Process.wait @pid
     end
-    path = Open.read(res) if File.exists? res
+    path = Open.read(res).strip if File.exists? res
   end
   path = "NO RESULT" if path.nil? or path.empty?
 
@@ -51,6 +51,8 @@ task = nil if task == '--'
 name = ARGV.shift if task
 name = nil if name == '--'
 
+orig_name = name
+
 $saved_args = ARGV.dup
 
 workflow = Workflow.require_workflow workflow
@@ -70,8 +72,12 @@ task_result.each do |code,res|
   task, name = code
   path, success = res
   if success
-    puts "#{Log.color :green, "SUCCESS"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
-    puts path
+    if orig_name
+      puts Open.read(path)
+    else
+      puts "#{Log.color :green, "SUCCESS"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
+      puts path
+    end
   else
     puts "#{Log.color :red, "ERROR"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
     puts path

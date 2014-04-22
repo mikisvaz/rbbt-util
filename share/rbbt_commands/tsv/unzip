@@ -3,7 +3,24 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get("-tch--tokyocabinet:-tcb--tokyocabinet_bd:-f--field Field to append to key:-m--merge Consider multiple values even after unzip")
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Zip fields in a TSV file 
+
+$ rbbt tsv info [options] file.tsv
+
+Display summary information. Works with Tokyocabinet HDB and BDB as well.
+
+-tch--tokyocabinet File is a TC HDB
+-tcb--tokyocabinet_bd File is a TC BDB
+-hh--header_hash* Change the character used to mark the header line (defaults to #)
+-m--merge* Merge lines
+-f--field* Field to unzip
+-h--help Help
+EOF
+
+SOPT.usage if options[:help]
 
 file = ARGV.shift
 
@@ -22,7 +39,7 @@ else
     file = file.dup
     Path.setup(File.expand_path(file))
   end
-  tsv = TSV.open(file, :type => :double)
+  tsv = TSV.open(file, {:type => :double}.merge(options))
 end
 
 puts tsv.unzip(field, merge).to_s

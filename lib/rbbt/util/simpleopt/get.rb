@@ -25,6 +25,10 @@ module SOPT
         value = args.delete_at(i) if value.nil?
         values[input] = value
       else
+        if value.nil? and %w(F false FALSE no).include?(args[i])
+          Log.warn "Boolean values must are best specified as #{current}[=true|false], not #{ current } [true|false]. Token '#{args[i]}' following '#{current}' automatically assigned as value" 
+          value = args.delete_at(i)
+        end
         values[input] = %w(F false FALSE no).include?(value)? false : true
       end
     end

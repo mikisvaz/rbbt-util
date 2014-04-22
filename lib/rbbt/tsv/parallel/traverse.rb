@@ -306,9 +306,9 @@ module TSV
     end
   end
 
-  def self.traverse_stream(obj, threads, cpus, options, &block)
+  def self.traverse_stream(obj, threads = nil, cpus = nil, options = {}, &block)
     into = options[:into]
-    thread = Thread.new(Thread.current, obj) do |parent,obj|
+    thread = Thread.new(Thread.current) do |parent|
       begin
         traverse_run(obj, threads, cpus, options, &block)
         into.close if into.respond_to? :close

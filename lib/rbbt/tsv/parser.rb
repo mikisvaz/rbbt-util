@@ -277,6 +277,15 @@ module TSV
       end
     end
 
+    def cast_values_flat(values)
+      case
+      when Symbol === cast
+        values.collect{|v| v.send(cast)}
+      when Proc === cast
+        values.collect{|v| cast.call v }
+      end
+    end
+
     def cast_values_double(values)
       case
       when Symbol === cast
@@ -408,7 +417,7 @@ module TSV
       when :flat
         @take_all = true if field_positions.nil?
         self.instance_eval do alias get_values get_values_flat end
-        self.instance_eval do alias cast_values cast_values_double end
+        self.instance_eval do alias cast_values cast_values_flat end
         if merge
           if key_position and key_position != 0 and field_positions.nil?
             self.instance_eval do alias add_to_data add_to_data_flat_merge_keys end

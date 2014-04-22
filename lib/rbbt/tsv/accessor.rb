@@ -621,7 +621,7 @@ Example:
       else
         self.through do |key,values|
           field_values = values.delete_at field_pos
-          zipped = values.zip_fields
+          zipped = Misc.zip_fields(values)
           field_values.zip(zipped).each do |field_value,rest|
             k = [key,field_value]*":"
             new[k] = rest
@@ -631,11 +631,12 @@ Example:
       end
     end
 
-
-    new.key_field = [self.key_field, self.fields[field_pos]] * ":"
-    new_fields = self.fields.dup
-    new_fields.delete_at field_pos
-    new.fields = new_fields
+    if self.key_field and self.fields
+      new.key_field = [self.key_field, self.fields[field_pos]] * ":" 
+      new_fields = self.fields.dup 
+      new_fields.delete_at field_pos
+      new.fields = new_fields
+    end
 
     new
   end

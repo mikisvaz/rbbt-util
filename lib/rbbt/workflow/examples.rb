@@ -63,6 +63,6 @@ module Workflow
         inputs[input.to_sym]  = file.read.strip
       end
     end
-    Sequence.job(task_name, example, inputs)
+    self.job(task_name, example, inputs)
   end
 end
