@@ -208,7 +208,7 @@ module Persist
   def self.tee_stream_thread(stream, path, type, callback = nil)
     file, out = Misc.tee_stream(stream)
 
-    saver_thread = Thread.new(Thread.current, path, file) do |parent,path,file|
+    saver_thread = Thread.new(Thread.current) do |parent|
       begin
         Thread.current["name"] = "file saver: " + path
         Misc.lock(path) do
@@ -216,11 +216,11 @@ module Persist
         end
       rescue Aborted
         Log.error "Persist stream thread aborted: #{ Log.color :blue, path }"
-        stream.abort if stream.respond_to? :abort
+        file.abort if file.respond_to? :abort
       rescue Exception
         Log.error "Persist stream thread exception: #{ Log.color :blue, path }"
         Log.exception $!
-        stream.abort if stream.respond_to? :abort
+        file.abort if file.respond_to? :abort
         parent.raise $!
       end
     end
