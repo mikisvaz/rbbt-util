@@ -60,6 +60,7 @@ module TSV
       rescue IOError
       rescue Exception
         Log.exception $!
+        raise $!
       end
     end
 

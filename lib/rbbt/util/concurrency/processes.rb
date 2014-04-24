@@ -56,6 +56,7 @@ class RbbtProcessQueue
         end
       rescue Aborted
         @processes.each{|p| p.abort }
+        @processes.each{|p| p.join }
         Log.error "Process monitor aborted"
       rescue Exception
         Log.error "Process monitor exception: #{$!.message}"
@@ -78,7 +79,8 @@ class RbbtProcessQueue
   def join
     @processes.length.times do 
       @queue.push ClosedStream.new
-    end
+    end if @process_monitor.alive?
+
     begin
       @process_monitor.join
       close_callback if @callback
@@ -104,8 +106,8 @@ class RbbtProcessQueue
   end
 
   def abort
-    @process_monitor.raise Aborted.new if @process_monitor and @process_monitor.alive?
-    @callback_thread.raise Aborted.new if @callback_thread and @callback_thread.alive?
+    @process_monitor.raise(Aborted.new); @process_monitor.join if @process_monitor and @process_monitor.alive?
+    @callback_thread.raise(Aborted.new); @callback_thread.join if @callback_thread and @callback_thread.alive?
   end
 
   def process(*e)

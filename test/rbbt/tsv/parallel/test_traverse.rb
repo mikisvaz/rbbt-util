@@ -317,9 +317,13 @@ class TestTSVParallelThrough < Test::Unit::TestCase
         raise "STOP" if rand(100) < 1
         [k,v]
       end
-      dumper.stream.read
+      stream = dumper.stream
+      stream.read
+      stream.join
       rescue Exception
         Log.exception $!
+        stream.abort if stream.respond_to? :abort
+        stream.join if stream.respond_to? :join
         raise $!
       end
     end

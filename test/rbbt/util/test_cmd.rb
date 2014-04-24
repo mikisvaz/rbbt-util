@@ -29,17 +29,17 @@ class TestCmd < Test::Unit::TestCase
   end
 
   def test_error
-    assert_raise CMD::CMDError do CMD.cmd('fake-command') end
-    assert_raise CMD::CMDError do CMD.cmd('ls -fake_option') end
+    assert_raise ProcessFailed do CMD.cmd('fake-command') end
+    assert_raise ProcessFailed do CMD.cmd('ls -fake_option') end
 
-    assert_raise CMD::CMDError do CMD.cmd('fake-command', :stderr => true) end
-    assert_raise CMD::CMDError do CMD.cmd('ls -fake_option', :stderr => true) end
+    assert_raise ProcessFailed do CMD.cmd('fake-command', :stderr => true) end
+    assert_raise ProcessFailed do CMD.cmd('ls -fake_option', :stderr => true) end
  
-    assert_nothing_raised CMD::CMDError do CMD.cmd('fake-command', :stderr => false, :pipe => true) end
-    assert_nothing_raised CMD::CMDError do CMD.cmd('ls -fake_option', :stderr => false, :pipe => true) end
+    assert_nothing_raised ProcessFailed do CMD.cmd('fake-command', :stderr => false, :pipe => true) end
+    assert_nothing_raised ProcessFailed do CMD.cmd('ls -fake_option', :stderr => false, :pipe => true) end
  
-    assert_raise CMD::CMDError do CMD.cmd('fake-command', :stderr => true, :pipe => true).read end
-    assert_raise CMD::CMDError do CMD.cmd('ls -fake_option', :stderr => true, :pipe => true).read end
+    assert_raise ProcessFailed do CMD.cmd('fake-command', :stderr => true, :pipe => true).join end
+    assert_raise ProcessFailed do CMD.cmd('ls -fake_option', :stderr => true, :pipe => true).join end
   end
 
   def test_pipes
@@ -58,10 +58,7 @@ line33
       gz = CMD.cmd("gunzip", :in => File.open(file + '.gz'), :pipe => true)
       io = CMD.cmd('tail -n 10', :in => gz, :pipe => true)
       assert_equal 10, io.read.split(/\n/).length
-
-
     end
-
   end
 
 end

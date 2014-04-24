@@ -283,7 +283,7 @@ module TSV
   end
 
   def self.traverse_run(obj, threads, cpus, options = {}, &block)
-    if threads.nil? and cpus.nil? 
+    if ENV["RBBT_NO_MAP_REDUCE"] == "true" or (threads.nil? and cpus.nil?)
       traverse_obj obj, options, &block
     else
       if threads

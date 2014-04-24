@@ -3,8 +3,6 @@ require 'stringio'
 
 module CMD
 
-  class CMDError < StandardError; end
-
   module SmartIO 
     attr_accessor :pid, :cmd, :post, :in, :out, :err, :log
     def self.tie(io, pid = nil, cmd = "",  post = nil, sin = nil, out = nil, err = nil, log = true)
@@ -33,7 +31,7 @@ module CMD
 
         if $? and not $?.success?
           Log.debug{"Raising exception" if log}
-          exception = CMDError.new "Command [#{@pid}] '#{@cmd}' failed with error status #{$?.exitstatus}"
+          exception = ProcessFailed.new "Command [#{@pid}] '#{@cmd}' failed with error status #{$?.exitstatus}"
           begin
             original_close
           ensure
@@ -160,9 +158,9 @@ module CMD
 
         exit(-1)
       rescue Exception
-        Log.debug{ "CMDError: #{$!.message}" } if log
+        Log.debug{ "ProcessFailed: #{$!.message}" } if log
         Log.debug{ "Backtrace: \n" + $!.backtrace * "\n" } if log
-        raise CMDError, $!.message
+        raise ProcessFailed, $!.message
       end
     }
 
@@ -207,7 +205,8 @@ module CMD
         Thread.exit
       end
 
-      SmartIO.tie sout, pid, cmd, post, in_content, sin, serr
+      #SmartIO.tie sout, pid, cmd, post, in_content, sin, serr
+      ConcurrentStream.setup sout, :pids => [pid], :autojoin => true
 
       sout
     else
@@ -222,12 +221,12 @@ module CMD
 
       out = StringIO.new sout.read
       sout.close unless sout.closed?
-      SmartIO.tie out, pid, cmd, post, in_content, sin, serr
+      #SmartIO.tie out, pid, cmd, post, in_content, sin, serr
 
       Process.waitpid pid
 
       if not $?.success?
-        exception      = CMDError.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"
+        exception      = ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"
         raise exception
       else
         Log.log err, stderr if Integer === stderr and log

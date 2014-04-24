@@ -100,7 +100,6 @@ class Step
         dependency.relay_log self
         dependency.clean if not dependency.done? and (dependency.error? or dependency.aborted?)
         dependency.clean if dependency.streaming? and not dependency.running?
-        #dependency.run_dependencies(seen)
         dependency.run(ENV["RBBT_NO_STREAM"] != 'true') unless dependency.result or dependency.done?
         seen << dependency.path
         seen.concat dependency.rec_dependencies.collect{|d| d.path} 
@@ -159,12 +158,13 @@ class Step
             raise $!
           end
 
-          result = prepare_result result, @task.description, info if IO === result and ENV["RBBT_NO_STREAM"]
-          result = prepare_result result.stream, @task.description, info if TSV::Dumper === result and ENV["RBBT_NO_STREAM"]
+          if not no_load or ENV["RBBT_NO_STREAM"] == "true" 
+            result = prepare_result result, @task.description, info if IO === result 
+            result = prepare_result result.stream, @task.description, info if TSV::Dumper === result 
+          end
 
           case result
           when IO
-            result = Misc.read_stream(result) if ENV["RBBT_NO_STREAM"]
 
             log :streaming, "#{Log.color :magenta, "Streaming task result IO"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
             ConcurrentStream.setup result do

@@ -398,7 +398,7 @@ module Persist
         begin
 
           lock_filename = Persist.persistence_path(path + '.persist', {:dir => Persist.lock_dir})
-          Misc.lock lock_filename  do |lockfile|
+          Misc.lock lock_filename do |lockfile|
 
             if is_persisted?(path, persist_options)
               Log.low "Persist up-to-date (suddenly): #{ path } - #{Misc.fingerprint persist_options}"

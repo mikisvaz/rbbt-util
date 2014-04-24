@@ -341,9 +341,14 @@ module Open
     io = gunzip(io) if ((String === url and gzip?(url)) and not options[:noz]) or options[:gzip]
 
     if block_given?
-      res = yield(io)
-      io.close unless io.closed?
-      return res
+      begin
+        return yield(io)
+      rescue
+        io.abort if io.respond_to? :abort
+        io.join if io.respond_to? :join
+      ensure
+        io.join if io.respond_to? :join
+      end
     else
       io
     end

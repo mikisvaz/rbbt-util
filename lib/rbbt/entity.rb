@@ -139,7 +139,7 @@ module Entity
           persist_options = options
           persist_options = persist_options.merge(:other => {:args => args}) if args.any?
 
-          Persist.persist(persist_name, type, persist_options) do
+          Persist.persist(persist_name, type, persist_options.merge(:persist => true)) do
             self.send(orig_name, *args)
           end
         end

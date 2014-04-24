@@ -21,7 +21,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_marshal
+  def test_marshal
    content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2

@@ -115,15 +115,6 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal 4, Misc.process_to_hash(list){|l| l.collect{|e| e * 2}}[2]
   end
 
-  def test_pipe
-    sout, sin = Misc.pipe
-    assert_equal 1, Misc::OPEN_PIPE_IN.reject{|p| p.closed? }.length
-    sin.close
-    assert sout.eof?
-    Misc.purge_pipes
-    assert_equal 0, Misc::OPEN_PIPE_IN.reject{|p| p.closed? }.length
-  end
-
   def test_pipe_fork
     sout, sin = Misc.pipe
     pid = Process.fork do

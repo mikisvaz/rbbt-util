@@ -44,11 +44,7 @@ module Task
   def exec(*args)
     case
     when (args.length == 1 and not inputs.nil? and inputs.length > 1 and Hash === args.first)
-      begin
-        self.call *take_input_values(IndiferentHash.setup(args.first))
-      ensure
-        purge_stream_cache
-      end
+      self.call *take_input_values(IndiferentHash.setup(args.first))
     else
       self.call *args
     end

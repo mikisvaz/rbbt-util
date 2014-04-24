@@ -27,7 +27,7 @@ module ReversableString
     self.reverse
   end
 
-  property :reverse_text_ary_p => :array do
+  property :reverse_text_ary_p => :array2single do
     $count += 1
     self.collect{|s| s.reverse}
   end
@@ -103,7 +103,7 @@ class TestEntity < Test::Unit::TestCase
     $count = 0
 
     assert_equal "2gnirtS", a.reverse_text_ary_p.last
-    assert_equal "2gnirtS", a[1].reverse_text_ary_p
+    assert_equal "2gnirtS", a.collect{|e| e.reverse_text_ary_p }[1]
     assert_equal 1, $count
   end
 

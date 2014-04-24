@@ -1,14 +1,15 @@
 module ConcurrentStream
-  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined
+  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :autojoin
 
   def self.setup(stream, options = {}, &block)
-    threads, pids, callback, filename = Misc.process_options options, :threads, :pids, :callback, :filename
+    threads, pids, callback, filename, autojoin = Misc.process_options options, :threads, :pids, :callback, :filename, :autojoin
     stream.extend ConcurrentStream unless ConcurrentStream === stream
 
     stream.threads ||= []
     stream.pids ||= []
     stream.threads.concat(Array === threads ? threads : [threads]) unless threads.nil? 
     stream.pids.concat(Array === pids ? pids : [pids]) unless pids.nil? or pids.empty?
+    stream.autojoin = autojoin
 
     callback = block if block_given?
     if stream.callback and callback
@@ -33,6 +34,7 @@ module ConcurrentStream
     stream.callback = callback
     stream.abort_callback = abort_callback
     stream.filename = filename
+    stream.autojoin = autojoin
     stream.joined = joined
   end
 
@@ -61,7 +63,7 @@ module ConcurrentStream
       @pids.each do |pid| 
         begin
           Process.waitpid(pid, Process::WUNTRACED)
-          raise "Error joining process #{pid} in #{self.inspect}" unless $?.success?
+          raise ProcessFailed.new "Error joining process #{pid} in #{self.inspect}" unless $?.success?
         rescue Errno::ECHILD
         end
       end 
@@ -100,6 +102,21 @@ module ConcurrentStream
     @abort_callback.call if @abort_callback
     @abort_callback = nil
     @callback = nil
+  end
+
+  def read(*args)
+    if autojoin
+      begin
+        super(*args)
+      rescue
+        self.abort
+        self.join 
+      ensure
+        self.join if self.closed? or self.eof? 
+      end
+    else
+      super(*args)
+    end
   end
 
 end

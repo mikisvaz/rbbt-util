@@ -40,7 +40,7 @@ module TSV
     persist_options = Misc.pull_keys options, :persist
 
     filename = TSV === file ? file.filename : file
-    text = Persist.persist filename, :string, persist_options do
+    path = Persist.persist filename, :string, persist_options.merge(:no_load => true) do
       tsv = TSV === file ? file : TSV.open(file)
 
       text = ""
@@ -55,13 +55,11 @@ module TSV
       text
     end
 
-    path = Persist.persistence_path(filename, persist_options)
     TmpFile.with_file(values.uniq * "\n") do |value_file|
       cmd = "cat '#{ path }' | sed 's/\\t/\\tHEADERNOMATCH/' | grep -w -F -f '#{ value_file }' |cut -f 2 | sed 's/HEADERNOMATCH//' | sort|uniq -c|sed 's/^ *//;s/ /\t/'"
       begin
         TSV.open(CMD.cmd(cmd), :key_field => 1, :type => :single, :cast => :to_i)
       rescue
-        Log.exception $!
         TSV.setup({}, :type => :single, :cast => :to_i)
       end
     end

@@ -18,6 +18,7 @@ class RbbtProcessQueue
           end
 
           Signal.trap(:INT){ raise Aborted; }
+
           loop do
             p = @queue.pop
             next if p.nil?
@@ -32,6 +33,7 @@ class RbbtProcessQueue
           Log.error "Worker #{Process.pid} aborted"
           Kernel.exit! -1
         rescue Exception
+          Log.exception $!
           @callback_queue.push($!) if @callback_queue
           Kernel.exit! -1
         ensure

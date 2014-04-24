@@ -17,7 +17,6 @@ class TestTmpFile < Test::Unit::TestCase
 
   def test_extension
     TmpFile.with_file(nil, true, :extension => 'txt') do |file|
-      ddd file
       assert file =~ /\.txt$/
     end
 

@@ -88,75 +88,84 @@ module TSV
       file2 = CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file2.to_s(:sort, true), :pipe => true)
     end
 
-    output = File.open(output, 'w') if String === output
+    begin
+      output = File.open(output, 'w') if String === output
 
-    cols1 = nil
-    cols2 = nil
+      cols1 = nil
+      cols2 = nil
 
-    done1 = false
-    done2 = false
+      done1 = false
+      done2 = false
 
-    key1 = key2 = nil
-    while key1.nil?
-      while (line1 = file1.gets) =~ /^#/
-        key_field1, *fields1 = line1.strip.sub('#','').split(sep)
-      end
-      key1, *parts1 = line1.sub("\n",'').split(sep, -1)
-      cols1 = parts1.length
-    end
-
-    while key2.nil?
-      while (line2 = file2.gets) =~ /^#/
-        key_field2, *fields2 = line2.strip.sub('#','').split(sep)
-      end
-      key2, *parts2 = line2.sub("\n",'').split(sep, -1)
-      cols2 = parts2.length
-    end
-
-    progress_monitor = Progress::Bar.new(size, 0, 100, "Merging fields") if monitor
-
-    entry_hash = options
-    entry_hash.delete :sep if entry_hash[:sep] == "\t"
-    output.puts TSV.header_lines key_field1, fields1 + fields2, entry_hash if key_field1 and fields1 and fields2
-
-    key = key1 < key2 ? key1 : key2
-    parts = [""] * (cols1 + cols2)
-    while not (done1 and done2)
-      while (not done1 and key1 == key)
-        parts1.each_with_index do |part, i|
-          parts[i] = (parts[i].nil? or parts[i].empty?) ? part : parts[i] << "|" << part
+      key1 = key2 = nil
+      while key1.nil?
+        while (line1 = file1.gets) =~ /^#/
+          key_field1, *fields1 = line1.strip.sub('#','').split(sep)
         end
-        key1 = nil
-        while key1.nil? and not done1
-          if file1.eof?; done1 = true; else key1, *parts1 = file1.gets.sub("\n",'').split(sep, -1) end
-        end
-        progress_monitor.tick if monitor
-      end
-      while (not done2 and key2 == key)
-        parts2.each_with_index do |part, i|
-          i += cols1
-          parts[i] = (parts[i].nil? or parts[i].empty?) ? part : parts[i] << "|" << part
-        end
-        key2 = nil
-        while key2.nil? and not done2
-          if file2.eof?; done2 = true; else key2, *parts2 = file2.gets.sub("\n",'').split(sep, -1) end
-        end
+        key1, *parts1 = line1.sub("\n",'').split(sep, -1)
+        cols1 = parts1.length
       end
 
-      output.puts [key, parts].flatten * sep
+      while key2.nil?
+        while (line2 = file2.gets) =~ /^#/
+          key_field2, *fields2 = line2.strip.sub('#','').split(sep)
+        end
+        key2, *parts2 = line2.sub("\n",'').split(sep, -1)
+        cols2 = parts2.length
+      end
+
+      progress_monitor = Progress::Bar.new(size, 0, 100, "Merging fields") if monitor
+
+      entry_hash = options
+      entry_hash.delete :sep if entry_hash[:sep] == "\t"
+      output.puts TSV.header_lines key_field1, fields1 + fields2, entry_hash if key_field1 and fields1 and fields2
+
+      key = key1 < key2 ? key1 : key2
       parts = [""] * (cols1 + cols2)
+      while not (done1 and done2)
+        while (not done1 and key1 == key)
+          parts1.each_with_index do |part, i|
+            parts[i] = (parts[i].nil? or parts[i].empty?) ? part : parts[i] << "|" << part
+          end
+          key1 = nil
+          while key1.nil? and not done1
+            if file1.eof?; done1 = true; else key1, *parts1 = file1.gets.sub("\n",'').split(sep, -1) end
+          end
+          progress_monitor.tick if monitor
+        end
+        while (not done2 and key2 == key)
+          parts2.each_with_index do |part, i|
+            i += cols1
+            parts[i] = (parts[i].nil? or parts[i].empty?) ? part : parts[i] << "|" << part
+          end
+          key2 = nil
+          while key2.nil? and not done2
+            if file2.eof?; done2 = true; else key2, *parts2 = file2.gets.sub("\n",'').split(sep, -1) end
+          end
+        end
 
-      case
-      when done1
-        key = key2
-      when done2
-        key = key1
-      else
-        key = key1 < key2 ? key1 : key2
+        output.puts [key, parts].flatten * sep
+        parts = [""] * (cols1 + cols2)
+
+        case
+        when done1
+          key = key2
+        when done2
+          key = key1
+        else
+          key = key1 < key2 ? key1 : key2
+        end
       end
-    end
 
-    output.close
+      output.close
+      file1.join if file1.respond_to? :join
+      file2.join if file2.respond_to? :join
+    rescue
+      file1.abort if file1.respond_to? :abort
+      file2.abort if file2.respond_to? :abort
+      file1.join if file1.respond_to? :join
+      file2.join if file2.respond_to? :join
+    end
   end
 
   # Merge columns from different files
