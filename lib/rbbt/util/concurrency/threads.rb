@@ -4,26 +4,28 @@ class RbbtThreadQueue
   class RbbtThreadQueueWorker < Thread
     def initialize(queue, mutex = nil, &block)
       if mutex.nil?
-        super(Thread.current) do |current|
+        super(Thread.current) do |parent|
           begin
             loop do
               p = queue.pop
               block.call *p
             end
+          rescue Aborted
           rescue Exception
-            current.raise $! unless Aborted === $!
+            parent.raise $! 
           end
         end
       else
-        super(Thread.current) do |current|
+        super(Thread.current) do |parent|
           begin
             loop do
               p = queue.pop
               p = Array === p ? p << mutex : [p,mutex]
               block.call *p
             end
+          rescue Aborted
           rescue Exception
-            current.raise $! unless Aborted === $!
+            parent.raise $! 
           end
         end
       end

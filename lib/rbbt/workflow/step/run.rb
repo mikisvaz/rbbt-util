@@ -61,7 +61,6 @@ class Step
 
   def _exec
     @exec = true if @exec.nil?
-    #@task.exec_in((bindings ? bindings : self), *@inputs)
     @task.exec_in((bindings ? bindings : self), *dup_inputs)
   end
 
@@ -251,7 +250,7 @@ class Step
           Log.debug("Exception '#{$!.message}' caught on forked process: #{path}")
           raise $!
         ensure
-          join
+          join_stream
         end
 
         begin
