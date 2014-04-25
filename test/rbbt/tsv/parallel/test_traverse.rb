@@ -283,7 +283,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     require 'rbbt/sources/organism'
 
     head = 10_000
-    cpus = nil
+    cpus = 4
 
     stream = Organism.identifiers("Hsa").open 
     dumper = TSV::Dumper.new Organism.identifiers("Hsa").tsv_options
@@ -333,6 +333,40 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     size = 100
     array = (1..size).to_a.collect{|n| n.to_s}
     stream = TSV.traverse array, :into => :stream do |e|
+      e
+    end
+    assert_equal size, stream.read.split("\n").length
+  end
+
+  def test_traverse_progress
+    size = 1000
+    array = (1..size).to_a.collect{|n| n.to_s}
+    stream = TSV.traverse array, :bar => {:max => size, :desc => "Array"}, :cpus => 5, :into => :stream do |e|
+      sleep 0.001
+      e
+    end
+    assert_equal size, stream.read.split("\n").length
+
+    size = 1000
+    array = (1..size).to_a.collect{|n| n.to_s}
+    stream = TSV.traverse array, :bar => {:max => size, :desc => "Array"}, :cpus => 5, :into => :stream do |e|
+      sleep 0.001
+      e
+    end
+    assert_equal size, stream.read.split("\n").length
+
+    size = 1000
+    array = (1..size).to_a.collect{|n| n.to_s}
+    stream = TSV.traverse array, :bar => {:max => size, :desc => "Array"}, :cpus => 5, :into => :stream do |e|
+      sleep 0.001
+      e
+    end
+    assert_equal size, stream.read.split("\n").length
+
+    size = 1000
+    array = (1..size).to_a.collect{|n| n.to_s}
+    stream = TSV.traverse array, :bar => {:max => size, :desc => "Array"}, :cpus => 5, :into => :stream do |e|
+      sleep 0.01
       e
     end
     assert_equal size, stream.read.split("\n").length

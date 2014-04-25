@@ -145,29 +145,34 @@ module Open
 
   def self.get_stream_from_repo(dir, sub_path)
     repo = get_repo_from_dir(dir)
-    repo.read
-    StringIO.new repo[sub_path]
+    repo.read_and_close do
+      StringIO.new repo[sub_path]
+    end
   end
 
   def self.save_content_in_repo(dir, sub_path, content)
     repo = get_repo_from_dir(dir)
-    repo.write
-    repo[sub_path] = content
+    repo.write_and_close do
+      repo[sub_path] = content
+    end
   end
 
   def self.remove_from_repo(dir, sub_path, recursive = false)
     repo = get_repo_from_dir(dir)
-    repo.write
-    if recursive
-      repo.outlist repo.range sub_path, true, sub_path.sub(/.$/,('\1'.ord + 1).chr), false
-    else
-      repo.outlist sub_path
+    repo.write_and_close do
+      if recursive
+        repo.outlist repo.range sub_path, true, sub_path.sub(/.$/,('\1'.ord + 1).chr), false
+      else
+        repo.outlist sub_path
+      end
     end
   end
 
   def self.exists_in_repo(dir, sub_path, content)
     repo = get_repo_from_dir(dir)
-    repo.include? sub_path
+    repo.read_and_close do
+      repo.include? sub_path
+    end
   end
 
   def self.find_repo_dir(file)
@@ -198,7 +203,7 @@ module Open
 
   def self.file_open(file, grep, mode = 'r', invert_grep = false)
     if (dir_sub_path = find_repo_dir(file))
-      stream =  get_stream_from_repo(*dir_sub_path)
+      stream = get_stream_from_repo(*dir_sub_path)
     else
       stream =  File.open(file, mode)
     end
@@ -225,6 +230,34 @@ module Open
         end
       end
     end
+  end
+
+  def self.mv(source, target)
+    dir_sub_path_source = find_repo_dir(source)
+    dir_sub_path_target = find_repo_dir(target)
+
+    return FileUtils.mv source, target if dir_sub_path_source.nil? and dir_sub_path_target.nil?
+
+    if dir_sub_path_source.nil?
+      save_content_in_repo(dir_sub_path_target[0], dir_sub_path_target[1], Open.read(source))
+      return nil
+    end
+
+    if dir_sub_path_target.nil?
+      Open.write(target, get_stream_from_repo(dir_sub_path_source))
+      return nil
+    end
+
+    repo_source = get_repo_from_dir(dir_sub_path_source[0])
+    repo_target = get_repo_from_dir(dir_sub_path_target[0])
+
+    repo_source.write do
+      repo_target.write do
+        repo_source[dir_sub_path_source[1]] = repo_target[dir_sub_path_target[1]]
+      end
+    end
+
+    return nil
   end
 
   def self.exists?(file)
@@ -358,6 +391,7 @@ module Open
     end
 
     io.filename = url.to_s
+
     io
   end
 

@@ -1,5 +1,6 @@
 require 'term/ansicolor'
 require 'rbbt/util/color'
+require 'rbbt/util/log/progress'
 
 module Log
   extend Term::ANSIColor

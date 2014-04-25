@@ -216,10 +216,11 @@ module Misc
   end
 
   def self.sensiblewrite(path, content = nil, &block)
-    return if File.exists? path
+
+    return if Open.exists? path
     tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
     Misc.lock tmp_path do
-      if not File.exists? path
+      if not Open.exists? path
         FileUtils.rm_f tmp_path if File.exists? tmp_path
         begin
           case
@@ -236,12 +237,13 @@ module Misc
           else
             File.open(tmp_path, 'w') do |f|  end
           end
-          FileUtils.mv tmp_path, path
+
+          Open.mv tmp_path, path
         rescue Aborted
           Log.error "Aborted sensiblewrite -- #{ Log.color :blue, path }"
         rescue Exception
           Log.error "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
-          FileUtils.rm_f path if File.exists? path
+          Open.rm_f path if File.exists? path
           raise $!
         ensure
           FileUtils.rm_f tmp_path if File.exists? tmp_path

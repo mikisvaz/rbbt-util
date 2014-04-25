@@ -13,8 +13,8 @@ module TSV
   def self.stream_name(obj)
     filename_obj   = obj.respond_to?(:filename) ? obj.filename : nil
     filename_obj ||= obj.respond_to?(:path) ? obj.path : nil
-    stream_obj = obj_stream(obj)
-    filename_obj.nil? ? stream_obj.inspect : filename_obj + "(#{stream_obj.inspect})"
+    stream_obj = obj_stream(obj) || obj
+    filename_obj.nil? ? Misc.fingerprint(stream_obj) : filename_obj + "(#{Misc.fingerprint(stream_obj)})"
   end
 
   def self.report(msg, obj, into)
@@ -23,71 +23,101 @@ module TSV
     Log.error "#{ msg } #{stream_name(obj)} -> #{stream_name(into)}"
   end
 
+  #{{{ TRAVERSE OBJECTS
+
   def self.traverse_tsv(tsv, options = {}, &block)
-    callback = Misc.process_options options, :callback
+    callback, bar, join = Misc.process_options options, :callback, :bar, :join
 
     if callback
       tsv.through options[:key_field], options[:fields] do |k,v|
-        callback.call yield(k,v)
+        begin
+          callback.call yield(k,v)
+        ensure
+          bar.tick if bar
+        end
       end
     else
       tsv.through options[:key_field], options[:fields] do |k,v|
-        yield k,v 
+        begin
+          yield k,v 
+        ensure
+          bar.tick if bar
+        end
       end
     end
+    join.call if join
   end
 
   def self.traverse_hash(hash, options = {}, &block)
-    callback = Misc.process_options options, :callback
+    callback, bar, join = Misc.process_options options, :callback, :bar, :join
 
     if callback
       hash.each do |k,v|
-        callback.call yield(k,v)
+        begin
+          callback.call yield(k,v)
+        ensure
+          bar.tick if bar
+        end
       end
     else
       hash.each do |k,v|
-        yield k,v 
+        begin
+          yield k,v 
+        ensure
+          bar.tick if bar
+        end
       end
     end
+    join.call if join
   end
 
   def self.traverse_array(array, options = {}, &block)
-    callback = Misc.process_options options, :callback
+    callback, bar, join = Misc.process_options options, :callback, :bar, :join
 
     if callback
       array.each do |e|
-        res = yield(e)
-        callback.call res
+        begin
+          callback.call yield(e)
+        ensure
+          bar.tick if bar
+        end
       end
     else
       array.each do |e|
-        yield e
+        begin
+          yield e
+        ensure
+          bar.tick if bar
+        end
       end
     end
+    join.call if join
   end
 
   def self.traverse_io_array(io, options = {}, &block)
-    callback = Misc.process_options options, :callback
+    callback, bar, join = Misc.process_options options, :callback, :bar, :join
     if callback
       while line = io.gets
-        res = yield line.strip
-        callback.call res
+        begin
+          callback.call yield line.strip
+        ensure
+          bar.tick if bar
+        end
       end
     else
       while line = io.gets
         yield line.strip
       end
     end
+    join.call if join
   end
 
   def self.traverse_io(io, options = {}, &block)
-    filename = io.filename if io.respond_to? :filename
-    callback = Misc.process_options options, :callback
+    callback, bar, join = Misc.process_options options, :callback, :bar, :join
     begin
       if callback
         TSV::Parser.traverse(io, options) do |k,v|
-          res = yield k, v
-          callback.call res
+          callback.call yield k, v
         end
       else
         TSV::Parser.traverse(io, options, &block)
@@ -96,10 +126,10 @@ module TSV
       Log.error "Traverse IO error"
       raise $!
     end
+    join.call if join
   end
 
   def self.traverse_obj(obj, options = {}, &block)
-    filename = obj.filename if obj.respond_to? :filename
     if options[:type] == :keys
       options[:fields] = []
       options[:type] = :single
@@ -114,8 +144,7 @@ module TSV
       callback = Misc.process_options options, :callback
       if callback
         obj.traverse(options) do |k,v|
-          res = yield k, v
-          callback.call res
+          callback.call yield k, v
         end
       else
         obj.traverse(options, &block)
@@ -195,9 +224,8 @@ module TSV
 
   def self.traverse_cpus(num, obj, options, &block)
     begin
-      filename = obj.respond_to?(:filename)? obj.filename : "none"
-      callback, cleanup = Misc.process_options options, :callback, :cleanup
-      q = RbbtProcessQueue.new num, cleanup
+      callback, cleanup, join = Misc.process_options options, :callback, :cleanup, :join
+      q = RbbtProcessQueue.new num, cleanup, join
 
       q.callback &callback
       q.init &block
@@ -209,8 +237,16 @@ module TSV
       end
 
       thread.join
+    rescue Interrupt, Aborted
+      Log.error "Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}"
+      stream = obj_stream(obj)
+      stream.abort if stream.respond_to? :abort
+      stream = obj_stream(options[:into])
+      stream.abort if stream.respond_to? :abort
+      q.abort
+      raise $!
     rescue Exception
-      Log.error "Exception traversing in cpus: #{$!.message}"
+      Log.error "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}"
       Log.exception $!
 
       stream = obj_stream(obj)
@@ -295,11 +331,13 @@ module TSV
         close_streams.concat(get_streams_to_close(obj))
         options[:close_streams] = close_streams
 
-        options[:cleanup] = Proc.new do
-          close_streams.uniq.each do |s|
-            s.close unless s.closed?
-          end
-        end if close_streams and close_streams.any?
+        if close_streams and close_streams.any?
+          options[:cleanup] = Proc.new do
+            close_streams.uniq.each do |s|
+              s.close unless s.closed?
+            end
+          end 
+        end
 
         traverse_cpus cpus, obj, options, &block
       end
@@ -323,12 +361,7 @@ module TSV
   end
 
   def self.traverse(obj, options = {}, &block)
-    threads = Misc.process_options options, :threads
-    cpus = Misc.process_options options, :cpus
     into = options[:into]
-
-    threads = nil if threads and threads.to_i <= 1
-    cpus = nil if cpus and cpus.to_i <= 1
 
     if into == :stream
       sout = Misc.open_pipe false, false do |sin|                                                                                                                                           
@@ -342,7 +375,34 @@ module TSV
       return sout
     end
 
+    threads = Misc.process_options options, :threads
+    cpus = Misc.process_options options, :cpus
+    threads = nil if threads and threads.to_i <= 1
+    cpus = nil if cpus and cpus.to_i <= 1
+
+    bar = Misc.process_options options, :bar
+    bar ||= Misc.process_options options, :progress
+    options[:bar] = case bar
+                    when String
+                      Log::ProgressBar.new_bar(nil, {:desc => bar}) 
+                    when TrueClass
+                      Log::ProgressBar.new_bar(nil, nil) 
+                    when Fixnum
+                      Log::ProgressBar.new_bar(bar) 
+                    when Hash
+                      max = Misc.process_options bar, :max
+                      Log::ProgressBar.new_bar(max, bar) 
+                    else
+                      bar
+                    end
+
     if into
+      bar = Misc.process_options options, :bar
+          
+      options[:join] = Proc.new do
+        Log::ProgressBar.remove_bar(bar)
+      end if bar
+
       options[:callback] = Proc.new do |e|
         begin
           store_into into, e
@@ -352,6 +412,8 @@ module TSV
         rescue Exception
           Log.exception $!
           raise $!
+        ensure
+          bar.tick if bar
         end
       end
 

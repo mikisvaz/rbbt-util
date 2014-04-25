@@ -4,11 +4,12 @@ require 'rbbt/util/concurrency/processes/socket'
 class RbbtProcessQueue
   #{{{ RbbtProcessQueue
 
-  attr_accessor :num_processes, :processes, :queue, :process_monitor, :cleanup
-  def initialize(num_processes, cleanup = nil)
+  attr_accessor :num_processes, :processes, :queue, :process_monitor, :cleanup, :join
+  def initialize(num_processes, cleanup = nil, join = nil)
     @num_processes = num_processes
     @processes = []
     @cleanup = cleanup
+    @join = join
     @queue = RbbtProcessSocket.new
   end
 
@@ -90,6 +91,8 @@ class RbbtProcessQueue
     ensure
       @queue.swrite.close
     end
+
+    @join.call if @join
   end
 
   def clean

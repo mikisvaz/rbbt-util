@@ -122,7 +122,6 @@ class TestOpen < Test::Unit::TestCase
         end
       end
 
-
       Misc.benchmark(100) do
         filename = "file" << (rand * 100).to_i.to_s
         Open.write(File.join(repo, filename), file2)
@@ -130,8 +129,6 @@ class TestOpen < Test::Unit::TestCase
           Open.read(File.join(repo, filename))
         end
       end
-
-
     end
   end
   

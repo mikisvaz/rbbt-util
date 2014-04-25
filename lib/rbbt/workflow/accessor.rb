@@ -104,57 +104,78 @@ class Step
     set_info(:messages, (messages || []) << message)
   end
 
+  def self.log_block(staus, message, path, &block)
+    start = Time.now
+    status = status.to_s
+    status_color = case status
+                   when "starting"
+                     :yellow
+                   when "error"
+                     :red
+                   when "done"
+                     :green
+                   else
+                     :cyan
+                   end
+    Log.info do 
+      now = Time.now
+      str = Log.color :reset
+      str << "#{ Log.color status_color, status}"
+      str << ": #{ message }" if message
+      str << " -- #{Log.color :blue, path.to_s}" if path
+      str
+    end
+    res = yield
+    eend = Time.now
+    Log.info do 
+      now = Time.now
+      str = "#{ Log.color :cyan, status.to_s } +#{Log.color :green, "%.1g" % (eend - start)}"
+      str << " -- #{Log.color :blue, path.to_s}" if path
+      str
+    end
+    res
+  end
+
+  def self.log_string(status, message, path)
+    Log.info do 
+
+      status = status.to_s
+      status_color = case status
+                     when "starting"
+                       :yellow
+                     when "error"
+                       :red
+                     when "done"
+                       :green
+                     else
+                       :cyan
+                     end
+
+      str = Log.color :reset
+      str << "#{ Log.color status_color, status}"
+      str << ": #{ message }" if message
+      str << " -- #{Log.color :blue, path.to_s}" if path
+      str
+    end
+  end
+
+  def self.log_progress(status, options, path, &block)
+    options = Misc.add_defaults options, :severity => Log::INFO
+    max = Misc.process_options options, :max
+    Log::ProgressBar.with_bar(max, options) do |bar|
+      yield bar
+    end
+  end
+
   def self.log(status, message, path, &block)
     if block_given?
-      start = Time.now
-      status = status.to_s
-      status_color = case status
-                     when "starting"
-                       :yellow
-                     when "error"
-                       :red
-                     when "done"
-                       :green
-                     else
-                       :cyan
-                     end
-      Log.info do 
-        now = Time.now
-        str = Log.color :reset
-        str << "#{ Log.color status_color, status}"
-        str << ": #{ message }" if message
-        str << " -- #{Log.color :blue, path.to_s}" if path
-        str
+      if Hash === message
+        log_progress(status, message, path, &block)
+      else
+        log_block(status, message, path, &block)
       end
-      res = yield
-      eend = Time.now
-      Log.info do 
-        now = Time.now
-        str = "#{ Log.color :cyan, status.to_s } +#{Log.color :green, "%.1g" % (eend - start)}"
-        str << " -- #{Log.color :blue, path.to_s}" if path
-        str
-      end
-      res
     else
-      status = status.to_s
-      status_color = case status
-                     when "starting"
-                       :yellow
-                     when "error"
-                       :red
-                     when "done"
-                       :green
-                     else
-                       :cyan
-                     end
-      Log.info do 
-        now = Time.now
-        str = Log.color :reset
-        str << "#{ Log.color status_color, status}"
-        str << ": #{ message }" if message
-        str << " -- #{Log.color :blue, path.to_s}" if path
-        str
-      end
+      log_string(status, message, path)
     end
   end
 

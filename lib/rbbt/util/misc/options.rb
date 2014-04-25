@@ -110,6 +110,7 @@ module Misc
   end
 
   def self.add_defaults(options, defaults = {})
+    options ||= {}
     case
     when Hash === options
       new_options = options.dup
