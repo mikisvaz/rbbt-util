@@ -73,50 +73,50 @@ module Misc
     sout
   end
 
-  def self.tee_stream_fork(stream)
-    stream_out1, stream_in1 = Misc.pipe
-    stream_out2, stream_in2 = Misc.pipe
+  #def self.tee_stream_fork(stream)
+  #  stream_out1, stream_in1 = Misc.pipe
+  #  stream_out2, stream_in2 = Misc.pipe
 
-    splitter_pid = Process.fork do
-      Misc.purge_pipes(stream_in1, stream_in2)
-      stream_out1.close
-      stream_out2.close
-      begin
-        filename = stream.respond_to?(:filename)? stream.filename : nil
-        skip1 = skip2 = false
-        while block = stream.read(2048)
-          begin stream_in1.write block; rescue Exception;  Log.exception $!; skip1 = true end unless skip1 
-          begin stream_in2.write block; rescue Exception;  Log.exception $!; skip2 = true end unless skip2 
-        end
-        raise "Error writing in stream_in1" if skip1
-        raise "Error writing in stream_in2" if skip2
-        stream.join if stream.respond_to? :join
-        stream_in1.close 
-        stream_in2.close 
-      rescue Aborted
-        stream.abort if stream.respond_to? :abort
-        raise $!
-      rescue IOError
-        Log.exception $!
-      rescue Exception
-        Log.exception $!
-      end
-    end
-    stream.close
-    stream_in1.close
-    stream_in2.close
+  #  splitter_pid = Process.fork do
+  #    Misc.purge_pipes(stream_in1, stream_in2)
+  #    stream_out1.close
+  #    stream_out2.close
+  #    begin
+  #      filename = stream.respond_to?(:filename)? stream.filename : nil
+  #      skip1 = skip2 = false
+  #      while block = stream.read(2048)
+  #        begin stream_in1.write block; rescue Exception;  Log.exception $!; skip1 = true end unless skip1 
+  #        begin stream_in2.write block; rescue Exception;  Log.exception $!; skip2 = true end unless skip2 
+  #      end
+  #      raise "Error writing in stream_in1" if skip1
+  #      raise "Error writing in stream_in2" if skip2
+  #      stream.join if stream.respond_to? :join
+  #      stream_in1.close 
+  #      stream_in2.close 
+  #    rescue Aborted
+  #      stream.abort if stream.respond_to? :abort
+  #      raise $!
+  #    rescue IOError
+  #      Log.exception $!
+  #    rescue Exception
+  #      Log.exception $!
+  #    end
+  #  end
+  #  stream.close
+  #  stream_in1.close
+  #  stream_in2.close
 
-    ConcurrentStream.setup stream_out1, :pids => [splitter_pid]
-    ConcurrentStream.setup stream_out2, :pids => [splitter_pid]
+  #  ConcurrentStream.setup stream_out1, :pids => [splitter_pid]
+  #  ConcurrentStream.setup stream_out2, :pids => [splitter_pid]
 
-    [stream_out1, stream_out2]
-  end
+  #  [stream_out1, stream_out2]
+  #end
 
   def self.tee_stream_thread(stream)
     stream_out1, stream_in1 = Misc.pipe
     stream_out2, stream_in2 = Misc.pipe
 
-    splitter_thread = Thread.new(Thread.current, stream_in1, stream_in2) do |parent,stream_in1,stream_in2|
+    splitter_thread = Thread.new(Thread.current) do |parent|
       begin
         filename = stream.respond_to?(:filename)? stream.filename : nil
         skip1 = skip2 = false
@@ -124,18 +124,19 @@ module Misc
           begin 
             stream_in1.write block; 
           rescue IOError
-            Log.error("Tee stream #{stream} IOError: #{$!.message}");
+            Log.error("Tee stream 1 #{stream} IOError: #{$!.message}");
             skip1 = true
           end unless skip1 
 
           begin 
             stream_in2.write block
           rescue IOError
+            Log.error("Tee stream 2 #{stream} IOError: #{$!.message}");
             skip2 = true
           end unless skip2 
         end
-        stream_in1.close unless stream_out1.closed?
-        stream_in2.close unless stream_out2.closed?
+        stream_in1.close unless stream_in1.closed?
+        stream_in2.close unless stream_in2.closed?
         stream.join if stream.respond_to? :join
       rescue Aborted
         Log.error("Tee stream #{stream} Aborted");
