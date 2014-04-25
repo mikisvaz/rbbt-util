@@ -346,6 +346,9 @@ module TSV
       options[:callback] = Proc.new do |e|
         begin
           store_into into, e
+        rescue Aborted
+          Log.error "Traversal info #{stream_name into} aborted"
+          raise $!
         rescue Exception
           Log.exception $!
           raise $!

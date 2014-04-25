@@ -59,7 +59,6 @@ module TSV
         @in_stream << k << TSV::Dumper.values_to_s(v, @fields)
       rescue IOError
       rescue Exception
-        Log.exception $!
         raise $!
       end
     end

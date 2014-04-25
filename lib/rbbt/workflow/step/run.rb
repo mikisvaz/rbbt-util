@@ -241,7 +241,7 @@ class Step
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
         begin
-          res = run
+          res = run true
         rescue Aborted
           Log.debug{"Forked process aborted: #{path}"}
           log :aborted, "Aborted"

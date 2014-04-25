@@ -121,17 +121,25 @@ module Misc
         filename = stream.respond_to?(:filename)? stream.filename : nil
         skip1 = skip2 = false
         while block = stream.read(2048)
-          begin stream_in1.write block; rescue Exception; Aborted === $! ? raise($!): Log.exception($!); skip1 = true end unless skip1 
-          begin stream_in2.write block; rescue Exception; Aborted === $! ? raise($!): Log.exception($!); skip2 = true end unless skip2 
+          begin 
+            stream_in1.write block; 
+          rescue IOError
+            Log.error("Tee stream #{stream} IOError: #{$!.message}");
+            skip1 = true
+          end unless skip1 
+
+          begin 
+            stream_in2.write block
+          rescue IOError
+            skip2 = true
+          end unless skip2 
         end
-        stream_in1.close 
-        stream_in2.close 
+        stream_in1.close unless stream_out1.closed?
+        stream_in2.close unless stream_out2.closed?
         stream.join if stream.respond_to? :join
       rescue Aborted
+        Log.error("Tee stream #{stream} Aborted");
         stream.abort if stream.respond_to? :abort
-        parent.raise $!
-      rescue IOError
-        Log.exception $!
       rescue Exception
         Log.exception $!
         parent.raise $!
@@ -228,6 +236,8 @@ module Misc
             File.open(tmp_path, 'w') do |f|  end
           end
           FileUtils.mv tmp_path, path
+        rescue Aborted
+          Log.error "Aborted sensiblewrite -- #{ Log.color :blue, path }"
         rescue Exception
           Log.error "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
           FileUtils.rm_f path if File.exists? path

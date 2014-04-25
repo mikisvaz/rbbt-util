@@ -337,8 +337,12 @@ begin
   end
 
   if options.delete(:printpath)
-    job.join.load
-    puts job.path
+    job.join
+    if Open.remote? job.path
+      puts job.path + Log.color(:blue, "?_format=raw")
+    else
+      puts job.path
+    end
     exit 0
   end
 
@@ -378,7 +382,13 @@ begin
     space.times do
       Log.clear_line 
     end
-    out.puts job.path
+
+    if Open.remote? job.path
+      out.puts job.path + Log.color(:blue, "?_format=raw")
+    else
+      out.puts job.path
+    end
+
     exit 0
   end
 rescue ParameterException
@@ -412,7 +422,7 @@ when Step
       Thread.pass while IO.select([io]).nil?
       while block = io.read(2048) do
         out.write block
-      end unless io.closed? 
+      end #unless io.closed? 
       io.join if io.respond_to? :join
     rescue Exception
       Log.exception $!
