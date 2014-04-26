@@ -94,6 +94,7 @@ module Log
   end
 
   LOG_MUTEX = Mutex.new
+  LAST = "log"
   def self.log(message = nil, severity = MEDIUM, &block)
     return if severity < self.severity 
     message ||= block.call if block_given?
@@ -110,6 +111,7 @@ module Log
     LOG_MUTEX.synchronize do
       STDERR.puts str
       logfile.puts str unless logfile.nil?
+      Log::LAST.replace "log"
     end
   end
 

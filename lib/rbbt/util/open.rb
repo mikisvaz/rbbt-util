@@ -440,8 +440,8 @@ module Open
       begin
         File.open(file, mode) do |f| 
           f.flock(File::LOCK_EX)
-          while not content.eof?
-            f.write content.gets
+          while block = content.read(2014)
+            f.write block
           end
           f.flock(File::LOCK_UN)
         end

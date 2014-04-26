@@ -344,7 +344,7 @@ class Step
 
   def join
 
-    until done? or status == :streamming
+    until done? or result or error? or aborted? or streaming?
       sleep 1
     end
 
