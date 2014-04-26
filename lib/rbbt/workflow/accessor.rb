@@ -46,6 +46,8 @@ class Step
         begin
           return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
         rescue Exception
+          Log.exception $!
+          raise $!
         end
 
         begin
@@ -64,8 +66,8 @@ class Step
       end
     rescue Exception
       Log.debug{"Error loading info file: " + info_file}
+      #self.abort_pid
       Open.write(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
-      self.abort
       raise $!
     end
   end

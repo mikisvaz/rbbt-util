@@ -344,7 +344,11 @@ class Step
 
   def join
 
-    join_stream
+    until done? or status == :streamming
+      sleep 1
+    end
+
+    join_stream if status == :streaming
 
     return self if not Open.exists? info_file
 
@@ -356,9 +360,8 @@ class Step
     end
 
     begin
-      if pid.nil?
+      if pid.nil? or Process.pid == pid
         dependencies.each{|dep| dep.join }
-        self
       else
         begin
           Log.debug{"Waiting for pid: #{pid}"}
@@ -368,11 +371,10 @@ class Step
         end if Misc.pid_exists? pid
         pid = nil
         dependencies.each{|dep| dep.join }
-        self
       end
+      self
     ensure
       set_info :joined, true
     end
-    self
   end
 end

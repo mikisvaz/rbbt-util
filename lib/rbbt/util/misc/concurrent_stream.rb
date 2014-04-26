@@ -104,13 +104,15 @@ module ConcurrentStream
     @callback = nil
   end
 
-  def read(*args)
+  def super(*args)
     if autojoin
       begin
         super(*args)
       rescue
+        Log.exception $!
         self.abort
         self.join 
+        raise $!
       ensure
         self.join if self.closed? or self.eof? 
       end

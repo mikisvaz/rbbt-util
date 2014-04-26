@@ -23,20 +23,8 @@ max = 0
 avg = 0
 all = []
 scale = 5
+bar = Log::ProgressBar.new_bar nil
+
 while line = STDIN.gets
-  count += 1
-  last ||= Time.now
-  if Time.now - last >= 1.0 / scale
-    Log.clear_line
-    puts "Reading #{ Log.color :blue, count*scale } per second. Max #{ Log.color :blue, max*scale }. Average #{Log.color :blue, avg*scale}"
-    max = count > max ? count : max
-    last = Time.now
-    all << count
-    avg = Misc.mean(all).to_i if all.length > 3
-    count = 0
-  end
+  bar.tick
 end
-
-all << count
-
-puts "Total #{Log.color :blue, Misc.sum(all).to_i} in #{Log.color :blue, (Time.now - start).to_i} seconds -- #{Log.color :green, (Misc.sum(all).to_f / (Time.now - start)).to_i } per second. Max #{Log.color :blue, max*scale}. Average #{Log.color :green, avg*scale}"

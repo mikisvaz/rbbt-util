@@ -2,7 +2,7 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../../..', 'test_he
 require 'rbbt/util/log/progress'
 
 class TestProgress < Test::Unit::TestCase
-  def _test_bar
+  def test_bar
     t1 = Thread.new do
       Log::ProgressBar.with_bar(20) do |bar|
         20.times do

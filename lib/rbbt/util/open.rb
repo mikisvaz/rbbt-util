@@ -379,6 +379,7 @@ module Open
       rescue
         io.abort if io.respond_to? :abort
         io.join if io.respond_to? :join
+        raise $!
       ensure
         io.join if io.respond_to? :join
       end

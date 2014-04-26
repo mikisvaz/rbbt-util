@@ -38,8 +38,7 @@ module Log
           @last_report=percent
         end
       else
-        @last_report = Time.now if @last_report == -1
-        if Time.now - @last_report >= 1.0 
+        if @last_report == -1 or Time.now - @last_report >= 1.0 
           throughput
         end
       end
@@ -66,11 +65,12 @@ module Log
 
 
     def up_lines(depth)
-      "\033[#{depth + 2}F\033[2K"
+      down_lines(1)
+      "\033[#{depth+1}F\033[2K"
     end
 
     def down_lines(depth)
-      "\n\033[#{depth + 3}E"
+      "\n\033[#{depth + 1}E"
     end
 
     def report_msg
@@ -107,10 +107,26 @@ module Log
     end
 
     def throughput_msg
+      @history ||= []
+      @mean_max ||= 0
+
+      @last_report = Time.now if @last_report == -1
       indicator = Log.color(:magenta, @desc) 
       time = Time.now - @last_report
       thr = (@current / time).to_i
+
+      @history << thr
+      @history.shift if @history.length > 10
+
+      if @history.length >= 3
+        mean = Misc.mean(@history)
+        @mean_max = mean if mean > @mean_max
+      end
+
       indicator << " #{ Log.color :blue, thr } per second"
+
+      indicator << " -- #{ Log.color :blue, mean.to_i } avg. #{ Log.color :blue, @mean_max.to_i} max" if mean
+
       indicator
     end
 
@@ -119,10 +135,12 @@ module Log
     # spent, and time left. And then goes moves the cursor back to its
     # original line. Everything is printed to stderr.
     def report(io = STDERR)
+      io.puts if @last_report == -1
       io.print(up_lines(@depth) << report_msg << down_lines(@depth)) if severity >= Log.severity
     end
 
     def throughput(io = STDERR)
+      io.puts if @last_report == -1
       io.print(up_lines(@depth) << throughput_msg << down_lines(@depth)) if severity >= Log.severity
       @last_report = Time.now
       @current = 0
