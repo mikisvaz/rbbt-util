@@ -335,7 +335,6 @@ module TSV
       Log.warn "Aborted storing into #{Misc.fingerprint store}: #{$!.message}"
       stream = obj_stream(store)
       stream.abort if stream.respond_to? :abort
-      raise $!
     rescue Exception
       stream = obj_stream(store)
       stream.abort if stream.respond_to? :abort
@@ -465,7 +464,6 @@ module TSV
         rescue Exception
           Log.warn "Exception callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
           Log.exception $!
-          raise $!
         ensure
           bar.tick if bar
         end

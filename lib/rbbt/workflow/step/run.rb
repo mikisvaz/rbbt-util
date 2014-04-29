@@ -206,9 +206,8 @@ class Step
           begin
             result = _exec
           rescue Aborted
-            log(:error, "Aborted")
-
             stop_dependencies
+            log(:error, "Aborted")
             raise $!
           rescue Exception
             backtrace = $!.backtrace
@@ -268,10 +267,9 @@ class Step
             end
             result.stream.abort_callback = Proc.new do
               begin
+                stop_dependencies
                 log :error, "#{Log.color :red, "ERROR -- streamming aborted"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] -- #{path}"  if status == :streaming
-                self.abort
-              rescue
-                Log.exception $!
+              rescue Exception
               end
             end
           else
@@ -345,8 +343,11 @@ class Step
 
   def stop_dependencies
     dependencies.each do |dep|
+      Log.warn "Stoping #{Misc.fingerprint dep}"
       begin
         dep.abort unless dep.done?
+      rescue Exception
+        Log.exception $!
       rescue Aborted
       end
     end
@@ -392,11 +393,11 @@ class Step
   end
 
   def abort
-    return if aborted? or @aborted
-    @aborted = true
+    return if @aborted
     Log.medium{"#{Log.color :red, "Aborting"} #{Log.color :blue, path}"}
     begin
       stop_dependencies
+      @aborted = true
       abort_stream
       abort_pid
     rescue Aborted
@@ -405,6 +406,7 @@ class Step
     rescue Exception
       Log.exception $!
     ensure
+      @aborted = true
       begin
         log(:aborted, "Job aborted")
       rescue Exception
@@ -421,9 +423,9 @@ class Step
         Misc.consume_stream stream
         stream.join if stream.respond_to? :join 
       rescue Exception
-        stream.abort if stream.respond_to? :abort 
         self.abort
         raise $!
+        #stream.abort if stream.respond_to? :abort 
       end
     end
   end

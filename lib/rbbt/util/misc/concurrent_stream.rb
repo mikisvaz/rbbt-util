@@ -102,12 +102,15 @@ module ConcurrentStream
 
   def abort
     return if @aborted
-    abort_threads
-    abort_pids
-    @abort_callback.call if @abort_callback
-    @abort_callback = nil
-    @callback = nil
-    @aborted = true
+    begin
+      abort_threads
+      abort_pids
+      @abort_callback.call if @abort_callback
+    ensure
+      @abort_callback = nil
+      @callback = nil
+      @aborted = true
+    end
   end
 
   def super(*args)
