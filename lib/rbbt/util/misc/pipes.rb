@@ -124,22 +124,22 @@ module Misc
           begin 
             stream_in1.write block; 
           rescue IOError
-            Log.error("Tee stream 1 #{stream} IOError: #{$!.message}");
+            Log.warn("Tee stream 1 #{Misc.fingerprint stream} IOError: #{$!.message}");
             skip1 = true
           end unless skip1 
 
           begin 
             stream_in2.write block
           rescue IOError
-            Log.error("Tee stream 2 #{stream} IOError: #{$!.message}");
+            Log.warn("Tee stream 2 #{Misc.fingerprint stream} IOError: #{$!.message}");
             skip2 = true
           end unless skip2 
         end
         stream_in1.close unless stream_in1.closed?
         stream_in2.close unless stream_in2.closed?
         stream.join if stream.respond_to? :join
-      rescue Aborted
-        Log.error("Tee stream #{stream} Aborted");
+      rescue Aborted, Interrupt
+        Log.warn("Tee stream #{Misc.fingerprint stream} Aborted");
         stream.abort if stream.respond_to? :abort
       rescue Exception
         Log.exception $!
@@ -177,6 +177,8 @@ module Misc
       io.join if io.respond_to? :join
       return
     end
+
+    Log.medium "Consuming stream #{Misc.fingerprint io}"
     if in_thread
       Thread.new do
         consume_stream(io, false)
@@ -188,9 +190,9 @@ module Misc
           Thread.pass 
         end
         io.join if io.respond_to? :join
+      rescue IOError
       rescue
-        Log.error "Exception consuming stream: #{io.inspect}"
-        Log.exception $!
+        Log.warn "Exception consuming stream: #{io.inspect}"
         io.abort if io.respond_to? :abort
       end
     end
@@ -240,9 +242,13 @@ module Misc
 
           Open.mv tmp_path, path
         rescue Aborted
-          Log.error "Aborted sensiblewrite -- #{ Log.color :blue, path }"
+          Log.warn "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
+          content.abort if content.respond_to? :abort
+          content.join if content.respond_to? :join
         rescue Exception
-          Log.error "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
+          Log.warn "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
+          content.abort if content.respond_to? :abort
+          content.join if content.respond_to? :join
           Open.rm_f path if File.exists? path
           raise $!
         ensure
@@ -264,29 +270,40 @@ module Misc
 
   def self.sort_stream(stream, header_hash = "#")
     Misc.open_pipe do |sin|
-      line = stream.gets
-      while line =~ /^#{header_hash}/ do
-        sin.puts line
-        line = stream.gets
-      end
-
-      line_stream = Misc.open_pipe do |line_stream_in|
-        begin
-          while line
-            line_stream_in.puts line
-            line = stream.gets
-          end
-          stream.join if stream.respond_to? :join
-        rescue
-          stream.abort if stream.respond_to? :abort
-          raise $!
+      begin
+        if defined? Step and Step === stream
+          step = stream
+          stream = stream.get_stream || stream.path.open
         end
-      end
 
-      sorted = CMD.cmd("sort", :in => line_stream, :pipe => true)
+        line = stream.gets
+        while line =~ /^#{header_hash}/ do
+          sin.puts line
+          line = stream.gets
+        end
 
-      while block = sorted.read(2048)
-        sin.write block
+        line_stream = Misc.open_pipe do |line_stream_in|
+          begin
+            while line
+              line_stream_in.puts line
+              line = stream.gets
+            end
+            stream.join if stream.respond_to? :join
+          rescue
+            stream.abort if stream.respond_to? :abort
+            raise $!
+          end
+        end
+
+        sorted = CMD.cmd("sort", :in => line_stream, :pipe => true)
+
+        while block = sorted.read(2048)
+          sin.write block
+        end
+      rescue
+        if defined? step and step
+          step.abort
+        end
       end
     end
   end
@@ -330,6 +347,14 @@ module Misc
     num_streams = streams.length
     Misc.open_pipe do |sin|
       sin.puts header if header
+      streams = streams.collect do |stream|
+        if defined? Step and Step === stream
+          stream.get_stream || stream.join.path.open
+        else
+          stream
+        end
+      end
+
       begin
         done_streams = []
         lines ||= streams.collect{|s| s.gets }
@@ -369,6 +394,7 @@ module Misc
           stream.join if stream.respond_to? :join
         end
       rescue 
+        Log.exception $!
         streams.each do |stream|
           stream.abort if stream.respond_to? :abort
         end
@@ -386,6 +412,21 @@ module Misc
     tee1, tee2 = Misc.tee_stream stream_dup
     stream.reopen(tee1)
     tee2
+  end
+
+  def self.save_stream(file, stream)
+    out, save = Misc.tee_stream stream
+
+    Thread.new(Thread.current) do |parent|
+      begin
+        Misc.sensiblewrite(file, save)
+      rescue
+        save.abort if save.respond_to? :abort
+        parent.raise $!
+      end
+    end
+
+    out
   end
 
 end

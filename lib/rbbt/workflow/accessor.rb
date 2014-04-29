@@ -46,7 +46,6 @@ class Step
         begin
           return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
         rescue Exception
-          Log.exception $!
           raise $!
         end
 
@@ -165,12 +164,18 @@ class Step
     options = Misc.add_defaults options, :severity => Log::INFO
     max = Misc.process_options options, :max
     Log::ProgressBar.with_bar(max, options) do |bar|
-      yield bar
+      begin
+        res = yield bar
+        raise KeepBar.new res if IO === res
+        res
+      rescue
+        Log.exception $!
+      end
     end
   end
 
   def self.log(status, message, path, &block)
-    if block_given?
+    if block
       if Hash === message
         log_progress(status, message, path, &block)
       else
@@ -202,7 +207,9 @@ class Step
   def running?
     return nil if not Open.exists? info_file
     return nil if info[:pid].nil?
-    return Misc.pid_exists?(p = info[:pid]) && Process.pid != p
+
+    pid = @pid || info[:pid]
+    return Misc.pid_exists?(pid) 
   end
 
   def error?
@@ -352,35 +359,48 @@ module Workflow
 
   def rec_dependencies(taskname)
     if task_dependencies.include? taskname
-      deps = task_dependencies[taskname].select{|dep| String === dep or Symbol === dep}
-      deps.concat deps.collect{|dep| rec_dependencies(dep)}.flatten
-      deps.uniq
+      deps = task_dependencies[taskname].select{|dep| String === dep or Symbol === dep or Array === dep}
+      all_deps = deps.dup
+      deps.each do |dep| 
+        if Array === dep 
+          dep.first.rec_dependencies(dep.last).each do |d|
+            if Array === d
+              d
+            else
+              all_deps << [dep.first, d]
+            end
+          end
+        else
+          all_deps.concat rec_dependencies(dep.to_sym)
+        end
+      end
+      all_deps.uniq
     else
       []
     end
   end
 
   def rec_inputs(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject([]){|acc, tn| acc.concat tasks[tn.to_sym].inputs}
+    [taskname].concat(rec_dependencies(taskname)).inject([]){|acc, tn| acc.concat((Array === tn ? tn.first.tasks[tn.last] : tasks[tn.to_sym]).inputs) }
   end
 
   def rec_input_defaults(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn.to_sym].input_defaults}.
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge((Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_defaults) }.
       tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_types(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn.to_sym].input_types}.
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge((Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_types) }.
       tap{|h| IndiferentHash.setup(h) }
   end
 
   def rec_input_descriptions(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn.to_sym].input_descriptions}.
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge((Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_descriptions) }.
       tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_options(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge tasks[tn.to_sym].input_options}.
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge((Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_options)}.
       tap{|h| IndiferentHash.setup(h)}
   end
 
@@ -388,6 +408,8 @@ module Workflow
     real_dependencies = []
     dependencies.each do |dependency|
       real_dependencies << case dependency
+      when Array
+        dependency.first.job(dependency.last, jobname, inputs)
       when Step
         dependency
       when Symbol

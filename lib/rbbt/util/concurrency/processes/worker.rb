@@ -17,7 +17,9 @@ class RbbtProcessQueue
             Misc.purge_pipes
           end
 
-          Signal.trap(:INT){ raise Aborted; }
+          Signal.trap(:INT){ 
+            Kernel.exit! -1
+          }
 
           loop do
             p = @queue.pop
@@ -29,8 +31,8 @@ class RbbtProcessQueue
           end
           Kernel.exit! 0
         rescue ClosedStream
-        rescue Aborted
-          Log.error "Worker #{Process.pid} aborted"
+        rescue Aborted, Interrupt
+          Log.warn "Worker #{Process.pid} aborted"
           Kernel.exit! -1
         rescue Exception
           Log.exception $!

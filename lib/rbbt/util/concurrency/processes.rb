@@ -29,10 +29,10 @@ class RbbtProcessQueue
             @callback.call p
           end
         rescue Aborted
-          Log.error "Callback thread aborted"
+          parent.raise $!
         rescue ClosedStream
         rescue Exception
-          Log.error "Callback thread exception"
+          Log.warn "Callback thread exception"
           parent.raise $!
         ensure
           @callback_queue.sread.close unless @callback_queue.sread.closed?
@@ -58,9 +58,9 @@ class RbbtProcessQueue
       rescue Aborted
         @processes.each{|p| p.abort }
         @processes.each{|p| p.join }
-        Log.error "Process monitor aborted"
+        Log.warn "Process monitor aborted"
       rescue Exception
-        Log.error "Process monitor exception: #{$!.message}"
+        Log.warn "Process monitor exception: #{$!.message}"
         @processes.each{|p| p.abort }
         @callback_thread.raise $! if @callback_thread
         parent.raise $!
@@ -72,7 +72,7 @@ class RbbtProcessQueue
     begin
       @callback_queue.push ClosedStream.new if @callback_thread.alive?
     rescue
-      Log.error "Error closing callback: #{$!.message}"
+      Log.warn "Error closing callback: #{$!.message}"
     end
     @callback_thread.join  if @callback_thread.alive?
   end
@@ -89,28 +89,27 @@ class RbbtProcessQueue
       Log.exception $!
       raise $!
     ensure
-      @queue.swrite.close
+      @queue.swrite.close unless @queue.swrite.closed?
     end
 
     @join.call if @join
   end
 
   def clean
-    if @process_monitor.alive?
-     @process_monitor.raise Aborted.new
-     aborted = true
+    if @process_monitor.alive? or @callback_thread.alive?
+      self.abort
+    else
+      self.join
     end
-
-    if @callback_thread and @callback_thread.alive?
-     @callback_thread.raise Aborted.new
-     aborted = true
-    end
-    raise Aborted.new if aborted
   end
 
   def abort
-    @process_monitor.raise(Aborted.new); @process_monitor.join if @process_monitor and @process_monitor.alive?
-    @callback_thread.raise(Aborted.new); @callback_thread.join if @callback_thread and @callback_thread.alive?
+    begin
+      @process_monitor.raise(Aborted.new); @process_monitor.join if @process_monitor and @process_monitor.alive?
+      @callback_thread.raise(Aborted.new); @callback_thread.join if @callback_thread and @callback_thread.alive?
+    ensure
+      join
+    end
   end
 
   def process(*e)

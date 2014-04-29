@@ -26,10 +26,14 @@ module Workflow
   end
 
   def dep(*dependency_list, &block)
-    @dependency_list ||= []
     @dependencies ||= []
-    dependency_list << block if block_given?
-    dependencies.concat dependency_list
+    if Array === dependency_list and Module === dependency_list.first
+      @dependencies << dependency_list
+    else
+      @dependency_list ||= []
+      dependency_list << block if block_given?
+      dependencies.concat dependency_list
+    end
   end
 
   def task(name, &block)

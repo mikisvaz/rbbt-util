@@ -1,6 +1,6 @@
 class Step
 
-  attr_reader :stream
+  attr_reader :stream, :dupped
 
   STREAM_CACHE = {}
   STREAM_CACHE_MUTEX = Mutex.new
@@ -8,11 +8,28 @@ class Step
     case stream
     when IO, File
       return stream if stream.closed?
+
       STREAM_CACHE_MUTEX.synchronize do
-        if STREAM_CACHE[stream].nil?
+        case current = STREAM_CACHE[stream]
+        when nil
+          Log.medium "Not duplicating stream #{ Misc.fingerprint(stream) }"
           STREAM_CACHE[stream] = stream
+        when File
+          if true or current.closed?
+            Log.medium "Reopening file #{ Misc.fingerprint(current) }"
+            Open.open(current.filename)
+          else
+            Log.medium "Duplicating file #{ Misc.fingerprint(current) }"
+            new = current.dup
+            new.rewind
+            new
+          end
+
         else
-          Misc.dup_stream(STREAM_CACHE[stream])
+          Log.medium "Duplicating stream #{ Misc.fingerprint(stream) }"
+          new = Misc.dup_stream(current)
+          Log.medium str << Log.color(:green, " -> ") << "#{new.inspect}"
+          new
         end
       end
     when TSV::Dumper, TSV::Parser
@@ -21,9 +38,12 @@ class Step
 
       STREAM_CACHE_MUTEX.synchronize do
         if STREAM_CACHE[stream].nil?
+          Log.high "Not duplicating dumper #{ stream.inspect }"
           STREAM_CACHE[stream] = stream
         else
-          Misc.dup_stream(STREAM_CACHE[stream])
+          new = Misc.dup_stream(STREAM_CACHE[stream])
+          Log.high "Duplicating dumper #{ stream.inspect } into #{new.inspect}"
+          new
         end
       end
     else
@@ -45,8 +65,12 @@ class Step
 
   def get_stream
     @mutex.synchronize do
-      @stream = begin
-        IO === @result ? @result : nil
+      begin
+        if IO === @result 
+          @result 
+        else 
+          nil
+        end
       ensure
         @result = nil
       end
@@ -54,20 +78,24 @@ class Step
   end
 
   def dup_inputs
-    @inputs.collect do |input|
+    return if @dupped or ENV["RBBT_NO_STREAM"] == 'true'
+    @inputs = @inputs.collect do |input|
       Step.dup_stream input
     end
+    @dupped = true
   end
 
   def _exec
     @exec = true if @exec.nil?
-    @task.exec_in((bindings ? bindings : self), *dup_inputs)
+    @task.exec_in((bindings ? bindings : self), *@inputs)
   end
 
   def exec(no_load=false)
     dependencies.each{|dependency| dependency.exec(no_load) }
-    @result = self._exec
-    @result = @result.stream if TSV::Dumper === @result
+    @mutex.synchronize do
+      @result = self._exec
+      @result = @result.stream if TSV::Dumper === @result
+    end
     no_load ? @result : prepare_result(@result, @task.result_description)
   end
 
@@ -91,29 +119,50 @@ class Step
   end
 
   def run_dependencies(seen = [])
-    seen << self.path
-    dependencies.uniq.each{|dependency| 
-      next if seen.include? dependency.path
+    dependencies.uniq.each do |dependency| 
+
+      next if seen.collect{|d| d.path}.include?(dependency.path)
+      seen << dependency
+      seen.concat dependency.rec_dependencies.collect{|d| d } 
+    end
+
+    seen.each do |dependency|
+      next if dependency == self
+      dependency.relay_log self
+      dependency.dup_inputs
+    end
+
+    seen.each do |dependency| 
+      next if dependency == self
       Log.info "#{Log.color :magenta, "Checking dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} -- #{Log.color :blue, dependency.path}"
       begin
-        dependency.relay_log self
-        dependency.clean if not dependency.done? and (dependency.error? or dependency.aborted?)
-        dependency.clean if dependency.streaming? and not dependency.running?
-        dependency.run(ENV["RBBT_NO_STREAM"] != 'true') unless dependency.result or dependency.done?
-        seen << dependency.path
-        seen.concat dependency.rec_dependencies.collect{|d| d.path} 
+        if dependency.streaming? 
+          next if dependency.running?
+          dependency.clean 
+        else
+          dependency.clean if not dependency.done? and (dependency.error? or dependency.aborted?)
+        end
+
+        unless dependency.result or dependency.done?
+          dependency.run(true) 
+        end
+      rescue Aborted, Interrupt
+        backtrace = $!.backtrace
+        set_info :backtrace, backtrace 
+        log(:error, "Aborted dependency #{Log.color :yellow, dependency.task.name.to_s}")
+        raise $!
       rescue Exception
         backtrace = $!.backtrace
         set_info :backtrace, backtrace 
         log(:error, "Exception processing dependency #{Log.color :yellow, dependency.task.name.to_s} -- #{$!.class}: #{$!.message}")
         raise $!
       end
-    }
+    end
   end
 
   def run(no_load = false)
-
     result = nil
+
     begin
       @mutex.synchronize do
         no_load = no_load ? :stream : false
@@ -131,7 +180,15 @@ class Step
           log(:preparing, "Preparing job: #{Misc.fingerprint dependencies}")
           set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name]}
 
-          run_dependencies
+          dup_inputs
+          begin
+            run_dependencies
+          rescue
+            log(:error, "Error procesing dependencies")
+            stop_dependencies
+            raise $!
+          end
+
 
           set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 
@@ -192,7 +249,6 @@ class Step
             log :streaming, "#{Log.color :magenta, "Streaming task result TSV::Dumper"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
             ConcurrentStream.setup result.stream do
               begin
-                set_info :done, (done_time = Time.now)
                 set_info :done, (done_time = Time.now)
                 set_info :time_elapsed, (time_elapsed = done_time - start_time)
                 log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i} -- #{path}"
@@ -284,7 +340,10 @@ class Step
 
   def stop_dependencies
     dependencies.each do |dep|
-      dep.abort unless dep.done?
+      begin
+        dep.abort unless dep.done? or dep.error? or dep.aborted?
+      rescue Aborted
+      end
     end
   end
 
@@ -313,16 +372,23 @@ class Step
   def abort_stream
     stream = get_stream if @result
     stream ||= @stream 
-    if stream
-      stream.abort if stream.respond_to? :abort
+    if stream and stream.respond_to? :abort
+      Log.medium "Aborting stream #{stream.inspect} -- #{Log.color :blue, path}"
+      begin
+        stream.abort 
+      rescue Aborted
+      end
     end
   end
 
   def abort
+    Log.medium{"#{Log.color :red, "Aborting"} #{Log.color :blue, path}"}
     begin
       abort_pid
       stop_dependencies
       abort_stream
+    rescue
+      Log.exception $!
     ensure
       log(:aborted, "Job aborted")
     end
@@ -333,7 +399,7 @@ class Step
     if stream
       begin
         Misc.consume_stream stream
-        stream.join if stream.respond_to? :join # and not stream.joined?
+        stream.join if stream.respond_to? :join 
       rescue Exception
         stream.abort if stream.respond_to? :abort 
         self.abort
@@ -342,11 +408,16 @@ class Step
     end
   end
 
+  def grace
+    until done? or result or streaming? or error? or aborted?
+      sleep 1 
+    end
+    self
+  end
+
   def join
 
-    until done? or result or error? or aborted? or streaming?
-      sleep 1
-    end
+    grace
 
     join_stream if status == :streaming
 
@@ -362,6 +433,9 @@ class Step
     begin
       if pid.nil? or Process.pid == pid
         dependencies.each{|dep| dep.join }
+        while not done?
+          sleep 1
+        end
       else
         begin
           Log.debug{"Waiting for pid: #{pid}"}

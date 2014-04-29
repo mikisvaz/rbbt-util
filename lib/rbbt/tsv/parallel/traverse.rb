@@ -14,13 +14,13 @@ module TSV
     filename_obj   = obj.respond_to?(:filename) ? obj.filename : nil
     filename_obj ||= obj.respond_to?(:path) ? obj.path : nil
     stream_obj = obj_stream(obj) || obj
-    filename_obj.nil? ? Misc.fingerprint(stream_obj) : filename_obj + "(#{Misc.fingerprint(stream_obj)})"
+    obj.class.to_s << "-" << Misc.fingerprint(stream_obj)
   end
 
   def self.report(msg, obj, into)
     into = into[:into] if Hash === into and into.include? :into
 
-    Log.error "#{ msg } #{stream_name(obj)} -> #{stream_name(into)}"
+    Log.medium "#{ msg } #{stream_name(obj)} -> #{stream_name(into)}"
   end
 
   #{{{ TRAVERSE OBJECTS
@@ -96,13 +96,20 @@ module TSV
 
   def self.traverse_io_array(io, options = {}, &block)
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
+    if File === io and io.closed? 
+      begin
+        Log.medium "Rewinding stream #{stream_name(io)}"
+        io.reopen io.filename, "r"
+      rescue
+        Log.exception $!
+        raise "File closed and could not reopen #{stream_name(io)}"
+      end
+    end
+
     if callback
       while line = io.gets
-        begin
-          callback.call yield line.strip
-        ensure
-          bar.tick if bar
-        end
+        callback.call yield line.strip
+        bar.tick if bar
       end
     else
       while line = io.gets
@@ -114,17 +121,22 @@ module TSV
 
   def self.traverse_io(io, options = {}, &block)
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
-    begin
-      if callback
-        TSV::Parser.traverse(io, options) do |k,v|
-          callback.call yield k, v
-        end
-      else
-        TSV::Parser.traverse(io, options, &block)
+    if File === io and io.closed? 
+      begin
+        Log.medium "Rewinding stream #{stream_name(io)}"
+        io.reopen io.filename, "r"
+      rescue
+        Log.exception $!
+        raise "File closed and could not reopen #{stream_name(io)}"
       end
-    rescue
-      Log.error "Traverse IO error"
-      raise $!
+    end
+
+    if callback
+      TSV::Parser.traverse(io, options) do |k,v|
+        callback.call yield k, v
+      end
+    else
+      TSV::Parser.traverse(io, options, &block)
     end
     join.call if join
   end
@@ -135,64 +147,90 @@ module TSV
       options[:type] = :single
     end
 
-    case obj
-    when TSV
-      traverse_tsv(obj, options, &block)
-    when Hash
-      traverse_hash(obj, options, &block)
-    when TSV::Parser
-      callback = Misc.process_options options, :callback
-      if callback
-        obj.traverse(options) do |k,v|
-          callback.call yield k, v
-        end
-      else
-        obj.traverse(options, &block)
-      end
-    when IO, File
-      begin
-        if options[:type] == :array
-          traverse_io_array(obj, options, &block)
+    Log.medium "Traversing #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
+    begin
+      sleep 1
+      case obj
+      when TSV
+        traverse_tsv(obj, options, &block)
+      when Hash
+        traverse_hash(obj, options, &block)
+      when TSV::Parser
+        callback = Misc.process_options options, :callback
+        if callback
+          obj.traverse(options) do |k,v|
+            callback.call yield k, v
+          end
         else
-          traverse_io(obj, options, &block)
+          obj.traverse(options, &block)
         end
-      rescue Exception
-        obj.abort if obj.respond_to? :abort
-        raise $!
-      ensure
-        obj.close if obj.respond_to? :close and not obj.closed?
-        obj.join if obj.respond_to? :join
-      end
-    when Path
-      obj.open do |stream|
-        traverse_obj(stream, options, &block)
-      end
-    when TSV::Dumper
-      traverse_obj(obj.stream, options, &block)
-    when (defined? Step and Step)
-
-      stream = obj.get_stream
-
-      if stream
-        traverse_obj(stream, options, &block)
-      else
-        obj.join
-        traverse_obj(obj.path, options, &block)
-      end
-    when Array
-      traverse_array(obj, options, &block)
-    when String
-      if Open.remote? obj or Misc.is_filename? obj
-        Open.open(obj) do |s|
-          traverse_obj(s, options, &block)
+      when IO, File
+        begin
+          if options[:type] == :array
+            traverse_io_array(obj, options, &block)
+          else
+            traverse_io(obj, options, &block)
+          end
+        rescue Aborted
+          obj.abort if obj.respond_to? :abort
+          raise $!
+        rescue Exception
+          obj.abort if obj.respond_to? :abort
+          raise $!
+        ensure
+          obj.close if obj.respond_to? :close and not obj.closed?
+          obj.join if obj.respond_to? :join
         end
+      when Path
+        obj.open do |stream|
+          traverse_obj(stream, options, &block)
+        end
+      when TSV::Dumper
+        traverse_obj(obj.stream, options, &block)
+      when (defined? Step and Step)
+
+        stream = obj.get_stream
+
+        if stream
+          traverse_obj(stream, options, &block)
+        else
+          obj.join
+          traverse_obj(obj.path, options, &block)
+        end
+      when Array
+        traverse_array(obj, options, &block)
+      when String
+        if Open.remote? obj or Misc.is_filename? obj
+          Open.open(obj) do |s|
+            traverse_obj(s, options, &block)
+          end
+        else
+          raise "Can not open obj for traversal #{Misc.fingerprint obj}"
+        end
+      when nil
+        raise "Can not traverse nil object into #{stream_name(options[:into])}"
       else
-        raise "Can not open obj for traversal #{Misc.fingerprint obj}"
+        raise "Unknown object for traversal: #{Misc.fingerprint obj }"
       end
-    when nil
-      raise "Can not traverse nil object into #{stream_name(options)}"
-    else
-      raise "Unknown object for traversal: #{Misc.fingerprint obj }"
+    rescue IOError
+      Log.warn "IOError traversing #{stream_name(obj)}: #{$!.message}"
+      stream = obj_stream(obj)
+      stream.abort if stream and stream.respond_to? :abort
+      raise $!
+    rescue Errno::EPIPE
+      Log.warn "Pipe closed while traversing #{stream_name(obj)}: #{$!.message}"
+      raise $!
+    rescue Aborted
+      Log.warn "Aborted traversing #{stream_name(obj)}"
+      stream = obj_stream(obj)
+      stream.abort if stream and stream.respond_to? :abort
+      raise $!
+    rescue Exception
+      Log.warn "Exception traversing #{stream_name(obj)}"
+      Log.exception $!
+      stream = obj_stream(obj)
+      stream.abort if stream and stream.respond_to? :abort
+      raise $!
     end
   end
 
@@ -236,9 +274,13 @@ module TSV
         end
       end
 
-      thread.join
+      begin
+        thread.join
+      rescue 
+        raise $!
+      end
     rescue Interrupt, Aborted
-      Log.error "Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}"
+      Log.warn "Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}"
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
@@ -246,9 +288,7 @@ module TSV
       q.abort
       raise $!
     rescue Exception
-      Log.error "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}"
-      Log.exception $!
-
+      Log.warn "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}"
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
@@ -350,11 +390,12 @@ module TSV
       begin
         traverse_run(obj, threads, cpus, options, &block)
         into.close if into.respond_to? :close
-      rescue Exception
-        Log.exception $!
-        parent.raise $!
+      rescue
+        stream = obj_stream(obj)
+        stream.abort if stream and stream.respond_to? :abort
         stream = obj_stream(into)
         stream.abort if stream and stream.respond_to? :abort
+        parent.raise $!
       end
     end
     ConcurrentStream.setup(obj_stream(into), :threads => thread)
@@ -398,7 +439,7 @@ module TSV
 
     if into
       bar = Misc.process_options options, :bar
-          
+
       options[:join] = Proc.new do
         Log::ProgressBar.remove_bar(bar)
       end if bar
@@ -407,7 +448,6 @@ module TSV
         begin
           store_into into, e
         rescue Aborted
-          Log.error "Traversal info #{stream_name into} aborted"
           raise $!
         rescue Exception
           Log.exception $!

@@ -3,7 +3,7 @@ require 'rbbt/tsv'
 require 'rbbt/tsv/filter'
 
 class TestTSVFilters < Test::Unit::TestCase
-  def test_collect
+  def _test_collect
     content1 =<<-EOF
 #: :sep=/\\s+/#:case_insensitive=false
 #Id    ValueA    ValueB
@@ -19,7 +19,7 @@ row2    A    B
     end
   end
 
-  def test_through
+  def _test_through
     content1 =<<-EOF
 #: :sep=/\\s+/#:case_insensitive=false
 #Id    ValueA    ValueB
@@ -37,7 +37,7 @@ row2    A    B
     end
   end
 
-  def test_2_filters
+  def _test_2_filters
     content1 =<<-EOF
 #: :sep=/\\s+/#:case_insensitive=false
 #Id    ValueA    ValueB
@@ -64,7 +64,7 @@ row3    A    C
     end
   end
 
-  def test_filter_persistence
+  def _test_filter_persistence
     content1 =<<-EOF
 #: :sep=/\\s+/#:case_insensitive=false
 #Id    ValueA    ValueB
@@ -98,7 +98,7 @@ row3    A    C
     end
   end
 
-  def test_filter_persistence_update
+  def __test_filter_persistence_update
     content1 =<<-EOF
 #: :sep=/\\s+/#:case_insensitive=false
 #Id    ValueA    ValueB
@@ -165,7 +165,7 @@ row2 A B C
     end
   end
 
-  def test_filename
+  def _test_filename
     content1 =<<-EOF
 #: :sep=/\\s+/#:case_insensitive=false
 #Id    ValueA    ValueB

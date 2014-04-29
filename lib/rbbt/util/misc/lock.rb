@@ -22,7 +22,7 @@ module Misc
               raise "No info" unless info
 
               if hostname == info["host"] and not Misc.pid_exists?(info["pid"])
-                Log.info("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
+                Log.high("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
                 FileUtils.rm lock_path
               end
             end

@@ -28,8 +28,8 @@ module TSV
     input_options = []
 
     input_source_streams = inputs.collect do |input|
-      stream = TSV.get_stream input
-      stream = sort ? Misc.sort_stream(stream) : stream
+      stream = sort ? Misc.sort_stream(input) : TSV.get_stream(input)
+      stream
     end
 
     input_source_streams.each do |stream|
@@ -51,5 +51,110 @@ module TSV
     header = TSV.header_lines(key_field, fields, options)
     dumper.stream = Misc.paste_streams input_streams, input_lines, options[:sep], header
     dumper
+  end
+
+  def self.paste_streams(streams, options = {})
+    options = Misc.add_defaults options, :sep => "\t", :sort => true
+    sort, sep = Misc.process_options options, :sort, :sep
+
+    Misc.open_pipe do |sin|
+      num_streams = streams.length
+
+      streams = streams.collect do |stream|
+        if defined? Step and Step === stream
+          stream.get_stream || stream.join.path.open
+        else
+          stream
+        end
+      end
+
+      streams = streams.collect do |stream|
+        Misc.sort_stream(stream)
+      end if sort
+
+      lines = []
+      fields = []
+      key_fields = []
+      input_options = []
+      empty = []
+
+      streams = streams.collect do |stream|
+        parser = TSV::Parser.new stream, options
+        lines << parser.first_line
+        empty << stream if parser.first_line.nil?
+        key_fields << parser.key_field
+        fields << parser.fields
+        input_options << parser.options
+
+        parser.stream
+      end
+
+      key_field = key_fields.compact.first
+      fields = fields.compact.flatten
+      options = options.merge(input_options.first)
+
+      sin.puts TSV.header_lines(key_field, fields, options)
+
+      empty.each do |stream|
+        i = streams.index stream
+        lines.delete_at i
+        fields.delete_at i
+        key_fields.delete_at i
+        input_options.delete_at i
+      end
+
+      begin
+        done_streams = []
+
+        keys = []
+        parts = []
+        lines.each_with_index do |line,i|
+          key, *p = line.strip.split(sep, -1) 
+          keys[i] = key
+          parts[i] = p
+        end
+        sizes = parts.collect{|p| p.length }
+        last_min = nil
+        while lines.compact.any?
+          min = keys.compact.sort.first
+          str = []
+          keys.each_with_index do |key,i|
+            case key
+            when min
+              str << [parts[i] * sep]
+              line = lines[i] = begin
+                                  streams[i].gets
+                                rescue
+                                  Log.exception $!
+                                  nil
+                                end
+              if line.nil?
+                stream = streams[i]
+                #stream.join if stream.respond_to? :join
+                keys[i] = nil
+                parts[i] = nil
+              else
+                k, *p = line.strip.split(sep, -1)
+                keys[i] = k
+                parts[i] = p
+              end
+            else
+              str << [sep * (sizes[i]-1)] if sizes[i] > 0
+            end
+          end
+
+          sin.puts [min, str*sep] * sep
+        end
+        streams.each do |stream|
+          #stream.join if stream.respond_to? :join
+        end
+      rescue 
+        Log.exception $!
+        streams.each do |stream|
+          stream.abort if stream.respond_to? :abort
+        end
+        raise $!
+      end
+    end
   end
 end

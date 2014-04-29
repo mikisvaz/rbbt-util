@@ -134,7 +134,6 @@ module TSV
         return parts.shift.split(@sep2, -1).first, parts.collect{|value| value.split(@sep2, -1)}.flatten if 
         field_positions.nil? and (key_position.nil? or key_position == 0)
       rescue
-        eee [:rescue, orig]
         raise $!
       end
 
@@ -536,11 +535,14 @@ module TSV
             end
           rescue END_PARSING
             break
-          #rescue IOError
-          #  Log.exception $!
-          #  break
+          rescue Errno::EPIPE
+            Log.error "Pipe closed while parsing #{Misc.fingerprint stream}: #{$!.message}"
+            raise $!
           rescue Exception
+            Log.error "Exception parsing #{Misc.fingerprint stream}: #{$!.message}"
+            Log.exception $!
             stream.abort if stream.respond_to? :abort
+            stream.join if stream.respond_to? :join
             raise $!
           end
         end

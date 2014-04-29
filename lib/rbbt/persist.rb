@@ -116,7 +116,6 @@ module Persist
             begin
               Marshal.load(stream) 
             rescue
-              Log.exception $!
               raise $!
             end
           else
@@ -135,7 +134,7 @@ module Persist
         raise "Unknown persistence: #{ type }"
       end
     rescue
-      Log.error "Exception loading #{ type } #{ path }: #{$!.message}"
+      Log.warn "Exception loading #{ type } #{ path }: #{$!.message}"
       raise $!
     end
   end
@@ -191,30 +190,6 @@ module Persist
     end
   end
 
-  #def self.tee_stream_fork(stream, path, type, callback = nil)
-  #  file, out = Misc.tee_stream(stream)
-
-  #  saver_pid = Process.fork do
-  #    out.close
-  #    stream.close
-  #    Misc.purge_pipes
-  #    begin
-  #      Misc.lock(path) do
-  #        save_file(path, type, file)
-  #      end
-  #    rescue Aborted
-  #      stream.abort if stream.respond_to? :abort
-  #      raise $!
-  #    rescue Exception
-  #      Log.exception $!
-  #      Kernel.exit! -1
-  #    end
-  #    Kernel.exit! 0
-  #  end
-  #  file.close
-  #  ConcurrentStream.setup(out, :pids => [saver_pid], :filename => path)
-  #end
-
   def self.tee_stream_thread(stream, path, type, callback = nil)
     file, out = Misc.tee_stream(stream)
 
@@ -225,11 +200,11 @@ module Persist
           save_file(path, type, file)
         end
       rescue Aborted
-        Log.error "Persist stream thread aborted: #{ Log.color :blue, path }"
+        Log.warn "Persist stream thread aborted: #{ Log.color :blue, path }"
         file.abort if file.respond_to? :abort
+        parent.raise $!
       rescue Exception
-        Log.error "Persist stream thread exception: #{ Log.color :blue, path }"
-        Log.exception $!
+        Log.warn "Persist stream thread exception: #{ Log.color :blue, path }"
         file.abort if file.respond_to? :abort
         parent.raise $!
       end
@@ -250,10 +225,10 @@ module Persist
             end
             Log.high "Stream pipe saved: #{path}"
           rescue Aborted
-            Log.error "Persist stream pipe exception: #{ Log.color :blue, path }"
+            Log.warn "Persist stream pipe exception: #{ Log.color :blue, path }"
             stream.abort if stream.respond_to? :abort
           rescue Exception
-            Log.error "Persist stream pipe exception: #{ Log.color :blue, path }"
+            Log.warn "Persist stream pipe exception: #{ Log.color :blue, path }"
             Log.exception $!
             stream.abort if stream.respond_to? :abort
             parent.raise $!
@@ -266,7 +241,7 @@ module Persist
               sin.write block
             end
           rescue Aborted
-            Log.error "Tee stream thread aborted"
+            Log.warn "Tee stream thread aborted"
             sout.abort if sout.respond_to? :abort
             sin.abort if sin.respond_to? :abort
           rescue Exception
@@ -328,7 +303,7 @@ module Persist
         res = tee_stream(res.stream, path, type, res.respond_to?(:callback)? res.callback : nil)
         ConcurrentStream.setup res do
           begin
-            lockfile.unlock
+            lockfile.unlock if lockfile.locked?
           rescue
             Log.exception $!
             Log.warn "Lockfile exception: " << $!.message
@@ -336,7 +311,7 @@ module Persist
         end
         res.abort_callback = Proc.new do
           begin
-            lockfile.unlock
+            lockfile.unlock if lockfile.locked?
           rescue
             Log.exception $!
             Log.warn "Lockfile exception: " << $!.message
@@ -406,7 +381,7 @@ module Persist
       end
 
     rescue
-      Log.error "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"
+      Log.warn "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"
       FileUtils.rm path if Open.exists? path 
       raise $!
     end

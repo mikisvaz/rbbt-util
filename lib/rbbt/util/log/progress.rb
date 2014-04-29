@@ -2,7 +2,7 @@ require 'rbbt/util/log'
 module Log
   class ProgressBar
 
-    attr_accessor :depth, :num_reports, :desc, :io, :severity, :history
+    attr_accessor :depth, :num_reports, :desc, :io, :severity, :history, :max
 
     # Creates a new instance. Max is the total number of iterations of the
     # loop. The depth represents how many other loops are above this one,
@@ -45,7 +45,6 @@ module Log
 
       nil
     end
-
 
     def progress
       @current.to_f/ @max
@@ -104,13 +103,17 @@ module Log
     end
 
     def thr
-      @history ||= []
       @last_report = Time.now if @last_report == -1
       time = Time.now - @last_report
+      time = 0.000001 if time == 0
       thr = (@current / time).to_i
 
-      @history << thr
-      @history.shift if @history.length > 10
+      if @history.nil?
+        @history ||= []
+      else
+        @history << thr
+        @history.shift if @history.length > 10
+      end
 
       thr
     end
@@ -118,7 +121,7 @@ module Log
     def mean
       @mean_max ||= 0
       if @history.length > 3
-        mean = Misc.mean(@history[1..-1])
+        mean = Misc.mean(@history)
         @mean_max = mean if mean > @mean_max
       end
       mean
@@ -132,7 +135,7 @@ module Log
       indicator = Log.color(:magenta, @desc) 
       indicator << " #{ Log.color :blue, thr } per second"
 
-      indicator << " -- #{ Log.color :yellow, mean.to_i } avg. #{ Log.color :yellow, @mean_max.to_i} max." if mean
+      indicator << " #{ Log.color :yellow, mean.to_i } avg. #{ Log.color :yellow, @mean_max.to_i} max." if mean
 
       indicator
     end
@@ -150,7 +153,9 @@ module Log
     # original line. Everything is printed to stderr.
     def report(io = STDERR)
       if Log::LAST != "progress"
-        BARS.length.times{print(io, "\n")}
+        Log::ProgressBar.cleanup_bars
+        print(io, Log.color(:yellow, "== Progress"))
+        (BARS.length-1).times{print(io, "\n")}
       end
       print(io, up_lines(@depth) << report_msg << down_lines(@depth)) if severity >= Log.severity
       @last_report = Time.now if @last_report == -1
@@ -158,15 +163,24 @@ module Log
 
     def throughput(io = STDERR)
       if Log::LAST != "progress"
-        BARS.length.times{print(io, "\n")}
+        Log::ProgressBar.cleanup_bars
+        print(io, Log.color(:yellow, "== Progress"))
+        (BARS.length-1).times{print(io, "\n")}
       end
       print(io, up_lines(@depth) << throughput_msg << down_lines(@depth)) if severity >= Log.severity
       @last_report = Time.now
       @current = 0
     end
+
+    def done
+      print(io, up_lines(@depth) << Log.color(:magenta, @desc) << Log.color(:green, " DONE") << down_lines(@depth)) if severity >= Log.severity
+    end
+
     BAR_MUTEX = Mutex.new
     BARS = []
+    REMOVE = []
     def self.new_bar(max, options = {})
+      cleanup_bars
       BAR_MUTEX.synchronize do
         options = Misc.add_defaults options, :depth => BARS.length
         BARS << (bar = ProgressBar.new(max, options))
@@ -174,18 +188,27 @@ module Log
       end
     end
 
+    def self.cleanup_bars
+      BAR_MUTEX.synchronize do
+        REMOVE.each do |bar|
+          index = BARS.index bar
+          if index
+            (index..BARS.length-1).each do |pos|
+              bar = BARS[pos]
+              bar.depth = pos - 1
+              BARS[pos-1] = bar
+            end 
+            BARS.pop
+          end
+        end
+        REMOVE.clear
+      end
+    end
+
     def self.remove_bar(bar)
       BAR_MUTEX.synchronize do
-        index = BARS.index bar
-        if index
-          (index+1..BARS.length-1).each do |pos|
-            bar = BARS[pos]
-            bar.depth = pos - 1
-            BARS[pos-1] = bar
-          end 
-          BARS.pop
-        end
-        Log::LAST.replace "removeprogress"
+        bar.done unless bar.max
+        REMOVE << bar
       end
     end
 
@@ -193,8 +216,11 @@ module Log
       bar = new_bar(max, options)
       begin
         yield bar
+        keep = false
+      rescue KeepBar
+        keep = true
       ensure
-        remove_bar(bar)
+        remove_bar(bar) unless bar
       end
     end
   end

@@ -70,7 +70,6 @@ class TestConcurrencyProcess < Test::Unit::TestCase
       q.clean
 
       q.join
-
     end
   end
 end

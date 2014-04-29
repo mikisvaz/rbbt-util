@@ -81,7 +81,7 @@ void post_semaphore(char* name){
                 yield elem
               end
             rescue Interrupt
-              Log.error "Process #{Process.pid} was aborted"
+              Log.warn "Process #{Process.pid} was aborted"
             end
           end
         end
@@ -93,10 +93,10 @@ void post_semaphore(char* name){
         #pids.each do |pid| Process.waitpid pid end
         
       rescue Exception
-        Log.error "Killing children: #{pids.sort * ", " }"
+        Log.warn "Killing children: #{pids.sort * ", " }"
         pids.each do |pid| begin Process.kill("INT", pid); rescue; end; end
         pids.each do |pid| begin RbbtSemaphore.post_semaphore(file); rescue; end; end
-        Log.error "Ensuring children are dead: #{pids.sort * ", " }"
+        Log.warn "Ensuring children are dead: #{pids.sort * ", " }"
         pids.each do |pid| begin Process.waitpid pid; rescue; end; end
       end
     end

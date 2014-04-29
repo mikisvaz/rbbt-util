@@ -110,8 +110,9 @@ module Log
 
     LOG_MUTEX.synchronize do
       STDERR.puts str
-      logfile.puts str unless logfile.nil?
       Log::LAST.replace "log"
+      logfile.puts str unless logfile.nil?
+      nil
     end
   end
 

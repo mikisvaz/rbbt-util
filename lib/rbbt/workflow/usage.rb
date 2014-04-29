@@ -71,7 +71,7 @@ module Workflow
         task_name = task
         task = self.tasks[task_name]
       end
-      dependencies = self.rec_dependencies(task_name).collect{|dep_name| self.tasks[dep_name.to_sym]}
+      dependencies = self.rec_dependencies(task_name).collect{|dep_name| Array === dep_name ? dep_name.first.tasks[dep_name.last.to_sym] : self.tasks[dep_name.to_sym]}
 
       task.doc(dependencies)
 

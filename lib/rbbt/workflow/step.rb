@@ -47,7 +47,7 @@ class Step
   end
 
   class << self
-  attr_accessor :log_relay_step
+    attr_accessor :log_relay_step
   end
 
   def relay_log(step)
@@ -164,12 +164,13 @@ class Step
   end
 
   def recursive_clean
+    clean
     rec_dependencies.each do |step| 
-      if File.exists?(step.info_file) 
+      if Open.exists?(step.info_file) 
         step.clean 
+      else
       end
     end
-    clean
   end
 
   def step(name)
