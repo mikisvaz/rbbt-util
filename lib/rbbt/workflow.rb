@@ -7,6 +7,8 @@ require 'rbbt/workflow/examples'
 
 module Workflow
 
+  STEP_CACHE = {}
+
   class TaskNotFoundException < Exception 
     def initialize(workflow, task = nil)
       if task
@@ -184,7 +186,7 @@ module Workflow
   end
 
   def step_cache
-    @step_cache ||= {}
+    @step_cache ||= Workflow::STEP_CACHE
   end
   
 
@@ -236,7 +238,7 @@ module Workflow
     step_path = step_path.call if Proc === step_path
     persist = input_values.nil? ? false : true
     key = Path === step_path ? step_path.find : step_path
-    step = Persist.memory("Step", :key => key, :repo => step_cache, :persist => persist ) do
+    step = Persist.memory("Step", :key => key, :repo => step_cache, :persist => persist) do
       step = Step.new step_path, task, input_values, dependencies
 
       helpers.each do |name, block|
@@ -244,8 +246,8 @@ module Workflow
           define_method name, &block
         end
       end
-      step
 
+      step
     end
 
     step.task ||= task

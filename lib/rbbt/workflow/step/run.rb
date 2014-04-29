@@ -1,6 +1,6 @@
 class Step
 
-  attr_reader :stream, :dupped
+  attr_reader :stream, :dupped, :saved_stream
 
   STREAM_CACHE = {}
   STREAM_CACHE_MUTEX = Mutex.new
@@ -67,7 +67,7 @@ class Step
     @mutex.synchronize do
       begin
         if IO === @result 
-          @result 
+          @saved_stream = @result 
         else 
           nil
         end
@@ -146,15 +146,23 @@ class Step
         unless dependency.result or dependency.done?
           dependency.run(true) 
         end
-      rescue Aborted, Interrupt
+      rescue Aborted
         backtrace = $!.backtrace
         set_info :backtrace, backtrace 
         log(:error, "Aborted dependency #{Log.color :yellow, dependency.task.name.to_s}")
+        self.abort
+        raise $!
+      rescue Interrupt
+        backtrace = $!.backtrace
+        set_info :backtrace, backtrace 
+        log(:error, "Interrupted dependency #{Log.color :yellow, dependency.task.name.to_s}")
+        self.abort
         raise $!
       rescue Exception
         backtrace = $!.backtrace
         set_info :backtrace, backtrace 
         log(:error, "Exception processing dependency #{Log.color :yellow, dependency.task.name.to_s} -- #{$!.class}: #{$!.message}")
+        self.abort
         raise $!
       end
     end
@@ -163,8 +171,8 @@ class Step
   def run(no_load = false)
     result = nil
 
-    begin
-      @mutex.synchronize do
+    @mutex.synchronize do
+      begin
         no_load = no_load ? :stream : false
         result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load do |lockfile|
           if Step === Step.log_relay_step and not self == Step.log_relay_step
@@ -200,17 +208,17 @@ class Step
           rescue Aborted
             log(:error, "Aborted")
 
-            kill_children
+            stop_dependencies
             raise $!
           rescue Exception
             backtrace = $!.backtrace
 
             # HACK: This fixes an strange behaviour in 1.9.3 where some
             # backtrace strings are coded in ASCII-8BIT
-            kill_children
             set_info :backtrace, backtrace 
             log(:error, "#{$!.class}: #{$!.message}")
             backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
+            stop_dependencies
             raise $!
           end
 
@@ -261,12 +269,9 @@ class Step
             result.stream.abort_callback = Proc.new do
               begin
                 log :error, "#{Log.color :red, "ERROR -- streamming aborted"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] -- #{path}"  if status == :streaming
-                stop_dependencies
-                abort_stream
+                self.abort
               rescue
                 Log.exception $!
-              ensure
-                join
               end
             end
           else
@@ -284,9 +289,9 @@ class Step
         else
           @result = prepare_result result, @task.result_description
         end
+      rescue Exception
+        self.abort
       end
-    ensure
-      join unless no_load
     end
   end
 
@@ -300,7 +305,7 @@ class Step
           res = run true
         rescue Aborted
           Log.debug{"Forked process aborted: #{path}"}
-          log :aborted, "Aborted"
+          log :aborted, "Job aborted (#{Process.pid})"
           raise $!
         rescue Exception
           Log.debug("Exception '#{$!.message}' caught on forked process: #{path}")
@@ -341,10 +346,11 @@ class Step
   def stop_dependencies
     dependencies.each do |dep|
       begin
-        dep.abort unless dep.done? or dep.error? or dep.aborted?
+        dep.abort unless dep.done?
       rescue Aborted
       end
     end
+    kill_children
   end
 
   def abort_pid
@@ -371,27 +377,41 @@ class Step
 
   def abort_stream
     stream = get_stream if @result
-    stream ||= @stream 
-    if stream and stream.respond_to? :abort
-      Log.medium "Aborting stream #{stream.inspect} -- #{Log.color :blue, path}"
+    stream ||= @saved_stream 
+    if stream and stream.respond_to? :abort and not stream.aborted?
       begin
+        Log.medium "Aborting job stream #{stream.inspect} -- #{Log.color :blue, path}"
         stream.abort 
+        Log.medium "Aborted job stream #{stream.inspect} -- #{Log.color :blue, path}"
+        #stream.close unless stream.closed?
       rescue Aborted
+        Log.medium "Aborting job stream #{stream.inspect} ABORTED RETRY -- #{Log.color :blue, path}"
+        retry
       end
     end
   end
 
   def abort
+    return if aborted? or @aborted
+    @aborted = true
     Log.medium{"#{Log.color :red, "Aborting"} #{Log.color :blue, path}"}
     begin
-      abort_pid
       stop_dependencies
       abort_stream
-    rescue
+      abort_pid
+    rescue Aborted
+      Log.medium{"#{Log.color :red, "Aborting ABORTED RETRY"} #{Log.color :blue, path}"}
+      retry
+    rescue Exception
       Log.exception $!
     ensure
-      log(:aborted, "Job aborted")
+      begin
+        log(:aborted, "Job aborted")
+      rescue Exception
+        Log.exception $!
+      end
     end
+    Log.medium{"#{Log.color :red, "Aborted"} #{Log.color :blue, path}"}
   end
 
   def join_stream

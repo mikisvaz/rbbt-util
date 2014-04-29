@@ -29,11 +29,14 @@ class RbbtProcessQueue
             @callback.call p
           end
         rescue Aborted
-          parent.raise $!
+          Log.warn "Callback thread aborted"
+          @process_monitor.raise Aborted.new
+          raise $!
         rescue ClosedStream
         rescue Exception
-          Log.warn "Callback thread exception"
-          parent.raise $!
+          Log.warn "Callback thread exception: #{$!.message}"
+          @process_monitor.raise $!
+          raise $!
         ensure
           @callback_queue.sread.close unless @callback_queue.sread.closed?
         end
@@ -56,14 +59,14 @@ class RbbtProcessQueue
           @processes.shift
         end
       rescue Aborted
+        Log.warn "Aborting process monitor"
         @processes.each{|p| p.abort }
         @processes.each{|p| p.join }
-        Log.warn "Process monitor aborted"
       rescue Exception
         Log.warn "Process monitor exception: #{$!.message}"
         @processes.each{|p| p.abort }
-        @callback_thread.raise $! if @callback_thread
-        parent.raise $!
+        @callback_thread.raise $! if @callback_thread and @callback_thread.alive?
+        raise $!
       end
     end
   end
@@ -71,22 +74,25 @@ class RbbtProcessQueue
   def close_callback
     begin
       @callback_queue.push ClosedStream.new if @callback_thread.alive?
-    rescue
+    rescue Exception
       Log.warn "Error closing callback: #{$!.message}"
     end
-    @callback_thread.join  if @callback_thread.alive?
+    @callback_thread.join  #if @callback_thread.alive?
   end
 
   def join
-    @processes.length.times do 
-      @queue.push ClosedStream.new
-    end if @process_monitor.alive?
+    begin
+      @processes.length.times do 
+        @queue.push ClosedStream.new
+      end if @process_monitor.alive?
+    rescue Exception
+    end
 
     begin
       @process_monitor.join
       close_callback if @callback
     rescue Exception
-      Log.exception $!
+      Log.error "Exception joining queue: #{$!.message}"
       raise $!
     ensure
       @queue.swrite.close unless @queue.swrite.closed?
@@ -113,7 +119,11 @@ class RbbtProcessQueue
   end
 
   def process(*e)
-    @queue.push e
+    begin
+      @queue.push e
+    rescue Errno::EPIPE
+      raise Aborted
+    end
   end
 
   def self.each(list, num = 3, &block)

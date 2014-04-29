@@ -202,7 +202,6 @@ module Persist
       rescue Aborted
         Log.warn "Persist stream thread aborted: #{ Log.color :blue, path }"
         file.abort if file.respond_to? :abort
-        parent.raise $!
       rescue Exception
         Log.warn "Persist stream thread exception: #{ Log.color :blue, path }"
         file.abort if file.respond_to? :abort
@@ -285,6 +284,7 @@ module Persist
         ConcurrentStream.setup res do
           begin
             lockfile.unlock if lockfile.locked?
+            FileUtils.rm lockfile.path if File.exists? lockfile.path
           rescue
             Log.exception $!
             Log.warn "Lockfile exception: " << $!.message
@@ -293,6 +293,7 @@ module Persist
         res.abort_callback = Proc.new do
           begin
             lockfile.unlock if lockfile.locked?
+            FileUtils.rm lockfile.path if File.exists? lockfile.path
           rescue
             Log.exception $!
             Log.warn "Lockfile exception: " << $!.message

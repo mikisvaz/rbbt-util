@@ -154,8 +154,7 @@ module Log
     def report(io = STDERR)
       if Log::LAST != "progress"
         Log::ProgressBar.cleanup_bars
-        print(io, Log.color(:yellow, "== Progress"))
-        (BARS.length-1).times{print(io, "\n")}
+        BARS.length.times{print(io, "\n")}
       end
       print(io, up_lines(@depth) << report_msg << down_lines(@depth)) if severity >= Log.severity
       @last_report = Time.now if @last_report == -1
@@ -164,8 +163,7 @@ module Log
     def throughput(io = STDERR)
       if Log::LAST != "progress"
         Log::ProgressBar.cleanup_bars
-        print(io, Log.color(:yellow, "== Progress"))
-        (BARS.length-1).times{print(io, "\n")}
+        BARS.length.times{print(io, "\n")}
       end
       print(io, up_lines(@depth) << throughput_msg << down_lines(@depth)) if severity >= Log.severity
       @last_report = Time.now

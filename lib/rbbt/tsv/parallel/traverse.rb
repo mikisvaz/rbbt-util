@@ -11,6 +11,7 @@ module TSV
   end
 
   def self.stream_name(obj)
+    return "nil" if obj.nil?
     filename_obj   = obj.respond_to?(:filename) ? obj.filename : nil
     filename_obj ||= obj.respond_to?(:path) ? obj.path : nil
     stream_obj = obj_stream(obj) || obj
@@ -149,7 +150,6 @@ module TSV
 
     Log.medium "Traversing #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
     begin
-      sleep 1
       case obj
       when TSV
         traverse_tsv(obj, options, &block)
@@ -173,7 +173,6 @@ module TSV
           end
         rescue Aborted
           obj.abort if obj.respond_to? :abort
-          raise $!
         rescue Exception
           obj.abort if obj.respond_to? :abort
           raise $!
@@ -216,20 +215,28 @@ module TSV
       Log.warn "IOError traversing #{stream_name(obj)}: #{$!.message}"
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
+      stream = obj_stream(options[:into])
+      stream.abort if stream.respond_to? :abort
       raise $!
     rescue Errno::EPIPE
       Log.warn "Pipe closed while traversing #{stream_name(obj)}: #{$!.message}"
+      stream = obj_stream(obj)
+      stream.abort if stream and stream.respond_to? :abort
+      stream = obj_stream(options[:into])
+      stream.abort if stream.respond_to? :abort
       raise $!
     rescue Aborted
       Log.warn "Aborted traversing #{stream_name(obj)}"
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
-      raise $!
+      stream = obj_stream(options[:into])
+      stream.abort if stream.respond_to? :abort
     rescue Exception
       Log.warn "Exception traversing #{stream_name(obj)}"
-      Log.exception $!
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
+      stream = obj_stream(options[:into])
+      stream.abort if stream.respond_to? :abort
       raise $!
     end
   end
@@ -263,40 +270,38 @@ module TSV
   def self.traverse_cpus(num, obj, options, &block)
     begin
       callback, cleanup, join = Misc.process_options options, :callback, :cleanup, :join
-      q = RbbtProcessQueue.new num, cleanup, join
 
-      q.callback &callback
-      q.init &block
+      begin
+        q = RbbtProcessQueue.new num, cleanup, join
+        q.callback &callback
+        q.init &block
 
-      thread = Thread.new do 
         traverse_obj(obj, options) do |*p|
           q.process *p
         end
-      end
-
-      begin
-        thread.join
-      rescue 
+      rescue Aborted, Errno::EPIPE
+        Log.warn "Aborted"
+      rescue Exception
+        Log.exception $!
         raise $!
+      ensure
+        q.join
       end
     rescue Interrupt, Aborted
-      Log.warn "Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}"
+      Log.warn "Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"
+      q.abort
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
-      q.abort
-      raise $!
+      raise "Traversal aborted"
     rescue Exception
-      Log.warn "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}"
+      Log.warn "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.message}"
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
-      q.abort
       raise $!
-    ensure
-      q.join
     end
   end
 
@@ -326,8 +331,16 @@ module TSV
         store << value
       end 
       true
-    rescue
-      raise "Error storing into #{store.inspect}: #{$!.message}"
+    rescue Aborted, Interrupt
+      Log.warn "Aborted storing into #{Misc.fingerprint store}: #{$!.message}"
+      stream = obj_stream(store)
+      stream.abort if stream.respond_to? :abort
+      raise $!
+    rescue Exception
+      stream = obj_stream(store)
+      stream.abort if stream.respond_to? :abort
+      Log.exception $!
+      raise $!
     end
   end
 
@@ -448,8 +461,9 @@ module TSV
         begin
           store_into into, e
         rescue Aborted
-          raise $!
+          Log.warn "Aborted callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
         rescue Exception
+          Log.warn "Exception callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
           Log.exception $!
           raise $!
         ensure

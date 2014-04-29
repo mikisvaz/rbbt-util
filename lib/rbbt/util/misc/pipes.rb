@@ -73,45 +73,6 @@ module Misc
     sout
   end
 
-  #def self.tee_stream_fork(stream)
-  #  stream_out1, stream_in1 = Misc.pipe
-  #  stream_out2, stream_in2 = Misc.pipe
-
-  #  splitter_pid = Process.fork do
-  #    Misc.purge_pipes(stream_in1, stream_in2)
-  #    stream_out1.close
-  #    stream_out2.close
-  #    begin
-  #      filename = stream.respond_to?(:filename)? stream.filename : nil
-  #      skip1 = skip2 = false
-  #      while block = stream.read(2048)
-  #        begin stream_in1.write block; rescue Exception;  Log.exception $!; skip1 = true end unless skip1 
-  #        begin stream_in2.write block; rescue Exception;  Log.exception $!; skip2 = true end unless skip2 
-  #      end
-  #      raise "Error writing in stream_in1" if skip1
-  #      raise "Error writing in stream_in2" if skip2
-  #      stream.join if stream.respond_to? :join
-  #      stream_in1.close 
-  #      stream_in2.close 
-  #    rescue Aborted
-  #      stream.abort if stream.respond_to? :abort
-  #      raise $!
-  #    rescue IOError
-  #      Log.exception $!
-  #    rescue Exception
-  #      Log.exception $!
-  #    end
-  #  end
-  #  stream.close
-  #  stream_in1.close
-  #  stream_in2.close
-
-  #  ConcurrentStream.setup stream_out1, :pids => [splitter_pid]
-  #  ConcurrentStream.setup stream_out2, :pids => [splitter_pid]
-
-  #  [stream_out1, stream_out2]
-  #end
-
   def self.tee_stream_thread(stream)
     stream_out1, stream_in1 = Misc.pipe
     stream_out2, stream_in2 = Misc.pipe
@@ -139,11 +100,14 @@ module Misc
         stream_in2.close unless stream_in2.closed?
         stream.join if stream.respond_to? :join
       rescue Aborted, Interrupt
-        Log.warn("Tee stream #{Misc.fingerprint stream} Aborted");
-        stream.abort if stream.respond_to? :abort
+        begin
+          stream.abort if stream.respond_to? :abort
+        rescue
+          Log.exception $!
+        end
       rescue Exception
         Log.exception $!
-        parent.raise $!
+        stream.abort if stream.respond_to? :abort
       end
     end
 
@@ -186,14 +150,17 @@ module Misc
     else
       begin
         while block = io.read(2048)
-          return if io.eof?
-          Thread.pass 
+          #return if io.eof?
+          #Thread.pass 
         end
         io.join if io.respond_to? :join
-      rescue IOError
-      rescue
-        Log.warn "Exception consuming stream: #{io.inspect}"
+      rescue Aborted
+        Log.warn "Consume stream aborted #{Misc.fingerprint io}"
         io.abort if io.respond_to? :abort
+      rescue Exception
+        Log.warn "Exception consuming stream: #{Misc.fingerprint io}: #{$!.message}"
+        io.abort if io.respond_to? :abort
+        raise $!
       end
     end
   end
@@ -244,11 +211,10 @@ module Misc
         rescue Aborted
           Log.warn "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
           content.abort if content.respond_to? :abort
-          content.join if content.respond_to? :join
+          Open.rm_f path if File.exists? path
         rescue Exception
           Log.warn "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
           content.abort if content.respond_to? :abort
-          content.join if content.respond_to? :join
           Open.rm_f path if File.exists? path
           raise $!
         ensure

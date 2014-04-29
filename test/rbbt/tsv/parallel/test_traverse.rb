@@ -2,6 +2,8 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../../..', 'test_he
 require 'rbbt/tsv'
 require 'rbbt/tsv/parallel'
 
+class StopException < StandardError; end
+
 class TestTSVParallelThrough < Test::Unit::TestCase
 
   def _test_traverse_tsv
@@ -307,16 +309,16 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     head = 2_000
     cpus = 2
 
-
-    3.times do
+    20.times do
+      Log.info Log.color :red, "TRAVERSE EXCEPTION"
       stream = Organism.identifiers("Hsa/jun2011").open 
       dumper = TSV::Dumper.new Organism.identifiers("Hsa/jun2011").tsv_options
       dumper.init
 
-      assert_raise do
+      assert_raise StopException do
         TSV.traverse stream, :head => head,  :cpus => cpus, :into => dumper do |k,v|
           k = k.first
-          raise "STOP" if rand(100) < 1
+          raise StopException if rand(100) < 1
           [k,v]
         end
         stream = dumper.stream

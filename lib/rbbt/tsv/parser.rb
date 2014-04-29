@@ -537,12 +537,11 @@ module TSV
             break
           rescue Errno::EPIPE
             Log.error "Pipe closed while parsing #{Misc.fingerprint stream}: #{$!.message}"
+            stream.abort if stream.respond_to? :abort
             raise $!
           rescue Exception
             Log.error "Exception parsing #{Misc.fingerprint stream}: #{$!.message}"
-            Log.exception $!
             stream.abort if stream.respond_to? :abort
-            stream.join if stream.respond_to? :join
             raise $!
           end
         end

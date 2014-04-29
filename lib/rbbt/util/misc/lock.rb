@@ -47,8 +47,9 @@ module Misc
       lockfile.unlock if lockfile.locked?
       raise $!
     ensure
-      if unlock and lockfile.locked?
-        lockfile.unlock
+      if unlock 
+        lockfile.unlock if lockfile.locked?
+        FileUtils.rm lock_path if File.exists? lock_path
       end
     end
 

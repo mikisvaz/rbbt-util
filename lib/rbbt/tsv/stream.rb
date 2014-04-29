@@ -130,7 +130,7 @@ module TSV
                                 end
               if line.nil?
                 stream = streams[i]
-                #stream.join if stream.respond_to? :join
+                stream.join if stream.respond_to? :join
                 keys[i] = nil
                 parts[i] = nil
               else
@@ -146,12 +146,13 @@ module TSV
           sin.puts [min, str*sep] * sep
         end
         streams.each do |stream|
-          #stream.join if stream.respond_to? :join
+          stream.join if stream.respond_to? :join
         end
-      rescue 
-        Log.exception $!
+      rescue Exception
         streams.each do |stream|
-          stream.abort if stream.respond_to? :abort
+          Thread.new do
+            stream.abort if stream.respond_to? :abort
+          end
         end
         raise $!
       end

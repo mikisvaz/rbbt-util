@@ -1,5 +1,5 @@
 module ConcurrentStream
-  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :autojoin
+  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :aborted, :autojoin
 
   def self.setup(stream, options = {}, &block)
     threads, pids, callback, filename, autojoin = Misc.process_options options, :threads, :pids, :callback, :filename, :autojoin
@@ -44,6 +44,10 @@ module ConcurrentStream
 
   def joined?
     @joined
+  end
+
+  def aborted?
+    @aborted
   end
 
   def join_threads
@@ -97,11 +101,13 @@ module ConcurrentStream
   end
 
   def abort
+    return if @aborted
     abort_threads
     abort_pids
     @abort_callback.call if @abort_callback
     @abort_callback = nil
     @callback = nil
+    @aborted = true
   end
 
   def super(*args)

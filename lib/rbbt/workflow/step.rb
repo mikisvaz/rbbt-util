@@ -83,11 +83,11 @@ class Step
         else
           value.read
         end
+        value.join if value.respond_to? :join
       rescue Exception
         value.abort if value.respond_to? :abort
-      ensure
-        value.join if value.respond_to? :join
-        value.close unless value.closed?
+        self.abort
+        raise $!
       end
     when (not defined? Entity or description.nil? or not Entity.formats.include? description)
       value
