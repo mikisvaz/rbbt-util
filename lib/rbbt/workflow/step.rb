@@ -71,19 +71,20 @@ class Step
     case 
     when IO === value
       begin
-        case @task.result_type
-        when :array
-          array = []
-          while line = value.gets
-            array << line.strip
-          end
-          array
-        when :tsv
-          TSV.open(value)
-        else
-          value.read
-        end
+        res = case @task.result_type
+              when :array
+                array = []
+                while line = value.gets
+                  array << line.strip
+                end
+                array
+              when :tsv
+                TSV.open(value)
+              else
+                value.read
+              end
         value.join if value.respond_to? :join
+        res
       rescue Exception
         value.abort if value.respond_to? :abort
         self.abort

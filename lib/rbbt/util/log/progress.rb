@@ -103,7 +103,10 @@ module Log
     end
 
     def thr
-      @last_report = Time.now if @last_report == -1
+      if @last_report == -1
+        @last_report = Time.now 
+        return thr
+      end
       time = Time.now - @last_report
       time = 0.000001 if time == 0
       thr = (@current / time).to_i
@@ -140,6 +143,10 @@ module Log
       indicator
     end
 
+    def msg
+      @max ? report_msg : throughput_msg
+    end
+
     def print(io, str)
       LOG_MUTEX.synchronize do
         STDERR.print str
@@ -153,8 +160,9 @@ module Log
     # original line. Everything is printed to stderr.
     def report(io = STDERR)
       if Log::LAST != "progress"
-        Log::ProgressBar.cleanup_bars
-        BARS.length.times{print(io, "\n")}
+        Log::LAST.replace "progress"
+        length = Log::ProgressBar.cleanup_bars
+        length.times{print(io, "\n")}
       end
       print(io, up_lines(@depth) << report_msg << down_lines(@depth)) if severity >= Log.severity
       @last_report = Time.now if @last_report == -1
@@ -162,8 +170,9 @@ module Log
 
     def throughput(io = STDERR)
       if Log::LAST != "progress"
-        Log::ProgressBar.cleanup_bars
-        BARS.length.times{print(io, "\n")}
+        Log::LAST.replace "progress"
+        length = Log::ProgressBar.cleanup_bars 
+        length.times{print(io, "\n")}
       end
       print(io, up_lines(@depth) << throughput_msg << down_lines(@depth)) if severity >= Log.severity
       @last_report = Time.now
@@ -171,6 +180,11 @@ module Log
     end
 
     def done
+      if Log::LAST != "progress"
+        Log::LAST.replace "progress"
+        length = Log::ProgressBar.cleanup_bars 
+        length.times{print(io, "\n")}
+      end
       print(io, up_lines(@depth) << Log.color(:magenta, @desc) << Log.color(:green, " DONE") << down_lines(@depth)) if severity >= Log.severity
     end
 
@@ -191,22 +205,22 @@ module Log
         REMOVE.each do |bar|
           index = BARS.index bar
           if index
-            (index..BARS.length-1).each do |pos|
-              bar = BARS[pos]
-              bar.depth = pos - 1
-              BARS[pos-1] = bar
-            end 
-            BARS.pop
+            BARS.delete_at index
+            BARS.each_with_index do |bar,i|
+              bar.depth = i
+            end
           end
         end
         REMOVE.clear
+        BARS.length
       end
     end
 
     def self.remove_bar(bar)
+      bar.done unless bar.max
       BAR_MUTEX.synchronize do
-        bar.done unless bar.max
         REMOVE << bar
+        Log::LAST.replace "remove"
       end
     end
 
@@ -218,7 +232,7 @@ module Log
       rescue KeepBar
         keep = true
       ensure
-        remove_bar(bar) unless bar
+        remove_bar(bar) if bar
       end
     end
   end

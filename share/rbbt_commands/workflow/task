@@ -309,14 +309,6 @@ begin
       exit 0
     end
 
-    Signal.trap(:INT) do
-      begin
-        job.abort if job.info[:pid] == job.pid
-      rescue
-      end
-      exit 0
-    end
-
     job.fork
   else
     job.run(true)

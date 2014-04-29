@@ -13,27 +13,33 @@ def run_task(workflow, task, name)
   ARGV.replace([workflow.to_s, task, '--load_inputs', example_dir, '--jobname', name,'-pf'] + $saved_args)
 
   path = nil
+  success = nil
   TmpFile.with_file do |res|
     Open.open(res, :mode => 'w') do |file|
       @pid = Process.fork{
         STDOUT.reopen res
         load Rbbt.share.rbbt_commands.workflow.task.find
       }
-      file.close
       Signal.trap(:INT) do
         begin
           Process.kill "INT", @pid
         ensure
-          exit -1
+          Kernel.exit! -1
         end
       end
-      Process.wait @pid
+      file.close
+      begin
+        p,s = Process.waitpid2 @pid
+        success = s.success?
+      rescue Errno::ECHILD
+        success = true
+      end
     end
     path = Open.read(res).strip if File.exists? res
   end
   path = "NO RESULT" if path.nil? or path.empty?
 
-  if $?.success?
+  if success
     Log.info "#{Log.color :green, "SUCCESS"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
     return [path, true]
   else
@@ -60,13 +66,14 @@ workflow = Workflow.require_workflow workflow
 tasks = task ? [task] : workflow.libdir.examples.glob('*').collect{|file| File.basename file }
 
 task_result = {}
-tasks.each do |task|
+TSV.traverse tasks, :threads => 5 do |task|
   names = name ? [name] : workflow.libdir.examples[task].glob('*').collect{|file| File.basename file }
-  names.each do |name|
+  TSV.traverse names, :threads => 5 do |name|
     success = run_task workflow, task, name
     task_result[[task, name]] = success
   end
 end
+
 
 task_result.each do |code,res|
   task, name = code

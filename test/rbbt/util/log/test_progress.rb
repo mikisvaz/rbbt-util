@@ -35,7 +35,7 @@ class TestProgress < Test::Unit::TestCase
           bar.tick
           sleep 0.3
         end
-        Log.debug "Done progress"
+        #Log.debug "Done progress"
         assert bar.history.length > 0
       end
     end
@@ -46,7 +46,7 @@ class TestProgress < Test::Unit::TestCase
           bar.tick
           sleep 0.2
         end
-        Log.debug "Done progress"
+        #Log.debug "Done progress"
         assert bar.history.length > 0
       end
     end
