@@ -149,11 +149,12 @@ module TSV
           stream.join if stream.respond_to? :join
         end
       rescue Exception
-        streams.each do |stream|
+        ts = streams.collect do |stream|
           Thread.new do
             stream.abort if stream.respond_to? :abort
           end
         end
+        ts.each do |t| t.join end
         raise $!
       end
     end
