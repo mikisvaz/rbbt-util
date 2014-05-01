@@ -13,11 +13,16 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 -cd--command_dir*       #{Log.color :yellow, "Directory from where to load command scripts"}
 --profile               #{Log.color :yellow, "Profile execution"}
 --nocolor               #{Log.color :yellow, "Disable colored output"}
+--nobar                 #{Log.color :yellow, "Disable progress report"}
 --locate_file           #{Log.color :yellow, "Report the location of the script instead of executing it"}
 EOF
 
 if options[:nocolor]
   Log.nocolor = true 
+end
+
+if options.delete :nobar
+  ENV["RBBT_NO_PROGRESS"] = "true"
 end
 
 locate = options.delete :locate_file
