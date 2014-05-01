@@ -25,6 +25,7 @@ module Log
 
     # Used to register a new completed loop iteration.
     def tick(step = nil)
+      return if ENV["RBBT_NO_PROGRESS"] == 'true'
 
       if step.nil?
         @current += 1
@@ -163,6 +164,8 @@ module Log
         Log::LAST.replace "progress"
         length = Log::ProgressBar.cleanup_bars
         length.times{print(io, "\n")}
+      else
+        print(io, "\n") if @last_report == -1
       end
       print(io, up_lines(@depth) << report_msg << down_lines(@depth)) if severity >= Log.severity
       @last_report = Time.now if @last_report == -1
@@ -173,6 +176,8 @@ module Log
         Log::LAST.replace "progress"
         length = Log::ProgressBar.cleanup_bars 
         length.times{print(io, "\n")}
+      else
+        print(io, "\n") if @last_report == -1
       end
       print(io, up_lines(@depth) << throughput_msg << down_lines(@depth)) if severity >= Log.severity
       @last_report = Time.now
@@ -217,10 +222,9 @@ module Log
     end
 
     def self.remove_bar(bar)
-      bar.done unless bar.max
+      bar.done unless bar.max or ENV["RBBT_NO_PROGRESS"] == 'true'
       BAR_MUTEX.synchronize do
         REMOVE << bar
-        Log::LAST.replace "remove"
       end
     end
 
