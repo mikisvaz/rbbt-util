@@ -1,6 +1,8 @@
 module TSV
   def self.obj_stream(obj)
     case obj
+    when Step
+      obj.result
     when IO, File
       obj
     when TSV::Dumper
@@ -252,6 +254,7 @@ module TSV
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
+      Log.warn "Aborted traversing 2 #{stream_name(obj)}"
     rescue Exception
       Log.warn "Exception traversing #{stream_name(obj)}"
       stream = obj_stream(obj)
@@ -359,7 +362,6 @@ module TSV
     rescue Exception
       stream = obj_stream(store)
       stream.abort if stream.respond_to? :abort
-      Log.exception $!
       raise $!
     end
   end
@@ -423,7 +425,7 @@ module TSV
       begin
         traverse_run(obj, threads, cpus, options, &block)
         into.close if into.respond_to? :close
-      rescue
+      rescue Exception
         stream = obj_stream(obj)
         stream.abort if stream and stream.respond_to? :abort
         stream = obj_stream(into)
@@ -483,9 +485,17 @@ module TSV
           store_into into, e
         rescue Aborted
           Log.warn "Aborted callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
+          stream = nil
+          stream = get_stream obj
+          stream.abort if stream.respond_to? :abort
+          raise $!
         rescue Exception
           Log.warn "Exception callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
           Log.exception $!
+          stream = nil
+          stream = get_stream obj
+          stream.abort if stream.respond_to? :abort
+          raise $!
         ensure
           bar.tick if bar
         end
