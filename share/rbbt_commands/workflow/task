@@ -302,6 +302,7 @@ begin
   end
 
   if do_fork
+    ENV["RBBT_NO_PROGRESS"] = "true"
     if detach
       job.fork
       Process.detach job.pid if job.pid
