@@ -8,7 +8,7 @@ class Step
   attr_accessor :path, :task, :inputs, :dependencies, :bindings
   attr_accessor :pid
   attr_accessor :exec
-  attr_accessor :result, :mutex
+  attr_accessor :result, :mutex, :seen
 
   class << self
     attr_accessor :lock_dir

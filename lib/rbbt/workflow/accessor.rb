@@ -217,7 +217,7 @@ class Step
   end
 
   def aborted?
-    info[:status] == :aborted
+    @aborted || info[:status] == :aborted
   end
 
   # {{{ INFO

@@ -66,13 +66,12 @@ class Step
   def get_stream
     @mutex.synchronize do
       begin
+        return nil if @saved_stream
         if IO === @result 
           @saved_stream = @result 
         else 
           nil
         end
-      ensure
-        @result = nil
       end
     end
   end
@@ -118,29 +117,33 @@ class Step
     end
   end
 
-  def run_dependencies(seen = [])
+  def run_dependencies
+    @seen ||= []
     dependencies.uniq.each do |dependency| 
-
       next if seen.collect{|d| d.path}.include?(dependency.path)
-      seen << dependency
-      seen.concat dependency.rec_dependencies.collect{|d| d } 
+      dependency.seen = seen
+      @seen << dependency
+      @seen.concat dependency.rec_dependencies.collect{|d| d } 
+      @seen.uniq!
     end
 
-    seen.each do |dependency|
+    @seen.each do |dependency|
       next if dependency == self
+      next unless dependencies.include? dependency
       dependency.relay_log self
       dependency.dup_inputs
     end
 
-    seen.each do |dependency| 
+    @seen.each do |dependency| 
       next if dependency == self
+      next unless dependencies.include? dependency
       Log.info "#{Log.color :magenta, "Checking dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} -- #{Log.color :blue, dependency.path}"
       begin
         if dependency.streaming? 
           next if dependency.running?
           dependency.clean 
         else
-          dependency.clean if not dependency.done? and (dependency.error? or dependency.aborted?)
+          dependency.clean if (dependency.error? or dependency.aborted? or not dependency.done?)
         end
 
         unless dependency.result or dependency.done?
@@ -155,8 +158,8 @@ class Step
       rescue Interrupt
         backtrace = $!.backtrace
         set_info :backtrace, backtrace 
-        log(:error, "Interrupted dependency #{Log.color :yellow, dependency.task.name.to_s}")
         self.abort
+        log(:error, "Interrupted dependency #{Log.color :yellow, dependency.task.name.to_s}")
         raise $!
       rescue Exception
         backtrace = $!.backtrace
@@ -171,8 +174,8 @@ class Step
   def run(no_load = false)
     result = nil
 
-    @mutex.synchronize do
-      begin
+    begin
+      @mutex.synchronize do
         no_load = no_load ? :stream : false
         result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load do |lockfile|
           if Step === Step.log_relay_step and not self == Step.log_relay_step
@@ -244,8 +247,6 @@ class Step
             result.abort_callback = Proc.new do
               begin
                 log :error, "#{Log.color :red, "ERROR -- streamming aborted"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] -- #{path}" if status == :streaming
-                stop_dependencies
-                abort_stream
               rescue
                 Log.exception $!
               ensure
@@ -267,9 +268,9 @@ class Step
             end
             result.stream.abort_callback = Proc.new do
               begin
-                stop_dependencies
                 log :error, "#{Log.color :red, "ERROR -- streamming aborted"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] -- #{path}"  if status == :streaming
               rescue Exception
+                Log.exception $!
               end
             end
           else
@@ -287,9 +288,10 @@ class Step
         else
           @result = prepare_result result, @task.result_description
         end
-      rescue Exception
-        self.abort
       end
+    rescue Exception
+      self.abort
+      raise $!
     end
   end
 
@@ -343,13 +345,7 @@ class Step
 
   def stop_dependencies
     dependencies.each do |dep|
-      Log.warn "Stoping #{Misc.fingerprint dep}"
-      begin
-        dep.abort unless dep.done?
-      rescue Exception
-        Log.exception $!
-      rescue Aborted
-      end
+      dep.abort
     end
     kill_children
   end
@@ -379,11 +375,11 @@ class Step
   def abort_stream
     stream = get_stream if @result
     stream ||= @saved_stream 
+    @saved_stream = nil
     if stream and stream.respond_to? :abort and not stream.aborted?
       begin
         Log.medium "Aborting job stream #{stream.inspect} -- #{Log.color :blue, path}"
         stream.abort 
-        Log.medium "Aborted job stream #{stream.inspect} -- #{Log.color :blue, path}"
         #stream.close unless stream.closed?
       rescue Aborted
         Log.medium "Aborting job stream #{stream.inspect} ABORTED RETRY -- #{Log.color :blue, path}"
@@ -394,19 +390,29 @@ class Step
 
   def abort
     return if @aborted
+    @aborted = true
+    return if error?
+    return if done?
     Log.medium{"#{Log.color :red, "Aborting"} #{Log.color :blue, path}"}
     begin
-      stop_dependencies
-      @aborted = true
       abort_stream
       abort_pid
+      stop_dependencies
     rescue Aborted
       Log.medium{"#{Log.color :red, "Aborting ABORTED RETRY"} #{Log.color :blue, path}"}
       retry
     rescue Exception
-      Log.exception $!
+      retry
     ensure
-      @aborted = true
+      if Open.exists? path
+        Log.warn "Aborted job had finished. Removing result"
+        begin
+          Open.rm path
+        rescue Exception
+          Log.warn "Exception removing result of aborted job: #{$!.message}"
+        end
+      end
+
       begin
         log(:aborted, "Job aborted")
       rescue Exception
