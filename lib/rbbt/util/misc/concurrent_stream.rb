@@ -98,18 +98,21 @@ module ConcurrentStream
 
   def abort_pids
     @pids.each{|pid| Process.kill :INT, pid } if @pids
+    @pids = []
   end
 
   def abort
+    Log.warn "Aborting stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"
     return if @aborted
+    @aborted = true
     begin
+      @callback = nil
+      @abort_callback.call if @abort_callback
+      @abort_callback = nil
+      close unless closed?
+
       abort_threads
       abort_pids
-      @abort_callback.call if @abort_callback
-    ensure
-      @abort_callback = nil
-      @callback = nil
-      @aborted = true
     end
   end
 

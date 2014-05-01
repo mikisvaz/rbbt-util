@@ -49,7 +49,6 @@ module Misc
     ensure
       if unlock 
         lockfile.unlock if lockfile.locked?
-        FileUtils.rm lock_path if File.exists? lock_path
       end
     end
 

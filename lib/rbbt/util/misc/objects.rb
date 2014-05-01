@@ -7,7 +7,7 @@ module Misc
 
     dup_array = options.delete :dup_array
 
-    if Annotated === field or Entity.respond_to?(:formats) and Entity.formats.include? field
+    if Annotated === field or (Entity.respond_to?(:formats) and Entity.formats.include? field)
       params = options.dup
 
       params[:format] ||= params.delete "format"

@@ -100,19 +100,25 @@ module Misc
         stream_in2.close unless stream_in2.closed?
         stream.join if stream.respond_to? :join
       rescue Aborted, Interrupt
-        begin
-          stream.abort if stream.respond_to? :abort
-        rescue
-          Log.exception $!
-        end
-      rescue Exception
-        Log.exception $!
+        Log.warn "Tee aborting #{Misc.fingerprint stream}"
         stream.abort if stream.respond_to? :abort
+        stream_out1.abort if stream_out1.respond_to? :abort
+        stream_out2.abort if stream_out2.respond_to? :abort
+        parent.raise $!
+      rescue Exception
+        stream.abort if stream.respond_to? :abort
+        parent.raise $!
       end
     end
 
     ConcurrentStream.setup stream_out1, :threads => splitter_thread
     ConcurrentStream.setup stream_out2, :threads => splitter_thread
+
+    stream_out1.callback = stream.callback if stream.respond_to? :callback
+    stream_out1.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
+
+    stream_out2.callback = stream.callback if stream.respond_to? :callback
+    stream_out2.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
 
     [stream_out1, stream_out2]
   end
