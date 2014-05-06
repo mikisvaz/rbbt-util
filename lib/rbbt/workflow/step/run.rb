@@ -185,11 +185,14 @@ class Step
 
           Open.rm info_file if Open.exists? info_file
 
-          set_info :pid, Process.pid
-          set_info :issued, Time.now
+          log :setup, "#{Log.color :green, "Task"} #{Log.color :yellow, task.name.to_s || ""}"
 
-          log(:preparing, "Preparing job: #{Misc.fingerprint dependencies}")
-          set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name]}
+          merge_info({
+            :pid => Process.pid,
+            :issued => Time.now,
+            :name => name,
+            :dependencies => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]},
+          })
 
           dup_inputs
           begin

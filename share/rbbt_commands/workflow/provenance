@@ -56,21 +56,31 @@ def print(file, offset = 1)
   dependencies = info[:dependencies] || []
   color = case
           when (not info)
-            Log::SEVERITY_COLOR[3]
+            nil
           when info[:status] == :error 
-            Log::SEVERITY_COLOR[3]
+            :red
           when info[:status] == :aborted 
-            Log::SEVERITY_COLOR[2]
+            :red
           when (info[:status] != :done and info[:pid] and not running? info)
-            Log::SEVERITY_COLOR[2]
+            :green
           end
 
-  puts (" " * offset * 2) << job_str(step.path, step.info, color)
+  puts (" " * offset * 2) << Log.color(color, step.path)
   $done << file
   root = File.dirname(File.dirname(file))
+  main_parts = step.path.split "/"
   dependencies.each do |task,new_file|
     new_file = File.join(root, task.to_s, new_file)
-    print(new_file, offset+1)
+    parts = new_file.split "/"
+    common ||= begin
+                 i = 0
+                 parts.each do |p|
+                   break unless main_parts[i] == p
+                   i += 1
+                 end
+                 i
+               end
+    print(new_file[common-1..-1], offset+1)
   end
 end
 

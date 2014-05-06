@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+
+require 'rbbt/workflow'
+
+require 'rbbt-util'
+require 'fileutils'
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow/step'
+require 'rbbt/util/misc'
+
+file = ARGV.shift
+
+$seen = []
+def get_step(file)
+  file = file.sub(/\.(info|files)/,'')
+  $seen << file
+  Step.new file
+end
+
+def status_msg(status)
+  color = case status
+          when :error, :aborted, :missing
+            :red
+          when :streaming
+            :yellow
+          when :done
+            :green
+          else
+            nil
+          end
+  Log.color(color, status)
+end
+
+def report_msg(status, name, path)
+
+  parts = path.sub(/#{Regexp.quote(name)}$/,'').split "/"
+
+  task = Log.color(:yellow, parts.pop)
+  workflow = Log.color(:magenta, parts.pop)
+
+  status_msg(status) << " " << [workflow, task, path] * " " << "\n"
+end
+
+def report(step, offset = 0)
+  info = step.info || {}
+  path  = step.path
+  status = info[:status] || :missing
+  name = info[:name] || File.basename(path)
+  str = " " * offset
+  str << report_msg(status, name, path)
+  info[:dependencies].each do |task,name,path|
+    new = ! $seen.include?(path)
+    dep = get_step path
+    if new
+      str << report(dep, offset + 1)
+    else
+      str << Log.color(:blue, Log.uncolor(report(dep, offset+1)))
+    end
+  end if info[:dependencies]
+  str
+end
+
+step = get_step file
+
+puts report(step).strip

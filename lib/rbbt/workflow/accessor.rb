@@ -85,6 +85,20 @@ class Step
     end
   end
 
+  def merge_info(hash)
+    return nil if @exec or info_file.nil?
+    value = Annotated.purge value if defined? Annotated
+    lock_filename = Persist.persistence_path(info_file, {:dir => Step.lock_dir})
+    Open.lock(info_file, :refresh => false) do
+      i = info
+      i.merge! hash
+      @info_cache = i
+      Open.write(info_file, INFO_SERIALIAZER.dump(i))
+      @info_cache_time = Time.now
+      value
+    end
+  end
+
   def status
     info[:status]
   end

@@ -278,6 +278,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     cmd
     monitor
     provenance
+    prov
     remote=remote{
      list
      add
