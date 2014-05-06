@@ -7,9 +7,8 @@ module TSV
         begin
           yield dumper
           dumper.close
-        rescue Aborted
         rescue Exception
-          parent.raise $!
+          raise $!
         end
       end
       dumper.stream

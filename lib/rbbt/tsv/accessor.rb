@@ -513,9 +513,9 @@ module TSV
             end
           end
         end
-      rescue
+      rescue Exception
         Log.exception $!
-        parent.raise $!
+        raise $!
       end
     end
 

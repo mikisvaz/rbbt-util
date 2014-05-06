@@ -64,8 +64,9 @@ module Misc
         begin
           yield sin
           sin.close if close and not sin.closed?
-        rescue
-          parent.raise $!
+        rescue Exception
+          Log.warn "Exception in open_pipe: #{$!.message}"
+          raise $!
         end
       end
       ConcurrentStream.setup sout, :threads => [thread]
@@ -104,10 +105,14 @@ module Misc
         stream.abort if stream.respond_to? :abort
         stream_out1.abort if stream_out1.respond_to? :abort
         stream_out2.abort if stream_out2.respond_to? :abort
-        parent.raise $!
+        Log.warn "tee_stream_thread aborted: #{$!.message}"
       rescue Exception
         stream.abort if stream.respond_to? :abort
-        parent.raise $!
+        stream_out1.abort if stream_out1.respond_to? :abort
+        stream_out2.abort if stream_out2.respond_to? :abort
+        stream.join
+        Log.warn "Exception in tee_stream_thread: #{$!.message}"
+        raise $!
       end
     end
 
@@ -391,9 +396,12 @@ module Misc
     Thread.new(Thread.current) do |parent|
       begin
         Misc.sensiblewrite(file, save)
-      rescue
+      rescue Exception
         save.abort if save.respond_to? :abort
-        parent.raise $!
+        stream.abort if stream.respond_to? :abort
+        stream.join
+        Log.warn "Exception in save_stream: #{$!.message}"
+        raise $!
       end
     end
 

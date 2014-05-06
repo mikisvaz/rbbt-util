@@ -202,10 +202,12 @@ module Persist
       rescue Aborted
         Log.warn "Persist stream thread aborted: #{ Log.color :blue, path }"
         file.abort if file.respond_to? :abort
+        raise $!
       rescue Exception
         Log.warn "Persist stream thread exception: #{ Log.color :blue, path }"
         file.abort if file.respond_to? :abort
         parent.raise $!
+        raise $!
       end
     end
     ConcurrentStream.setup(out, :threads => saver_thread, :filename => path)
@@ -233,7 +235,8 @@ module Persist
             Log.warn "Persist stream pipe exception: #{ Log.color :blue, path }"
             Log.exception $!
             stream.abort if stream.respond_to? :abort
-            parent.raise $!
+            stream.join if stream.respond_to? :join
+            raise $!
           end
         end
 
@@ -250,7 +253,7 @@ module Persist
             sin.abort if sin.respond_to? :abort
             sout.abort if sout.respond_to? :abort
             Log.exception $!
-            parent.raise $!
+            raise $!
           ensure
             sin.close unless sin.closed?
           end

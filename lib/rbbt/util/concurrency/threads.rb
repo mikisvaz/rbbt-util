@@ -10,9 +10,8 @@ class RbbtThreadQueue
               p = queue.pop
               block.call *p
             end
-          rescue Aborted
           rescue Exception
-            parent.raise $! 
+            raise $!
           end
         end
       else
@@ -23,9 +22,8 @@ class RbbtThreadQueue
               p = Array === p ? p << mutex : [p,mutex]
               block.call *p
             end
-          rescue Aborted
           rescue Exception
-            parent.raise $! 
+            raise $!
           end
         end
       end
