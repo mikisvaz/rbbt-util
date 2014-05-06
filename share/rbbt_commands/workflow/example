@@ -35,6 +35,7 @@ def run_task(workflow, task, name)
         success = true
       end
     end
+    sleep 0.5
     path = Open.read(res).strip if File.exists? res
   end
   path = "NO RESULT" if path.nil? or path.empty?
@@ -82,11 +83,11 @@ task_result.each do |code,res|
     if orig_name
       puts Open.read(path)
     else
-      puts "#{Log.color :green, "SUCCESS"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
+      STDERR.puts "#{Log.color :green, "SUCCESS"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
       puts path
     end
   else
-    puts "#{Log.color :red, "ERROR"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
+    STDERR.puts "#{Log.color :red, "ERROR"} #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
     puts path
   end
 end
