@@ -156,8 +156,6 @@ module Misc
     else
       begin
         while block = io.read(2048)
-          #return if io.eof?
-          #Thread.pass 
         end
         io.join if io.respond_to? :join
       rescue Aborted
@@ -166,6 +164,7 @@ module Misc
       rescue Exception
         Log.warn "Exception consuming stream: #{Misc.fingerprint io}: #{$!.message}"
         io.abort if io.respond_to? :abort
+        io.join
         raise $!
       end
     end

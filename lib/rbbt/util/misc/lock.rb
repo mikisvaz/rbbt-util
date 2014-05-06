@@ -33,10 +33,10 @@ module Misc
           end
         end
       end
+      lockfile.lock 
     end
 
     begin
-      lockfile.lock 
       res = yield lockfile
     rescue Lockfile::StolenLockError
       unlock = false

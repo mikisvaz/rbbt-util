@@ -1,7 +1,7 @@
 module TSV
   def self.obj_stream(obj)
     case obj
-    when Step
+    when (defined? Step and Step)
       obj.result
     when IO, File
       obj
@@ -430,7 +430,7 @@ module TSV
         stream.abort if stream and stream.respond_to? :abort
         stream = obj_stream(into)
         stream.abort if stream and stream.respond_to? :abort
-        parent.raise $!
+        raise $!
       end
     end
     ConcurrentStream.setup(obj_stream(into), :threads => thread)

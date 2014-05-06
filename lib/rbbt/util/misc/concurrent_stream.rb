@@ -53,10 +53,11 @@ module ConcurrentStream
   def join_threads
     if @threads and @threads.any?
       @threads.each do |t| 
-        begin
-        ensure
-          t.join unless t == Thread.current
-        end
+        t.join unless t == Thread.current
+        #begin
+        #ensure
+        #  t.join unless t == Thread.current
+        #end
       end
       @threads = []
     end

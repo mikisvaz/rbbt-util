@@ -6,7 +6,7 @@ class StopException < StandardError; end
 
 class TestTSVParallelThrough < Test::Unit::TestCase
 
-  def _test_traverse_tsv
+  def test_traverse_tsv
     require 'rbbt/sources/organism'
 
     head = 100
@@ -25,7 +25,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.keys.compact.sort.length
   end
 
-  def _test_traverse_tsv_cpus
+  def test_traverse_tsv_cpus
     require 'rbbt/sources/organism'
 
     head = 100
@@ -47,7 +47,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert res.values.compact.flatten.uniq.length > 0
   end
 
-  def _test_traverse_stream
+  def test_traverse_stream
     require 'rbbt/sources/organism'
 
     head = 1000
@@ -61,7 +61,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.keys.compact.sort.length
   end
 
-  def _test_traverse_stream_cpus
+  def test_traverse_stream_cpus
     require 'rbbt/sources/organism'
 
     head = 1000
@@ -75,7 +75,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.keys.compact.sort.length
   end
 
-  def _test_traverse_stream_keys
+  def test_traverse_stream_keys
     require 'rbbt/sources/organism'
 
     head = 1000
@@ -99,7 +99,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal res.sort, Organism.identifiers("Hsa").tsv(:head => head).keys.sort
   end
   
-  def _test_traverse_array
+  def test_traverse_array
     require 'rbbt/sources/organism'
 
     array = []
@@ -121,7 +121,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal array, res
   end
 
-  def _test_traverse_array_threads
+  def test_traverse_array_threads
     require 'rbbt/sources/organism'
 
     array = []
@@ -142,7 +142,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal array.sort, res.sort
   end
 
-  def _test_traverse_array_cpus
+  def test_traverse_array_cpus
     require 'rbbt/sources/organism'
 
     array = []
@@ -157,7 +157,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal array.sort, res.sort
   end
 
-  def _test_traverse_benchmark
+  def test_traverse_benchmark
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -179,7 +179,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     end
   end
 
-  def _test_traverse_into_dumper
+  def test_traverse_into_dumper
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -197,7 +197,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.size
   end
 
-  def _test_traverse_into_dumper_threads
+  def test_traverse_into_dumper_threads
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -217,7 +217,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.size
   end
 
-  def _test_traverse_into_dumper_cpus
+  def test_traverse_into_dumper_cpus
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -238,7 +238,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
   #{{{ TRAVERSE DUMPER
 
-  def _test_traverse_dumper
+  def test_traverse_dumper
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -259,7 +259,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.size
   end
 
-  def _test_traverse_dumper_threads
+  def test_traverse_dumper_threads
     require 'rbbt/sources/organism'
 
     head = 2_000
@@ -281,7 +281,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.size
   end
 
-  def _test_traverse_dumper_cpus
+  def test_traverse_dumper_cpus
     require 'rbbt/sources/organism'
 
     head = 10_000
@@ -309,26 +309,22 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     head = 2_000
     cpus = 2
 
-    20.times do
-      Log.info Log.color :red, "TRAVERSE EXCEPTION"
-      stream = Organism.identifiers("Hsa/jun2011").open 
-      dumper = TSV::Dumper.new Organism.identifiers("Hsa/jun2011").tsv_options
-      dumper.init
+    Log.info Log.color :red, "TRAVERSE EXCEPTION"
+    stream = Organism.identifiers("Hsa/jun2011").open 
+    dumper = TSV::Dumper.new Organism.identifiers("Hsa/jun2011").tsv_options
+    dumper.init
 
-      assert_raise StopException do
-        TSV.traverse stream, :head => head,  :cpus => cpus, :into => dumper do |k,v|
-          k = k.first
-          raise StopException if rand(100) < 1
-          [k,v]
-        end
-        stream = dumper.stream
-        stream.read
-        stream.join
+    assert_raise StopException do
+      TSV.traverse stream, :head => head, :_cpus => cpus, :into => dumper do |k,v|
+        k = k.first
+        raise StopException if rand(100) < 1
+        [k,v]
       end
+      Misc.consume_stream dumper.stream 
     end
   end
 
-  def _test_traverse_into_stream
+  def test_traverse_into_stream
     size = 100
     array = (1..size).to_a.collect{|n| n.to_s}
     stream = TSV.traverse array, :into => :stream do |e|
@@ -337,7 +333,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal size, stream.read.split("\n").length
   end
 
-  def _test_traverse_progress
+  def test_traverse_progress
     size = 1000
     array = (1..size).to_a.collect{|n| n.to_s}
     stream = TSV.traverse array, :bar => {:max => size, :desc => "Array"}, :cpus => 5, :into => :stream do |e|
