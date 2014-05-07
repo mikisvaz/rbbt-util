@@ -430,11 +430,9 @@ class Step
     if stream
       begin
         Misc.consume_stream stream
-        stream.join if stream.respond_to? :join 
       rescue Exception
         self.abort
         raise $!
-        #stream.abort if stream.respond_to? :abort 
       end
     end
   end
