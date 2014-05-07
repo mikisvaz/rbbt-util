@@ -8,8 +8,12 @@ cmd, *rest = ARGV
 aliases ||= Rbbt.etc.cmd_alias.exists? ? Rbbt.etc.cmd_alias.yaml : {}
 
 if cmd.nil?
-  require 'pp'
-  pp aliases
+  aliases.each do |name, parts|
+    parts = parts.collect{|p|
+      p =~ /^[\w:_\/-]*$/ ? p : "'" << p << "'"
+    }
+    puts [Log.color(:magenta, name), parts * " "] * ": "
+  end
   exit 0
 end
 
