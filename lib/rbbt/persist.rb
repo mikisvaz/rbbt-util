@@ -396,7 +396,7 @@ module Persist
 
     return (persist_options[:repo] || Persist::MEMORY)[persist_options[:file]] ||= yield if type ==:memory and persist_options[:file] and persist_options[:persist] and persist_options[:persist] != :update
 
-    if FalseClass == persist_options[:persist]
+    if FalseClass === persist_options[:persist]
       yield
     else
       other_options = Misc.process_options persist_options, :other

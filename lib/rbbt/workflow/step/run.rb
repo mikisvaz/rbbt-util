@@ -394,13 +394,12 @@ class Step
   def abort
     return if @aborted
     @aborted = true
-    return if error?
     return if done?
     Log.medium{"#{Log.color :red, "Aborting"} #{Log.color :blue, path}"}
     begin
+      stop_dependencies
       abort_stream
       abort_pid
-      stop_dependencies
     rescue Aborted
       Log.medium{"#{Log.color :red, "Aborting ABORTED RETRY"} #{Log.color :blue, path}"}
       retry
