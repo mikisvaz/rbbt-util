@@ -34,7 +34,7 @@ module Log
 
       @mean_max ||= 0
       if @history.length > 3
-        mean = Misc.mean(@history)
+        mean = @mean = Misc.mean(@history)
         @mean_max = mean if mean > @mean_max
       end
 
@@ -60,7 +60,7 @@ module Log
 
       used = time - @start
       if @mean_max and @mean_max > 0
-        eta =  (@max - @ticks) / @mean_max
+        eta =  (@max - @ticks) / @mean
       else
         eta =  (@max - @ticks) / (@ticks/used)
       end
