@@ -10,4 +10,8 @@ module R
   def self.eval(cmd)
     instance.eval(cmd).payload.first
   end
+
+  def self.eval_a(cmd)
+    instance.eval(cmd).payload
+  end
 end

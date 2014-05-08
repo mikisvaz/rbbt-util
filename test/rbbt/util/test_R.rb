@@ -18,5 +18,13 @@ data = data + 1
     tsv = TSV.setup({"a" => [1], "b" => [2]}, :type => :list, :key_field => "Letter", :fields => ["Number"])
     assert tsv.transpose("Field").include? "Number"
   end
+
+  def test_error
+    assert_raise ProcessFailed do
+      R.run <<-EOF
+        fadsfasdf
+      EOF
+    end
+  end
 end
 

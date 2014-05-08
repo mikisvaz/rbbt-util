@@ -98,7 +98,9 @@ module Log
 
     def done(io = STDERR)
       done_msg = Log.color(:magenta, desc) << " " << Log.color(:green, "done")
-      done_msg << " " << Log.color(:yellow, (@ticks).to_s) << " in " << Log.color(:blue, (Time.now - @start).to_i.to_s) << " sec." 
+      ellapsed = (Time.now - @start).to_i
+      ellapsed = [ellapsed/3600, ellapsed/60 % 60, ellapsed % 60].map{|t| "%02i" % t }.join(':')
+      done_msg << " " << Log.color(:blue, (@ticks).to_s) << " in " << Log.color(:green, ellapsed)
       @last_count = 0
       @last_time = @start
       done_msg << " (" << thr_msg << ")"

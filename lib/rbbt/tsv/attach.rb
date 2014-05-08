@@ -114,7 +114,8 @@ module TSV
         cols2 = parts2.length
       end
 
-      progress_monitor = Progress::Bar.new(size, 0, 100, "Merging fields") if monitor
+      #progress_monitor = Progress::Bar.new(size, 0, 100, "Merging fields") if monitor
+      progress_monitor = Log::ProgressBar.new(size, :desc => "Merging fields") if monitor
 
       entry_hash = options
       entry_hash.delete :sep if entry_hash[:sep] == "\t"

@@ -219,15 +219,14 @@ module CMD
         Thread.exit
       end
 
+      ConcurrentStream.setup sout, :pids => [pid], :autojoin => true
       out = StringIO.new sout.read
       sout.close unless sout.closed?
-      #SmartIO.tie out, pid, cmd, post, in_content, sin, serr
 
       Process.waitpid pid
 
       if not $?.success?
-        exception      = ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"
-        raise exception
+        raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"
       else
         Log.log err, stderr if Integer === stderr and log
       end

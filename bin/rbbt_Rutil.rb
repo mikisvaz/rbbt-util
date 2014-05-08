@@ -1,4 +1,7 @@
 #!/usr/bin/env ruby
+
+ENV["RBBT_LOG"] = "10"
+
 require 'rbbt-util'
 require 'rbbt/util/R'
 

@@ -78,19 +78,10 @@ end
 
 module TSV
 
-  #def R(arg1, arg2 = nil)
-  #  if arg2.nil?
-  #    script = arg1
-  #    open_options = {}
-  #  else
-  #    script = arg2
-  #    open_options = arg1
-  #  end
-
   def R(script, open_options = {})
     TmpFile.with_file do |f|
       Open.write(f, self.to_s)
-      Log.debug(R.run(
+      io = R.run(
       <<-EOF
 ## Loading tsv into data
 data = rbbt.tsv('#{f}');
@@ -100,7 +91,10 @@ data = rbbt.tsv('#{f}');
 ## Resaving data
 if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
       EOF
-      ).read)
+      )
+
+      Log.debug(io.read)
+
       open_options = Misc.add_defaults open_options, :type => :list
       if open_options[:raw]
         Open.read(f)
