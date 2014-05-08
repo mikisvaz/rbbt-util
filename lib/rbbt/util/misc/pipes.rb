@@ -244,7 +244,7 @@ module Misc
     end
   end
 
-  def self.sort_stream(stream, header_hash = "#")
+  def self.sort_stream(stream, header_hash = "#", cmd_args = nil)
     Misc.open_pipe do |sin|
       begin
         if defined? Step and Step === stream
@@ -271,7 +271,7 @@ module Misc
           end
         end
 
-        sorted = CMD.cmd("sort", :in => line_stream, :pipe => true)
+        sorted = CMD.cmd("sort #{cmd_args || ""}", :in => line_stream, :pipe => true)
 
         while block = sorted.read(2048)
           sin.write block

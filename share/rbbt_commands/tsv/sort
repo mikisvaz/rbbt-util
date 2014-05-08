@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Sort a TSV file, mantaining headers
+
+$ rbbt tsv sort file.tsv
+
+Display summary information. Works with Tokyocabinet HDB and BDB as well.
+
+-hh--header_hash* Change the character used to mark the header line (defaults to #)
+-h--help Help
+EOF
+
+SOPT.usage if options[:help]
+
+file = ARGV.shift
+
+file = STDIN if file == '-' or file.nil?
+
+rest = ARGV.inject(""){|acc,e| acc << " '#{e}'" }
+
+file_io = TSV.get_stream(file)
+stream = Misc.sort_stream(file_io, options[:header_hash] || "#", rest)
+
+begin
+  while line = stream.gets
+    puts line
+  end
+rescue Exception
+  exit -1
+end

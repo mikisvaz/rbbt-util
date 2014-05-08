@@ -10,8 +10,4 @@ module R
   def self.eval(cmd)
     instance.eval(cmd).payload.first
   end
-
-  def self.eval(cmd)
-    RSRuby.eval cmd
-  end
 end
