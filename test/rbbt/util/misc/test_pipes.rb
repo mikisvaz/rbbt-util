@@ -5,7 +5,7 @@ require 'rbbt/util/misc'
 
 class TestMiscPipes < Test::Unit::TestCase
 
-  def test_collapse_stream
+  def _test_collapse_stream
     text=<<-EOF
 row1 A B C
 row1 a b c
@@ -19,7 +19,7 @@ row2 aa bb cc
     assert_equal ["BB", "bb"], tsv["row2"][1]
   end
 
-  def test_paste_stream
+  def _test_paste_stream
     text1=<<-EOF
 row1 A B C
 row2 AA BB CC
@@ -46,7 +46,7 @@ row3 ccc
     assert_equal ["AAA", "BBB", "CCC", "", "", "ccc"], tsv["row3"]
   end
 
-  def test_sort_stream
+  def _test_sort_stream
     text =<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -69,10 +69,19 @@ row3 AAA BBB CCC
 row1 A B C
     EOF
 
+    text = text * 10000
     TmpFile.with_file(text) do |tmp|
       io = Open.open(tmp)
       dup = Misc.dup_stream(io)
+      Misc.consume_stream io, true
       assert_equal text, dup.read
+    end
+
+
+    TmpFile.with_file(text) do |tmp|
+      io = Open.open(tmp)
+      dup = Misc.dup_stream(io)
+      Misc.consume_stream dup, true
       assert_equal text, io.read
     end
   end

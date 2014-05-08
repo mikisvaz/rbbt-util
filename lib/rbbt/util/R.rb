@@ -1,5 +1,6 @@
 require 'rbbt/util/cmd'
 require 'rbbt/tsv'
+require 'rbbt/util/R/eval'
 
 module R
 
@@ -77,6 +78,15 @@ end
 
 module TSV
 
+  #def R(arg1, arg2 = nil)
+  #  if arg2.nil?
+  #    script = arg1
+  #    open_options = {}
+  #  else
+  #    script = arg2
+  #    open_options = arg1
+  #  end
+
   def R(script, open_options = {})
     TmpFile.with_file do |f|
       Open.write(f, self.to_s)
@@ -95,7 +105,9 @@ if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
       if open_options[:raw]
         Open.read(f)
       else
-        TSV.open(f, open_options) unless open_options[:ignore_output]
+        tsv = TSV.open(f, open_options) unless open_options[:ignore_output]
+        tsv.key_field = open_options[:key] if open_options.include? :key
+        tsv
       end
     end
   end

@@ -67,9 +67,9 @@ workflow = Workflow.require_workflow workflow
 tasks = task ? [task] : workflow.libdir.examples.glob('*').collect{|file| File.basename file }
 
 task_result = {}
-TSV.traverse tasks, :threads => 5 do |task|
+TSV.traverse tasks do |task|
   names = name ? [name] : workflow.libdir.examples[task].glob('*').collect{|file| File.basename file }
-  TSV.traverse names, :threads => 5 do |name|
+  TSV.traverse names  do |name|
     success = run_task workflow, task, name
     task_result[[task, name]] = success
   end

@@ -27,12 +27,10 @@ class Step
 
         else
           Log.medium "Duplicating stream #{ Misc.fingerprint(stream) }"
-          new = Misc.dup_stream(current)
-          Log.medium str << Log.color(:green, " -> ") << "#{new.inspect}"
-          new
+          Misc.dup_stream(current)
         end
       end
-    when TSV::Dumper, TSV::Parser
+    when TSV::Dumper#, TSV::Parser
       stream = stream.stream
       return stream if stream.closed?
 
@@ -90,6 +88,7 @@ class Step
   end
 
   def exec(no_load=false)
+    dup_inputs
     dependencies.each{|dependency| dependency.exec(no_load) }
     @mutex.synchronize do
       @result = self._exec

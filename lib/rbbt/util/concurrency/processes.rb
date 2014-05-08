@@ -2,7 +2,6 @@ require 'rbbt/util/concurrency/processes/worker'
 require 'rbbt/util/concurrency/processes/socket'
 
 class RbbtProcessQueue
-  #{{{ RbbtProcessQueue
 
   attr_accessor :num_processes, :processes, :queue, :process_monitor, :cleanup, :join
   def initialize(num_processes, cleanup = nil, join = nil)

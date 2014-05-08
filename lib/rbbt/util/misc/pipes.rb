@@ -221,11 +221,11 @@ module Misc
         rescue Aborted
           Log.warn "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
           content.abort if content.respond_to? :abort
-          Open.rm_f path if File.exists? path
+          Open.rm path if File.exists? path
         rescue Exception
           Log.warn "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
           content.abort if content.respond_to? :abort
-          Open.rm_f path if File.exists? path
+          Open.rm path if File.exists? path
           raise $!
         ensure
           FileUtils.rm_f tmp_path if File.exists? tmp_path
