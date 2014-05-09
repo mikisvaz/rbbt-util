@@ -15,7 +15,7 @@ class Step
           Log.medium "Not duplicating stream #{ Misc.fingerprint(stream) }"
           STREAM_CACHE[stream] = stream
         when File
-          if true or current.closed?
+          if Open.exists? current.filename 
             Log.medium "Reopening file #{ Misc.fingerprint(current) }"
             Open.open(current.filename)
           else
@@ -136,7 +136,7 @@ class Step
     @seen.each do |dependency| 
       next if dependency == self
       next unless dependencies.include? dependency
-      Log.info "#{Log.color :magenta, "Checking dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} -- #{Log.color :blue, dependency.path}"
+      Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} -- #{Log.color :blue, dependency.path}"
       begin
         if dependency.streaming? 
           next if dependency.running?
@@ -184,7 +184,7 @@ class Step
 
           Open.rm info_file if Open.exists? info_file
 
-          log :setup, "#{Log.color :green, "Task"} #{Log.color :yellow, task.name.to_s || ""}"
+          log :setup, "#{Log.color :magenta, "Task"} #{Log.color :yellow, task.name.to_s || ""}"
 
           merge_info({
             :pid => Process.pid,
@@ -234,12 +234,12 @@ class Step
           case result
           when IO
 
-            log :streaming, "#{Log.color :magenta, "Streaming task result IO"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
+            log :streaming, "#{Log.color :magenta, "Streaming IO"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
             ConcurrentStream.setup result do
               begin
                 set_info :done, (done_time = Time.now)
                 set_info :time_elapsed, (time_elapsed = done_time - start_time)
-                log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i} -- #{path}"
+                log :done, "#{Log.color :red, "Completed"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i} -- #{path}"
               rescue
                 Log.exception $!
               ensure
@@ -256,7 +256,7 @@ class Step
               end
             end
           when TSV::Dumper
-            log :streaming, "#{Log.color :magenta, "Streaming task result TSV::Dumper"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
+            log :streaming, "#{Log.color :magenta, "Streaming TSV::Dumper"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
             ConcurrentStream.setup result.stream do
               begin
                 set_info :done, (done_time = Time.now)

@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+options = SOPT.setup <<EOF
+Read a TSV file and dump it
+
+$ rbbt tsv read [options] <filename.tsv|->
+
+Use - to read from STDIN
+
+-k--key_field* Key field
+-f--fields* Fields
+-t--type* Type
+-m--merge* Merge from multiple rows
+-h--help Print this help
+
+EOF
+rbbt_usage and exit 0 if options[:help]
+
+file = ARGV.shift
+
+file = STDIN if file == '-'
+
+parser = TSV::Parser.new TSV.get_stream(file), options
+
+dumper = TSV::Dumper.new parser.options
+
+options[:merge] = false if options[:merge] == "false"
+
+Thread.new do
+  line = parser.first_line
+  bar = Log::ProgressBar.new
+  while line 
+    bar.tick
+
+    line = Misc.fixutf8(line)
+    line = parser.process line
+    raise SKIP_LINE if line.empty?
+    parts = parser.chop_line line
+    key, values = parser.get_values parts
+    values = parser.cast_values values if parser.cast?
+
+    if Array === key
+      key.each do |k|
+        dumper.add k, values
+      end
+      line = parser.stream.gets
+    else
+      dumper.add key, values
+      line = parser.stream.gets
+    end
+  end
+  dumper.close
+end
+
+dumper.init
+stream = dumper.stream
+stream = TSV.collapse_stream(dumper.stream).stream if options[:merge]
+
+while line = stream.gets
+  puts line
+end

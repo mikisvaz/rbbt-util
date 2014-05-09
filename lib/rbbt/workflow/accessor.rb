@@ -207,7 +207,7 @@ class Step
   end
 
   def started?
-    Open.exists? info_file
+    Open.exists? info_file or Open.exists? path
   end
 
   def done?

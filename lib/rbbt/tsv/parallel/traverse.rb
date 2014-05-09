@@ -28,7 +28,7 @@ module TSV
       when Path
         CMD.cmd("wc -l '#{obj.find}'").read.to_i
       end
-    rescue
+    rescue Exception
       nil
     end
   end
