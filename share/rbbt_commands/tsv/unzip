@@ -15,8 +15,8 @@ Display summary information. Works with Tokyocabinet HDB and BDB as well.
 -tch--tokyocabinet File is a TC HDB
 -tcb--tokyocabinet_bd File is a TC BDB
 -hh--header_hash* Change the character used to mark the header line (defaults to #)
--m--merge* Merge lines
 -f--field* Field to unzip
+-m--merge Merge lines
 -h--help Help
 EOF
 

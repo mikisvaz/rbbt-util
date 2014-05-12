@@ -116,23 +116,28 @@ module TSV
   end
 
   def self.identify_field(key_field, fields, field)
-    case
-    when Integer === field
-      field
-    when (field.nil? or field == :key)
+    case field
+    when nil
       :key
-    when (String === field and not fields.nil?)
+    when Symbol
+      field == :key ? field : identify_field(key_field, fields, field.to_s)
+    when Integer
+      field
+    when (fields.nil? and String)
+      raise "No field information available and specified field not numeric: #{ field }" unless field =~ /^\d+$/
+      identify_field(key_field, fields, field.to_i)
+    when String
+      return key if key_field == field
       pos = fields.index field
       pos ||= :key if key_field == field
-      Log.medium "Field #{ field } was not found. Options: #{fields * ", "}" if pos.nil?
-      pos
-    when key_field == field
-      :key
+      return identify_field(key_field, fields, field.to_i) if field =~ /^\d+$/
+      raise "Field #{ field } was not found. Options: #{fields * ", "}" if pos.nil?
     else
-      raise "No fields specified in TSV.identify_field" if fields.nil?
-      Log.medium "Field #{ field } was not found. Options: (#{key_field}), #{fields * ", "}"
+      raise "Field #{ field } was not found. Options: (#{key_field || "NO_KEY_FIELD"}), #{(fields || ["NO_FIELDS"]) * ", "}"
     end
   end
+
+
   
   def self.header_lines(key_field, fields, entry_hash = {})
     sep = (Hash === entry_hash and entry_hash[:sep]) ? entry_hash[:sep] : "\t"
