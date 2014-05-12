@@ -230,9 +230,11 @@ class Step
             log :streaming, "#{Log.color :magenta, "Streaming IO"} #{Log.color :yellow, task.name.to_s || ""}"
             ConcurrentStream.setup result do
               begin
-                set_info :done, (done_time = Time.now)
-                set_info :time_elapsed, (time_elapsed = done_time - start_time)
-                log :done, "#{Log.color :red, "Completed"} #{Log.color :yellow, task.name.to_s || ""}"
+                if status != :done
+                  set_info :done, (done_time = Time.now)
+                  set_info :time_elapsed, (time_elapsed = done_time - start_time)
+                  log :done, "#{Log.color :red, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i} sec."
+                end
               rescue
                 Log.exception $!
               ensure
@@ -252,9 +254,11 @@ class Step
             log :streaming, "#{Log.color :magenta, "Streaming TSV::Dumper"} #{Log.color :yellow, task.name.to_s || ""}"
             ConcurrentStream.setup result.stream do
               begin
-                set_info :done, (done_time = Time.now)
-                set_info :time_elapsed, (time_elapsed = done_time - start_time)
-                log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""}"
+                if status != :done
+                  set_info :done, (done_time = Time.now)
+                  set_info :time_elapsed, (time_elapsed = done_time - start_time)
+                  log :done, "#{Log.color :red, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i} sec."
+                end
               rescue
                 Log.exception $!
               ensure
@@ -271,7 +275,7 @@ class Step
           else
             set_info :done, (done_time = Time.now)
             set_info :time_elapsed, (time_elapsed = done_time - start_time)
-            log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} +#{time_elapsed.to_i}"
+            log :done, "#{Log.color :red, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i} sec."
           end
 
           result

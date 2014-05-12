@@ -9,6 +9,7 @@ module Log
     end
 
     def print(io, str)
+      return if ENV["RBBT_NO_PROGRESS"] == "true"
       LOG_MUTEX.synchronize do
         STDERR.print str
         Log.logfile.puts str unless Log.logfile.nil?
