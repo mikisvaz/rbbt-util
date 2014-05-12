@@ -61,8 +61,8 @@ module TSV
       @new_key_field = TSV.identify_field(key_field, fields, new_key_field)
 
       raise "Key field #{ new_key_field } not found" if @new_key_field.nil?
-      @new_fields = case
-                    when new_fields.nil?
+      @new_fields = case new_fields
+                    when nil
                       case 
                       when @new_key_field == :key
                         :all
@@ -74,11 +74,11 @@ module TSV
                         new.unshift :key
                         new
                       end
-                    when Array === new_fields
+                    when Array
                       new_fields.collect do |field|
                         TSV.identify_field(key_field, fields, field)
                       end
-                    when (String === new_fields or Symbol === new_fields)
+                    when String, Symbol
                       [TSV.identify_field(key_field, fields, new_fields)]
                     else
                       raise "Unknown format for new_fields (should be nil, Array or String): #{new_fields.inspect}"

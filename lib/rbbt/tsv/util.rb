@@ -129,7 +129,7 @@ module TSV
     when String
       return key if key_field == field
       pos = fields.index field
-      pos ||= :key if key_field == field
+      return pos if pos
       return identify_field(key_field, fields, field.to_i) if field =~ /^\d+$/
       raise "Field #{ field } was not found. Options: #{fields * ", "}" if pos.nil?
     else
