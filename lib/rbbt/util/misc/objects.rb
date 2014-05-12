@@ -52,7 +52,12 @@ module Misc
 
   def self.zip_fields(array)
     return [] if array.empty? or (first = array.first).nil?
-    first.zip(*array[1..-1])
+    max = array[1..-1].collect{|l| l.length}.max
+    rest = array[1..-1].collect{|v|
+      v.length == 1 & max > 1 ? v * max : v
+    }
+    first = first * max if first.length == 1 and max > 1
+    first.zip(*rest)
   end
 
   def self.field_position(fields, field, quiet = false)
