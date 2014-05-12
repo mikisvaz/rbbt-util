@@ -103,7 +103,7 @@ module ConcurrentStream
   end
 
   def abort
-    Log.warn "Aborting stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"
+    Log.medium "Aborting stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"
     return if @aborted
     @aborted = true
     begin

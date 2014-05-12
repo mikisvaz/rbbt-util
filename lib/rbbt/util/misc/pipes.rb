@@ -64,8 +64,11 @@ module Misc
         begin
           yield sin
           sin.close if close and not sin.closed?
+        rescue Aborted
+          Log.medium "Aborted open_pipe: #{$!.message}"
         rescue Exception
-          Log.warn "Exception in open_pipe: #{$!.message}"
+          Log.medium "Exception in open_pipe: #{$!.message}"
+          parent.raise $!
           raise $!
         end
       end
@@ -86,14 +89,14 @@ module Misc
           begin 
             stream_in1.write block; 
           rescue IOError
-            Log.warn("Tee stream 1 #{Misc.fingerprint stream} IOError: #{$!.message}");
+            Log.medium("Tee stream 1 #{Misc.fingerprint stream} IOError: #{$!.message}");
             skip1 = true
           end unless skip1 
 
           begin 
             stream_in2.write block
           rescue IOError
-            Log.warn("Tee stream 2 #{Misc.fingerprint stream} IOError: #{$!.message}");
+            Log.medium("Tee stream 2 #{Misc.fingerprint stream} IOError: #{$!.message}");
             skip2 = true
           end unless skip2 
         end
@@ -101,17 +104,17 @@ module Misc
         stream_in2.close unless stream_in2.closed?
         stream.join if stream.respond_to? :join
       rescue Aborted, Interrupt
-        Log.warn "Tee aborting #{Misc.fingerprint stream}"
+        Log.medium "Tee aborting #{Misc.fingerprint stream}"
         stream.abort if stream.respond_to? :abort
         stream_out1.abort if stream_out1.respond_to? :abort
         stream_out2.abort if stream_out2.respond_to? :abort
-        Log.warn "tee_stream_thread aborted: #{$!.message}"
+        Log.medium "tee_stream_thread aborted: #{$!.message}"
       rescue Exception
         stream.abort if stream.respond_to? :abort
         stream_out1.abort if stream_out1.respond_to? :abort
         stream_out2.abort if stream_out2.respond_to? :abort
         stream.join
-        Log.warn "Exception in tee_stream_thread: #{$!.message}"
+        Log.medium "Exception in tee_stream_thread: #{$!.message}"
         raise $!
       end
     end
@@ -153,21 +156,21 @@ module Misc
       return
     end
 
-    Log.medium "Consuming stream #{Misc.fingerprint io}"
     if in_thread
       Thread.new do
         consume_stream(io, false)
       end
     else
+      Log.medium "Consuming stream #{Misc.fingerprint io}"
       begin
         while block = io.read(2048)
         end
         io.join if io.respond_to? :join
       rescue Aborted
-        Log.warn "Consume stream aborted #{Misc.fingerprint io}"
+        Log.medium "Consume stream aborted #{Misc.fingerprint io}"
         io.abort if io.respond_to? :abort
       rescue Exception
-        Log.warn "Exception consuming stream: #{Misc.fingerprint io}: #{$!.message}"
+        Log.medium "Exception consuming stream: #{Misc.fingerprint io}: #{$!.message}"
         io.abort if io.respond_to? :abort
         io.join
         raise $!
@@ -219,11 +222,11 @@ module Misc
 
           Open.mv tmp_path, path
         rescue Aborted
-          Log.warn "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
+          Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
           content.abort if content.respond_to? :abort
           Open.rm path if File.exists? path
         rescue Exception
-          Log.warn "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
+          Log.medium "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
           content.abort if content.respond_to? :abort
           Open.rm path if File.exists? path
           raise $!
@@ -400,7 +403,7 @@ module Misc
         save.abort if save.respond_to? :abort
         stream.abort if stream.respond_to? :abort
         stream.join
-        Log.warn "Exception in save_stream: #{$!.message}"
+        Log.medium "Exception in save_stream: #{$!.message}"
         raise $!
       end
     end

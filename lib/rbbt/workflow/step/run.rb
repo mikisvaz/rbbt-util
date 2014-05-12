@@ -19,10 +19,13 @@ class Step
             Log.medium "Reopening file #{ Misc.fingerprint(current) }"
             Open.open(current.filename)
           else
-            Log.medium "Duplicating file #{ Misc.fingerprint(current) }"
-            new = current.dup
-            new.rewind
-            new
+            Log.medium "Duplicating file #{ Misc.fingerprint(current) } #{current.inspect}"
+            Misc.dup_stream(current)
+            #STREAM_CACHE[stream] = new
+            #new
+            #new = current.dup
+            #new.rewind
+            #new
           end
 
         else
@@ -149,22 +152,13 @@ class Step
           dependency.run(true) 
         end
       rescue Aborted
-        backtrace = $!.backtrace
-        set_info :backtrace, backtrace 
-        log(:error, "Aborted dependency #{Log.color :yellow, dependency.task.name.to_s}")
-        self.abort
+        Log.error "Aborted dep. #{Log.color :red, dependency.task.name.to_s}"
         raise $!
       rescue Interrupt
-        backtrace = $!.backtrace
-        set_info :backtrace, backtrace 
-        self.abort
-        log(:error, "Interrupted dependency #{Log.color :yellow, dependency.task.name.to_s}")
+        Log.error "Interrupted while in dep. #{Log.color :red, dependency.task.name.to_s}"
         raise $!
       rescue Exception
-        backtrace = $!.backtrace
-        set_info :backtrace, backtrace 
-        log(:error, "Exception processing dependency #{Log.color :yellow, dependency.task.name.to_s} -- #{$!.class}: #{$!.message}")
-        self.abort
+        Log.error "Exception in dep. #{ Log.color :red, dependency.task.name.to_s }"
         raise $!
       end
     end
@@ -196,8 +190,7 @@ class Step
           dup_inputs
           begin
             run_dependencies
-          rescue
-            log(:error, "Error procesing dependencies")
+          rescue Exception
             stop_dependencies
             raise $!
           end
@@ -206,7 +199,7 @@ class Step
           set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 
           set_info :started, (start_time = Time.now)
-          log :started, "#{Log.color :green, "Starting task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
+          log :started, "#{Log.color :green, "Starting task"} #{Log.color :yellow, task.name.to_s || ""}"
 
           begin
             result = _exec
@@ -234,12 +227,12 @@ class Step
           case result
           when IO
 
-            log :streaming, "#{Log.color :magenta, "Streaming IO"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
+            log :streaming, "#{Log.color :magenta, "Streaming IO"} #{Log.color :yellow, task.name.to_s || ""}"
             ConcurrentStream.setup result do
               begin
                 set_info :done, (done_time = Time.now)
                 set_info :time_elapsed, (time_elapsed = done_time - start_time)
-                log :done, "#{Log.color :red, "Completed"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i} -- #{path}"
+                log :done, "#{Log.color :red, "Completed"} #{Log.color :yellow, task.name.to_s || ""}"
               rescue
                 Log.exception $!
               ensure
@@ -248,7 +241,7 @@ class Step
             end
             result.abort_callback = Proc.new do
               begin
-                log :error, "#{Log.color :red, "ERROR -- streamming aborted"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] -- #{path}" if status == :streaming
+                log :aborted, "#{Log.color :red, "Aborted"} #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
               rescue
                 Log.exception $!
               ensure
@@ -256,12 +249,12 @@ class Step
               end
             end
           when TSV::Dumper
-            log :streaming, "#{Log.color :magenta, "Streaming TSV::Dumper"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}]"
+            log :streaming, "#{Log.color :magenta, "Streaming TSV::Dumper"} #{Log.color :yellow, task.name.to_s || ""}"
             ConcurrentStream.setup result.stream do
               begin
                 set_info :done, (done_time = Time.now)
                 set_info :time_elapsed, (time_elapsed = done_time - start_time)
-                log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i} -- #{path}"
+                log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""}"
               rescue
                 Log.exception $!
               ensure
@@ -270,7 +263,7 @@ class Step
             end
             result.stream.abort_callback = Proc.new do
               begin
-                log :error, "#{Log.color :red, "ERROR -- streamming aborted"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] -- #{path}"  if status == :streaming
+                log :aborted, "#{Log.color :red, "Aborted"} #{Log.color :yellow, task.name.to_s || ""}"  if status == :streaming
               rescue Exception
                 Log.exception $!
               end
@@ -278,7 +271,7 @@ class Step
           else
             set_info :done, (done_time = Time.now)
             set_info :time_elapsed, (time_elapsed = done_time - start_time)
-            log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} [#{Process.pid}] +#{time_elapsed.to_i}"
+            log :done, "#{Log.color :red, "Completed task"} #{Log.color :yellow, task.name.to_s || ""} +#{time_elapsed.to_i}"
           end
 
           result
@@ -292,7 +285,7 @@ class Step
         end
       end
     rescue Exception
-      self.abort
+      exception $!
       raise $!
     end
   end
@@ -390,7 +383,7 @@ class Step
     end
   end
 
-  def abort
+  def _abort
     return if @aborted
     @aborted = true
     return if done?
@@ -406,21 +399,20 @@ class Step
       retry
     ensure
       if Open.exists? path
-        Log.warn "Aborted job had finished. Removing result"
+        Log.warn "Aborted job had finished. Removing result -- #{ path }"
         begin
           Open.rm path
         rescue Exception
           Log.warn "Exception removing result of aborted job: #{$!.message}"
         end
       end
-
-      begin
-        log(:aborted, "Job aborted")
-      rescue Exception
-        Log.exception $!
-      end
     end
     Log.medium{"#{Log.color :red, "Aborted"} #{Log.color :blue, path}"}
+  end
+
+  def abort
+    _abort
+    log(:aborted, "Job aborted") unless aborted? or error?
   end
 
   def join_stream
@@ -429,7 +421,7 @@ class Step
       begin
         Misc.consume_stream stream
       rescue Exception
-        self.abort
+        self._abort
         raise $!
       end
     end

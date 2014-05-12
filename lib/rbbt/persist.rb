@@ -134,7 +134,7 @@ module Persist
         raise "Unknown persistence: #{ type }"
       end
     rescue
-      Log.warn "Exception loading #{ type } #{ path }: #{$!.message}"
+      Log.medium "Exception loading #{ type } #{ path }: #{$!.message}"
       raise $!
     end
   end
@@ -200,11 +200,11 @@ module Persist
           save_file(path, type, file)
         end
       rescue Aborted
-        Log.warn "Persist stream thread aborted: #{ Log.color :blue, path }"
+        Log.medium "Persist stream thread aborted: #{ Log.color :blue, path }"
         file.abort if file.respond_to? :abort
         raise $!
       rescue Exception
-        Log.warn "Persist stream thread exception: #{ Log.color :blue, path }"
+        Log.medium "Persist stream thread exception: #{ Log.color :blue, path }"
         file.abort if file.respond_to? :abort
         parent.raise $!
         raise $!
@@ -229,10 +229,10 @@ module Persist
             end
             Log.high "Stream pipe saved: #{path}"
           rescue Aborted
-            Log.warn "Persist stream pipe exception: #{ Log.color :blue, path }"
+            Log.medium "Persist stream pipe exception: #{ Log.color :blue, path }"
             stream.abort if stream.respond_to? :abort
           rescue Exception
-            Log.warn "Persist stream pipe exception: #{ Log.color :blue, path }"
+            Log.medium "Persist stream pipe exception: #{ Log.color :blue, path }"
             Log.exception $!
             stream.abort if stream.respond_to? :abort
             stream.join if stream.respond_to? :join
@@ -246,7 +246,7 @@ module Persist
               sin.write block
             end
           rescue Aborted
-            Log.warn "Tee stream thread aborted"
+            Log.medium "Tee stream thread aborted"
             sout.abort if sout.respond_to? :abort
             sin.abort if sin.respond_to? :abort
           rescue Exception
@@ -291,14 +291,14 @@ module Persist
           begin
             lockfile.unlock if File.exists? lockfile.path and lockfile.locked?
           rescue
-            Log.warn "Lockfile exception: " << $!.message
+            Log.medium "Lockfile exception: " << $!.message
           end
         end
         res.abort_callback = Proc.new do
           begin
             lockfile.unlock if File.exists? lockfile.path and lockfile.locked?
           rescue
-            Log.warn "Lockfile exception: " << $!.message
+            Log.medium "Lockfile exception: " << $!.message
           end
         end
         raise KeepLocked.new res 
@@ -310,7 +310,7 @@ module Persist
             stream.callback
             lockfile.unlock if File.exists? lockfile.path and lockfile.locked?
           rescue
-            Log.warn "Lockfile exception: " << $!.message
+            Log.medium "Lockfile exception: " << $!.message
           end
         end
         res.abort_callback = Proc.new do
@@ -318,7 +318,7 @@ module Persist
             stream.abort
             lockfile.unlock if File.exists? lockfile.path and lockfile.locked?
           rescue
-            Log.warn "Lockfile exception: " << $!.message
+            Log.medium "Lockfile exception: " << $!.message
           end
         end
         raise KeepLocked.new res 
@@ -385,7 +385,7 @@ module Persist
       end
 
     rescue
-      Log.warn "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"
+      Log.medium "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"
       FileUtils.rm path if Open.exists? path 
       raise $!
     end

@@ -119,25 +119,32 @@ class Step
     set_info(:messages, (messages || []) << message)
   end
 
+  def self.status_color(status)
+    status = status.split(">").last
+    case status
+    when "starting"
+      :yellow
+    when "error", "aborted"
+      :red
+    when "done"
+      :green
+    else
+      :cyan
+    end
+  end
+
   def self.log_block(staus, message, path, &block)
     start = Time.now
     status = status.to_s
-    status_color = case status
-                   when "starting"
-                     :yellow
-                   when "error"
-                     :red
-                   when "done"
-                     :green
-                   else
-                     :cyan
-                   end
+    status_color = self.status_color status
+
     Log.info do 
       now = Time.now
       str = Log.color :reset
       str << "#{ Log.color status_color, status}"
       str << ": #{ message }" if message
       str << " -- #{Log.color :blue, path.to_s}" if path
+      str << " #{Log.color :yellow, Process.pid}"
       str
     end
     res = yield
@@ -146,6 +153,7 @@ class Step
       now = Time.now
       str = "#{ Log.color :cyan, status.to_s } +#{Log.color :green, "%.1g" % (eend - start)}"
       str << " -- #{Log.color :blue, path.to_s}" if path
+      str << " #{Log.color :yellow, Process.pid}"
       str
     end
     res
@@ -155,21 +163,13 @@ class Step
     Log.info do 
 
       status = status.to_s
-      status_color = case status
-                     when "starting"
-                       :yellow
-                     when "error"
-                       :red
-                     when "done"
-                       :green
-                     else
-                       :cyan
-                     end
+      status_color = self.status_color status
 
       str = Log.color :reset
       str << "#{ Log.color status_color, status}"
       str << ": #{ message }" if message
       str << " -- #{Log.color :blue, path.to_s}" if path
+      str << " #{Log.color :yellow, Process.pid}"
       str
     end
   end
@@ -204,6 +204,16 @@ class Step
     self.status = status
     self.message Log.uncolor(message)
     Step.log(status, message, path, &block)
+  end
+
+  def exception(ex, msg = nil)
+    self._abort
+    set_info :backtrace, ex.backtrace
+    if msg.nil?
+      log :error, "Exception -- #{ex.message}"
+    else
+      log :error, "#{msg} -- #{ex.message}"
+    end
   end
 
   def started?

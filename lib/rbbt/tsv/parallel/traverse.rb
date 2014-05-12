@@ -235,28 +235,28 @@ module TSV
         raise "Unknown object for traversal: #{Misc.fingerprint obj }"
       end
     rescue IOError
-      Log.warn "IOError traversing #{stream_name(obj)}: #{$!.message}"
+      Log.medium "IOError traversing #{stream_name(obj)}: #{$!.message}"
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
       raise $!
     rescue Errno::EPIPE
-      Log.warn "Pipe closed while traversing #{stream_name(obj)}: #{$!.message}"
+      Log.medium "Pipe closed while traversing #{stream_name(obj)}: #{$!.message}"
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
       raise $!
     rescue Aborted
-      Log.warn "Aborted traversing #{stream_name(obj)}"
+      Log.medium "Aborted traversing #{stream_name(obj)}"
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
-      Log.warn "Aborted traversing 2 #{stream_name(obj)}"
+      Log.medium "Aborted traversing 2 #{stream_name(obj)}"
     rescue Exception
-      Log.warn "Exception traversing #{stream_name(obj)}"
+      Log.medium "Exception traversing #{stream_name(obj)}"
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
@@ -304,7 +304,7 @@ module TSV
           q.process *p
         end
       rescue Aborted, Errno::EPIPE
-        Log.warn "Aborted"
+        Log.medium "Aborted"
       rescue Exception
         Log.exception $!
         raise $!
@@ -312,7 +312,7 @@ module TSV
         q.join
       end
     rescue Interrupt, Aborted
-      Log.warn "Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"
+      Log.medium "Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"
       q.abort
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
@@ -320,7 +320,7 @@ module TSV
       stream.abort if stream.respond_to? :abort
       raise "Traversal aborted"
     rescue Exception
-      Log.warn "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.message}"
+      Log.medium "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.message}"
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
@@ -356,7 +356,7 @@ module TSV
       end 
       true
     rescue Aborted, Interrupt
-      Log.warn "Aborted storing into #{Misc.fingerprint store}: #{$!.message}"
+      Log.medium "Aborted storing into #{Misc.fingerprint store}: #{$!.message}"
       stream = obj_stream(store)
       stream.abort if stream.respond_to? :abort
     rescue Exception
@@ -484,14 +484,13 @@ module TSV
         begin
           store_into into, e
         rescue Aborted
-          Log.warn "Aborted callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
+          Log.medium "Aborted callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
           stream = nil
           stream = get_stream obj
           stream.abort if stream.respond_to? :abort
           raise $!
         rescue Exception
-          Log.warn "Exception callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
-          Log.exception $!
+          Log.medium "Exception callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
           stream = nil
           stream = get_stream obj
           stream.abort if stream.respond_to? :abort
