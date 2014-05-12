@@ -1,10 +1,12 @@
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '../..', 'lib'))
-$LOAD_PATH.unshift(File.dirname(__FILE__))
+require File.expand_path(File.dirname(__FILE__) + '/../test_helper')
+require 'rbbt/util/tmpfile'
 require 'test/unit'
-require 'rbbt/knowledge_base'
 
-require 'rbbt/sources/pina'
 require 'rbbt/workflow'
+require 'rbbt/entity'
+
+require 'rbbt/association'
+require 'rbbt/knowledge_base'
 
 class TestKnowledgeBase < Test::Unit::TestCase
   def setup
