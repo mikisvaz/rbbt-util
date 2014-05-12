@@ -127,7 +127,7 @@ module TSV
       raise "No field information available and specified field not numeric: #{ field }" unless field =~ /^\d+$/
       identify_field(key_field, fields, field.to_i)
     when String
-      return key if key_field == field
+      return :key if key_field == field
       pos = fields.index field
       return pos if pos
       return identify_field(key_field, fields, field.to_i) if field =~ /^\d+$/
