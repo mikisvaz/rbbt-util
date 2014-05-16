@@ -208,9 +208,11 @@ class Step
 
   def exception(ex, msg = nil)
     self._abort
+    ex_class = ex.class.to_s
     set_info :backtrace, ex.backtrace
+    set_info :exception, {:class => ex_class, :message => ex.message, :backtrace => ex.backtrace}
     if msg.nil?
-      log :error, "Exception -- #{ex.message}"
+      log :error, "#{ex_class} -- #{ex.message}"
     else
       log :error, "#{msg} -- #{ex.message}"
     end

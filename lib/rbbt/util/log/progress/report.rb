@@ -20,7 +20,11 @@ module Log
     attr_accessor :history, :mean_max
     def thr
       count = @ticks - @last_count
-      seconds = Time.now - @last_time
+      if @last_time.nil?
+        seconds = 0.001
+      else
+        seconds = Time.now - @last_time
+      end
       thr = count / seconds
     end
 
@@ -99,7 +103,11 @@ module Log
 
     def done(io = STDERR)
       done_msg = Log.color(:magenta, desc) << " " << Log.color(:green, "done")
-      ellapsed = (Time.now - @start).to_i
+      if @start
+        ellapsed = (Time.now - @start).to_i
+      else
+        ellapsed = 0
+      end
       ellapsed = [ellapsed/3600, ellapsed/60 % 60, ellapsed % 60].map{|t| "%02i" % t }.join(':')
       done_msg << " " << Log.color(:blue, (@ticks).to_s) << " in " << Log.color(:green, ellapsed)
       @last_count = 0

@@ -79,7 +79,11 @@ class Step
                 end
                 array
               when :tsv
-                TSV.open(value)
+                begin
+                  TSV.open(value)
+                rescue IOError
+                  TSV.setup({})
+                end
               else
                 value.read
               end
