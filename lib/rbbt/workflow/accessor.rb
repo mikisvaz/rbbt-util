@@ -391,7 +391,7 @@ module Workflow
         if Array === dep 
           dep.first.rec_dependencies(dep.last).each do |d|
             if Array === d
-              d
+              all_deps << d
             else
               all_deps << [dep.first, d]
             end
