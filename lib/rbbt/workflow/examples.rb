@@ -19,7 +19,7 @@ module Workflow
   end
 
   def example(task_name, example)
-    tasks[task_name.to_sym].input_types.collect do |input,type|
+    task_info(task_name.to_sym)[:input_types].collect do |input,type|
       next unless example_dir[task_name][example][input].exists?
       [input, type, example_dir[task_name][example][input].find]
     end.compact

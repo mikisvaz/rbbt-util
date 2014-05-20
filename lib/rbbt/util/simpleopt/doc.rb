@@ -80,7 +80,7 @@ module SOPT
 
 #{ Log.color :magenta, "## SYNOPSYS"}
 
-#{synopsys}
+#{Log.color :blue, synopsys}
 
 #{ Log.color :magenta, "## DESCRIPTION"}
 

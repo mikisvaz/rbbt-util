@@ -2,7 +2,7 @@ require 'rbbt/util/simpleopt'
 
 module Task
   def doc(deps = nil)
-    puts Log.color :magenta, "## #{ name }:"
+    puts Log.color(:yellow, "## #{ name }") << ":"
     puts "\n" << description  << "\n" if description and not description.empty?
     puts
 
@@ -19,21 +19,23 @@ module Task
       puts
     end
 
-    puts SOPT.input_doc(inputs, input_types, input_descriptions, input_defaults, true)
-    puts
+    if inputs.any?
+      puts SOPT.input_doc(inputs, input_types, input_descriptions, input_defaults, true)
+      puts
+    end
 
     if deps and deps.any?
-      puts "From dependencies:"
+      puts Log.color(:magenta, "Inputs from dependencies:")
       puts
       deps.each do |dep|
-        puts "  #{Log.color :magenta, dep.name.to_s}:"
+        puts "  #{Log.color :yellow, dep.name.to_s}:"
         puts
         puts SOPT.input_doc((dep.inputs - self.inputs), dep.input_types, dep.input_descriptions, dep.input_defaults, true)
         puts
       end
     end
 
-    puts "Returns: " << Log.color(:blue, result_type.to_s) << "\n"
+    puts Log.color(:magenta, "Returns: ") << Log.color(:blue, result_type.to_s) << "\n"
     puts
   end
 end
@@ -79,18 +81,20 @@ module Workflow
       if self.examples.include? task_name
           self.examples[task_name].each do |example|
 
-            puts Log.color(:magenta, "Example " << example) + " -- " + Log.color(:blue, example_dir[task_name][example])
+            puts Log.color(:magenta, "Example ") << Log.color(:green, example) + " -- " + Log.color(:blue, example_dir[task_name][example])
 
             inputs = self.example(task_name, example)
 
             inputs.each do |input, type, file|
                 case type
                 when :tsv, :array, :text
-                  head = file.read.split("\n")[0..5].compact * "\n\n"
+                  lines = file.read.split("\n")
+                  head = lines[0..5].compact * "\n\n"
                   head = head[0..500]
-                  puts Misc.format_definition_list_item(input, head, 100, -1).gsub(/\n\s*\n/,"\n")
+                  puts Misc.format_definition_list_item(input, head, 1000, -1, :blue).gsub(/\n\s*\n/,"\n") 
+                  puts '...' if lines.length > 6
                 else
-                  puts Misc.format_definition_list_item(input, file.read)
+                  puts Misc.format_definition_list_item(input, file.read, 80, 20, :blue)
                 end
             end
             puts
