@@ -198,7 +198,6 @@ module Misc
   end
 
   def self.sensiblewrite(path, content = nil, &block)
-
     return if Open.exists? path
     tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
     Misc.lock tmp_path do

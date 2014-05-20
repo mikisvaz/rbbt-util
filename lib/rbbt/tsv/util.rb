@@ -91,8 +91,11 @@ module TSV
       end
       file
     when String
-      raise "Could not open file given by String: #{Misc.fingerprint file}" unless Open.remote?(file) or File.exists? file
-      Open.open(file, open_options)
+      if Open.remote?(file) or File.exists? file
+        Open.open(file, open_options)
+      else
+        StringIO.new file
+      end
     when (defined? Step and Step)
       file.grace
       stream = file.get_stream

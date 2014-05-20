@@ -413,7 +413,6 @@ when Step
   if IO === res.result
     begin
       io = res.result
-      Thread.pass while IO.select([io]).nil?
       while block = io.read(2048) do
         out.write block
       end #unless io.closed? 

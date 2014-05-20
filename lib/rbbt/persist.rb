@@ -360,7 +360,10 @@ module Persist
       Log.low "Persist up-to-date: #{ path } - #{Misc.fingerprint persist_options}"
       return path if persist_options[:no_load]
       return load_file(path, type) 
+    else
+      Open.rm path if Open.exists? path
     end
+
 
     begin
 

@@ -95,8 +95,8 @@ module TSV
 
       sin.puts TSV.header_lines(key_field, fields, options)
 
-      empty.each do |stream|
-        i = streams.index stream
+      empty_pos = empty.collect{|stream| streams.index stream }
+      empty_pos.sort.reverse.each do |i|
         lines.delete_at i
         fields.delete_at i
         key_fields.delete_at i

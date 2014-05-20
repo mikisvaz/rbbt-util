@@ -257,6 +257,7 @@ module TSV
       Log.medium "Aborted traversing 2 #{stream_name(obj)}"
     rescue Exception
       Log.medium "Exception traversing #{stream_name(obj)}"
+      Log.exception $!
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
