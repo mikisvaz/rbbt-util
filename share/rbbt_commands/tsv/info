@@ -44,6 +44,7 @@ else
 
   puts "File: #{ file }"
   puts "Type: #{header.type}"
+  puts "Namespace: #{header.namespace}"
   puts "Key: #{Log.color :yellow, header.key_field}"
   puts "Fields: "
   if header.fields.nil?

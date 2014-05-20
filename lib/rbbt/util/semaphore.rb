@@ -22,7 +22,7 @@ module RbbtSemaphore
 
     builder.c_singleton <<-EOF
 void create_semaphore(char* name, int value){
-  sem_open(name, O_CREAT, S_IRWXU, value);
+  sem_open(name, O_CREAT, S_IRWXU|S_IRWXG|S_IRWXO, value);
 }
     EOF
     builder.c_singleton <<-EOF
@@ -34,7 +34,7 @@ void delete_semaphore(char* name){
     builder.c_singleton <<-EOF
 void wait_semaphore(char* name){
   sem_t* sem;
-  sem = sem_open(name, O_EXCL);
+  sem = sem_open(name, 0);
   sem_wait(sem);
   sem_close(sem);
 }
@@ -43,29 +43,35 @@ void wait_semaphore(char* name){
     builder.c_singleton <<-EOF
 void post_semaphore(char* name){
   sem_t* sem;
-  sem = sem_open(name, O_EXCL);
+  sem = sem_open(name, 0);
   sem_post(sem);
   sem_close(sem);
 }
     EOF
   end
 
+  SEM_MUTEX = Mutex.new
   def self.synchronize(sem)
-    RbbtSemaphore.wait_semaphore(sem)
+    SEM_MUTEX.synchronize do
+      RbbtSemaphore.wait_semaphore(sem)
+    end
     begin
       yield
     ensure
-      RbbtSemaphore.post_semaphore(sem)
+      SEM_MUTEX.synchronize do
+        RbbtSemaphore.post_semaphore(sem)
+      end
     end
   end
 
   def self.with_semaphore(size, file = nil)
-    file = Misc.digest(rand.to_s) if file.nil?
+    file = "/" << Misc.digest(rand(1000000000000).to_s) if file.nil?
     file.gsub!('/', '_')
     begin
       RbbtSemaphore.create_semaphore(file, size)
       yield file
     ensure
+      Log.error "Removing semaphore #{ file }"
       RbbtSemaphore.delete_semaphore(file)
     end
   end
