@@ -44,7 +44,7 @@ class Step
     begin
       @info_mutex.synchronize do
         begin
-          return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
+          return @info_cache if @info_cache and File.mtime(info_file) > @info_cache_time
         rescue Exception
           raise $!
         end
@@ -65,7 +65,6 @@ class Step
       end
     rescue Exception
       Log.debug{"Error loading info file: " + info_file}
-      #self.abort_pid
       Open.write(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
       raise $!
     end
@@ -100,7 +99,12 @@ class Step
   end
 
   def status
-    info[:status]
+    begin
+      info[:status]
+    rescue Exception
+      Log.error "Exception reading status: #{$!.message}" 
+      :error
+    end
   end
 
   def status=(status)
@@ -239,11 +243,11 @@ class Step
   end
 
   def error?
-    info[:status] == :error
+    status == :error
   end
 
   def aborted?
-    @aborted || info[:status] == :aborted
+    @aborted || status == :aborted
   end
 
   # {{{ INFO

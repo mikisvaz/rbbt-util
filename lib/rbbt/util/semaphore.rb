@@ -52,15 +52,11 @@ void post_semaphore(char* name){
 
   SEM_MUTEX = Mutex.new
   def self.synchronize(sem)
-    SEM_MUTEX.synchronize do
-      RbbtSemaphore.wait_semaphore(sem)
-    end
+    RbbtSemaphore.wait_semaphore(sem)
     begin
       yield
     ensure
-      SEM_MUTEX.synchronize do
-        RbbtSemaphore.post_semaphore(sem)
-      end
+      RbbtSemaphore.post_semaphore(sem)
     end
   end
 
@@ -68,6 +64,7 @@ void post_semaphore(char* name){
     file = "/" << Misc.digest(rand(1000000000000).to_s) if file.nil?
     file.gsub!('/', '_')
     begin
+      Log.warn "Creating semaphore (#{ size }): #{file}"
       RbbtSemaphore.create_semaphore(file, size)
       yield file
     ensure

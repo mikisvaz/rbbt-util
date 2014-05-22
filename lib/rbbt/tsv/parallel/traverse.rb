@@ -311,6 +311,7 @@ module TSV
         raise $!
       ensure
         q.join
+        q.clean
       end
     rescue Interrupt, Aborted
       Log.medium "Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"
