@@ -71,7 +71,7 @@ module TSV
       data = self
     end
 
-    data.each do |key, values|
+    data.through do |key, values|
       cells = []
       cells.push((name and key.respond_to?(:name)) ?  key.name || key : key )
 
