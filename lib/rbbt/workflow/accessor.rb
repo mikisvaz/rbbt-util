@@ -44,7 +44,7 @@ class Step
     begin
       @info_mutex.synchronize do
         begin
-          return @info_cache if @info_cache and File.mtime(info_file) > @info_cache_time
+          return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
         rescue Exception
           raise $!
         end
