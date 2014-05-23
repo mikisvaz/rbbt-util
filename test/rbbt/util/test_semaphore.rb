@@ -10,7 +10,6 @@ class TestRbbtSemaphore < Test::Unit::TestCase
           100.times do
             RbbtSemaphore.wait_semaphore(s)
             sleep 0.001
-            puts '.'
             RbbtSemaphore.post_semaphore(s)
           end
         end

@@ -1,4 +1,4 @@
-Lockfile.refresh = false if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
+Lockfile.refresh = false #if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
 
 module Misc
 
@@ -23,6 +23,7 @@ module Misc
 
               if hostname == info["host"] and not Misc.pid_exists?(info["pid"])
                 Log.high("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
+
                 FileUtils.rm lock_path
               end
             end
@@ -48,7 +49,10 @@ module Misc
       raise $!
     ensure
       if unlock 
-        lockfile.unlock if lockfile.locked?
+        begin
+          lockfile.unlock #if lockfile.locked?
+        rescue Exception
+        end
       end
     end
 

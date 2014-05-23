@@ -34,7 +34,7 @@ module Log
         @history ||= []
       else
         @history << thr
-        @history.shift if @history.length > 10
+        @history.shift if @history.length > 20
       end
 
       @mean_max ||= 0

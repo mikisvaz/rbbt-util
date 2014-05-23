@@ -61,8 +61,12 @@ void post_semaphore(char* name){
   end
 
   def self.with_semaphore(size, file = nil)
-    file = "/" << Misc.digest(rand(1000000000000).to_s) if file.nil?
-    file.gsub!('/', '_')
+    if file.nil?
+      file = "/" << Misc.digest(rand(1000000000000).to_s) if file.nil?
+    else
+      file = file.gsub('/', '_') if file
+    end
+
     begin
       Log.warn "Creating semaphore (#{ size }): #{file}"
       RbbtSemaphore.create_semaphore(file, size)

@@ -289,15 +289,15 @@ module Persist
         res = tee_stream(res, path, type, res.respond_to?(:callback)? res.callback : nil, res.respond_to?(:abort_callback)? res.abort_callback : nil)
         ConcurrentStream.setup res do
           begin
-            lockfile.unlock if File.exists? lockfile.path and lockfile.locked?
-          rescue
+            lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
+          rescue Exception
             Log.medium "Lockfile exception: " << $!.message
           end
         end
         res.abort_callback = Proc.new do
           begin
-            lockfile.unlock if File.exists? lockfile.path and lockfile.locked?
-          rescue
+            lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
+          rescue Exception
             Log.medium "Lockfile exception: " << $!.message
           end
         end
@@ -308,16 +308,16 @@ module Persist
         ConcurrentStream.setup res do
           begin
             stream.callback
-            lockfile.unlock if File.exists? lockfile.path and lockfile.locked?
-          rescue
+            lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
+          rescue Exception
             Log.medium "Lockfile exception: " << $!.message
           end
         end
         res.abort_callback = Proc.new do
           begin
             stream.abort
-            lockfile.unlock if File.exists? lockfile.path and lockfile.locked?
-          rescue
+            lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
+          rescue Exception
             Log.medium "Lockfile exception: " << $!.message
           end
         end

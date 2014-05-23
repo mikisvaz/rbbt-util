@@ -205,7 +205,7 @@ def ppp(message)
   stack = caller
   puts "#{Log.color :cyan, "PRINT:"} " << stack.first
   puts ""
-  puts "=> " << message
+  puts Log.color(:cyan, "=> ") << message
   puts ""
 end
 

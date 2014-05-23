@@ -20,7 +20,7 @@ class RbbtProcessQueue
     def clean
       @sread.close unless @sread.closed?
       @swrite.close unless @swrite.closed?
-      Log.warn "Destroying socket semaphores: #{key}"
+      Log.warn "Destroying socket semaphores"
       RbbtSemaphore.delete_semaphore(@write_sem)
       RbbtSemaphore.delete_semaphore(@read_sem)
     end
