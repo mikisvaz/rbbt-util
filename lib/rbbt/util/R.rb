@@ -101,6 +101,7 @@ if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
       else
         tsv = TSV.open(f, open_options) unless open_options[:ignore_output]
         tsv.key_field = open_options[:key] if open_options.include? :key
+        tsv.namespace ||= self.namespace if self.namespace
         tsv
       end
     end

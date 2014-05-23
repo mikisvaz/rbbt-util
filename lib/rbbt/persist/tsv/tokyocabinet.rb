@@ -3,7 +3,7 @@ require 'tokyocabinet'
 module Persist
 
   module TCAdapter
-    attr_accessor :persistence_path, :tokyocabinet_class, :closed, :writable
+    attr_accessor :persistence_path, :tokyocabinet_class, :closed, :writable, :mutex
 
     def self.open(path, write, tokyocabinet_class = TokyoCabinet::HDB)
       tokyocabinet_class = TokyoCabinet::HDB if tokyocabinet_class == "HDB"
@@ -23,6 +23,7 @@ module Persist
       database.persistence_path ||= path
       database.tokyocabinet_class = tokyocabinet_class
 
+      database.mutex = Mutex.new
       database
     end
 
@@ -76,6 +77,9 @@ module Persist
       @writable
     end
 
+    def read?
+      ! write?
+    end
     #def each
     #  iterinit
     #  while key = iternext
@@ -102,20 +106,36 @@ module Persist
     def write_and_read
       lock_filename = Persist.persistence_path(persistence_path + '.write', {:dir => TSV.lock_dir})
       Misc.lock(lock_filename) do
-        write if @closed or not write?
-        res = begin
-                yield
-              ensure
-                read
-              end
-        res
+        @mutex.synchronize do
+          write if @closed or not write?
+          res = begin
+                  yield
+                ensure
+                  read
+                end
+          res
+        end
       end
     end
 
     def write_and_close
       lock_filename = Persist.persistence_path(persistence_path + '.write', {:dir => TSV.lock_dir})
       Misc.lock(lock_filename) do
-        write if @closed or not write?
+        @mutex.synchronize do
+          write if @closed or not write?
+          res = begin
+                  yield
+                ensure
+                  close
+                end
+          res
+        end
+      end
+    end
+
+    def read_and_close
+      @mutex.synchronize do
+        read if @closed or not read?
         res = begin
                 yield
               ensure
@@ -125,15 +145,6 @@ module Persist
       end
     end
 
-    def read_and_close
-      read if @closed or write?
-      res = begin
-              yield
-            ensure
-              close
-            end
-      res
-    end
 
     def merge!(hash)
       hash.each do |key,values|
