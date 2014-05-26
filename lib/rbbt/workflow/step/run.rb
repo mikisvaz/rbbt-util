@@ -140,7 +140,7 @@ class Step
           next if dependency.running?
           dependency.clean 
         else
-          dependency.clean if (dependency.error? or dependency.aborted? or not dependency.done?)
+          dependency.clean if (dependency.error? or dependency.aborted? or dependency.status.nil?)# or not dependency.done?)
         end
 
         unless dependency.result or dependency.done?
@@ -200,7 +200,7 @@ class Step
             result = _exec
           rescue Aborted
             stop_dependencies
-            log(:error, "Aborted")
+            log(:aborted, "Aborted")
             raise $!
           rescue Exception
             backtrace = $!.backtrace
@@ -448,6 +448,7 @@ class Step
         dependencies.each{|dep| dep.join }
       end
       self
+      sleep 1 until path.exists?
     ensure
       set_info :joined, true
     end

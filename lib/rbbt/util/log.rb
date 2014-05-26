@@ -6,6 +6,8 @@ module Log
   extend Term::ANSIColor
 
 
+  LOG_MUTEX = Mutex.new
+
   SEVERITY_NAMES ||= begin
                      names = %w(DEBUG LOW MEDIUM HIGH INFO WARN ERROR ) 
                      names.each_with_index do |name,i|
@@ -13,6 +15,20 @@ module Log
                      end
                      names
                    end
+
+  def self.ignore_stderr
+    backup_stderr = STDERR.dup
+    LOG_MUTEX.synchronize do
+      begin
+        File.open('/dev/null', 'w') do |f|
+          STDERR.reopen(f)
+          yield
+        end
+      ensure
+        STDERR.reopen backup_stderr
+      end
+    end
+  end
 
   def self.get_level(level)
     case level
@@ -35,8 +51,11 @@ module Log
 
   self.nocolor = ENV["RBBT_NOCOLOR"] == 'true'
 
-  require "highline/system_extensions.rb"
-  self.tty_size = HighLine::SystemExtensions.terminal_size.first 
+  self.ignore_stderr do
+    require 'nokogiri'
+    require "highline/system_extensions.rb"
+    self.tty_size = HighLine::SystemExtensions.terminal_size.first 
+  end
 
   def self.with_severity(level)
     orig = Log.severity
@@ -95,7 +114,6 @@ module Log
     end
   end
 
-  LOG_MUTEX = Mutex.new
   LAST = "log"
   def self.log(message = nil, severity = MEDIUM, &block)
     return if severity < self.severity 

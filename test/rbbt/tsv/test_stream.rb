@@ -89,4 +89,37 @@ row2 cc
     assert_equal ["AA", "BB", "CC", "aa", "bb", "cc"], tsv["row2"]
     assert_equal ["AAA", "BBB", "CCC", "aaa", "bbb", "ccc"], tsv["row3"]
   end
+
+  def test_paste_stream_missing
+    text1=<<-EOF
+#: :sep=" "
+#Row LabelA LabelB LabelC
+row2 AA BB CC
+row1 A B C
+    EOF
+
+    text2=<<-EOF
+#: :sep=" "
+#Row Labela Labelb 
+row1 a b
+row2 aa bb
+    EOF
+
+    text3=<<-EOF
+#: :sep=" "
+#Row Labelc
+row3 ccc
+row2 cc
+    EOF
+
+    s1 = StringIO.new text1
+    s2 = StringIO.new text2
+    s3 = StringIO.new text3
+    tsv = TSV.open TSV.paste_streams([s1,s2,s3], :sep => " ", :type => :list, :sort => true)
+    assert_equal "Row", tsv.key_field
+    assert_equal %w(LabelA LabelB LabelC Labela Labelb Labelc), tsv.fields
+    assert_equal ["A", "B", "C", "a", "b", ""], tsv["row1"]
+    assert_equal ["AA", "BB", "CC", "aa", "bb", "cc"], tsv["row2"]
+    assert_equal ["", "", "", "", "", "ccc"], tsv["row3"]
+  end
 end

@@ -6,8 +6,9 @@ require 'rbbt/workflow'
 
 workflow = ARGV.shift
 
-Workflow.require_workflow workflow
-dir = $command_dir = Workflow.workflows.last.libdir.share.rbbt_commands
+wf = Workflow.require_workflow workflow
+dir = $command_dir = wf.libdir.share.rbbt_commands
+
 def commands(prev)
     rbbt_command_dir = $command_dir
 

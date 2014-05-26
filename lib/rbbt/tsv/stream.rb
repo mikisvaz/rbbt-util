@@ -74,6 +74,7 @@ module TSV
 
       lines = []
       fields = []
+      sizes = []
       key_fields = []
       input_options = []
       empty = []
@@ -84,6 +85,7 @@ module TSV
         empty << stream if parser.first_line.nil?
         key_fields << parser.key_field
         fields << parser.fields
+        sizes << parser.fields.length
         input_options << parser.options
 
         parser.stream
@@ -113,7 +115,6 @@ module TSV
           keys[i] = key
           parts[i] = p
         end
-        sizes = parts.collect{|p| p.length }
         last_min = nil
         while lines.compact.any?
           min = keys.compact.sort.first

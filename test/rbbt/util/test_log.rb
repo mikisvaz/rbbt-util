@@ -14,8 +14,10 @@ class TestLog < Test::Unit::TestCase
     assert Log.color(:green, "green")
   end
 
-  def test_return_line
-    puts Log.return_line  + "ccc"*3
+  def test_no_stderr
+    Log.ignore_stderr do
+      STDERR.puts "NOPRINT"
+    end
   end
 end
 

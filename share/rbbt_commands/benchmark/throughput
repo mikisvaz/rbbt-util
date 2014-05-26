@@ -23,7 +23,7 @@ max = 0
 avg = 0
 all = []
 scale = 5
-bar = Log::ProgressBar.new_bar nil
+bar = Log::ProgressBar.new_bar nil, :desc => "Throughput"
 
 while line = STDIN.gets
   bar.tick
