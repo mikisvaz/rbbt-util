@@ -12,7 +12,7 @@ class RbbtProcessQueue
       key = "/" << rand(100000000).to_s;
       @write_sem = key + '.in'
       @read_sem = key + '.out'
-      Log.warn "Creating socket semaphores: #{key}"
+      Log.low "Creating socket semaphores: #{key}"
       RbbtSemaphore.create_semaphore(@write_sem,1)
       RbbtSemaphore.create_semaphore(@read_sem,1)
     end
@@ -20,7 +20,7 @@ class RbbtProcessQueue
     def clean
       @sread.close unless @sread.closed?
       @swrite.close unless @swrite.closed?
-      Log.warn "Destroying socket semaphores"
+      Log.low "Destroying socket semaphores"
       RbbtSemaphore.delete_semaphore(@write_sem)
       RbbtSemaphore.delete_semaphore(@read_sem)
     end
