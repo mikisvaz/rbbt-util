@@ -246,8 +246,6 @@ class Step
                 log :aborted, "#{Log.color :red, "Aborted"} #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
               rescue
                 Log.exception $!
-              ensure
-                join
               end
             end
           else

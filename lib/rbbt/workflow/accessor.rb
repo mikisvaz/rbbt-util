@@ -5,6 +5,18 @@ class Step
    
   INFO_SERIALIAZER = Marshal
 
+  def self.wait_for_jobs(jobs)
+    begin
+      threads = []
+      jobs.each do |j| threads << Thread.new{j.grace.join} end
+      threads.each{|t| t.join }
+    rescue Exception
+      threads.each{|t| t.exit }
+      jobs.each do |j| j.abort end
+      raise $!
+    end
+  end
+
   def self.files_dir(path)
     path.nil? ? nil : path + '.files'
   end

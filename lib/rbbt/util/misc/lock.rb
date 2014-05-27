@@ -1,4 +1,6 @@
-Lockfile.refresh = false #if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
+Lockfile.refresh = 5 * 60 #if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
+Lockfile.max_age = 60 * 60 * 5
+Lockfile.refresh=false
 
 module Misc
 

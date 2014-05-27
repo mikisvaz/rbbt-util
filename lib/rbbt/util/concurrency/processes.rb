@@ -29,11 +29,12 @@ class RbbtProcessQueue
           end
         rescue Aborted
           Log.warn "Callback thread aborted"
-          @process_monitor.raise Aborted.new
+          @process_monitor.raise $!
           raise $!
         rescue ClosedStream
         rescue Exception
           Log.warn "Callback thread exception: #{$!.message}"
+          Log.exception $!
           @process_monitor.raise $!
           raise $!
         ensure

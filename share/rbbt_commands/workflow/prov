@@ -8,6 +8,21 @@ require 'rbbt/util/simpleopt'
 require 'rbbt/workflow/step'
 require 'rbbt/util/misc'
 
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Examine the provenance of a job result
+
+$ rbbt workflow prov <job-result>
+
+-h--help Help
+EOF
+
+SOPT.usage if options[:help]
+
 file = ARGV.shift
 
 $seen = []
