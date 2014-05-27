@@ -239,7 +239,7 @@ module Workflow
     persist = false
     key = Path === step_path ? step_path.find : step_path
     step = Persist.memory("Step", :key => key, :repo => step_cache, :persist => persist) do
-      step = Step.new step_path, task, input_values, dependencies
+    step = Step.new step_path, task, input_values, dependencies
 
       helpers.each do |name, block|
         (class << step; self; end).instance_eval do
@@ -270,7 +270,15 @@ module Workflow
 
     dependencies = real_dependencies(task, jobname, inputs, task_dependencies[taskname] || [])
 
-    if inputs.empty?
+    real_inputs = {}
+    task_inputs = task_info(taskname)[:inputs]
+    defaults = task_info(taskname)[:input_defaults]
+
+    inputs.each do |k,v|
+      real_inputs[k] = v if task_inputs.include?(k) and defaults[k].to_s != v.to_s and not (FalseClass === v and defaults[k].nil?)
+    end
+
+    if real_inputs.empty?
       step_path = step_path taskname, jobname, [], [], task.extension
       input_values = task.take_input_values(inputs)
     else

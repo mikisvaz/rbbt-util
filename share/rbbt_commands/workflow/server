@@ -18,12 +18,12 @@ workflow = ARGV.first
 
 YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
 
-Workflow.require_workflow workflow
+wf = Workflow.require_workflow workflow
 
 class WorkflowRest < Sinatra::Base
-  get '/' do
-    redirect to(File.join('/', Workflow.workflows.last.to_s))
-  end
+  self
+end.get '/' do
+  redirect to(File.join('/', wf.to_s))
 end
 
 ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
@@ -60,7 +60,7 @@ class WorkflowRest < Sinatra::Base
   use Rack::Deflater
 end
 
-WorkflowRest.add_workflow Workflow.workflows.last, true
+WorkflowRest.add_workflow wf, true
 
 WorkflowRest.port = options[:port] || 4567
 WorkflowRest.bind = options[:bind] || "0.0.0.0"

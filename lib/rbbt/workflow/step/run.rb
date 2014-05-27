@@ -445,8 +445,8 @@ class Step
         pid = nil
         dependencies.each{|dep| dep.join }
       end
-      self
       sleep 1 until path.exists?
+      self
     ensure
       set_info :joined, true
     end
