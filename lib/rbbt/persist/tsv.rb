@@ -28,6 +28,8 @@ rescue Exception
   Log.debug "The kyotocabinet gem could not be loaded. Persistance using this engine will fail."
 end
 
+require 'rbbt/persist/tsv/sharder'
+
 module Persist
   CONNECTIONS = {}
 

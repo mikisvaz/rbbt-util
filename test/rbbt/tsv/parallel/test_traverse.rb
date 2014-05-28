@@ -366,4 +366,14 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     end
     assert_equal size, stream.read.split("\n").length
   end
+
+  def test_store_multiple
+    size = 1000
+    array = (1..size).to_a.collect{|n| n.to_s}
+    stream = TSV.traverse array, :bar => {:max => size, :desc => "Array"}, :cpus => 5, :into => :stream do |e|
+      sleep 0.01
+      [e,e+".alt"].extend TSV::MultipleResult
+    end
+    assert_equal size*2, stream.read.split("\n").length
+  end
 end

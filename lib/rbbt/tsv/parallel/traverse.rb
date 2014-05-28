@@ -1,4 +1,7 @@
 module TSV
+
+  module MultipleResult; end
+
   def self.obj_stream(obj)
     case obj
     when (defined? Step and Step)
@@ -15,7 +18,7 @@ module TSV
   def self.guess_max(obj)
     begin
       case obj
-      when Step
+      when (defined? Step and Step)
         if obj.done?
           CMD.cmd("wc -l '#{obj.path.find}'").read.to_i
         else
@@ -27,8 +30,15 @@ module TSV
         CMD.cmd("wc -l '#{obj.filename}'").read.to_i
       when Path
         CMD.cmd("wc -l '#{obj.find}'").read.to_i
+      when String
+        if File.exists? obj
+          CMD.cmd("wc -l '#{obj}'").read.to_i
+        else
+          nil
+        end
       end
     rescue Exception
+      Log.exception $!
       nil
     end
   end
@@ -69,6 +79,7 @@ module TSV
         end
       end
     end
+    Log::ProgressBar.remove_bar(bar) if bar
     join.call if join
   end
 
@@ -92,6 +103,7 @@ module TSV
         end
       end
     end
+    Log::ProgressBar.remove_bar(bar) if bar
     join.call if join
   end
 
@@ -115,6 +127,7 @@ module TSV
         end
       end
     end
+    Log::ProgressBar.remove_bar(bar) if bar
     join.call if join
   end
 
@@ -132,14 +145,22 @@ module TSV
 
     if callback
       while line = io.gets
-        callback.call yield line.strip
-        bar.tick if bar
+        begin
+          callback.call yield line.strip
+        ensure
+          bar.tick if bar
+        end
       end
     else
       while line = io.gets
-        yield line.strip
+        begin
+          yield line.strip
+        ensure
+          bar.tick if bar
+        end
       end
     end
+    Log::ProgressBar.remove_bar(bar) if bar
     join.call if join
   end
 
@@ -332,6 +353,12 @@ module TSV
   end
 
   def self.store_into(store, value)
+    if MultipleResult === value
+      value.each do |v|
+        store_into store, v
+      end
+      return
+    end
     begin
       case store
       when Hash
