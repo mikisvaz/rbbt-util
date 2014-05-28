@@ -5,7 +5,7 @@ module Persist
   module TCAdapter
     attr_accessor :persistence_path, :tokyocabinet_class, :closed, :writable, :mutex
 
-    def self.open(path, write, tokyocabinet_class = TokyoCabinet::HDB)
+    def self.open(path, write, serializer, tokyocabinet_class = TokyoCabinet::HDB)
       tokyocabinet_class = TokyoCabinet::HDB if tokyocabinet_class == "HDB"
       tokyocabinet_class = TokyoCabinet::BDB if tokyocabinet_class == "BDB"
 
@@ -80,12 +80,6 @@ module Persist
     def read?
       ! write?
     end
-    #def each
-    #  iterinit
-    #  while key = iternext
-    #    yield key, get(key)
-    #  end
-    #end
 
     def collect
       res = []

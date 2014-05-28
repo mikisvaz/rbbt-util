@@ -28,6 +28,6 @@ class Test::Unit::TestCase
   end
 
   def datafile_test(file)
-    File.join(File.dirname(__FILE__), 'data', file)
+    Path.setup(File.join(File.dirname(__FILE__), 'data', file))
   end
 end

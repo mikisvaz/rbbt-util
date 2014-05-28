@@ -135,6 +135,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    persist=persist{
     tsv.rb
     tsv=tsv{
+     sharder.rb
      tokyocabinet.rb
      kyotocabinet.rb
      lmdb.rb
@@ -168,6 +169,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   }
  }
  test=test {
+  data=data{
+   .identifiers
+  }
   test_helper.rb
   rbbt=rbbt{
    test_annotations.rb

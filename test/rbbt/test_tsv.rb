@@ -519,4 +519,12 @@ row2    A AA AAA
     end
  
   end
+
+  def test_shard
+    shard_function = Proc.new do |key|
+      key[-1]
+    end
+    tsv = datafile_test('identifiers').tsv :persist => true, :shard_function => shard_function
+    assert_equal 10000, tsv.keys.length + 2
+  end
 end

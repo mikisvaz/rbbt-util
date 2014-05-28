@@ -243,7 +243,7 @@ module TSV
       next if ENTRY_KEYS.include? key
 
       # TODO Update this to be more efficient
-      value = serializer_module.load(value) unless serializer_module.nil? or TSV::CleanSerializer == serializer_module
+      value = serializer_module.load(value) unless value.nil? or serializer_module.nil? or TSV::CleanSerializer == serializer_module
 
       # Annotated with Entity and NamedArray
       if not @unnamed
@@ -417,13 +417,15 @@ module TSV
   end
 
   def namespace=(value)
-    self.send(:[]=, "__tsv_hash_namespace", value.nil? ? SERIALIZED_NIL : value.to_yaml, true)
+    self.send(:[]=, "__tsv_hash_namespace", value.nil? ? SERIALIZED_NIL : TSV::TSV_SERIALIZER.dump(value), true)
     @namespace = value
     @entity_options = nil
   end
 
   def fields=(value)
-    self.send(:[]=, "__tsv_hash_fields", value.nil? ? SERIALIZED_NIL : value.to_yaml, true)
+    clean = true
+    value_ym = value.nil? ? SERIALIZED_NIL : TSV::TSV_SERIALIZER.dump(value)
+    self.send(:[]=, "__tsv_hash_fields", value_ym, clean)
     @fields = value
     @named_fields = nil
   end

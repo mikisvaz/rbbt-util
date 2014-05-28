@@ -28,8 +28,6 @@ rescue Exception
   Log.debug "The kyotocabinet gem could not be loaded. Persistance using this engine will fail."
 end
 
-require 'rbbt/persist/tsv/sharder'
-
 module Persist
   CONNECTIONS = {}
 
@@ -85,14 +83,23 @@ module Persist
 
     if is_persisted?(path) and not persist_options[:update]
       Log.debug "TSV persistence up-to-date: #{ path }"
-      return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
+      if persist_options[:shard_function]
+        return open_sharder(path, false, nil, persist_options[:engine], &persist_options[:shard_function]) 
+      else
+        return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
+      end
     end
 
     Misc.lock lock_filename do
       begin
         if is_persisted?(path) and not persist_options[:update]
           Log.debug "TSV persistence (suddenly) up-to-date: #{ path }"
-          return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
+
+          if persist_options[:shard_function]
+            return open_sharder(path, false, nil, persist_options[:engine], &persist_options[:shard_function]) 
+          else
+            return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
+          end
         end
 
         FileUtils.rm path if File.exists? path
@@ -101,8 +108,15 @@ module Persist
 
         tmp_path = path + '.persist'
 
-        data = open_database(tmp_path, true, persist_options[:serializer], persist_options[:engine] || TokyoCabinet::HDB)
-        data.serializer = :type if TSV === data and data.serializer.nil?
+        data = if persist_options[:shard_function]
+                 open_sharder(tmp_path, true, persist_options[:serializer], persist_options[:engine], &persist_options[:shard_function]) 
+               else
+                 open_database(tmp_path, true, persist_options[:serializer], persist_options[:engine] || TokyoCabinet::HDB) 
+               end
+
+        if TSV === data and data.serializer.nil?
+          data.serializer = :type 
+        end
 
         data.write_and_read do
           yield data
@@ -123,3 +137,6 @@ module Persist
     end
   end
 end
+
+require 'rbbt/persist/tsv/sharder'
+
