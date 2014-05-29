@@ -205,7 +205,7 @@ module Log
     error("BACKTRACE:\n" + e.backtrace * "\n") 
   end
 
-  case ENV['RBBT_LOG']
+  case ENV['RBBT_LOG'] 
   when 'DEBUG' 
     self.severity = DEBUG
   when 'LOW' 

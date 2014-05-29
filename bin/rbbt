@@ -1,5 +1,29 @@
 #!/usr/bin/env ruby
 
+dev_dir = nil
+if _i = ARGV.index("--dev")
+  dev_dir = ARGV[_i+1]
+  ARGV.delete "--dev"
+end
+
+if dev_dir.nil? 
+  _s = nil
+  ARGV.each_with_index do |s,i|
+    if s.match(/^--dev(?:=(.*))?/)
+      dev_dir = $1
+      _s = s
+      next
+    end
+  end
+  ARGV.delete _s if _s
+end
+
+if dev_dir
+  Dir.glob(File.join(File.expand_path(dev_dir),'rbbt-*')).each do |f|
+    $LOAD_PATH << f
+  end
+end
+
 require 'rbbt'
 require 'rbbt/util/simpleopt'
 
@@ -12,6 +36,7 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 
 
 --log*                  #{Log.color :yellow, "Log level from 0 (debug) 6 (errors)"}
+--dev*                  #{Log.color :yellow, "Find development libraries in the directory specified"}
 -cd--command_dir*       #{Log.color :yellow, "Directory from where to load command scripts"}
 --profile               #{Log.color :yellow, "Profile execution"}
 --nocolor               #{Log.color :yellow, "Disable colored output"}
@@ -27,7 +52,9 @@ locate = options.delete :locate_file
 
 if options[:log]
   Log.severity = options[:log].to_i
-  SOPT.input_descriptions.each{|t,d| d.replace Log.uncolor(d) }
+else
+  global_severity = Log.get_level(Rbbt.etc.log_severity.read.strip) if Rbbt.etc.log_severity.exists?
+  Log.severity = ENV["RBBT_LOG"] || global_severity
 end
 
 if options[:command_dir]
