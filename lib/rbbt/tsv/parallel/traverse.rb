@@ -54,7 +54,7 @@ module TSV
   def self.report(msg, obj, into)
     into = into[:into] if Hash === into and into.include? :into
 
-    Log.medium "#{ msg } #{stream_name(obj)} -> #{stream_name(into)}"
+    Log.medium{"#{ msg } #{stream_name(obj)} -> #{stream_name(into)}"}
   end
 
   #{{{ TRAVERSE OBJECTS
@@ -135,7 +135,7 @@ module TSV
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
     if File === io and io.closed? 
       begin
-        Log.medium "Rewinding stream #{stream_name(io)}"
+        Log.medium{"Rewinding stream #{stream_name(io)}"}
         io.reopen io.filename, "r"
       rescue
         Log.exception $!
@@ -168,7 +168,7 @@ module TSV
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
     if File === io and io.closed? 
       begin
-        Log.medium "Rewinding stream #{stream_name(io)}"
+        Log.medium{"Rewinding stream #{stream_name(io)}"}
         io.reopen io.filename, "r"
       rescue
         Log.exception $!
@@ -192,7 +192,7 @@ module TSV
       options[:type] = :single
     end
 
-    Log.medium "Traversing #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
+    Log.medium{"Traversing #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"}
     begin
       case obj
       when TSV
@@ -256,28 +256,28 @@ module TSV
         raise "Unknown object for traversal: #{Misc.fingerprint obj }"
       end
     rescue IOError
-      Log.medium "IOError traversing #{stream_name(obj)}: #{$!.message}"
+      Log.medium{"IOError traversing #{stream_name(obj)}: #{$!.message}"}
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
       raise $!
     rescue Errno::EPIPE
-      Log.medium "Pipe closed while traversing #{stream_name(obj)}: #{$!.message}"
+      Log.medium{"Pipe closed while traversing #{stream_name(obj)}: #{$!.message}"}
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
       raise $!
     rescue Aborted
-      Log.medium "Aborted traversing #{stream_name(obj)}"
+      Log.medium{"Aborted traversing #{stream_name(obj)}"}
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
-      Log.medium "Aborted traversing 2 #{stream_name(obj)}"
+      Log.medium{"Aborted traversing 2 #{stream_name(obj)}"}
     rescue Exception
-      Log.medium "Exception traversing #{stream_name(obj)}"
+      Log.medium{"Exception traversing #{stream_name(obj)}"}
       Log.exception $!
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
@@ -335,7 +335,7 @@ module TSV
         q.clean
       end
     rescue Interrupt, Aborted
-      Log.medium "Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"
+      Log.medium{"Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"}
       q.abort
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort

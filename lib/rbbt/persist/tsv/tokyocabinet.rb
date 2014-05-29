@@ -6,7 +6,7 @@ module Persist
     attr_accessor :persistence_path, :tokyocabinet_class, :closed, :writable, :mutex
 
     def self.open(path, write, serializer, tokyocabinet_class = TokyoCabinet::HDB)
-      tokyocabinet_class = TokyoCabinet::HDB if tokyocabinet_class == "HDB"
+      tokyocabinet_class = TokyoCabinet::HDB if tokyocabinet_class == "HDB" or tokyocabinet_class.nil?
       tokyocabinet_class = TokyoCabinet::BDB if tokyocabinet_class == "BDB"
 
       database = CONNECTIONS[path] ||= tokyocabinet_class.new
@@ -158,7 +158,7 @@ module Persist
 
     FileUtils.mkdir_p File.dirname(path) unless File.exists?(File.dirname(path))
 
-    database = Persist::TCAdapter.open(path, write, tokyocabinet_class)
+    database = Persist::TCAdapter.open(path, write, serializer, tokyocabinet_class)
 
     unless serializer == :clean
       TSV.setup database
