@@ -26,7 +26,11 @@ def pid_msg(pid)
           else
             :red
           end
-  Log.color(color, pid || "missing")
+  if pid.nil?
+    Log.color(:yellow, "missing")
+  else
+    Log.color(color, pid)
+  end
 end
 
 def status_msg(status)
@@ -56,6 +60,7 @@ puts
 if locks.any?
   puts Log.color(:magenta, "Locks:")
   locks.sort_by{|f| File.exists?(f) ? File.ctime(f) : Time.now}.each do |lock|
+    next unless File.exists?(lock)
     pid, ppid, time = Rbbt.load_lock(lock)
     time = File.exists?(lock) ? File.ctime(lock) : Time.now
     puts "  " << lock + Log.color(:blue, " -- time: #{Misc.format_seconds(Time.now - time)}; ppid: #{ppid}; pid: #{pid_msg pid}")
@@ -66,6 +71,7 @@ end
 if persists.any?
   puts Log.color(:magenta, "Persist:")
   persists.sort_by{|f| File.exists?(f) ? File.ctime(f) : Time.now}.each do |persist|
+    next unless File.exists?(persist)
     time = File.exists?(persist) ? File.ctime(persist) : Time.now
     puts "  " << persist + Log.color(:blue, " -- time: #{Misc.format_seconds(Time.now - time)})")
   end
@@ -75,6 +81,7 @@ end
 if sensiblewrites.any?
   puts Log.color(:magenta, "Writing:")
   sensiblewrites.sort_by{|f| File.exists?(f) ? File.ctime(f) : Time.now}.each do |sensiblewrite|
+    next unless File.exists?(sensiblewrite)
     pid, ppid, time = Rbbt.load_lock(sensiblewrite + '.lock')
     time = File.exists?(sensiblewrite) ? File.ctime(sensiblewrite) : Time.now
     puts "  " << sensiblewrite + Log.color(:blue, " -- time: #{Misc.format_seconds(Time.now - time)}; ppid: #{ppid}; pid: #{pid_msg pid}")
