@@ -91,4 +91,25 @@ module SOPT
 #{input_doc(inputs, input_types, input_descriptions, input_defaults, input_shortcuts)}
     EOF
   end
+
+  def self.doc
+    doc = <<-EOF
+#{Log.color :magenta}#{command}(1) -- #{summary}
+#{"=" * (command.length + summary.length + 7)}#{Log.color :reset}
+
+    EOF
+
+    if synopsys and not synopsys.empty?
+      doc << Log.color(:magenta, "## SYNOPSYS") << "\n\n"
+      doc << Log.color(:blue, synopsys) << "\n\n"
+    end
+
+    if description and not description.empty?
+      doc << Log.color(:magenta, "## DESCRIPTION") << "\n\n"
+      doc << Misc.format_paragraph(description)
+    end
+
+    doc << Log.color(:magenta, "## OPTIONS") << "\n\n"
+    doc << input_doc(inputs, input_types, input_descriptions, input_defaults, input_shortcuts)
+  end
 end

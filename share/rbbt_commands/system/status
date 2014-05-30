@@ -100,7 +100,7 @@ jobs.each do |workflow, tasks|
       end
     end
     next if uncomplete and other.empty?
-    puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:yellow, task) << ": " << Log.color(:green, "done") << " " << done.length.to_s
+    puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:cyan, task) << ": " <<  Log.color(:blue, done.length.to_s) << " done"
     other.each do |status, list|
       files_txt = list.collect{|f,p| p.nil? ? f : (f + " (#{pid_msg p})") }
       puts "  " << status_msg(status) << ": " << (files_txt * ", ")
