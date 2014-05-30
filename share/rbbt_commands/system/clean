@@ -83,8 +83,8 @@ jobs.each do |workflow, tasks|
     end
     other.each do |status, list|
       list.each do |f,p|
-        if (p and not Misc.pid_exists?(p)) or status.to_s =~ /error|aborted|missing/
-          puts "  Cleaning #{ f }"
+        if not Misc.pid_exists?(p) or status.to_s =~ /error|aborted|missing/
+          puts "  Removing #{ f }"
           FileUtils.rm_rf f
           FileUtils.rm_rf f + '.info'
           FileUtils.rm_rf f + '.files'
