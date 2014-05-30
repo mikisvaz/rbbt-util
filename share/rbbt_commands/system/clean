@@ -1,0 +1,96 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow'
+require 'rbbt/monitor'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Clean failed jobs, lock files, etc
+
+$ rbbt system clean 
+
+-h--help Print this help
+EOF
+rbbt_usage and exit 0 if options[:help]
+
+locks = Rbbt.locks
+sensiblewrites = Rbbt.sensiblewrites
+persists = Rbbt.persists
+
+puts Log.color(:magenta, "# System clean")
+puts
+if locks.any?
+  puts Log.color(:magenta, "Locks: #{locks.length}")
+  locks.each do |lock|
+    pid, ppid, time = Rbbt.load_lock(lock)
+    if not Misc.pid_exists? pid
+      puts "  Removing #{ lock }"
+      FileUtils.rm lock 
+    end
+  end
+  puts
+end
+
+if persists.any?
+  puts Log.color(:magenta, "Persist: #{persists.length}")
+  persists.each do |persist|
+    lf = persist + '.lock'
+    pid, ppid, time = Rbbt.load_lock(lf)
+    if not Misc.pid_exists? pid
+      puts "  Removing #{ persist }"
+      FileUtils.rm persists 
+      FileUtils.rm lf 
+    end
+  end
+  puts
+end
+
+if sensiblewrites.any?
+  puts Log.color(:magenta, "Writing: #{sensiblewrites.length}")
+  sensiblewrites.each do |sensiblewrite|
+    lf = sensiblewrite + '.lock'
+    pid, ppid, time = Rbbt.load_lock(lf)
+    if not Misc.pid_exists? pid
+      puts "  Removing #{ sensiblewrite }"
+      FileUtils.rm sensiblewrite 
+      FileUtils.rm lf 
+    end
+  end
+  puts
+end
+
+jobs = Rbbt.jobs
+
+puts Log.color(:magenta, "# Workflows:")
+puts
+jobs.each do |workflow, tasks|
+  tasks.each do |task, jobs|
+    puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:yellow, task) << ": #{jobs.length}"
+    done = []
+    other = {}
+    jobs.each do |file,h|
+      status = h[:status]
+      if h[:status] == :done
+        done << file
+      else
+        other[status||"missing"] ||= []
+        other[status||"missing"] << [file, h[:pid]]
+      end
+    end
+    other.each do |status, list|
+      list.each do |f,p|
+        if (p and not Misc.pid_exists?(p)) or status.to_s =~ /error|aborted|missing/
+          puts "  Cleaning #{ f }"
+          FileUtils.rm_rf f
+          FileUtils.rm_rf f + '.info'
+          FileUtils.rm_rf f + '.files'
+        end
+      end
+    end
+  end
+end
+

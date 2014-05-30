@@ -3,6 +3,7 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
+require 'rbbt/monitor'
 
 $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
@@ -16,13 +17,6 @@ $ rbbt system status
 EOF
 rbbt_usage and exit 0 if options[:help]
 
-def find_locks(dir)
-  dir.glob("**/*.lock")
-end
-
-def find_persists(dir)
-  dir.glob("**/*.persist")
-end
 
 def pid_msg(pid)
   color = if Misc.pid_exists? pid
@@ -51,82 +45,17 @@ def status_msg(status)
   Log.color(color, status)
 end
 
-def load_jobs(dir)
-  job_files = {}
-  workflow_dirs = dir.glob("*").each do |wdir|
-    workflow = File.basename(wdir)
-    job_files[workflow] = {}
-    task_dirs = wdir.glob('*')
-    task_dirs.each do |tdir|
-      task = File.basename(tdir)
-      job_files[workflow][task] = tdir.glob('*')
-    end
-  end
-  jobs = {}
-  job_files.each do |workflow,task_jobs|
-    jobs[workflow] ||= {}
-    task_jobs.each do |task, files|
-      jobs[workflow][task] ||= {}
-      files.each do |f|
-        next if f =~ /\.lock$/
-        job = f.sub(/\.(info|files)/,'')
-
-        jobs[workflow][task][job] ||= {}
-        if jobs[workflow][task][job][:status].nil? 
-          status = nil
-          status = :done if Open.exists? job
-          if status.nil? and f=~/\.info/
-            info = begin
-                     Step::INFO_SERIALIAZER.load(Open.read(f, :mode => 'rb'))
-                   rescue
-                     {}
-                   end 
-            status = info[:status]
-            pid = info[:pid]
-          end
-
-          jobs[workflow][task][job][:pid] = pid if pid
-          jobs[workflow][task][job][:status] = status if status
-        end
-      end
-    end
-  end
-  jobs
-end
-
-def load_lock(lock)
- begin
-  info = Misc.insist 3 do 
-   YAML.load(Open.read(lock))
-  end
-  info.values_at "pid", "ppid", "time"
- rescue Exception
-  ["noinfo", "noinfo", File.atime(lock)]
- end
-end
-
-lock_dirs    = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all + Rbbt.tmp.tsv_open_locks.find_all + Rbbt.var.jobs.find_all 
-persist_dirs = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all 
-sensiblewrite_dirs = Rbbt.tmp.sensiblewrite.find_all
-
-locks = lock_dirs.inject([]) do |acc,e|
-  acc += find_locks(e)
-end
-
-persists = persist_dirs.inject([]) do |acc,e|
-  acc += find_persists(e)
-end
-
-sensiblewrites = sensiblewrite_dirs.inject([]) do |acc,e|
-  acc += e.glob('*').reject{|d| d=~/\.lock$/}
-end
+locks = Rbbt.locks
+sensiblewrites = Rbbt.sensiblewrites
+persists = Rbbt.persists
 
 puts Log.color(:magenta, "# System report")
 puts
 if locks.any?
   puts Log.color(:magenta, "Locks:")
   locks.each do |lock|
-    pid, ppid, time = load_lock(lock)
+    pid, ppid, time = Rbbt.load_lock(lock)
+    time ||= File.atime lock
     puts "  " << lock + Log.color(:blue, " -- time: #{Time.now - time}; ppid: #{ppid}; pid: #{pid_msg pid}")
   end
   puts
@@ -143,13 +72,13 @@ end
 if sensiblewrites.any?
   puts Log.color(:magenta, "Writing:")
   sensiblewrites.each do |sensiblewrite|
-    pid, ppid, time = load_lock(sensiblewrite + '.lock')
+    pid, ppid, time = Rbbt.load_lock(sensiblewrite + '.lock')
     puts "  " << sensiblewrite + Log.color(:blue, " -- time: #{Time.now - time}; ppid: #{ppid}; pid: #{pid_msg pid}")
   end
   puts
 end
 
-jobs = load_jobs(Rbbt.var.jobs)
+jobs = Rbbt.jobs
 
 puts Log.color(:magenta, "# Workflows:")
 puts

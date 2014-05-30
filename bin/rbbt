@@ -19,8 +19,8 @@ if dev_dir.nil?
 end
 
 if dev_dir
-  Dir.glob(File.join(File.expand_path(dev_dir),'rbbt-*')).each do |f|
-    $LOAD_PATH << f
+  Dir.glob(File.join(File.expand_path(dev_dir),'rbbt-*/lib')).each do |f|
+    $LOAD_PATH.unshift f
   end
 end
 
