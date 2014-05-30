@@ -42,7 +42,7 @@ def status_msg(status)
           when :done
             :green
           else
-            if status.index ">"
+            if status.to_s.index ">"
               :yellow
             else
               nil
@@ -94,6 +94,17 @@ def load_jobs(dir)
   jobs
 end
 
+def load_lock(lock)
+ begin
+  info = Misc.insist 3 do 
+   YAML.load(Open.read(lock))
+  end
+  info.values_at "pid", "ppid", "time"
+ rescue Exception
+  ["noinfo", "noinfo", File.atime(lock)]
+ end
+end
+
 lock_dirs    = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all + Rbbt.tmp.tsv_open_locks.find_all + Rbbt.var.jobs.find_all 
 persist_dirs = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all 
 sensiblewrite_dirs = Rbbt.tmp.sensiblewrite.find_all
@@ -115,7 +126,7 @@ puts
 if locks.any?
   puts Log.color(:magenta, "Locks:")
   locks.each do |lock|
-    pid, ppid, time = YAML.load(Open.read(lock)).values_at "pid", "ppid", "time"
+    pid, ppid, time = load_lock(lock)
     puts "  " << lock + Log.color(:blue, " -- time: #{Time.now - time}; ppid: #{ppid}; pid: #{pid_msg pid}")
   end
   puts
@@ -132,7 +143,7 @@ end
 if sensiblewrites.any?
   puts Log.color(:magenta, "Writing:")
   sensiblewrites.each do |sensiblewrite|
-    pid, ppid, time = YAML.load(Open.read(sensiblewrite + '.lock')).values_at "pid", "ppid", "time"
+    pid, ppid, time = load_lock(sensiblewrite + '.lock')
     puts "  " << sensiblewrite + Log.color(:blue, " -- time: #{Time.now - time}; ppid: #{ppid}; pid: #{pid_msg pid}")
   end
   puts

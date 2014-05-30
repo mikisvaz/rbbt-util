@@ -53,8 +53,12 @@ module Log
 
   self.ignore_stderr do
     require 'nokogiri'
-    require "highline/system_extensions.rb"
-    self.tty_size = HighLine::SystemExtensions.terminal_size.first 
+    self.tty_size = begin
+                      require "highline/system_extensions.rb"
+                      HighLine::SystemExtensions.terminal_size.first 
+                    rescue Exception
+                      nil
+                    end
   end
 
   def self.with_severity(level)
