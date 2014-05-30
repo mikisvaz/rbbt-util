@@ -54,10 +54,6 @@ module ConcurrentStream
     if @threads and @threads.any?
       @threads.each do |t| 
         t.join unless t == Thread.current
-        #begin
-        #ensure
-        #  t.join unless t == Thread.current
-        #end
       end
       @threads = []
     end
@@ -94,7 +90,33 @@ module ConcurrentStream
   end
 
   def abort_threads
-    @threads.each{|t| t.raise Aborted.new unless t == Thread.current } if @threads
+    Log.medium "Aborting threads (#{Thread.current.inspect}) #{@threads.collect{|t| t.inspect } * ", "}"
+
+    @threads.each do |t| 
+      @aborted = false if t == Thread.current
+      next if t == Thread.current
+      Log.medium "Aborting thread #{t.inspect}"
+      t.raise Aborted.new "Hey"
+    end if @threads
+
+    sleeped = false
+    @threads.each do |t|
+      next if t == Thread.current
+      if t.alive? 
+        sleep 1 unless sleeped
+        sleeped = true
+        Log.medium "Kill thread #{t.inspect}"
+        t.kill
+      end
+      begin
+        Log.medium "Join thread #{t.inspect}"
+        t.join unless t == Thread.current
+      rescue Aborted
+      rescue Exception
+        Log.exception $!
+      end
+    end
+    Log.medium "Aborted threads (#{Thread.current.inspect}) #{@threads.collect{|t| t.inspect } * ", "}"
   end
 
   def abort_pids
@@ -103,9 +125,9 @@ module ConcurrentStream
   end
 
   def abort
-    Log.medium "Aborting stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"
     return if @aborted
-    @aborted = true
+    Log.medium "Aborting stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"
+    @aborted = true 
     begin
       @callback = nil
       @abort_callback.call if @abort_callback
@@ -115,6 +137,7 @@ module ConcurrentStream
       abort_threads
       abort_pids
     end
+    Log.medium "Aborted stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"
   end
 
   def super(*args)

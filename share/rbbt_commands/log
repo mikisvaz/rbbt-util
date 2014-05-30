@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Change log level
+
+$ rbbt log <level>
+
+DEBUG
+LOW
+MEDIUM
+HIGH
+INFO
+WARN
+ERROR
+
+-h--help Print this help
+
+EOF
+rbbt_usage and exit 0 if options[:help] 
+if ARGV.empty?
+  puts Rbbt.etc.log_severity.read
+else
+  Open.write(Rbbt.etc.log_severity, ARGV[0].upcase)
+end
+
+

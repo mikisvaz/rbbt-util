@@ -358,6 +358,7 @@ class Step
         #stream.close unless stream.closed?
       rescue Aborted
         Log.medium "Aborting job stream #{stream.inspect} ABORTED RETRY -- #{Log.color :blue, path}"
+        Log.exception $!
         retry
       end
     end

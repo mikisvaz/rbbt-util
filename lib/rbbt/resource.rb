@@ -65,7 +65,8 @@ module Resource
     begin
       @server_missing_resource_cache ||= Set.new
       raise "Resource Not Found" if @server_missing_resource_cache.include? url
-      Net::HTTP.get_response URI(url) do |response|
+      Misc.lock final_path do
+        Net::HTTP.get_response URI(url) do |response|
           case response
           when Net::HTTPSuccess, Net::HTTPOK
             Misc.sensiblewrite(final_path) do |file|
@@ -77,15 +78,19 @@ module Resource
             location = response['location']
             Log.debug("Feching directory from: #{location}. Into: #{final_path}")
             FileUtils.mkdir_p final_path unless File.exists? final_path
-            Misc.in_dir final_path do
-              CMD.cmd('tar xvfz -', :in => Open.open(location, :nocache => true))
+            TmpFile.with_file do |tmp_dir|
+              Misc.in_dir tmp_dir do
+                CMD.cmd('tar xvfz -', :in => Open.open(location, :nocache => true))
+              end
             end
+            File.utils tmp_dir, final_path
           when Net::HTTPInternalServerError
             @server_missing_resource_cache << url
             raise "Resource Not Found"
           else
             raise "Response not understood: #{response.inspect}"
           end
+        end
       end
     rescue
       Log.warn "Could not retrieve (#{self.to_s}) #{ path } from #{ remote_server }"

@@ -54,7 +54,12 @@ if options[:log]
   Log.severity = options[:log].to_i
 else
   global_severity = Log.get_level(Rbbt.etc.log_severity.read.strip) if Rbbt.etc.log_severity.exists?
-  Log.severity = ENV["RBBT_LOG"] || global_severity
+  if ENV["RBBT_LOG"]
+    Log.severity = ENV["RBBT_LOG"].to_i 
+  else
+    global_severity = Log.get_level(Rbbt.etc.log_severity.read.strip) if Rbbt.etc.log_severity.exists?
+    Log.severity = global_severity.to_i if global_severity
+  end
 end
 
 if options[:command_dir]

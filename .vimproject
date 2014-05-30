@@ -262,6 +262,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   rbbt_commands=rbbt_commands filter="*"{
    alias
    color
+   log
    system=system{
     report
     purge

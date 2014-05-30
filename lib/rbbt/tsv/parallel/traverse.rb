@@ -459,6 +459,7 @@ module TSV
         stream.abort if stream and stream.respond_to? :abort
         stream = obj_stream(into)
         stream.abort if stream and stream.respond_to? :abort
+        parent.raise $!
         raise $!
       end
     end
