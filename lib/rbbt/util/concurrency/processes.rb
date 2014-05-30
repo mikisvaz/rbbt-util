@@ -102,7 +102,7 @@ class RbbtProcessQueue
   end
 
   def clean
-    if @process_monitor.alive? or @callback_thread.alive?
+    if (@process_monitor and @process_monitor.alive?) or (@callback_thread and @callback_thread.alive?)
       self.abort
     else
       self.join
@@ -111,8 +111,8 @@ class RbbtProcessQueue
 
   def abort
     begin
-      @process_monitor.raise(Aborted.new); @process_monitor.join if @process_monitor and @process_monitor.alive?
-      @callback_thread.raise(Aborted.new); @callback_thread.join if @callback_thread and @callback_thread.alive?
+      (@process_monitor.raise(Aborted.new); @process_monitor.join) if @process_monitor and @process_monitor.alive?
+      (@callback_thread.raise(Aborted.new); @callback_thread.join) if @callback_thread and @callback_thread.alive?
     ensure
       join
     end

@@ -76,7 +76,12 @@ module Rbbt
       end
       info.values_at "pid", "ppid", "time"
     rescue Exception
-      [nil, nil, File.atime(lock)]
+      time = begin
+               File.atime(lock)
+             rescue Exception
+               Time.now
+             end
+      [nil, nil, time]
     end
   end
 

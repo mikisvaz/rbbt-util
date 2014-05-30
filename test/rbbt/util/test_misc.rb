@@ -6,7 +6,13 @@ require 'rbbt/entity'
 
 class TestMisc < Test::Unit::TestCase
 
-  def _test_format_paragraph
+  def test_format_seconds
+    t = 61.3232
+    assert_equal "00:01:01", Misc.format_seconds(t)
+    assert_equal "00:01:01.32", Misc.format_seconds(t, true)
+  end
+
+  def test_format_paragraph
     p = <<-EOF
 Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
@@ -26,7 +32,7 @@ in culpa qui officia deserunt mollit anim id est laborum.
     assert Misc.format_paragraph(p, 70, 10, 5) =~ /\n\s*\* two/sm
   end
 
-  def _test_format_dl
+  def test_format_dl
     p1 = <<-EOF
 Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
@@ -56,13 +62,13 @@ eum fugiat quo voluptas nulla pariatur?"
     assert Misc.format_definition_list({:paragraph_first => p1, :paragraph_second => p2}) =~ /       /
   end
 
-  def _test_parse_cmd_params
+  def test_parse_cmd_params
     assert_equal ["workflow", "task", "Translation", "translate", "-f", "Associated Gene Name", "-l", "-"],
       Misc.parse_cmd_params("workflow task Translation translate -f 'Associated Gene Name' -l -")
   end
 
 
-  def _test_fixutf8
+  def test_fixutf8
     string = "abc\xffdef"
     string = string.force_encoding("UTF-8") if string.respond_to? :force_encoding
     assert(! string.valid_encoding?) if string.respond_to? :valid_encoding?
@@ -71,37 +77,37 @@ eum fugiat quo voluptas nulla pariatur?"
     assert( Misc.fixutf8(string).valid_encoding) if string.respond_to? :valid_encoding
   end
 
-  def _test_colors_for
+  def test_colors_for
     colors, used = Misc.colors_for([1,2,2,1,2,1,2,2,3,3,2,3,2])
     assert_equal Misc::COLOR_LIST[1], used[2]
   end
 
-  def _test_total_length
+  def test_total_length
     ranges = [(0..100), (50..150), (120..160)]
     ranges = [(0..100), (50..150), (120..160), (51..70)]
     assert_equal 161, Misc.total_length(ranges)
   end
 
-  def _test_id_filename?
+  def test_id_filename?
     TmpFile.with_file("") do |file|
       assert Misc.is_filename?(file)
       assert ! Misc.is_filename?("TEST STRING")
     end
   end
 
-  def _test_merge_sorted_arrays
+  def test_merge_sorted_arrays
     assert_equal [1,2,3,4], Misc.merge_sorted_arrays([1,3], [2,4])
   end
 
-  def _test_intersect_sorted_arrays
+  def test_intersect_sorted_arrays
     assert_equal [2,4], Misc.intersect_sorted_arrays([1,2,3,4], [2,4])
   end
 
-  def _test_sorted_array_matches
+  def test_sorted_array_matches
     assert_equal [1,3], Misc.sorted_array_hits(%w(a b c d e), %w(b d))
   end
 
-  def _test_binary_include?
+  def test_binary_include?
     a = %w(a b c d e).sort
     assert Misc.binary_include?(a, "a")
     assert(!Misc.binary_include?(a, "z"))
@@ -110,12 +116,12 @@ eum fugiat quo voluptas nulla pariatur?"
     assert(Misc.binary_include?(a, "d"))
   end
 
-  def _test_process_to_hash
+  def test_process_to_hash
     list = [1,2,3,4]
     assert_equal 4, Misc.process_to_hash(list){|l| l.collect{|e| e * 2}}[2]
   end
 
-  def _test_pipe_fork
+  def test_pipe_fork
     sout, sin = Misc.pipe
     pid = Process.fork do
       Misc.purge_pipes(sin)
@@ -127,7 +133,7 @@ eum fugiat quo voluptas nulla pariatur?"
     Process.kill :INT, pid
   end
 
-  def _test_open_pipe
+  def test_open_pipe
     t = 5
     stream = Misc.open_pipe do |sin|
       t.times do |i|
@@ -148,7 +154,7 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }"}, lines
   end
 
-  def _test_open_pipe_fork
+  def test_open_pipe_fork
     t = 5
     stream = Misc.open_pipe(true) do |sin|
       t.times do |i|
@@ -169,7 +175,7 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }"}, lines
   end
 
-  def _test_open_pipe_fork_cascade
+  def test_open_pipe_fork_cascade
     t = 500
     sleep_time = 2.0 / t
     time = Time.now
@@ -205,7 +211,7 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }".reverse.downcase}, lines
   end
 
-  def _test_tee_stream
+  def test_tee_stream
     t = 500
     sleep_time = 2.0 / t
     time = Time.now
@@ -255,7 +261,7 @@ eum fugiat quo voluptas nulla pariatur?"
   end
 
 
-  def _test_string2hash
+  def test_string2hash
     assert(Misc.string2hash("--user-agent=firefox").include? "--user-agent")
     assert_equal(true, Misc.string2hash(":true")[:true])
     assert_equal(true, Misc.string2hash("true")["true"])
@@ -266,16 +272,16 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal(:j, Misc.string2hash("a=b#c=d#:h=:j")[:h])
   end
   
-  def _test_named_array
+  def test_named_array
     a = NamedArray.setup([1,2,3,4], %w(a b c d))
     assert_equal(1, a['a'])
   end
 
-  def _test_path_relative_to
+  def test_path_relative_to
     assert_equal "test/foo", Misc.path_relative_to('/test', '/test/test/foo')
   end
 
-  def _test_hash2string
+  def test_hash2string
     hash = {}
     assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
 
@@ -293,14 +299,14 @@ eum fugiat quo voluptas nulla pariatur?"
  
   end
 
-  def _test_merge
+  def test_merge
     a = [[1],[2]]
     a = NamedArray.setup a, %w(1 2)
     a.merge [3,4]
     assert_equal [1,3], a[0]
   end
 
-  def _test_indiferent_hash
+  def test_indiferent_hash
     a = {:a => 1, "b" => 2}
     a.extend IndiferentHash
 
@@ -310,7 +316,7 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal 2, a[:b]
   end
 
-  def _test_lockfile
+  def test_lockfile
 
     TmpFile.with_file do |tmpfile|
       pids = []
@@ -334,7 +340,7 @@ eum fugiat quo voluptas nulla pariatur?"
     end
   end
 
-  def _test_positions2hash
+  def test_positions2hash
     inputs = Misc.positional2hash([:one, :two, :three], 1, :two => 2, :four => 4)
     assert_equal 1, inputs[:one]
     assert_equal 2, inputs[:two]
@@ -342,12 +348,12 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal nil, inputs[:four]
   end
 
-  def _test_mean
+  def test_mean
     assert_equal 2, Misc.mean([1,2,3])
     assert_equal 3, Misc.mean([1,2,3,4,5])
   end
 
-  def _test_zip_fields
+  def test_zip_fields
     current = [[:a,1], [:b,2]]
     assert_equal [[:a, :b],[1,2]], Misc.zip_fields(current)
     assert_equal current, Misc.zip_fields(Misc.zip_fields(current))
@@ -359,7 +365,7 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal current, Misc.zip_fields(Misc.zip_fields(current)).collect{|v| v.compact }
   end
 
-  def _test_add_zipped
+  def test_add_zipped
     current = [[:a,1], [:b,2]]
     new = %w(A B)
     Misc.append_zipped current, new
@@ -370,20 +376,20 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal Math.sqrt(2), Misc.sd([1,3])
   end
 
-  def _test_divide
+  def test_divide
     assert_equal 2, Misc.divide(%w(1 2 3 4 5 6 7 8 9),2).length
   end
 
-  def _test_ordered_divide
+  def test_ordered_divide
     assert_equal 5, Misc.ordered_divide(%w(1 2 3 4 5 6 7 8 9),2).length
   end
 
-  def _test_collapse_ranges
+  def test_collapse_ranges
     ranges = [(0..100), (50..150), (51..61),(200..250), (300..324),(320..350)]
     assert_equal [(0..150),(200..250), (300..350)], Misc.collapse_ranges(ranges)
   end
 
-  def _test_humanize
+  def test_humanize
     str1 = "test_string"
     str2 = "TEST_string"
     str3 = "test"
@@ -395,22 +401,22 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal "mutation_enrichment", Misc.snake_case("MutationEnrichment")
   end
 
-  def _test_snake_case
+  def test_snake_case
     str1 = "ACRONIMTest"
     str2 = "ACRONIM_test"
     assert_equal "ACRONIM_test", Misc.snake_case(str1)
     assert_equal "ACRONIM_test", Misc.snake_case(str2)
   end
 
-  def _test_correct_vcf_mutations
+  def test_correct_vcf_mutations
     assert_equal [737407, ["-----", "-----G", "-----GTTAAT"]], Misc.correct_vcf_mutation(737406, "GTTAAT", "G,GG,GGTTAAT")
   end
 
-  def _test_fingerprint
+  def test_fingerprint
     assert_equal '{a=>1}', Misc.fingerprint({:a => 1})
   end
 
-  def _test_tarize
+  def test_tarize
     path = File.expand_path('/home/mvazquezg/git/rbbt-util/lib')
     stream = Misc.tarize(path)
     TmpFile.with_file do |res|
@@ -420,7 +426,7 @@ eum fugiat quo voluptas nulla pariatur?"
     end
   end
 
-  def _test_camel_case
+  def test_camel_case
     assert_equal "DbSNP", Misc.camel_case("db_SNP")
     assert_equal "D3Js", Misc.camel_case("D3Js")
     assert_equal "Structure", Misc.camel_case("Structure")

@@ -4,6 +4,8 @@ module TSV
 
   def self.obj_stream(obj)
     case obj
+    when nil
+      nil
     when (defined? Step and Step)
       obj.result
     when IO, File

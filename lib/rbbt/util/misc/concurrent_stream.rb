@@ -96,7 +96,7 @@ module ConcurrentStream
       @aborted = false if t == Thread.current
       next if t == Thread.current
       Log.medium "Aborting thread #{t.inspect}"
-      t.raise Aborted.new "From step: #{path}"
+      t.raise Aborted.new 
     end if @threads
 
     sleeped = false

@@ -29,7 +29,7 @@ if locks.any?
     pid, ppid, time = Rbbt.load_lock(lock)
     if not Misc.pid_exists? pid
       puts "  Removing #{ lock }"
-      FileUtils.rm lock 
+      FileUtils.rm lock if File.exists? lock
     end
   end
   puts
@@ -42,8 +42,8 @@ if persists.any?
     pid, ppid, time = Rbbt.load_lock(lf)
     if not Misc.pid_exists? pid
       puts "  Removing #{ persist }"
-      FileUtils.rm persists 
-      FileUtils.rm lf 
+      FileUtils.rm persists if File.exists? persists
+      FileUtils.rm lf if File.exists? lf
     end
   end
   puts
@@ -56,8 +56,8 @@ if sensiblewrites.any?
     pid, ppid, time = Rbbt.load_lock(lf)
     if not Misc.pid_exists? pid
       puts "  Removing #{ sensiblewrite }"
-      FileUtils.rm sensiblewrite 
-      FileUtils.rm lf 
+      FileUtils.rm sensiblewrite  if File.exists? sensiblewrite
+      FileUtils.rm lf if File.exists? lf
     end
   end
   puts
@@ -69,10 +69,10 @@ puts Log.color(:magenta, "# Workflows:")
 puts
 jobs.each do |workflow, tasks|
   tasks.each do |task, jobs|
-    puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:yellow, task) << ": #{jobs.length}"
     done = []
     other = {}
     jobs.each do |file,h|
+      #puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:yellow, task) << ": #{jobs.length}"
       status = h[:status]
       if h[:status] == :done
         done << file
@@ -85,9 +85,9 @@ jobs.each do |workflow, tasks|
       list.each do |f,p|
         if not Misc.pid_exists?(p) or status.to_s =~ /error|aborted|missing/
           puts "  Removing #{ f }"
-          FileUtils.rm_rf f
-          FileUtils.rm_rf f + '.info'
-          FileUtils.rm_rf f + '.files'
+          FileUtils.rm_rf f if File.exists? f
+          FileUtils.rm_rf f + '.info' if File.exists? f + '.info'
+          FileUtils.rm_rf f + '.files' if File.exists? f + '.files'
         end
       end
     end

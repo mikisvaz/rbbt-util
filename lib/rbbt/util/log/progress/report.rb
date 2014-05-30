@@ -70,7 +70,7 @@ module Log
         eta =  (@max - @ticks) / (@ticks/used)
       end
 
-      used = [used/3600, used/60 % 60, used % 60].map{|t|  "%02i" % t }.join(':')
+      used = Misc.format_seconds(used) 
       eta = [eta/3600, eta/60 % 60, eta % 60].map{|t| "%02i" % t }.join(':')
 
       indicator << " #{Log.color :yellow, used} used #{Log.color :yellow, eta} left"

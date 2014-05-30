@@ -18,6 +18,13 @@ module Misc
     [colors, used]
   end
 
+  def self.format_seconds(time, extended = false)
+    seconds = time.to_i
+    str = [seconds/3600, seconds/60 % 60, seconds % 60].map{|t|  "%02i" % t }.join(':')
+    str << ".%02i" % ((time - seconds) * 100) if extended
+    str
+  end
+
   def self.format_paragraph(text, size = 80, indent = 0, offset = 0)
     i = 0
     re = /((?:\n\s*\n\s*)|(?:\n\s*(?=\*)))/
