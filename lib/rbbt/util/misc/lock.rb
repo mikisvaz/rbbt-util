@@ -2,8 +2,8 @@ if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
   Lockfile.refresh = false 
   Lockfile.max_age = 60 * 60 * 5
 else
-  Lockfile.refresh = 3 
-  Lockfile.max_age = 10
+  Lockfile.refresh = 5 
+  Lockfile.max_age = 5 * 60
   Lockfile.suspend = 3
 end
 

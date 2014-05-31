@@ -144,7 +144,7 @@ class Step
         end
 
         unless dependency.result or dependency.done?
-          dependency.run(true) 
+          dependency.run(true).grace
         end
       rescue Aborted
         Log.error "Aborted dep. #{Log.color :red, dependency.task.name.to_s}"

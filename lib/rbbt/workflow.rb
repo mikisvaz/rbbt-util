@@ -275,7 +275,7 @@ module Workflow
     defaults = task_info(taskname)[:input_defaults]
 
     inputs.each do |k,v|
-      real_inputs[k] = v if task_inputs.include?(k) and defaults[k].to_s != v.to_s and not (FalseClass === v and defaults[k].nil?)
+      real_inputs[k] = v if (task_inputs.include?(k.to_sym) or task_inputs.include?(k.to_s)) and (defaults[k].to_s != v.to_s and not (FalseClass === v and defaults[k].nil?))
     end
 
     if real_inputs.empty?

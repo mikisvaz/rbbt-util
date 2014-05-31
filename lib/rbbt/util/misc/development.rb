@@ -125,7 +125,7 @@ module Misc
     try = 0
     begin
       yield
-    rescue
+    rescue Exception
       if msg
         Log.warn("Insisting after exception: #{$!.message} -- #{msg}")
       else
