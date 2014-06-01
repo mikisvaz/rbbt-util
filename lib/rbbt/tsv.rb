@@ -34,7 +34,7 @@ module TSV
 
     IndiferentHash.setup(options)
     ENTRIES.each do |entry|
-      hash.send("#{ entry }=", options[entry]) if options.include? entry
+      hash.send("#{ entry }=", options[entry.to_s]) if options.include? entry.to_s
       hash.send("#{ entry }=", options[entry.to_sym]) if options.include? entry.to_sym
     end
 
@@ -84,6 +84,7 @@ module TSV
       end
     end
 
+
     data.unnamed = unnamed unless unnamed.nil?
 
     data.entity_options = entity_options
@@ -92,7 +93,13 @@ module TSV
       data.identifiers = Path.setup(data.identifiers, source.pkgdir, source.resource)
     end
 
-    data
+    if data.respond_to? :persistence_path
+      data
+    else
+      h = data.dup
+      data.clear
+      data.annotate h
+    end
   end
 
   def self.parse_header(stream, options = {})

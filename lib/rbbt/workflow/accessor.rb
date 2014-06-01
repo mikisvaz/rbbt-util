@@ -423,7 +423,7 @@ module Workflow
   end
 
   def rec_inputs(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject([]){|acc, tn| acc.concat((Array === tn ? tn.first.tasks[tn.last] : tasks[tn.to_sym]).inputs) }
+    [taskname].concat(rec_dependencies(taskname)).inject([]){|acc, tn| acc.concat((Array === tn ? tn.first.tasks[tn.last] : tasks[tn.to_sym]).inputs) }.uniq
   end
 
   def rec_input_defaults(taskname)

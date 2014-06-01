@@ -82,27 +82,41 @@ module TSV
     res
   end
 
-  def self.extended(data)
+  def close
+    begin
+      super
+    rescue Exception
+      self
+    end
+  end
+
+  def read(force = false)
+    begin
+      super
+    rescue Exception
+      @writable = false
+      self
+    end
+  end
+
+  def write(force = false)
+    begin
+      super
+    rescue Exception
+      @writable = true
+      self
+    end
+  end
+
+  def write?
+    @writable
+  end
+
+  def self._extended(data)
     if not data.respond_to? :write
       class << data
         attr_accessor :writable
 
-        def close
-        end
-
-        def read(force = false)
-          @writable = false
-          self
-        end
-
-        def write(force = false)
-          @writable = true
-          self
-        end
-
-        def write?
-          @writable
-        end
       end
     end
   end
@@ -113,6 +127,16 @@ module TSV
   ENTRIES = []
   ENTRY_KEYS = Set.new
   NIL_VALUE = "NIL_VALUE"
+
+  def load_entry_value(value)
+    return value unless respond_to? :persistence_path
+    (value.nil? or value == SERIALIZED_NIL) ? nil : TSV_SERIALIZER.load(value)
+  end
+
+  def dump_entry_value(value)
+    return value unless respond_to? :persistence_path
+    (value.nil? or value == SERIALIZED_NIL) ? SERIALIZED_NIL : TSV_SERIALIZER.dump(value)
+  end
 
   def self.entry(*entries)
     entries = entries.collect{|entry| entry.to_s}
@@ -125,7 +149,7 @@ module TSV
       TSV.send(:define_method, entry) do
         return instance_variable_get(var_name) if instance_variables.include? var_name
         svalue = self.send(:[], key, :entry_key)
-        value = (svalue.nil? or svalue == SERIALIZED_NIL) ? nil : TSV_SERIALIZER.load(svalue)
+        value = load_entry_value(svalue)
         instance_variable_set(var_name, value)
         value
       end
@@ -133,7 +157,7 @@ module TSV
       TSV.send(:define_method, entry + "=") do |value|
         instance_variable_set(var_name, value)
         value = value.to_s if Path === value
-        self.send(:[]=, key, (value.nil? ? SERIALIZED_NIL : TSV_SERIALIZER.dump(value)), :entry_key)
+        self.send(:[]=, key, dump_entry_value(value), :entry_key)
         value
       end
 
@@ -153,7 +177,7 @@ module TSV
 
   def serializer=(serializer)
     @serializer = serializer
-    self.send(:[]=, KEY_PREFIX + 'serializer', (serializer.nil? ? SERIALIZED_NIL : TSV_SERIALIZER.dump(serializer)), :entry_key)
+    self.send(:[]=, KEY_PREFIX + 'serializer', dump_entry_value(serializer), :entry_key)
     @serializar_module = serializer.nil? ? TSV::CleanSerializer : SERIALIZER_ALIAS[serializer.to_sym]
   end
 
@@ -408,7 +432,8 @@ module TSV
 
 
   def fields
-    @fields ||= TSV_SERIALIZER.load(self.send(:[], "__tsv_hash_fields", :entry_key) || SERIALIZED_NIL)
+    #@fields ||= TSV_SERIALIZER.load(self.send(:[], "__tsv_hash_fields", :entry_key) || SERIALIZED_NIL)
+    @fields ||= load_entry_value(self.send(:[], "__tsv_hash_fields", :entry_key))
     if true or @fields.nil? or @unnamed
       @fields
     else
@@ -417,15 +442,15 @@ module TSV
   end
 
   def namespace=(value)
-    self.send(:[]=, "__tsv_hash_namespace", value.nil? ? SERIALIZED_NIL : TSV::TSV_SERIALIZER.dump(value), true)
+    #self.send(:[]=, "__tsv_hash_namespace", value.nil? ? SERIALIZED_NIL : TSV::TSV_SERIALIZER.dump(value), true)
+    self.send(:[]=, "__tsv_hash_namespace", dump_entry_value(value), true)
     @namespace = value
     @entity_options = nil
   end
 
   def fields=(value)
     clean = true
-    value_ym = value.nil? ? SERIALIZED_NIL : TSV::TSV_SERIALIZER.dump(value)
-    self.send(:[]=, "__tsv_hash_fields", value_ym, clean)
+    self.send(:[]=, "__tsv_hash_fields", dump_entry_value(value), clean)
     @fields = value
     @named_fields = nil
   end

@@ -62,7 +62,7 @@ if inputs and inputs.any?
     when TrueClass, FalseClass
       puts "  " << Misc.format_definition_list_item(input, value.to_s, 80, 20, :blue)
     else
-      text = value.split("\n")[0..5].compact * "\n\n"
+      text = value.to_s.split("\n")[0..5].compact * "\n\n"
       puts "  " << Misc.format_definition_list_item(input, text, 80, 20, :blue)
     end
   end
