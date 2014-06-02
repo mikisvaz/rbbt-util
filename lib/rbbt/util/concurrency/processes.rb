@@ -61,7 +61,12 @@ class RbbtProcessQueue
       rescue Aborted
         Log.warn "Aborting process monitor"
         @processes.each{|p| p.abort }
-        @processes.each{|p| p.join }
+        @processes.each{|p| 
+          begin
+            p.join 
+          rescue ProcessFailed
+          end
+        }
       rescue Exception
         Log.warn "Process monitor exception: #{$!.message}"
         @processes.each{|p| p.abort }
@@ -114,7 +119,10 @@ class RbbtProcessQueue
       (@process_monitor.raise(Aborted.new); @process_monitor.join) if @process_monitor and @process_monitor.alive?
       (@callback_thread.raise(Aborted.new); @callback_thread.join) if @callback_thread and @callback_thread.alive?
     ensure
-      join
+      begin
+        join
+      rescue ProcessFailed
+      end
     end
   end
 

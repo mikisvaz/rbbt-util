@@ -125,6 +125,12 @@ module Misc
     try = 0
     begin
       yield
+    rescue Aborted
+      if msg
+        Log.warn("Not Insisting after Aborted: #{$!.message} -- #{msg}")
+      else
+        Log.warn("Not Insisting after Aborted: #{$!.message}")
+      end
     rescue Exception
       if msg
         Log.warn("Insisting after exception: #{$!.message} -- #{msg}")

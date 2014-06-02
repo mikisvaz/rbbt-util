@@ -33,8 +33,10 @@ class RbbtProcessQueue
         rescue ClosedStream
         rescue Aborted, Interrupt
           Log.warn "Worker #{Process.pid} aborted"
-          Kernel.exit! -1
+          Kernel.exit! 0
+          #Kernel.exit! -1
         rescue Exception
+          Log.exception $!
           @callback_queue.push($!) if @callback_queue
           Kernel.exit! -1
         ensure
@@ -44,7 +46,8 @@ class RbbtProcessQueue
     end
 
     def join
-      joined_pid = Process.waitpid @pid
+      Process.waitpid @pid
+      raise ProcessFailed unless $?.success?
     end
 
     def abort
