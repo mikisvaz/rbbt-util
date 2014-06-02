@@ -377,12 +377,13 @@ module Open
     if block_given?
       begin
         return yield(io)
-      rescue
+      rescue Exception
         io.abort if io.respond_to? :abort
         io.join if io.respond_to? :join
         raise $!
       ensure
         io.join if io.respond_to? :join
+        io.close if io.respond_to? :close and not io.closed?
       end
     else
       io

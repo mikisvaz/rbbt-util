@@ -5,6 +5,10 @@ class Step
    
   INFO_SERIALIAZER = Marshal
 
+  def self.started?
+    info_file.exists?
+  end
+  
   def self.wait_for_jobs(jobs)
     begin
       threads = []
@@ -465,7 +469,7 @@ module Workflow
 
   TAG = :hash
   def step_path(taskname, jobname, inputs, dependencies, extension = nil)
-    Proc.new{
+    #Proc.new{
       raise "Jobname makes an invalid path: #{ jobname }" if jobname =~ /\.\./
       if inputs.any? or dependencies.any?
         tagged_jobname = case TAG
@@ -486,7 +490,7 @@ module Workflow
       end
 
       workdir[taskname][tagged_jobname].find
-    }
+    #}
   end
 
   def id_for(path)

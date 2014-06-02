@@ -62,7 +62,7 @@ module TSV
 
     data = nil
 
-    lock_filename = filename.nil? ? nil : Persist.persistence_path(filename, {:dir => TSV.lock_dir})
+    lock_filename = filename.nil? ? nil : Persist.persistence_path(filename + '.open', {:dir => TSV.lock_dir})
     Misc.lock lock_filename  do
       data = Persist.persist_tsv source, filename, options, persist_options do |data|
         if serializer

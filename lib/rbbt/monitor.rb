@@ -2,7 +2,9 @@ require 'rbbt'
 
 module Rbbt
 
-  LOCK_DIRS    = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all + Rbbt.tmp.tsv_open_locks.find_all + Rbbt.var.jobs.find_all 
+  LOCK_DIRS = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all +  Rbbt.var.jobs.find_all +
+    Rbbt.tmp.tsv_open_locks.find_all + Rbbt.tmp.persist_locks.find_all 
+
   def self.locks(dirs = LOCK_DIRS)
     dirs.collect do |dir|
       dir.glob("**/*.lock")

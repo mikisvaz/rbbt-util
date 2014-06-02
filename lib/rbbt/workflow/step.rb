@@ -140,7 +140,7 @@ class Step
       @result = nil
       @pid = nil
 
-      begin
+      Misc.insist do
         Open.rm info_file if Open.exists? info_file
         Open.rm info_file + '.lock' if Open.exists? info_file + '.lock'
         Open.rm path if Open.exists? path

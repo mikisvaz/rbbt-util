@@ -201,6 +201,7 @@ module Misc
     return if Open.exists? path
     tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
     Misc.lock tmp_path do
+      return if Open.exists? path
       if not Open.exists? path
         FileUtils.rm_f tmp_path if File.exists? tmp_path
         begin

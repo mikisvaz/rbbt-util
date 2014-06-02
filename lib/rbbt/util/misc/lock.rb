@@ -1,12 +1,15 @@
 if ENV["RBBT_NO_LOCKFILE_REFRESH"] == "true"
   Lockfile.refresh = false 
   Lockfile.max_age = 60 * 60 * 5
+  Lockfile.max_age = 15
   Lockfile.suspend = 10
 else
+  Lockfile.dont_use_lock_id = true
   Lockfile.refresh = 5 
-  Lockfile.max_age = 5 * 60
-  Lockfile.suspend = 3
+  Lockfile.max_age = 60
+  Lockfile.suspend = 15
 end
+
 
 module Misc
 
@@ -20,40 +23,16 @@ module Misc
     lock_path = File.expand_path(file + '.lock')
     lockfile = Lockfile.new(lock_path, options)
 
-    hostname = Misc.hostname
-    LOCK_MUTEX.synchronize do
-      Misc.insist 2, 0.1 do
-        Misc.insist 3, 0.1 do
-          begin
-            if File.exists? lock_path
-              info = Open.open(lock_path){|f| YAML.load(f) }
-              raise "No info" unless info
-
-              if hostname == info["host"] and not Misc.pid_exists?(info["pid"])
-                Log.high("Removing lockfile: #{lock_path}. This pid #{Process.pid}. Content: #{info.inspect}")
-
-                FileUtils.rm lock_path
-              end
-            end
-          rescue Exception
-            FileUtils.rm lock_path if File.exists? lock_path
-            lockfile = Lockfile.new(lock_path, options) unless File.exists? lock_path
-            raise $!
-          end
-        end
-      end
-      lockfile.lock 
-    end
+    lockfile.lock 
 
     begin
       res = yield lockfile
-    rescue Lockfile::StolenLockError
-      unlock = false
+    #rescue Lockfile::StolenLockError
     rescue KeepLocked
       unlock = false
       res = $!.payload
     rescue Exception
-      lockfile.unlock if lockfile.locked?
+      lockfile.unlock #if lockfile.locked?
       raise $!
     ensure
       if unlock 

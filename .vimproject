@@ -265,6 +265,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    color
    log
    system=system{
+    deleted_files
     status
     clean
     report

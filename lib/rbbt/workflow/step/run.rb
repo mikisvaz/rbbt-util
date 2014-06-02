@@ -143,8 +143,8 @@ class Step
           dependency.clean if (dependency.error? or dependency.aborted? or dependency.status.nil?)# or not dependency.done?)
         end
 
-        unless dependency.result or dependency.done?
-          dependency.run(true).grace
+        unless dependency.started? #dependency.result or dependency.done?
+          dependency.run(true)#.grace
         end
       rescue Aborted
         Log.error "Aborted dep. #{Log.color :red, dependency.task.name.to_s}"

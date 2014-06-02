@@ -1,0 +1,49 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow'
+require 'rbbt/monitor'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Find process with deleted open files
+
+$ rbbt system deleted_files 
+
+-h--help Print this help
+EOF
+rbbt_usage and exit 0 if options[:help]
+
+pids = {}
+Dir.glob('/proc/*/fd/*').each do |file|
+  pid = file.split('/')[-3]
+  begin
+    dest = File.readlink(file)
+  rescue
+    next
+  end
+  next if File.exists? dest
+  pids[pid] ||= []
+  pids[pid] << dest
+end
+
+pids.sort_by{|p,files| files.length}.each do |pid,files|
+    dirs = {}
+    files.each do |f|
+        name = File.basename(f)
+        dir = File.basename(File.dirname(f))
+        next if dir =~ /^pts|\.$/
+        dirs[dir] ||= []
+        dirs[dir] << name
+    end
+    next if dirs.empty?
+    puts Log.color :magenta, pid
+    dirs.sort_by{|dir,list| list.length}.each do |dir,list|
+        puts Misc.format_definition_list_item(dir, list.length.to_s)
+    end
+end
+
+puts "Total: #{pids.values.collect{|k,v| v}.flatten.length}"

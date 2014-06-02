@@ -18,7 +18,7 @@ module Persist
     attr_accessor :lock_dir
     
     def lock_dir
-      @lock_dir ||= Rbbt.tmp.tsv_open_locks.find
+      @lock_dir ||= Rbbt.tmp.persist_locks.find
     end
   end
 
@@ -282,47 +282,72 @@ module Persist
 
   def self.get_result(path, type, persist_options, lockfile, &block)
     res = yield
+    stream = res if IO === res
+    stream = res.stream if res.respond_to? :stream
+
+    if stream
+      if persist_options[:no_load] == :stream 
+        res = tee_stream(stream, path, type, stream.respond_to?(:callback)? stream.callback : nil, stream.respond_to?(:abort_callback)? stream.abort_callback : nil)
+
+        ConcurrentStream.setup res do
+          begin
+            lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
+          rescue Exception
+            Log.medium "Lockfile exception: " << $!.message
+          end
+        end
+        res.abort_callback = Proc.new do
+          begin
+            lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
+          rescue Exception
+            Log.medium "Lockfile exception: " << $!.message
+          end
+        end
+        raise KeepLocked.new res 
+      else
+        begin
+          res = case type
+                when :array
+                  res.read.split "\n"
+                when :tsv
+                  TSV.open(res)
+                else
+                  res.read
+                end
+          res.join if res.respond_to? :join
+          res
+        rescue
+          res.abort if res.respond_to? :abort
+          raise $!
+        end
+      end
+    else
+      res
+    end
+  end
+
+  def self._get_result(path, type, persist_options, lockfile, &block)
+    res = yield
 
     if persist_options[:no_load] == :stream 
-      case res
-      when IO
-        res = tee_stream(res, path, type, res.respond_to?(:callback)? res.callback : nil, res.respond_to?(:abort_callback)? res.abort_callback : nil)
-        ConcurrentStream.setup res do
-          begin
+      stream = IO === res ? res : res.stream
+      res = tee_stream(stream, path, type, stream.respond_to?(:callback)? stream.callback : nil, stream.respond_to?(:abort_callback)? stream.abort_callback : nil)
+
+      ConcurrentStream.setup res do
+        begin
             lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
-          rescue Exception
-            Log.medium "Lockfile exception: " << $!.message
-          end
+        rescue Exception
+          Log.medium "Lockfile exception: " << $!.message
         end
-        res.abort_callback = Proc.new do
-          begin
-            lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
-          rescue Exception
-            Log.medium "Lockfile exception: " << $!.message
-          end
-        end
-        raise KeepLocked.new res 
-      when TSV::Dumper
-        stream = res.stream
-        res = tee_stream(stream, path, type)
-        ConcurrentStream.setup res do
-          begin
-            stream.callback
-            lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
-          rescue Exception
-            Log.medium "Lockfile exception: " << $!.message
-          end
-        end
-        res.abort_callback = Proc.new do
-          begin
-            stream.abort
-            lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
-          rescue Exception
-            Log.medium "Lockfile exception: " << $!.message
-          end
-        end
-        raise KeepLocked.new res 
       end
+      res.abort_callback = Proc.new do
+        begin
+          lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
+        rescue Exception
+          Log.medium "Lockfile exception: " << $!.message
+        end
+      end
+      raise KeepLocked.new res 
     end
 
     case res
@@ -356,24 +381,29 @@ module Persist
 
   def self.persist_file(path, type, persist_options, &block)
 
-    if is_persisted?(path, persist_options)
-      Log.low "Persist up-to-date: #{ path } - #{Misc.fingerprint persist_options}"
-      return path if persist_options[:no_load]
-      return load_file(path, type) 
-    else
+    begin
+      if is_persisted?(path, persist_options)
+        Log.low "Persist up-to-date: #{ path } - #{Misc.fingerprint persist_options}"
+        return path if persist_options[:no_load]
+        return load_file(path, type) 
+      else
+        Open.rm path if Open.exists? path
+      end
+    rescue Exception
       Open.rm path if Open.exists? path
     end
 
 
+    lock_filename = Persist.persistence_path(path + '.persist', {:dir => Persist.lock_dir})
     begin
-
-      lock_filename = Persist.persistence_path(path + '.persist', {:dir => Persist.lock_dir})
       Misc.lock lock_filename do |lockfile|
 
-        if is_persisted?(path, persist_options)
-          Log.low "Persist up-to-date (suddenly): #{ path } - #{Misc.fingerprint persist_options}"
-          return path if persist_options[:no_load]
-          return load_file(path, type) 
+        Misc.insist do
+          if is_persisted?(path, persist_options)
+            Log.low "Persist up-to-date (suddenly): #{ path } - #{Misc.fingerprint persist_options}"
+            return path if persist_options[:no_load]
+            return load_file(path, type) 
+          end
         end
 
         Log.medium "Persist create: #{ path } - #{type} #{Misc.fingerprint persist_options}"
@@ -387,8 +417,12 @@ module Persist
         persist_options[:no_load] ? path : res
       end
 
-    rescue
+    rescue Lockfile::StolenLockError
+      Log.medium "Lockfile stolen: #{path}"
+      retry
+    rescue Exception
       Log.medium "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"
+      Log.exception $!
       FileUtils.rm path if Open.exists? path 
       raise $!
     end

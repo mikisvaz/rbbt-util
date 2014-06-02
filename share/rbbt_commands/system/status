@@ -13,12 +13,12 @@ Report the status of the system
 
 $ rbbt system status 
 
--u--uncomplete Print only uncompleted or error jobs
+-a--all Print all jobs, not only uncompleted
 -h--help Print this help
 EOF
 rbbt_usage and exit 0 if options[:help]
 
-uncomplete = options.delete :uncomplete
+all = options.delete :all
 
 def pid_msg(pid)
   color = if pid and Misc.pid_exists? pid
@@ -51,12 +51,10 @@ def status_msg(status)
   Log.color(color, status.to_s)
 end
 
-locks = Rbbt.locks
-sensiblewrites = Rbbt.sensiblewrites
-persists = Rbbt.persists
-
 puts Log.color(:magenta, "# System report")
 puts
+
+locks = Rbbt.locks
 if locks.any?
   puts Log.color(:magenta, "Locks:")
   locks.sort_by{|f| File.exists?(f) ? File.ctime(f) : Time.now}.each do |lock|
@@ -68,6 +66,7 @@ if locks.any?
   puts
 end
 
+persists = Rbbt.persists
 if persists.any?
   puts Log.color(:magenta, "Persist:")
   persists.sort_by{|f| File.exists?(f) ? File.ctime(f) : Time.now}.each do |persist|
@@ -78,6 +77,7 @@ if persists.any?
   puts
 end
 
+sensiblewrites = Rbbt.sensiblewrites
 if sensiblewrites.any?
   puts Log.color(:magenta, "Writing:")
   sensiblewrites.sort_by{|f| File.exists?(f) ? File.ctime(f) : Time.now}.each do |sensiblewrite|
@@ -89,10 +89,10 @@ if sensiblewrites.any?
   puts
 end
 
-jobs = Rbbt.jobs
 
 puts Log.color(:magenta, "# Workflows")
-puts
+
+jobs = Rbbt.jobs
 jobs.each do |workflow, tasks|
   tasks.each do |task, jobs|
     done = []
@@ -106,7 +106,7 @@ jobs.each do |workflow, tasks|
         other[status||"missing"] << [file, h[:pid]]
       end
     end
-    next if uncomplete and other.empty?
+    next if not all and other.empty?
     puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:cyan, task) << ": " <<  Log.color(:blue, done.length.to_s) << " done"
     other.each do |status, list|
       files_txt = list.collect{|f,p| p.nil? ? f : (f + " (#{pid_msg p})") }

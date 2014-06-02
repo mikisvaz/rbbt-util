@@ -18,8 +18,6 @@ EOF
 rbbt_usage and exit 0 if options[:help]
 
 locks = Rbbt.locks
-sensiblewrites = Rbbt.sensiblewrites
-persists = Rbbt.persists
 
 puts Log.color(:magenta, "# System clean")
 puts
@@ -27,14 +25,15 @@ if locks.any?
   puts Log.color(:magenta, "Locks: #{locks.length}")
   locks.each do |lock|
     pid, ppid, time = Rbbt.load_lock(lock)
-    if not Misc.pid_exists? pid
+    if File.exists?(lock) and not Misc.pid_exists? pid
       puts "  Removing #{ lock }"
-      FileUtils.rm lock if File.exists? lock
+      FileUtils.rm lock #if File.exists? lock
     end
   end
   puts
 end
 
+persists = Rbbt.persists
 if persists.any?
   puts Log.color(:magenta, "Persist: #{persists.length}")
   persists.each do |persist|
@@ -49,6 +48,7 @@ if persists.any?
   puts
 end
 
+sensiblewrites = Rbbt.sensiblewrites
 if sensiblewrites.any?
   puts Log.color(:magenta, "Writing: #{sensiblewrites.length}")
   sensiblewrites.each do |sensiblewrite|
@@ -65,7 +65,7 @@ end
 
 jobs = Rbbt.jobs
 
-puts Log.color(:magenta, "# Workflows:")
+puts Log.color(:magenta, "# Workflow clean")
 puts
 jobs.each do |workflow, tasks|
   tasks.each do |task, jobs|
