@@ -132,5 +132,21 @@ class TestOpen < Test::Unit::TestCase
     end
   end
   
+  def test_repo_dir
+    TmpFile.with_file do |tmpdir|
+      tmpdir = "/home/mvazquezg/tmp/repo_dir"
+      repo = File.join(tmpdir, 'repo')
+
+      Open.repository_dirs.push(repo)
+
+      obj = { :a => "???a"}
+      filename = "file" << (rand * 100).to_i.to_s
+      Open.write(File.join(repo, filename), Marshal.dump(obj))
+      dump = Open.read(File.join(repo, filename))
+      obj_cp = Marshal.load(dump)
+      assert_equal obj, obj_cp
+    end
+  end
+  
 end
 

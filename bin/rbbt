@@ -42,7 +42,26 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 --nocolor               #{Log.color :yellow, "Disable colored output"}
 --nobar                 #{Log.color :yellow, "Disable progress report"}
 --locate_file           #{Log.color :yellow, "Report the location of the script instead of executing it"}
+--dump_mem*             #{Log.color :yellow, "Dump strings in memory each second into file"}
 EOF
+
+if mem_dump = options.delete(:dump_mem)
+  Thread.new do
+    while true
+      Open.write(mem_dump) do |f|
+        Thread.exclusive do
+          GC.start
+          ObjectSpace.each_object(String) do |o|
+            f.puts "---"
+            f.puts String === o ? o : Misc.fingerprint(o)
+          end
+        end
+      end
+      FileUtils.cp mem_dump, mem_dump + '.save'
+      sleep 3
+    end
+  end
+end
 
 if options.delete :nobar
   ENV["RBBT_NO_PROGRESS"] = "true"

@@ -207,17 +207,17 @@ module Misc
         begin
           case
           when block_given?
-            File.open(tmp_path, 'w', &block)
+            File.open(tmp_path, 'wb', &block)
           when String === content
-            File.open(tmp_path, 'w') do |f| f.write content end
+            File.open(tmp_path, 'wb') do |f| f.write content end
           when (IO === content or StringIO === content or File === content)
-            File.open(tmp_path, 'w') do |f|  
+            File.open(tmp_path, 'wb') do |f|  
               while block = content.read(2048); 
                 f.write block
               end  
             end
           else
-            File.open(tmp_path, 'w') do |f|  end
+            File.open(tmp_path, 'wb') do |f|  end
           end
 
           Open.mv tmp_path, path

@@ -6,6 +6,16 @@ require 'rbbt/entity'
 
 class TestMisc < Test::Unit::TestCase
 
+  def test_object_delta
+    a = []
+    b = nil
+    d = Misc.object_delta(String) do
+      a << rand.to_s
+    end
+    assert_equal 1, a.length
+    assert_match /^0\.\d+$/, a.first
+  end
+
   def test_format_seconds
     t = 61.3232
     assert_equal "00:01:01", Misc.format_seconds(t)

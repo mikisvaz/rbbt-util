@@ -111,16 +111,8 @@ module Persist
         res
       when :marshal
         Open.open(path) do |stream|
-          case stream
-          when StringIO
-            begin
-              Marshal.load(stream) 
-            rescue
-              raise $!
-            end
-          else
-            Marshal.load(stream)
-          end
+          content = stream.read.unpack("m").first
+          Marshal.load(content) 
         end
       when :yaml
         Open.open(path) do |stream|
@@ -180,7 +172,8 @@ module Persist
     when :marshal_tsv
       Misc.sensiblewrite(path, Marshal.dump(content.dup))
     when :marshal
-      Misc.sensiblewrite(path, Marshal.dump(content))
+      dump = Marshal.dump(content)
+      Misc.sensiblewrite(path, [dump].pack("m"))
     when :yaml
       Misc.sensiblewrite(path, YAML.dump(content))
     when :float, :integer, :tsv
@@ -327,7 +320,6 @@ module Persist
   end
 
   def self.persist_file(path, type, persist_options, &block)
-
     begin
       if is_persisted?(path, persist_options)
         Log.low "Persist up-to-date: #{ path } - #{Misc.fingerprint persist_options}"
@@ -361,7 +353,9 @@ module Persist
           save_file(path, type, res)
         end
 
-        persist_options[:no_load] ? path : res
+        return path if persist_options[:no_load]
+
+        res
       end
 
     rescue Lockfile::StolenLockError

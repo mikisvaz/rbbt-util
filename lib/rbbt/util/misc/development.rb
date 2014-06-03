@@ -220,4 +220,22 @@ module Misc
       ary.values_at *p
     end
   end
+
+  def self.object_delta(*args)
+    res, delta = nil, nil
+    Thread.exclusive do
+      GC.start
+      pre = Set.new
+      ObjectSpace.each_object(*args) do |o|
+        pre.add o
+      end
+      res = yield
+      delta = Set.new
+      GC.start
+      ObjectSpace.each_object(*args) do |o|
+        delta.add o unless pre.include? o
+      end
+    end
+    res
+  end
 end

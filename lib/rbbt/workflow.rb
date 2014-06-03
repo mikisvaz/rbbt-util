@@ -233,22 +233,28 @@ module Workflow
     end 
   end
 
+  def step_module
+    @_m ||= begin
+              m = Module.new
+
+              helpers.each do |name,block|
+                m.class.send(:define_method, name, &block)
+              end
+
+              m
+            end
+    @_m
+  end
+
   def get_job_step(step_path, task = nil, input_values = nil, dependencies = nil)
     step_path = step_path.call if Proc === step_path
     persist = input_values.nil? ? false : true
     persist = false
     key = Path === step_path ? step_path.find : step_path
-    step = Persist.memory("Step", :key => key, :repo => step_cache, :persist => persist) do
     step = Step.new step_path, task, input_values, dependencies
 
-      helpers.each do |name, block|
-        (class << step; self; end).instance_eval do
-          define_method name, &block
-        end
-      end
 
-      step
-    end
+    step.extend step_module
 
     step.task ||= task
     step.inputs ||= input_values

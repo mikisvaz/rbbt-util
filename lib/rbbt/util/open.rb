@@ -146,8 +146,8 @@ module Open
   def self.get_stream_from_repo(dir, sub_path)
     repo = get_repo_from_dir(dir)
     repo.read_and_close do
-      text = repo[sub_path]
-      text.nil? ? nil : StringIO.new(text)
+      content = repo[sub_path]
+      content.nil? ? nil : StringIO.new(content)
     end
   end
 
