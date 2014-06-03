@@ -3,8 +3,7 @@ require 'lmdb'
 module Persist
 
   module LMDBAdapter
-    attr_accessor :persistence_path, :closed
-
+    include Persist::TSVAdapter
     def self.open(path, write)
 
       database = CONNECTIONS[path] ||= begin
@@ -19,40 +18,6 @@ module Persist
       database.persistence_path ||= path
 
       database
-    end
-
-    def keys
-      keys = []
-      cursor do |cursor|
-        while p = cursor.next
-          keys << p.first
-        end
-      end
-      keys
-    end
-    
-    def include?(key)
-      self.send(:[], key, true)
-    end
-
-    def closed?
-      false
-    end
-
-    def close
-      self
-    end
-
-    def read(force = false)
-      self
-    end
-
-    def write(force = true)
-      self
-    end
-
-    def write?
-      @writable
     end
 
     def each
@@ -77,59 +42,7 @@ module Persist
       end
       res
     end
-
-    def delete(key)
-      out(key)
-    end
-
-    def write_and_read
-      lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
-      Misc.lock(lock_filename) do
-        write if @closed or not write?
-        res = begin
-                yield
-              ensure
-                read
-              end
-        res
-      end
-    end
-
-    def write_and_close
-      lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
-      Misc.lock(lock_filename) do
-        write if @closed or not write?
-        res = begin
-                yield
-              ensure
-                close
-              end
-        res
-      end
-    end
-
-    def read_and_close
-      read if @closed or write?
-      res = begin
-              yield
-            ensure
-              close
-            end
-      res
-    end
-
-    def merge!(hash)
-      hash.each do |key,values|
-        self[key] = values
-      end
-    end
-
-
-    def range(*args)
-      super(*args) - TSV::ENTRY_KEYS.to_a
-    end
   end
-
 
   def self.open_lmdb(path, write, serializer = nil)
     write = true unless File.exists? path

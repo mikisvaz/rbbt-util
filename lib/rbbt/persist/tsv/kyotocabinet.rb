@@ -3,7 +3,8 @@ require 'kyotocabinet'
 module Persist
 
   module KCAdapter
-    attr_accessor :persistence_path, :kyotocabinet_class, :closed, :writable
+    include Persist::TSVAdapter
+    attr_accessor :kyotocabinet_class
 
     def self.open(path, write, kyotocabinet_class = "kch")
       real_path = path + ".#{kyotocabinet_class}"
@@ -24,33 +25,10 @@ module Persist
       database
     end
 
-    def keys
-      keys = []
-      each_key{|k| keys.concat k}
-      keys
-    end
-
-    def prefix(key)
-      range(key, 1, key + 255.chr, 1)
-    end
-
-    def get_prefix(key)
-      keys = prefix(key)
-      select(:key => keys)
-    end
-
-    def include?(key)
-      value = get(key)
-      ! value.nil?
-    end
-
-    def closed?
-      @closed
-    end
-
     def close
       @closed = true
       super
+      self
     end
 
     def read(force = false)
@@ -95,58 +73,6 @@ module Persist
 
     def delete(key)
       out(key)
-    end
-
-    def write_and_read
-      lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
-      Misc.lock(lock_filename) do
-        write if @closed or not write?
-        res = begin
-                yield
-              ensure
-                read
-              end
-        res
-      end
-    end
-
-    def write_and_close
-      lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
-      Misc.lock(lock_filename) do
-        write if @closed or not write?
-        res = begin
-                yield
-              ensure
-                close
-              end
-        res
-      end
-    end
-
-    def read_and_close
-      read if @closed or write?
-      res = begin
-              yield
-            ensure
-              close
-            end
-      res
-    end
-
-    def merge!(hash)
-      hash.each do |key,values|
-        self[key] = values
-      end
-    end
-
-    #def []=(key,value)
-    #  super(key,value)
-    #  self.synchronize
-    #end
-
-
-    def range(*args)
-      super(*args) - TSV::ENTRY_KEYS.to_a
     end
   end
 

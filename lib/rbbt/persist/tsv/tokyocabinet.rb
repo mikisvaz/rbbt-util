@@ -3,7 +3,9 @@ require 'tokyocabinet'
 module Persist
 
   module TCAdapter
-    attr_accessor :persistence_path, :tokyocabinet_class, :closed, :writable, :mutex
+    include Persist::TSVAdapter
+
+    attr_accessor :tokyocabinet_class
 
     def self.open(path, write, serializer, tokyocabinet_class = TokyoCabinet::HDB)
       tokyocabinet_class = TokyoCabinet::HDB if tokyocabinet_class == "HDB" or tokyocabinet_class.nil?

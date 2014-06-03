@@ -1,3 +1,5 @@
+require 'rbbt/persist/tsv/adapter'
+
 begin
   require 'rbbt/persist/tsv/tokyocabinet'
 rescue Exception
