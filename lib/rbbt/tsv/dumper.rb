@@ -48,6 +48,7 @@ module TSV
       str = TSV.header_lines(key_field, fields, options)
 
       Thread.pass while IO.select(nil, [@in_stream],nil,1).nil?
+      iii :PUTS
       @in_stream.puts str
     end
 

@@ -27,7 +27,7 @@ def pid_msg(pid)
             :red
           end
   if pid.nil?
-    Log.color(:yellow, "missing")
+    ""
   else
     Log.color(color, pid)
   end
@@ -54,37 +54,33 @@ end
 puts Log.color(:magenta, "# System report")
 puts
 
-locks = Rbbt.locks
+locks = Rbbt.lock_info
 if locks.any?
   puts Log.color(:magenta, "Locks:")
-  locks.sort_by{|f| File.exists?(f) ? File.ctime(f) : Time.now}.each do |lock|
-    next unless File.exists?(lock)
-    pid, ppid, time = Rbbt.load_lock(lock)
-    time = File.exists?(lock) ? File.ctime(lock) : Time.now
-    puts "  " << lock + Log.color(:blue, " -- time: #{Misc.format_seconds(Time.now - time)}; ppid: #{ppid}; pid: #{pid_msg pid}")
+  locks.sort_by{|f,i| i[:ctime] }.each do |file,info|
+    elapsed, pid, ppid = info.values_at :elapsed, :pid, :ppid
+    puts "  " << file + Log.color(:blue, " -- time: #{Misc.format_seconds elapsed}; ppid: #{ppid}; pid: #{pid_msg pid}")
   end
   puts
 end
 
-persists = Rbbt.persists
+
+persists = Rbbt.persist_info
 if persists.any?
   puts Log.color(:magenta, "Persist:")
-  persists.sort_by{|f| File.exists?(f) ? File.ctime(f) : Time.now}.each do |persist|
-    next unless File.exists?(persist)
-    time = File.exists?(persist) ? File.ctime(persist) : Time.now
-    puts "  " << persist + Log.color(:blue, " -- time: #{Misc.format_seconds(Time.now - time)})")
+  persists.sort_by{|f,i| i[:ctime] }.each do |file,info|
+    elapsed = info[:elapsed]
+    puts "  " << file + Log.color(:blue, " -- time: #{Misc.format_seconds elapsed}")
   end
   puts
 end
 
-sensiblewrites = Rbbt.sensiblewrites
+sensiblewrites = Rbbt.sensiblewrite_info
 if sensiblewrites.any?
   puts Log.color(:magenta, "Writing:")
-  sensiblewrites.sort_by{|f| File.exists?(f) ? File.ctime(f) : Time.now}.each do |sensiblewrite|
-    next unless File.exists?(sensiblewrite)
-    pid, ppid, time = Rbbt.load_lock(sensiblewrite + '.lock')
-    time = File.exists?(sensiblewrite) ? File.ctime(sensiblewrite) : Time.now
-    puts "  " << sensiblewrite + Log.color(:blue, " -- time: #{Misc.format_seconds(Time.now - time)}; ppid: #{ppid}; pid: #{pid_msg pid}")
+  sensiblewrites.sort_by{|f,i| i[:ctime] }.each do |file,info|
+    elapsed = info[:elapsed]
+    puts "  " << file + Log.color(:blue, " -- time: #{Misc.format_seconds elapsed}")
   end
   puts
 end
@@ -93,25 +89,31 @@ end
 puts Log.color(:magenta, "# Workflows")
 
 jobs = Rbbt.jobs
-jobs.each do |workflow, tasks|
-  tasks.each do |task, jobs|
-    done = []
-    other = {}
-    jobs.each do |file,h|
-      status = h[:status]
-      if h[:status] == :done
-        done << file
-      else
-        other[status||"missing"] ||= []
-        other[status||"missing"] << [file, h[:pid]]
-      end
-    end
-    next if not all and other.empty?
-    puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:cyan, task) << ": " <<  Log.color(:blue, done.length.to_s) << " done"
-    other.each do |status, list|
-      files_txt = list.collect{|f,p| p.nil? ? f : (f + " (#{pid_msg p})") }
-      puts "  " << status_msg(status) << ": " << (files_txt * ", ")
-    end
-  end
+workflows = {}
+
+jobs.each do |job|
+  job.workflow
 end
+#jobs = Rbbt.jobs
+#jobs.each do |workflow, tasks|
+#  tasks.each do |task, jobs|
+#    done = []
+#    other = {}
+#    jobs.each do |file,h|
+#      status = h[:status]
+#      if h[:status] == :done
+#        done << file
+#      else
+#        other[status||"missing"] ||= []
+#        other[status||"missing"] << [file, h[:pid]]
+#      end
+#    end
+#    next if not all and other.empty?
+#    puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:cyan, task) << ": " <<  Log.color(:blue, done.length.to_s) << " done"
+#    other.each do |status, list|
+#      files_txt = list.collect{|f,p| p.nil? ? f : (f + " (#{pid_msg p})") }
+#      puts "  " << status_msg(status) << ": " << (files_txt * ", ")
+#    end
+#  end
+#end
 

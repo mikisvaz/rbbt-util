@@ -1,14 +1,22 @@
-if ENV["RBBT_NO_LOCKFILE_ID"] == "true"
-  Lockfile.dont_use_lock_id = true
-  Lockfile.refresh = 2 
-  Lockfile.max_age = 5 #60 * 60 * 10
-  Lockfile.suspend = 1
-else
-  Lockfile.suspend = 15
-end
-
-
 module Misc
+  def self.use_lock_id=(use = true)
+    if use
+      Log.medium "Activating lockfile ids"
+      Lockfile.dont_use_lock_id = false
+      Lockfile.refresh = 20 
+      Lockfile.max_age = 60 * 10
+      Lockfile.suspend = 10
+    else
+      Log.medium "De-activating lockfile ids"
+      Lockfile.dont_use_lock_id = false
+      Lockfile.dont_use_lock_id = true
+      Lockfile.refresh = 2 
+      Lockfile.max_age = 5
+      Lockfile.suspend = 1
+    end
+  end
+
+  self.use_lock_id = ENV["RBBT_NO_LOCKFILE_ID"] != "true"
 
   LOCK_MUTEX = Mutex.new
   def self.lock(file, unlock = true, options = {})

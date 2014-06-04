@@ -367,9 +367,9 @@ module Open
            file_open(in_cache(url, wget_options), options[:grep], mode, options[:invert_grep])
          else
            io = wget(url, wget_options)
-           add_cache(url, io, wget_options)
-           io.close
-           file_open(in_cache(url, wget_options), options[:grep], mode, options[:invert_grep])
+           new, save = Misc.tee_stream io
+           add_cache(url, save, wget_options)
+           new
          end
     io = unzip(io)  if ((String === url and zip?(url))  and not options[:noz]) or options[:zip]
     io = gunzip(io) if ((String === url and gzip?(url)) and not options[:noz]) or options[:gzip]

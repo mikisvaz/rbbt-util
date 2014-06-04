@@ -224,18 +224,23 @@ module Misc
   def self.object_delta(*args)
     res, delta = nil, nil
     Thread.exclusive do
-      GC.start
       pre = Set.new
+      delta = Set.new
+
+      GC.start
       ObjectSpace.each_object(*args) do |o|
         pre.add o
       end
+
       res = yield
-      delta = Set.new
+
       GC.start
       ObjectSpace.each_object(*args) do |o|
         delta.add o unless pre.include? o
       end
+
     end
+    iii delta
     res
   end
 end

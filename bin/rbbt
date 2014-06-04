@@ -43,7 +43,12 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 --nobar                 #{Log.color :yellow, "Disable progress report"}
 --locate_file           #{Log.color :yellow, "Report the location of the script instead of executing it"}
 --dump_mem*             #{Log.color :yellow, "Dump strings in memory each second into file"}
+--no_lock_id           #{Log.color :yellow, "Do not track lockfiles with ids (for high-througput and high-concurrency"}
 EOF
+
+if options.delete(:no_lock_id)
+  Misc.use_lock_id = false
+end
 
 if mem_dump = options.delete(:dump_mem)
   Thread.new do
@@ -53,7 +58,7 @@ if mem_dump = options.delete(:dump_mem)
           GC.start
           ObjectSpace.each_object(String) do |o|
             f.puts "---"
-            f.puts String === o ? o : Misc.fingerprint(o)
+            f.puts(String === o ? o : o.inspect)
           end
         end
       end

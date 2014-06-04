@@ -1,32 +1,125 @@
 require 'rbbt'
+require 'rbbt/workflow/step'
 
 module Rbbt
 
   LOCK_DIRS = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all +  Rbbt.var.jobs.find_all +
     Rbbt.tmp.tsv_open_locks.find_all + Rbbt.tmp.persist_locks.find_all 
 
-  def self.locks(dirs = LOCK_DIRS)
-    dirs.collect do |dir|
-      dir.glob("**/*.lock")
-    end.flatten
-  end
-
   SENSIBLE_WRITE_DIRS = Misc.sensiblewrite_dir.find_all
-  def self.sensiblewrites(dirs = SENSIBLE_WRITE_DIRS)
-    dirs.collect do |dir|
-      dir.glob("**/*").reject{|f| f =~ /\.lock$/ }
-    end.flatten
-  end
 
   PERSIST_DIRS    = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all  
-  def self.persists(dirs = PERSIST_DIRS)
-    dirs.collect do |dir|
-      dir.glob("**/*.persist").reject{|f| f =~ /\.lock$/ }
-    end.flatten
-  end
 
   JOB_DIRS = Rbbt.var.jobs.find_all
-  def self.jobs(dirs = JOB_DIRS)
+
+  def self.file_time(file)
+    ctime = File.ctime file
+    atime = File.atime file
+    elapsed = Time.now - ctime
+    {:ctime => ctime, :atime => atime, :elapsed => elapsed}
+  end
+
+  #{{{ LOCKS
+
+  def self.locks(dirs = LOCK_DIRS)
+    dirs.collect do |dir|
+      next unless Open.exists? dir
+      `find "#{ dir }" -name "*.lock"`.split "\n"
+    end.compact.flatten
+  end
+
+  def self.lock_info(dirs = LOCK_DIRS)
+    info = {}
+    locks(dirs).each do |f|
+      begin
+        i = file_time(f)
+        if File.size(f) > 0 
+          info = YAML.load(f) 
+          i[:pid] = info[:pid]
+          i[:ppid] = info[:ppid]
+        end
+        info[f] = i
+      rescue
+        Log.exception $!
+      end
+    end
+    info
+  end
+
+  #{{{ SENSIBLE WRITES
+
+  def self.sensiblewrites(dirs = SENSIBLE_WRITE_DIRS)
+    dirs.collect do |dir|
+      next unless Open.exists? dir
+      `find "#{ dir }" -not -name "*.lock" -not -type d`.split "\n"
+    end.compact.flatten
+  end
+
+  def self.sensiblewrite_info(dirs = SENSIBLE_WRITE_DIRS)
+    info = {}
+    sensiblewrites(dirs).each do |f|
+      begin
+        i = file_time(f)
+        info[f] = i
+      rescue
+        Log.exception $!
+      end
+    end
+    info
+  end
+
+  # PERSISTS
+  def self.persists(dirs = PERSIST_DIRS)
+    dirs.collect do |dir|
+      next unless Open.exists? dir
+      `find "#{ dir }" -name "*.persist"`.split "\n"
+    end.compact.flatten
+  end
+
+  def self.persist_info(dirs = PERSIST_DIRS)
+    info = {}
+    persists(dirs).each do |f|
+      begin
+        i = file_time(f)
+        info[f] = i
+      rescue
+        Log.exception $!
+      end
+    end
+    info
+  end
+
+  # PERSISTS
+
+  def self.jobs(workflows = nil, tasks = nil, dirs = JOB_DIRS)
+    workflows = [workflows] if workflows and not Array === workflows
+    workflows = workflows.collect{|w| w.to_s} if workflows
+
+    tasks = [tasks] if tasks and not Array === tasks
+    tasks = tasks.collect{|w| w.to_s} if tasks
+
+    dirs.collect do |dir|
+      next unless Open.exists? dir
+      dir.glob("*").collect do |workflowdir|
+        next if workflows and not workflows.include? File.basename(workflowdir)
+        workflowdir.glob("*").collect do |taskdir|
+          next if tasks and not tasks.include? File.basename(taskdir)
+          files = `find "#{ taskdir }/" -not -type d -not -path "*/*.files/*"`.split("\n").sort
+          TSV.traverse files, :type => :array, :into => [], :bar => (workflows ? nil : workflowdir) do |file|
+            if m = file.match(/(.*).info$/)
+              file = m[1]
+            end
+            name = file[taskdir.length+1..-1]
+            Step.new file, name
+          end
+        end.compact.flatten
+      end.compact.flatten
+    end.compact.flatten
+  end
+
+  # REST
+
+  def self.__jobs(dirs = JOB_DIRS)
     job_files = {}
     dirs.each do |dir|
       workflow_dirs = dir.glob("*").each do |wdir|

@@ -202,7 +202,7 @@ module CMD
           Log.log line, stderr if Integer === stderr and log
         end
         serr.close
-        Thread.exit
+        Thread.exit!
       end
 
       #SmartIO.tie sout, pid, cmd, post, in_content, sin, serr

@@ -17,15 +17,16 @@ module Log
                    end
 
   def self.ignore_stderr
-    backup_stderr = STDERR.dup
     LOG_MUTEX.synchronize do
-      begin
-        File.open('/dev/null', 'w') do |f|
-          STDERR.reopen(f)
+      backup_stderr = STDERR.dup
+      File.open('/dev/null', 'w') do |f|
+        STDERR.reopen(f)
+        begin
           yield
+        ensure
+          STDERR.reopen backup_stderr
+          backup_stderr.close
         end
-      ensure
-        STDERR.reopen backup_stderr
       end
     end
   end

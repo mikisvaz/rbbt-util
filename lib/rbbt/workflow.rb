@@ -277,7 +277,7 @@ module Workflow
     task_inputs = task_info(taskname)[:inputs]
     defaults = task_info(taskname)[:input_defaults]
 
-    dependencies = real_dependencies(task, jobname, inputs.merge(defaults), task_dependencies[taskname] || [])
+    dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
 
     real_inputs = {}
 
