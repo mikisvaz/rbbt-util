@@ -51,21 +51,8 @@ if options.delete(:no_lock_id)
 end
 
 if mem_dump = options.delete(:dump_mem)
-  Thread.new do
-    while true
-      Open.write(mem_dump) do |f|
-        Thread.exclusive do
-          GC.start
-          ObjectSpace.each_object(String) do |o|
-            f.puts "---"
-            f.puts(String === o ? o : o.inspect)
-          end
-        end
-      end
-      FileUtils.cp mem_dump, mem_dump + '.save'
-      sleep 3
-    end
-  end
+  require 'rbbt/monitor'
+  Rbbt.dump_memory(mem_dump, Symbol)
 end
 
 if options.delete :nobar

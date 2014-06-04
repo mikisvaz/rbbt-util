@@ -400,7 +400,8 @@ class Step
     stream = get_stream if @result
     if stream
       begin
-        Misc.consume_stream stream
+        @stream_data = StringIO.new
+        Misc.consume_stream stream, false, @stream_data
       rescue Exception
         self._abort
         raise $!

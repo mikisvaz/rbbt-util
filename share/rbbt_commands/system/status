@@ -92,7 +92,6 @@ jobs = Rbbt.jobs
 workflows = {}
 
 jobs.each do |job|
-  job.workflow
 end
 #jobs = Rbbt.jobs
 #jobs.each do |workflow, tasks|

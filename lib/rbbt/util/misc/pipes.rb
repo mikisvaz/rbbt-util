@@ -148,7 +148,7 @@ module Misc
     str
   end
 
-  def self.consume_stream(io, in_thread = false)
+  def self.consume_stream(io, in_thread = false, into = nil)
     return if Path === io
     return unless io.respond_to? :read 
     if io.respond_to? :closed? and io.closed?
@@ -164,15 +164,20 @@ module Misc
       Log.medium "Consuming stream #{Misc.fingerprint io}"
       begin
         while block = io.read(2048)
+          if into
+            into << block 
+          end
         end
         io.join if io.respond_to? :join
+        io.close unless io.closed?
       rescue Aborted
         Log.medium "Consume stream aborted #{Misc.fingerprint io}"
         io.abort if io.respond_to? :abort
+        io.close unless io.closed?
       rescue Exception
         Log.medium "Exception consuming stream: #{Misc.fingerprint io}: #{$!.message}"
         io.abort if io.respond_to? :abort
-        io.join
+        io.close unless io.closed?
         raise $!
       end
     end

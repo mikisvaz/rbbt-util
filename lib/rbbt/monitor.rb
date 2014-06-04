@@ -1,5 +1,4 @@
 require 'rbbt'
-require 'rbbt/workflow/step'
 
 module Rbbt
 
@@ -11,6 +10,25 @@ module Rbbt
   PERSIST_DIRS    = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all  
 
   JOB_DIRS = Rbbt.var.jobs.find_all
+
+  def self.dump_memory(file, obj = nil)
+    Log.info "Dumping #{obj} objects into #{ file }"
+    Thread.new do
+      while true
+        Open.write(file) do |f|
+          Thread.exclusive do
+            GC.start
+            ObjectSpace.each_object(obj) do |o|
+              f.puts "---"
+              f.puts(String === o ? o : o.inspect)
+            end
+          end
+        end
+        FileUtils.cp file, file + '.save'
+        sleep 3
+      end
+    end
+  end
 
   def self.file_time(file)
     ctime = File.ctime file
@@ -92,6 +110,8 @@ module Rbbt
   # PERSISTS
 
   def self.jobs(workflows = nil, tasks = nil, dirs = JOB_DIRS)
+    require 'rbbt/workflow/step'
+
     workflows = [workflows] if workflows and not Array === workflows
     workflows = workflows.collect{|w| w.to_s} if workflows
 
