@@ -28,10 +28,10 @@ all = options.delete :all
 force = options.delete :force
 
 puts Log.color(:magenta, "# System clean")
-puts
 
 locks = Rbbt.lock_info
 if locks.any?
+  puts
   puts Log.color(:magenta, "Locks:")
   locks.each do |file,info|
     if force or (info[:pid] and Misc.pid_exists? info[:pid])
@@ -43,6 +43,7 @@ end
 
 persists = Rbbt.persist_info
 if persists.any?
+  puts
   puts Log.color(:magenta, "Persist:")
   persists.each do |file,info|
     if force or (info[:pid] and Misc.pid_exists? info[:pid])
@@ -54,6 +55,7 @@ end
 
 sensiblewrites = Rbbt.sensiblewrite_info
 if sensiblewrites.any?
+  puts
   puts Log.color(:magenta, "Writes:")
   sensiblewrites.each do |file,info|
     if force or (info[:pid] and Misc.pid_exists? info[:pid])
@@ -63,7 +65,9 @@ if sensiblewrites.any?
   end
 end
 
+puts
 puts Log.color(:magenta, "# Workflow clean")
+puts
 
 jobs = Rbbt.job_info workflow, task
 workflows = {}
@@ -78,10 +82,14 @@ jobs.each do |file,i|
            {:status => :noinfo}
          end
 
-  status = info[:status].to_s
-  status = :missing if status == :done and not File.exists? file
   pid = info[:pid]
-  puts "  Removing #{ file }"
-  Step.clean(file) if status == "error" or status == "missing" or status == "aborted" or status == ""
+
+  status = info[:status]
+  status = :missing if status == :done and not File.exists? file
+  status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
+
+  status = status.to_s
+  puts "  Removing #{ file } - #{status}" 
+  Step.clean(file) if status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status == ""
 end
 

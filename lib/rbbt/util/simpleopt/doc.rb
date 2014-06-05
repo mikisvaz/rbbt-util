@@ -106,7 +106,7 @@ module SOPT
 
     if description and not description.empty?
       doc << Log.color(:magenta, "## DESCRIPTION") << "\n\n"
-      doc << Misc.format_paragraph(description)
+      doc << Misc.format_paragraph(description) << "\n\n"
     end
 
     doc << Log.color(:magenta, "## OPTIONS") << "\n\n"

@@ -20,6 +20,9 @@ rbbt_usage and exit 0 if options[:help]
 
 workflow, task = ARGV
 
+workflow = workflow.split "," if workflow
+task = task.split "," if task
+
 all = options.delete :all
 
 def pid_msg(pid)
@@ -37,7 +40,7 @@ end
 
 def status_msg(status)
   color = case status
-          when :error, :aborted, :missing
+          when :error, :aborted, :missing, :dead
             :red
           when :streaming, :started
             :yellow
@@ -104,7 +107,7 @@ end
 
 workflows.sort.each do |workflow,tasks|
   tasks.sort.each do |task,jobs|
-    puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:cyan, task) << ": " <<  Log.color(:blue, jobs.length.to_s)
+    puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:yellow, task) << ": " <<  Log.color(:blue, jobs.length.to_s)
 
     files_txt = jobs.collect do |file, i|
       info = begin
@@ -115,9 +118,11 @@ workflows.sort.each do |workflow,tasks|
                {:status => :noinfo}
              end
 
+      pid = info[:pid]
       status = info[:status]
       status = :missing if status == :done and not File.exists? file
-      pid = info[:pid]
+      status = status.to_s
+      status << Log.color(:red, " (dead)") if status != "done" and pid and not Misc.pid_exists?(pid)
       str = file.dup
       str << " #{ status_msg status }"
       str << "; #{pid_msg pid}"

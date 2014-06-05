@@ -47,21 +47,23 @@ module Rbbt
   end
 
   def self.lock_info(dirs = LOCK_DIRS)
-    info = {}
+    lock_info = {}
     locks(dirs).each do |f|
       begin
         i = file_time(f)
         if File.size(f) > 0 
-          info = YAML.load(f) 
+          info = Open.open(f) do |s|
+            YAML.load(s) 
+          end
           i[:pid] = info[:pid]
           i[:ppid] = info[:ppid]
         end
-        info[f] = i
+        lock_info[f] = i
       rescue
         Log.exception $!
       end
     end
-    info
+    lock_info
   end
 
   #{{{ SENSIBLE WRITES
@@ -133,7 +135,7 @@ module Rbbt
 
           files = `find "#{ taskdir }/" -not -type d -not -path "*/*.files/*"`.split("\n").sort
           _files = Set.new files
-          TSV.traverse files, :type => :array, :into => jobs, :bar => (workflows ? nil : [workflow, task]*"#") do |file|
+          TSV.traverse files, :type => :array, :into => jobs do |file|
             if m = file.match(/(.*).info$/)
               file = m[1]
             end
