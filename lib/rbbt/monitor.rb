@@ -152,7 +152,7 @@ module Rbbt
             if _files.include? file
               info = info.merge(file_time(file))
               info[:done] = true
-              info[:info_file] = File.exists? info_file ? info_file : nil
+              info[:info_file] = File.exists?(info_file) ? info_file : nil
             else
               info = info.merge({:info_file => info_file, :done => false})
             end

@@ -281,11 +281,13 @@ module TSV
     rescue Exception
       Log.medium{"Exception traversing #{stream_name(obj)}"}
       Log.exception $!
-      stream = obj_stream(obj)
-      stream.abort if stream and stream.respond_to? :abort
-      stream = obj_stream(options[:into])
-      stream.abort if stream.respond_to? :abort
-      raise $!
+      begin
+        stream = obj_stream(obj)
+        stream.abort if stream and stream.respond_to? :abort
+        stream = obj_stream(options[:into])
+        stream.abort if stream.respond_to? :abort
+        raise $!
+      end
     end
   end
 
