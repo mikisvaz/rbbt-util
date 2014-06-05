@@ -87,6 +87,7 @@ module Rbbt
   end
 
   # PERSISTS
+  
   def self.persists(dirs = PERSIST_DIRS)
     dirs.collect do |dir|
       next unless Open.exists? dir
@@ -109,7 +110,7 @@ module Rbbt
 
   # PERSISTS
 
-  def self.jobs(workflows = nil, tasks = nil, dirs = JOB_DIRS)
+  def self.job_info(workflows = nil, tasks = nil, dirs = JOB_DIRS)
     require 'rbbt/workflow/step'
 
     workflows = [workflows] if workflows and not Array === workflows
@@ -118,23 +119,49 @@ module Rbbt
     tasks = [tasks] if tasks and not Array === tasks
     tasks = tasks.collect{|w| w.to_s} if tasks
 
+    jobs = {}
     dirs.collect do |dir|
       next unless Open.exists? dir
+
       dir.glob("*").collect do |workflowdir|
-        next if workflows and not workflows.include? File.basename(workflowdir)
+        workflow = File.basename(workflowdir)
+        next if workflows and not workflows.include? workflow
+
         workflowdir.glob("*").collect do |taskdir|
-          next if tasks and not tasks.include? File.basename(taskdir)
+          task = File.basename(taskdir)
+          next if tasks and not tasks.include? task
+
           files = `find "#{ taskdir }/" -not -type d -not -path "*/*.files/*"`.split("\n").sort
-          TSV.traverse files, :type => :array, :into => [], :bar => (workflows ? nil : workflowdir) do |file|
+          _files = Set.new files
+          TSV.traverse files, :type => :array, :into => jobs, :bar => (workflows ? nil : [workflow, task]*"#") do |file|
             if m = file.match(/(.*).info$/)
               file = m[1]
             end
+
             name = file[taskdir.length+1..-1]
-            Step.new file, name
+            info_file = file + '.info'
+
+            info = {}
+
+            info[:workflow] = workflow
+            info[:task] = task
+            info[:name] = name
+
+            if _files.include? file
+              info = info.merge(file_time(file))
+              info[:done] = true
+              info[:info_file] = File.exists? info_file ? info_file : nil
+            else
+              info = info.merge({:info_file => info_file, :done => false})
+            end
+
+            [file, info]
           end
+
         end.compact.flatten
       end.compact.flatten
     end.compact.flatten
+    jobs
   end
 
   # REST

@@ -281,36 +281,25 @@ module Persist
     if stream
       if persist_options[:no_load] == :stream 
         res = tee_stream(stream, path, type, stream.respond_to?(:callback)? stream.callback : nil, stream.respond_to?(:abort_callback)? stream.abort_callback : nil)
+        res.lockfile = lockfile
 
-        ConcurrentStream.setup res do
-          begin
-            lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
-          rescue Exception
-            Log.medium "Lockfile exception: " << $!.message
-          end
-        end
-        res.abort_callback = Proc.new do
-          begin
-            lockfile.unlock #if File.exists? lockfile.path and lockfile.locked?
-          rescue Exception
-            Log.medium "Lockfile exception: " << $!.message
-          end
-        end
         raise KeepLocked.new res 
       else
+        stream = res.get_stream if res.respond_to? :get_stream
         begin
-          res = case type
-                when :array
-                  res.read.split "\n"
-                when :tsv
-                  TSV.open(res)
-                else
-                  res.read
-                end
-          res.join if res.respond_to? :join
-          res
+          Open.write(path, stream)
+          Open.open(path) do |stream|
+            case type
+            when :array
+              stream.read.split "\n"
+            when :tsv
+              TSV.open(stream)
+            else
+              stream.read
+            end
+          end
         rescue
-          res.abort if res.respond_to? :abort
+          stream.abort if stream.respond_to? :abort
           raise $!
         end
       end

@@ -11,12 +11,14 @@ options = SOPT.setup <<EOF
 
 Report the status of the system
 
-$ rbbt system status 
+$ rbbt system status <workflow> <task>
 
 -a--all Print all jobs, not only uncompleted
 -h--help Print this help
 EOF
 rbbt_usage and exit 0 if options[:help]
+
+workflow, task = ARGV
 
 all = options.delete :all
 
@@ -88,11 +90,45 @@ end
 
 puts Log.color(:magenta, "# Workflows")
 
-jobs = Rbbt.jobs
+jobs = Rbbt.job_info workflow, task
 workflows = {}
 
-jobs.each do |job|
+jobs.each do |file,info|
+  next unless all or not info[:done]
+  workflow = info[:workflow]
+  task = info[:task]
+  workflows[workflow] ||= {}
+  workflows[workflow][task] ||= {}
+  workflows[workflow][task][file] ||= info
 end
+
+workflows.sort.each do |workflow,tasks|
+  tasks.sort.each do |task,jobs|
+    puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:cyan, task) << ": " <<  Log.color(:blue, jobs.length.to_s)
+
+    files_txt = jobs.collect do |file, i|
+      info = begin
+               Open.open(i[:info_file]) do |f|
+                 Marshal.load(f)
+               end
+             rescue
+               {:status => :noinfo}
+             end
+
+      status = info[:status]
+      status = :missing if status == :done and not File.exists? file
+      pid = info[:pid]
+      str = file.dup
+      str << " #{ status_msg status }"
+      str << "; #{pid_msg pid}"
+      str
+    end
+    files_txt.each do |f|
+      puts "  " << f
+    end
+  end
+end
+
 #jobs = Rbbt.jobs
 #jobs.each do |workflow, tasks|
 #  tasks.each do |task, jobs|

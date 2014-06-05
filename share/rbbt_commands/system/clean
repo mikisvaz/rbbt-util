@@ -9,88 +9,79 @@ $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_c
 
 options = SOPT.setup <<EOF
 
-Clean failed jobs, lock files, etc
+Clean orphaned files
 
-$ rbbt system clean 
+$ rbbt system clean <workflow> <task>
 
+-a--all Print all jobs, not only uncompleted
+-f--force Remove regardless of been active
 -h--help Print this help
 EOF
 rbbt_usage and exit 0 if options[:help]
 
-locks = Rbbt.locks
+workflow, task = ARGV
+
+workflow = workflow.split "," if workflow
+task = task.split "," if task
+
+all = options.delete :all
+force = options.delete :force
 
 puts Log.color(:magenta, "# System clean")
 puts
+
+locks = Rbbt.lock_info
 if locks.any?
-  puts Log.color(:magenta, "Locks: #{locks.length}")
-  locks.each do |lock|
-    pid, ppid, time = Rbbt.load_lock(lock)
-    if File.exists?(lock) and not Misc.pid_exists? pid
-      puts "  Removing #{ lock }"
-      FileUtils.rm lock #if File.exists? lock
+  puts Log.color(:magenta, "Locks:")
+  locks.each do |file,info|
+    if force or (info[:pid] and Misc.pid_exists? info[:pid])
+      puts "  Removing #{ file }"
+      File.unlink file 
     end
   end
-  puts
 end
 
-persists = Rbbt.persists
+persists = Rbbt.persist_info
 if persists.any?
-  puts Log.color(:magenta, "Persist: #{persists.length}")
-  persists.each do |persist|
-    lf = persist + '.lock'
-    pid, ppid, time = Rbbt.load_lock(lf)
-    if not Misc.pid_exists? pid
-      puts "  Removing #{ persist }"
-      FileUtils.rm persists if File.exists? persists
-      FileUtils.rm lf if File.exists? lf
+  puts Log.color(:magenta, "Persist:")
+  persists.each do |file,info|
+    if force or (info[:pid] and Misc.pid_exists? info[:pid])
+      puts "  Removing #{ file }"
+      File.unlink file 
     end
   end
-  puts
 end
 
-sensiblewrites = Rbbt.sensiblewrites
+sensiblewrites = Rbbt.sensiblewrite_info
 if sensiblewrites.any?
-  puts Log.color(:magenta, "Writing: #{sensiblewrites.length}")
-  sensiblewrites.each do |sensiblewrite|
-    lf = sensiblewrite + '.lock'
-    pid, ppid, time = Rbbt.load_lock(lf)
-    if not Misc.pid_exists? pid
-      puts "  Removing #{ sensiblewrite }"
-      FileUtils.rm sensiblewrite  if File.exists? sensiblewrite
-      FileUtils.rm lf if File.exists? lf
+  puts Log.color(:magenta, "Writes:")
+  sensiblewrites.each do |file,info|
+    if force or (info[:pid] and Misc.pid_exists? info[:pid])
+      puts "  Removing #{ file }"
+      File.unlink file 
     end
   end
-  puts
 end
-
-jobs = Rbbt.jobs
 
 puts Log.color(:magenta, "# Workflow clean")
-puts
-jobs.each do |workflow, tasks|
-  tasks.each do |task, jobs|
-    done = []
-    other = {}
-    jobs.each do |file,h|
-      #puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:yellow, task) << ": #{jobs.length}"
-      status = h[:status]
-      if h[:status] == :done
-        done << file
-      else
-        other[status||"missing"] ||= []
-        other[status||"missing"] << [file, h[:pid]]
-      end
-    end
-    other.each do |status, list|
-      list.each do |f,p|
-        if not Misc.pid_exists?(p) or status.to_s =~ /error|aborted|missing/
-          puts "  Removing #{ f }"
-          FileUtils.rm_rf f if File.exists? f
-          FileUtils.rm_rf f + '.info' if File.exists? f + '.info'
-          FileUtils.rm_rf f + '.files' if File.exists? f + '.files'
-        end
-      end
-    end
-  end
+
+jobs = Rbbt.job_info workflow, task
+workflows = {}
+
+jobs.each do |file,i|
+  next if i[:done]
+  info = begin
+           Open.open(i[:info_file]) do |f|
+             Marshal.load(f)
+           end
+         rescue
+           {:status => :noinfo}
+         end
+
+  status = info[:status].to_s
+  status = :missing if status == :done and not File.exists? file
+  pid = info[:pid]
+  puts "  Removing #{ file }"
+  Step.clean(file) if status == "error" or status == "missing" or status == "aborted" or status == ""
 end
 

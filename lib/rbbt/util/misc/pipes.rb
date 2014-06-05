@@ -83,7 +83,6 @@ module Misc
 
     splitter_thread = Thread.new(Thread.current) do |parent|
       begin
-        filename = stream.respond_to?(:filename)? stream.filename : nil
         skip1 = skip2 = false
         while block = stream.read(2048)
           begin 
@@ -163,10 +162,8 @@ module Misc
     else
       Log.medium "Consuming stream #{Misc.fingerprint io}"
       begin
-        while block = io.read(2048)
-          if into
-            into << block 
-          end
+        while not io.closed? and block = io.read(2048)
+          into << block if into
         end
         io.join if io.respond_to? :join
         io.close unless io.closed?
@@ -216,16 +213,26 @@ module Misc
           when String === content
             File.open(tmp_path, 'wb') do |f| f.write content end
           when (IO === content or StringIO === content or File === content)
-            File.open(tmp_path, 'wb') do |f|  
-              while block = content.read(2048); 
-                f.write block
-              end  
+
+            out = nil
+            PIPE_MUTEX.synchronize do
+              out = File.open(tmp_path, 'wb') 
+              out.sync = true
+              OPEN_PIPE_IN << out
             end
+
+            while block = content.read(2048); 
+              out.write block
+            end  
+
+            content.close
+            out.close
           else
             File.open(tmp_path, 'wb') do |f|  end
           end
 
           Open.mv tmp_path, path
+          content.join if content.respond_to? :join
         rescue Aborted
           Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
           content.abort if content.respond_to? :abort

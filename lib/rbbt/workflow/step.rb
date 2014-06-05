@@ -130,7 +130,9 @@ class Step
     exec
   end
 
-  def clean
+  def self.clean(path)
+    info_file = Step.info_file path
+    files_dir = Step.files_dir path
     if Open.exists?(path) or Open.exists?(info_file)
       begin
         self.abort if self.running?
@@ -148,6 +150,10 @@ class Step
         Open.rm_rf files_dir if Open.exists? files_dir
       end
     end
+  end
+
+  def clean
+    Step.clean(path)
     self
   end
 

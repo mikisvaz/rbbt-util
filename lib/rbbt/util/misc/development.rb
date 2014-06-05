@@ -240,7 +240,7 @@ module Misc
       end
 
     end
-    iii delta
+    Log.info "Delta: #{delta.inspect}" 
     res
   end
 end
