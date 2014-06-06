@@ -38,6 +38,7 @@ module Rbbt
       info[:elapsed] = Time.now - info[:ctime]
     rescue Exception
     end
+    info[:ctime] = Time.now - 999
     info
   end
 
