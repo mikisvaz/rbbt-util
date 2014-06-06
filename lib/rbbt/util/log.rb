@@ -133,12 +133,12 @@ module Log
     message = "" << highlight << message << color(0) if severity >= INFO
     str = prefix << " " << message
 
-    LOG_MUTEX.synchronize do
-      STDERR.puts str
-      Log::LAST.replace "log"
-      logfile.puts str unless logfile.nil?
-      nil
-    end
+    #LOG_MUTEX.synchronize do
+    STDERR.puts str
+    Log::LAST.replace "log"
+    logfile.puts str unless logfile.nil?
+    nil
+    #end
   end
 
   def self.log_obj_inspect(obj, level, file = $stdout)

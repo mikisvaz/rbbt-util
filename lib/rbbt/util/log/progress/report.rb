@@ -89,12 +89,14 @@ module Log
     def report(io = STDERR)
       if Log::LAST != "progress"
         length = Log::ProgressBar.cleanup_bars
-        print(io, Log.color(:yellow, "--Progress\n"))
         bars = BARS
         bars.sort_by{|b| b.depth }.reverse.each do |bar|
           print(io, Log.color(:yellow ,bar.report_msg) << "\n")
         end
+      else
+        bars = BARS
       end
+      print(io, up_lines(bars.length) << Log.color(:yellow, "--Progress\n") << down_lines(bars.length)) 
       print(io, up_lines(@depth) << report_msg << down_lines(@depth)) 
       @last_time = Time.now
       @last_count = ticks
