@@ -34,7 +34,7 @@ if locks.any?
   puts
   puts Log.color(:magenta, "Locks:")
   locks.each do |file,info|
-    if force or (info[:pid] and Misc.pid_exists? info[:pid])
+    if force or (info[:pid] and not Misc.pid_exists? info[:pid])
       puts "  Removing #{ file }"
       File.unlink file 
     end
@@ -65,6 +65,9 @@ if sensiblewrites.any?
   end
 end
 
+exit 0 if workflow.nil?
+workflow = nil if workflow == ["all"]
+
 puts
 puts Log.color(:magenta, "# Workflow clean")
 puts
@@ -89,7 +92,8 @@ jobs.each do |file,i|
   status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
 
   status = status.to_s
+  next unless status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status == "" or (force and status == 'noinfo')
   puts "  Removing #{ file } - #{status}" 
-  Step.clean(file) if status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status == ""
+  Step.clean(file) 
 end
 

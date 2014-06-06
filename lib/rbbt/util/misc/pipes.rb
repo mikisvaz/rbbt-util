@@ -1,4 +1,13 @@
+require 'rbbt'
+
 module Misc
+  class << self
+    attr_accessor :sensiblewrite_lock_dir
+    
+    def sensible_write_locks
+      @sensiblewrite_locks ||= Rbbt.tmp.sensiblewrite_locks.find
+    end
+  end
 
   class << self
     attr_accessor :sensiblewrite_dir
@@ -112,7 +121,7 @@ module Misc
         stream.abort if stream.respond_to? :abort
         stream_out1.abort if stream_out1.respond_to? :abort
         stream_out2.abort if stream_out2.respond_to? :abort
-        stream.join
+        stream.join if stream.respond_to? :join
         Log.medium "Exception in tee_stream_thread: #{$!.message}"
         raise $!
       end
@@ -199,10 +208,12 @@ module Misc
     str
   end
 
-  def self.sensiblewrite(path, content = nil, &block)
+  def self.sensiblewrite(path, content = nil, options = {}, &block)
+    lock_options = Misc.pull_keys options, :lock
+    lock_options = lock_options[:lock] if Hash === lock_options[:lock]
     return if Open.exists? path
-    tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
-    Misc.lock tmp_path do
+    tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_lock_dir})
+    Misc.lock tmp_path, lock_options do
       return if Open.exists? path
       if not Open.exists? path
         FileUtils.rm_f tmp_path if File.exists? tmp_path
@@ -231,7 +242,7 @@ module Misc
             File.open(tmp_path, 'wb') do |f|  end
           end
 
-          Open.mv tmp_path, path
+          Open.mv tmp_path, path, lock_options
           content.join if content.respond_to? :join
         rescue Aborted
           Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"

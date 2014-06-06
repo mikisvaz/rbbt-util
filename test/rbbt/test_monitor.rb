@@ -7,7 +7,7 @@ class TestMonitor < Test::Unit::TestCase
 end
 
 if __FILE__ == $0
-  jobs = Rbbt.jobs("Structure", "annotate")
+  iii Rbbt.lock_info.select{|k,v| k =~ /.file_repo/}
 
 end
 

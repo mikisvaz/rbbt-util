@@ -92,7 +92,7 @@ class Step
       @result = self._exec
       @result = @result.stream if TSV::Dumper === @result
     end
-    no_load ? @result : prepare_result(@result, @task.result_description)
+    no_load or ENV["RBBT_NO_STREAM"] ? @result : prepare_result(@result, @task.result_description)
   end
 
   def checks

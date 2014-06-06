@@ -7,6 +7,7 @@ class RbbtProcessQueue
 
       @pid = Process.fork do
         begin
+          Persist::CONNECTIONS.values.each do |db| db.close if db.write? end
           @cleanup.call if @cleanup
           @queue.close_write 
 

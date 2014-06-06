@@ -46,18 +46,6 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 --no_lock_id           #{Log.color :yellow, "Do not track lockfiles with ids (for high-througput and high-concurrency"}
 EOF
 
-if options.delete(:no_lock_id)
-  Misc.use_lock_id = false
-end
-
-if mem_dump = options.delete(:dump_mem)
-  require 'rbbt/monitor'
-  Rbbt.dump_memory(mem_dump, Symbol)
-end
-
-if options.delete :nobar
-  ENV["RBBT_NO_PROGRESS"] = "true"
-end
 
 locate = options.delete :locate_file
 
@@ -71,6 +59,19 @@ else
     global_severity = Log.get_level(Rbbt.etc.log_severity.read.strip) if Rbbt.etc.log_severity.exists?
     Log.severity = global_severity.to_i if global_severity
   end
+end
+
+if options.delete(:no_lock_id)
+  Misc.use_lock_id = false
+end
+
+if mem_dump = options.delete(:dump_mem)
+  require 'rbbt/monitor'
+  Rbbt.dump_memory(mem_dump, Symbol)
+end
+
+if options.delete :nobar
+  ENV["RBBT_NO_PROGRESS"] = "true"
 end
 
 if options[:command_dir]

@@ -3,7 +3,7 @@ require 'rbbt'
 module Rbbt
 
   LOCK_DIRS = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all +  Rbbt.var.jobs.find_all +
-    Rbbt.tmp.tsv_open_locks.find_all + Rbbt.tmp.persist_locks.find_all 
+    Rbbt.tmp.tsv_open_locks.find_all + Rbbt.tmp.persist_locks.find_all + Rbbt.tmp.sensiblewrite_lock_dir.find_all
 
   SENSIBLE_WRITE_DIRS = Misc.sensiblewrite_dir.find_all
 
@@ -31,10 +31,14 @@ module Rbbt
   end
 
   def self.file_time(file)
-    ctime = File.ctime file
-    atime = File.atime file
-    elapsed = Time.now - ctime
-    {:ctime => ctime, :atime => atime, :elapsed => elapsed}
+    info = {}
+    begin
+      info[:ctime] = File.ctime file
+      info[:atime] = File.atime file
+      info[:elapsed] = Time.now - info[:ctime]
+    rescue Exception
+    end
+    info
   end
 
   #{{{ LOCKS
@@ -49,17 +53,18 @@ module Rbbt
   def self.lock_info(dirs = LOCK_DIRS)
     lock_info = {}
     locks(dirs).each do |f|
+      lock_info[f] = {}
       begin
-        i = file_time(f)
+        lock_info[f].merge!(file_time(f))
         if File.size(f) > 0 
           info = Open.open(f) do |s|
             YAML.load(s) 
           end
-          i[:pid] = info[:pid]
-          i[:ppid] = info[:ppid]
+          IndiferentHash.setup(info)
+          lock_info[f][:pid] = info[:pid]
+          lock_info[f][:ppid] = info[:ppid]
         end
-        lock_info[f] = i
-      rescue
+      rescue Exception
         Log.exception $!
       end
     end

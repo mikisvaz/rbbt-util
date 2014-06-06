@@ -20,6 +20,7 @@ rbbt_usage and exit 0 if options[:help]
 
 workflow, task = ARGV
 
+
 workflow = workflow.split "," if workflow
 task = task.split "," if task
 
@@ -58,11 +59,16 @@ end
 
 puts Log.color(:magenta, "# System report")
 puts
-
+sort_file = Proc.new do |f,i|
+  dir = f.split(/:\_/).first
+  
+  dir + i[:ctime].to_i.to_s
+end
 locks = Rbbt.lock_info
 if locks.any?
   puts Log.color(:magenta, "Locks:")
-  locks.sort_by{|f,i| i[:ctime] }.each do |file,info|
+  #locks.sort_by{|f,i| i[:ctime] }.each do |file,info|
+  locks.sort_by(&sort_file).each do |file,info|
     elapsed, pid, ppid = info.values_at :elapsed, :pid, :ppid
     puts "  " << file + Log.color(:blue, " -- time: #{Misc.format_seconds elapsed}; ppid: #{ppid}; pid: #{pid_msg pid}")
   end
@@ -90,6 +96,8 @@ if sensiblewrites.any?
   puts
 end
 
+exit 0 if workflow.nil?
+workflow = nil if workflow == ["all"]
 
 puts Log.color(:magenta, "# Workflows")
 
@@ -115,7 +123,6 @@ workflows.sort.each do |workflow,tasks|
                  Marshal.load(f)
                end
              rescue
-               Log.exception $!
                {:status => :noinfo}
              end
 

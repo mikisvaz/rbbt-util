@@ -180,9 +180,14 @@ module TSV
 
     if callback
       TSV::Parser.traverse(io, options) do |k,v|
-        callback.call yield k, v
+        begin
+          callback.call yield k, v
+        ensure
+          bar.tick if bar
+        end
       end
     else
+      options[:monitor] = bar
       TSV::Parser.traverse(io, options, &block)
     end
     join.call if join
@@ -491,6 +496,17 @@ module TSV
     cpus = Misc.process_options options, :cpus
     threads = nil if threads and threads.to_i <= 1
     cpus = nil if cpus and cpus.to_i <= 1
+
+    if options[:keys]
+      case options[:keys]
+      when TrueClass
+        options[:type] = :keys
+      when String
+        options[:type] = :keys
+        options[:key_field] = options[:keys]
+        options[:fields] = []
+      end
+    end
 
     bar = Misc.process_options options, :bar
     bar ||= Misc.process_options options, :progress

@@ -23,7 +23,7 @@ module Log
       (@ticks * 100) / @max
     end
 
-    def tick
+    def tick(step = nil)
       @ticks += 1
 
       time = Time.now

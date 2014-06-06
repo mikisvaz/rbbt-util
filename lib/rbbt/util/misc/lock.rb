@@ -8,12 +8,15 @@ module Misc
       Lockfile.suspend = 10
     else
       Log.medium "De-activating lockfile ids"
-      Lockfile.dont_use_lock_id = false
       Lockfile.dont_use_lock_id = true
-      Lockfile.refresh = 2 
-      Lockfile.max_age = 5
-      Lockfile.suspend = 1
+      Lockfile.refresh = 5
+      Lockfile.max_age = 30
+      Lockfile.suspend = 5
     end
+
+    Lockfile.refresh = 3
+    Lockfile.max_age = 10
+    Lockfile.suspend = 2
   end
 
   self.use_lock_id = ENV["RBBT_NO_LOCKFILE_ID"] != "true"
@@ -26,19 +29,19 @@ module Misc
     res = nil
 
     lock_path = File.expand_path(file + '.lock')
-    lockfile = Lockfile.new(lock_path, options)
-
-    lockfile.lock 
+    if options[:lock]
+      lockfile = options[:lock]
+      lockfile.lock unless lockfile.locked?
+    else
+      lockfile = Lockfile.new(lock_path, options)
+      lockfile.lock 
+    end
 
     begin
       res = yield lockfile
-    #rescue Lockfile::StolenLockError
     rescue KeepLocked
       unlock = false
       res = $!.payload
-    rescue Exception
-      lockfile.unlock #if lockfile.locked?
-      raise $!
     ensure
       if unlock 
         begin

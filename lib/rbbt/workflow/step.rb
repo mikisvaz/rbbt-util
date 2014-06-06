@@ -35,6 +35,12 @@ class Step
     @mutex = Mutex.new
     @info_mutex = Mutex.new
     @inputs = inputs || []
+    NamedArray.setup @inputs, task.inputs
+  end
+
+  def inputs
+    NamedArray.setup @inputs, task.inputs if task.inputs and not NamedArray === @inputs
+    @inputs
   end
 
   def task_name

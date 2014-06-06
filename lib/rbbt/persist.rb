@@ -131,7 +131,7 @@ module Persist
     end
   end
 
-  def self.save_file(path, type, content)
+  def self.save_file(path, type, content, lockfile = nil)
 
     return if content.nil?
 
@@ -139,17 +139,17 @@ module Persist
     when :nil
       nil
     when :boolean
-      Misc.sensiblewrite(path, content ? "true" : "false")
+      Misc.sensiblewrite(path, content ? "true" : "false", :lock => lockfile)
     when :fwt
       content.file.seek 0
-      Misc.sensiblewrite(path, content.file.read)
+      Misc.sensiblewrite(path, content.file.read, :lock => lockfile)
     when :tsv
       content = content.to_s if TSV === content
       Misc.sensiblewrite(path, content)
     when :annotations
-      Misc.sensiblewrite(path, Annotated.tsv(content, :all).to_s)
+      Misc.sensiblewrite(path, Annotated.tsv(content, :all).to_s, :lock => lockfile)
     when :string, :text
-      Misc.sensiblewrite(path, content)
+      Misc.sensiblewrite(path, content, :lock => lockfile)
     when :binary
       content.force_encoding("ASCII-8BIT") if content.respond_to? :force_encoding
       f = File.open(path, 'wb')
@@ -160,38 +160,36 @@ module Persist
       case content
       when Array
         if content.empty?
-          Misc.sensiblewrite(path, "")
+          Misc.sensiblewrite(path, "", :lock => lockfile)
         else
-          Misc.sensiblewrite(path, content * "\n" + "\n")
+          Misc.sensiblewrite(path, content * "\n" + "\n", :lock => lockfile)
         end
       when IO
-        Misc.sensiblewrite(path, content)
+        Misc.sensiblewrite(path, content, :lock => lockfile)
       else
-        Misc.sensiblewrite(path, content.to_s)
+        Misc.sensiblewrite(path, content.to_s, :lock => lockfile)
       end
     when :marshal_tsv
-      Misc.sensiblewrite(path, Marshal.dump(content.dup))
+      Misc.sensiblewrite(path, Marshal.dump(content.dup), :lock => lockfile)
     when :marshal
       dump = Marshal.dump(content)
-      Misc.sensiblewrite(path, [dump].pack("m"))
+      Misc.sensiblewrite(path, [dump].pack("m"), :lock => lockfile)
     when :yaml
-      Misc.sensiblewrite(path, YAML.dump(content))
+      Misc.sensiblewrite(path, YAML.dump(content), :lock => lockfile)
     when :float, :integer, :tsv
-      Misc.sensiblewrite(path, content.to_s)
+      Misc.sensiblewrite(path, content.to_s, :lock => lockfile)
     else
       raise "Unknown persistence: #{ type }"
     end
   end
 
-  def self.tee_stream_thread(stream, path, type, callback = nil, abort_callback = nil)
+  def self.tee_stream_thread(stream, path, type, callback = nil, abort_callback = nil, lockfile = nil)
     file, out = Misc.tee_stream(stream)
 
     saver_thread = Thread.new(Thread.current) do |parent|
       begin
         Thread.current["name"] = "file saver: " + path
-        Misc.lock(path) do
-          save_file(path, type, file)
-        end
+        save_file(path, type, file, lockfile)
       rescue Aborted
         Log.medium "Persist stream thread aborted: #{ Log.color :blue, path }"
         file.abort if file.respond_to? :abort
@@ -209,66 +207,6 @@ module Persist
     out
   end
 
-  def self.tee_stream_pipe(stream, path, type, callback = nil, abort_callback = nil)
-    parent_pid = Process.pid
-    out = Misc.open_pipe true, false do |sin|
-      begin
-        file, out = Misc.tee_stream(stream)
-
-        saver_th = Thread.new(Thread.current, path, file) do |parent,path,file|
-          begin
-            Misc.lock(path) do
-              save_file(path, type, file)
-            end
-            Log.high "Stream pipe saved: #{path}"
-          rescue Aborted
-            Log.medium "Persist stream pipe exception: #{ Log.color :blue, path }"
-            stream.abort if stream.respond_to? :abort
-          rescue Exception
-            Log.medium "Persist stream pipe exception: #{ Log.color :blue, path }"
-            Log.exception $!
-            stream.abort if stream.respond_to? :abort
-            stream.join if stream.respond_to? :join
-            raise $!
-          end
-        end
-
-        tee_th = Thread.new(Thread.current) do |parent|
-          begin
-            while block = out.read(2028)
-              sin.write block
-            end
-          rescue Aborted
-            Log.medium "Tee stream thread aborted"
-            sout.abort if sout.respond_to? :abort
-            sin.abort if sin.respond_to? :abort
-          rescue Exception
-            sin.abort if sin.respond_to? :abort
-            sout.abort if sout.respond_to? :abort
-            Log.exception $!
-            raise $!
-          ensure
-            sin.close unless sin.closed?
-          end
-        end
-        saver_th.join
-        tee_th.join
-      rescue Aborted
-        tee_th.raise Aborted.new if tee_th and tee_th.alive?
-        saver_th.raise Aborted.new if saver_th and saver_th.alive?
-        Kernel.exit! -1
-      rescue Exception
-        tee_th.raise Aborted.new if tee_th and tee_th.alive?
-        saver_th.raise Aborted.new if saver_th and saver_th.alive?
-        Log.exception $!
-        Process.kill :INT, parent_pid
-        Kernel.exit! -1
-      end
-    end
-    stream.close
-    out
-  end
-
   class << self
     alias tee_stream tee_stream_thread 
   end
@@ -280,7 +218,7 @@ module Persist
 
     if stream
       if persist_options[:no_load] == :stream 
-        res = tee_stream(stream, path, type, stream.respond_to?(:callback)? stream.callback : nil, stream.respond_to?(:abort_callback)? stream.abort_callback : nil)
+        res = tee_stream(stream, path, type, stream.respond_to?(:callback)? stream.callback : nil, stream.respond_to?(:abort_callback)? stream.abort_callback : nil, lockfile)
         res.lockfile = lockfile
 
         raise KeepLocked.new res 
@@ -321,10 +259,11 @@ module Persist
       Open.rm path if Open.exists? path
     end
 
-
     lock_filename = Persist.persistence_path(path + '.persist', {:dir => Persist.lock_dir})
     begin
-      Misc.lock lock_filename do |lockfile|
+      lock_options = Misc.pull_keys persist_options, :lock
+      lock_options = lock_options[:lock] if Hash === lock_options[:lock]
+      Misc.lock lock_filename, lock_options do |lockfile|
 
         Misc.insist do
           if is_persisted?(path, persist_options)
@@ -338,9 +277,7 @@ module Persist
 
         res = get_result(path, type, persist_options, lockfile, &block)
 
-        Misc.lock(path) do
-          save_file(path, type, res)
-        end
+        save_file(path, type, res, lockfile)
 
         return path if persist_options[:no_load]
 
@@ -348,7 +285,11 @@ module Persist
       end
 
     rescue Lockfile::StolenLockError
-      Log.medium "Lockfile stolen: #{path}"
+      begin
+        Log.medium "Lockfile stolen: #{path}"
+        sleep 1 + rand(2)
+      rescue Exception
+      end
       retry
     rescue Exception
       Log.medium "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"

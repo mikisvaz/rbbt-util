@@ -153,14 +153,14 @@ module Open
 
   def self.save_content_in_repo(dir, sub_path, content)
     repo = get_repo_from_dir(dir)
-    repo.write_and_read do
+    repo.write_and_close do
       repo[sub_path] = content
     end
   end
 
   def self.remove_from_repo(dir, sub_path, recursive = false)
     repo = get_repo_from_dir(dir)
-    repo.write_and_read do
+    repo.write_and_close do
       if recursive
         repo.outlist repo.range sub_path, true, sub_path.sub(/.$/,('\1'.ord + 1).chr), false
       else
@@ -233,7 +233,7 @@ module Open
     end
   end
 
-  def self.mv(source, target)
+  def self.mv(source, target, options)
     dir_sub_path_source = find_repo_dir(source)
     dir_sub_path_target = find_repo_dir(target)
 
@@ -252,8 +252,8 @@ module Open
     repo_source = get_repo_from_dir(dir_sub_path_source[0])
     repo_target = get_repo_from_dir(dir_sub_path_target[0])
 
-    repo_source.write do
-      repo_target.write do
+    repo_source.write_and_close do
+      repo_target.write_and_close do
         repo_source[dir_sub_path_source[1]] = repo_target[dir_sub_path_target[1]]
       end
     end
