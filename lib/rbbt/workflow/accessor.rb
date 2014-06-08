@@ -29,6 +29,17 @@ class Step
     path.nil? ? nil : path + '.info'
   end
 
+  def self.step_info(path)
+    begin
+      Open.open(info_file(path)) do |f|
+        INFO_SERIALIAZER.load(f)
+      end
+    rescue Exception
+      Log.exception $!
+      {}
+    end
+  end
+
   def self.job_name_for_info_file(info_file, extension = nil)
     if extension and not extension.empty?
       info_file.sub(/\.#{extension}\.info$/,'')

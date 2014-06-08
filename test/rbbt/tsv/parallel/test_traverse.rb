@@ -339,7 +339,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_raise ProcessFailed do
       TSV.traverse stream, :head => head, :cpus => cpus, :into => dumper do |k,v|
         k = k.first
-        raise StopException if rand(100) < 20
+        raise ProcessFailed if rand(100) < 20
         [k,v]
       end
       dumper.stream.join

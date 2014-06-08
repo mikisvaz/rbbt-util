@@ -237,7 +237,10 @@ module Open
     dir_sub_path_source = find_repo_dir(source)
     dir_sub_path_target = find_repo_dir(target)
 
-    return FileUtils.mv source, target if dir_sub_path_source.nil? and dir_sub_path_target.nil?
+    if dir_sub_path_source.nil? and dir_sub_path_target.nil?
+      FileUtils.mkdir_p File.dirname(target) unless File.exists? File.dirname(target)
+      return FileUtils.mv source, target 
+    end
 
     if dir_sub_path_source.nil?
       save_content_in_repo(dir_sub_path_target[0], dir_sub_path_target[1], Open.read(source))
