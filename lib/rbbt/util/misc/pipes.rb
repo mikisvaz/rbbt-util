@@ -12,7 +12,7 @@ module Misc
   class << self
     attr_accessor :sensiblewrite_dir
     def sensiblewrite_dir
-      @sensiblewrite_dir = Rbbt.tmp.sensiblewrite
+      @sensiblewrite_dir = Rbbt.tmp.sensiblewrite.find
     end
   end
 
@@ -171,7 +171,8 @@ module Misc
     else
       Log.medium "Consuming stream #{Misc.fingerprint io}"
       begin
-        while not io.closed? and block = io.read(2048)
+        into.sync == true if IO === into
+        while not io.closed? and block = io.read(2048 * 10)
           into << block if into
         end
         io.join if io.respond_to? :join
@@ -212,10 +213,12 @@ module Misc
     lock_options = Misc.pull_keys options, :lock
     lock_options = lock_options[:lock] if Hash === lock_options[:lock]
     return if Open.exists? path
-    tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_lock_dir})
-    Misc.lock tmp_path, lock_options do
+    tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
+    tmp_path_lock = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_lock_dir})
+    Misc.lock tmp_path_lock, lock_options do
       return if Open.exists? path
       if not Open.exists? path
+        FileUtils.mkdir_p File.dirname(tmp_path) unless File.directory? File.dirname(tmp_path)
         FileUtils.rm_f tmp_path if File.exists? tmp_path
         begin
           case

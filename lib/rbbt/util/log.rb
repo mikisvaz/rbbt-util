@@ -17,7 +17,7 @@ module Log
                    end
 
   def self.ignore_stderr
-    LOG_MUTEX.synchronize do
+    #LOG_MUTEX.synchronize do
       backup_stderr = STDERR.dup
       File.open('/dev/null', 'w') do |f|
         STDERR.reopen(f)
@@ -28,7 +28,7 @@ module Log
           backup_stderr.close
         end
       end
-    end
+    #end
   end
 
   def self.get_level(level)

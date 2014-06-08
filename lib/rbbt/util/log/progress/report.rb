@@ -10,11 +10,11 @@ module Log
 
     def print(io, str)
       return if ENV["RBBT_NO_PROGRESS"] == "true"
-      LOG_MUTEX.synchronize do
+      #LOG_MUTEX.synchronize do
         STDERR.print str
         Log.logfile.puts str unless Log.logfile.nil?
         Log::LAST.replace "progress"
-      end
+      #end
     end
 
     attr_accessor :history, :mean_max
@@ -96,7 +96,7 @@ module Log
       else
         bars = BARS
       end
-      print(io, up_lines(bars.length) << Log.color(:yellow, "--Progress\n") << down_lines(bars.length)) 
+      print(io, up_lines(bars.length) << Log.color(:yellow, "...Progress\n") << down_lines(bars.length)) 
       print(io, up_lines(@depth) << report_msg << down_lines(@depth)) 
       @last_time = Time.now
       @last_count = ticks

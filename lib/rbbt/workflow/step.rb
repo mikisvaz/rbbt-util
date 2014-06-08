@@ -35,7 +35,7 @@ class Step
     @mutex = Mutex.new
     @info_mutex = Mutex.new
     @inputs = inputs || []
-    NamedArray.setup @inputs, task.inputs
+    NamedArray.setup @inputs, task.inputs if task
   end
 
   def inputs

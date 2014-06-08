@@ -218,7 +218,7 @@ module Persist
 
     if stream
       if persist_options[:no_load] == :stream 
-        res = tee_stream(stream, path, type, stream.respond_to?(:callback)? stream.callback : nil, stream.respond_to?(:abort_callback)? stream.abort_callback : nil, lockfile)
+        res = tee_stream(stream, path, type, stream.respond_to?(:callback)? stream.callback : nil, stream.respond_to?(:abort_callback)? stream.abort_callback : nil)
         res.lockfile = lockfile
 
         raise KeepLocked.new res 

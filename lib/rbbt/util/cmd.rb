@@ -186,6 +186,7 @@ module CMD
           end
 
           sin.close unless sin.closed?
+          in_content.join if in_content.respond_to? :join and not dont_close_in
           in_content.close unless in_content.closed? or dont_close_in
         rescue
           Process.kill "INT", pid

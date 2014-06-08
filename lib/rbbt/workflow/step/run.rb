@@ -140,7 +140,7 @@ class Step
           next if dependency.running?
           dependency.clean 
         else
-          dependency.clean if (dependency.error? or dependency.aborted? or dependency.status.nil?)# or not dependency.done?)
+          dependency.clean if (dependency.error? or dependency.aborted? or dependency.status.nil? or not (dependency.done? or dependency.running?))
         end
 
         unless dependency.started? #dependency.result or dependency.done?
