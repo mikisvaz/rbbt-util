@@ -1,5 +1,15 @@
 module Misc
 
+  def self.pre_fork
+    Persist::CONNECTIONS.values.each do |db| db.close if db.write? end
+    ObjectSpace.each_object(Mutex) do |m| 
+      begin 
+        m.unlock 
+      rescue ThreadError
+      end if m.locked? 
+    end
+  end
+
   def self.string2const(string)
     return nil if string.nil?
     mod = Kernel

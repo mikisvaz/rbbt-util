@@ -57,22 +57,22 @@ module TSV
     options = Misc.add_defaults options, :sep => "\t", :sort => true
     sort, sep = Misc.process_options options, :sort, :sep
 
-    Misc.open_pipe do |sin|
+    streams = streams.collect do |stream|
+      if defined? Step and Step === stream
+        stream.grace
+        stream.get_stream || stream.join.path.open
+      else
+        stream
+      end
+    end
+
+    out = Misc.open_pipe do |sin|
       num_streams = streams.length
 
-      streams = streams.collect do |stream|
-        if defined? Step and Step === stream
-          stream.grace
-          stream.get_stream || stream.join.path.open
-        else
-          stream
-        end
-      end
 
       streams = streams.collect do |stream|
         sorted = Misc.sort_stream(stream)
         stream.annotate sorted if stream.respond_to? :annotate
-        stream.clear if stream.respond_to? :annotate
         sorted
       end if sort
 
@@ -161,5 +161,7 @@ module TSV
         raise $!
       end
     end
+
+    out
   end
 end

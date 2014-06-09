@@ -92,7 +92,7 @@ class Step
       @result = self._exec
       @result = @result.stream if TSV::Dumper === @result
     end
-    no_load or ENV["RBBT_NO_STREAM"] ? @result : prepare_result(@result, @task.result_description)
+    (no_load or ENV["RBBT_NO_STREAM"]) ? @result : prepare_result(@result, @task.result_description)
   end
 
   def checks
@@ -273,6 +273,7 @@ class Step
   def fork(semaphore = nil)
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil? and not Process.pid == @pid and Misc.pid_exists?(@pid) and not done? and info[:forked]
     @pid = Process.fork do
+      Misc.pre_fork
       begin
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)

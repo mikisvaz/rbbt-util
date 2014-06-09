@@ -204,6 +204,7 @@ module Persist
     ConcurrentStream.setup(out, :threads => saver_thread, :filename => path)
     out.callback = callback
     out.abort_callback = abort_callback
+    out.lockfile = stream.lockfile
     out
   end
 

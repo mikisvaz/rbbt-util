@@ -238,7 +238,7 @@ module Workflow
               m = Module.new
 
               helpers.each do |name,block|
-                m.class.send(:define_method, name, &block)
+                m.send(:define_method, name, &block)
               end
 
               m

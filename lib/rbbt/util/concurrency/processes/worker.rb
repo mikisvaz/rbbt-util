@@ -7,13 +7,17 @@ class RbbtProcessQueue
 
       @pid = Process.fork do
         begin
-          Persist::CONNECTIONS.values.each do |db| db.close if db.write? end
-          ObjectSpace.each_object(Mutex) do |m| 
-            begin 
-              m.unlock 
-            rescue ThreadError
-            end if m.locked? 
-          end
+
+          #Persist::CONNECTIONS.values.each do |db| db.close if db.write? end
+          #ObjectSpace.each_object(Mutex) do |m| 
+          #  begin 
+          #    m.unlock 
+          #  rescue ThreadError
+          #  end if m.locked? 
+          #end
+          
+          Misc.pre_fork
+
           @cleanup.call if @cleanup
           @queue.close_write 
 

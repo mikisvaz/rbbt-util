@@ -2,7 +2,7 @@ module ConcurrentStream
   attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :aborted, :autojoin, :lockfile
 
   def self.setup(stream, options = {}, &block)
-    threads, pids, callback, filename, autojoin = Misc.process_options options, :threads, :pids, :callback, :filename, :autojoin
+    threads, pids, callback, filename, autojoin, lockfile = Misc.process_options options, :threads, :pids, :callback, :filename, :autojoin, :lockfile
     stream.extend ConcurrentStream unless ConcurrentStream === stream
 
     stream.threads ||= []
@@ -24,18 +24,13 @@ module ConcurrentStream
 
     stream.filename = filename unless filename.nil?
 
+    stream.lockfile = lockfile if lockfile
+
     stream
   end
 
   def annotate(stream)
-    ConcurrentStream.setup stream
-    stream.threads = threads
-    stream.pids = pids
-    stream.callback = callback
-    stream.abort_callback = abort_callback
-    stream.filename = filename
-    stream.autojoin = autojoin
-    stream.joined = joined
+    ConcurrentStream.setup(stream, :threads => threads, :pids => pids, :callback => callback, :abort_callback => abort_callback, :filename => filename, :autojoin => autojoin, :lockfile => lockfile)
     stream
   end
 
@@ -138,6 +133,8 @@ module ConcurrentStream
 
       abort_threads
       abort_pids
+      iii [:abort, lockfile]
+      lockfile.unlock if lockfile and lockfile.locked?
     end
     Log.medium "Aborted stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"
   end
