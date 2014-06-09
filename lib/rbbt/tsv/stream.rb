@@ -69,7 +69,6 @@ module TSV
     out = Misc.open_pipe do |sin|
       num_streams = streams.length
 
-
       streams = streams.collect do |stream|
         sorted = Misc.sort_stream(stream)
         stream.annotate sorted if stream.respond_to? :annotate
@@ -150,6 +149,7 @@ module TSV
 
           sin.puts [min, str*sep] * sep
         end
+
         streams.each do |stream|
           stream.join if stream.respond_to? :join
         end
