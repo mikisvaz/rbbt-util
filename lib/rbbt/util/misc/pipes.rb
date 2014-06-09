@@ -90,6 +90,10 @@ module Misc
     stream_out1, stream_in1 = Misc.pipe
     stream_out2, stream_in2 = Misc.pipe
 
+    if ConcurrentStream === stream 
+      stream.annotate stream_out1
+    end
+
     splitter_thread = Thread.new(Thread.current) do |parent|
       begin
         skip1 = skip2 = false
@@ -109,20 +113,19 @@ module Misc
           end unless skip2 
         end
         stream_in1.close unless stream_in1.closed?
+        stream.join if stream.respond_to? :join
         stream_in2.close unless stream_in2.closed?
-        stream.join if stream.respond_to? :join
       rescue Aborted, Interrupt
+        stream_out1.abort if stream_out1.respond_to? :abort
+        stream.abort if stream.respond_to? :abort
+        stream_out2.abort if stream_out2.respond_to? :abort
         Log.medium "Tee aborting #{Misc.fingerprint stream}"
-        stream.abort if stream.respond_to? :abort
-        stream_out1.abort if stream_out1.respond_to? :abort
-        stream_out2.abort if stream_out2.respond_to? :abort
-        Log.medium "tee_stream_thread aborted: #{$!.message}"
+        raise $!
       rescue Exception
-        stream.abort if stream.respond_to? :abort
         stream_out1.abort if stream_out1.respond_to? :abort
+        stream.abort if stream.respond_to? :abort
         stream_out2.abort if stream_out2.respond_to? :abort
-        stream.join if stream.respond_to? :join
-        Log.medium "Exception in tee_stream_thread: #{$!.message}"
+        Log.medium "Tee exception #{Misc.fingerprint stream}"
         raise $!
       end
     end
@@ -228,19 +231,12 @@ module Misc
             File.open(tmp_path, 'wb') do |f| f.write content end
           when (IO === content or StringIO === content or File === content)
 
-            out = nil
-            PIPE_MUTEX.synchronize do
-              out = File.open(tmp_path, 'wb') 
-              out.sync = true
-              OPEN_PIPE_IN << out
+            Open.write(tmp_path) do |f|
+              f.sync = true
+              while block = content.read(2048)
+                f.write block
+              end
             end
-
-            while block = content.read(2048); 
-              out.write block
-            end  
-
-            content.close
-            out.close
           else
             File.open(tmp_path, 'wb') do |f|  end
           end

@@ -62,6 +62,7 @@ module TSV
 
       streams = streams.collect do |stream|
         if defined? Step and Step === stream
+          stream.grace
           stream.get_stream || stream.join.path.open
         else
           stream
@@ -69,7 +70,10 @@ module TSV
       end
 
       streams = streams.collect do |stream|
-        Misc.sort_stream(stream)
+        sorted = Misc.sort_stream(stream)
+        stream.annotate sorted if stream.respond_to? :annotate
+        stream.clear if stream.respond_to? :annotate
+        sorted
       end if sort
 
       lines = []
@@ -123,6 +127,7 @@ module TSV
             case key
             when min
               str << [parts[i] * sep]
+
               line = lines[i] = begin
                                   streams[i].gets
                                 rescue
@@ -131,7 +136,6 @@ module TSV
                                 end
               if line.nil?
                 stream = streams[i]
-                stream.join if stream.respond_to? :join
                 keys[i] = nil
                 parts[i] = nil
               else
@@ -150,12 +154,10 @@ module TSV
           stream.join if stream.respond_to? :join
         end
       rescue Exception
-        ts = streams.collect do |stream|
-          Thread.new do
-            stream.abort if stream.respond_to? :abort
-          end
+        Log.error "Exception pasting streams #{streams.inspect}: #{$!.message}"
+        streams.each do |stream|
+          stream.abort
         end
-        ts.each do |t| t.join end
         raise $!
       end
     end

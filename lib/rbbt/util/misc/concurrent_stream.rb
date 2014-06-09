@@ -36,10 +36,11 @@ module ConcurrentStream
     stream.filename = filename
     stream.autojoin = autojoin
     stream.joined = joined
+    stream
   end
 
   def clear
-    threads, pids, callback, abort_callback = nil
+    threads, pids, callback, abort_callback, joined = nil
   end
 
   def joined?

@@ -400,8 +400,7 @@ class Step
     stream = get_stream if @result
     if stream
       begin
-        @stream_data = StringIO.new
-        Misc.consume_stream stream, false, @stream_data
+        Misc.consume_stream stream 
       rescue Exception
         self._abort
         raise $!
@@ -434,9 +433,6 @@ class Step
     begin
       if pid.nil? or Process.pid == pid
         dependencies.each{|dep| dep.join }
-        while not done?
-          sleep 1
-        end
       else
         begin
           Log.debug{"Waiting for pid: #{pid}"}
