@@ -1,7 +1,5 @@
 module TSV
 
-  module MultipleResult; end
-
   def self.obj_stream(obj)
     case obj
     when nil
@@ -510,13 +508,15 @@ module TSV
 
     bar = Misc.process_options options, :bar
     bar ||= Misc.process_options options, :progress
-    max = guess_max(obj)
     options[:bar] = case bar
                     when String
+                      max = guess_max(obj)
                       Log::ProgressBar.new_bar(max, {:desc => bar}) 
                     when TrueClass
+                      max = guess_max(obj)
                       Log::ProgressBar.new_bar(max, nil) 
                     when Fixnum
+                      max = guess_max(obj)
                       Log::ProgressBar.new_bar(bar) 
                     when Hash
                       max = Misc.process_options(bar, :max) || max

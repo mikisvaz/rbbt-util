@@ -1,4 +1,5 @@
 module TSV
+
   class CleanSerializer
     def self.dump(o); o end
     def self.load(o); o end
@@ -26,7 +27,7 @@ module TSV
 
   class StringSerializer
     def self.dump(str); str.to_s; end
-    def self.load(str); str; end
+    def self.load(str); str.dup; end
   end
 
   class StringArraySerializer
@@ -60,7 +61,6 @@ module TSV
       TSV.setup Marshal.load(string)
     end
   end
-
 
   class TSVSerializer
     def self.dump(tsv)

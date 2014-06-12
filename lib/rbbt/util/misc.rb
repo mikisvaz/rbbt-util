@@ -20,6 +20,8 @@ require 'rbbt/util/misc/system'
 require 'rbbt/util/misc/objects'
 require 'rbbt/util/misc/manipulation'
 
+module MultipleResult; end
+
 module Misc
 end
 

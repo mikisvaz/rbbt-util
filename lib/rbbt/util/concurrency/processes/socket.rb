@@ -3,11 +3,12 @@ require 'rbbt/util/semaphore'
 class RbbtProcessQueue
   class RbbtProcessSocket
 
-    Serializer = Marshal
-
     attr_accessor :sread, :swrite, :write_sem, :read_sem
-    def initialize
+    def initialize(serializer = nil)
       @sread, @swrite = Misc.pipe
+
+      @serializer = serializer || Marshal
+                   
 
       key = "/" << rand(100000000).to_s;
       @write_sem = key + '.in'
@@ -30,16 +31,15 @@ class RbbtProcessQueue
       case obj
       when String
         payload = obj
-        size_head = [payload.bytesize,"S"].pack 'La'
+        size_head = [payload.bytesize,"C"].pack 'La'
         str = size_head << payload
       else
-        payload = Serializer.dump(obj)
-        size_head = [payload.bytesize,"M"].pack 'La'
+        payload = @serializer.dump(obj)
+        size_head = [payload.bytesize,"S"].pack 'La'
         str = size_head << payload
       end
 
       write_length = str.length
-      #IO.select(nil, [stream])
       wrote = stream.write(str) 
       while wrote < write_length
         wrote += stream.write(str[wrote..-1]) 
@@ -54,9 +54,9 @@ class RbbtProcessQueue
       begin
         payload = Misc.read_stream stream, size
         case type
-        when "M"
-          Serializer.load(payload)
         when "S"
+          @serializer.load(payload)
+        when "C"
           payload
         end
       rescue TryAgain

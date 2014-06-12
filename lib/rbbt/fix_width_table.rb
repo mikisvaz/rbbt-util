@@ -1,6 +1,6 @@
 class FixWidthTable
 
-  attr_accessor :filename, :file, :value_size, :record_size, :range, :size
+  attr_accessor :filename, :file, :value_size, :record_size, :range, :size, :mask
   def initialize(filename, value_size = nil, range = nil, update = false, in_memory = true)
     @filename = filename
 
@@ -8,13 +8,14 @@ class FixWidthTable
       Log.debug "FixWidthTable create: #{ filename }"
       @value_size  = value_size
       @range       = range
-      @record_size = @value_size + (@range ? 12 : 4)
+      @record_size = @value_size + (@range ? 16 : 8)
 
       if %w(memory stringio).include? filename.to_s.downcase
         @filename = :memory
         @file     = StringIO.new
       else
         FileUtils.rm @filename if File.exists? @filename
+        FileUtils.mkdir_p File.dirname(@filename) unless File.exists? @filename
         @file = File.open(@filename, 'wb')
       end
 
@@ -24,17 +25,26 @@ class FixWidthTable
     else
       Log.debug "FixWidthTable up-to-date: #{ filename }"
       if in_memory
-        @file        = StringIO.new(Open.read(@filename, :mode => 'rb'), 'r')
+        @file        = StringIO.new(Open.read(@filename, :mode => 'r:ASCII-8BIT'), 'r')
       else
-        @file        = File.open(@filename, 'r')
+        @file        = File.open(@filename, 'r:ASCII-8BIT')
       end
       @value_size  = @file.read(4).unpack("L").first
       @range       = @file.read(1).unpack("C").first == 1
       @record_size = @value_size + (@range ? 12 : 4)
       @size        = (File.size(@filename) - 5) / (@record_size)
     end
+
+    @mask = "a#{value_size}"
   end
 
+  def persistence_path
+    @filename
+  end
+
+  def persistence_path=(value)
+    @filename=value
+  end
 
   CONNECTIONS = {} unless defined? CONNECTIONS
   def self.get(filename, value_size = nil, range = nil, update = false)
@@ -50,28 +60,18 @@ class FixWidthTable
   def format(pos, value)
     padding = value_size - value.length
     if range
-      (pos  + [value + ("\0" * padding)]).pack("llla#{value_size}")
+      (pos  + [padding, value + ("\0" * padding)]).pack("llll#{mask}")
     else
-      [pos, value + ("\0" * padding)].pack("la#{value_size}")
-    end
-  end
-
-  def unformat(format)
-    if range
-      pos_start, pos_end, pos_overlap, value = format.unpack("llla#{value_size}")
-      [[pos_start, pos_end, pos_overlap], value.strip]
-    else
-      pos, value = format.unpack("la#{value_size}")
-      [pos, value.strip]
+      [pos, padding, value + ("\0" * padding)].pack("ll#{mask}")
     end
   end
 
   def add(pos, value)
     format = format(pos, value)
     @file.write format
+
     @size += 1
   end
-  alias << add
 
   def last_pos
     pos(size - 1)
@@ -98,13 +98,15 @@ class FixWidthTable
   def value(index)
     return nil if index < 0 or index >= size
     @file.seek((range ? 17 : 9 ) + (record_size) * index, IO::SEEK_SET)
-    @file.read(value_size).unpack("a#{value_size}").first.strip
+    padding = @file.read(4).unpack("l").first+1
+    txt = @file.read(value_size)
+    txt.unpack(mask).first[0..-padding]
   end
 
-  def read
+  def read(force = false)
     return if @filename == :memory
     @file.close unless @file.closed?
-    @file = File.open(@filename, 'r')
+    @file = File.open(filename, 'r:ASCII-8BIT')
   end
 
   def close
@@ -125,17 +127,20 @@ class FixWidthTable
     end
   end
 
+  def add_range_point(pos, value)
+    @latest ||= []
+    while @latest.any? and @latest[0] < pos[0]
+      @latest.shift
+    end
+    overlap = @latest.length
+    add pos + [overlap], value
+    @latest << pos[1]
+  end
+
   def add_range(data)
-    latest = []
+    @latest = []
     data.sort_by{|value, pos| pos[0] }.each do |value, pos|
-      while latest.any? and latest[0] < pos[0]
-        latest.shift
-      end
-
-      overlap = latest.length
-
-      add pos + [overlap], value
-      latest << pos[1]
+      add_range_point(pos, value)
     end
   end
 
@@ -169,12 +174,14 @@ class FixWidthTable
   end
 
   def get_range(pos)
-    if Range === pos
+    case pos
+    when Range
       r_start = pos.begin
       r_end   = pos.end
+    when Array
+      r_start, r_end = pos
     else
-      r_start = pos.to_i
-      r_end   = pos.to_i
+      r_start, r_end = pos, pos
     end
 
     idx = closest(r_start)
@@ -242,6 +249,7 @@ class FixWidthTable
       get_point(pos)
     end
   end
+
 
   def values_at(*list)
     list.collect{|pos|

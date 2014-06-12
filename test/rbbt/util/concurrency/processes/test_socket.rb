@@ -11,9 +11,8 @@ class TestConcurrency < Test::Unit::TestCase
     obj3 = "some string"
     obj4 = TSV.setup({1 => 1})
 
-    socket = RbbtProcessQueue::RbbtProcessSocket.new 
+    socket = RbbtProcessQueue::RbbtProcessSocket.new  Marshal
     10.times do
-
       socket.push(obj1)
       socket.push(obj2)
       socket.push(obj3)
@@ -23,7 +22,6 @@ class TestConcurrency < Test::Unit::TestCase
       assert_equal obj2, socket.pop 
       assert_equal obj3, socket.pop 
       assert_equal obj4, socket.pop 
-
 
     end
 
@@ -36,4 +34,37 @@ class TestConcurrency < Test::Unit::TestCase
   end
 end
 
+if false and __FILE__ == $0
+  socket = RbbtProcessQueue::RbbtProcessSocket.new 
 
+  obj = "Some string" * 1000
+  Misc.benchmark(1000) do
+    socket.push(obj)
+    socket.pop
+  end
+
+  obj = ["Some string"] * 1000
+  Misc.benchmark(1000) do
+    socket.push(obj)
+    socket.pop
+  end
+  socket.clean
+
+
+  socket = RbbtProcessQueue::RbbtProcessSocket.new Marshal
+
+  obj = "Some string" * 1000
+  Misc.benchmark(1000) do
+    socket.push(obj)
+    socket.pop
+  end
+  socket.clean
+
+  socket = RbbtProcessQueue::RbbtProcessSocket.new TSV::StringArraySerializer
+  obj = ["Some string"] * 1000
+  Misc.benchmark(1000) do
+    socket.push(obj)
+    socket.pop
+  end
+  socket.clean
+end

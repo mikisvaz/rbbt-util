@@ -94,6 +94,7 @@ module TSV
     begin
       super
     rescue Exception
+      Log.exception $!
       @writable = false
       self
     end
@@ -197,12 +198,7 @@ module TSV
 
   #{{{ GETTERS AND SETTERS
 
-
-  def [](key, clean = false)
-    value = super(key)
-    return value if clean or value.nil?
-    @serializer_module ||= self.serializer_module
-
+  def prepare_value(key, value)
     value = @serializer_module.load(value) if @serializer_module and not TSV::CleanSerializer == @serializer_module
 
     return value if @unnamed or fields.nil?
@@ -216,6 +212,20 @@ module TSV
       value = prepare_entity(value, fields.first, entity_options)
     end
     value
+  end
+
+  def [](key, clean = false)
+    value = super(key)
+    return value if clean or value.nil?
+    @serializer_module ||= self.serializer_module
+
+    if MultipleResult === value
+      res = value.collect{|v| prepare_value key, v }
+      res.extend MultipleResult
+      res
+    else
+      prepare_value key, value
+    end
   end
 
   def []=(key, value, clean = false)
@@ -634,6 +644,7 @@ Example:
       if merge
         self.through do |key,values|
           field_values = values.delete_at field_pos
+          next if field_values.nil?
           zipped = values.zip_fields
           field_values.zip(zipped).each do |field_value,rest|
             k = [key,field_value]*":"
@@ -648,6 +659,7 @@ Example:
       else
         self.through do |key,values|
           field_values = values.delete_at field_pos
+          next if field_values.nil?
           zipped = Misc.zip_fields(values)
           field_values.zip(zipped).each do |field_value,rest|
             k = [key,field_value]*":"

@@ -6,6 +6,15 @@ require 'set'
 
  
 module Resource
+
+  class << self
+    attr_accessor :lock_dir
+    
+    def lock_dir
+      @lock_dir ||= Rbbt.tmp.produce_locks.find
+    end
+  end
+
   def self.remote_servers
     @remote_servers = Rbbt.etc.file_servers.exists? ? Rbbt.etc.file_servers.yaml : {}
   end
@@ -65,7 +74,8 @@ module Resource
     begin
       @server_missing_resource_cache ||= Set.new
       raise "Resource Not Found" if @server_missing_resource_cache.include? url
-      Misc.lock final_path do
+      lock_filename = Persist.persistence_path(final_path, {:dir => Resource.lock_dir})
+      Misc.lock lock_filename do
         Net::HTTP.get_response URI(url) do |response|
           case response
           when Net::HTTPSuccess, Net::HTTPOK
@@ -115,15 +125,16 @@ module Resource
     final_path = path.respond_to?(:find) ? (force ? path.find(:user) : path.find) : path
     if not File.exists? final_path or force
       Log.medium "Producing: #{ final_path }"
-      Misc.lock final_path + '.produce' do
+      lock_filename = Persist.persistence_path(final_path, {:dir => Resource.lock_dir})
+      Misc.lock lock_filename do
         if not File.exists? final_path or force
           (remote_server and get_from_server(path, final_path)) or
           begin
             case type
             when :string
-              Open.write(final_path, content)
+              Misc.sensiblewrite(final_path, content)
             when :url
-              Open.write(final_path, Open.open(content))
+              Misc.sensiblewrite(final_path, Open.open(content))
             when :proc
               data = case content.arity
                      when 0
@@ -131,7 +142,7 @@ module Resource
                      when 1
                        content.call final_path
                      end
-              Open.write(final_path, data) unless data.nil?
+              Misc.sensiblewrite(final_path, data) unless data.nil?
             when :rake
               run_rake(path, content, rake_dir)
             when :install

@@ -130,6 +130,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     }
    }
 
+   packed_index.rb
    fix_width_table.rb
 
    persist.rb
@@ -139,6 +140,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      sharder.rb
      adapter.rb
      tokyocabinet.rb
+     fix_width_table.rb
      kyotocabinet.rb
      lmdb.rb
      cdb.rb

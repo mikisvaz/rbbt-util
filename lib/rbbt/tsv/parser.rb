@@ -554,6 +554,10 @@ module TSV
       self
     end
 
+    def identify_field(field)
+      TSV.identify_field(key_field, fields, field)
+    end
+
     def self.traverse(stream, options = {}, &block)
       parser = Parser.new(stream, options)
       parser.traverse(options, &block)

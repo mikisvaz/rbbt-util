@@ -133,7 +133,6 @@ module ConcurrentStream
 
       abort_threads
       abort_pids
-      iii [:abort, lockfile]
       lockfile.unlock if lockfile and lockfile.locked?
     end
     Log.medium "Aborted stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"

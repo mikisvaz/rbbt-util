@@ -1,5 +1,7 @@
 require 'rbbt/persist/tsv/adapter'
 
+require 'rbbt/persist/tsv/fix_width_table'
+
 begin
   require 'rbbt/persist/tsv/tokyocabinet'
 rescue Exception
@@ -46,7 +48,7 @@ module Persist
     end || source.object_id.to_s
   end
 
-  def self.open_database(path, write, serializer = nil, type = "HDB")
+  def self.open_database(path, write, serializer = nil, type = "HDB", options = {})
     case type
     when "LevelDB"
       Persist.open_leveldb(path, write, serializer)
@@ -56,6 +58,13 @@ module Persist
       Persist.open_lmdb(path, write, serializer)
     when 'kch', 'kct'
       Persist.open_kyotocabinet(path, write, serializer, type)
+    when 'fwt'
+      value_size, range, update, in_memory, pos_function = Misc.process_options options.dup, :value_size, :range, :update, :in_memory, :pos_function
+      if pos_function
+        Persist.open_fwt(path, value_size, range, serializer, update, in_memory, &pos_function)
+      else
+        Persist.open_fwt(path, value_size, range, serializer, update, in_memory)
+      end
     else
       Persist.open_tokyocabinet(path, write, serializer, type)
     end
@@ -86,9 +95,9 @@ module Persist
     if is_persisted?(path) and not persist_options[:update]
       Log.debug "TSV persistence up-to-date: #{ path }"
       if persist_options[:shard_function]
-        return open_sharder(path, false, nil, persist_options[:engine], &persist_options[:shard_function]) 
+        return open_sharder(path, false, nil, persist_options[:engine], persist_options, &persist_options[:shard_function]) 
       else
-        return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
+        return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB, persist_options) 
       end
     end
 
@@ -98,9 +107,9 @@ module Persist
           Log.debug "TSV persistence (suddenly) up-to-date: #{ path }"
 
           if persist_options[:shard_function]
-            return open_sharder(path, false, nil, persist_options[:engine], &persist_options[:shard_function]) 
+            return open_sharder(path, false, nil, persist_options[:engine], persist_options, &persist_options[:shard_function]) 
           else
-            return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB) 
+            return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB, persist_options) 
           end
         end
 
@@ -111,9 +120,9 @@ module Persist
         tmp_path = path + '.persist'
 
         data = if persist_options[:shard_function]
-                 open_sharder(tmp_path, true, persist_options[:serializer], persist_options[:engine], &persist_options[:shard_function]) 
+                 open_sharder(tmp_path, true, persist_options[:serializer], persist_options[:engine], persist_options, &persist_options[:shard_function]) 
                else
-                 open_database(tmp_path, true, persist_options[:serializer], persist_options[:engine] || TokyoCabinet::HDB) 
+                 open_database(tmp_path, true, persist_options[:serializer], persist_options[:engine] || TokyoCabinet::HDB, persist_options) 
                end
 
         if TSV === data and data.serializer.nil?
@@ -127,6 +136,7 @@ module Persist
         FileUtils.mv data.persistence_path, path if File.exists? data.persistence_path and not File.exists? path
         tsv = CONNECTIONS[path] = CONNECTIONS.delete tmp_path
         tsv.persistence_path = path
+
         tsv.fix_io if tsv.respond_to? :fix_io
 
         data

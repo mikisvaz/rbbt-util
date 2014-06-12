@@ -35,5 +35,45 @@ class TestSharder < Test::Unit::TestCase
 
     end
   end
+
+  def test_shard_fwt
+    TmpFile.with_file do |dir|
+      shard_function = Proc.new do |key|
+        key[0..(key.index(":")-1)]
+      end
+
+      pos_function = Proc.new do |key|
+        key.split(":").last.to_i
+      end
+
+      size = 10
+      sharder = Persist.persist_tsv(nil, "ShardTest", {}, :update => true, :range => false, :value_size => 64, :engine => 'fwt', :file => dir, :shard_function => shard_function, :pos_function => pos_function, :persist => true, :serializer => :float) do |db|
+        size.times do |v| 
+          v = v + 1
+          chr = "chr" << (v % 5).to_s
+          key = chr + ":" << v.to_s
+          db << [key, v*2]
+        end
+      end
+      sharder.read
+
+      assert_equal dir, sharder.persistence_path
+      assert_equal size, sharder.size
+
+      assert_equal [4.0], sharder["chr2:2"]
+
+      count = 0
+      sharder.through do |k,v|
+        count += 1
+      end
+      assert_equal count, size
+
+      sharder = Persist.open_sharder(dir, false, :float, 'fwt', {:range => false, :value_size => 64, :pos_function => pos_function}, &shard_function)
+
+      assert_equal [4.0], sharder["chr2:2"]
+
+      assert_equal size, sharder.size 
+    end
+  end
 end
 
