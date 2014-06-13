@@ -31,7 +31,7 @@ module Log
     end
 
     def self.remove_bar(bar)
-      bar.done 
+      bar.done if bar.respond_to? :done
       BAR_MUTEX.synchronize do
         REMOVE << bar
       end

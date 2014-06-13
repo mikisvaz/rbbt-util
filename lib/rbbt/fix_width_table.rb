@@ -21,6 +21,7 @@ class FixWidthTable
 
       @file.write [value_size].pack("L")
       @file.write [@range ? 1 : 0 ].pack("C")
+
       @size = 0
     else
       Log.debug "FixWidthTable up-to-date: #{ filename }"
@@ -31,11 +32,12 @@ class FixWidthTable
       end
       @value_size  = @file.read(4).unpack("L").first
       @range       = @file.read(1).unpack("C").first == 1
-      @record_size = @value_size + (@range ? 12 : 4)
+      @record_size = @value_size + (@range ? 16 : 8)
+
       @size        = (File.size(@filename) - 5) / (@record_size)
     end
 
-    @mask = "a#{value_size}"
+    @mask = "a#{@value_size}"
   end
 
   def persistence_path
@@ -100,7 +102,8 @@ class FixWidthTable
     @file.seek((range ? 17 : 9 ) + (record_size) * index, IO::SEEK_SET)
     padding = @file.read(4).unpack("l").first+1
     txt = @file.read(value_size)
-    txt.unpack(mask).first[0..-padding]
+    str = txt.unpack(mask).first
+    padding > 1 ? str[0..-padding] : str
   end
 
   def read(force = false)
@@ -191,7 +194,9 @@ class FixWidthTable
 
     idx = 0 if idx < 0
 
-    idx -= overlap(idx) unless overlap(idx).nil?
+    overlap = overlap(idx)
+
+    idx -= overlap unless overlap.nil?
 
     values = []
     l_start = pos(idx)

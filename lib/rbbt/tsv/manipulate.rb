@@ -162,7 +162,6 @@ module TSV
         desc = @monitor[:desc] if @monitor.include? :desc 
         step = @monitor[:step] if @monitor.include? :step 
       end
-      #progress_monitor = Progress::Bar.new(size, 0, step, desc)
       progress_monitor = Log::ProgressBar.new(size, :desc => desc)
     else
       progress_monitor = nil
@@ -192,8 +191,8 @@ module TSV
         when :flat, :single
           prepare_entity(value, traverser.new_field_names.first, entity_options)
         end
-
       end
+
 
 
       if zipped
@@ -224,7 +223,10 @@ module TSV
         end
 
       end
+
     end
+
+    Log::ProgressBar.remove_bar progress_monitor if progress_monitor
 
     [traverser.new_key_field_name, traverser.new_field_names]
   end

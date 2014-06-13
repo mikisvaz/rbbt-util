@@ -113,7 +113,7 @@ module Persist
           end
         end
 
-        FileUtils.rm path if File.exists? path
+        FileUtils.rm_rf path if File.exists? path
 
         Log.medium "TSV persistence creating: #{ path }"
 

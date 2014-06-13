@@ -81,7 +81,7 @@ module Persist
     end
 
     def size
-      @size #+ metadata.keys.length
+      @size
     end
 
     def each

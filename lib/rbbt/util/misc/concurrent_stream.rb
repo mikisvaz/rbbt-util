@@ -117,7 +117,12 @@ module ConcurrentStream
   end
 
   def abort_pids
-    @pids.each{|pid| Process.kill :INT, pid } if @pids
+    @pids.each do |pid|
+      begin 
+        Process.kill :INT, pid 
+      rescue Errno::ESRCH
+      end
+    end if @pids
     @pids = []
   end
 

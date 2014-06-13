@@ -38,7 +38,6 @@ module TSV
         end
       end
     rescue Exception
-      Log.exception $!
       nil
     end
   end

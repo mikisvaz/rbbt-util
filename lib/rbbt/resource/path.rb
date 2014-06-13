@@ -154,7 +154,7 @@ module Path
     begin
       self.produce
       File.exists? self.find
-    rescue
+    rescue Exception
       false
     end
   end

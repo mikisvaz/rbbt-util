@@ -49,6 +49,7 @@ module Rake
         end
       rescue
         Log.error "Error in rake: #{$!.message}"
+        Log.exception $!
         raise $!
       end
     }
