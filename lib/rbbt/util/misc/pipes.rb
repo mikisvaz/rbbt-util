@@ -343,64 +343,68 @@ module Misc
     end
   end
 
+  def self._paste_streams(streams, output, lines = nil, sep = "\t", header = nil)
+    output.puts header if header
+    streams = streams.collect do |stream|
+      if defined? Step and Step === stream
+        stream.get_stream || stream.join.path.open
+      else
+        stream
+      end
+    end
+
+    begin
+      done_streams = []
+      lines ||= streams.collect{|s| s.gets }
+      keys = []
+      parts = []
+      lines.each_with_index do |line,i|
+        key, *p = line.strip.split(sep, -1) 
+        keys[i] = key
+        parts[i] = p
+      end
+      sizes = parts.collect{|p| p.length }
+      last_min = nil
+      while lines.compact.any?
+        min = keys.compact.sort.first
+        str = []
+        keys.each_with_index do |key,i|
+          case key
+          when min
+            str << [parts[i] * sep]
+            line = lines[i] = streams[i].gets
+            if line.nil?
+              keys[i] = nil
+              parts[i] = nil
+            else
+              k, *p = line.strip.split(sep, -1)
+              keys[i] = k
+              parts[i] = p
+            end
+          else
+            str << [sep * (sizes[i]-1)] if sizes[i] > 0
+          end
+        end
+
+        output.puts [min, str*sep] * sep
+      end
+      streams.each do |stream|
+        stream.join if stream.respond_to? :join
+      end
+    rescue 
+      Log.exception $!
+      streams.each do |stream|
+        stream.abort if stream.respond_to? :abort
+      end
+      raise $!
+    end
+  end
+
   def self.paste_streams(streams, lines = nil, sep = "\t", header = nil)
     sep ||= "\t"
     num_streams = streams.length
     Misc.open_pipe do |sin|
-      sin.puts header if header
-      streams = streams.collect do |stream|
-        if defined? Step and Step === stream
-          stream.get_stream || stream.join.path.open
-        else
-          stream
-        end
-      end
-
-      begin
-        done_streams = []
-        lines ||= streams.collect{|s| s.gets }
-        keys = []
-        parts = []
-        lines.each_with_index do |line,i|
-          key, *p = line.strip.split(sep, -1) 
-          keys[i] = key
-          parts[i] = p
-        end
-        sizes = parts.collect{|p| p.length }
-        last_min = nil
-        while lines.compact.any?
-          min = keys.compact.sort.first
-          str = []
-          keys.each_with_index do |key,i|
-            case key
-            when min
-              str << [parts[i] * sep]
-              line = lines[i] = streams[i].gets
-              if line.nil?
-                keys[i] = nil
-                parts[i] = nil
-              else
-                k, *p = line.strip.split(sep, -1)
-                keys[i] = k
-                parts[i] = p
-              end
-            else
-              str << [sep * (sizes[i]-1)] if sizes[i] > 0
-            end
-          end
-
-          sin.puts [min, str*sep] * sep
-        end
-        streams.each do |stream|
-          stream.join if stream.respond_to? :join
-        end
-      rescue 
-        Log.exception $!
-        streams.each do |stream|
-          stream.abort if stream.respond_to? :abort
-        end
-        raise $!
-      end
+      self._paste_streams(streams, sin, lines, sep, header)
     end
   end
 
