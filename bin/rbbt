@@ -41,9 +41,10 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 --profile               #{Log.color :yellow, "Profile execution"}
 --nocolor               #{Log.color :yellow, "Disable colored output"}
 --nobar                 #{Log.color :yellow, "Disable progress report"}
+--nostream              #{Log.color :yellow, "Disable persistance/job streaming"}
 --locate_file           #{Log.color :yellow, "Report the location of the script instead of executing it"}
 --dump_mem*             #{Log.color :yellow, "Dump strings in memory each second into file"}
---no_lock_id           #{Log.color :yellow, "Do not track lockfiles with ids (for high-througput and high-concurrency"}
+--no_lock_id            #{Log.color :yellow, "Do not track lockfiles with ids (for high-througput and high-concurrency"}
 EOF
 
 
@@ -68,6 +69,10 @@ end
 if mem_dump = options.delete(:dump_mem)
   require 'rbbt/monitor'
   Rbbt.dump_memory(mem_dump, Symbol)
+end
+
+if options.delete :stream
+  ENV["RBBT_NO_STREAM"] = "true"
 end
 
 if options.delete :nobar
