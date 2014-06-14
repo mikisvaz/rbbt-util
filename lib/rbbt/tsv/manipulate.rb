@@ -162,7 +162,7 @@ module TSV
         desc = @monitor[:desc] if @monitor.include? :desc 
         step = @monitor[:step] if @monitor.include? :step 
       end
-      progress_monitor = Log::ProgressBar.new(size, :desc => desc)
+      progress_monitor = Log::ProgressBar.new_bar(size, :desc => desc)
     else
       progress_monitor = nil
     end
