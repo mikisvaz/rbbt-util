@@ -442,23 +442,31 @@ module Workflow
   end
 
   def rec_input_defaults(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge((Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_defaults) }.
-      tap{|h| IndiferentHash.setup(h)}
+    [taskname].concat(rec_dependencies(taskname)).inject(IndiferentHash.setup({})){|acc, tn|
+      new = (Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_defaults
+      acc = new.merge(acc) 
+    }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_types(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge((Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_types) }.
-      tap{|h| IndiferentHash.setup(h) }
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
+      new = (Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_types
+      acc = new.merge(acc) 
+    }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_descriptions(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge((Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_descriptions) }.
-      tap{|h| IndiferentHash.setup(h)}
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
+      new = (Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_descriptions
+      acc = new.merge(acc) 
+    }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_options(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn| acc.merge((Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_options)}.
-      tap{|h| IndiferentHash.setup(h)}
+    [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
+      new = (Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_options
+      acc = new.merge(acc) 
+    }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def real_dependencies(task, jobname, inputs, dependencies)

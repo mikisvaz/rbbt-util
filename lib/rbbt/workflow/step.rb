@@ -35,11 +35,18 @@ class Step
     @mutex = Mutex.new
     @info_mutex = Mutex.new
     @inputs = inputs || []
-    NamedArray.setup @inputs, task.inputs if task
+    NamedArray.setup @inputs, task.inputs.collect{|s| s.to_s} if task
   end
 
   def inputs
-    NamedArray.setup @inputs, task.inputs if task.inputs and not NamedArray === @inputs
+    if @inputs.nil? and task and task.respond_to? :inputs
+      @inputs = info[:inputs].values_at *task.inputs.collect{|name| name.to_s}
+    end
+
+    if task.inputs and not NamedArray === @inputs
+      NamedArray.setup @inputs, task.inputs 
+    end
+
     @inputs
   end
 

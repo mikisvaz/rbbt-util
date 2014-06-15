@@ -86,14 +86,14 @@ module ConcurrentStream
     lockfile.unlock if lockfile and lockfile.locked?
   end
 
-  def abort_threads
+  def abort_threads(exception)
     Log.medium "Aborting threads (#{Thread.current.inspect}) #{@threads.collect{|t| t.inspect } * ", "}"
 
     @threads.each do |t| 
       @aborted = false if t == Thread.current
       next if t == Thread.current
       Log.medium "Aborting thread #{t.inspect}"
-      t.raise Aborted.new 
+      t.raise exception ? exception : Aborted.new 
     end if @threads
 
     sleeped = false
@@ -126,7 +126,7 @@ module ConcurrentStream
     @pids = []
   end
 
-  def abort
+  def abort(exception = nil)
     return if @aborted
     Log.medium "Aborting stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"
     @aborted = true 
@@ -136,7 +136,7 @@ module ConcurrentStream
       @abort_callback = nil
       close unless closed?
 
-      abort_threads
+      abort_threads(exception)
       abort_pids
       lockfile.unlock if lockfile and lockfile.locked?
     end

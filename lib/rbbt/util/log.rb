@@ -2,10 +2,18 @@ require 'term/ansicolor'
 require 'rbbt/util/color'
 require 'rbbt/util/log/progress'
 
+class MockMutex
+  def synchronize
+    yield
+  end
+end
+
 module Log
   extend Term::ANSIColor
 
 
+  #ToDo: I'm not sure if using a Mutex here really gives troubles in CPU concurrency
+  #LOG_MUTEX = MockMutex.new
   LOG_MUTEX = Mutex.new
 
   SEVERITY_NAMES ||= begin
@@ -16,8 +24,16 @@ module Log
                      names
                    end
 
+  def self.last_caller(stack)
+    line = nil
+    while line.nil? or line =~ /util\/log\.rb/ and stack.any?
+      line = stack.shift 
+    end
+    line ||= caller.first
+  end
+
   def self.ignore_stderr
-    #LOG_MUTEX.synchronize do
+    LOG_MUTEX.synchronize do
       backup_stderr = STDERR.dup
       File.open('/dev/null', 'w') do |f|
         STDERR.reopen(f)
@@ -28,7 +44,7 @@ module Log
           backup_stderr.close
         end
       end
-    #end
+    end
   end
 
   def self.get_level(level)
@@ -133,22 +149,18 @@ module Log
     message = "" << highlight << message << color(0) if severity >= INFO
     str = prefix << " " << message
 
-    #LOG_MUTEX.synchronize do
-    STDERR.puts str
-    Log::LAST.replace "log"
-    logfile.puts str unless logfile.nil?
-    nil
-    #end
+    LOG_MUTEX.synchronize do
+      STDERR.puts str
+      Log::LAST.replace "log"
+      logfile.puts str unless logfile.nil?
+      nil
+    end
   end
 
   def self.log_obj_inspect(obj, level, file = $stdout)
     stack = caller
 
-    line = nil
-    while line.nil? or line =~ /util\/log\.rb/ and stack.any?
-      line = stack.shift 
-    end
-    line ||= caller.first
+    line = Log.last_caller stack
 
     level = Log.get_level level
     name = Log::SEVERITY_NAMES[level] + ": "
@@ -161,11 +173,7 @@ module Log
   def self.log_obj_fingerprint(obj, level, file = $stdout)
     stack = caller
 
-    line = nil
-    while line.nil? or line =~ /util\/log\.rb/ and stack.any?
-      line = stack.shift 
-    end
-    line ||= caller.first
+    line = Log.last_caller stack
 
     level = Log.get_level level
     name = Log::SEVERITY_NAMES[level] + ": "
@@ -208,6 +216,19 @@ module Log
     error("#{Log.color :error, "EXCEPTION:"} " << stack.first)
     error([e.class.to_s, e.message].compact * ": ")
     error("BACKTRACE:\n" + e.backtrace * "\n") 
+  end
+
+  def self.stack(stack)
+    LOG_MUTEX.synchronize do
+
+      STDERR.puts Log.color :magenta, "Stack trace: " << Log.last_caller(caller)
+      stack.each do |line|
+        line = line.sub('`',"'")
+        color = :green if line =~ /workflow/
+        color = :blue if line =~ /rbbt-/
+        STDERR.puts Log.color color, line
+      end
+    end
   end
 
   case ENV['RBBT_LOG'] 

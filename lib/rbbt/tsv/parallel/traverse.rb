@@ -187,6 +187,7 @@ module TSV
       options[:monitor] = bar
       TSV::Parser.traverse(io, options, &block)
     end
+    Log::ProgressBar.remove_bar(bar) if bar
     join.call if join
   end
 
@@ -212,7 +213,7 @@ module TSV
         else
           obj.traverse(options, &block)
         end
-      when IO, File
+      when IO, File, StringIO
         begin
           if options[:type] == :array
             traverse_io_array(obj, options, &block)
@@ -391,10 +392,11 @@ module TSV
       end 
       true
     rescue Aborted, Interrupt
-      Log.medium "Aborted storing into #{Misc.fingerprint store}: #{$!.message}"
+      Log.medium "Aborted storing into #{Misc.fingerprint store}"
       stream = obj_stream(store)
       stream.abort if stream.respond_to? :abort
     rescue Exception
+      Log.medium "Exception storing into #{Misc.fingerprint store}: #{$!.message}"
       stream = obj_stream(store)
       stream.abort if stream.respond_to? :abort
       raise $!
@@ -461,7 +463,7 @@ module TSV
     thread = Thread.new(Thread.current) do |parent|
       begin
         traverse_run(obj, threads, cpus, options, &block)
-        into.close if into.respond_to? :close
+        into.close if into.respond_to?(:close) and not (into.respond_to? :closed? and into.closed?)
       rescue Exception
         stream = obj_stream(obj)
         stream.abort if stream and stream.respond_to? :abort
@@ -556,7 +558,7 @@ module TSV
         traverse_stream(obj, threads, cpus, options, &block)
       else
         traverse_run(obj, threads, cpus, options, &block)
-        into.close if into.respond_to? :close
+        into.close if into.respond_to?(:close) and not (into.respond_to? :closed and into.closed?)
       end
 
       into

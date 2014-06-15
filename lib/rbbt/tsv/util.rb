@@ -142,11 +142,16 @@ module TSV
 
 
   
-  def self.header_lines(key_field, fields, entry_hash = {})
-    sep = (Hash === entry_hash and entry_hash[:sep]) ? entry_hash[:sep] : "\t"
+  def self.header_lines(key_field, fields, entry_hash = nil)
+    if Hash === entry_hash 
+      sep = entry_hash[:sep] ? entry_hash[:sep] : "\t"
+      preamble = entry_hash[:preamble]
+    end
+
+    preamble ||= "#: " << Misc.hash2string(entry_hash.merge(:key_field => nil, :fields => nil)) << "\n" if entry_hash and entry_hash.any?
 
     str = "" 
-    str << "#: " << Misc.hash2string(entry_hash.merge(:key_field => nil, :fields => nil)) << "\n" if entry_hash and entry_hash.any?
+    str << preamble.strip << "\n" if preamble
     if fields
       str << "#" << key_field << sep << fields * sep << "\n"
     end

@@ -48,7 +48,9 @@ row3 ccc
 
   def test_sort_stream
     text =<<-EOF
-#: :sep=" "
+##
+##
+##
 #Row LabelA LabelB LabelC
 row2 AA BB CC
 row3 AAA BBB CCC
@@ -56,8 +58,8 @@ row1 A B C
     EOF
     s = StringIO.new text
     sorted = Misc.sort_stream(s)
-    assert_equal %w(#: #Row row2 row3 row1), text.split("\n").collect{|l| l.split(" ").first}
-    assert_equal %w(#: #Row row1 row2 row3), sorted.read.split("\n").collect{|l| l.split(" ").first}
+    assert_equal %w(## ## ## #Row row2 row3 row1), text.split("\n").collect{|l| l.split(" ").first}
+    assert_equal %w(## ## ## #Row row1 row2 row3), sorted.read.split("\n").collect{|l| l.split(" ").first}
   end
 
   def test_dup_stream

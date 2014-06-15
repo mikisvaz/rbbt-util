@@ -112,7 +112,6 @@ module CMD
       stderr = Log::HIGH
     end
 
-    # Process cmd_options
     cmd_options = process_cmd_options options
     if cmd =~ /'\{opt\}'/
       cmd.sub!('\'{opt}\'', cmd_options) 

@@ -1,4 +1,4 @@
-require 'rbbt/tsv/parser'
+require'rbbt/tsv/parser'
 require 'rbbt/tsv/dumper'
 module TSV
 
@@ -17,56 +17,22 @@ module TSV
     dumper
   end
  
-  def self.paste_streams(inputs, options = {})
-    options = Misc.add_defaults options, :sep => "\t", :sort => false
-    sort = Misc.process_options options, :sort
-
-    input_streams = []
-    input_lines = []
-    input_fields = []
-    input_key_fields = []
-    input_options = []
-
-    input_source_streams = inputs.collect do |input|
-      stream = sort ? Misc.sort_stream(input) : TSV.get_stream(input)
-      stream
-    end
-
-    input_source_streams.each do |stream|
-      parser = TSV::Parser.new stream, options
-      input_streams << parser.stream
-      input_lines << parser.first_line
-      input_fields << parser.fields
-      input_key_fields << parser.key_field
-      input_options << parser.options
-    end
-
-    key_field = input_key_fields.first
-    fields = input_fields.flatten
-    options = options.merge(input_options.first)
-
-    dumper = TSV::Dumper.new options.merge(:key_field => key_field, :fields => fields)
-    dumper.close_in
-    dumper.close_out
-    header = TSV.header_lines(key_field, fields, options)
-    dumper.stream = Misc.paste_streams input_streams, input_lines, options[:sep], header
-    dumper
-  end
-
   def self.paste_streams(streams, options = {})
     options = Misc.add_defaults options, :sep => "\t", :sort => true
-    sort, sep = Misc.process_options options, :sort, :sep
+    sort, sep, preamble = Misc.process_options options, :sort, :sep, :preamble
 
-    streams = streams.collect do |stream|
-      if defined? Step and Step === stream
-        stream.grace
-        stream.get_stream || stream.join.path.open
-      else
-        stream
-      end
-    end
 
     out = Misc.open_pipe do |sin|
+
+      streams = streams.collect do |stream|
+        if defined? Step and Step === stream
+          stream.grace
+          stream.get_stream || stream.join.path.open
+        else
+          stream
+        end
+      end
+
       num_streams = streams.length
 
       streams = streams.collect do |stream|
@@ -75,12 +41,13 @@ module TSV
         sorted
       end if sort
 
-      lines = []
-      fields = []
-      sizes = []
-      key_fields = []
+      lines         = []
+      fields        = []
+      sizes         = []
+      key_fields    = []
       input_options = []
-      empty = []
+      empty         = []
+      preambles     = []
 
       streams = streams.collect do |stream|
         parser = TSV::Parser.new stream, options
@@ -88,8 +55,9 @@ module TSV
         empty << stream if parser.first_line.nil?
         key_fields << parser.key_field
         fields << parser.fields
-        sizes << parser.fields.length
+        sizes << parser.fields.length if parser.fields
         input_options << parser.options
+        preambles << parser.preamble if TrueClass === preamble and not parser.preamble.empty?
 
         parser.stream
       end
@@ -98,12 +66,20 @@ module TSV
       fields = fields.compact.flatten
       options = options.merge(input_options.first)
 
-      sin.puts TSV.header_lines(key_field, fields, options)
+      preamble_txt = case preamble
+                     when TrueClass
+                       preambles * "\n"
+                     when String
+                       preamble
+                     else
+                       nil
+                     end
+
+      header = TSV.header_lines(key_field, fields, options.merge(:preamble => preamble_txt))
+      sin.puts header
 
       empty_pos = empty.collect{|stream| streams.index stream }
       empty_pos.sort.reverse.each do |i|
-        lines.delete_at i
-        fields.delete_at i
         key_fields.delete_at i
         input_options.delete_at i
       end
@@ -114,10 +90,18 @@ module TSV
         keys = []
         parts = []
         lines.each_with_index do |line,i|
-          key, *p = line.strip.split(sep, -1) 
-          keys[i] = key
-          parts[i] = p
+          if line.nil?
+            keys[i] = nil
+            parts[i] = nil
+          else
+            vs = line.chomp.split(sep, -1) 
+            key, *p = vs
+            keys[i] = key
+            parts[i] = p
+          end
+          sizes[i] ||= parts[i].length-1 unless parts[i].nil?
         end
+
         last_min = nil
         while lines.compact.any?
           min = keys.compact.sort.first
@@ -125,7 +109,7 @@ module TSV
           keys.each_with_index do |key,i|
             case key
             when min
-              str << [parts[i] * sep]
+              str << parts[i] * sep
 
               line = lines[i] = begin
                                   streams[i].gets
@@ -138,25 +122,44 @@ module TSV
                 keys[i] = nil
                 parts[i] = nil
               else
-                k, *p = line.strip.split(sep, -1)
+                k, *p = line.chomp.split(sep, -1)
                 keys[i] = k
-                parts[i] = p
+                parts[i] = p.collect{|e| e.nil? ? "" : e }
               end
             else
-              str << [sep * (sizes[i]-1)] if sizes[i] > 0
+              if sizes[i] > 0
+                p = sep * (sizes[i]-1)
+                str << p
+              end
             end
           end
 
-          sin.puts [min, str*sep] * sep
+          values = str.inject(nil) do |acc,part| 
+            if acc.nil?
+              acc = part.dup
+            else
+              acc << sep << part
+            end
+            acc
+          end
+
+          text = [min, values] * sep
+          sin.puts text
         end
 
         streams.each do |stream|
           stream.join if stream.respond_to? :join
         end
+      rescue Aborted
+        Log.error "Aborted pasting streams #{streams.inspect}: #{$!.message}"
+        streams.each do |stream|
+          stream.abort if stream.respond_to? :abort
+        end
+        raise $!
       rescue Exception
         Log.error "Exception pasting streams #{streams.inspect}: #{$!.message}"
         streams.each do |stream|
-          stream.abort
+          stream.abort if stream.respond_to? :abort
         end
         raise $!
       end

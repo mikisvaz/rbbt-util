@@ -10,11 +10,11 @@ module Log
 
     def print(io, str)
       return if ENV["RBBT_NO_PROGRESS"] == "true"
-      #LOG_MUTEX.synchronize do
+      LOG_MUTEX.synchronize do
         STDERR.print str
         Log.logfile.puts str unless Log.logfile.nil?
         Log::LAST.replace "progress"
-      #end
+      end
     end
 
     attr_accessor :history, :mean_max
@@ -90,6 +90,7 @@ module Log
       if Log::LAST != "progress"
         length = Log::ProgressBar.cleanup_bars
         bars = BARS
+        print(io, Log.color(:yellow, "...Progress\n"))
         bars.sort_by{|b| b.depth }.reverse.each do |bar|
           print(io, Log.color(:yellow ,bar.report_msg) << "\n")
         end

@@ -53,10 +53,16 @@ else
       puts "  - #{Log.color :cyan, i + 1}: " << Log.color(:yellow, f)
     end
   end
-  puts "Rows: #{Log.color :blue, `wc -l '#{ file }'|cut -f 1 -d' '`}" unless Open.remote? file
-  parts = []
-  header.first_line.split(header.sep).each_with_index{|p,i| parts << (Log.color(:cyan, "(#{i}) ") << p.strip) }
-  puts parts * "\t"
+
+  if String === file and not Open.remote? file and File.exists? file
+    rows = `wc -l '#{ file }' 2>/dev/null|cut -f 1 -d' '`
+  else
+    rows = "Could not get rows of #{Misc.fingerprint file}"
+  end
+    puts "Rows: #{Log.color :blue, rows}" 
+    parts = []
+    header.first_line.split(header.sep).each_with_index{|p,i| parts << (Log.color(:cyan, "(#{i}) ") << p.strip) }
+    puts parts * "\t"
   puts
 end
 

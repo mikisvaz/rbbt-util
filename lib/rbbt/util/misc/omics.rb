@@ -126,8 +126,9 @@ module Misc
   def self.correct_vcf_mutation(pos, ref, mut_str)
     muts = mut_str.nil? ? [] : mut_str.split(',')
 
-    while ref.length >= 1 and muts.reject{|m| m[0] == ref[0]}.empty?
+    while ref.length > 1 and muts.reject{|m| m[0] == ref[0]}.empty?
       ref = ref[1..-1]
+      raise "REF nil" if ref.nil?
       pos = pos + 1
       muts = muts.collect{|m| m[1..-1]}
     end

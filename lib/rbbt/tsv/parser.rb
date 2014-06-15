@@ -1,7 +1,7 @@
 require 'rbbt/util/cmd'
 module TSV
   class Parser
-    attr_accessor :stream, :filename, :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace, :first_line, :stream
+    attr_accessor :stream, :filename, :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace, :first_line, :stream, :preamble
 
     class SKIP_LINE < Exception; end
     class END_PARSING < Exception; end
@@ -13,20 +13,22 @@ module TSV
 
     def parse_header(stream)
       options = {}
+      @preamble = []
 
       # Get line
 
       #Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
       line = stream.gets
-      raise "Empty content: #{ stream.inspect }" if line.nil?
-      line = Misc.fixutf8 line
-      line.chomp!
+      return {} if line.nil?
+      #raise "Empty content: #{ stream.inspect }" if line.nil?
+      line = Misc.fixutf8 line.chomp
 
       # Process options line
 
       if line and line =~ /^#{@header_hash}: (.*)/
-        options = Misc.string2hash $1.strip
-        line = Misc.fixutf8 stream.gets
+        options = Misc.string2hash $1.chomp
+        line = stream.gets
+        line = Misc.fixutf8 line.chomp if line
       end
 
       # Determine separator
@@ -35,15 +37,19 @@ module TSV
 
       # Process fields line
 
+      preamble << line if line
       while line and Misc.fixutf8(line) =~ /^#{@header_hash}/ 
-        line.chomp!
         @fields = line.split(@sep)
         @key_field = @fields.shift
         @key_field = @key_field[(0 + header_hash.length)..-1] # Remove initial hash character
 
         #Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
-        line = @header_hash != "" ?  Misc.fixutf8(stream.gets) : nil
+        line = (@header_hash != "" ?  stream.gets : nil)
+        line = Misc.fixutf8 line.chomp if line
+        preamble << line if line
       end
+
+      @preamble = preamble[0..-3] * "\n"
 
       line ||= stream.gets
 
@@ -541,13 +547,13 @@ module TSV
             raise $!
           rescue Exception
             Log.error "Exception parsing #{Misc.fingerprint stream}: #{$!.message}"
-            stream.abort if stream.respond_to? :abort
+            stream.abort $! if stream.respond_to? :abort
             raise $!
           end
         end
 
       ensure
-        stream.close
+        stream.close unless stream.closed?
         stream.join if stream.respond_to? :join
       end
 

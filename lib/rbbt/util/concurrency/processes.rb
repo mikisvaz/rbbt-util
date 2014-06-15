@@ -96,6 +96,9 @@ class RbbtProcessQueue
     begin
       @process_monitor.join
       close_callback if @callback
+    rescue Aborted
+      Log.error "Aborted joining queue"
+      raise $!
     rescue Exception
       Log.error "Exception joining queue: #{$!.message}"
       raise $!

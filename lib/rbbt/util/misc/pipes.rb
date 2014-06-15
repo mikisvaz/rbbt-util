@@ -175,7 +175,7 @@ module Misc
       Log.medium "Consuming stream #{Misc.fingerprint io}"
       begin
         into.sync == true if IO === into
-        while not io.closed? and block = io.read(2048 * 10)
+        while not io.closed? and block = io.read(2048)
           into << block if into
         end
         io.join if io.respond_to? :join

@@ -269,8 +269,6 @@ end
 
 if recursive_clean 
   job.recursive_clean 
-  sleep 1
-  job = workflow.job(task.name, name, job_options)
 end
 
 require 'pp'

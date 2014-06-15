@@ -275,14 +275,18 @@ module Workflow
     Workflow.resolve_locals(inputs)
 
     task_inputs = task_info(taskname)[:inputs]
-    defaults = task_info(taskname)[:input_defaults]
+    defaults = IndiferentHash.setup(task_info(taskname)[:input_defaults])
 
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
 
     real_inputs = {}
 
     inputs.each do |k,v|
-      real_inputs[k] = v if (task_inputs.include?(k.to_sym) or task_inputs.include?(k.to_s)) and (defaults[k].to_s != v.to_s and not (FalseClass === v and defaults[k].nil?))
+      default = defaults[k]
+      if (task_inputs.include?(k.to_sym) or task_inputs.include?(k.to_s)) and 
+        (defaults[k].to_s != v.to_s and not (FalseClass === v and defaults[k].nil?))
+        real_inputs[k] = v 
+      end
     end
 
     if real_inputs.empty?
