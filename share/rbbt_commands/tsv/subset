@@ -15,7 +15,7 @@ Subsets entries from a TSV file from a given list. Works with Tokyocabinet HDB a
 -tch--tokyocabinet File is a TC HDB
 -tcb--tokyocabinet_bd File is a TC BDB
 -hh--header_hash* Change the character used to mark the header line (defaults to #)
--s--subset* Subset of samples (Comma-separated of file)
+-s--subset* Subset of keys (Comma-separated or file)
 -h--help Help
 EOF
 
