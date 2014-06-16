@@ -77,7 +77,7 @@ rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1, check
   data=read.table(file=filename, sep=sep, fill=fill, as.is=as.is, quote=quote, row.names= row.names, comment.char = comment.char, ...);
   f = file(filename, 'r');
   headers = readLines(f, 1);
-  if (length(grep("^#: ", headers)) > 0){ 
+  if (length(grep("^#:", headers)) > 0){ 
       headers = readLines(f, 1); 
   } 
   if (length(grep("^#", headers)) > 0){

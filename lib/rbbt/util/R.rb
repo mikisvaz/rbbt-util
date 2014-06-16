@@ -38,7 +38,7 @@ source('#{UTIL}');
 
   def self.interactive(script, options = {})
     TmpFile.with_file do |init_file|
-        Open.write(init_file) do |f|
+       Open.write(init_file) do |f|
           f.puts "# Loading basic rbbt environment"
           f.puts "library(utils);\n"
           f.puts "source('#{R::UTIL}');\n"

@@ -148,10 +148,10 @@ module TSV
       preamble = entry_hash[:preamble]
     end
 
-    preamble ||= "#: " << Misc.hash2string(entry_hash.merge(:key_field => nil, :fields => nil)) << "\n" if entry_hash and entry_hash.any?
+    preamble = "#: " << Misc.hash2string(entry_hash.merge(:key_field => nil, :fields => nil)) << "\n" if preamble.nil? and entry_hash and entry_hash.values.compact.any?
 
     str = "" 
-    str << preamble.strip << "\n" if preamble
+    str << preamble.strip << "\n" if preamble and not preamble.empty?
     if fields
       str << "#" << key_field << sep << fields * sep << "\n"
     end
