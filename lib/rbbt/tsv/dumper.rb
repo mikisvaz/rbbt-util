@@ -4,12 +4,8 @@ module TSV
     def self.stream(options = {}, filename = nil, &block)
       dumper = TSV::Dumper.new options, filename
       Thread.new(Thread.current) do |parent|
-        begin
-          yield dumper
-          dumper.close
-        rescue Exception
-          raise $!
-        end
+        yield dumper
+        dumper.close
       end
       dumper.stream
     end

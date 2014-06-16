@@ -12,7 +12,7 @@ class Step
   def self.wait_for_jobs(jobs)
     begin
       threads = []
-      jobs.each do |j| threads << Thread.new{j.grace.join} end
+      jobs.each do |j| threads << Thread.new{j.join} end
       threads.each{|t| t.join }
     rescue Exception
       threads.each{|t| t.exit }

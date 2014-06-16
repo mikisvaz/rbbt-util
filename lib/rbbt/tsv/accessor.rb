@@ -524,19 +524,8 @@ module TSV
     end
   end
 
-  def to_s(keys = nil, no_options = false)
-    if FalseClass === keys or TrueClass === keys
-      no_options = keys
-      keys = nil
-    end
-
-    if keys == :sort
-      with_unnamed do
-        keys = self.keys.sort
-      end
-    end
-
-    io = TSV::Dumper.stream self do |dumper|
+  def dumper_stream(keys = nil, no_options = false)
+    TSV::Dumper.stream self do |dumper|
       dumper.init unless no_options
       begin
         if keys
@@ -554,7 +543,23 @@ module TSV
         Log.exception $!
         raise $!
       end
+      dumper.close
     end
+  end
+
+  def to_s(keys = nil, no_options = false)
+    if FalseClass === keys or TrueClass === keys
+      no_options = keys
+      keys = nil
+    end
+
+    if keys == :sort
+      with_unnamed do
+        keys = self.keys.sort
+      end
+    end
+
+    io = dumper_stream(keys, no_options)
 
     str = ''
     while block = io.read(2048)

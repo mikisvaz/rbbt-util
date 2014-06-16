@@ -17,12 +17,10 @@ else
   tsv = TSV.open(file, :grep => value )
 end
 
-
 res = tsv[value]
 
 if res.nil?
   raise "RECORD NOT FOUND"
 else
   puts tsv[value].report
-end
 

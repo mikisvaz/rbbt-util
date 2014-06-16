@@ -82,8 +82,8 @@ module ConcurrentStream
     join_callback
 
     @joined = true
-    close unless closed?
     lockfile.unlock if lockfile and lockfile.locked?
+    close unless closed?
   end
 
   def abort_threads(exception)
@@ -138,6 +138,7 @@ module ConcurrentStream
 
       abort_threads(exception)
       abort_pids
+    ensure
       lockfile.unlock if lockfile and lockfile.locked?
     end
     Log.medium "Aborted stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"

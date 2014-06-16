@@ -1,4 +1,3 @@
-require'rbbt/tsv/parser'
 require 'rbbt/tsv/dumper'
 module TSV
 
@@ -25,9 +24,12 @@ module TSV
     out = Misc.open_pipe do |sin|
 
       streams = streams.collect do |stream|
-        if defined? Step and Step === stream
+        case stream
+        when (defined? Step and Step) 
           stream.grace
           stream.get_stream || stream.join.path.open
+        when Path
+          stream.open
         else
           stream
         end
