@@ -100,17 +100,21 @@ class Step
   end
 
   def kill_children
-    children_pids = info[:children_pids]
-    if children_pids and children_pids.any?
-      Log.medium("Killing children: #{ children_pids * ", " }")
-      children_pids.each do |pid|
-        Log.medium("Killing child #{ pid }")
-        begin
-          Process.kill "INT", pid
-        rescue Exception
-          Log.medium("Exception killing child #{ pid }: #{$!.message}")
+    begin
+      children_pids = info[:children_pids]
+      if children_pids and children_pids.any?
+        Log.medium("Killing children: #{ children_pids * ", " }")
+        children_pids.each do |pid|
+          Log.medium("Killing child #{ pid }")
+          begin
+            Process.kill "INT", pid
+          rescue Exception
+            Log.medium("Exception killing child #{ pid }: #{$!.message}")
+          end
         end
       end
+    rescue
+      Log.medium("Exception finding children")
     end
   end
 
@@ -276,9 +280,10 @@ class Step
       Misc.pre_fork
       begin
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
-        FileUtils.mkdir_p File.dirname(path) unless Open.exists? File.dirname(path)
+        FileUtils.mkdir_p File.dirname(path) unless File.exists? File.dirname(path)
         begin
           res = run true
+          set_info :forked, true
         rescue Aborted
           Log.debug{"Forked process aborted: #{path}"}
           log :aborted, "Job aborted (#{Process.pid})"
@@ -306,15 +311,15 @@ class Step
           end
         rescue Exception
           Log.debug("Exception waiting for children: #{$!.message}")
-          exit -1
+          RbbtSemaphore.post_semaphore(semaphore) if semaphore
+          Kernel.exit! -1
         end
         set_info :pid, nil
-        exit 0
       ensure
         RbbtSemaphore.post_semaphore(semaphore) if semaphore
       end
+      Kernel.exit! 0
     end
-    set_info :forked, true
     Process.detach(@pid)
     self
   end

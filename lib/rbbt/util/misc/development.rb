@@ -135,24 +135,30 @@ module Misc
     try = 0
     begin
       yield
-    rescue Aborted
+    rescue TryAgain
+      sleep sleep
+      retry
+    rescue Aborted, Interrupt
       if msg
         Log.warn("Not Insisting after Aborted: #{$!.message} -- #{msg}")
       else
         Log.warn("Not Insisting after Aborted: #{$!.message}")
       end
+      raise $!
     rescue Exception
       if msg
-        Log.warn("Insisting after exception: #{$!.message} -- #{msg}")
+        Log.warn("Insisting after exception: #{$!.class} #{$!.message} -- #{msg}")
       else
-        Log.warn("Insisting after exception: #{$!.message}")
-      end
+        Log.warn("Insisting after exception:  #{$!.class} #{$!.message}")
+      end 
+
       if sleep and try > 0
         sleep sleep
         sleep = sleep_array.shift if sleep_array
       else
         Thread.pass
       end
+
       try += 1
       retry if try < times
       raise $!

@@ -205,7 +205,9 @@ module Persist
     end
 
     def [](key, clean=false)
-      v = database(key).send(:[], key)
+      database = database(key)
+      return nil if database.nil?
+      v = database.send(:[], key)
     end
 
     def <<(p)
@@ -240,7 +242,7 @@ module Persist
 
     database = Persist::SharderAdapter.open(path, write, type, options, &shard_function)
 
-    unless serializer == :clean #or type.to_s == 'fwt'
+    unless serializer == :clean and type.to_s != 'pki'
       TSV.setup database
       database.serializer = serializer if serializer
     end

@@ -417,7 +417,7 @@ module TSV
       case
       when (Array === method and (key == :key or key_field == key))
         with_unnamed do
-          Annotated.purge(method).uniq.each{|key| 
+          TSV.traverse(Annotated.purge(method).uniq, :bar => true){|key| 
             new[key] = self[key] if invert ^ (self.include? key)
           }
         end

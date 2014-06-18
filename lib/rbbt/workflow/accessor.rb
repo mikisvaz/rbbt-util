@@ -2,7 +2,8 @@ require 'rbbt/util/open'
 require 'yaml'
 
 class Step
-   
+
+
   INFO_SERIALIAZER = Marshal
 
   def self.started?
@@ -66,33 +67,40 @@ class Step
     @info_file ||= Step.info_file(path)
   end
 
-  def info
+  def info_lock
+    @info_lock ||= begin
+                     path = Persist.persistence_path(info_file, {:dir => Step.lock_dir})
+                     Lockfile.new path
+                   end
+  end
+
+  def info(check_lock = true)
     return {} if info_file.nil? or not Open.exists? info_file
     begin
-      @info_mutex.synchronize do
-        begin
-          return @info_cache if @info_cache and File.mtime(info_file) < @info_cache_time
-        rescue Exception
-          raise $!
-        end
+      begin
+        return @info_cache if @info_cache and File.ctime(info_file) < @info_cache_time
+      rescue Exception
+        raise $!
+      end
 
-        begin
-          @info_cache = Misc.insist(2, 3, info_file) do
-            Misc.insist(2, 1, info_file) do
-              Misc.insist(3, 0.2, info_file) do
-                Open.open(info_file) do |file|
-                  INFO_SERIALIAZER.load(file) || {}
-                end
+      begin
+        @info_cache = Misc.insist(2, 3, info_file) do
+          Misc.insist(2, 1, info_file) do
+            Misc.insist(3, 0.2, info_file) do
+              raise TryAgain, "Info locked" if check_lock and info_lock.locked?
+              Open.open(info_file) do |file|
+                INFO_SERIALIAZER.load(file) #|| {}
               end
             end
           end
-          @info_cache_time = Time.now
-          @info_cache
         end
+        @info_cache_time = Time.now
+        @info_cache
       end
     rescue Exception
       Log.debug{"Error loading info file: " + info_file}
-      Open.write(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
+      Log.exception $!
+      Open.sensiblewrite(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
       raise $!
     end
   end
@@ -100,12 +108,11 @@ class Step
   def set_info(key, value)
     return nil if @exec or info_file.nil?
     value = Annotated.purge value if defined? Annotated
-    lock_filename = Persist.persistence_path(info_file, {:dir => Step.lock_dir})
-    Open.lock(info_file, :refresh => false) do
-      i = info
+    Open.lock(info_file, :lock => info_lock) do
+      i = info(false)
       i[key] = value 
       @info_cache = i
-      Open.write(info_file, INFO_SERIALIAZER.dump(i))
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true)
       @info_cache_time = Time.now
       value
     end
@@ -114,12 +121,11 @@ class Step
   def merge_info(hash)
     return nil if @exec or info_file.nil?
     value = Annotated.purge value if defined? Annotated
-    lock_filename = Persist.persistence_path(info_file, {:dir => Step.lock_dir})
-    Open.lock(info_file, :refresh => false) do
-      i = info
+    Open.lock(info_file, :lock => info_lock) do
+      i = info(false)
       i.merge! hash
       @info_cache = i
-      Open.write(info_file, INFO_SERIALIAZER.dump(i))
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true)
       @info_cache_time = Time.now
       value
     end

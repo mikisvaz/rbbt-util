@@ -14,7 +14,11 @@ class Step
     attr_accessor :lock_dir
     
     def lock_dir
-      @lock_dir ||= Rbbt.tmp.step_info_locks.find
+      @lock_dir ||= begin
+                      dir = Rbbt.tmp.step_info_locks.find
+                      FileUtils.mkdir_p dir unless Open.exists? dir
+                      dir
+                    end
     end
   end
 

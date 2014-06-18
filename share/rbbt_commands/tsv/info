@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#"!/usr/bin/env ruby
 
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
@@ -18,6 +18,7 @@ Display summary information. Works with Tokyocabinet HDB and BDB as well.
 -hh--header_hash* Change the character used to mark the header line (defaults to #)
 -k--key_field* Change the key field
 -f--fields* Change the fields to load
+-s--sep* Change the fields separator (default TAB)
 -h--help Help
 EOF
 
@@ -31,6 +32,7 @@ raise ParameterException, "Please specify the tsv file as argument" if file.nil?
 
 options[:fields] = options[:fields].split(/,\|/) if options[:fields]
 options[:header_hash] = options["header_hash"]
+options[:sep] = options["sep"]
 
 case
 when options[:tokyocabinet]

@@ -202,7 +202,6 @@ module CMD
           Log.log line, stderr if Integer === stderr and log
         end
         serr.close
-        Thread.exit!
       end
 
       #SmartIO.tie sout, pid, cmd, post, in_content, sin, serr
@@ -216,7 +215,6 @@ module CMD
           err << serr.gets if Integer === stderr
         end
         serr.close
-        Thread.exit
       end
 
       ConcurrentStream.setup sout, :pids => [pid], :autojoin => true

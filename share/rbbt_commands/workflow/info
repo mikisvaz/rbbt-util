@@ -14,11 +14,13 @@ Examine the info of a job result
 $ rbbt workflow info <job-result>
 
 -h--help Help
+-a--all Print all info entries
 EOF
 
 SOPT.usage if options[:help]
 
 file = ARGV.shift
+all = options.delete :all
 
 def get_step(file)
   file = file.sub(/\.(info|files)/,'')
@@ -39,6 +41,19 @@ def status_msg(status)
   Log.color(color, status)
 end
 
+def pid_msg(pid, done = false)
+  color = if pid and (done or Misc.pid_exists? pid)
+            :green
+          else
+            :red
+          end
+  if pid.nil?
+    ""
+  else
+    Log.color(color, pid)
+  end
+end
+
 step = get_step file
 
 info = step.info
@@ -47,9 +62,14 @@ inputs = info[:inputs]
 status = info[:status]
 time = info[:time_elapsed]
 messages = info[:messages]
+backtrace = info[:backtrace]
+pid = info[:pid]
+exception = info[:exception]
+rest = info.keys - [:inputs, :dependencies, :status, :time_elapsed, :messages, :backtrace, :exception, :pid]
 
 puts Log.color(:magenta, "File") << ": " << step.path
 puts Log.color(:magenta, "Status") << ": " << status_msg(status)
+puts Log.color(:magenta, "Pid") << ": " << pid_msg(pid, status.to_s == "done")
 puts Log.color(:magenta, "Time") << ": " << time.to_i.to_s << " sec." if time
 if inputs and inputs.any?
   puts Log.color(:magenta, "Inputs")
@@ -80,4 +100,16 @@ if messages and messages.any?
   messages.each do |msg|
     puts "  " << msg
   end 
+end
+
+if status == :error
+  puts Log.color(:magenta, "Backtrace") << ": "
+  puts Log.color_stack backtrace
+end
+
+if all
+  puts Log.color(:magenta, "Other entries") << ": "
+  rest.each do |key|
+    puts Misc.format_definition_list_item(key, info[key].to_s)
+  end
 end

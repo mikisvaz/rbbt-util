@@ -213,48 +213,47 @@ module Misc
   end
 
   def self.sensiblewrite(path, content = nil, options = {}, &block)
+    force = Misc.process_options options, :force
     lock_options = Misc.pull_keys options, :lock
     lock_options = lock_options[:lock] if Hash === lock_options[:lock]
-    return if Open.exists? path
+    return if Open.exists? path and not force
     tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
     tmp_path_lock = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_lock_dir})
     Misc.lock tmp_path_lock, lock_options do
-      return if Open.exists? path
-      if not Open.exists? path
-        FileUtils.mkdir_p File.dirname(tmp_path) unless File.directory? File.dirname(tmp_path)
-        FileUtils.rm_f tmp_path if File.exists? tmp_path
-        begin
-          case
-          when block_given?
-            File.open(tmp_path, 'wb', &block)
-          when String === content
-            File.open(tmp_path, 'wb') do |f| f.write content end
-          when (IO === content or StringIO === content or File === content)
+      return if Open.exists? path and not force
+      FileUtils.mkdir_p File.dirname(tmp_path) unless File.directory? File.dirname(tmp_path)
+      FileUtils.rm_f tmp_path if File.exists? tmp_path
+      begin
+        case
+        when block_given?
+          File.open(tmp_path, 'wb', &block)
+        when String === content
+          File.open(tmp_path, 'wb') do |f| f.write content end
+        when (IO === content or StringIO === content or File === content)
 
-            Open.write(tmp_path) do |f|
-              f.sync = true
-              while block = content.read(2048)
-                f.write block
-              end
+          Open.write(tmp_path) do |f|
+            f.sync = true
+            while block = content.read(2048)
+              f.write block
             end
-          else
-            File.open(tmp_path, 'wb') do |f|  end
           end
-
-          Open.mv tmp_path, path, lock_options
-          content.join if content.respond_to? :join
-        rescue Aborted
-          Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
-          content.abort if content.respond_to? :abort
-          Open.rm path if File.exists? path
-        rescue Exception
-          Log.medium "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
-          content.abort if content.respond_to? :abort
-          Open.rm path if File.exists? path
-          raise $!
-        ensure
-          FileUtils.rm_f tmp_path if File.exists? tmp_path
+        else
+          File.open(tmp_path, 'wb') do |f|  end
         end
+
+        Open.mv tmp_path, path, lock_options
+        content.join if content.respond_to? :join
+      rescue Aborted
+        Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
+        content.abort if content.respond_to? :abort
+        Open.rm path if File.exists? path
+      rescue Exception
+        Log.medium "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
+        content.abort if content.respond_to? :abort
+        Open.rm path if File.exists? path
+        raise $!
+      ensure
+        FileUtils.rm_f tmp_path if File.exists? tmp_path
       end
     end
   end

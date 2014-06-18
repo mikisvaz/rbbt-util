@@ -28,11 +28,11 @@ module Misc
 
     res = nil
 
-    lock_path = File.expand_path(file + '.lock')
     if options[:lock]
       lockfile = options[:lock]
       lockfile.lock unless lockfile.locked?
     else
+      lock_path = File.expand_path(file + '.lock')
       lockfile = Lockfile.new(lock_path, options)
       lockfile.lock 
     end

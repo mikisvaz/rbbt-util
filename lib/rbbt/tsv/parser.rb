@@ -488,6 +488,7 @@ module TSV
       # first line
       line = self.rescue_first_line
 
+      progress_monitor, monitor = monitor, nil if Log::ProgressBar === monitor
       # setup monitor
       if monitor and (stream.respond_to?(:size) or (stream.respond_to?(:stat) and stream.stat.respond_to? :size)) and stream.respond_to?(:pos)
         size = case
@@ -503,8 +504,6 @@ module TSV
           step = monitor[:step] if monitor.include? :step 
         end
         progress_monitor = Log::ProgressBar.new(size, :desc => desc)
-      else
-        progress_monitor = nil
       end
 
       # parser 
@@ -513,7 +512,8 @@ module TSV
 
         while not line.nil? 
           begin
-            progress_monitor.tick(stream.pos) if progress_monitor 
+            #progress_monitor.tick(stream.pos) if progress_monitor 
+            progress_monitor.tick if progress_monitor 
 
             raise SKIP_LINE if line.empty?
 
@@ -525,8 +525,6 @@ module TSV
             values = self.cast_values values if self.cast?
             
             yield key, values
-
-            #Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
 
             line = stream.gets
 

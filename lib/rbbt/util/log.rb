@@ -218,15 +218,21 @@ module Log
     error("BACKTRACE:\n" + e.backtrace * "\n") 
   end
 
+  def self.color_stack(stack)
+    stack.collect do |line|
+      line = line.sub('`',"'")
+      color = :green if line =~ /workflow/
+      color = :blue if line =~ /rbbt-/
+      Log.color color, line
+    end
+  end
+
   def self.stack(stack)
     LOG_MUTEX.synchronize do
 
       STDERR.puts Log.color :magenta, "Stack trace: " << Log.last_caller(caller)
-      stack.each do |line|
-        line = line.sub('`',"'")
-        color = :green if line =~ /workflow/
-        color = :blue if line =~ /rbbt-/
-        STDERR.puts Log.color color, line
+      color_stack(stack).each do |line|
+        STDERR.puts line
       end
     end
   end

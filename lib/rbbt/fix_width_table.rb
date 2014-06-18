@@ -48,15 +48,14 @@ class FixWidthTable
     @filename=value
   end
 
-  CONNECTIONS = {} unless defined? CONNECTIONS
   def self.get(filename, value_size = nil, range = nil, update = false)
     return self.new(filename, value_size, range, update) if filename == :memory
     case
-    when (!File.exists?(filename) or update or not CONNECTIONS.include?(filename))
-      CONNECTIONS[filename] = self.new(filename, value_size, range, update)
+    when (!File.exists?(filename) or update or not Persist::CONNECTIONS.include?(filename))
+      Persist::CONNECTIONS[filename] = self.new(filename, value_size, range, update)
     end
 
-    CONNECTIONS[filename] 
+    Persist::CONNECTIONS[filename] 
   end
 
   def format(pos, value)

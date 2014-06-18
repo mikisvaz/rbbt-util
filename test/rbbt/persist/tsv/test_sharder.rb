@@ -75,5 +75,49 @@ class TestSharder < Test::Unit::TestCase
       assert_equal size, sharder.size 
     end
   end
+
+  def test_shard_pki
+    TmpFile.with_file do |dir|
+      shard_function = Proc.new do |key|
+        key[0..(key.index(":")-1)]
+      end
+
+      pos_function = Proc.new do |key|
+        key.split(":").last.to_i
+      end
+
+      size = 10
+      chrs = (1..10).to_a
+      sharder = Persist.persist_tsv(nil, "ShardTest", {}, :pattern => %w(f), :update => true, :range => false, :value_size => 64, :engine => 'pki', :file => dir, :shard_function => shard_function, :pos_function => pos_function, :persist => true, :serializer => :clean) do |db|
+        chrs.each do |c|
+          size.times do |v| 
+            v = v 
+            chr = "chr" << c.to_s
+            key = chr + ":" << v.to_s
+            iii [key, v]
+            db << [key, [v*2]]
+          end
+        end
+      end
+      sharder.read
+
+      assert_equal dir, sharder.persistence_path
+      assert_equal size*chrs.length, sharder.size
+
+      assert_equal [4.0], sharder["chr2:2"]
+
+      count = 0
+      sharder.through do |k,v|
+        count += 1
+      end
+      assert_equal count, size*chrs.length
+
+      sharder = Persist.open_sharder(dir, false, :float, 'fwt', {:range => false, :value_size => 64, :pos_function => pos_function}, &shard_function)
+
+      assert_equal [4.0], sharder["chr2:2"]
+
+      assert_equal chrs.length*size, sharder.size 
+    end
+  end
 end
 

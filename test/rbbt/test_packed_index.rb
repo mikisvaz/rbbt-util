@@ -13,12 +13,15 @@ class TestPackedIndex < Test::Unit::TestCase
       pi << nil
       pi.close
       pi = PackedIndex.new tmpfile, false
+      Misc.benchmark(1000) do
       100.times do |i|
         assert_equal i, pi[i][0] 
         assert_equal i+2, pi[i][1] 
       end
+      end
       assert_equal nil, pi[100]
       assert_equal nil, pi[101]
+
     end
   end
 end

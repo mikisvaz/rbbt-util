@@ -192,7 +192,7 @@ class TestStep < Test::Unit::TestCase
         task  = Task.setup do 
           5.times do
             puts "Process: #{Process.pid}"
-            sleep rand * 2
+            sleep rand 
           end
         end
 
@@ -203,11 +203,12 @@ class TestStep < Test::Unit::TestCase
             jobs << step.fork(semaphore)
           end
         end
-        jobs.each do |job|
-          while not job.done?
-            sleep 1
-          end
-        end
+        Step.wait_for_jobs(jobs)
+        #jobs.each do |job|
+        #  while not job.done?
+        #    sleep 1
+        #  end
+        #end
       ensure
         RbbtSemaphore.delete_semaphore(semaphore)
       end

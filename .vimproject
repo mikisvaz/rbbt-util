@@ -141,6 +141,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      adapter.rb
      tokyocabinet.rb
      fix_width_table.rb
+     packed_index.rb
      kyotocabinet.rb
      lmdb.rb
      cdb.rb

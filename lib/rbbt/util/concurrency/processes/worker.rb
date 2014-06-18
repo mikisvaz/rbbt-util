@@ -36,7 +36,6 @@ class RbbtProcessQueue
         rescue Aborted, Interrupt
           Log.warn "Worker #{Process.pid} aborted"
           Kernel.exit! 0
-          #Kernel.exit! -1
         rescue Exception
           Log.exception $!
           @callback_queue.push($!) if @callback_queue

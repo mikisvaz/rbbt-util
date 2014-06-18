@@ -2,10 +2,10 @@ class PackedIndex
   attr_accessor :file, :mask, :mask_length, :offset, :item_size, :stream, :nil_string
 
   ELEMS = {
-    "I" => ["q", 8],
     "i" => ["l", 4],
+    "I" => ["q", 8],
     "f" => ["f", 4],
-    "F" => ["D", 8],
+    "F" => ["d", 8],
   }
 
   def self.process_mask(mask)
@@ -28,6 +28,12 @@ class PackedIndex
     [str, size]
   end
 
+  def size
+    @size ||= begin
+                (File.size(file) - offset) / item_size
+              end
+  end
+
   def initialize(file, write = false, pattern = nil)
     @file = file
     if write
@@ -44,10 +50,18 @@ class PackedIndex
       @mask = @stream.read(mask_length)
       @offset = @mask.length + 8
     end
-    @nil_string = "[NIL]" + "-" * (@item_size - 5)
+    @nil_string = "NIL" << ("-" * (@item_size - 3))
   end
 
-  def read
+  def persistence_path
+    @file
+  end
+
+  def persistence_path=(value)
+    @file=value
+  end
+
+  def read(force = false)
     close
     @stream = Open.open(file, :mode => 'rb')
   end
@@ -61,6 +75,7 @@ class PackedIndex
   end
 
   def [](position)
+    @stream.rewind
     @stream.seek(position * item_size + offset)
     encoded = @stream.read(item_size)
     return nil if encoded == nil_string

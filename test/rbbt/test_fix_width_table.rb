@@ -44,6 +44,7 @@ class TestFixWidthTable < Test::Unit::TestCase
       assert_equal 0, f.overlap(1)
       assert_equal "test1", f.value(0)
       assert_equal "test2", f.value(1)
+
     end
  
   end

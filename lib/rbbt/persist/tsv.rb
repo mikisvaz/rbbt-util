@@ -1,6 +1,7 @@
 require 'rbbt/persist/tsv/adapter'
 
 require 'rbbt/persist/tsv/fix_width_table'
+require 'rbbt/persist/tsv/packed_index'
 
 begin
   require 'rbbt/persist/tsv/tokyocabinet'
@@ -64,6 +65,13 @@ module Persist
         Persist.open_fwt(path, value_size, range, serializer, update, in_memory, &pos_function)
       else
         Persist.open_fwt(path, value_size, range, serializer, update, in_memory)
+      end
+    when 'pki'
+      pattern, pos_function = Misc.process_options options.dup, :pattern, :pos_function
+      if pos_function
+        Persist.open_pki(path, write, pattern, &pos_function)
+      else
+        Persist.open_pki(path, write, pattern)
       end
     else
       Persist.open_tokyocabinet(path, write, serializer, type)

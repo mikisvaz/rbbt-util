@@ -185,7 +185,7 @@ module TSV
       end
     else
       options[:monitor] = bar
-      TSV::Parser.traverse(io, options, &block)
+      TSV::Parser.traverse(io, options.merge(:monitor => bar), &block)
     end
     Log::ProgressBar.remove_bar(bar) if bar
     join.call if join
