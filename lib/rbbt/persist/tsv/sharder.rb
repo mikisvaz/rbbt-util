@@ -242,9 +242,15 @@ module Persist
 
     database = Persist::SharderAdapter.open(path, write, type, options, &shard_function)
 
-    unless serializer == :clean and type.to_s != 'pki'
+    if type.to_s == 'pki'
       TSV.setup database
-      database.serializer = serializer if serializer
+      database.type = :list
+      database.serializer = :clean 
+    else
+      if serializer != :clean 
+        TSV.setup database
+        database.serializer = serializer if serializer
+      end
     end
 
     database

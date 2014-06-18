@@ -1,6 +1,6 @@
 class FixWidthTable
 
-  attr_accessor :filename, :file, :value_size, :record_size, :range, :size, :mask
+  attr_accessor :filename, :file, :value_size, :record_size, :range, :size, :mask, :write
   def initialize(filename, value_size = nil, range = nil, update = false, in_memory = true)
     @filename = filename
 
@@ -9,6 +9,7 @@ class FixWidthTable
       @value_size  = value_size
       @range       = range
       @record_size = @value_size + (@range ? 16 : 8)
+      @write = true
 
       if %w(memory stringio).include? filename.to_s.downcase
         @filename = :memory
@@ -33,11 +34,16 @@ class FixWidthTable
       @value_size  = @file.read(4).unpack("L").first
       @range       = @file.read(1).unpack("C").first == 1
       @record_size = @value_size + (@range ? 16 : 8)
+      @write = false
 
       @size        = (File.size(@filename) - 5) / (@record_size)
     end
 
     @mask = "a#{@value_size}"
+  end
+
+  def write?
+    @write
   end
 
   def persistence_path
@@ -107,11 +113,13 @@ class FixWidthTable
 
   def read(force = false)
     return if @filename == :memory
+    @write = false
     @file.close unless @file.closed?
     @file = File.open(filename, 'r:ASCII-8BIT')
   end
 
   def close
+    @write = false
     @file.close
   end
 
