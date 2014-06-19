@@ -114,20 +114,26 @@ module TSV
             when min
               str << parts[i] * sep
 
-              line = lines[i] = begin
-                                  streams[i].gets
-                                rescue
-                                  Log.exception $!
-                                  nil
-                                end
-              if line.nil?
-                stream = streams[i]
-                keys[i] = nil
-                parts[i] = nil
-              else
-                k, *p = line.chomp.split(sep, -1)
-                keys[i] = k
-                parts[i] = p.collect{|e| e.nil? ? "" : e }
+              begin
+                line = lines[i] = begin
+                                    streams[i].gets
+                                  rescue
+                                    Log.exception $!
+                                    nil
+                                  end
+                if line.nil?
+                  stream = streams[i]
+                  keys[i] = nil
+                  parts[i] = nil
+                else
+                  k, *p = line.chomp.split(sep, -1)
+                  raise TryAgain if k == keys[i]
+                  keys[i] = k
+                  parts[i] = p.collect{|e| e.nil? ? "" : e }
+                end
+              rescue TryAgain
+                Log.warn "Skipping repeated key in stream #{i}: #{keys[i]}"
+                retry
               end
             else
               if sizes[i] > 0
@@ -145,9 +151,7 @@ module TSV
             end
             acc
           end
-
           text = [min, values] * sep
-          #puts [min,keys*",", values] * "\t"
           sin.puts text
         end
 
