@@ -27,7 +27,10 @@ module Task
     if deps and deps.any?
       puts Log.color(:magenta, "Inputs from dependencies:")
       puts
+      seen = []
       deps.each do |dep|
+        next if seen.include? dep.name
+        seen << dep.name
         puts "  #{Log.color :yellow, dep.name.to_s}:"
         puts
         puts SOPT.input_doc((dep.inputs - self.inputs), dep.input_types, dep.input_descriptions, dep.input_defaults, true)

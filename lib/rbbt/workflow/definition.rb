@@ -4,6 +4,15 @@ require 'rbbt/workflow/annotate'
 module Workflow
   include AnnotatedModule
 
+  module DependencyBlock
+    attr_accessor :dependency
+    def self.setup(block, dependency)
+      block.extend DependencyBlock
+      block.dependency = dependency
+      block
+    end
+  end
+
   AnnotatedModule.add_consummable_annotation(self,
                                              :result_description => "",
                                              :result_type        => nil,
@@ -33,6 +42,20 @@ module Workflow
       @dependency_list ||= []
       dependency_list << block if block_given?
       dependencies.concat dependency_list
+    end
+  end
+
+  def dep(*dependency, &block)
+    @dependencies ||= []
+    if block_given?
+      DependencyBlock.setup block, dependency if dependency.any?
+      @dependencies << block
+    else
+      if Module === dependency.first
+        @dependencies << dependency
+      else
+        @dependencies.concat dependency
+      end
     end
   end
 

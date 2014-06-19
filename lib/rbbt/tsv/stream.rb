@@ -21,6 +21,7 @@ module TSV
     sort, sep, preamble = Misc.process_options options, :sort, :sep, :preamble
 
 
+
     out = Misc.open_pipe do |sin|
 
       streams = streams.collect do |stream|
@@ -146,6 +147,7 @@ module TSV
           end
 
           text = [min, values] * sep
+          #puts [min,keys*",", values] * "\t"
           sin.puts text
         end
 

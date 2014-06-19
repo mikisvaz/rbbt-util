@@ -69,7 +69,7 @@ class Step
 
   def info_lock
     @info_lock ||= begin
-                     path = Persist.persistence_path(info_file, {:dir => Step.lock_dir})
+                     path = Persist.persistence_path(info_file + '.lock', {:dir => Step.lock_dir})
                      Lockfile.new path
                    end
   end
@@ -422,10 +422,11 @@ module Workflow
 
   def rec_dependencies(taskname)
     if task_dependencies.include? taskname
-      deps = task_dependencies[taskname].select{|dep| String === dep or Symbol === dep or Array === dep}
-      all_deps = deps.dup
+      deps = task_dependencies[taskname]
+      all_deps = deps.select{|dep| String === dep or Symbol === dep or Array === dep}
       deps.each do |dep| 
-        if Array === dep 
+        case dep
+        when Array
           dep.first.rec_dependencies(dep.last).each do |d|
             if Array === d
               all_deps << d
@@ -433,8 +434,10 @@ module Workflow
               all_deps << [dep.first, d]
             end
           end
-        else
+        when String, Symbol
           all_deps.concat rec_dependencies(dep.to_sym)
+        when DependencyBlock
+          all_deps << dep.dependency
         end
       end
       all_deps.uniq
@@ -443,8 +446,21 @@ module Workflow
     end
   end
 
+  def task_from_dep(dep)
+    case dep
+    when Array
+      dep.first.tasks[dep.last] 
+    when String
+      tasks[dep.to_sym]
+    when Symbol
+      tasks[dep.to_sym]
+    else
+      raise "Unknown dependency: #{Misc.fingerprint dep}"
+    end
+  end
+
   def rec_inputs(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject([]){|acc, tn| acc.concat((Array === tn ? tn.first.tasks[tn.last] : tasks[tn.to_sym]).inputs) }.uniq
+    [taskname].concat(rec_dependencies(taskname)).inject([]){|acc, tn| acc.concat(task_from_dep(tn).inputs) }.uniq
   end
 
   def rec_input_defaults(taskname)

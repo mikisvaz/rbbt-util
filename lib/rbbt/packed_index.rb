@@ -75,10 +75,9 @@ class PackedIndex
   end
 
   def [](position)
-    @stream.rewind
     @stream.seek(position * item_size + offset)
     encoded = @stream.read(item_size)
-    return nil if encoded == nil_string
+    return nil if encoded.nil? or encoded == nil_string 
     encoded.unpack mask
   end
 

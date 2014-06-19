@@ -268,7 +268,7 @@ module Misc
     end
   end
 
-  def self.sort_stream(stream, header_hash = "#", cmd_args = nil)
+  def self.sort_stream(stream, header_hash = "#", cmd_args = " -u ")
     Misc.open_pipe do |sin|
       begin
         if defined? Step and Step === stream

@@ -199,6 +199,7 @@ class Step
       else
       end
     end
+    self
   end
 
   def step(name)
