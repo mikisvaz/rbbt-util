@@ -47,7 +47,7 @@ class TestStep < Test::Unit::TestCase
     end
   end
 
-  def test_dependency_log_relay
+  def __test_dependency_log_relay
     str = "TEST"
     TmpFile.with_file do |tmpfile|
       task1  = Task.setup :result_type => nil, :name => :task1 do 

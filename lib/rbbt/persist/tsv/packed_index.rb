@@ -62,6 +62,14 @@ module Persist
      
     def add(key, value)
       key = pos_function.call(key) if pos_function 
+      if Fixnum === key
+        @_last ||= -1
+        skipped = key - @_last - 1
+        skipped.times do
+          self.send(:<<, nil)
+        end
+        @_last = key
+      end
       self.send(:<<, value)
     end
 
