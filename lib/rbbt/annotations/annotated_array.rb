@@ -37,11 +37,8 @@ module AnnotatedArray
     pos = 0
     super do |value|
 
-      if value.nil?
-
-        block.call value
-      else
-
+      case value
+      when Array
         value = value.dup if value.frozen?
 
         value = annotate(value)
@@ -53,6 +50,20 @@ module AnnotatedArray
 
         pos += 1
 
+        block.call value
+      when String
+
+        value = value.dup if value.frozen?
+
+        value = annotate(value)
+
+        value.container       = self
+        value.container_index = pos
+
+        pos += 1
+
+        block.call value
+      else
         block.call value
       end
     end

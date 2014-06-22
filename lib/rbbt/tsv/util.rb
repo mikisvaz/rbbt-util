@@ -82,6 +82,8 @@ module TSV
 
   def self.get_stream(file, open_options = {})
     case file
+    when TSV::Parser
+      file.stream
     when Path
       file.open(open_options)
     when IO, StringIO

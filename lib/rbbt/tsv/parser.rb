@@ -544,6 +544,7 @@ module TSV
             stream.abort if stream.respond_to? :abort
             raise $!
           rescue Exception
+            Log.exception $!
             Log.error "Exception parsing #{Misc.fingerprint stream}: #{$!.message}"
             stream.abort $! if stream.respond_to? :abort
             raise $!

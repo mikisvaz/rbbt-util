@@ -82,7 +82,11 @@ module Log
       str = Log.color :magenta, desc
       return str << " " << Log.color(:yellow, "waiting") if @ticks == 0
       str << " " << thr_msg
-      str << Log.color(:blue, " -- ") << eta_msg  if max
+      if max
+        str << Log.color(:blue, " -- ") << eta_msg 
+      else
+        str << Log.color(:blue, " -- ") << ticks.to_s
+      end
       str
     end
 

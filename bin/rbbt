@@ -71,7 +71,7 @@ if mem_dump = options.delete(:dump_mem)
   Rbbt.dump_memory(mem_dump, Symbol)
 end
 
-if options.delete :stream
+if options.delete :nostream
   ENV["RBBT_NO_STREAM"] = "true"
 end
 

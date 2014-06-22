@@ -175,4 +175,15 @@ module TSV
 
     out
   end
+
+  def self.stream_flat2double(stream, options = {})
+    parser = TSV::Parser.new stream
+    dumper_options = parser.options.merge(options).merge(:type => :double)
+    dumper = TSV::Dumper.new dumper_options
+    dumper.init
+    TSV.traverse parser, :into => dumper do |key,values|
+      [key, [values]]
+    end
+    dumper.stream
+  end
 end

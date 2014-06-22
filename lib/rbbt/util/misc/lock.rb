@@ -22,15 +22,20 @@ module Misc
   self.use_lock_id = ENV["RBBT_NO_LOCKFILE_ID"] != "true"
 
   LOCK_MUTEX = Mutex.new
+  #def self.lock(file, unlock = true, options = {})
   def self.lock(file, unlock = true, options = {})
+    unlock, options = true, unlock if Hash === unlock
     return yield if file.nil?
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
 
     res = nil
 
-    if options[:lock]
+    case options[:lock]
+    when Lockfile
       lockfile = options[:lock]
       lockfile.lock unless lockfile.locked?
+    when FalseClass
+      unlock = false
     else
       lock_path = File.expand_path(file + '.lock')
       lockfile = Lockfile.new(lock_path, options)

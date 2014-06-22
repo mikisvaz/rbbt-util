@@ -279,7 +279,7 @@ module Open
       repo = get_repo_from_dir(dir)
       Misc.lock_in_repo(repo, sub_path, &block)
     else
-      Misc.lock(file, true, options, &block)
+      Misc.lock(file, options, &block)
     end
   end
 

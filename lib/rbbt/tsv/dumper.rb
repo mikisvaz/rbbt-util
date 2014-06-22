@@ -1,6 +1,6 @@
 module TSV
   class Dumper
-    attr_accessor :in_stream, :stream, :options, :filename
+    attr_accessor :in_stream, :stream, :options, :filename, :sep
     def self.stream(options = {}, filename = nil, &block)
       dumper = TSV::Dumper.new options, filename
       Thread.new(Thread.current) do |parent|
@@ -22,18 +22,19 @@ module TSV
       @stream, @in_stream = Misc.pipe
     end
 
-    def self.values_to_s(values, fields = nil)
+    def self.values_to_s(values, fields = nil, sep = "\t")
+      sep = "\t" if sep.nil?
       case values
       when nil
         if fields.nil? or fields.empty?
           "\n"
         else
-          "\t" << ([""] * fields.length) * "\t" << "\n"
+          sep + ([""] * fields.length) * sep << "\n"
         end
       when Array
-        "\t" << values.collect{|v| Array === v ? v * "|" : v} * "\t" << "\n"
+        sep + values.collect{|v| Array === v ? v * "|" : v} * sep << "\n"
       else
-        "\t" << values.to_s << "\n"
+        sep + values.to_s << "\n"
       end
     end
 
@@ -49,9 +50,10 @@ module TSV
 
     def add(k,v)
       @fields ||= @options[:fields]
+      @sep ||= @options[:sep]
       begin
         Thread.pass while IO.select(nil, [@in_stream],nil,1).nil?
-        @in_stream << k << TSV::Dumper.values_to_s(v, @fields)
+        @in_stream << k << TSV::Dumper.values_to_s(v, @fields, @sep)
       rescue IOError
       rescue Exception
         raise $!

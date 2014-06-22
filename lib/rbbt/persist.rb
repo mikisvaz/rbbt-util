@@ -132,7 +132,6 @@ module Persist
   end
 
   def self.save_file(path, type, content, lockfile = nil)
-
     return if content.nil?
 
     case (type || :marshal).to_sym
@@ -145,7 +144,7 @@ module Persist
       Misc.sensiblewrite(path, content.file.read, :lock => lockfile)
     when :tsv
       content = content.to_s if TSV === content
-      Misc.sensiblewrite(path, content)
+      Misc.sensiblewrite(path, content, :lock => lockfile)
     when :annotations
       Misc.sensiblewrite(path, Annotated.tsv(content, :all).to_s, :lock => lockfile)
     when :string, :text
@@ -219,8 +218,8 @@ module Persist
 
     if stream
       if persist_options[:no_load] == :stream 
-        res = tee_stream(stream, path, type, stream.respond_to?(:callback)? stream.callback : nil, stream.respond_to?(:abort_callback)? stream.abort_callback : nil)
-        res.lockfile = lockfile
+        res = tee_stream(stream, path, type, stream.respond_to?(:callback)? stream.callback : nil, stream.respond_to?(:abort_callback)? stream.abort_callback : nil, lockfile)
+        #res.lockfile = lockfile
 
         raise KeepLocked.new res 
       else
@@ -265,7 +264,6 @@ module Persist
       lock_options = Misc.pull_keys persist_options, :lock
       lock_options = lock_options[:lock] if Hash === lock_options[:lock]
       Misc.lock lock_filename, lock_options do |lockfile|
-
         Misc.insist do
           if is_persisted?(path, persist_options)
             Log.low "Persist up-to-date (suddenly): #{ path } - #{Misc.fingerprint persist_options}"

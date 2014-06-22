@@ -214,9 +214,9 @@ module Misc
 
   def self.sensiblewrite(path, content = nil, options = {}, &block)
     force = Misc.process_options options, :force
-    lock_options = Misc.pull_keys options, :lock
-    lock_options = lock_options[:lock] if Hash === lock_options[:lock]
     return if Open.exists? path and not force
+    lock_options = Misc.pull_keys options.dup, :lock
+    lock_options = lock_options[:lock] if Hash === lock_options[:lock]
     tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
     tmp_path_lock = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_lock_dir})
     Misc.lock tmp_path_lock, lock_options do
@@ -241,7 +241,11 @@ module Misc
           File.open(tmp_path, 'wb') do |f|  end
         end
 
-        Open.mv tmp_path, path, lock_options
+        begin
+          Open.mv tmp_path, path, lock_options
+        rescue
+          raise $! unless File.exists? path
+        end
         content.join if content.respond_to? :join
       rescue Aborted
         Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"

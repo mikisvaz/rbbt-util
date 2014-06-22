@@ -11,6 +11,7 @@ class Step
   end
   
   def self.wait_for_jobs(jobs)
+    jobs = [jobs] if Step === jobs
     begin
       threads = []
       jobs.each do |j| threads << Thread.new{j.join} end
@@ -112,7 +113,7 @@ class Step
       i = info(false)
       i[key] = value 
       @info_cache = i
-      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true)
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
       @info_cache_time = Time.now
       value
     end

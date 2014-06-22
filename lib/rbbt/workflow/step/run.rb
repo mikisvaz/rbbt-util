@@ -15,9 +15,9 @@ class Step
           Log.medium "Not duplicating stream #{ Misc.fingerprint(stream) }"
           STREAM_CACHE[stream] = stream
         when File
-          if Open.exists? current.filename 
+          if Open.exists? current.path 
             Log.medium "Reopening file #{ Misc.fingerprint(current) }"
-            Open.open(current.filename)
+            Open.open(current.path)
           else
             Log.medium "Duplicating file #{ Misc.fingerprint(current) } #{current.inspect}"
             Misc.dup_stream(current)
@@ -131,7 +131,7 @@ class Step
     @seen.each do |dependency|
       next if dependency == self
       next unless dependencies.include? dependency
-      dependency.relay_log self
+      #dependency.relay_log self
       dependency.dup_inputs
     end
 
@@ -235,9 +235,11 @@ class Step
             ConcurrentStream.setup stream do
               begin
                 if status != :done
-                  set_info :done, (done_time = Time.now)
-                  set_info :time_elapsed, (time_elapsed = done_time - start_time)
-                  log :done, "#{Log.color :magenta, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i} sec."
+                  Misc.insist do
+                    set_info :done, (done_time = Time.now)
+                    set_info :time_elapsed, (time_elapsed = done_time - start_time)
+                    log :done, "#{Log.color :magenta, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i} sec."
+                  end
                 end
               rescue
                 Log.exception $!

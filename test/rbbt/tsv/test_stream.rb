@@ -175,4 +175,25 @@ row1 A B C
     assert_equal ["A", "B", "C", ""], tsv["row1"]
     assert_equal ["AA", "BB", "CC", ""], tsv["row2"]
   end
+
+  def test_flat2double
+    text1=<<-EOF
+#: :sep= #:type=:flat
+#Row LabelA
+row1 A AA AAA
+row2 a aa aaa
+    EOF
+
+    text2=<<-EOF
+#: :sep= #:type=:double
+#Row LabelA
+row1 A|AA|AAA
+row2 a|aa|aaa
+    EOF
+    s1 = StringIO.new text1
+    s2 = TSV.stream_flat2double(s1, :sep => " ")
+
+    assert_equal text2, s2.read
+  end
+
 end
