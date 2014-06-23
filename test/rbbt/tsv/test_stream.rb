@@ -193,7 +193,7 @@ row2 a|aa|aaa
     s1 = StringIO.new text1
     s2 = TSV.stream_flat2double(s1, :sep => " ")
 
-    assert_equal text2, s2.read
+    assert_equal text2, s2.stream.read
   end
 
 end

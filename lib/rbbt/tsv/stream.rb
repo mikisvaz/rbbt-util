@@ -31,10 +31,12 @@ module TSV
           stream.get_stream || stream.join.path.open
         when Path
           stream.open
+        when TSV::Dumper
+          stream.stream
         else
           stream
         end
-      end
+      end.compact
 
       num_streams = streams.length
 
@@ -54,13 +56,15 @@ module TSV
 
       streams = streams.collect do |stream|
         parser = TSV::Parser.new stream, options
-        lines << parser.first_line
-        empty << stream if parser.first_line.nil?
-        key_fields << parser.key_field
-        fields << parser.fields
-        sizes << parser.fields.length if parser.fields
+
+        lines         << parser.first_line
+        empty         << stream               if parser.first_line.nil?
+        key_fields    << parser.key_field
+        fields        << parser.fields
+        sizes         << parser.fields.length if parser.fields
         input_options << parser.options
-        preambles << parser.preamble if TrueClass === preamble and not parser.preamble.empty?
+        preambles     << parser.preamble      if TrueClass === preamble and 
+                                                 not parser.preamble.empty?
 
         parser.stream
       end
@@ -136,7 +140,7 @@ module TSV
                 retry
               end
             else
-              if sizes[i] > 0
+              if sizes[i] and sizes[i] > 0
                 p = sep * (sizes[i]-1)
                 str << p
               end
@@ -177,13 +181,13 @@ module TSV
   end
 
   def self.stream_flat2double(stream, options = {})
-    parser = TSV::Parser.new stream
+    parser = TSV::Parser.new TSV.get_stream(stream)
     dumper_options = parser.options.merge(options).merge(:type => :double)
     dumper = TSV::Dumper.new dumper_options
     dumper.init
     TSV.traverse parser, :into => dumper do |key,values|
       [key, [values]]
     end
-    dumper.stream
+    dumper
   end
 end

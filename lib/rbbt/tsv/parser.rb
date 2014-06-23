@@ -363,6 +363,7 @@ module TSV
     def initialize(stream = nil, options = {})
       @header_hash = Misc.process_options(options, :header_hash) || "#"
       @sep = Misc.process_options(options, :sep) || "\t"
+      stream = TSV.get_stream stream
       @stream = stream
 
 

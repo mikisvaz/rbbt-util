@@ -479,7 +479,8 @@ module TSV
   def self.traverse(obj, options = {}, &block)
     into = options[:into]
 
-    if into == :stream
+    case into
+    when :stream
       sout = Misc.open_pipe false, false do |sin|                                                                                                                                           
         begin
           traverse(obj, options.merge(:into => sin), &block)                                                                                                                                  
@@ -489,6 +490,12 @@ module TSV
         end
       end                                                                                                                                                                                   
       return sout
+    when :dumper
+      obj_options = obj.respond_to?(:options) ? obj.options : {}
+      dumper = TSV::Dumper.new obj_options.merge(options)
+      dumper.init
+      traverse(obj, obj_options.merge(:into => dumper), &block)                                                                                                                                  
+      return dumper
     end
 
     threads = Misc.process_options options, :threads
