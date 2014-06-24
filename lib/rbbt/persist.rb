@@ -132,7 +132,10 @@ module Persist
   end
 
   def self.save_file(path, type, content, lockfile = nil)
-    return if content.nil?
+    if content.nil?
+      lockfile.unlock if lockfile and lockfile.locked?
+      return
+    end
 
     case (type || :marshal).to_sym
     when :nil

@@ -61,6 +61,10 @@ source('#{UTIL}');
       "'#{ object }'"
     when Fixnum, Float
       object
+    when TrueClass
+      "TRUE"
+    when FalseClass
+      "FALSE"
     when Array
       "c(#{object.collect{|e| ruby2R(e) } * ", "})"
     else
