@@ -38,32 +38,32 @@ class TestPersistTSV < Test::Unit::TestCase
     end
   end
 
-  def _test_benchmark_tch
+  def __test_benchmark_tch
     engine = "HDB"
     run_bechmark(tsv_path, engine)
   end
 
-  def _test_benchmark_tcb
+  def __test_benchmark_tcb
     engine = "BDB"
     run_bechmark(tsv_path, engine)
   end
 
-  def _test_benchmark_kch
+  def __test_benchmark_kch
     engine = "kch"
     run_bechmark(tsv_path, engine)
   end
 
-  def _test_benchmark_kcb
+  def __test_benchmark_kcb
     engine = "kct"
     run_bechmark(tsv_path, engine)
   end
 
-  def test_benchmark_cdb
+  def __test_benchmark_cdb
     engine = "CDB"
     run_bechmark(tsv_path, engine)
   end
 
-  def _test_benchmark_leveldb
+  def __test_benchmark_leveldb
     engine = "LevelDB"
     run_bechmark(tsv_path, engine)
   end
