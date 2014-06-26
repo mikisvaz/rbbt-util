@@ -55,7 +55,7 @@ module Persist
     def write_and_read
       lock_filename = Persist.persistence_path(persistence_path + '.write', {:dir => TSV.lock_dir})
       #mutex.synchronize do
-        Misc.lock(lock_filename, true, :max_age => 600) do
+        Misc.lock(lock_filename) do
           write if closed? or not write?
           res = begin
                   yield

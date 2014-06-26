@@ -214,13 +214,23 @@ module Misc
 
   def self.sensiblewrite(path, content = nil, options = {}, &block)
     force = Misc.process_options options, :force
-    return if Open.exists? path and not force
+
+    if Open.exists? path and not force
+      Misc.consume_stream content 
+      return
+    end
+
     lock_options = Misc.pull_keys options.dup, :lock
     lock_options = lock_options[:lock] if Hash === lock_options[:lock]
     tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
     tmp_path_lock = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_lock_dir})
     Misc.lock tmp_path_lock, lock_options do
-      return if Open.exists? path and not force
+
+      if Open.exists? path and not force
+        Misc.consume_stream content 
+        return
+      end
+
       FileUtils.mkdir_p File.dirname(tmp_path) unless File.directory? File.dirname(tmp_path)
       FileUtils.rm_f tmp_path if File.exists? tmp_path
       begin

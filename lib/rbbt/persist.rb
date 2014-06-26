@@ -295,8 +295,12 @@ module Persist
       retry
     rescue Exception
       Log.medium "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"
-      Log.exception $!
-      FileUtils.rm path if Open.exists? path 
+
+      begin
+        FileUtils.rm path 
+      rescue
+      end if Open.exists? path 
+
       raise $!
     end
   end

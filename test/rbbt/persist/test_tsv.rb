@@ -21,9 +21,11 @@ class TestPersistTSV < Test::Unit::TestCase
     Log.info "Testing #{ Term::ANSIColor.red(engine) }"
     TmpFile.with_file nil, false do |tmp_file|
       db= nil
+
       Misc.benchmark(1, "Build database with #{MAX - 2} entries") do
         db = TSV.open(file, :fields => [1], :persist => true, :persist_engine => engine, :persist_dir => tmp_file, :type => :single, :unnamed => true)
       end
+
       _test = db.keys.sort{rand}[1..100000]
       Misc.benchmark(5, "Access #{test.length} random entries") do
         _test.each do |k| db[k] end
@@ -56,7 +58,7 @@ class TestPersistTSV < Test::Unit::TestCase
     run_bechmark(tsv_path, engine)
   end
 
-  def _test_benchmark_cdb
+  def test_benchmark_cdb
     engine = "CDB"
     run_bechmark(tsv_path, engine)
   end

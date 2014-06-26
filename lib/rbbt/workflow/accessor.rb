@@ -503,7 +503,7 @@ module Workflow
       when Symbol
         job(dependency, jobname, inputs)
       when Proc
-        dependency.call jobname, inputs
+        dependency.call jobname, inputs, real_dependencies
       end
     end
     real_dependencies.flatten.compact

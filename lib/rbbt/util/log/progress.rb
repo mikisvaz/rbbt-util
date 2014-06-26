@@ -24,6 +24,7 @@ module Log
     end
 
     def tick(step = nil)
+      return if ENV["RBBT_NO_PROGRESS"] == "true"
       @ticks += 1
 
       time = Time.now

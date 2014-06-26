@@ -112,8 +112,10 @@ module TSV
         last_min = nil
         while lines.compact.any?
           min = keys.compact.sort.first
+          break if min.nil?
           str = []
           keys.each_with_index do |key,i|
+
             case key
             when min
               str << parts[i] * sep

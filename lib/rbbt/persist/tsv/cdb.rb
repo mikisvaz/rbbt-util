@@ -3,7 +3,7 @@ require 'libcdb'
 module Persist
 
   module CDBAdapter
-    attr_accessor :persistence_path, :closed
+    include Persist::TSVAdapter
 
     def self.open(path, write)
       write = true unless File.exists? path
@@ -17,6 +17,10 @@ module Persist
       database.persistence_path ||= path
 
       database
+    end
+
+    def serializer
+      :clean
     end
 
     def include?(k)
@@ -38,9 +42,8 @@ module Persist
     end
 
     def fix_io
+      ddd instance_variable_get(:@io)
       if instance_variable_get(:@io) != persistence_path
-        #close_read if read?
-        #close_write if write?
         instance_variable_set(:@io, File.open(persistence_path))
       end
     end
@@ -129,10 +132,10 @@ module Persist
 
     database = Persist::CDBAdapter.open(path, write)
 
-    unless serializer == :clean
-      TSV.setup database
-      database.serializer = serializer || database.serializer
-    end
+    #unless serializer == :clean
+    #  TSV.setup database
+    #  database.serializer = serializer if serializer
+    #end
 
     database
   end
