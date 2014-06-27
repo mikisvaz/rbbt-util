@@ -2,7 +2,7 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '..', 'test_helper.r
 require 'rbbt/packed_index'
 
 class TestPackedIndex < Test::Unit::TestCase
-  def test_index
+  def _test_index
 
     TmpFile.with_file do |tmpfile|
       pi = PackedIndex.new tmpfile, true, %w(i i 23s f f f f f)
@@ -12,7 +12,7 @@ class TestPackedIndex < Test::Unit::TestCase
       pi << nil
       pi << nil
       pi.close
-      pi = PackedIndex.new tmpfile, false
+      pi = PackedIndex.new(tmpfile, false)
       Misc.benchmark(1000) do
       100.times do |i|
         assert_equal i, pi[i][0] 
@@ -21,7 +21,47 @@ class TestPackedIndex < Test::Unit::TestCase
       end
       assert_equal nil, pi[100]
       assert_equal nil, pi[101]
+    end
+  end
 
+  def test_bgzip
+
+    size = 1000000
+    density = 0.1
+
+    access = []
+    (size * density).to_i.times do
+      access << rand(size-1) + 1
+    end
+    access.sort!
+    access.uniq!
+
+    TmpFile.with_file do |tmpfile|
+      pi = PackedIndex.new tmpfile, true, %w(i i 23s f f f f f)
+      size.times do |i|
+        pi << [i, i+2, i.to_s * 10, rand, rand, rand, rand, rand]
+      end
+      pi << nil
+      pi << nil
+      pi.close
+
+      pi = PackedIndex.new(tmpfile, false)
+      Misc.benchmark do
+        access.each do |point|
+          assert_equal point+2, pi[point][1]
+        end
+      end
+
+      `bgzip #{tmpfile} `
+      `mv #{tmpfile}.gz #{tmpfile}.bgz`
+
+      pi = PackedIndex.new(tmpfile + '.bgz', false)
+      pi[0]
+      Misc.benchmark do
+        access.each do |point|
+          assert_equal point+2, pi[point][1]
+        end
+      end
     end
   end
 end

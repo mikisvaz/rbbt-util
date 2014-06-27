@@ -1,6 +1,7 @@
 require 'rbbt/util/cmd'
 require 'rbbt/util/tmpfile'
 require 'rbbt/util/misc'
+require 'rbbt/util/misc/bgzf'
 
 require 'zlib'
 
@@ -285,13 +286,13 @@ module Open
 
 
   # Decompression
+  
+  def self.bgunzip(stream)
+    Bgzf.setup stream
+  end
    
   def self.gunzip(stream)
-    if String === stream
-      Zlib::Inflate.inflate(stream)
-    else
-      CMD.cmd("gunzip", :pipe => true, :in => stream, :post => proc{stream.force_close if stream.respond_to? :force_close})
-    end
+    Zlib::GzipReader.new(stream)
   end
 
   def self.unzip(stream)
@@ -308,6 +309,10 @@ module Open
 
   def self.gzip?(file)
     !! (file =~ /\.gz$/)
+  end
+
+  def self.bgzip?(file)
+    !! (file =~ /\.bgz$/)
   end
 
   def self.zip?(file)
@@ -375,6 +380,7 @@ module Open
          end
     io = unzip(io)  if ((String === url and zip?(url))  and not options[:noz]) or options[:zip]
     io = gunzip(io) if ((String === url and gzip?(url)) and not options[:noz]) or options[:gzip]
+    io = bgunzip(io) if ((String === url and bgzip?(url)) and not options[:noz]) or options[:bgzip]
 
     if block_given?
       begin

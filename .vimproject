@@ -35,6 +35,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      system.rb
      objects.rb
      manipulation.rb
+     bgzf.rb
     }
     tar.rb
     color.rb
@@ -175,7 +176,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
  }
  test=test {
   data=data{
-   .identifiers
+   identifiers
   }
   test_helper.rb
   rbbt=rbbt{
@@ -346,6 +347,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    util.R
   }
   software=install/software{
+   zran=zran{
+    zran.c
+   }
    lib=lib{
     install_helpers
    }

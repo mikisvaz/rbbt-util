@@ -386,6 +386,7 @@ module Workflow
   def task_info(name)
     name = name.to_sym
     task = tasks[name]
+    raise "No '#{name}' task in '#{self.to_s}' Workflow" if task.nil?
     description = task.description
     result_description = task.result_description
     result_type = task.result_type

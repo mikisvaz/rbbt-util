@@ -82,6 +82,10 @@ module TSV
 
   def self.get_stream(file, open_options = {})
     case file
+    when Zlib::GzipReader
+      file
+    when (defined? Bgzf and Bgzf)
+      file
     when TSV::Parser
       file.stream
     when Path

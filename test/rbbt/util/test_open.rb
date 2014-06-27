@@ -7,11 +7,11 @@ require 'iconv'
 
 class TestOpen < Test::Unit::TestCase
 
-  def test_wget
+  def _test_wget
     assert(Misc.fixutf8(Open.wget('http://google.com', :quiet => true).read) =~ /html/)
   end
 
-  def test_nice
+  def _test_nice
     nice =  0.5
 
     t = Time.now
@@ -24,16 +24,16 @@ class TestOpen < Test::Unit::TestCase
     assert(Time.now - t + 0.5 >= nice)
   end
 
-  def test_remote?
+  def _test_remote?
     assert(Open.remote?('http://google.com'))
     assert(! Open.remote?('~/.bashrc'))
   end
 
-  def test_open
+  def _test_open
     assert(Open.read('http://google.com', :quiet => true) =~ /html/)
   end
 
-  def test_read
+  def _test_read
     content =<<-EOF
 1
 2
@@ -48,7 +48,7 @@ class TestOpen < Test::Unit::TestCase
     end
   end
 
-  def test_read_grep
+  def _test_read_grep
     content =<<-EOF
 1
 2
@@ -68,7 +68,7 @@ class TestOpen < Test::Unit::TestCase
     end
   end
 
-  def test_read_grep_invert
+  def _test_read_grep_invert
     content =<<-EOF
 1
 2
@@ -98,13 +98,14 @@ class TestOpen < Test::Unit::TestCase
 4
     EOF
     TmpFile.with_file(content) do |file|
-      `gzip #{file}`
+      `bgzip #{file}`
       assert_equal(content, Open.read(file + '.gz'))
+      puts content
       FileUtils.rm file + '.gz'
     end
   end
 
-  def test_repo_dir
+  def _test_repo_dir
     file1 = "TEST"
     file2 = "TEST" * 1000
     TmpFile.with_file do |tmpdir|
@@ -132,7 +133,7 @@ class TestOpen < Test::Unit::TestCase
     end
   end
   
-  def test_repo_dir
+  def _test_repo_dir
     TmpFile.with_file do |tmpdir|
       tmpdir = "/home/mvazquezg/tmp/repo_dir"
       repo = File.join(tmpdir, 'repo')
