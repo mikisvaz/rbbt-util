@@ -551,7 +551,6 @@ module TSV
             raise $!
           end
         end
-
       ensure
         stream.close unless stream.closed?
         stream.join if stream.respond_to? :join

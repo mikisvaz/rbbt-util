@@ -292,7 +292,8 @@ module Open
   end
    
   def self.gunzip(stream)
-    Zlib::GzipReader.new(stream)
+    #Zlib::GzipReader.new(stream)
+    CMD.cmd('zcat', :in => stream, :pipe => true)
   end
 
   def self.unzip(stream)

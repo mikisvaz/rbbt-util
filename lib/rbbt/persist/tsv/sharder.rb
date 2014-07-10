@@ -124,6 +124,13 @@ module Persist
       ! write?
     end
 
+    def range(*args)
+      databases.values.inject([]) do |acc,database|
+        acc.concat database.range(*args) if TokyoCabinet::BDB === database
+        acc
+      end
+    end
+
     def each
       databases.values.each do |database|
         database.each do |k,v|

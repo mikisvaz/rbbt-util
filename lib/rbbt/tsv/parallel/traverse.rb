@@ -6,7 +6,7 @@ module TSV
       nil
     when (defined? Step and Step)
       obj.result
-    when IO, File
+    when IO, File, Zlib::GzipReader, Bgzf
       obj
     when TSV::Dumper
       obj.stream
@@ -24,14 +24,19 @@ module TSV
         else
           nil
         end
+      when TSV
+        obj.length
       when Array, Hash
         obj.size
       when File
+        return nil if Misc.gzip?(file) or Misc.bgzip?(file)
         CMD.cmd("wc -l '#{obj.filename}'").read.to_i
       when Path
+        return nil if Misc.gzip?(file) or Misc.bgzip?(file)
         CMD.cmd("wc -l '#{obj.find}'").read.to_i
       when String
         if File.exists? obj
+          return nil if Misc.gzip?(file) or Misc.bgzip?(file)
           CMD.cmd("wc -l '#{obj}'").read.to_i
         else
           nil
@@ -144,6 +149,12 @@ module TSV
 
     if callback
       while line = io.gets
+        if line[-1] != "\n"
+          while c = io.getc
+            line << c
+            break if c=="\n"
+          end
+        end
         begin
           callback.call yield line.strip
         ensure
@@ -213,7 +224,7 @@ module TSV
         else
           obj.traverse(options, &block)
         end
-      when IO, File, StringIO
+      when IO, File, Zlib::GzipReader, Bgzf, StringIO
         begin
           if options[:type] == :array
             traverse_io_array(obj, options, &block)

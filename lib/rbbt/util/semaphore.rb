@@ -68,11 +68,11 @@ void post_semaphore(char* name){
     end
 
     begin
-      Log.warn "Creating semaphore (#{ size }): #{file}"
+      Log.low "Creating semaphore (#{ size }): #{file}"
       RbbtSemaphore.create_semaphore(file, size)
       yield file
     ensure
-      Log.error "Removing semaphore #{ file }"
+      Log.low "Removing semaphore #{ file }"
       RbbtSemaphore.delete_semaphore(file)
     end
   end
