@@ -260,7 +260,7 @@ module Annotation
     annotations.each_with_index do |name,i|
       value = values[i]
 
-      value = value.split("|") if String === value and value.index "|"
+      value = value.split("|") if String === value and value.include? "|"
 
       annotation_values[name] = value
     end

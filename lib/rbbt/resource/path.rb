@@ -123,6 +123,10 @@ module Path
         sub('{SUBPATH}', subpath).
         sub('{PATH}', self).
         sub('{LIBDIR}', libdir) #, @pkgdir, @resource, @search_paths
+
+      path = path + '.gz' if File.exists? path + '.gz'
+      path = path + '.bgz' if File.exists? path + '.bgz'
+
       self.annotate path
     end
   end
@@ -150,19 +154,21 @@ module Path
     self.find
   end
 
+  def _exists?
+    Open.exists? self.find.to_s
+  end
+
   def exists?
     begin
       self.produce
-      File.exists? self.find
+      _exists?
     rescue Exception
       false
     end
   end
 
   def produce(force = false)
-    path = self.find
-
-    return self if Open.exists?(path.to_s) and not force
+    return self if _exists? and not force
 
     raise "No resource defined to produce file: #{ self }" if resource.nil?
 

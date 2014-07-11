@@ -33,17 +33,20 @@ module Bgzf
 
   def _index
     @_index ||= begin
-                 index = []
-                 pos = 0
-                 while true do
-                   blockdata_offset = tell
-                   block = read_block
-                   break unless block
-                   index << [pos, blockdata_offset]
-                   pos += block.length
-                 end
-                 @block_cache_size = Math.log(index.length).to_i + 1
-                 index
+                  index = Persist.persist("BGZF index" + filename.sub(/.bgz$/,''), :marshal, :dir => Rbbt.var.bgzf_index) do
+                    index = []
+                    pos = 0
+                    while true do
+                      blockdata_offset = tell
+                      block = read_block
+                      break unless block
+                      index << [pos, blockdata_offset]
+                      pos += block.length
+                    end
+                    index
+                  end
+                  @block_cache_size = Math.log(index.length).to_i + 1
+                  index
                end
   end
 
@@ -129,6 +132,10 @@ module Bgzf
       str << read(size - len)
       str
     end
+  end
+
+  def getc
+    read(1)
   end
 
   def gets

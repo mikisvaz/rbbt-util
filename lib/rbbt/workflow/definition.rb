@@ -36,7 +36,7 @@ module Workflow
 
   def dep(*dependency_list, &block)
     @dependencies ||= []
-    if Array === dependency_list and Module === dependency_list.first
+    if Module === dependency_list.first or Hash === dependency_list.last
       @dependencies << dependency_list
     else
       @dependency_list ||= []

@@ -449,16 +449,16 @@ module Workflow
   end
 
   def task_from_dep(dep)
-    case dep
-    when Array
-      dep.first.tasks[dep.last] 
-    when String
-      tasks[dep.to_sym]
-    when Symbol
-      tasks[dep.to_sym]
-    else
-      raise "Unknown dependency: #{Misc.fingerprint dep}"
-    end
+    task = case dep
+           when Array
+             dep.first.tasks[dep[1]] 
+           when String
+             tasks[dep.to_sym]
+           when Symbol
+             tasks[dep.to_sym]
+           end
+    raise "Unknown dependency: #{Misc.fingerprint dep}" if task.nil?
+    task
   end
 
   def rec_inputs(taskname)
@@ -467,28 +467,28 @@ module Workflow
 
   def rec_input_defaults(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject(IndiferentHash.setup({})){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_defaults
+      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_defaults
       acc = new.merge(acc) 
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_types(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_types
+      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_types
       acc = new.merge(acc) 
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_descriptions(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_descriptions
+      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_descriptions
       acc = new.merge(acc) 
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_options(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn.last.to_sym] : tasks[tn.to_sym]).input_options
+      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_options
       acc = new.merge(acc) 
     }.tap{|h| IndiferentHash.setup(h)}
   end
@@ -498,7 +498,18 @@ module Workflow
     dependencies.each do |dependency|
       real_dependencies << case dependency
       when Array
-        dependency.first.job(dependency.last, jobname, inputs)
+        inputs = inputs.dup
+        options = dependency.last if Hash === dependency.last
+        options.each{|i,v|
+          case v
+          when Symbol
+            rec_dependency = real_dependencies.select{|d| d.task.name == v }.first
+            inputs[i] = rec_dependency
+          else
+            inputs[i] = v
+          end
+        } if options
+        dependency.first.job(dependency[1], jobname, inputs)
       when Step
         dependency
       when Symbol

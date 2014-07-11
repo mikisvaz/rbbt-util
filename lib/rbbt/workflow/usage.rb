@@ -31,9 +31,11 @@ module Task
       deps.each do |dep|
         next if seen.include? dep.name
         seen << dep.name
+        new_inputs = (dep.inputs - self.inputs)
+        next unless new_inputs.any?
         puts "  #{Log.color :yellow, dep.name.to_s}:"
         puts
-        puts SOPT.input_doc((dep.inputs - self.inputs), dep.input_types, dep.input_descriptions, dep.input_defaults, true)
+        puts SOPT.input_doc(new_inputs, dep.input_types, dep.input_descriptions, dep.input_defaults, true)
         puts
       end
     end
@@ -77,7 +79,7 @@ module Workflow
         task = self.tasks[task_name]
       end
 
-      dependencies = self.rec_dependencies(task_name).collect{|dep_name| Array === dep_name ? dep_name.first.tasks[dep_name.last.to_sym] : self.tasks[dep_name.to_sym]}
+      dependencies = self.rec_dependencies(task_name).collect{|dep_name| Array === dep_name ? dep_name.first.tasks[dep_name[1].to_sym] : self.tasks[dep_name.to_sym]}
 
       task.doc(dependencies)
 
