@@ -149,10 +149,6 @@ class KnowledgeBase
       end
   end
 
-  #def index(name, file, options = {}, persist_options = {})
-  #  @indices[name] = Association.index(file, open_options.merge(options), persist_options)
-  #end
-
   #{{{ Add manual database
   
   def add_index(name, source_type, target_type, *fields)
