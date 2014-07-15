@@ -1,7 +1,7 @@
 require 'rbbt/util/simpleopt'
 
 module Task
-  def doc(deps = nil)
+  def doc(workflow = nil, deps = nil)
     puts Log.color(:yellow, "## #{ name }") << ":"
     puts "\n" << description  << "\n" if description and not description.empty?
     puts
@@ -29,13 +29,15 @@ module Task
       puts
       seen = []
       deps.each do |dep|
-        next if seen.include? dep.name
-        seen << dep.name
-        new_inputs = (dep.inputs - self.inputs)
+        task = Array === dep ? dep.first.tasks[dep[1].to_sym] : workflow.tasks[dep.to_sym]
+        maps = (Array === dep and Hash === dep.last) ? dep.last.keys : []
+        next if seen.include? task.name
+        seen << task.name
+        new_inputs = (task.inputs - self.inputs - maps)
         next unless new_inputs.any?
-        puts "  #{Log.color :yellow, dep.name.to_s}:"
+        puts "  #{Log.color :yellow, task.name.to_s}:"
         puts
-        puts SOPT.input_doc(new_inputs, dep.input_types, dep.input_descriptions, dep.input_defaults, true)
+        puts SOPT.input_doc(new_inputs, task.input_types, task.input_descriptions, task.input_defaults, true)
         puts
       end
     end
@@ -79,9 +81,8 @@ module Workflow
         task = self.tasks[task_name]
       end
 
-      dependencies = self.rec_dependencies(task_name).collect{|dep_name| Array === dep_name ? dep_name.first.tasks[dep_name[1].to_sym] : self.tasks[dep_name.to_sym]}
-
-      task.doc(dependencies)
+      #dependencies = self.rec_dependencies(task_name).collect{|dep_name| Array === dep_name ? dep_name.first.tasks[dep_name[1].to_sym] : self.tasks[dep_name.to_sym]}
+      task.doc(self, self.rec_dependencies(task_name))
 
       if self.examples.include? task_name
           self.examples[task_name].each do |example|
