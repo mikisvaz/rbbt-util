@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+require 'rbbt/association'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Subset of matches between entities
+
+$ rbbt association subset [options] <filename>
+
+Indicate the index file (TokyoCabinet BDB with source~target keys) as the <filename> argument
+
+-h--help Print this help
+-s--source* Source entities
+-t--target* Target entities
+EOF
+rbbt_usage and exit 0 if options[:help] 
+filename = ARGV.shift
+raise ParameterException, "No filename specified" if filename.nil?
+
+file = Persist.open_tokyocabinet(filename,false, nil, TokyoCabinet::BDB)
+
+file.extend Association::Index
+
+source = options[:source] ? options[:source].split(/,\|/) : :all
+target = options[:target] ? options[:target].split(/,\|/) : :all
+
+file.subset(source, target).each do |item|
+  puts Log.color(:magenta, item)
+  info = file.fields.zip(file[item])
+  source,_sep, target = item.partition "~"
+  puts "  " << Misc.format_definition_list_item("source", source)
+  puts "  " << Misc.format_definition_list_item("target", target)
+  info.each do |key,value|
+    puts "  " << Misc.format_definition_list_item(key, value)
+  end
+end

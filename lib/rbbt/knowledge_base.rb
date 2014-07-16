@@ -275,19 +275,28 @@ class KnowledgeBase
   end
 
   def subset(name, entities)
-    case entities
-    when AnnotatedArray
-      format = entities.format if entities.respond_to? :format 
-      format ||= entities.base_entity.to_s
-      {format => entities.clean_annotations}
-    when Hash
-    else
-      raise "Entities are not a Hash or an AnnotatedArray: #{Misc.fingerprint entities}"
-    end
+    entities = case entities
+               when AnnotatedArray
+                 format = entities.format if entities.respond_to? :format 
+                 format ||= entities.base_entity.to_s
+                 {format => entities.clean_annotations}
+               when Hash
+                 entities
+               else
+                 raise "Entities are not a Hash or an AnnotatedArray: #{Misc.fingerprint entities}"
+               end
+
     repo = get_index name
+
     begin
       setup(name, repo.subset_entities(entities))
-    rescue 
+    rescue Exception
+      target = entities[:target]
+      source = entities[:source]
+      if target or source
+        entities[:target] = source 
+        entities[:source] = target
+      end
       setup(name, repo.reverse.subset_entities(entities), true)
     end
   end

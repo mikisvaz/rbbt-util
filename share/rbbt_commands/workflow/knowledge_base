@@ -1,0 +1,68 @@
+#!/usr/bin/env ruby
+
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow'
+require 'rbbt/workflow/usage'
+require 'time'
+
+options = SOPT.setup <<EOF
+Access workflow knowledge_base
+
+$ rbbt workflow knowledge_base <workflow> [<database>] [<action>] [<options>]
+
+Access workflow knowledge base
+
+-h--help Show this help:
+-cl--clean Clean the last step of the job so that it gets recomputed:
+-sf--source_format* Source format
+-se--source_entities* Source entities
+-tf--target_format* Target format
+-te--target_entities* Target entities
+-i--info Print information on matches
+EOF
+
+workflow = ARGV.shift
+usage and exit -1 if workflow.nil? or options[:help]
+
+database     = ARGV.shift
+action       = ARGV.shift
+
+# Get workflow
+
+workflow = Workflow.require_workflow workflow
+
+action = :list_databases if database.nil?
+action ||= :summary 
+
+case action.to_sym
+when :list_databases
+  dbs = workflow.knowledge_base.registry.keys
+  puts dbs * "\n"
+when :summary
+  db = workflow.knowledge_base.get_database(database)
+  puts db.summary
+when :subset
+  source_format = options[:source_format] || :source
+  target_format = options[:target_format] || :target
+  source_entities = options[:source_entities] || :all
+  target_entities = options[:target_entities] || :all
+
+  source_entities = source_entities.split(/,\|/) if String === source_entities
+  target_entities = target_entities.split(/,\|/) if String === target_entities
+
+  entities = {source_format => source_entities, target_format => target_entities}
+
+  matches = workflow.knowledge_base.subset(database, entities)
+  matches.each do |item|
+    puts Log.color :magenta, item
+    if options[:info]
+      source = item.source_entity
+      target = item.target_entity
+      source = source.name if source.respond_to? :name
+      target = target.name if target.respond_to? :name
+
+      info = item.info.merge(:source => source, :target => target)
+      puts Misc.format_definition_list(info, 80, 20, :yellow, "\n") 
+    end
+  end
+end

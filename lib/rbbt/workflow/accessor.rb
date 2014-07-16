@@ -503,7 +503,8 @@ module Workflow
         options.each{|i,v|
           case v
           when Symbol
-            rec_dependency = real_dependencies.select{|d| d.task.name == v }.first
+            rec_dependency = real_dependencies.collect{|d| [d, d.dependencies].flatten}.flatten.select{|d| d.task.name == v }.first
+            rec_dependency = rec_dependency.run unless (dependency.first.tasks[dependency[1]].input_options[i] || {})[:stream]
             inputs[i] = rec_dependency
           else
             inputs[i] = v

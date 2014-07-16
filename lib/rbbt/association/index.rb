@@ -20,6 +20,7 @@ module Association
 
                      if File.exists?(reverse_filename)
                        new = Persist.open_tokyocabinet(reverse_filename, false, serializer, TokyoCabinet::BDB)
+                       new
                      else
                        FileUtils.mkdir_p File.basename(reverse_filename) unless File.exists?(File.basename(reverse_filename))
                        new = Persist.open_tokyocabinet(reverse_filename, true, serializer, TokyoCabinet::BDB)
@@ -64,8 +65,8 @@ module Association
       source_type = Entity.formats[source_field] 
       target_type = Entity.formats[target_field]
 
-      source_entities = entities[source_field] || entities[Entity.formats[source_field].to_s]  
-      target_entities = entities[target_field] || entities[Entity.formats[target_field].to_s]
+      source_entities = entities[:source] || entities[source_field] || entities[Entity.formats[source_field].to_s]  
+      target_entities = entities[:target] || entities[target_field] || entities[Entity.formats[target_field].to_s]
 
       [source_entities, target_entities]
     end
@@ -79,7 +80,7 @@ module Association
         matches = source.uniq.inject([]){|acc,e| acc.concat(match(e)) }
       end
 
-      return matches if target == :all or target == "all"
+      return matches if target.nil? or target == :all or target == "all"
 
       target_matches = {}
 
@@ -95,6 +96,10 @@ module Association
 
     def subset_entities(entities)
       source, target = select_entities(entities)
+      raise "Please specify source entities" if source.nil?
+      target = :all if target.nil?
+      return if Array === target and target.empty?
+      return if Array === source and source.empty?
       subset source, target
     end
   end

@@ -71,13 +71,13 @@ module Misc
     text
   end
 
-  def self.format_definition_list(defs, size = 80, indent = 20, color = :yellow)
+  def self.format_definition_list(defs, size = 80, indent = 20, color = :yellow, sep = "\n\n")
     entries = []
     defs.each do |dt,dd|
       text = format_definition_list_item(dt,dd,size,indent,color)
       entries << text
     end
-    entries * "\n\n"
+    entries * sep 
   end
 
   def self.camel_case(string)

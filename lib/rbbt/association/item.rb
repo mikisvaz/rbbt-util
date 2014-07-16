@@ -19,6 +19,14 @@ module AssociationItem
     self.clean_annotations.collect{|p| p[/[^~]+/] }
   end
 
+  property :target_type => :single do
+    reverse ? knowledge_base.source(database) : knowledge_base.target(database)
+  end
+
+  property :source_type => :single do
+    reverse ? knowledge_base.target(database) : knowledge_base.source(database)
+  end
+
   property :target_entity => :array2single do
     type = reverse ? knowledge_base.source(database) : knowledge_base.target(database)
     knowledge_base.annotate self.target, type, database #if self.target.any?

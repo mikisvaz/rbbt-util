@@ -78,7 +78,7 @@ module Association
       :persist => false,
       :key_field => all_fields.index(source), 
       :fields => fields.collect{|f| String === f ? all_fields.index(f): f },
-      :type => (options[:type] and options[:type].to_sym == :flat) ? :flat : :double,
+      #:type => (options[:type] and options[:type].to_sym == :flat) ? :flat : nil,
       :unnamed => true,
       :merge => (options[:type] and options[:type].to_sym == :flat) ? false : true
     })
