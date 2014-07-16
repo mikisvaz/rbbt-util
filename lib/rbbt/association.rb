@@ -12,19 +12,22 @@ module Association
 
   def self.add_reciprocal(tsv)
 
-    new = {}
+    new = tsv.dup
     tsv.with_unnamed do
       tsv.through do |key, values|
-        new[key] ||= values
-        Misc.zip_fields(values).each do |fields|
-          target, *rest = fields
-          
-          target_values = new[target] || tsv[target] || [[]] * values.length
-          zipped_target_values = Misc.zip_fields(target_values) 
+        Misc.zip_fields(values).each do |zipped|
+          target, *rest = zipped
 
-          zipped_target_values << ([key].concat rest)
-          
-          new_values = Misc.zip_fields zipped_target_values
+          target_values = new[target] || []
+          if target_values and target_values.any?
+            zipped_target_values = Misc.zip_fields(target_values) 
+
+            zipped_target_values << ([key].concat rest)
+
+            new_values = Misc.zip_fields zipped_target_values
+          else
+            new_values = [[key], rest.collect{|v| [v]}]
+          end
 
           new[target] = new_values
         end

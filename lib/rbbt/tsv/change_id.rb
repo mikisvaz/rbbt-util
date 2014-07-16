@@ -7,7 +7,13 @@ module TSV
     identifiers, persist_input = Misc.process_options options, :identifiers, :persist_input
 
     if not tsv.fields.include? format
-      tsv = tsv.annotate(Hash[*tsv.keys.zip(tsv.values.collect{|l| l.dup}).flatten(1)]) 
+      new = {}
+      tsv.each do |k,v|
+        new[k] = v.dup
+      end
+      orig_fields = tsv.fields
+      tsv = tsv.annotate new
+      new.fields = new.fields.collect{|f| "TMP-" << f }
 
       orig_type = tsv.type 
       tsv = tsv.to_double if orig_type != :double
@@ -18,11 +24,13 @@ module TSV
         tsv = tsv.attach identifiers, :fields => [format], :persist_input => true
       end
 
-      tsv = tsv.reorder(format, tsv.fields - [format])
+      tsv = tsv.reorder(format, tsv.fields[0..-2])
 
       tsv = tsv.to_flat  if orig_type == :flat
 
       tsv = tsv.to_list(&block)  if orig_type == :list
+
+      tsv.fields = orig_fields
 
       tsv
     else

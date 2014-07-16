@@ -96,6 +96,7 @@ module Association
 
     def subset_entities(entities)
       source, target = select_entities(entities)
+      source = :all if source.nil? and target.nil?
       raise "Please specify source entities" if source.nil?
       target = :all if target.nil?
       return if Array === target and target.empty?

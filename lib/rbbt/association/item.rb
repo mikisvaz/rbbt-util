@@ -38,7 +38,7 @@ module AssociationItem
   end
 
   property :value => :array2single do
-    value = knowledge_base.get_index(database).chunked_values_at self
+    value = (reverse ? knowledge_base.get_index(database).reverse : knowledge_base.get_index(database)).chunked_values_at self
     value.collect{|v| NamedArray.setup(v, knowledge_base.get_index(database).fields)}
   end
 
@@ -46,6 +46,7 @@ module AssociationItem
     fields = knowledge_base.index_fields(database)
     return [{}] * self.length if fields.nil? or fields.empty?
 
+    value = self.value
     value.collect{|v|
       Hash[*fields.zip(v).flatten]
     }

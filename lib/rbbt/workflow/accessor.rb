@@ -499,12 +499,13 @@ module Workflow
       real_dependencies << case dependency
       when Array
         inputs = inputs.dup
+        workflow, task, options = dependency
         options = dependency.last if Hash === dependency.last
         options.each{|i,v|
           case v
           when Symbol
             rec_dependency = real_dependencies.collect{|d| [d, d.dependencies].flatten}.flatten.select{|d| d.task.name == v }.first
-            rec_dependency = rec_dependency.run unless (dependency.first.tasks[dependency[1]].input_options[i] || {})[:stream]
+            rec_dependency = rec_dependency.run(true).grace.join.load unless (dependency.first.tasks[dependency[1]].input_options[i] || {})[:stream]
             inputs[i] = rec_dependency
           else
             inputs[i] = v

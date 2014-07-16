@@ -15,8 +15,9 @@ module NamedArray
   end
 
   def self.setup(array, fields, key = nil, entity_options = nil, entity_templates = nil)
+    return array if array.nil?
     array.extend NamedArray unless NamedArray === array
-    array.fields = fields
+    array.fields = Annotated.purge fields
     array.key = key
     array.entity_options = entity_options unless entity_options.nil?
     array.entity_templates = entity_templates unless entity_templates.nil?
@@ -112,9 +113,12 @@ module NamedArray
 
   def each(&block)
     if defined?(Entity) and not @fields.nil? and not @fields.empty?
-      @fields.zip(self).each do |field,elem|
+      i = 0
+      super do |elem|
+        field = @fields[i]
         elem = prepare_entity(elem, field, entity_options)
         yield(elem)
+        i += 1
         elem
       end
     else

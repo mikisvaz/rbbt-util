@@ -593,6 +593,7 @@ module TSV
     end
     with_unnamed do
       <<-EOF
+Filename = #{Path === filename ? filename.find : (filename || "No filename")}
 Key field = #{key_field || "*No key field*"}
 Fields = #{fields ? Misc.fingerprint(fields) : "*No field info*"}
 Type = #{type}
