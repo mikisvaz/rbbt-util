@@ -14,11 +14,12 @@ Access workflow knowledge base
 
 -h--help Show this help:
 -cl--clean Clean the last step of the job so that it gets recomputed:
+-s--source_entities* Source entities
 -sf--source_format* Source format
--se--source_entities* Source entities
+-t--target_entities* Target entities
 -tf--target_format* Target format
--te--target_entities* Target entities
--i--info Print information on matches
+-d--details Print details on matches
+-i--identify Attempt to identify entities by identifier translation
 EOF
 
 workflow = ARGV.shift
@@ -34,12 +35,14 @@ workflow = Workflow.require_workflow workflow
 action = :list_databases if database.nil?
 action ||= :summary 
 
+knowledge_base = workflow.knowledge_base
+
 case action.to_sym
 when :list_databases
-  dbs = workflow.knowledge_base.registry.keys
+  dbs = knowledge_base.registry.keys
   puts dbs * "\n"
 when :summary
-  db = workflow.knowledge_base.get_database(database)
+  db = knowledge_base.get_database(database)
   puts db.summary
 when :subset
   source_format = options[:source_format] || :source
@@ -50,12 +53,16 @@ when :subset
   source_entities = source_entities.split(/,\|/) if String === source_entities
   target_entities = target_entities.split(/,\|/) if String === target_entities
 
+  if options[:identify]
+    source_entities = knowledge_base.identify(database, source_entities)
+    target_entities = knowledge_base.identify(database, target_entities)
+  end
   entities = {source_format => source_entities, target_format => target_entities}
 
-  matches = workflow.knowledge_base.subset(database, entities)
+  matches = knowledge_base.subset(database, entities)
   matches.each do |item|
     puts Log.color :magenta, item
-    if options[:info]
+    if options[:details]
       source = item.source_entity
       target = item.target_entity
       source = source.name if source.respond_to? :name

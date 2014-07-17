@@ -196,30 +196,37 @@ class KnowledgeBase
   
   def identify_source(name, entity)
     database = get_database(name, :persist => true)
-    return entity if database.include? entity
+    return entity if Symbol === entity or (String === entity and database.include? entity)
     source = source(name)
     @identifiers[name] ||= {}
     @identifiers[name]['source'] ||= begin
                                        if database.identifier_files.any?
                                          if TSV.parse_header(database.identifier_files.first).all_fields.include? source
-                                           TSV.index(database.identifiers, :target => source, :persist => true)
+                                           TSV.index(database.identifiers, :target => source, :persist => true, :order => true)
                                          else
                                            {}
                                          end
                                        else
                                          if TSV.parse_header(Organism.identifiers(namespace)).all_fields.include? source
-                                           Organism.identifiers(namespace).index(:target => source, :persist => true)
+                                           Organism.identifiers(namespace).index(:target => source, :persist => true, :order => true)
                                          else
                                            {}
                                          end
                                        end
                                      end
 
-    @identifiers[name]['source'][entity]
+    if Array === entity
+      @identifiers[name]['source'].chunked_values_at(entity).zip(entity).collect{|p|
+        p.compact.first
+      }
+    else
+      @identifiers[name]['source'][entity] || entity
+    end
   end
 
   def identify_target(name, entity)
     database = get_database(name, :persist => true)
+    return entity if Symbol === entity
     target = target(name)
 
     @identifiers[name] ||= {}
@@ -238,7 +245,13 @@ class KnowledgeBase
                                          end
                                        end
                                      end
-    @identifiers[name]['target'][entity]
+    if Array === entity
+      @identifiers[name]['target'].chunked_values_at(entity).zip(entity).collect{|p|
+        p.compact.first
+      }
+    else
+      @identifiers[name]['target'][entity] || entity
+    end
   end
 
   def identify(name, entity)
