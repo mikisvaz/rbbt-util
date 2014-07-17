@@ -61,6 +61,16 @@ module AssociationItem
     }
   end
 
+  property :tsv => :array do
+    fields = self.info_fields
+    type = [self.source_type, self.target_type] * "~"
+    tsv = TSV.setup({}, :key_field => type, :fields => fields, :type => :list, :namespace => self.namespace)
+    self.each do |match|
+      tsv[match] = match.info.values_at *fields
+    end
+    tsv
+  end
+
   def self.incidence(pairs, key_field = nil)
     matrix = {}
     targets = []

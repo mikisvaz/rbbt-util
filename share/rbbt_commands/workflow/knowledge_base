@@ -20,6 +20,7 @@ Access workflow knowledge base
 -tf--target_format* Target format
 -d--details Print details on matches
 -i--identify Attempt to identify entities by identifier translation
+-tsv--tsv Output TSV
 EOF
 
 workflow = ARGV.shift
@@ -60,16 +61,20 @@ when :subset
   entities = {source_format => source_entities, target_format => target_entities}
 
   matches = knowledge_base.subset(database, entities)
-  matches.each do |item|
-    puts Log.color :magenta, item
-    if options[:details]
-      source = item.source_entity
-      target = item.target_entity
-      source = source.name if source.respond_to? :name
-      target = target.name if target.respond_to? :name
 
-      info = item.info.merge(:source => source, :target => target)
-      puts Misc.format_definition_list(info, 80, 20, :yellow, "\n") 
+
+  if options[:tsv]
+    puts matches.tsv.to_s
+  else
+    matches.each do |item|
+      puts Log.color(:magenta, item)
+      info = file.fields.zip(file[item])
+      source,_sep, target = item.partition "~"
+      puts "  " << Misc.format_definition_list_item("source", source)
+      puts "  " << Misc.format_definition_list_item("target", target)
+      info.each do |key,value|
+        puts "  " << Misc.format_definition_list_item(key, value)
+      end
     end
   end
 end
