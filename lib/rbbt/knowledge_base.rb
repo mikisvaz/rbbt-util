@@ -15,6 +15,11 @@ class KnowledgeBase
     end
   end
 
+
+  def setup(name, matches, reverse = false)
+    AssociationItem.setup matches, self, name, reverse
+  end
+
   attr_accessor :namespace, :dir, :indices, :registry, :format, :databases, :entity_options
   def initialize(dir, namespace = nil)
     @dir = Path.setup(dir).find
@@ -260,10 +265,6 @@ class KnowledgeBase
 
   #{{{ Query
   
-  def setup(name, matches, reverse = false)
-    AssociationItem.setup matches, self, name, reverse
-  end
-
   def all(name, options={})
     repo = get_index name, options
     setup name, repo.keys

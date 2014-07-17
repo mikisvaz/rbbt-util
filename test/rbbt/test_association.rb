@@ -57,6 +57,9 @@ class TestAssociations < Test::Unit::TestCase
     assert_equal ["aa"], database["TP53"].first
   end
 
+  def test_reciprocal
+  end
+
 
   def __test_ICGC
     assoc = Association.open(Open.open('ftp://data.dcc.icgc.org/current/Chronic_Lymphocytic_Leukemia-ISC_MICINN-ES/simple_somatic_mutation.CLLE-ES.tsv.gz'),

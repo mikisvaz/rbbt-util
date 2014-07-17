@@ -38,6 +38,8 @@ module Association
 
                      Association::Index.setup new
 
+                     new.undirected = undirected
+
                      new
                    end
     end
@@ -80,13 +82,12 @@ module Association
         matches = source.uniq.inject([]){|acc,e| acc.concat(match(e)) }
       end
 
-      return matches if target.nil? or target == :all or target == "all"
+      return matches if target == :all or target == "all"
 
       target_matches = {}
 
       matches.each{|code| 
         s,sep,t = code.partition "~"
-        next if (undirected and t > s) 
         target_matches[t] ||= []
         target_matches[t] << code
       }
@@ -96,11 +97,9 @@ module Association
 
     def subset_entities(entities)
       source, target = select_entities(entities)
-      source = :all if source.nil? and target.nil?
-      raise "Please specify source entities" if source.nil?
-      target = :all if target.nil?
-      return if Array === target and target.empty?
-      return if Array === source and source.empty?
+      return [] if source.nil? or target.nil?
+      return [] if Array === target and target.empty?
+      return [] if Array === source and source.empty?
       subset source, target
     end
   end

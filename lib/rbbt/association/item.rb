@@ -7,6 +7,10 @@ module AssociationItem
   annotation :database
   annotation :reverse
 
+  property :namespace => :both do
+    knowledge_base.namespace
+  end
+
   property :part => :array2single do
     self.clean_annotations.collect{|p| p.partition("~") }
   end
@@ -19,11 +23,11 @@ module AssociationItem
     self.clean_annotations.collect{|p| p[/[^~]+/] }
   end
 
-  property :target_type => :single do
-    reverse ? knowledge_base.source(database) : knowledge_base.target(database)
+  property :target_type => :both do
+    type = reverse ? knowledge_base.source(database) : knowledge_base.target(database)
   end
 
-  property :source_type => :single do
+  property :source_type => :both do
     reverse ? knowledge_base.target(database) : knowledge_base.source(database)
   end
 
@@ -42,8 +46,13 @@ module AssociationItem
     value.collect{|v| NamedArray.setup(v, knowledge_base.get_index(database).fields)}
   end
 
+  property :info_fields => :both do
+    knowledge_base.index_fields(database)
+  end
+
   property :info => :array2single do
-    fields = knowledge_base.index_fields(database)
+    fields = self.info_fields
+
     return [{}] * self.length if fields.nil? or fields.empty?
 
     value = self.value

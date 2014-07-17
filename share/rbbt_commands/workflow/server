@@ -10,6 +10,7 @@ require 'rbbt/rest/main'
 require 'rbbt/rest/entity'
 require 'rbbt/rest/workflow'
 require 'rbbt/rest/file_server'
+require 'rbbt/rest/knowledge_base'
 require 'rbbt/rest/helpers'
 
 options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*"
@@ -34,6 +35,7 @@ class WorkflowRest < Sinatra::Base
   register Sinatra::RbbtRESTMain
   register Sinatra::RbbtRESTWorkflow
   register Sinatra::RbbtRESTEntity
+  register Sinatra::RbbtRESTKnowledgeBase
   helpers Sinatra::RbbtMiscHelpers
 
   #{{{ DIRECTORIES

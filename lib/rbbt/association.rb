@@ -14,22 +14,15 @@ module Association
 
     new = tsv.dup
     tsv.with_unnamed do
-      tsv.through do |key, values|
-        Misc.zip_fields(values).each do |zipped|
-          target, *rest = zipped
-
-          target_values = new[target] || []
-          if target_values and target_values.any?
-            zipped_target_values = Misc.zip_fields(target_values) 
-
-            zipped_target_values << ([key].concat rest)
-
-            new_values = Misc.zip_fields zipped_target_values
+      tsv.through do |source, values|
+        Misc.zip_fields(values).each do |_target_values|
+          target, *target_values = _target_values
+          if new[target].nil?
+            new[target] = [[source]] + target_values.collect{|v| [v] }
           else
-            new_values = [[key], rest.collect{|v| [v]}]
+            new[target].first << source
+            new[target][1..-1].zip(target_values).each{|list,elem| list << elem }
           end
-
-          new[target] = new_values
         end
       end
     end
