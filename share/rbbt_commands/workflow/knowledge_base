@@ -68,7 +68,7 @@ when :subset
   else
     matches.each do |item|
       puts Log.color(:magenta, item)
-      info = file.fields.zip(file[item])
+      info = item.info
       source,_sep, target = item.partition "~"
       puts "  " << Misc.format_definition_list_item("source", source)
       puts "  " << Misc.format_definition_list_item("target", target)

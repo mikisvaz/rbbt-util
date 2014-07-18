@@ -79,7 +79,9 @@ module Association
       if source == :all or source == "all"
         matches = keys
       else
-        matches = source.uniq.inject([]){|acc,e| acc.concat(match(e)) }
+        matches = source.uniq.inject([]){|acc,e| 
+          acc.concat(match(e)) 
+        }
       end
 
       return matches if target == :all or target == "all"
@@ -88,6 +90,7 @@ module Association
 
       matches.each{|code| 
         s,sep,t = code.partition "~"
+        next if t > s
         target_matches[t] ||= []
         target_matches[t] << code
       }

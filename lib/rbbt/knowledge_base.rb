@@ -206,7 +206,8 @@ class KnowledgeBase
     @identifiers[name] ||= {}
     @identifiers[name]['source'] ||= begin
                                        if database.identifier_files.any?
-                                         if TSV.parse_header(database.identifier_files.first).all_fields.include? source
+                                         identifier_fields = TSV.parse_header(database.identifier_files.first).all_fields
+                                         if identifier_fields.include? source
                                            TSV.index(database.identifiers, :target => source, :persist => true, :order => true)
                                          else
                                            {}
