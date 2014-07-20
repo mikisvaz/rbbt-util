@@ -62,11 +62,12 @@ module AssociationItem
   end
 
   property :tsv => :array do
-    fields = self.info_fields
+    info_fields = self.info_fields
+    fields = [self.source_type, self.target_type].concat info_fields
     type = [self.source_type, self.target_type] * "~"
     tsv = TSV.setup({}, :key_field => type, :fields => fields, :type => :list, :namespace => self.namespace)
     self.each do |match|
-      tsv[match] = match.info.values_at *fields
+      tsv[match] = [match.source, match.target].concat match.info.values_at(*info_fields)
     end
     tsv
   end
