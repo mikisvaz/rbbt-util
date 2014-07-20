@@ -90,7 +90,7 @@ module Association
 
       matches.each{|code| 
         s,sep,t = code.partition "~"
-        next if t > s
+        next if undirected and t > s 
         target_matches[t] ||= []
         target_matches[t] << code
       }
