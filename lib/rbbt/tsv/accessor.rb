@@ -235,14 +235,25 @@ module TSV
 
   def zip_new(key, values)
     values = [values] unless Array === values
-    if self.include? key
-      new = []
-      self[key, true].each_with_index do |v,i|
-        new << (v << values[i])
+    case type
+    when :double
+      if self.include? key
+        new = []
+        self[key, true].each_with_index do |v,i|
+          new << (v << values[i])
+        end
+        self[key] == new
+      else
+        self[key] = values.collect{|v| [v] }
       end
-      self[key] == new
+    when :flat
+      if self.include? key
+        self[key] = (self[key] + values).uniq
+      else
+        self[key] = values
+      end
     else
-      self[key] = values.collect{|v| [v] }
+      raise "Cannot zip_new for type: #{type}"
     end
   end
 

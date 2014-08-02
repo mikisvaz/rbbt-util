@@ -205,6 +205,10 @@ rescue ParameterException
   print_error($!.message, $!.backtrace)
   puts
   exit -1
+rescue SystemExit
+  Log.exception $! unless $?.success?
+rescue Exception
+  Log.exception $!
 ensure
   if options[:profile]
     result = RubyProf.stop

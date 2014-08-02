@@ -38,7 +38,10 @@ module Persist
     check = persist_options[:check]
     if not check.nil?
       if Array === check
-        return false if check.select{|file| newer? path, file}.any?
+        if check.select{|file| newer? path, file}.any?
+          Log.medium "Persistence check for #{path} failed in: #{ check.select{|file| newer? path, file} * ", "}"
+          return false 
+        end
      else
         return false if newer? path, check
      end

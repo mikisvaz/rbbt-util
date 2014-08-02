@@ -213,9 +213,8 @@ module Log
 
   def self.exception(e)
     stack = caller
-    error("#{Log.color :error, "EXCEPTION:"} " << stack.first)
-    error([e.class.to_s, e.message].compact * ": ")
-    error("BACKTRACE:\n" + e.backtrace * "\n") 
+    error([e.class.to_s, e.message].compact * ": " )
+    error("BACKTRACE: " << Log.last_caller(caller) << "\n" + color_stack(e.backtrace)*"\n")
   end
 
   def self.color_stack(stack)

@@ -90,28 +90,6 @@ module AnnotatedArray
     end
   end
 
-  def select(method = nil, *args)
-
-    if method
-
-      res = self.zip( self.send(method, *args) ).
-        select{|e,result| result }. 
-        collect{|element,r| element }
-    else
-
-      return self unless block_given?
-
-      res = []
-      each do |value|
-        res << value if yield(value)
-      end
-    end
-
-    annotate(res)
-    res.extend AnnotatedArray 
-
-    res
-  end
 
   def reject
     res = []

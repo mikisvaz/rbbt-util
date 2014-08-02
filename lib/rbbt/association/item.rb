@@ -95,4 +95,38 @@ module AssociationItem
 
     defined?(TSV)? TSV.setup(matrix, :key_field => (key_field || "Source") , :fields => targets, :type => :list) : matrix
   end
+
+  def self._select_match(orig, elem)
+    if Array === orig and Array === elem
+      (orig & elem).any?
+    elsif Array === orig
+      orig.include? elem
+    elsif Array === elem
+      elem.include? orig
+    else
+      elem === orif
+    end
+    false
+  end
+
+  def self.select(list, method = nil, &block)
+    if method and method.any?
+      list.select do |item|
+        method.collect do |key,value|
+          case key
+          when :target
+            _select_match item.target, value
+          when :source
+            _select_match item.source, value
+          else
+            orig = item.info[key]
+            orig = orig.split(";;") if String orig
+            _select_match orig, value 
+          end
+        end
+      end
+    else
+      list.select(&block)
+    end
+  end
 end

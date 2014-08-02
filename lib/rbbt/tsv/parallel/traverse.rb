@@ -294,12 +294,13 @@ module TSV
       Log.medium{"Aborted traversing 2 #{stream_name(obj)}"}
     rescue Exception
       Log.medium{"Exception traversing #{stream_name(obj)}"}
-      Log.exception $!
       begin
         stream = obj_stream(obj)
         stream.abort if stream and stream.respond_to? :abort
         stream = obj_stream(options[:into])
         stream.abort if stream.respond_to? :abort
+      rescue Exception
+      ensure
         raise $!
       end
     end
@@ -378,15 +379,24 @@ module TSV
       return
     end
     begin
+      return false if value.nil?
       case store
-      when Hash
-        return false if value.nil?
-        if Hash === value
-          if TSV === store and store.type == :double
+      when TSV
+        if store.type == :double or store.type == :flat
+          case value
+          when TSV, Hash
             store.merge_zip value
           else
-            store.merge! value
+            store.zip_new *value
           end
+        else
+          k,v = value
+          store[k] = v
+        end
+      when Hash
+        case value
+        when TSV, Hash
+          store.merge! value 
         else
           k,v = value
           store[k] = v

@@ -297,7 +297,9 @@ module Workflow
       step_path = step_path taskname, jobname, input_values, dependencies, task.extension
     end
 
-    get_job_step step_path, task, input_values, dependencies
+    job = get_job_step step_path, task, input_values, dependencies
+    job.clean_name = jobname
+    job
   end
 
   def load_step(path)

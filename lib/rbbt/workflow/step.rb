@@ -5,7 +5,7 @@ require 'rbbt/util/semaphore'
 require 'rbbt/workflow/accessor'
 
 class Step
-  attr_accessor :path, :task, :inputs, :dependencies, :bindings
+  attr_accessor :clean_name, :path, :task, :inputs, :dependencies, :bindings
   attr_accessor :pid
   attr_accessor :exec
   attr_accessor :result, :mutex, :seen
@@ -22,9 +22,16 @@ class Step
     end
   end
 
-  def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil)
+  def clean_name
+    @clean_name ||= begin
+                      info[:clean_name] || path.sub(/_[a-z0-9]{32}/, '')
+                    end
+  end
+
+  def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil, clean_name = nil)
     path = Path.setup(Misc.sanitize_filename(path)) if String === path
-    pat = path.call if Proc === path
+    path = path.call if Proc === path
+
     @path = path
     @task = task
     @bindings = bindings
@@ -39,7 +46,7 @@ class Step
     @mutex = Mutex.new
     @info_mutex = Mutex.new
     @inputs = inputs || []
-    NamedArray.setup @inputs, task.inputs.collect{|s| s.to_s} if task and task.inputs
+    NamedArray.setup @inputs, task.inputs.collect{|s| s.to_s} if task and task.respond_to? :inputs and task.inputs
   end
 
   def inputs
@@ -204,9 +211,13 @@ class Step
 
   def step(name)
     @steps ||= {}
-    @steps[name] ||= rec_dependencies.select do |step| 
-      step.task_name.to_sym == name.to_sym
-    end.first
+    @steps[name] ||= begin
+                       deps = rec_dependencies.select{|step| 
+                         step.task_name.to_sym == name.to_sym
+                       }
+                       deps.first
+                     end
+
   end
 end
 

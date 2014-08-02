@@ -40,7 +40,10 @@ module Workflow
       @dependencies << dependency_list
     else
       @dependency_list ||= []
-      dependency_list << block if block_given?
+      if block_given?
+        dependency_list.unshift self if dependency_list.length == 1
+        dependency_list << block 
+      end
       dependencies.concat dependency_list
     end
   end
@@ -48,6 +51,7 @@ module Workflow
   def dep(*dependency, &block)
     @dependencies ||= []
     if block_given?
+      dependency.unshift self if dependency.length == 1
       DependencyBlock.setup block, dependency if dependency.any?
       @dependencies << block
     else

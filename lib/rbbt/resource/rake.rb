@@ -49,8 +49,7 @@ module Rake
         end
       rescue
         Log.error "Error in rake: #{$!.message}"
-        Log.exception $!
-        raise $!
+        Kernel.exit! -1
       end
     }
     Process.waitpid(pid)

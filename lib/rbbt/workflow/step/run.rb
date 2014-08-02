@@ -123,15 +123,14 @@ class Step
     dependencies.uniq.each do |dependency| 
       next if seen.collect{|d| d.path}.include?(dependency.path)
       dependency.seen = seen
-      @seen << dependency
       @seen.concat dependency.rec_dependencies.collect{|d| d } 
+      @seen << dependency
       @seen.uniq!
     end
 
     @seen.each do |dependency|
       next if dependency == self
       next unless dependencies.include? dependency
-      #dependency.relay_log self
       dependency.dup_inputs
     end
 
@@ -147,8 +146,8 @@ class Step
           dependency.clean if (dependency.error? or dependency.aborted? or dependency.status.nil? or not (dependency.done? or dependency.running?))
         end
 
-        unless dependency.started? #dependency.result or dependency.done?
-          dependency.run(true)#.grace
+        unless dependency.started? 
+          dependency.run(true)
         end
       rescue Aborted
         Log.error "Aborted dep. #{Log.color :red, dependency.task.name.to_s}"
@@ -183,6 +182,7 @@ class Step
             :pid => Process.pid,
             :issued => Time.now,
             :name => name,
+            :clean_name => clean_name,
             :dependencies => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]},
           })
 

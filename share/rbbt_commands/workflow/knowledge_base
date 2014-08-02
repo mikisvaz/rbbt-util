@@ -51,17 +51,16 @@ when :subset
   source_entities = options[:source_entities] || :all
   target_entities = options[:target_entities] || :all
 
-  source_entities = source_entities.split(/,\|/) if String === source_entities
-  target_entities = target_entities.split(/,\|/) if String === target_entities
+  source_entities = source_entities.split(/[,|]/) if String === source_entities
+  target_entities = target_entities.split(/[,|]/) if String === target_entities
 
   if options[:identify]
-    source_entities = knowledge_base.identify(database, source_entities)
-    target_entities = knowledge_base.identify(database, target_entities)
+    source_entities = knowledge_base.identify_source(database, source_entities)
+    target_entities = knowledge_base.identify_target(database, target_entities)
   end
   entities = {source_format => source_entities, target_format => target_entities}
 
   matches = knowledge_base.subset(database, entities)
-
 
   if options[:tsv]
     puts matches.tsv.to_s

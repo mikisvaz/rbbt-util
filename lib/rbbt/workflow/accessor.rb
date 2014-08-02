@@ -54,10 +54,6 @@ class Step
     path.sub(/.*\/#{Regexp.quote task.name.to_s}\/(.*)/, '\1')
   end
 
-  def clean_name
-    name.sub(/(.*)_.*/, '\1')
-  end
-
   def task_name
     @task_name ||= task.name
   end
@@ -505,13 +501,17 @@ module Workflow
           case v
           when Symbol
             rec_dependency = real_dependencies.collect{|d| [d, d.dependencies].flatten}.flatten.select{|d| d.task.name == v }.first
-            rec_dependency = rec_dependency.run(true).grace.join.load unless (dependency.first.tasks[dependency[1]].input_options[i] || {})[:stream]
-            inputs[i] = rec_dependency
+            if (dependency.first.tasks[dependency[1]].input_options[i] || {})[:stream]
+              inputs[i] = rec_dependency.run(true).grace.join.path 
+            else
+              inputs[i] = rec_dependency.run(true).join.load
+            end
           else
             inputs[i] = v
           end
         } if options
-        dependency.first.job(dependency[1], jobname, inputs)
+        res = dependency.first.job(dependency[1], jobname, inputs)
+        res
       when Step
         dependency
       when Symbol
