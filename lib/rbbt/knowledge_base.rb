@@ -304,7 +304,8 @@ class KnowledgeBase
     repo = get_index name
 
     begin
-      setup(name, repo.subset_entities(entities))
+      s = repo.subset_entities(entities)
+      setup(name, s)
     rescue Exception
       target = entities[:target]
       source = entities[:source]

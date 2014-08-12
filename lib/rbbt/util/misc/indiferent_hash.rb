@@ -14,6 +14,11 @@ module IndiferentHash
     new
   end
 
+  def []=(key,value)
+    delete(key)
+    super(key,value)
+  end
+
   def [](key)
     res = super(key) 
     return res unless res.nil?

@@ -10,6 +10,11 @@ module NamedArray
   attr_accessor :entity_options
   attr_accessor :entity_templates
 
+  def shift
+    fields.shift
+    super
+  end
+
   def entity_templates
     @entity_templates ||= {}
   end

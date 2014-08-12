@@ -259,4 +259,15 @@ module Misc
     Log.info "Delta: #{delta.inspect}" 
     res
   end
+
+  def self.time_tick
+    if $_last_time_tick.nil?
+      $_last_time_tick = Time.now
+      puts "Tick started: #{Time.now}"
+    else
+      ellapsed = Time.now - $_last_time_tick
+      puts "Tick ellapsed: #{ellapsed.to_i} s. #{(ellapsed * 1000).to_i - ellapsed.to_i * 1000} ms"
+      $_last_time_tick = Time.now
+    end
+  end
 end

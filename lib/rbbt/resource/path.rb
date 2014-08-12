@@ -39,9 +39,13 @@ module Path
   end
 
   def glob(pattern = '*')
-    return [] unless self.exists?
-    exp = File.join(self.find, pattern)
-    Dir.glob(exp).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
+    if self.include? "*"
+      Dir.glob(self).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
+    else
+      return [] unless self.exists? 
+      exp = File.join(self.find, pattern)
+      Dir.glob(exp).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
+    end
   end
 
   def [](name, orig = false)

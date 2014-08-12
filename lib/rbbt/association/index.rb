@@ -77,12 +77,17 @@ module Association
       return [] if source.nil? or target.nil?
 
       if source == :all or source == "all"
-        matches = keys
-      else
-        matches = source.uniq.inject([]){|acc,e| 
-          acc.concat(match(e)) 
-        }
+        if target == :all or target == "all"
+          return keys
+        else
+          matches = reverse.subset(target, source)
+          return matches.collect{|m| r = m.partition "~"; r.reverse*"" }
+        end
       end
+
+      matches = source.uniq.inject([]){|acc,e| 
+        acc.concat(match(e)) 
+      }
 
       return matches if target == :all or target == "all"
 

@@ -23,6 +23,7 @@ Misc.in_dir(app_dir) do
   if server == 'unicorn'
     `unicorn -c #{ Rbbt.share['unicorn.rb'].find } '#{config_ru_file}' -p #{options[:port] || "2887"}`
   else
-    Rack::Server.start(options.merge(:config => config_ru_file))
+    options[:config] = config_ru_file
+    Rack::Server.start(options)
   end
 end

@@ -30,7 +30,9 @@ file = STDIN if file == '-'
 
 raise ParameterException, "Please specify the tsv file as argument" if file.nil?
 
-options[:fields] = options[:fields].split(/,\|/) if options[:fields]
+iii options
+options[:fields] = options[:fields].split(/[,\|]/) if options[:fields]
+iii options
 options[:header_hash] = options["header_hash"]
 options[:sep] = options["sep"]
 

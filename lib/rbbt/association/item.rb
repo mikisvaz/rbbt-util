@@ -69,6 +69,10 @@ module AssociationItem
     self.each do |match|
       tsv[match] = [match.source, match.target].concat match.info.values_at(*info_fields)
     end
+    tsv.entity_options = {:organism => namespace}
+    knowledge_base.entity_options.each do |type,options|
+      tsv.entity_options.merge! options
+    end
     tsv
   end
 
