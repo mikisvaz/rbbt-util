@@ -5,9 +5,9 @@ Rbbt.etc.requires.read.split("\n").each do |file|
 end if Rbbt.etc.requires.exists?
 
 
-Entity.entity_list_cache     = Rbbt.var.find.sinatra.entity_lists
-Entity.entity_map_cache      = Rbbt.var.find.sinatra.entity_maps
-Entity.entity_property_cache = Rbbt.var.find.sinatra.entity_properties
+Entity.entity_list_cache     = Rbbt.var.sinatra.find.entity_lists
+Entity.entity_map_cache      = Rbbt.var.sinatra.find.entity_maps
+Entity.entity_property_cache = Rbbt.var.sinatra.find.entity_properties
 
 Rbbt.etc.entities.read.split("\n").each do |name|
   next if name.empty?
@@ -18,7 +18,7 @@ Rbbt.etc.entities.read.split("\n").each do |name|
   end
 end if Rbbt.etc.entities.exists?
 
-$annotation_repo = Rbbt.var.find.sinatra.annotation_repo.find
+$annotation_repo = Rbbt.var.sinatra.annotation_repo.find
 (Rbbt.etc.persist_properties.yaml || {}).each do |name,list|
   next if name.empty?
   mod = Kernel.const_get name

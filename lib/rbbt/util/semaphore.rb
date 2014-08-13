@@ -79,34 +79,20 @@ void post_semaphore(char* name){
 
   def self.fork_each_on_semaphore(elems, size, file = nil)
     with_semaphore(size, file) do |file|
-      begin
 
-        pids = elems.collect do |elem| 
-          Process.fork do 
-            begin
-              RbbtSemaphore.synchronize(file) do
-                yield elem
-              end
-            rescue Interrupt
-              Log.warn "Process #{Process.pid} was aborted"
-            end
+      TSV.traverse elems, :cpus => size*2, :bar => "Fork each on semaphore: #{ file }" do |elem|
+        elems.annotate elem if elems.respond_to? :annotate
+        begin
+          RbbtSemaphore.synchronize(file) do
+            yield elem
           end
+        rescue Interrupt
+          Log.warn "Process #{Process.pid} was aborted"
         end
-
-        while pids.any?
-          pid = Process.wait -1
-          pids.delete pid
-        end
-        #pids.each do |pid| Process.waitpid pid end
-        
-      rescue Exception
-        Log.warn "Killing children: #{pids.sort * ", " }"
-        pids.each do |pid| begin Process.kill("INT", pid); rescue; end; end
-        pids.each do |pid| begin RbbtSemaphore.post_semaphore(file); rescue; end; end
-        Log.warn "Ensuring children are dead: #{pids.sort * ", " }"
-        pids.each do |pid| begin Process.waitpid pid; rescue; end; end
       end
+
     end
+    true
   end
 
   def self.thread_each_on_semaphore(elems, size)

@@ -174,3 +174,4 @@ source "$INSTALL_HELPER_FILE"
     path
   end
 end
+

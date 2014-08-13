@@ -19,11 +19,11 @@ helpers Sinatra::RbbtMiscHelpers
 use Rack::Session::Cookie, :key => 'rack.session',
   :path => '/',
   :expire_after => 2592000,
-  :secret => 'StudyExplorer secret!!'
+  :secret => "#{self.to_s} secret!!"
 
 
 #{{{ DIRECTORIES
-local_var = Rbbt.var.find(:current)
+local_var = Rbbt.var#.find(:current)
 set :cache_dir           , local_var.sinatra.cache.find
 set :persist_dir         , local_var.sinatra.cache.persistence.find
 set :persist_options     , {:persist => true, :persist_dir => :persist_dir}

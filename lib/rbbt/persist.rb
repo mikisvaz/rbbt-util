@@ -18,7 +18,7 @@ module Persist
     attr_accessor :lock_dir
     
     def lock_dir
-      @lock_dir ||= Rbbt.tmp.persist_locks.find
+      @lock_dir ||= Rbbt.tmp.persist_locks
     end
   end
 

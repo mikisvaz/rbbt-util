@@ -31,6 +31,7 @@ end
 module Resource
   def set_software_env(software_dir)
     software_dir.find_all.each do |software_dir|
+      next unless software_dir.exists?
       bin_dir = File.join(software_dir, 'bin')
       opt_dir = File.join(software_dir, 'opt')
 

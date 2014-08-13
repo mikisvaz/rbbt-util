@@ -23,6 +23,14 @@ module AssociationItem
     self.clean_annotations.collect{|p| p[/[^~]+/] }
   end
 
+  property :target_entity_type => :both do
+    Entity.formats[target_type].to_s
+  end
+
+  property :source_entity_type => :both do
+    Entity.formats[source_type].to_s
+  end
+
   property :target_type => :both do
     type = reverse ? knowledge_base.source(database) : knowledge_base.target(database)
   end

@@ -71,14 +71,16 @@ module Path
     end
   end
 
-  SEARCH_PATHS = {
+  SEARCH_PATHS = IndiferentHash.setup({
     :current => File.join("{PWD}", "{TOPLEVEL}", "{SUBPATH}"),
     :user    => File.join(ENV['HOME'], ".{PKGDIR}", "{TOPLEVEL}", "{SUBPATH}"),
     :global  => File.join('/', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
     :local   => File.join('/usr/local', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
     :lib     => File.join('{LIBDIR}', "{TOPLEVEL}", "{SUBPATH}"),
     :default => :user
-  }
+  })
+
+  STANDARD_SEARCH = %w(current user local global lib cache bulk)
 
   search_path_file = File.join(ENV['HOME'], '.rbbt/etc/search_paths')
   if File.exists?(search_path_file)
@@ -99,7 +101,13 @@ module Path
 
     path = nil
     if where.nil?
-      %w(current user local global lib).each do |w| 
+      STANDARD_SEARCH.each do |w| 
+        w = w.to_sym
+        next unless paths.include? w
+        path = find(w, caller_lib, paths)
+        return path if File.exists? path
+      end
+      (SEARCH_PATHS.keys - STANDARD_SEARCH).each do |w|
         w = w.to_sym
         next unless paths.include? w
         path = find(w, caller_lib, paths)

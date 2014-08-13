@@ -194,7 +194,8 @@ class KnowledgeBase
   end
 
   def annotate(entities, type, database = nil)
-    Misc.prepare_entity(entities, type, entity_options_for(type, database))
+    format = @format[type] || type
+    Misc.prepare_entity(entities, format, entity_options_for(type, database))
   end
 
   #{{{ Identify

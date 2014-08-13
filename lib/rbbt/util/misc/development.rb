@@ -270,4 +270,19 @@ module Misc
       $_last_time_tick = Time.now
     end
   end
+
+  def self.bootstrap(elems, num = :current, file = nil, &block)
+    cpus = case num
+           when :current
+            4 
+           when Integer
+             if num < 100
+               num
+             else
+               32000 / num
+             end
+           end
+    file = caller.first + rand(1000000).to_s if file.nil?
+    RbbtSemaphore.fork_each_on_semaphore elems, cpus, file, &block
+  end
 end
