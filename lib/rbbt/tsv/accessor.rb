@@ -244,7 +244,7 @@ module TSV
         end
         self[key] == new
       else
-        self[key] = values.collect{|v| [v] }
+        self[key] = Array === values.first ? values.dup : values.collect{|v| [v] }
       end
     when :flat
       if self.include? key

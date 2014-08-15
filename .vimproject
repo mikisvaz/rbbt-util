@@ -252,10 +252,10 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
  }
  etc=etc filter="*"{
   app.d=app.d{
+   init.rb
    base.rb
    entities.rb
    finder.rb
-   init.rb
    resources.rb
   }
  }

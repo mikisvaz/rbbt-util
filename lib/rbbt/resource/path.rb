@@ -90,57 +90,61 @@ module Path
   end
 
   def find(where = nil, caller_lib = nil, paths = nil)
-    paths = (self.search_paths || SEARCH_PATHS).merge(paths || {})
-    where = paths[:default] if where == :default
-    return self if located?
-    if self.match(/(.*?)\/(.*)/)
-      toplevel, subpath = self.match(/(.*?)\/(.*)/).values_at 1, 2
-    else
-      toplevel, subpath = self, ""
-    end
+    @path ||= {}
+    key = Misc.digest([where, caller_lib, paths].inspect)
+    @path[key] ||= begin
+                     paths = (self.search_paths || SEARCH_PATHS).merge(paths || {})
+                     where = paths[:default] if where == :default
+                     return self if located?
+                     if self.match(/(.*?)\/(.*)/)
+                       toplevel, subpath = self.match(/(.*?)\/(.*)/).values_at 1, 2
+                     else
+                       toplevel, subpath = self, ""
+                     end
 
-    path = nil
-    if where.nil?
-      STANDARD_SEARCH.each do |w| 
-        w = w.to_sym
-        next unless paths.include? w
-        path = find(w, caller_lib, paths)
-        return path if File.exists? path
-      end
-      (SEARCH_PATHS.keys - STANDARD_SEARCH).each do |w|
-        w = w.to_sym
-        next unless paths.include? w
-        path = find(w, caller_lib, paths)
-        return path if File.exists? path
-      end
-      if paths.include? :default
-        find((paths[:default] || :user), caller_lib, paths)
-      else
-        raise "Path '#{ path }' not found, and no default specified in search paths: #{paths.inspect}"
-      end
-    else
-      where = where.to_sym
-      raise "Did not recognize the 'where' tag: #{where}. Options: #{paths.keys}" unless paths.include? where
+                     path = nil
+                     if where.nil?
+                       STANDARD_SEARCH.each do |w| 
+                         w = w.to_sym
+                         next unless paths.include? w
+                         path = find(w, caller_lib, paths)
+                         return path if File.exists? path
+                       end
+                       (SEARCH_PATHS.keys - STANDARD_SEARCH).each do |w|
+                         w = w.to_sym
+                         next unless paths.include? w
+                         path = find(w, caller_lib, paths)
+                         return path if File.exists? path
+                       end
+                       if paths.include? :default
+                         find((paths[:default] || :user), caller_lib, paths)
+                       else
+                         raise "Path '#{ path }' not found, and no default specified in search paths: #{paths.inspect}"
+                       end
+                     else
+                       where = where.to_sym
+                       raise "Did not recognize the 'where' tag: #{where}. Options: #{paths.keys}" unless paths.include? where
 
-      if where == :lib
-        libdir = Path.caller_lib_dir(caller_lib) || "NOLIBDIR"
-      else
-        libdir = "NOLIBDIR"
-      end
-      pwd = FileUtils.pwd
-      path = paths[where].
-        sub('{PKGDIR}', pkgdir).
-        sub('{PWD}', pwd).
-        sub('{TOPLEVEL}', toplevel).
-        sub('{SUBPATH}', subpath).
-        sub('{PATH}', self).
-        sub('{LIBDIR}', libdir) #, @pkgdir, @resource, @search_paths
+                       if where == :lib
+                         libdir = Path.caller_lib_dir(caller_lib) || "NOLIBDIR"
+                       else
+                         libdir = "NOLIBDIR"
+                       end
+                       pwd = FileUtils.pwd
+                       path = paths[where].
+                         sub('{PKGDIR}', pkgdir).
+                         sub('{PWD}', pwd).
+                         sub('{TOPLEVEL}', toplevel).
+                         sub('{SUBPATH}', subpath).
+                         sub('{PATH}', self).
+                         sub('{LIBDIR}', libdir) #, @pkgdir, @resource, @search_paths
 
-      path = path + '.gz' if File.exists? path + '.gz'
-      path = path + '.bgz' if File.exists? path + '.bgz'
+                       path = path + '.gz' if File.exists? path + '.gz'
+                       path = path + '.bgz' if File.exists? path + '.bgz'
 
-      self.annotate path
-    end
+                       self.annotate path
+                     end
+                   end
   end
 
   def find_all(caller_lib = nil, search_paths = nil)

@@ -1,14 +1,16 @@
+
+#{{{ Require files
 Rbbt.etc.requires.read.split("\n").each do |file|
   next if file.empty?
   Log.debug("requiring #{ file }")
   require file
 end if Rbbt.etc.requires.exists?
 
-
 Entity.entity_list_cache     = Rbbt.var.sinatra.find.entity_lists
 Entity.entity_map_cache      = Rbbt.var.sinatra.find.entity_maps
 Entity.entity_property_cache = Rbbt.var.sinatra.find.entity_properties
 
+#{{{ Prepare REST entities
 Rbbt.etc.entities.read.split("\n").each do |name|
   next if name.empty?
   mod = Kernel.const_get name
@@ -18,6 +20,7 @@ Rbbt.etc.entities.read.split("\n").each do |name|
   end
 end if Rbbt.etc.entities.exists?
 
+#{{{ Prepare REST entity property persist
 $annotation_repo = Rbbt.var.sinatra.annotation_repo.find
 (Rbbt.etc.persist_properties.yaml || {}).each do |name,list|
   next if name.empty?

@@ -143,7 +143,8 @@ module TSV
         raise $!
       end
 
-      keys = parts[key_position].split(@sep2, -1)
+      str = parts[key_position]
+      keys = str.split(@sep2, -1)
 
       if @take_all
         values = parts.collect{|e| e.split(@sep2, -1) }.flatten
@@ -545,7 +546,6 @@ module TSV
             stream.abort if stream.respond_to? :abort
             raise $!
           rescue Exception
-            Log.exception $!
             Log.error "Exception parsing #{Misc.fingerprint stream}: #{$!.message}"
             stream.abort $! if stream.respond_to? :abort
             raise $!

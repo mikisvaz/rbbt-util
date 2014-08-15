@@ -88,6 +88,7 @@ module Association
             if file.fields == field_headers
               file
             else
+              iii :reorder
               file.reorder(source, field_headers)
             end
           else
@@ -239,7 +240,7 @@ module Association
       tsv = load_tsv(file, options)
 
       tsv.annotate(data)
-      data.serializer = tsv.type if data.respond_to? :persistence_path
+      data.serializer = tsv.type 
 
       tsv.with_unnamed do
         tsv.each do |k,v|
@@ -330,4 +331,3 @@ module Association
     end
   end
 end
-

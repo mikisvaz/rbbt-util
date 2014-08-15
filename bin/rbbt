@@ -206,7 +206,7 @@ rescue ParameterException
   puts
   exit -1
 rescue SystemExit
-  Log.exception $! unless $?.success?
+  Log.error "Command error" unless $?.success?
 rescue Exception
   Log.exception $!
 ensure

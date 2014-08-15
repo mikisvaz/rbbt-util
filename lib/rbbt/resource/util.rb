@@ -101,7 +101,7 @@ module Resource
     task = Misc.path_relative_to rake_dir, path
     rakefile = rakefile.produce if rakefile.respond_to? :produce
 
-    rake_dir = rake_dir.find if rake_dir.respond_to? :find
+    rake_dir = rake_dir.find(:user) if rake_dir.respond_to? :find
 
     begin
       require 'rbbt/resource/rake'

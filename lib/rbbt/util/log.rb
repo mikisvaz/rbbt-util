@@ -226,6 +226,12 @@ module Log
     end
   end
 
+  def self.tsv(tsv)
+    STDERR.puts Log.color :magenta, "TSV log: " << Log.last_caller(caller)
+    iif tsv
+    ppp tsv.summary
+  end
+
   def self.stack(stack)
     LOG_MUTEX.synchronize do
 

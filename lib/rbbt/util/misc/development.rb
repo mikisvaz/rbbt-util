@@ -272,9 +272,12 @@ module Misc
   end
 
   def self.bootstrap(elems, num = :current, file = nil, &block)
+    num = :current if num.nil?
     cpus = case num
            when :current
             4 
+           when String
+             num.to_i
            when Integer
              if num < 100
                num
@@ -283,6 +286,9 @@ module Misc
              end
            end
     file = caller.first + rand(1000000).to_s if file.nil?
-    RbbtSemaphore.fork_each_on_semaphore elems, cpus, file, &block
+    index = (0..elems.length-1).to_a.collect{|v| v.to_s }
+    RbbtSemaphore.fork_each_on_semaphore index, cpus, file do |i|
+      yield elems[i.to_i]
+    end
   end
 end
