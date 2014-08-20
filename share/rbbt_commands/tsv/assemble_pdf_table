@@ -1,0 +1,68 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Assemble the TSV from a table extracted from a PDF
+
+$ rbbt tsv assemble_pdf_table file.txt
+
+When extracting tables from PDF they are often laid out one column at a time, divided by pages.
+This command takes a file with the following structure:
+
+1 A few lines containing table headers, one per line
+2 A group of lines containing the values for the first column of the first page, ending in an empty line
+3 More groups of lines corresponding to other columns
+4 Repetitions of 2 and 3 for more pages
+
+This script will take care of matching the columns read with the headers specified
+
+-h--help Help
+EOF
+
+SOPT.usage if options[:help]
+
+file = ARGV.shift
+
+file = STDIN if file == '-' or file.nil?
+
+
+txt = Misc.fixutf8(TSV.get_stream(file).read)
+
+header, _sep, rest = txt.strip.partition("\n\n")
+fields = header.split("\n")
+num_columns = fields.length
+
+columns = {}
+
+num_columns.times do |i|
+  columns[i] = []
+end
+
+lines = rest.split("\n")
+
+while lines and lines.any?
+  first_block = lines[0..lines.index("")-1]
+  block_size = first_block.length
+  lines = lines[block_size+1..-1]
+  columns[0] << first_block
+  (1..num_columns-1).each do |pos|
+    block = lines[0..block_size-1]
+    lines = lines[block_size+1..-1]
+    columns[pos] << block
+  end
+end
+
+full_columns = []
+num_columns.times do |i|
+  column = columns[i]
+  full_columns << column.flatten
+end
+
+puts "#" << fields * "\t"
+Misc.zip_fields(full_columns).zip do |values|
+  puts values * "\t"
+end

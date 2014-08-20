@@ -50,10 +50,13 @@ module Annotated
     info = {}
     fields.each_with_index do |field,i|
       next if field == "literal"
-      if field == "JSON"
+      case field
+      when "JSON"
         JSON.parse(values[i]).each do |key, value|
           info[key.to_sym] = value
         end
+      when nil
+        next
       else
         info[field.to_sym] = resolve_array(values[i])
       end

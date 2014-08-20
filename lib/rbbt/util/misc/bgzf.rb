@@ -23,8 +23,8 @@ module Bgzf
 
   def close
     @compressed_stream.close unless @compressed_stream.closed?
-    @access.clear
-    @blocks.clear
+    @access.clear if @access
+    @blocks.clear if @blocks
   end
 
   def seek(off)

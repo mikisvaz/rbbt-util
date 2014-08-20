@@ -275,7 +275,7 @@ module Misc
     num = :current if num.nil?
     cpus = case num
            when :current
-            4 
+            10
            when String
              num.to_i
            when Integer
@@ -285,10 +285,18 @@ module Misc
                32000 / num
              end
            end
-    file = caller.first + rand(1000000).to_s if file.nil?
+
+    #file = caller.first + rand(1000000).to_s if file.nil?
     index = (0..elems.length-1).to_a.collect{|v| v.to_s }
-    RbbtSemaphore.fork_each_on_semaphore index, cpus, file do |i|
-      yield elems[i.to_i]
+    TSV.traverse index, :cpus => cpus, :bar => "Bootstrap in #{ cpus } cpus: #{ Misc.fingerprint elems }", :into => Set.new do |pos|
+      elem = elems[pos.to_i]
+      elems.annotate elem if elems.respond_to? :annotate
+      begin
+        yield elem
+      rescue Interrupt
+        Log.warn "Process #{Process.pid} was aborted"
+      end
+      nil
     end
   end
 end

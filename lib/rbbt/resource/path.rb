@@ -40,7 +40,7 @@ module Path
 
   def glob(pattern = '*')
     if self.include? "*"
-      Dir.glob(self).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
+      self.glob_all
     else
       return [] unless self.exists? 
       exp = File.join(self.find, pattern)
@@ -156,6 +156,14 @@ module Path
       compact.select{|file| file.exists? }.uniq
   end
 
+  def glob_all(caller_lib = nil, search_paths = nil)
+    search_paths ||= self.search_paths || SEARCH_PATHS
+    search_paths = search_paths.dup
+
+    search_paths.keys.
+      collect{|where| Dir.glob(find(where, Path.caller_lib_dir, search_paths))}.
+      compact.flatten.collect{|path| Path.setup(path, self.resource, self.pkgdir)}
+  end
   #{{{ Methods
 
   def in_dir?(dir)

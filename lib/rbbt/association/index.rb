@@ -74,7 +74,7 @@ module Association
     end
 
     def subset(source, target)
-      return [] if source.nil? or target.nil?
+      return [] if source.nil? or target.nil? or source.empty? or target.empty?
 
       if source == :all or source == "all"
         if target == :all or target == "all"

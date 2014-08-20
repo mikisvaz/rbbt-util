@@ -78,21 +78,17 @@ void post_semaphore(char* name){
   end
 
   def self.fork_each_on_semaphore(elems, size, file = nil)
-    with_semaphore(size, file) do |file|
 
-      TSV.traverse elems, :cpus => size*2, :bar => "Fork each on semaphore: #{ file }" do |elem|
-        elems.annotate elem if elems.respond_to? :annotate
-        begin
-          RbbtSemaphore.synchronize(file) do
-            yield elem
-          end
-        rescue Interrupt
-          Log.warn "Process #{Process.pid} was aborted"
-        end
+    TSV.traverse elems, :cpus => size, :bar => "Fork each on semaphore: #{ Misc.fingerprint elems }", :into => Set.new do |elem|
+      elems.annotate elem if elems.respond_to? :annotate
+      begin
+        yield elem
+      rescue Interrupt
+        Log.warn "Process #{Process.pid} was aborted"
       end
-
+      nil
     end
-    true
+    nil
   end
 
   def self.thread_each_on_semaphore(elems, size)

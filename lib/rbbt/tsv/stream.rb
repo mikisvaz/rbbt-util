@@ -20,8 +20,6 @@ module TSV
     options = Misc.add_defaults options, :sep => "\t", :sort => true
     sort, sep, preamble = Misc.process_options options, :sort, :sep, :preamble
 
-
-
     out = Misc.open_pipe do |sin|
 
       streams = streams.collect do |stream|
@@ -72,6 +70,7 @@ module TSV
       key_field = key_fields.compact.first
       fields = fields.compact.flatten
       options = options.merge(input_options.first)
+      options[:type] = :list if options[:type] == :single
 
       preamble_txt = case preamble
                      when TrueClass
@@ -115,7 +114,6 @@ module TSV
           break if min.nil?
           str = []
           keys.each_with_index do |key,i|
-
             case key
             when min
               str << parts[i] * sep
