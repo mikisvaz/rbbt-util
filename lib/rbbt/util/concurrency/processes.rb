@@ -111,10 +111,12 @@ class RbbtProcessQueue
 
   def clean
     if (@process_monitor and @process_monitor.alive?) or (@callback_thread and @callback_thread.alive?)
-      self.abort
-    else
+      self.abort 
       self.join
     end
+
+    @queue.clean if @queue
+    @callback_queue.clean if @callback_queue
   end
 
   def abort

@@ -311,8 +311,8 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     head = 2_000
 
     Log.info Log.color :red, "TRAVERSE EXCEPTION"
-    stream = Organism.identifiers("Hsa/jun2011").open 
-    dumper = TSV::Dumper.new Organism.identifiers("Hsa/jun2011").tsv_options
+    stream = Organism.identifiers(Organism.default_code("Hsa")).open 
+    dumper = TSV::Dumper.new Organism.identifiers(Organism.default_code("Hsa")).tsv_options
     dumper.init
 
     assert_raise StopException do
@@ -332,8 +332,8 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     cpus = 2
 
     Log.info Log.color :red, "TRAVERSE EXCEPTION"
-    stream = Organism.identifiers("Hsa/jun2011").open 
-    dumper = TSV::Dumper.new Organism.identifiers("Hsa/jun2011").tsv_options
+    stream = Organism.identifiers(Organism.default_code("Hsa")).open 
+    dumper = TSV::Dumper.new Organism.identifiers(Organism.default_code("Hsa")).tsv_options
     dumper.init
 
     assert_raise ProcessFailed do

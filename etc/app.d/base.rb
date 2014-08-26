@@ -23,17 +23,19 @@ use Rack::Session::Cookie, :key => 'rack.session',
 
 
 #{{{ DIRECTORIES
-global_var = Rbbt.var
-local_var = Rbbt.var.app[$class_name]
+global_var = Rbbt.var.sinatra
+local_var = Rbbt.var.sinatra.app[$class_name]
 
-set :cache_dir           , local_var.sinatra.cache.find
-set :persist_dir         , local_var.sinatra.cache.persistence.find
+set :cache_dir           , local_var.cache
+set :persist_dir         , local_var.cache.persistence
 set :persist_options     , {:persist => true, :persist_dir => :persist_dir}
-set :file_dir            , local_var.sinatra.files.find
-set :permalink_dir       , local_var.sinatra.permalink.find
-set :favourites_dir      , local_var.sinatra.favourites.find
-set :favourite_lists_dir , local_var.sinatra.favourite_lists
-set :favourite_maps_dir  , local_var.sinatra.favourite_maps
+set :file_dir            , local_var.files
+set :permalink_dir       , local_var.permalink
+set :favourites_dir      , local_var.favourites
+set :favourite_lists_dir , local_var.favourite_lists
+set :favourite_maps_dir  , local_var.favourite_maps
+
+#set :finder, nil
 
 #{{{ WORKFLOWS
 

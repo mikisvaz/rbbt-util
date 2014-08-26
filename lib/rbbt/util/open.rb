@@ -430,6 +430,7 @@ module Open
   def self.write(file, content = nil, options = {})
     options = Misc.add_defaults options, :mode => 'w'
 
+    file = file.find(options[:where]) if Path === file
     mode = Misc.process_options options, :mode
 
     FileUtils.mkdir_p File.dirname(file)

@@ -16,13 +16,15 @@ module Association
 
     def reverse
       @reverse ||= begin
+                     persistence_path = self.persistence_path
+                     persistence_path = persistence_path.find if Path === persistence_path
                      reverse_filename = persistence_path + '.reverse'
 
                      if File.exists?(reverse_filename)
                        new = Persist.open_tokyocabinet(reverse_filename, false, serializer, TokyoCabinet::BDB)
                        new
                      else
-                       FileUtils.mkdir_p File.basename(reverse_filename) unless File.exists?(File.basename(reverse_filename))
+                       FileUtils.mkdir_p File.dirname(reverse_filename) unless File.exists?(File.basename(reverse_filename))
                        new = Persist.open_tokyocabinet(reverse_filename, true, serializer, TokyoCabinet::BDB)
                        new.write
                        through do |key, value|

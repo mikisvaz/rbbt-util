@@ -454,4 +454,14 @@ eum fugiat quo voluptas nulla pariatur?"
     end
     puts `ls -l /proc/#{ Process.pid }/fd`
   end
+
+  def test_bootstrap
+    Misc.bootstrap (0..10).to_a do
+      Misc.bootstrap (0..10).to_a do
+        Misc.bootstrap (0..10).to_a do
+          sleep 0.1
+        end
+      end
+    end
+  end
 end

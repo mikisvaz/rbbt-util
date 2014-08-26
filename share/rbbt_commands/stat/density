@@ -1,7 +1,3 @@
-#!/usr/bin/env ruby
-
-require 'rbbt'
-require 'rbbt/util/simpleopt'
 
 require 'rbbt/util/R'
 

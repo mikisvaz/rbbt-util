@@ -286,9 +286,8 @@ module Misc
              end
            end
 
-    #file = caller.first + rand(1000000).to_s if file.nil?
     index = (0..elems.length-1).to_a.collect{|v| v.to_s }
-    TSV.traverse index, :cpus => cpus, :bar => "Bootstrap in #{ cpus } cpus: #{ Misc.fingerprint elems }", :into => Set.new do |pos|
+    TSV.traverse index, :cpus => cpus, :bar => "Bootstrap in #{ cpus } cpus: #{ Misc.fingerprint Annotated.purge(elems) }", :into => Set.new do |pos|
       elem = elems[pos.to_i]
       elems.annotate elem if elems.respond_to? :annotate
       begin

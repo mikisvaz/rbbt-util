@@ -50,6 +50,16 @@ module Bgzf
                end
   end
 
+  def read_all
+    str = ""
+    while true
+      block = read_block
+      break if block.nil?
+      str << block
+    end
+    str
+  end
+
   def init
     _index
   end
@@ -119,7 +129,9 @@ module Bgzf
     block[offset..-1]
   end
 
-  def read(size)
+  def read(size=nil)
+    return read_all if size.nil?
+
     block = get_block 
     return "" if block.nil? or block.empty?
     len = block.length

@@ -336,38 +336,33 @@ module TSV
     begin
       callback, cleanup, join = Misc.process_options options, :callback, :cleanup, :join
 
-      begin
-        q = RbbtProcessQueue.new num, cleanup, join
-        q.callback &callback
-        q.init &block
+      q = RbbtProcessQueue.new num, cleanup, join
+      q.callback &callback
+      q.init &block
 
-        traverse_obj(obj, options) do |*p|
-          q.process *p
-        end
-      rescue Aborted, Errno::EPIPE
-        Log.medium "Aborted"
-      rescue Exception
-        Log.exception $!
-        raise $!
-      ensure
-        q.join
-        q.clean
+      traverse_obj(obj, options) do |*p|
+        q.process *p
       end
+
+      q.join
     rescue Interrupt, Aborted
-      Log.medium{"Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"}
       q.abort
+      Log.medium{"Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"}
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
       raise "Traversal aborted"
     rescue Exception
+      q.abort
       Log.medium "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.message}"
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
       raise $!
+    ensure
+      q.clean
     end
   end
 
