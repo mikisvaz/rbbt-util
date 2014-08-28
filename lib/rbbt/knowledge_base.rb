@@ -22,7 +22,7 @@ class KnowledgeBase
 
   attr_accessor :namespace, :dir, :indices, :registry, :format, :databases, :entity_options
   def initialize(dir, namespace = nil)
-    @dir = Path.setup(dir).find
+    @dir = Path.setup(dir.dup).find
 
     @namespace = namespace
     @format = IndiferentHash.setup({})
@@ -72,7 +72,9 @@ class KnowledgeBase
   end
 
   def all_databases
-    @registry.keys
+    @all_databases ||= begin
+                         @registry.keys 
+                       end
   end
 
   def description(name)
@@ -153,6 +155,59 @@ class KnowledgeBase
         end
       end
   end
+
+  def get_database(name, options = {})
+    key = name.to_s + "_" + Misc.digest(Misc.fingerprint([name,options]))
+    @databases[key] ||= 
+      begin 
+        Persist.memory("Database:" << [key, dir] * "@") do
+          persist_file = dir.indices[key]
+          options = Misc.add_defaults options, :persist_file => persist_file
+          persist_options = Misc.pull_keys options, :persist
+
+          database = if persist_file.exists?
+                    Log.low "Re-opening database #{ name } from #{ Misc.fingerprint persist_file }. #{options}"
+                    Association.open(nil, options, persist_options)
+                  else
+                    file, registered_options = registry[name]
+                    raise "Repo #{ name } not found and not registered" if file.nil?
+                    Log.low "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
+                    Association.open(file, options, persist_options)
+                  end
+
+          database.namespace = self.namespace
+
+          database
+        end
+      end
+  end
+
+  def get_index(name, options = {})
+    key = name.to_s + "_" + Misc.digest(Misc.fingerprint([name,options]))
+    @indices[key] ||= 
+      begin 
+        Persist.memory("Index:" << [key, dir] * "@") do
+          persist_file = dir.indices[key]
+          options = Misc.add_defaults options, :persist_file => persist_file
+          persist_options = Misc.pull_keys options, :persist
+
+          index = if persist_file.exists?
+                    Log.low "Re-opening index #{ name } from #{ Misc.fingerprint persist_file }. #{options}"
+                    Association.index(nil, options, persist_options)
+                  else
+                    file, registered_options = registry[name]
+                    raise "Repo #{ name } not found and not registered" if file.nil?
+                    Log.low "Opening index #{ name } from #{ Misc.fingerprint file }. #{options}"
+                    Association.index(file, options, persist_options)
+                  end
+
+          index.namespace = self.namespace
+
+          index
+        end
+      end
+  end
+
 
   #{{{ Add manual database
   
@@ -292,6 +347,8 @@ class KnowledgeBase
 
   def subset(name, entities)
     entities = case entities
+               when :all
+                 {:target => :all, :source => :all}
                when AnnotatedArray
                  format = entities.format if entities.respond_to? :format 
                  format ||= entities.base_entity.to_s

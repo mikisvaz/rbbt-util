@@ -528,6 +528,16 @@ module TSV
     new
   end
 
+  def column_values(field, options = {})
+    all = []
+    through :key, field do |k,values|
+      values = Array === values ? values.flatten : [values]
+      all.concat value
+    end
+    prepare_entity(all, field, options = {})
+  end
+
+
   def process_key(&block)
     new = annotate({})
     through do |key, values|

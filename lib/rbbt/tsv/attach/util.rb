@@ -34,12 +34,12 @@ module TSV
 
             new_values.flatten if type == :flat
 
-            self[key] = current.concat new_values
+            self[key] = current + new_values
           else
             if type == :double
-              self[key] = current.concat [[]] * fields.length
+              self[key] = current + [[]] * fields.length
             else
-              self[key] = current.concat [nil] * fields.length
+              self[key] = current + [nil] * fields.length
             end
           end
         end

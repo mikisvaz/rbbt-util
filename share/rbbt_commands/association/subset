@@ -19,6 +19,7 @@ Indicate the index file (TokyoCabinet BDB with source~target keys) as the <filen
 -t--target* Target entities
 -tsv--tsv* Output tsv
 EOF
+
 rbbt_usage and exit 0 if options[:help] 
 filename = ARGV.shift
 raise ParameterException, "No filename specified" if filename.nil?
