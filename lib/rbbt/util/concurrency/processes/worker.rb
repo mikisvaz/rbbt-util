@@ -51,6 +51,7 @@ class RbbtProcessQueue
                      3
                    end
 
+      status = nil
       begin
         @current = Process.fork do
           run
@@ -65,6 +66,7 @@ class RbbtProcessQueue
               if current > multiplier * initial
                 Process.kill "USR1", @current
               end
+              sleep 1
             end
           rescue
             Log.exception $!
@@ -90,9 +92,8 @@ class RbbtProcessQueue
       ensure
         @monitor_thread.kill
         Process.kill "INT", @current if Misc.pid_exists? @current
+        @callback_queue.close_write if @callback_queue 
       end
-
-      @callback_queue.close_write if @callback_queue 
 
       if status
         Kernel.exit! status.to_i >> 8

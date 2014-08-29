@@ -40,4 +40,3 @@ $annotation_repo = Rbbt.var.sinatra.annotation_repo.find
   end
 end if Rbbt.etc.persist_properties.exists?
 
-
