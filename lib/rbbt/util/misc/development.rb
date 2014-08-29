@@ -298,4 +298,8 @@ module Misc
       nil
     end
   end
+
+  def self.memory_use(pid=nil)
+    `ps -o rss -p #{pid || $$}`.strip.split.last.to_i
+  end
 end

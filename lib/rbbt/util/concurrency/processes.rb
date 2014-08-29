@@ -3,12 +3,13 @@ require 'rbbt/util/concurrency/processes/socket'
 
 class RbbtProcessQueue
 
-  attr_accessor :num_processes, :processes, :queue, :process_monitor, :cleanup, :join
-  def initialize(num_processes, cleanup = nil, join = nil)
+  attr_accessor :num_processes, :processes, :queue, :process_monitor, :cleanup, :join, :reswpan
+  def initialize(num_processes, cleanup = nil, join = nil, reswpan = nil)
     @num_processes = num_processes
     @processes = []
     @cleanup = cleanup
     @join = join
+    @respawn = reswpan
     @queue = RbbtProcessSocket.new
   end
 
@@ -48,7 +49,7 @@ class RbbtProcessQueue
 
   def init(&block)
     num_processes.times do |i|
-      @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, &block)
+      @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, &block)
     end
     @queue.close_read
 

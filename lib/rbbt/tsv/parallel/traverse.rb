@@ -334,9 +334,9 @@ module TSV
 
   def self.traverse_cpus(num, obj, options, &block)
     begin
-      callback, cleanup, join = Misc.process_options options, :callback, :cleanup, :join
+      callback, cleanup, join, respawn = Misc.process_options options, :callback, :cleanup, :join, :respawn
 
-      q = RbbtProcessQueue.new num, cleanup, join
+      q = RbbtProcessQueue.new num, cleanup, join, respawn
       q.callback &callback
       q.init &block
 

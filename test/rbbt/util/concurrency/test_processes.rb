@@ -69,8 +69,35 @@ class TestConcurrencyProcess < Test::Unit::TestCase
       sleep 2
       q.clean
 
+
       q.join
     end
+  end
+
+
+  def test_process_respawn
+    q = RbbtProcessQueue.new 2, nil, nil, true
+
+    res = []
+
+    q.callback do |v|
+      res << v
+    end
+
+    q.init do |i|
+      $str ||="-"
+      $str = $str *  (2 + rand(5).to_i)
+      sleep 0.1
+      "."
+    end
+
+    times = 50
+
+    times.times do |i|
+      q.process i
+    end
+
+    q.join
   end
 end
 
