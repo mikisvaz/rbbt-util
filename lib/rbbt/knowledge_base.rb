@@ -162,7 +162,7 @@ class KnowledgeBase
       begin 
         Persist.memory("Database:" << [key, dir] * "@") do
           persist_file = dir.indices[key]
-          options = Misc.add_defaults options, :persist_file => persist_file
+          options = Misc.add_defaults options, :persist_file => persist_file, :namespace => namespace
           persist_options = Misc.pull_keys options, :persist
 
           database = if persist_file.exists?
@@ -188,7 +188,7 @@ class KnowledgeBase
       begin 
         Persist.memory("Index:" << [key, dir] * "@") do
           persist_file = dir.indices[key]
-          options = Misc.add_defaults options, :persist_file => persist_file
+          options = Misc.add_defaults options, :persist_file => persist_file, :namespace => namespace
           persist_options = Misc.pull_keys options, :persist
 
           index = if persist_file.exists?
@@ -196,6 +196,7 @@ class KnowledgeBase
                     Association.index(nil, options, persist_options)
                   else
                     file, registered_options = registry[name]
+                    options = Misc.add_defaults options, registered_options
                     raise "Repo #{ name } not found and not registered" if file.nil?
                     Log.low "Opening index #{ name } from #{ Misc.fingerprint file }. #{options}"
                     Association.index(file, options, persist_options)
