@@ -376,7 +376,7 @@ class KnowledgeBase
   end
 
   def translate(entities, type)
-    if format = @format[type] and format != entities.format
+    if format = @format[type] and (entities.respond_to? :format and format != entities.format)
       entities.to format
     else
       entities
