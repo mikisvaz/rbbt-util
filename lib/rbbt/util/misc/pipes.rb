@@ -257,6 +257,7 @@ module Misc
           raise $! unless File.exists? path
         end
         content.join if content.respond_to? :join
+        FileUtils.touch path if File.exists? path
       rescue Aborted
         Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
         content.abort if content.respond_to? :abort
