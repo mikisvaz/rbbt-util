@@ -311,6 +311,7 @@ module Persist
   def self.persist(name, type = nil, persist_options = {}, &block)
     type ||= :marshal
 
+    persist_options ||= {}
     return (persist_options[:repo] || Persist::MEMORY)[persist_options[:file]] ||= yield if type ==:memory and persist_options[:file] and persist_options[:persist] and persist_options[:persist] != :update
 
     if FalseClass === persist_options[:persist]
