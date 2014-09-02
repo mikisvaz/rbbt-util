@@ -208,6 +208,7 @@ rescue ParameterException
 rescue SystemExit
 rescue Exception
   Log.exception $!
+  exit -1
 ensure
   if options[:profile]
     result = RubyProf.stop
