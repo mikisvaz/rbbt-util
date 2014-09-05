@@ -1,5 +1,3 @@
-require 'zurb-foundation'
-require 'modular-scale'
 
 require 'rbbt'
 require 'rbbt/rest/main'

@@ -26,7 +26,18 @@ module Misc
   def self.sd(list)
     return nil if list.length < 3
     mean = mean(list)
-    Math.sqrt(list.compact.inject(0.0){|acc,e| d = e - mean; acc += d * d}) / (list.compact.length - 1)
+    list = list.compact
+    list_length = list.length
+
+    total_square_distance = 0
+    list.each do |value|
+      distance = value - mean
+      total_square_distance += distance * distance
+    end
+
+    variance = total_square_distance / (list_length - 1)
+    Math.sqrt(variance)
+    #Math.sqrt(list.compact.inject(0.0){|acc,e| d = e - mean; acc += d * d; acc}) / (list.compact.length - 1)
   end
 
   def self.counts(array)

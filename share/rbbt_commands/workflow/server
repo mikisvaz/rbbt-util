@@ -17,50 +17,22 @@ options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environ
 
 workflow = ARGV.first
 
-YAML::ENGINE.yamler = 'syck' if defined? YAML::ENGINE and YAML::ENGINE.respond_to? :yamler
-
 wf = Workflow.require_workflow workflow
 
-class WorkflowRest < Sinatra::Base
-  self
-end.get '/' do
+$title = wf.to_s
+
+load Rbbt.etc['app.d/init.rb'].find
+
+app = class WorkflowRest < Sinatra::Base; self end
+
+app.register Sinatra::RbbtRESTWorkflow
+app.get '/' do
   redirect to(File.join('/', wf.to_s))
 end
+app.instance_eval Rbbt.etc['app.d/base.rb'].read
+app.use Rack::Deflater
 
-ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
-
-class WorkflowRest < Sinatra::Base
-   
-  #{{{ MODULES AND HELPERS
-  register Sinatra::RbbtRESTMain
-  register Sinatra::RbbtRESTWorkflow
-  register Sinatra::RbbtRESTEntity
-  register Sinatra::RbbtRESTKnowledgeBase
-  helpers Sinatra::RbbtMiscHelpers
-
-  #{{{ DIRECTORIES
-  local_var = Rbbt.var.find(:user)
-  set :cache_dir           , local_var.sinatra.cache.find
-  set :file_dir            , local_var.sinatra.files.find
-  set :favourites_dir      , local_var.sinatra.favourites.find
-  set :favourite_lists_dir , local_var.sinatra.favourite_lists
-
-  #{{{ SESSIONS
-  use Rack::Session::Cookie, :key => 'rack.session',
-    :path => '/',
-    :expire_after => 2592000,
-    :secret => "Workflow #{Workflow.workflows.inspect} secret!!"
-
-  #{{{ FOUNDATION RESOURCES
-  add_sass_load_path "#{Gem.loaded_specs['compass'].full_gem_path}/frameworks/compass/stylesheets"
-  add_sass_load_path "#{Gem.loaded_specs['zurb-foundation'].full_gem_path}/scss/" 
-  add_sass_load_path "#{Gem.loaded_specs['modular-scale'].full_gem_path}/stylesheets/" 
-  RbbtRESTHelpers.javascript_resources << Path.setup("#{Gem.loaded_specs['zurb-foundation'].full_gem_path}/js/foundation")
-  RbbtRESTHelpers.javascript_resources << Path.setup("#{Gem.loaded_specs['zurb-foundation'].full_gem_path}/js/vendor")
-
-  $title = "Workflow Scout"
-  use Rack::Deflater
-end
+load Rbbt.etc['app.d/resources.rb'].find
 
 WorkflowRest.add_workflow wf, true
 

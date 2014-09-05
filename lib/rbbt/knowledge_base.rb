@@ -192,7 +192,7 @@ class KnowledgeBase
           file, registered_options = registry[name]
 
           options = Misc.add_defaults options, :persist_file => persist_file, :namespace => namespace, :format => format
-          options = Misc.add_defaults options, registered_options
+          options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
 
           persist_options = Misc.pull_keys options, :persist
 

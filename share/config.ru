@@ -3,14 +3,18 @@ require 'rbbt/resource'
 $LOAD_PATH.unshift('lib') unless $LOAD_PATH.include?('lib')
 
 def load_file(file)
-  if file.exists?
+  if Array === file
+    file.each{|f| load_file f }
+  elsif file.exists?
     Log.info("Loading: " << file)
     load file
   end
 end
 
 def app_eval(app, file)
-  if file.exists?
+  if Array === file
+    file.each{|f| app_eval app, f }
+  elsif file.exists?
     app.class_eval do
       Log.info("Loading: " << file)
       eval file.read, nil, file
@@ -27,6 +31,9 @@ $app = app = eval "class #{class_name} < Sinatra::Base; self end"
 #{{{ PRE
 load_file Rbbt.etc['app.d/pre.rb'].find 
 
+#{{{ WORKFLOWS
+app_eval app, Rbbt.etc['app.d/workflows.rb'].find_all
+
 #{{{ BASE
 app_eval app, Rbbt.etc['app.d/base.rb'].find
 
@@ -37,16 +44,16 @@ load_file Rbbt.etc['app.d/resources.rb'].find
 load_file Rbbt.etc['app.d/entities.rb'].find
 
 #{{{ ROUTES
-app_eval app, Rbbt.etc['app.d/routes.rb'].find
+app_eval app, Rbbt.etc['app.d/routes.rb'].find_all
 
 #{{{ FINDER
 app_eval app, Rbbt.etc['app.d/finder.rb'].find
 
 #{{{ POST
-load_file Rbbt.etc['app.d/post.rb'].find 
+load_file Rbbt.etc['app.d/post.rb'].find_all
 
 #{{{ PRELOAD
-load_file Rbbt.etc['app.d/preload.rb'].find 
+load_file Rbbt.etc['app.d/preload.rb'].find_all
 
 #{{{ RUN
 $title = class_name
