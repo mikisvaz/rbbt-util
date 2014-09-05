@@ -70,4 +70,26 @@ module Task
       exec_in *args
     end
   end
+
+  def self.dep_inputs(deps, workflow = nil)
+    seen = []
+    task_inputs = {}
+    deps.each do |dep|
+      wf, task = (Array === dep ? [dep.first, dep.first.tasks[dep[1].to_sym]] : [workflow, workflow.tasks[dep.to_sym]])
+      maps = (Array === dep and Hash === dep.last) ? dep.last.keys : []
+      next if seen.include? [wf, task.name]
+      seen << [wf, task.name]
+      new_inputs = task.inputs - maps
+      next unless new_inputs.any?
+      task_inputs[task] = new_inputs
+    end
+    task_inputs
+  end
+
+  def dep_inputs(deps, workflow = nil)
+    task_inputs = Task.dep_inputs deps, workflow
+    task_inputs.each do |task, inputs|
+      inputs.replace (inputs - self.inputs)
+    end
+  end
 end

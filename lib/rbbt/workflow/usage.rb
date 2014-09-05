@@ -28,13 +28,8 @@ module Task
       puts Log.color(:magenta, "Inputs from dependencies:")
       puts
       seen = []
-      deps.each do |dep|
-        task = Array === dep ? dep.first.tasks[dep[1].to_sym] : workflow.tasks[dep.to_sym]
-        maps = (Array === dep and Hash === dep.last) ? dep.last.keys : []
-        next if seen.include? task.name
-        seen << task.name
-        new_inputs = (task.inputs - self.inputs - maps)
-        next unless new_inputs.any?
+      task_inputs = dep_inputs deps, workflow
+      task_inputs.each do |task,new_inputs|
         puts "  #{Log.color :yellow, task.name.to_s}:"
         puts
         puts SOPT.input_doc(new_inputs, task.input_types, task.input_descriptions, task.input_defaults, true)

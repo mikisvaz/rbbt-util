@@ -461,6 +461,12 @@ module Workflow
     [taskname].concat(rec_dependencies(taskname)).inject([]){|acc, tn| acc.concat(task_from_dep(tn).inputs) }.uniq
   end
 
+  def rec_inputs(taskname)
+    task = task_from_dep(taskname)
+    dep_inputs = task.dep_inputs rec_dependencies(taskname), self
+    task.inputs + dep_inputs.values.flatten
+  end
+
   def rec_input_defaults(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject(IndiferentHash.setup({})){|acc, tn|
       new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_defaults
