@@ -26,7 +26,7 @@ source('#{UTIL}');
     Log.debug{"R Script:\n#{ cmd }"}
 
     if options.delete :monitor
-      io = CMD.cmd('R --vanilla --slave --quiet', options.merge(:in => cmd, :pipe => true))
+      io = CMD.cmd('R --vanilla --slave --quiet', options.merge(:in => cmd, :pipe => true, :log => true))
       while line = io.gets
         puts line
       end
@@ -85,8 +85,8 @@ module TSV
   def R(script, open_options = {})
     TmpFile.with_file do |f|
       Open.write(f, self.to_s)
-      io = R.run(
-      <<-EOF
+
+      script = <<-EOF
 ## Loading tsv into data
 data = rbbt.tsv('#{f}');
 
@@ -95,9 +95,10 @@ data = rbbt.tsv('#{f}');
 ## Resaving data
 if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
       EOF
-      )
 
-      Log.debug(io.read)
+      r_options = Misc.pull_keys open_options, :R
+      io = R.run script, r_options
+
 
       open_options = Misc.add_defaults open_options, :type => :list
       if open_options[:raw]

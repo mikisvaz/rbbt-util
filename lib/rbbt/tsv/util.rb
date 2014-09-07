@@ -90,7 +90,13 @@ module TSV
       file.stream
     when Path
       file.open(open_options)
-    when IO, StringIO, File, Tempfile
+    when (defined? Tempfile and Tempfile)
+      begin
+        file.rewind if file.respond_to?(:rewind) and file.eof?
+      rescue
+      end
+      file
+    when IO, StringIO, File
       begin
         file.rewind if file.respond_to?(:rewind) and file.eof?
       rescue
