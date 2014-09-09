@@ -16,6 +16,7 @@ require 'rbbt/tsv/filter'
 require 'rbbt/tsv/field_index'
 require 'rbbt/tsv/parallel'
 require 'rbbt/tsv/stream'
+require 'rbbt/tsv/melt'
 
 module TSV
   class << self
@@ -58,7 +59,7 @@ module TSV
     unnamed = Misc.process_options options, :unnamed
     entity_options = Misc.process_options options, :entity_options
 
-    Log.debug "TSV open: #{ filename } - #{options.inspect}.#{unnamed ? " [unnamed]" : "[not unnamed]"}"
+    Log.debug "TSV open: #{ filename } - #{Misc.fingerprint options }.#{unnamed ? " [unnamed]" : "[not unnamed]"}"
 
     data = nil
 
@@ -118,6 +119,7 @@ module TSV
       Parser.new stream, options
     end
   end
+
   def self.parse(stream, data, options = {})
 
     parser = TSV::Parser.new stream, options

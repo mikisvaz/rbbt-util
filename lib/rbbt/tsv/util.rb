@@ -86,6 +86,10 @@ module TSV
       file
     when (defined? Bgzf and Bgzf)
       file
+    when TSV
+      file
+    when TSV::Dumper
+      file.stream
     when TSV::Parser
       file.stream
     when Path
@@ -117,8 +121,6 @@ module TSV
         file.join
         get_stream(file.path)
       end
-    when TSV::Dumper
-      file.stream
     when Array
       Misc.open_pipe do |sin|
         file.each do |l|

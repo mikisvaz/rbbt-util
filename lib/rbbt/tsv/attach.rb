@@ -200,10 +200,10 @@ module TSV
       Log.debug "Attachment with same key: #{other.key_field}"
       attach_same_key other, fields
     when (not in_namespace and self.fields.include?(other.key_field))
-      Log.debug "Found other's key field: #{other.key_field}"
+      Log.debug "Found other key field: #{other.key_field}"
       attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
     when (in_namespace and self.fields_in_namespace.include?(other.key_field))
-      Log.debug "Found other's key field in #{in_namespace}: #{other.key_field}"
+      Log.debug "Found other key field in #{in_namespace}: #{other.key_field}"
       attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
     else
       index = TSV.find_traversal(self, other, options)

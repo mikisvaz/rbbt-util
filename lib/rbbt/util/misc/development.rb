@@ -1,5 +1,9 @@
 module Misc
 
+  def self.add_libdir(dir)
+    $LOAD_PATH.unshift(dir) unless $LOAD_PATH.include? dir
+  end
+
   def self.pre_fork
     Persist::CONNECTIONS.values.each do |db| db.close if db.write? end
     ObjectSpace.each_object(Mutex) do |m| 

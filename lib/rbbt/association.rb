@@ -76,7 +76,7 @@ module Association
       :fields => fields.collect{|f| String === f ? all_fields.index(f): f },
       #:type => (options[:type] and options[:type].to_sym == :flat) ? :flat : nil,
       :unnamed => true,
-      :merge => (options[:type] and options[:type].to_sym == :flat) ? false : true
+      :merge => (options[:merge] or (options[:type] and options[:type].to_sym == :flat) ? false : true)
     })
 
     open_options["header_hash"] = "#" if options["header_hash"] == ""
@@ -259,10 +259,10 @@ module Association
   #  Persist.open_tokyocabinet(index_file, write, :list, TokyoCabinet::BDB).tap{|r| r.unnamed = true; Association::Index.setup r }
   #end
 
-  def self.index(file, options = {}, persist_options = {})
+  def self.index(file, options = {}, persist_options = nil)
     options = {} if options.nil?
     options = Misc.add_defaults options, :persist => true
-    persist_options = {} if persist_options.nil?
+    persist_options = Misc.pull_keys options, persist_options if persist_options.nil?
 
     Persist.persist_tsv(file, nil, options, {:persist => true, :prefix => "Association Index"}.merge(persist_options).merge(:engine => TokyoCabinet::BDB, :serializer => :clean)) do |assocs|
       undirected = options[:undirected]

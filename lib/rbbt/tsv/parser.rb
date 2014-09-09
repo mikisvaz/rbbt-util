@@ -128,16 +128,18 @@ module TSV
       [keys, [value]]
     end
 
-    def get_values_flat(parts)
+
+    def get_values_flat_merge(parts)
       begin
         orig = parts
-      if key_position and key_position != 0 and field_positions.nil?
-        value = parts.shift
-        keys = parts.dup
-        return [keys, [value]]
-      end
 
-        return parts.shift.split(@sep2, -1).first, parts.collect{|value| value.split(@sep2, -1)}.flatten if 
+        if key_position and key_position != 0 and field_positions.nil?
+          value = parts.shift.split(@sep2, -1)
+          keys = parts.collect{|p| p.split(@sep2, -1) }.flatten
+          return [keys, value]
+        end
+
+        return parts.shift.split(@sep2, -1), parts.collect{|value| value.split(@sep2, -1)}.flatten if 
         field_positions.nil? and (key_position.nil? or key_position == 0)
       rescue
         raise $!
@@ -159,18 +161,22 @@ module TSV
         values = values.split(@sep2, -1)
       end
 
+      [keys, values]
+    end
+
+    def get_values_flat(parts)
+      keys, values = get_values_flat_merge(parts)
       [keys.first, values]
     end
+
 
     def add_to_data_no_merge_list(data, key, values)
       data[key] = values unless data.include? key
       nil
     end
 
-    def add_to_data_flat_keys(data, keys, values)
-      keys.each do |key|
-        data[key] = values unless data.include? key
-      end
+    def add_to_data_flat_keys(data, key, values)
+      data[key] = values unless data.include? key
       nil
     end
 
@@ -184,6 +190,17 @@ module TSV
         data[key] = data[key].concat values
       else
         data[key] = values
+      end
+      nil
+    end
+
+    def add_to_data_flat_merge_double(data, keys, values)
+      keys.each do |key|
+        if data.include? key
+          data[key] = data[key].concat values
+        else
+          data[key] = values
+        end
       end
       nil
     end
@@ -346,7 +363,7 @@ module TSV
               raise "Field not identified: #{ field }" if pos.nil?
               pos
             else
-              raise "Format of fields not understood: #{fields.inspect}"
+              raise "Format of fields not understood: #{field.inspect}"
             end
           }
         end
@@ -423,15 +440,17 @@ module TSV
         self.instance_eval do alias add_to_data add_to_data_no_merge_list end
       when :flat
         @take_all = true if field_positions.nil?
-        self.instance_eval do alias get_values get_values_flat end
         self.instance_eval do alias cast_values cast_values_flat end
-        if merge
+        merge = true if key_position and key_position != 0 and field_positions.nil?
+        if merge 
+          self.instance_eval do alias get_values get_values_flat_merge end
           if key_position and key_position != 0 and field_positions.nil?
             self.instance_eval do alias add_to_data add_to_data_flat_merge_keys end
           else
-            self.instance_eval do alias add_to_data add_to_data_flat_merge end
+            self.instance_eval do alias add_to_data add_to_data_flat_merge_double end
           end
         else
+          self.instance_eval do alias get_values get_values_flat end
           if key_position and key_position != 0 and field_positions.nil?
             self.instance_eval do alias add_to_data add_to_data_flat_keys end
           else

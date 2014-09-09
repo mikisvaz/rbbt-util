@@ -5,7 +5,7 @@ require 'test/unit'
 
 class TestTSV < Test::Unit::TestCase
 
-  def test_extend
+  def _test_extend
     a = {
       "one" => "1", 
       "two" => "2"
@@ -18,7 +18,7 @@ class TestTSV < Test::Unit::TestCase
     assert_equal "1", a["one"]
   end
   
-  def test_tsv
+  def _test_tsv
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -41,7 +41,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_headerless
+  def _test_headerless
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -54,7 +54,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_headerless_fields
+  def _test_headerless_fields
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -68,7 +68,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_tsv_persistence
+  def _test_tsv_persistence
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -94,7 +94,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_tsv_field_selection
+  def _test_tsv_field_selection
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -136,7 +136,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_tsv_cast
+  def _test_tsv_cast
     content =<<-EOF
 #Id    Value
 row1    1|2|3
@@ -151,7 +151,7 @@ row2    4
     end
   end
 
-  def test_tsv_single
+  def _test_tsv_single
     content =<<-EOF
 #Id    Value
 row1    1
@@ -168,7 +168,7 @@ row2    4
     end
   end
 
-  def test_tsv_single_from_flat
+  def _test_tsv_single_from_flat
     content =<<-EOF
 #: :type=:flat
 #Id    Value
@@ -183,7 +183,7 @@ row2    4
   end
 
 
-  def test_tsv_serializer
+  def _test_tsv_serializer
     content =<<-EOF
 #Id    Value
 row1    1
@@ -197,7 +197,7 @@ row2    4
     end
   end
 
-  def test_tsv_header_options
+  def _test_tsv_header_options
     content =<<-EOF
 #: :sep=/\\s+/
 #Id Value
@@ -211,7 +211,7 @@ row2    4
     end
   end
 
-  def test_tsv_fastimport
+  def _test_tsv_fastimport
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -228,7 +228,7 @@ row3    AA    B    Id3
     end
   end
 
-  def test_header_type
+  def _test_header_type
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -244,7 +244,7 @@ row3    AA    B    Id3
  
   end
 
-  def test_single_cast
+  def _test_single_cast
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single#:cast=:to_i
 #Id Value
@@ -259,7 +259,7 @@ b 2
     end
   end
 
-  def test_key_field
+  def _test_key_field
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -275,7 +275,7 @@ b 2
     end
   end
 
-  def test_fix
+  def _test_fix
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -289,7 +289,7 @@ b 2
     end
   end
 
-  def test_select
+  def _test_select
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -303,7 +303,7 @@ b 2
     end
   end
 
-  def test_grep
+  def _test_grep
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -317,7 +317,7 @@ b 2
     end
   end
 
-  def test_grep_invert
+  def _test_grep_invert
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -331,7 +331,7 @@ b 2
     end
   end
 
-  def test_grep_header
+  def _test_grep_header
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single#:namespace=Test
 #Id Value
@@ -346,7 +346,7 @@ b 2
     end
   end
 
-  def test_json
+  def _test_json
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -361,7 +361,7 @@ b 2
  
   end
 
-  def test_flat_no_merge
+  def _test_flat_no_merge
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -377,7 +377,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_flat_merge
+  def _test_flat_merge
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -399,12 +399,12 @@ row2   b  bbb bbbb bb
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :sep => /\s+/, :merge => true, :type => :flat, :fields => ["ValueA"])
+      tsv = TSV.open(filename, :sep => /\s+/, :merge => false, :type => :flat, :fields => ["ValueA"])
       assert_equal ["a", "aa", "aaa"], tsv["row1"]
     end
   end
 
-  def test_flat_key
+  def _test_flat_key
     content =<<-EOF
 #Id    ValueA 
 row1   a   aa   aaa
@@ -420,7 +420,7 @@ row2   b  bbb bbbb bb aa
 
 
 
-  def test_zipped
+  def _test_zipped
     content =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b|bb|bbb
@@ -433,7 +433,7 @@ row2    a|aa|aaa    c|cc|ccc
     end
   end
 
-  def test_named_array_key
+  def _test_named_array_key
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -448,7 +448,7 @@ row2    A    B    Id3
  
   end
 
-  def test_unnamed_key
+  def _test_unnamed_key
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -461,7 +461,7 @@ row2    A    B    Id3
  
   end
 
-  def test_float_array
+  def _test_float_array
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1   0.2   0.3 0
@@ -476,7 +476,7 @@ row2    0.1  4.5 0
  
   end
 
-  def test_flat_field_select
+  def _test_flat_field_select
     content =<<-EOF
 #: :type=:flat
 #Id    Value
@@ -485,11 +485,12 @@ row2    b  bb bbb
     EOF
 
     TmpFile.with_file(content) do |filename|
+      puts TSV.open(filename, :sep => /\s+/, :key_field => "Value").to_s
       assert TSV.open(filename, :sep => /\s+/, :key_field => "Value").include? "aa"
     end
   end
 
-  def test_flat2
+  def _test_flat2
     content =<<-EOF
 #: :type=:flat
 #Id    Value
@@ -503,10 +504,25 @@ row2    A|AA|AAA
       assert TSV.open(filename, :sep => /\s+/, :type => :flat, :key_field => "Id")["row1"].include? "a"
       assert TSV.open(filename, :sep => /\s+/, :type => :flat, :key_field => "Id", :fields => ["Value"])["row1"].include? "a"
     end
- 
   end
 
-  def test_flat2single
+
+  def _test_tsv_flat_double
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :type => :flat, :key_field => "ValueA", :fields => ["OtherID"], :merge => true)
+      assert tsv["aaa"].include? "Id1"
+      assert tsv["aaa"].include? "Id2"
+ 
+    end
+  end
+
+  def _test_flat2single
     content =<<-EOF
 #: :type=:flat
 #Id    Value
@@ -520,7 +536,7 @@ row2    A AA AAA
  
   end
 
-  def test_shard
+  def _test_shard
     shard_function = Proc.new do |key|
       key[-1]
     end

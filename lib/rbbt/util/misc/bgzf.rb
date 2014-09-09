@@ -33,7 +33,7 @@ module Bgzf
 
   def _index
     @_index ||= begin
-                  index = Persist.persist("BGZF index" + filename.sub(/.bgz$/,''), :marshal, :dir => Rbbt.var.bgzf_index) do
+                  index = Persist.persist("BGZF index" + (filename || "").sub(/.bgz$/,''), :marshal, :dir => Rbbt.var.bgzf_index) do
                     index = []
                     pos = 0
                     while true do
