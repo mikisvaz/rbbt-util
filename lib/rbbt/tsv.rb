@@ -73,12 +73,13 @@ module TSV
 
         open_options = Misc.pull_keys options, :open
 
-        stream = get_stream source, open_options
+        stream = get_stream source, options.merge(open_options)
         parse stream, data, options
 
         data.filename = filename.to_s unless filename.nil?
+
         if data.identifiers.nil? and Path === filename and filename.identifier_file_path
-          data.identifiers = filename.identifier_file_path.to_s
+          data.identifiers = filename.identifier_file_path.find if filename.identifier_file_path.exists?
         end
 
         data

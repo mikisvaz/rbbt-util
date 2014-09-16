@@ -91,9 +91,10 @@ module Path
 
   def find(where = nil, caller_lib = nil, paths = nil)
     @path ||= {}
-    key = Misc.digest([where, caller_lib, paths].inspect)
+    rsearch_paths = (resource and resource.respond_to?(:search_paths)) ? resource.search_paths : nil 
+    key = Misc.digest([where, caller_lib, rsearch_paths, paths].inspect)
     @path[key] ||= begin
-                     paths = (self.search_paths || SEARCH_PATHS).merge(paths || {})
+                     paths = [paths, rsearch_paths, self.search_paths, SEARCH_PATHS].reverse.compact.inject({}){|acc,h| acc.merge! h; acc }
                      where = paths[:default] if where == :default
                      return self if located?
                      if self.match(/(.*?)\/(.*)/)
@@ -131,11 +132,14 @@ module Path
                          libdir = "NOLIBDIR"
                        end
                        pwd = FileUtils.pwd
-                       path = paths[where].
+                       path = paths[where]
+                       path = File.join(path, "{PATH}") unless path.include? "PATH}" or path.include? "{BASENAME}"
+                       path = path.
                          sub('{PKGDIR}', pkgdir).
                          sub('{PWD}', pwd).
                          sub('{TOPLEVEL}', toplevel).
                          sub('{SUBPATH}', subpath).
+                         sub('{BASENAME}', File.basename(self)).
                          sub('{PATH}', self).
                          sub('{LIBDIR}', libdir) #, @pkgdir, @resource, @search_paths
 
@@ -223,7 +227,7 @@ module Path
   end
 
   def tsv(*args)
-    TSV.open(self.produce, *args)
+    TSV.open(self.produce.find, *args)
   end
 
   def tsv_options(options = {})

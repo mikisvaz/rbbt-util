@@ -11,17 +11,36 @@ module Association
   end
 
   def self.add_reciprocal(tsv)
-
-    new = tsv.dup
+    tsv = tsv.type == :double ? tsv : tsv.to_double
+    new = TSV.open(tsv.dumper_stream)
     tsv.with_unnamed do
       tsv.through do |source, values|
-        Misc.zip_fields(values).each do |_target_values|
-          target, *target_values = _target_values
-          if new[target].nil?
-            new[target] = [[source]] + target_values.collect{|v| [v] }
-          else
-            new[target].first << source
-            new[target][1..-1].zip(target_values).each{|list,elem| list << elem }
+        next if values.flatten.compact.empty?
+        if values.length > 1
+          Misc.zip_fields(values).each do |_target_values|
+            target, *target_values = _target_values
+            if new[target].nil?
+              new_values = [[source]] + target_values.collect{|v| [v] }
+              new[target] = new_values
+            else
+              new_values = new[target].collect{|l| l.dup }
+              targets = new_values.shift
+              targets << source
+              rest = new_values.zip(target_values).collect do |o,n|
+                o << n
+                o
+              end
+              new_values = [targets] + rest
+              new[target] = new_values
+            end
+          end
+        else
+          values.first.each do |target|
+            if new[target].nil?
+              new[target] = [[source]]
+            else
+              new[target] = [new[target][0] + [source]]
+            end
           end
         end
       end
@@ -61,7 +80,7 @@ module Association
   end
 
   #{{{ Open
-  
+
   def self.open_tsv(file, source, source_header, target, target_header, all_fields, options)
     fields = Misc.process_options options, :fields
     fields ||= all_fields.dup
@@ -74,7 +93,6 @@ module Association
       :persist => false,
       :key_field => all_fields.index(source), 
       :fields => fields.collect{|f| String === f ? all_fields.index(f): f },
-      #:type => (options[:type] and options[:type].to_sym == :flat) ? :flat : nil,
       :unnamed => true,
       :merge => (options[:merge] or (options[:type] and options[:type].to_sym == :flat) ? false : true)
     })
@@ -88,7 +106,6 @@ module Association
             if file.fields == field_headers
               file
             else
-              iii :reorder
               file.reorder(source, field_headers)
             end
           else
@@ -200,7 +217,7 @@ module Association
   end
 
   def self.load_tsv(file, options)
-    undirected = Misc.process_options options, :undirected
+    undirected = options[:undirected]
 
     case file
     when Proc
@@ -261,7 +278,7 @@ module Association
 
   def self.index(file, options = {}, persist_options = nil)
     options = {} if options.nil?
-    options = Misc.add_defaults options, :persist => true
+    options = Misc.add_defaults options, :persist => true, :undirected => false
     persist_options = Misc.pull_keys options, persist_options if persist_options.nil?
 
     Persist.persist_tsv(file, nil, options, {:persist => true, :prefix => "Association Index"}.merge(persist_options).merge(:engine => TokyoCabinet::BDB, :serializer => :clean)) do |assocs|
@@ -270,7 +287,10 @@ module Association
         tsv = TSV === file ? file : Association.open(file, options, persist_options.merge(:persist => false))
 
         fields = tsv.fields
-        key_field = [tsv.key_field, fields.first.split(":").last, undirected ? "undirected" : nil].compact * "~"
+        source_field = tsv.key_field
+        target_field = fields.first.split(":").last
+
+        key_field = [source_field, target_field, undirected ? "undirected" : nil].compact * "~"
 
         TSV.setup(assocs, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => :list)
 
@@ -299,7 +319,7 @@ module Association
             when :double
               tsv.through do |source, values|
                 next if values.empty?
-                next if source.nil?
+                next if source.nil? or source.empty?
                 next if values.empty?
                 targets = values.first
                 rest = Misc.zip_fields values[1..-1]
@@ -309,9 +329,15 @@ module Association
                   targets.zip(rest * targets.length) 
 
                 annotations.each do |target, info|
-                  next if target.nil?
+                  next if target.nil? or target.empty?
                   key = [source, target] * "~"
-                  assocs[key] = info
+                  if assocs[key].nil? or info.nil?
+                    assocs[key] = info
+                  else
+                    old_info = assocs[key]
+                    info = old_info.zip(info).collect{|p| p * ";;" }
+                    assocs[key] = info
+                  end
                 end
               end
             else

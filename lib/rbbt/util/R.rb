@@ -49,6 +49,41 @@ source('#{UTIL}');
     end
   end
 
+  def self.console(script, options = {})
+    TmpFile.with_file do |init_file|
+       Open.write(init_file) do |f|
+          f.puts "# Loading basic rbbt environment"
+          f.puts "library(utils);\n"
+          f.puts "source('#{R::UTIL}');\n"
+          f.puts 
+          f.puts script
+        end
+
+       pid = Process.fork do |ppid|
+         ENV["R_PROFILE"] = init_file
+         exec("R")
+       end
+
+       begin
+         Process.waitpid pid
+       rescue Interrupt
+         if Misc.pid_exists? pid
+           Process.kill "INT", pid
+           retry
+         else
+           raise $!
+         end
+       rescue Exception
+         Process.kill 9, pid if Misc.pid_exists? pid
+         raise $!
+       ensure
+         Process.waitpid pid if Misc.pid_exists? pid
+       end
+
+    end
+  end
+
+
   def self.ruby2R(object)
     case object
     when nil
@@ -114,12 +149,24 @@ if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
 
   def R_interactive(pre_script = nil)
     TmpFile.with_file do |f|
-      Log.debug{"R Script:\n" << pre_script }
+      Log.debug{"R Interactive:\n" << pre_script } if pre_script
       TmpFile.with_file(pre_script) do |script_file|
         Open.write(f, self.to_s)
         script = "data_file = '#{f}';\n"
         script << "script_file = '#{script_file}';\n" if pre_script
         R.interactive(script)
+      end
+    end
+  end
+
+  def R_console(pre_script = nil)
+    TmpFile.with_file do |f|
+      Log.debug{"R Console:\n" << pre_script } if pre_script
+      TmpFile.with_file(pre_script) do |script_file|
+        Open.write(f, self.to_s)
+        script = "data_file = '#{f}';\n"
+        script <<  "\n#\{{{Pre-script:\n\n" << pre_script << "\n#}}}Pre-script\n\n"
+        R.console(script)
       end
     end
   end

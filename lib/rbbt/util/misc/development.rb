@@ -1,6 +1,7 @@
 module Misc
 
-  def self.add_libdir(dir)
+  def self.add_libdir(dir=nil)
+    dir ||= File.join(Path.caller_lib_dir(caller.first), 'lib')
     $LOAD_PATH.unshift(dir) unless $LOAD_PATH.include? dir
   end
 

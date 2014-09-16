@@ -170,8 +170,6 @@ rbbt.png_plot <- function(filename, width, height, p, ...){
 }
 
 rbbt.heatmap <- function(filename, width, height, data, take_log=FALSE, ...){
-    require(gplots, quietly = TRUE, warn.conflicts = FALSE)
-    library(pls, quietly = TRUE, warn.conflicts = FALSE)
     opar = par()
     png(filename=filename, width=width, height=height);
 

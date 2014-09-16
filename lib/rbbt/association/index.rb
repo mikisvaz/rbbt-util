@@ -47,6 +47,7 @@ module Association
     end
 
     def match(entity)
+      return entity.inject([]){|acc,e| acc.concat match(e); acc } if Array === entity
       return [] if entity.nil?
       prefix(entity + "~")
     end

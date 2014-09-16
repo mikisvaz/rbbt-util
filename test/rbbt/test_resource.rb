@@ -24,20 +24,30 @@ end
 
 class TestTSV < Test::Unit::TestCase
 
-  def test_rake
+  def test_tsv
+    require 'rbbt/tsv'
+    TestResource.claim TestResource.tmp.test.test_tsv, :proc do 
+      tsv = {"a" => 1, "b" => 2}
+      TSV.setup(tsv, :key_field => "Letter", :fields => ["Value"], :type => :single)
+    end
+    iii TestResource.tmp.test.test_tsv.produce
+    Log.tsv TestResource.tmp.test.test_tsv.tsv
+  end
+
+  def _test_rake
     TestResource.tmp.test.work.footest.foo.read == "TEST"
     assert TestResource.tmp.test.work.footest.foo.read == "TEST"
   end
 
-  def test_proc
+  def _test_proc
     assert TestResource.tmp.test.proc.read == "PROC TEST"
   end
 
-  def test_string
+  def _test_string
     assert TestResource.tmp.test.string.read == "TEST"
   end
 
-  def test_url
+  def _test_url
     assert TestResource[].tmp.test.google.read =~ /google/
   end
 
@@ -59,7 +69,7 @@ class TestTSV < Test::Unit::TestCase
     assert_equal File.join(ENV['HOME'], '.phgx/etc/foo'), Path.setup('etc/foo', 'phgx').find()
   end
 
-  def test_libdir
+  def _test_libdir
     assert File.exists? TestResource[].share.Rlib["util.R"].find :lib
     assert File.exists? TestResource[].share.Rlib["util.R"].find 
   end

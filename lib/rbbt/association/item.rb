@@ -7,6 +7,21 @@ module AssociationItem
   annotation :database
   annotation :reverse
 
+  property :name => :single do
+    [source_entity, target_entity].collect{|e| e.respond_to?(:name)? e.name || e : e } * "~"
+  end 
+
+  property :full_name => :single do
+    database ? [database, name] * ":" : name
+  end 
+
+  property :invert => :single do
+    s,_sep,t= self.partition "~"
+    inverted = self.annotate([t,s] * _sep)
+    inverted.reverse = ! reverse
+    inverted
+  end
+
   property :namespace => :both do
     knowledge_base.namespace
   end
@@ -42,6 +57,10 @@ module AssociationItem
   property :target_entity => :array2single do
     type = reverse ? knowledge_base.source(database) : knowledge_base.target(database)
     knowledge_base.annotate self.target, type, database #if self.target.any?
+  end
+
+  property :undirected => :both do
+    knowledge_base.undirected(database)
   end
 
   property :source_entity => :array2single do
@@ -84,18 +103,25 @@ module AssociationItem
     tsv
   end
 
-  def self.incidence(pairs, key_field = nil)
+  def self.incidence(pairs, key_field = nil, &block)
     matrix = {}
     targets = []
     sources = []
     matches = {}
 
-    pairs.each do |p|
+    pairs.inject([]){|acc,m| acc << m; acc << m.invert if m.respond_to?(:undirected) and m.undirected; acc  }.each do |p|
       s, sep, t = p.partition "~"
+
       sources << s
       targets << t
-      matches[s] ||= Hash.new{false}
-      matches[s][t] = true
+      if block_given?
+        matches[s] ||= Hash.new{nil}
+        value = block.call p
+        matches[s][t] = value unless value.nil? or (mv = matches[s][t] and value > mv)
+      else
+        matches[s] ||= Hash.new{true}
+        matches[s][t] ||= true 
+      end
     end
 
     sources.uniq!
@@ -106,6 +132,18 @@ module AssociationItem
     end
 
     defined?(TSV)? TSV.setup(matrix, :key_field => (key_field || "Source") , :fields => targets, :type => :list) : matrix
+  end
+
+  def self.adjacency(pairs, key_field = nil, &block)
+    incidence = incidence(pairs, key_field, &block)
+
+    targets = incidence.fields
+    adjacency = TSV.setup({}, :key_field => incidence.key_field, :fields => ["Target"], :type => :double)
+    TSV.traverse incidence, :into => adjacency, :unnamed => true do |k,values|
+      target_values = targets.zip(values).reject{|t,v| v.nil? }.collect{|t,v| [t,v]}
+      next if target_values.empty?
+      [k, Misc.zip_fields(target_values)]
+    end
   end
 
   def self._select_match(orig, elem)

@@ -493,10 +493,10 @@ module TSV
       when (TSV === identifiers.first or identifiers.empty?)
         identifiers
       else
-        identifiers.collect{|f| Path === f ? f : Path.setup(f, nil, namespace)}
+        identifiers.collect{|f| Path === f ? f : Path.setup(f)}
       end
     when identifiers
-      [ Path === identifiers ? identifiers : Path.setup(identifiers, nil, namespace) ]
+      [ Path === identifiers ? identifiers : Path.setup(identifiers) ]
     when Path === filename
       filename.identifier_files
     when filename
@@ -662,7 +662,7 @@ Example:
         self.through do |key,values|
           field_values = values.delete_at field_pos
           next if field_values.nil?
-          zipped = values.zip_fields
+          zipped = Misc.zip_fields(values)
           field_values.zip(zipped).each do |field_value,rest|
             k = [key,field_value]*":"
             if new.include? k

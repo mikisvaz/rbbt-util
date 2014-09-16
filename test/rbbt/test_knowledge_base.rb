@@ -65,7 +65,7 @@ class TestKnowledgeBase < Test::Unit::TestCase
 
   def test_syndication
     kb = KnowledgeBase.new Rbbt.tmp.test.kb2, "Hsa/jan2013"
-    kb.syndicate @kb, :genomics
+    kb.syndicate :genomics, @kb
 
     gene = "TP53"
     found = kb.identify "pina@genomics", gene

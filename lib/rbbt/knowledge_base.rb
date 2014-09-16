@@ -260,26 +260,32 @@ class KnowledgeBase
 
   #{{{ Identify
   
+
+  def database_identify_index(database, target)
+    if database.identifier_files.any?
+      id_file =  database.identifier_files.first
+      identifier_fields = TSV.parse_header(id_file).all_fields
+      if identifier_fields.include? target
+        TSV.index(database.identifiers, :target => target, :persist => true, :order => true)
+      else
+        {}
+      end
+    else
+      if TSV.parse_header(Organism.identifiers(namespace)).all_fields.include? target
+        Organism.identifiers(namespace).index(:target => target, :persist => true, :order => true)
+      else
+        {}
+      end
+    end
+  end
+
   def identify_source(name, entity)
     database = get_database(name, :persist => true)
     return entity if Symbol === entity or (String === entity and database.include? entity)
     source = source(name)
     @identifiers[name] ||= {}
     @identifiers[name]['source'] ||= begin
-                                       if database.identifier_files.any?
-                                         identifier_fields = TSV.parse_header(database.identifier_files.first).all_fields
-                                         if identifier_fields.include? source
-                                           TSV.index(database.identifiers, :target => source, :persist => true, :order => true)
-                                         else
-                                           {}
-                                         end
-                                       else
-                                         if TSV.parse_header(Organism.identifiers(namespace)).all_fields.include? source
-                                           Organism.identifiers(namespace).index(:target => source, :persist => true, :order => true)
-                                         else
-                                           {}
-                                         end
-                                       end
+                                       database_identify_index(database, source)
                                      end
 
     if Array === entity
@@ -287,37 +293,25 @@ class KnowledgeBase
         p.compact.first
       }
     else
-      @identifiers[name]['source'][entity] || entity
+      @identifiers[name]['source'][entity]
     end
   end
 
   def identify_target(name, entity)
     database = get_database(name, :persist => true)
-    return entity if Symbol === entity
+    return entity if Symbol === entity or (String === entity and database.values.collect{|v| v.first}.compact.flatten.include?(entity))
     target = target(name)
 
     @identifiers[name] ||= {}
     @identifiers[name]['target'] ||= begin
-                                       if database.identifier_files.any?
-                                         if TSV.parse_header(database.identifier_files.first).all_fields.include? target
-                                           TSV.index(database.identifiers, :target => target, :persist => true)
-                                         else
-                                           {}
-                                         end
-                                       else
-                                         if TSV.parse_header(Organism.identifiers(namespace)).all_fields.include? target
-                                           Organism.identifiers(namespace).index(:target => target, :persist => true)
-                                         else
-                                          database.index(:target => database.fields.first, :fields => [database.fields.first], :persist => true)
-                                         end
-                                       end
+                                       database_identify_index(database, target)
                                      end
     if Array === entity
       @identifiers[name]['target'].chunked_values_at(entity).zip(entity).collect{|p|
         p.compact.first
       }
     else
-      @identifiers[name]['target'][entity] || entity
+      @identifiers[name]['target'][entity] 
     end
   end
 
@@ -325,8 +319,22 @@ class KnowledgeBase
     identify_source(name, entity) || identify_target(name, entity)
   end
 
+  def normalize(entity)
+    source_matches = all_databases.collect{|d|
+      identify_source(d, entity)
+    }.flatten.compact.uniq
+    return entity if source_matches.include? entity
+
+    target_matches = all_databases.collect{|d|
+      identify_target(d, entity)
+    }.flatten.compact.uniq
+    return entity if target_matches.include? entity
+
+    (source_matches + target_matches).first
+  end
+
   #{{{ Query
-  
+
   def all(name, options={})
     repo = get_index name, options
     setup name, repo.keys
@@ -343,7 +351,7 @@ class KnowledgeBase
   end
 
   def neighbours(name, entity)
-    if undirected(name)
+    if undirected(name) and source(name) == target(name)
       IndiferentHash.setup({:children => children(name, entity)})
     else
       IndiferentHash.setup({:parents => parents(name, entity), :children => children(name, entity)})
@@ -386,5 +394,25 @@ class KnowledgeBase
     else
       entities
     end
+  end
+
+  def pair_matches(source, target, undirected = nil)
+    all_databases.inject([]){|acc,database|
+      match = [source, target] * "~"
+      index = get_index(database)
+
+      if index.include? match 
+        acc << setup(database, match) 
+
+      elsif undirected or undirected(database) 
+        inv = [target, source] * "~"
+        if index.include? inv 
+          setup(database, inv)
+          acc <<  inv 
+        end
+      end
+
+      acc
+    }
   end
 end

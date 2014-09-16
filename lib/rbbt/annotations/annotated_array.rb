@@ -1,6 +1,10 @@
 module AnnotatedArray
   attr_accessor :list_id
 
+  def to_a
+    self.collect{|i| i }
+  end
+
   def double_array
     AnnotatedArray === self.send(:[], 0, true)
   end

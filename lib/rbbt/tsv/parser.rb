@@ -501,7 +501,7 @@ module TSV
 
       # grep
       if grep
-        stream.rewind
+        stream.rewind if stream.eof?
         stream = Open.grep(stream, grep, invert_grep)
         self.first_line = stream.gets
       end

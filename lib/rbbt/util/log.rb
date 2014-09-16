@@ -26,7 +26,8 @@ module Log
 
   def self.last_caller(stack)
     line = nil
-    while line.nil? or line =~ /util\/log\.rb/ and stack.any?
+    pos ||= 0
+    while line.nil? or line =~ /util\/log\.rb/ and stack.any? 
       line = stack.shift 
     end
     line ||= caller.first
@@ -215,6 +216,12 @@ module Log
     stack = caller
     error([e.class.to_s, e.message].compact * ": " )
     error("BACKTRACE: " << Log.last_caller(caller) << "\n" + color_stack(e.backtrace)*"\n")
+  end
+
+  def self.deprecated(m)
+    stack = caller
+    warn("DEPRECATED: " << Log.last_caller(caller))
+    warn("* " << (m || "").to_s)
   end
 
   def self.color_stack(stack)

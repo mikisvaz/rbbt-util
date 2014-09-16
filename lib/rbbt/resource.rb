@@ -28,7 +28,7 @@ module Resource
     base
   end
 
-  attr_accessor :pkgdir, :subdir, :resources, :rake_dirs, :remote_server
+  attr_accessor :pkgdir, :subdir, :resources, :rake_dirs, :remote_server, :search_paths
 
   def root()
     Path.setup @subdir || "", @pkgdir, self
@@ -122,11 +122,12 @@ module Resource
       raise "Resource is missing and does not seem to be claimed: #{ self } -- #{ path } "
     end
 
-    final_path = path.respond_to?(:find) ? (force ? path.find(:user) : path.find) : path
+    final_path = path.respond_to?(:find) ? (force ? path.find(:default) : path.find) : path
     if not File.exists? final_path or force
       Log.medium "Producing: #{ final_path }"
       lock_filename = Persist.persistence_path(final_path, {:dir => Resource.lock_dir})
       Misc.lock lock_filename do
+        FileUtils.rm_rf final_path if force and File.exists? final_path
         if not File.exists? final_path or force
           (remote_server and get_from_server(path, final_path)) or
           begin
@@ -142,7 +143,17 @@ module Resource
                      when 1
                        content.call final_path
                      end
-              Misc.sensiblewrite(final_path, data) unless data.nil?
+              case data
+              when String, IO
+                Misc.sensiblewrite(final_path, data) 
+              when Array
+                Misc.sensiblewrite(final_path, data * "\n")
+              when TSV
+                Misc.sensiblewrite(final_path, data.dumper_stream) 
+              when nil
+              else
+                raise "Unkown object produced: #{Misc.fingerprint data}"
+              end
             when :rake
               run_rake(path, content, rake_dir)
             when :install
