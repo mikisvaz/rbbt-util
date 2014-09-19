@@ -1,8 +1,8 @@
 module ConcurrentStream
-  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :aborted, :autojoin, :lockfile
+  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :aborted, :autojoin, :lockfile, :no_fail
 
   def self.setup(stream, options = {}, &block)
-    threads, pids, callback, filename, autojoin, lockfile = Misc.process_options options, :threads, :pids, :callback, :filename, :autojoin, :lockfile
+    threads, pids, callback, filename, autojoin, lockfile, no_fail = Misc.process_options options, :threads, :pids, :callback, :filename, :autojoin, :lockfile, :no_fail
     stream.extend ConcurrentStream unless ConcurrentStream === stream
 
     stream.threads ||= []
@@ -10,6 +10,7 @@ module ConcurrentStream
     stream.threads.concat(Array === threads ? threads : [threads]) unless threads.nil? 
     stream.pids.concat(Array === pids ? pids : [pids]) unless pids.nil? or pids.empty?
     stream.autojoin = autojoin
+    stream.no_fail = no_fail
 
     callback = block if block_given?
     if stream.callback and callback
@@ -60,7 +61,7 @@ module ConcurrentStream
       @pids.each do |pid| 
         begin
           Process.waitpid(pid, Process::WUNTRACED)
-          raise ProcessFailed.new "Error joining process #{pid} in #{self.inspect}" unless $?.success?
+          raise ProcessFailed.new "Error joining process #{pid} in #{self.inspect}" unless $?.success? or no_fail
         rescue Errno::ECHILD
         end
       end 
@@ -76,12 +77,13 @@ module ConcurrentStream
   end
 
   def join
+    @joined = true
+
     join_threads
     join_pids
 
     join_callback
 
-    @joined = true
     lockfile.unlock if lockfile and lockfile.locked?
     close unless closed?
   end

@@ -104,7 +104,8 @@ module CMD
     pipe       = options.delete(:pipe)
     post       = options.delete(:post)
     log        = options.delete(:log)
-    dont_close_in        = options.delete(:dont_close_in)
+    no_fail    = options.delete(:no_fail)
+    dont_close_in  = options.delete(:dont_close_in)
 
     log = true if log.nil?
 
@@ -205,7 +206,7 @@ module CMD
       end
 
       #SmartIO.tie sout, pid, cmd, post, in_content, sin, serr
-      ConcurrentStream.setup sout, :pids => [pid], :autojoin => true
+      ConcurrentStream.setup sout, :pids => [pid], :autojoin => true, :no_fail => no_fail
 
       sout
     else
@@ -217,7 +218,7 @@ module CMD
         serr.close
       end
 
-      ConcurrentStream.setup sout, :pids => [pid], :autojoin => true
+      ConcurrentStream.setup sout, :pids => [pid], :autojoin => true, :no_fail => no_fail
       out = StringIO.new sout.read
       sout.close unless sout.closed?
 

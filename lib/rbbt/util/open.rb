@@ -132,7 +132,7 @@ module Open
         CMD.cmd("grep #{invert ? '-v' : ''}", "-w" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
       end
     else
-      CMD.cmd("grep #{invert ? '-v ' : ''} '#{grep}' -", :in => stream, :pipe => true, :post => proc{stream.force_close if stream.respond_to? :force_close})
+      CMD.cmd("grep #{invert ? '-v ' : ''} '#{grep}' -", :in => stream, :pipe => true, :post => proc{begin stream.force_close; rescue Exception; end if stream.respond_to?(:force_close)})
     end
   end
 

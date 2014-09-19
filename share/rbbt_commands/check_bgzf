@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Check the integrity of a BGZF file
+
+$ rbbt check_bgzf <filename.bgz>
+
+-h--help Print this help
+
+EOF
+
+rbbt_usage and exit 0 if defined? rbbt_usage and (options[:help] or ARGV.empty?)
+
+file = ARGV.shift
+
+begin
+  Open.read(file)
+rescue Exception
+  puts Log.color :red, "#{ file } is Broken"
+  exit -1
+end

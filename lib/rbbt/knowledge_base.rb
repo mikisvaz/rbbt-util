@@ -358,7 +358,7 @@ class KnowledgeBase
     end
   end
 
-  def subset(name, entities)
+  def subset(name, entities, &block)
     entities = case entities
                when :all
                  {:target => :all, :source => :all}
@@ -374,18 +374,20 @@ class KnowledgeBase
 
     repo = get_index name
 
-    begin
-      s = repo.subset_entities(entities)
-      setup(name, s)
-    rescue Exception
-      target = entities[:target]
-      source = entities[:source]
-      if target or source
-        entities[:target] = source 
-        entities[:source] = target
-      end
-      setup(name, repo.reverse.subset_entities(entities), true)
-    end
+    matches = begin
+                s = repo.subset_entities(entities, &block)
+                setup(name, s)
+              rescue Exception
+                target = entities[:target]
+                source = entities[:source]
+                if target or source
+                  entities[:target] = source 
+                  entities[:source] = target
+                end
+                setup(name, repo.reverse.subset_entities(entities, &block), true)
+              end
+
+    block_given? ? matches.select(&block) : matches
   end
 
   def translate(entities, type)

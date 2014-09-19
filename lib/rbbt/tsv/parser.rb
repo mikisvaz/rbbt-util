@@ -1,7 +1,7 @@
 require 'rbbt/util/cmd'
 module TSV
   class Parser
-    attr_accessor :stream, :filename, :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace, :first_line, :stream, :preamble
+    attr_accessor :stream, :filename, :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace, :first_line, :stream, :preamble, :identifiers
 
     class SKIP_LINE < Exception; end
     class END_PARSING < Exception; end
@@ -392,6 +392,8 @@ module TSV
       @type ||= Misc.process_options(options, :type) || :double
       @type ||= :double
 
+      @identifiers = Misc.process_options(options, :identifiers) 
+
       @filename = Misc.process_options(options, :filename) 
       @filename ||= stream.filename if stream.respond_to? :filename
 
@@ -472,6 +474,7 @@ module TSV
       data.fields = @fields
       data.namespace = @namespace
       data.filename = @filename
+      data.identifiers = @identifiers
       data.cast = @cast if Symbol === @cast
       data
     end
@@ -559,6 +562,8 @@ module TSV
               break
             end
           rescue END_PARSING
+            stream.close unless stream.closed?
+            begin stream.join; rescue Exception; end if stream.respond_to? :join and not stream.joined?
             break
           rescue Errno::EPIPE
             Log.error "Pipe closed while parsing #{Misc.fingerprint stream}: #{$!.message}"
@@ -572,7 +577,7 @@ module TSV
         end
       ensure
         stream.close unless stream.closed?
-        stream.join if stream.respond_to? :join
+        stream.join if stream.respond_to? :join and not stream.joined?
       end
 
       self

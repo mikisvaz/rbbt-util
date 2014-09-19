@@ -142,7 +142,7 @@ module Log
     message ||= block.call if block_given?
     return if message.nil?
 
-    time = Time.now.strftime("%m/%d/%y-%H:%M:%S")
+    time = Time.now.strftime("%m/%d/%y-%H:%M:%S.%L")
 
     sev_str = severity.to_s
 

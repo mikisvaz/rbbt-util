@@ -122,7 +122,12 @@ module Resource
       raise "Resource is missing and does not seem to be claimed: #{ self } -- #{ path } "
     end
 
-    final_path = path.respond_to?(:find) ? (force ? path.find(:default) : path.find) : path
+    if path.respond_to?(:find) 
+      final_path = force ? path.find(:default) : path.find
+    else
+      final_path = path
+    end
+
     if not File.exists? final_path or force
       Log.medium "Producing: #{ final_path }"
       lock_filename = Persist.persistence_path(final_path, {:dir => Resource.lock_dir})

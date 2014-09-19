@@ -182,7 +182,7 @@ module TSV
     unless TSV === other
       other_identifier_file = other.identifier_files.first if other.respond_to? :identifier_files
       other = TSV.open(other, :persist => options[:persist_input] == true)
-      other.identifiers = other_identifier_file
+      other.identifiers ||= other_identifier_file
     end
 
     fields = other.fields - [key_field].concat(self.fields) if fields.nil?  or fields == :all 

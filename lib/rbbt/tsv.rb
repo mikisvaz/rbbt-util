@@ -17,6 +17,7 @@ require 'rbbt/tsv/field_index'
 require 'rbbt/tsv/parallel'
 require 'rbbt/tsv/stream'
 require 'rbbt/tsv/melt'
+require 'rbbt/tsv/matrix'
 
 module TSV
   class << self

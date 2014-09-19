@@ -218,7 +218,7 @@ module Persist
   end
 
   def self.get_result(path, type, persist_options, lockfile, &block)
-    res = yield
+    res = yield path
     stream = res if IO === res
     stream = res.stream if res.respond_to? :stream
 
@@ -317,6 +317,7 @@ module Persist
     if FalseClass === persist_options[:persist]
       yield
     else
+      persist_options[:update] ||= true if persist_options[:persist].to_s == "update"
       other_options = Misc.process_options persist_options, :other
       path = persistence_path(name, persist_options, other_options || {})
 

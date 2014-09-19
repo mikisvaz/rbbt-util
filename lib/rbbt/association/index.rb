@@ -70,7 +70,7 @@ module Association
       source_type = Entity.formats[source_field] 
       target_type = Entity.formats[target_field]
 
-      source_entities = entities[:source] || entities[source_field] || entities[Entity.formats[source_field].to_s]  
+      source_entities = entities[:source] || entities[source_field] || entities[Entity.formats[source_field].to_s] 
       target_entities = entities[:target] || entities[target_field] || entities[Entity.formats[target_field].to_s]
 
       [source_entities, target_entities]
@@ -89,7 +89,11 @@ module Association
       end
 
       matches = source.uniq.inject([]){|acc,e| 
-        acc.concat(match(e)) 
+        if block_given?
+          acc.concat(match(e))
+        else
+          acc.concat(match(e))
+        end
       }
 
       return matches if target == :all or target == "all"

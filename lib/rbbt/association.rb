@@ -133,12 +133,13 @@ module Association
     target_field = tsv.fields.first
 
     if source_final_format and source_field != source_final_format and
-      Entity.formats[source_field] and
-      Entity.formats[source_final_format].all_formats.include? source_field
+      Entity.formats[source_field] 
+
       Log.debug("Changing source format from #{tsv.key_field} to #{source_final_format}")
 
       tsv.with_unnamed do
-        tsv = tsv.change_key source_final_format, :identifiers => Organism.identifiers(tsv.namespace), :persist => true
+        identifiers = tsv.identifiers || Organism.identifiers(tsv.namespace)
+        tsv = tsv.change_key source_final_format, :identifiers => identifiers, :persist => true
       end
     end
 
@@ -221,7 +222,14 @@ module Association
 
     case file
     when Proc
-      return load_tsv(file.call, options)
+      res = file.call
+      tsv = case res
+            when TSV, Path
+              return load_tsv(res, options)
+            else
+              tsv = TSV.open(res, :unnamed => true)
+              return load_tsv(tsv, options)
+            end 
     when TSV
       key_field, *fields = all_fields = file.all_fields
     else 
@@ -257,6 +265,7 @@ module Association
       tsv = load_tsv(file, options)
 
       tsv.annotate(data)
+
       data.serializer = tsv.type 
 
       tsv.with_unnamed do

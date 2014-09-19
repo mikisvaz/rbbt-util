@@ -216,6 +216,10 @@ module Workflow
   def exec_exports
     @exec_exports ||= []
   end
+  
+  def all_exports
+    @all_exports ||= asynchronous_exports + synchronous_exports + exec_exports
+  end
 
   # {{{ JOB MANAGEMENT
   DEFAULT_NAME="Default"

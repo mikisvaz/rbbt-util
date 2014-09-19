@@ -167,7 +167,7 @@ module TSV
     str = "" 
     str << preamble.strip << "\n" if preamble and not preamble.empty?
     if fields
-      str << "#" << key_field << sep << fields * sep << "\n"
+      str << "#" << (key_field || "ID") << sep << fields * sep << "\n"
     end
 
     str

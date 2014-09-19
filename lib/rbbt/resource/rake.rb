@@ -47,8 +47,9 @@ module Rake
           Rake::Task.clear
           Rake::FileTask.clear_files
         end
-      rescue
+      rescue Exception
         Log.error "Error in rake: #{$!.message}"
+        Log.exception $!
         Kernel.exit! -1
       end
     }

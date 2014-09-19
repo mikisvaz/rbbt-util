@@ -38,7 +38,12 @@ module Bgzf
                     pos = 0
                     while true do
                       blockdata_offset = tell
-                      block = read_block
+                      block = begin
+                                read_block
+                              rescue Exception
+                                raise "BGZF seems to be buggy so some compressed files will not decompress right. Try uncompressing #{filename}" if $!.message =~ /BGFZ.*expected/
+                                raise $!
+                              end
                       break unless block
                       index << [pos, blockdata_offset]
                       pos += block.length
