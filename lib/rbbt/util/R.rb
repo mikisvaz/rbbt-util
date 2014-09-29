@@ -26,7 +26,7 @@ source('#{UTIL}');
     Log.debug{"R Script:\n#{ cmd }"}
 
     if options.delete :monitor
-      io = CMD.cmd('R --vanilla', options.merge(:in => cmd, :pipe => true, :log => true))
+      io = CMD.cmd('R --vanilla --quiet', options.merge(:in => cmd, :pipe => true, :log => true))
       while line = io.gets
         puts line
       end
@@ -40,7 +40,7 @@ source('#{UTIL}');
     TmpFile.with_file do |init_file|
        Open.write(init_file) do |f|
           f.puts "# Loading basic rbbt environment"
-          f.puts "library(utils);\n"
+          f.puts "library(utils, quietly=TRUE);\n"
           f.puts "source('#{R::UTIL}');\n"
           f.puts 
           f.puts script
@@ -117,13 +117,37 @@ end
 
 module TSV
 
-  def R(script, open_options = {})
-    TmpFile.with_file do |f|
+  def R(script, source = nil, open_options = {})
+    open_options, source = source, nil if Hash === source
+
+    source = [source] if String === source
+
+    require_sources  = source.collect{|source|
+      "source('#{source}');"
+    } * ";\n" if Array === source and source.any?
+
+    script = require_sources + "\n\n" + script if require_sources
+
+    r_options = Misc.pull_keys open_options, :R
+    r_options[:debug] = true if r_options[:method] == :debug
+    if r_options.delete :debug
+      r_options[:monitor] = true
+      r_options[:method] = :shell
+      erase = false
+    else
+      erase = true
+    end
+
+    tsv_R_option_str = r_options.delete :open
+    tsv_R_option_str = ", "  + tsv_R_option_str if String === tsv_R_option_str and not tsv_R_option_str.empty?
+
+    raw = open_options.delete :raw
+    TmpFile.with_file nil, erase do |f|
       Open.write(f, self.to_s)
 
       script = <<-EOF
 ## Loading tsv into data
-data = rbbt.tsv('#{f}');
+data = rbbt.tsv('#{f}'#{tsv_R_option_str});
 
 #{script.strip}
 
@@ -131,12 +155,16 @@ data = rbbt.tsv('#{f}');
 if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
       EOF
 
-      r_options = Misc.pull_keys open_options, :R
-      io = R.run script, r_options
 
+      case r_options.delete :method
+      when :eval
+        R.eval_run script
+      else 
+        R.run script, r_options
+      end
 
       open_options = Misc.add_defaults open_options, :type => :list
-      if open_options[:raw]
+      if raw
         Open.read(f)
       else
         tsv = TSV.open(f, open_options) unless open_options[:ignore_output]

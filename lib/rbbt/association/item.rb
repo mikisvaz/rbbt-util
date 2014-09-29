@@ -84,6 +84,7 @@ module AssociationItem
 
     value = self.value
     value.collect{|v|
+      raise "No info for pair; not registered in index" if v.nil?
       Hash[*fields.zip(v).flatten]
     }
   end
@@ -101,6 +102,12 @@ module AssociationItem
       tsv.entity_options.merge! options
     end
     tsv
+  end
+
+  property :filter => :array do |*args,&block|
+    keys = tsv.select(*args,&block).keys
+    keys = self.annotate Annotated.purge(keys)
+    keys
   end
 
   def self.incidence(pairs, key_field = nil, &block)

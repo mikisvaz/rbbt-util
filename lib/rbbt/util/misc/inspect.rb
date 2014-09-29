@@ -2,6 +2,10 @@ module Misc
   ARRAY_MAX_LENGTH = 1000
   STRING_MAX_LENGTH = ARRAY_MAX_LENGTH * 10
 
+  def self.name2basename(file)
+    sanitize_filename(file.gsub("/",'>').gsub("~", '-'))
+  end
+
   def self.sanitize_filename(filename, length = 254)
     if filename.length > length
       if filename =~ /(\..{2,9})$/
@@ -157,7 +161,7 @@ module Misc
 
       end
 
-      str << "_" << hash2md5(v.info) if defined? Annotated and Annotated === v
+      str << "_" << hash2md5(v.info) if defined? Annotated and Annotated === v and not AssociationItem === v
     end
     hash.unnamed = unnamed if hash.respond_to? :unnamed
 

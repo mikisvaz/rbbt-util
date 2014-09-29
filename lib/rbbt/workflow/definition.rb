@@ -97,13 +97,19 @@ module Workflow
   
   def export_exec(*names)
     exec_exports.concat names
+    exec_exports.uniq!
+    exec_exports
   end
 
   def export_asynchronous(*names)
     asynchronous_exports.concat names
+    asynchronous_exports.uniq!
+    asynchronous_exports
   end
 
   def export_synchronous(*names)
     synchronous_exports.concat names
+    synchronous_exports.uniq!
+    synchronous_exports
   end
 end

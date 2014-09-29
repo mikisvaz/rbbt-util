@@ -15,7 +15,6 @@ class KnowledgeBase
     end
   end
 
-
   def setup(name, matches, reverse = false)
     AssociationItem.setup matches, self, name, reverse
   end
@@ -64,7 +63,12 @@ class KnowledgeBase
       db_name = [database, name] * "@"
       file, kb_options = kb.registry[database]
       options = {}
+      options[:entity_options] = kb_options[:entity_options]
       options[:undirected] = true if kb_options and kb_options[:undirected]
+      if kb.entity_options
+        options[:entity_options] = kb.entity_options.merge(options[:entity_options] || {})
+      end
+
       register(db_name, nil, options) do
         kb.get_database(database)
       end
@@ -158,9 +162,9 @@ class KnowledgeBase
     key = name.to_s + "_" + Misc.digest(Misc.fingerprint([name,options,format,namespace]))
     @databases[key] ||= 
       begin 
-        Persist.memory("Database:" << [key, dir] * "@") do
+        file, registered_options = registry[name]
+        database = Persist.memory("Database:" << [key, dir] * "@") do
           persist_file = dir.databases[key]
-          file, registered_options = registry[name]
 
           options = Misc.add_defaults options, :persist_file => persist_file, :namespace => namespace, :format => format
           options = Misc.add_defaults options, registered_options if registered_options
@@ -180,6 +184,10 @@ class KnowledgeBase
 
           database
         end
+
+        database.entity_options ||= {}
+        database.entity_options.merge! registered_options[:entity_options] if registered_options.include? :entity_options
+        database
       end
   end
 
@@ -247,8 +255,10 @@ class KnowledgeBase
     options = entity_options[Entity.formats[type]] || {}
     options[:format] = @format[type] if @format.include? :type
     options = {:organism => namespace}.merge(options)
-    if database_name and (database = get_database(database_name)).entity_options
-      options = options.merge database.entity_options
+    if database_name and 
+      (database = get_database(database_name)).entity_options and
+      (database = get_database(database_name)).entity_options[type]
+      options = options.merge database.entity_options[type] 
     end
     options
   end
@@ -299,7 +309,7 @@ class KnowledgeBase
 
   def identify_target(name, entity)
     database = get_database(name, :persist => true)
-    return entity if Symbol === entity or (String === entity and database.values.collect{|v| v.first}.compact.flatten.include?(entity))
+    return entity if Symbol === entity #or (String === entity) # and database.values.collect{|v| v.first}.compact.flatten.include?(entity))
     target = target(name)
 
     @identifiers[name] ||= {}
@@ -347,7 +357,7 @@ class KnowledgeBase
 
   def parents(name, entity)
     repo = get_index name
-    setup(name, repo.reverse.match(entity))
+    setup(name, repo.reverse.match(entity), true)
   end
 
   def neighbours(name, entity)

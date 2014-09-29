@@ -177,6 +177,11 @@ module TSV
     TSV.identify_field(key_field, fields, field)
   end
 
+  def rename_field(field, new)
+    self.fields = self.fields.collect{|f| f == field ? new : f }
+    self
+  end
+
   def to_list
     new = {}
     case type
@@ -220,8 +225,14 @@ module TSV
         new[k] = [[v]]
       end
     when :list
-      through do |k,v|
-        new[k] = v.collect{|e| [e]}
+      if block_given?
+        through do |k,v|
+          new[k] = v.collect{|e| yield e}
+        end
+      else
+        through do |k,v|
+          new[k] = v.collect{|e| [e]}
+        end
       end
     end
     self.annotate(new)

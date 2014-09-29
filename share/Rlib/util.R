@@ -207,9 +207,12 @@ rbbt.init <- function(data, new){
     }
 }
 
-rbbt.this.script = system("rbbt_Rutil.rb", intern =T)
+rbbt.this.script = NULL;
 
 rbbt.reload <- function (){
+    if (is.null(rbbt.this.script)){
+        rbbt.this.script = system("rbbt_Rutil.rb", intern =T)
+    }
     source(rbbt.this.script)
 }
 
@@ -302,7 +305,8 @@ rbbt.plot.matrix <- function(x, ...){
 }
 
 rbbt.log <- function(m){
-    cat(paste(m,"\n"), file = stderr())
+    head = "R-Rbbt"
+    cat(paste(head, "> ", m,"\n",sep=""), file = stderr())
 }
 
 rbbt.ddd <- function(o){
@@ -310,3 +314,128 @@ rbbt.ddd <- function(o){
     cat("\n", file = stderr())
 }
 
+
+
+# {{{ MODELS
+
+
+rbbt.model.fit <- function(data, formula, method=lm, ...){
+    method(formula, data = data, ...);
+}
+
+rbbt.model.groom <- function(data, variables = NULL, classes = NULL, formula = NULL){
+    names = names(data)
+    if (is.null(variables)){
+        if (is.null(formula)){
+            variables = names
+        }
+        variables = names[names %in% all.vars(formula)]
+    }
+
+    data.groomed = data[,variables]
+
+    if (! is.null(classes)){
+        if (is.character(classes)){ classes = rep(classes,dim(data.groomed)[2]) }
+        i = 1
+        for (class in classes){
+            v = data.groomed[, i]
+            v = switch(class, numeric =as.numeric(v), character = as.character(v), factor = as.factor(v), boolean = as.logical(v), logical = as.logical(v))
+            data.groomed[,i] = v
+            i = i+1
+        }
+    }
+
+    data.groomed
+}
+
+rbbt.model.predict <- function(model, data, ...){
+    predictions = predict(model, newdata = data, ...);
+    predictions
+}
+
+rbbt.loaded.models = list();
+rbbt.model.load <- function(file, force = F){
+    if (is.null(rbbt.loaded.models[[file]])){
+        load(file)
+        rbbt.loaded.models[[file]] = model
+    }
+    rbbt.loaded.models[[file]]
+}
+
+rbbt.pull.keys <- function(items, key){
+    pulled = list()
+    rest = list()
+
+    names = names(items)
+
+    prefix = paste("^",key,'.',sep='')
+    matches = grep(prefix, names)
+
+    for (i in seq(1,length(names))){
+        if (i %in% matches){
+            name = names[i]
+            name = sub(prefix, "", name)
+            pulled[[name]] = items[[i]]
+        }else{
+            name = names[i]
+            rest[[name]] = items[[i]]
+        }
+    }
+    
+    list(pulled=pulled, rest=rest)
+}
+
+rbbt.model.add_fit <- function(data, formula, method, classes=NULL, ...){
+    data.groomed = rbbt.model.groom(data, formula=formula, classes = classes);
+
+    args = list(...)
+    args.pull = rbbt.pull.keys(args, 'predict')
+    predict.args = args.pull$pulled
+
+    args.pull = rbbt.pull.keys(args.pull$rest, 'fit')
+
+    fit.args = args.pull$pulled
+    args.rest = args.pull$rest
+
+    fit.args =c(fit.args, args.rest)
+    predict.args =c(predict.args, args.rest)
+
+    fit.args[["data"]] = data.groomed
+    fit.args[["formula"]] = formula
+    fit.args[["method"]] = method
+
+    model = do.call(rbbt.model.fit, fit.args);
+
+    response = rbbt.model.formula.reponse(formula)
+    data.groomed[[response]] = NULL
+
+    predict.args[["model"]] = model
+    predict.args[["data"]] = data.groomed
+
+    predictions = do.call(rbbt.model.predict,predict.args)
+
+    data$Prediction = predictions;
+    data
+}
+
+rbbt.model.formula.reponse <- function(formula){
+    tt <- terms(formula)
+    vars <- as.character(attr(tt, "variables"))[-1] ## [1] is the list call
+    response.index <- attr(tt, "response") # index of response var
+    as.character(vars[response.index])
+}
+
+rbbt.model.inpute <- function(data, formula, ...){
+    data = rbbt.model.add_fit(data, formula=formula, ...)
+
+    response = rbbt.model.formula.reponse(formula)
+
+    rows = rownames(data)
+    missing = rows[is.na(data[,c(response)])]
+
+    predictions = data[missing, "Prediction"]
+
+    data[missing,c(response)] = predictions
+#    data$Prediction = NULL
+    data
+}

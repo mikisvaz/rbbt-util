@@ -558,7 +558,6 @@ module TSV
     field_pos = identify_field field
 
     through do |key, values|
-      next if values.nil?
 
       case
       when type == :single
@@ -566,7 +565,7 @@ module TSV
       when type == :flat
         field_values = values
       else
-        next if values[field_pos].nil? 
+        next if values.nil?
         field_values = values[field_pos]
       end
 

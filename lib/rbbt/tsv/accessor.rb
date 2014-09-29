@@ -39,8 +39,11 @@ module TSV
     return entity unless defined? Entity
     entity = entity if options.delete :dup_array
     if (template = entity_templates[field]) and template.respond_to?(:annotate)
-      entity = template.annotate(entity.frozen? ? entity.dup : entity)
-      entity.extend AnnotatedArray if Array === entity
+      if String === entity or Array === entity
+        entity = entity.dup if entity.frozen? 
+        template.annotate entity
+        entity.extend AnnotatedArray if Array === entity
+      end
       entity
     else
       if entity_templates.include? field
@@ -49,8 +52,11 @@ module TSV
         template = Misc.prepare_entity("TEMPLATE", field, options)
         if template.respond_to?(:annotate)
           entity_templates[field] = template
-          entity = template.annotate(entity.frozen? ? entity.dup : entity)
-          entity.extend AnnotatedArray if Array === entity
+          if String === entity or Array === entity
+            entity = entity.dup if entity.frozen? 
+            template.annotate entity
+            entity.extend AnnotatedArray if Array === entity
+          end
           entity
         else
           entity_templates[field] = nil

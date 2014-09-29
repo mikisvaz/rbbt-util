@@ -128,6 +128,8 @@ module Annotated
       @shared_annotations = true
     end
 
+    object.extend AnnotatedArray if AnnotatedArray === self and Array === object
+
     object
   end
 

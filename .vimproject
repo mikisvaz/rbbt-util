@@ -71,6 +71,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
     R.rb
     R=R{
+     model.rb
      eval.rb
     }
 
@@ -109,6 +110,8 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    tsv=tsv{
     parser.rb
     dumper.rb
+
+    matrix.rb
 
     accessor.rb
     util.rb

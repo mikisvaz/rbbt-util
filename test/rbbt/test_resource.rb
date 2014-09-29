@@ -30,7 +30,6 @@ class TestTSV < Test::Unit::TestCase
       tsv = {"a" => 1, "b" => 2}
       TSV.setup(tsv, :key_field => "Letter", :fields => ["Value"], :type => :single)
     end
-    iii TestResource.tmp.test.test_tsv.produce
     Log.tsv TestResource.tmp.test.test_tsv.tsv
   end
 
