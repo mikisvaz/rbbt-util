@@ -37,6 +37,9 @@ module R
                        begin
                         i = Rserve::Connection.new :hostname => @@socket_file
                         i.eval "source('#{UTIL}');" 
+                        wdir = @@socket_file + '.wd'
+                        FileUtils.mkdir wdir unless File.exists? wdir
+                        i.eval "setwd('#{wdir}');"
                         i
                        rescue Exception
                          raise TryAgain

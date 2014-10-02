@@ -121,43 +121,6 @@ class KnowledgeBase
     {:namespace => namespace, :format => @format}
   end
  
-  #def get_database(name, options = {})
-  #  @databases[Misc.fingerprint([name, options])] ||= \
-  #    begin 
-  #      Persist.memory("Database:" <<[name, self.dir] * "@") do
-  #        options = Misc.add_defaults options, :persist_dir => dir.databases
-  #        persist_options = Misc.pull_keys options, :persist
-
-  #        file, registered_options = registry[name]
-  #        options = open_options.merge(registered_options || {}).merge(options)
-  #        raise "Repo #{ name } not found and not registered" if file.nil?
-
-  #        Log.low "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
-  #        Association.open(file, options, persist_options).
-  #          tap{|tsv| tsv.namespace = self.namespace}
-  #      end
-  #    end
-  #end
-
-
-  #def get_index(name, options = {})
-  #  @indices[Misc.fingerprint([name, options])] ||= \
-  #    begin 
-  #      Persist.memory("Index:" <<[name, self.dir] * "@") do
-  #        options = Misc.add_defaults options, :persist_dir => dir.indices
-  #        persist_options = Misc.pull_keys options, :persist
-
-  #        file, registered_options = registry[name]
-  #        options = open_options.merge(registered_options || {}).merge(options)
-  #        raise "Repo #{ name } not found and not registered" if file.nil?
-
-  #        Log.low "Opening index #{ name } from #{ Misc.fingerprint file }. #{options}"
-  #        Association.index(file, options, persist_options).
-  #          tap{|tsv| tsv.namespace = self.namespace}
-  #      end
-  #    end
-  #end
-
   def get_database(name, options = {})
     key = name.to_s + "_" + Misc.digest(Misc.fingerprint([name,options,format,namespace]))
     @databases[key] ||= 
@@ -192,6 +155,7 @@ class KnowledgeBase
   end
 
   def get_index(name, options = {})
+    name = name.to_s
     key = name.to_s + "_" + Misc.digest(Misc.fingerprint([name,options]))
     @indices[key] ||= 
       begin 
@@ -384,18 +348,7 @@ class KnowledgeBase
 
     repo = get_index name
 
-    matches = begin
-                s = repo.subset_entities(entities, &block)
-                setup(name, s)
-              rescue Exception
-                target = entities[:target]
-                source = entities[:source]
-                if target or source
-                  entities[:target] = source 
-                  entities[:source] = target
-                end
-                setup(name, repo.reverse.subset_entities(entities, &block), true)
-              end
+    matches = setup(name, repo.subset_entities(entities))
 
     block_given? ? matches.select(&block) : matches
   end
