@@ -147,6 +147,7 @@ class Step
     child_pid
   end
 
+
   def load
     return prepare_result @result, @task.result_description if @result and not @path == @result
     join if not done?
