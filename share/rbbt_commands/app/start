@@ -3,7 +3,7 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-f--finder-R--Rserve_session*"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-f--finder:-R--Rserve_session*"
 options[:Port] ||= options[:port]
 
 
