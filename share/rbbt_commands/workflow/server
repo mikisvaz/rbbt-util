@@ -13,9 +13,13 @@ require 'rbbt/rest/file_server'
 require 'rbbt/rest/knowledge_base'
 require 'rbbt/rest/helpers'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*"
 
 workflow = ARGV.first
+
+ENV["RServe-session"] = options[:RServe_session] || workflow
+
+raise rbbt_usage unless workflow
 
 wf = Workflow.require_workflow workflow
 

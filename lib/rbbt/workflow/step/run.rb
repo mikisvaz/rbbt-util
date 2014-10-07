@@ -319,8 +319,8 @@ class Step
         set_info :pid, nil
       ensure
         RbbtSemaphore.post_semaphore(semaphore) if semaphore
+        Kernel.exit! 0
       end
-      Kernel.exit! 0
     end
     Process.detach(@pid)
     self

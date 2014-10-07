@@ -25,7 +25,7 @@ class TestRModel < Test::Unit::TestCase
     assert pred > y and pred < y + 4
   end
 
-  def test_add_fit
+  def _test_add_fit
     tsv = TSV.open datafile_test('dose_response'), :type => :list
     tsv = tsv.slice(["Dose", "Response"])
 
@@ -48,5 +48,42 @@ data = rbbt.model.inpute(data, CI ~ Dose, method=drm, classes='numeric', fct=LL.
     EOF
 
     assert_equal result.size, result.column("CI").values.flatten.reject{|p| p.nil? or p.empty? or p == "NA"}.length
+  end
+
+  def test_ab_surv_corr
+    require 'rbbt/workflow'
+    Workflow.require_workflow "Miller"
+
+    require 'rbbt/util/R/model'
+    require 'rbbt/util/R/svg'
+
+    antibody = "14-3-3-Zeta(C)_GBL9006927"
+
+    rppa = Miller.RPPA.data.tsv
+    rppa.attach Miller.RPPA.labels
+    viability = Miller.Viability.data.tsv
+
+    viability.add_field "Perturbation" do |compound,values|
+      values["Dose"].collect do |dose|
+        compound.split("-").flatten.zip(dose.split("-")).collect{|p| p * "="} * "-"
+      end
+    end
+
+    viability = viability.reorder "Perturbation", nil, :zipped => true
+    compounds = viability.column("Compound").flatten.uniq
+
+    rppa = rppa.select("Compound"){|c| ! c.include? "-" and compounds.include? c}
+    rppa = rppa.slice([antibody,"Compound", "Dose"])
+    rppa.rename_field antibody, "RPPA"
+
+    model = R::Model.new "viability", "Effect ~ Dose * Compound", "Compound" => :factor
+
+    model.fit(viability.select("Compound"){|c| ! c.include? "-"}, 'drm', :fct => ":LL.4()")
+
+    rppa = model.predict(rppa, "Prediction")
+
+    plot_script = "plot<-ggplot(data=data) + geom_point(aes(x=RPPA, y=Prediction, color=Compound));"
+
+    puts R::SVG.ggplotSVG rppa, plot_script, 7, 7, :R_method => :eval 
   end
 end

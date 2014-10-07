@@ -3,10 +3,13 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-f--finder"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-f--finder-R--Rserve_session*"
 options[:Port] ||= options[:port]
 
+
 app = ARGV.shift
+
+ENV["RServe-session"] = options[:RServe_session] || app
 
 app_dir = Rbbt.etc.app_dir.exists? ? Path.setup(Rbbt.etc.app_dir.read.strip) : Rbbt.apps.find
 

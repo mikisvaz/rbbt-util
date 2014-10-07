@@ -288,10 +288,15 @@ module Association
   def self.index(file, options = {}, persist_options = nil)
     options = {} if options.nil?
     options = Misc.add_defaults options, :persist => true, :undirected => false
-    persist_options = Misc.pull_keys options, persist_options if persist_options.nil?
+    persist_options = Misc.pull_keys options, :persist if persist_options.nil?
 
-    Persist.persist_tsv(file, nil, options, {:persist => true, :prefix => "Association Index"}.merge(persist_options).merge(:engine => TokyoCabinet::BDB, :serializer => :clean)) do |assocs|
+    expanded_persist_options = {:persist => true, :prefix => "Association Index"}.
+      merge(persist_options).
+      merge(:engine => TokyoCabinet::BDB, :serializer => :clean)
+
+    Persist.persist_tsv(file, nil, options, expanded_persist_options) do |assocs|
       undirected = options[:undirected]
+      recycle = options[:recycle]
       if file
         tsv = TSV === file ? file : Association.open(file, options, persist_options.merge(:persist => false))
 
@@ -330,8 +335,18 @@ module Association
                 next if values.empty?
                 next if source.nil? or source.empty?
                 next if values.empty?
+
                 targets = values.first
-                rest = Misc.zip_fields values[1..-1]
+
+                rest =  values[1..-1]
+
+                size = values.first ? values.first.length : 0
+
+                rest.each_with_index do |list,i|
+                  list.replace [list.first] * size if list.length == 1
+                end if recycle and size > 1
+
+                rest = Misc.zip_fields rest
 
                 annotations = rest.length > 1 ?
                   targets.zip(rest) :

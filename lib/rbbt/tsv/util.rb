@@ -69,8 +69,12 @@ module TSV
     case
     when (defined? Step and Step === file)
       file.path
-    when String === file
+    when Path === file
       file
+    when (String === file and (Open.exists? file or Open.remote? file))
+      file
+    when String === file 
+      "String-#{Misc.digest file}"
     when file.respond_to?(:filename)
       file.filename
     when file.respond_to?(:gets)

@@ -16,11 +16,25 @@ module R
 
   self.model_dir = Rbbt.var.R.models
   class Model
+    R_METHOD = :debug
 
     attr_accessor :name, :formula
-    def initialize(name, formula)
+    def initialize(name, formula, options = {})
       @name = name
       @formula = formula
+      @options = options || {}
+    end
+
+    def colClasses(tsv)
+      "c('character', " << 
+      (tsv.fields.collect{|f| R.ruby2R(@options[f] ? @options[f].to_s : ":NA") } * ", ") <<
+      ")"
+    end
+
+    def r_options(tsv)
+      {:R_open => "colClasses=#{colClasses(tsv)}", 
+        :R_method => (@options[:R_method] || R_METHOD), 
+          :source => @options[:source]}
     end
 
     def model_file
@@ -28,10 +42,11 @@ module R
     end
 
     def update(tsv, field = "Prediction")
-      tsv.R <<-EOF, :R_method => :eval
+      tsv.R <<-EOF, r_options(tsv)
 model = rbbt.model.load('#{model_file}');
 model = update(model, data);
 save(model, file='#{model_file}');
+data = NULL
       EOF
     end
 
@@ -49,9 +64,10 @@ save(model, file='#{model_file}');
 
     def predict(tsv, field = "Prediction")
       tsv = Model.groom tsv, formula 
-      tsv.R <<-EOF, :R_method => :eval, :key => tsv.key_field
+      tsv.R <<-EOF, r_options(tsv)
 model = rbbt.model.load('#{model_file}');
-data$#{field} = predict(model, data);
+data.groomed = rbbt.model.groom(data,formula=#{formula})
+data$#{field} = predict(model, data.groomed);
       EOF
     end
 
@@ -67,9 +83,10 @@ data$#{field} = predict(model, data);
       tsv = Model.groom(tsv, formula)
 
       FileUtils.mkdir_p File.dirname(model_file) unless File.exists?(File.dirname(model_file))
-      tsv.R <<-EOF, :R_method => :shell
+      tsv.R <<-EOF, r_options(tsv)
 model = rbbt.model.fit(data, #{formula}, method=#{method}#{args_str})
 save(model, file='#{model_file}')
+data = NULL
       EOF
     end
   end

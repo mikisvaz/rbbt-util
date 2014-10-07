@@ -93,7 +93,7 @@ source('#{UTIL}');
     when Symbol
       "#{ object }"
     when String
-      "'#{ object }'"
+      object[0] == ":" ? object[1..-1] : "'#{ object }'"
     when Fixnum, Float
       object
     when TrueClass
@@ -120,6 +120,7 @@ module TSV
   def R(script, source = nil, open_options = {})
     open_options, source = source, nil if Hash === source
 
+    source ||= Misc.process_options open_options, :source
     source = [source] if String === source
 
     require_sources  = source.collect{|source|
@@ -153,6 +154,7 @@ data = rbbt.tsv('#{f}'#{tsv_R_option_str});
 
 ## Resaving data
 if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
+NULL
       EOF
 
 

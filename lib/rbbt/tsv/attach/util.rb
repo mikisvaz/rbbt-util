@@ -23,7 +23,7 @@ module TSV
             when other.type == :single
               new_values = [other[key]]
             else
-              other_values = other[key]
+              other_values = other[key] || [nil] * other.fields.length
               new_values = field_positions.collect do |pos|
                 pos == :key ? key : other_values[pos]
               end

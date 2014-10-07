@@ -228,6 +228,29 @@ rbbt.parse <- function(filename){
     return(parse(text=paste(lines[from:to],sep="\n")));
 }
 
+rbbt.pull.keys <- function(items, key){
+    pulled = list()
+    rest = list()
+
+    names = names(items)
+
+    prefix = paste("^",key,'.',sep='')
+    matches = grep(prefix, names)
+
+    for (i in seq(1,length(names))){
+        if (i %in% matches){
+            name = names[i]
+            name = sub(prefix, "", name)
+            pulled[[name]] = items[[i]]
+        }else{
+            name = names[i]
+            rest[[name]] = items[[i]]
+        }
+    }
+    
+    list(pulled=pulled, rest=rest)
+}
+
 rbbt.run <- function(filename){
     rbbt.reload();
     eval(rbbt.parse(filename), envir=globalenv());
@@ -314,6 +337,14 @@ rbbt.ddd <- function(o){
     cat("\n", file = stderr())
 }
 
+# From: http://ryouready.wordpress.com/2008/12/18/generate-random-string-name/
+rbbt.random_string <- function(n=1, length=12){
+    randomString <- c(1:n)
+    for (i in 1:n){
+        randomString[i] <- paste(sample(c(0:9, letters, LETTERS), length, replace=TRUE), collapse="")
+    }
+    return(randomString)
+}
 
 
 # {{{ MODELS
@@ -332,7 +363,7 @@ rbbt.model.groom <- function(data, variables = NULL, classes = NULL, formula = N
         variables = names[names %in% all.vars(formula)]
     }
 
-    data.groomed = data[,variables]
+    data.groomed = data[,variables,drop=F]
 
     if (! is.null(classes)){
         if (is.character(classes)){ classes = rep(classes,dim(data.groomed)[2]) }
@@ -360,29 +391,6 @@ rbbt.model.load <- function(file, force = F){
         rbbt.loaded.models[[file]] = model
     }
     rbbt.loaded.models[[file]]
-}
-
-rbbt.pull.keys <- function(items, key){
-    pulled = list()
-    rest = list()
-
-    names = names(items)
-
-    prefix = paste("^",key,'.',sep='')
-    matches = grep(prefix, names)
-
-    for (i in seq(1,length(names))){
-        if (i %in% matches){
-            name = names[i]
-            name = sub(prefix, "", name)
-            pulled[[name]] = items[[i]]
-        }else{
-            name = names[i]
-            rest[[name]] = items[[i]]
-        }
-    }
-    
-    list(pulled=pulled, rest=rest)
 }
 
 rbbt.model.add_fit <- function(data, formula, method, classes=NULL, ...){
