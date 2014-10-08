@@ -145,6 +145,8 @@ def rbbt_usage(prev = nil)
   true
 end
 
+alias usage rbbt_usage 
+
 def print_error(error, backtrace = nil)
   puts Log.color :magenta, "## ERROR"
   puts

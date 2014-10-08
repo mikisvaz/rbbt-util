@@ -170,12 +170,22 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    entity.rb
 
    association.rb
+   association.rb.old
    association=association{
+    util.rb
+    database.rb
+    open.rb
     index.rb
     item.rb
    }
 
    knowledge_base.rb
+   knowledge_base=knowledge_base{
+    registry.rb
+    entity.rb
+    query.rb
+   }
+   knowledge_base.rb.old
   }
  }
  test=test {

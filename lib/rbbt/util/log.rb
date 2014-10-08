@@ -235,8 +235,8 @@ module Log
 
   def self.tsv(tsv)
     STDERR.puts Log.color :magenta, "TSV log: " << Log.last_caller(caller)
-    iif tsv
-    ppp tsv.summary
+    puts Log.color(:blue, "=> "<< Misc.fingerprint(tsv), true) 
+    puts Log.color(:cyan, "=> " << tsv.summary)
   end
 
   def self.stack(stack)

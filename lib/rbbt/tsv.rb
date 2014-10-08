@@ -124,7 +124,8 @@ module TSV
 
   def self.parse(stream, data, options = {})
 
-    parser = TSV::Parser.new stream, options
+    parser = Misc.process_options options, :parser
+    parser = TSV::Parser.new stream, options if parser.nil?
 
     # dump with tchmgr
     if defined? TokyoCabinet and TokyoCabinet::HDB === data and parser.straight and

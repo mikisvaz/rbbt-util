@@ -84,5 +84,114 @@ module TSV
     TSV.swap_id(self, *args)
   end
 
+  def self.translation_index(files, target = nil, source = nil, options = {})
+    return nil if source == target
+    options = Misc.add_defaults options.dup, :persist => true
+    fields = source ? [source] : nil
+    files.each do |file|
+      if TSV === file
+        all_fields = file.all_fields
+        target = file.fields.first if target.nil?
+        return file.index(options.merge(:target => target, :fields => fields, :order => true)) if (source.nil? or all_fields.include? source) and all_fields.include? target
+      else
+        all_fields = TSV.parse_header(file).all_fields
+        target = all_fields[1] if target.nil?
+        return TSV.index(file, options.merge(:target => target, :fields => fields, :order => true)) if (source.nil? or all_fields.include? source) and all_fields.include? target
+      end
+    end
 
+    files.each do |file|
+      tsv = TSV === file ? file : TSV.open(file)
+
+      files.each do |other_file|
+        next if file == other_file
+        other_tsv = TSV === other_file ? other_file : TSV.open(other_file)
+
+        common_field = (tsv.all_fields & other_tsv.all_fields).first
+
+        if common_field and (source.nil? or tsv.fields.include? source) and tsv.fields.include? common_field and 
+          other_tsv.fields.include? common_field and other_tsv.fields.include? target 
+
+          index = file.index(options.merge(:target => common_field, :fields => fields)).
+            attach(other_file.index(options.merge(:target => target, :fields => [common_field]))).slice([target]).to_flat
+          iii :index
+
+          return index
+        end
+      end
+    end
+    return nil
+  end
+
+  def self.translate(tsv, *args)
+    new = TSV.open translate_stream(tsv, *args)
+    new.identifiers = tsv.identifiers
+    new
+  end
+
+  def self.translate_stream(tsv, field, format, options = {}, &block)
+    options = Misc.add_defaults options, :persist => false, :identifier_files => tsv.identifier_files, :compact => true
+
+    identifier_files, identifiers, persist_input, compact = Misc.process_options options, :identifier_files, :identifiers, :persist, :compact
+    identifier_files = [tsv, identifiers].compact if identifier_files.nil? or identifier_files.empty?
+
+    identifier_files << Organism.identifiers(tsv.namespace).find if tsv.respond_to? :namespace and tsv.namespace 
+
+    identifier_files.uniq!
+
+    index = translation_index identifier_files, format, field, options.dup
+    raise "No index: #{Misc.fingerprint([identifier_files, field, format])}" if index.nil?
+
+    orig_type = tsv.type 
+    tsv = tsv.to_double if orig_type != :double
+
+    pos = tsv.identify_field field
+
+    new_options = tsv.options
+    new_options[:identifiers] = tsv.identifiers.find if tsv.identifiers
+
+    case pos
+    when :key
+      new_options[:key_field] = format if tsv.key_field == field
+      dumper = TSV::Dumper.new new_options
+      dumper.init
+      TSV.traverse tsv, :into => dumper do |key,values|
+        new_key = index[key]
+        [new_key, values]
+      end
+    else
+      new_options[:fields] = tsv.fields.collect{|f| f == field ? format : f }
+      dumper = TSV::Dumper.new new_options
+      dumper.init
+
+      case tsv.type
+      when :double
+        TSV.traverse tsv, :into => dumper do |key,values|
+          original = values[pos]
+          new = index.values_at *original
+          values[pos] = new
+          [key, values]
+        end
+      when :list
+        TSV.traverse tsv, :into => dumper do |key,values|
+          original = values[pos]
+          new = index[original]
+          values[pos] = new
+          [key, values]
+        end
+      when :flat
+        TSV.traverse tsv, :into => dumper do |key,values|
+          new = index.values_at *values
+          [key, new]
+        end
+      when :single
+        TSV.traverse tsv, :into => dumper do |key,original|
+          new = index[original]
+          [key, new]
+        end
+      end
+    end
+
+    dumper.stream
+  end
 end

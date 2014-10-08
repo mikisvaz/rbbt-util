@@ -5,7 +5,7 @@ require 'test/unit'
 
 class TestTSV < Test::Unit::TestCase
 
-  def _test_extend
+  def test_extend
     a = {
       "one" => "1", 
       "two" => "2"
@@ -18,7 +18,7 @@ class TestTSV < Test::Unit::TestCase
     assert_equal "1", a["one"]
   end
   
-  def _test_tsv
+  def test_tsv
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -41,7 +41,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_headerless
+  def test_headerless
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -54,7 +54,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_headerless_fields
+  def test_headerless_fields
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -68,7 +68,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_tsv_persistence
+  def test_tsv_persistence
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -94,7 +94,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_tsv_field_selection
+  def test_tsv_field_selection
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -136,7 +136,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_tsv_cast
+  def test_tsv_cast
     content =<<-EOF
 #Id    Value
 row1    1|2|3
@@ -151,7 +151,7 @@ row2    4
     end
   end
 
-  def _test_tsv_single
+  def test_tsv_single
     content =<<-EOF
 #Id    Value
 row1    1
@@ -168,7 +168,7 @@ row2    4
     end
   end
 
-  def _test_tsv_single_from_flat
+  def test_tsv_single_from_flat
     content =<<-EOF
 #: :type=:flat
 #Id    Value
@@ -183,7 +183,7 @@ row2    4
   end
 
 
-  def _test_tsv_serializer
+  def test_tsv_serializer
     content =<<-EOF
 #Id    Value
 row1    1
@@ -197,7 +197,7 @@ row2    4
     end
   end
 
-  def _test_tsv_header_options
+  def test_tsv_header_options
     content =<<-EOF
 #: :sep=/\\s+/
 #Id Value
@@ -211,7 +211,7 @@ row2    4
     end
   end
 
-  def _test_tsv_fastimport
+  def test_tsv_fastimport
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -228,7 +228,7 @@ row3    AA    B    Id3
     end
   end
 
-  def _test_header_type
+  def test_header_type
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -244,7 +244,7 @@ row3    AA    B    Id3
  
   end
 
-  def _test_single_cast
+  def test_single_cast
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single#:cast=:to_i
 #Id Value
@@ -259,7 +259,7 @@ b 2
     end
   end
 
-  def _test_key_field
+  def test_key_field
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -275,7 +275,7 @@ b 2
     end
   end
 
-  def _test_fix
+  def test_fix
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -289,7 +289,7 @@ b 2
     end
   end
 
-  def _test_select
+  def test_select
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -303,7 +303,7 @@ b 2
     end
   end
 
-  def _test_grep
+  def test_grep
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -317,7 +317,7 @@ b 2
     end
   end
 
-  def _test_grep_invert
+  def test_grep_invert
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -331,7 +331,7 @@ b 2
     end
   end
 
-  def _test_grep_header
+  def test_grep_header
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single#:namespace=Test
 #Id Value
@@ -346,7 +346,7 @@ b 2
     end
   end
 
-  def _test_json
+  def test_json
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
 #Id Value
@@ -361,7 +361,7 @@ b 2
  
   end
 
-  def _test_flat_no_merge
+  def test_flat_no_merge
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -377,7 +377,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_flat_merge
+  def test_flat_merge
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -404,7 +404,7 @@ row2   b  bbb bbbb bb
     end
   end
 
-  def _test_flat_key
+  def test_flat_key
     content =<<-EOF
 #Id    ValueA 
 row1   a   aa   aaa
@@ -420,7 +420,7 @@ row2   b  bbb bbbb bb aa
 
 
 
-  def _test_zipped
+  def test_zipped
     content =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b|bb|bbb
@@ -433,7 +433,7 @@ row2    a|aa|aaa    c|cc|ccc
     end
   end
 
-  def _test_named_array_key
+  def test_named_array_key
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -448,7 +448,7 @@ row2    A    B    Id3
  
   end
 
-  def _test_unnamed_key
+  def test_unnamed_key
     content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -461,7 +461,7 @@ row2    A    B    Id3
  
   end
 
-  def _test_float_array
+  def test_float_array
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1   0.2   0.3 0
@@ -476,7 +476,7 @@ row2    0.1  4.5 0
  
   end
 
-  def _test_flat_field_select
+  def test_flat_field_select
     content =<<-EOF
 #: :type=:flat
 #Id    Value
@@ -490,7 +490,7 @@ row2    b  bb bbb
     end
   end
 
-  def _test_flat2
+  def test_flat2
     content =<<-EOF
 #: :type=:flat
 #Id    Value
@@ -507,7 +507,7 @@ row2    A|AA|AAA
   end
 
 
-  def _test_tsv_flat_double
+  def test_tsv_flat_double
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -522,7 +522,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_flat2single
+  def test_flat2single
     content =<<-EOF
 #: :type=:flat
 #Id    Value
@@ -536,7 +536,7 @@ row2    A AA AAA
  
   end
 
-  def _test_shard
+  def test_shard
     shard_function = Proc.new do |key|
       key[-1]
     end

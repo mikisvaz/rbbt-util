@@ -27,7 +27,10 @@ class Test::Unit::TestCase
     #end
   end
 
-  def datafile_test(file)
+  def self.datafile_test(file)
     Path.setup(File.join(File.dirname(__FILE__), 'data', file.to_s))
+  end
+  def datafile_test(file)
+    Test::Unit::TestCase.datafile_test(file)
   end
 end

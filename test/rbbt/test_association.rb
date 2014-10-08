@@ -6,7 +6,9 @@ require 'rbbt/workflow'
 require 'rbbt/entity'
 
 require 'rbbt/association'
+require 'rbbt/association/open'
 require 'rbbt/knowledge_base'
+require 'rbbt/entity'
 
 
 TEST_ASSOCIATIONS =<<-EOF
@@ -99,5 +101,6 @@ class TestAssociations < Test::Unit::TestCase
     database = Association.open(FAssocs, {:target => "Gene=~Associated Gene Name=>Ensembl Gene ID", :source => "Entity3", :zipped => true}, :dir => DAssocs)
     assert_equal [tp53.ensembl], database["aa"].first
   end
+
 
 end
