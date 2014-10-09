@@ -114,7 +114,6 @@ module TSV
 
           index = file.index(options.merge(:target => common_field, :fields => fields)).
             attach(other_file.index(options.merge(:target => target, :fields => [common_field]))).slice([target]).to_flat
-          iii :index
 
           return index
         end
@@ -130,6 +129,7 @@ module TSV
   end
 
   def self.translate_stream(tsv, field, format, options = {}, &block)
+    require 'rbbt/sources/organism'
     options = Misc.add_defaults options, :persist => false, :identifier_files => tsv.identifier_files, :compact => true
 
     identifier_files, identifiers, persist_input, compact = Misc.process_options options, :identifier_files, :identifiers, :persist, :compact

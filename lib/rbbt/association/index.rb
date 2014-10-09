@@ -16,7 +16,6 @@ module Association
       recycle = options[:recycle]
 
       database = open(file, options, persist_options.dup)
-      Log.tsv database
 
       fields = database.fields
       source_field = database.key_field

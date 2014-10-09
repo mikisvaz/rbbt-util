@@ -5,6 +5,7 @@ module Association
     entity_type = Entity.formats[format]
     raise "Field #{ format } could not be resolved: #{fields}" if entity_type.nil?
     main_field = fields.select{|f| Entity.formats[f] == entity_type}.first
+    raise "Field #{ format } not present, options: #{Misc.fingerprint fields}" if main_field.nil?
     [main_field, nil, format]
   end
 
@@ -23,15 +24,20 @@ module Association
     field, header, format = parse_field_specification spec 
 
     return nil if field.nil?
-    if all_fields.nil? or all_fields.include? field
-      [field, header, format]
-    else
-      begin
-        identify_entity_format field, all_fields 
-      rescue
-        [field, nil, nil]
-      end
-    end
+    specs = if all_fields.nil? or all_fields.include? field
+               [field, header, format]
+             else
+               if all_fields.nil?
+                 begin
+                   identify_entity_format field, all_fields 
+                 rescue
+                   [field, nil, nil]
+                 end
+               else
+                 [field, nil, nil]
+               end
+             end
+    specs
   end
 
   def self.extract_specs(all_fields=nil, options = {})
@@ -69,10 +75,10 @@ module Association
     {:source => source_specs, :target => target_specs}
   end
 
-  def self.process_formats(entity, default_format = {})
+  def self.process_formats(field, default_format = {})
     return nil if default_format.nil? or default_format.empty?
     default_format.each do |type, field|
-      entity_type = Entity.formats[entity] || entity
+      entity_type = Entity.formats[field] || field
       return field if entity_type.to_s === type 
     end
     return nil
@@ -115,10 +121,12 @@ module Association
     source_format = specs[:source][2]
     target_format = specs[:target][2]
 
-    source_format = process_formats specs[:source][1] || specs[:source][0], options[:format]
-    target_format = process_formats specs[:target][1] || specs[:target][0], options[:format]
 
-    iii [source_pos, field_pos, source_header, field_headers, source_format, target_format]
+    if format = options[:format]
+      source_format = process_formats(specs[:source][1] || specs[:source][0], format) || source_format
+      target_format = process_formats(specs[:target][1] || specs[:target][0], format) || target_format
+    end
+
     [source_pos, field_pos, source_header, field_headers, source_format, target_format]
   end
 end

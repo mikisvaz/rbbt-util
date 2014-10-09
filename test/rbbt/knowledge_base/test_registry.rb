@@ -5,7 +5,7 @@ require 'rbbt/knowledge_base'
 require 'rbbt/knowledge_base/registry'
 
 
-class TestKnowledgeBase < Test::Unit::TestCase
+class TestKnowledgeBaseRegistry < Test::Unit::TestCase
 
   EFFECT =StringIO.new <<-END
 #: :sep=" "#:type=:double
@@ -34,8 +34,14 @@ TP53 NFKB1|GLI1 activation|activation true|true
   end
 
   def test_index
-    assert KNOWLEDGE_BASE.get_index(:effects).include? "MDM2~ENSG00000141510"
+    assert KNOWLEDGE_BASE.get_index(:effects, :source_format => "Associated Gene Name", :target_format => "Ensembl Gene ID", :persist => false).include? "MDM2~ENSG00000141510"
   end
 
+  def test_index_flat
+    require 'rbbt/sources/tfacts'
+    file = TFacts.regulators
+    KNOWLEDGE_BASE.register :tfacts, file,  :type => :flat, :source => "Transcription Factor Associated Gene Name=~Associated Gene Name", :merge => true
+    assert KNOWLEDGE_BASE.subset(:tfacts, :source => ["TP53"], :target => :all).length > 10
+  end
 end
 

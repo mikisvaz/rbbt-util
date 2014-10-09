@@ -49,7 +49,7 @@ class KnowledgeBase
 
           persist_options = Misc.pull_keys options, :persist
 
-          index = if persist_file.exists?
+          index = if persist_file.exists? and persist_options[:persist] and not persist_options[:update]
                     Log.low "Re-opening index #{ name } from #{ Misc.fingerprint persist_file }. #{options}"
                     Association.index(nil, options, persist_options)
                   else

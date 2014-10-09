@@ -505,11 +505,11 @@ module TSV
       # get parser
 
       # grep
-      if grep
-        stream.rewind if stream.eof?
-        stream = Open.grep(stream, grep, invert_grep)
-        self.first_line = stream.gets
-      end
+      #if grep and false
+      #  stream.rewind if stream.eof?
+      #  stream = Open.grep(stream, grep, invert_grep)
+      #  self.first_line = stream.gets
+      #end
 
       # first line
       line = self.rescue_first_line

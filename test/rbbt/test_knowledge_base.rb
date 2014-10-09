@@ -32,19 +32,5 @@ TP53 NFKB1|GLI1 activation|activation true|true
   KNOWLEDGE_BASE = KnowledgeBase.new '/tmp/kb.foo'
 
   KNOWLEDGE_BASE.register :effects, EFFECT_TSV, EFFECT_OPTIONS.dup
-
-  def test_subset_all
-    assert_equal 6, KNOWLEDGE_BASE.subset(:effects, :all, :source_format => "Ensembl Gene ID").length
-    assert_equal 4, KNOWLEDGE_BASE.subset(:effects, :all, :source_format => "Ensembl Gene ID").target_entity.uniq.length
-    assert_equal %w(Effect), KNOWLEDGE_BASE.subset(:effects, :all).info.first.keys 
-  end
-
-  def test_subset_all_persist
-    Misc.benchmark(1000) do
-      assert_equal 6, KNOWLEDGE_BASE.subset(:effects, :all, :source_format => "Ensembl Gene ID", :persist => true).length
-      assert_equal 4, KNOWLEDGE_BASE.subset(:effects, :all, :source_format => "Ensembl Gene ID", :persist => true).target_entity.uniq.length
-      assert_equal %w(Effect), KNOWLEDGE_BASE.subset(:effects, :all).info.first.keys 
-    end
-  end
 end
 

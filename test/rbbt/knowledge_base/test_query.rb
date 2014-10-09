@@ -8,7 +8,7 @@ require 'rbbt/workflow'
 Workflow.require_workflow "Genomics"
 require 'rbbt/knowledge_base/Genomics'
 
-class TestKnowledgeBase < Test::Unit::TestCase
+class TestKnowledgeBaseQuery < Test::Unit::TestCase
 
   EFFECT =StringIO.new <<-END
 #: :sep=" "#:type=:double

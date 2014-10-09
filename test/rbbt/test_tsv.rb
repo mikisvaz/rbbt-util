@@ -18,7 +18,7 @@ class TestTSV < Test::Unit::TestCase
     assert_equal "1", a["one"]
   end
   
-  def test_tsv
+  def test_tsv_1
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -82,15 +82,6 @@ row2    A    B    Id3
       assert_equal :double, tsv.type
       assert_equal "Id", tsv.key_field
       assert TokyoCabinet::HDB === tsv
-
-      FileUtils.rm filename
-      tsv = TSV.open(filename, :sep => /\s+/, :persist =>  true)
-      assert_equal ["a", "aa", "aaa"], tsv["row1"][0]
-      assert_equal ["ValueA", "ValueB", "OtherID"], tsv.fields
-      assert_equal :double, tsv.type
-      assert_equal "Id", tsv.key_field
-      assert TokyoCabinet::HDB === tsv
-
     end
   end
 
@@ -340,7 +331,7 @@ b 2
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :key_field => "Value", :grep => "2")
+      tsv = TSV.open(filename, :key_field => "Value", :grep => "#\\|2")
       assert(! tsv.include?("1"))
       assert(tsv.include?("2"))
     end
@@ -485,7 +476,6 @@ row2    b  bb bbb
     EOF
 
     TmpFile.with_file(content) do |filename|
-      puts TSV.open(filename, :sep => /\s+/, :key_field => "Value").to_s
       assert TSV.open(filename, :sep => /\s+/, :key_field => "Value").include? "aa"
     end
   end

@@ -16,7 +16,7 @@ module R
 
   self.model_dir = Rbbt.var.R.models
   class Model
-    R_METHOD = :debug
+    R_METHOD = :eval
 
     attr_accessor :name, :formula
     def initialize(name, formula, options = {})

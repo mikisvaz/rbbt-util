@@ -32,12 +32,16 @@ module TSV
 
           new_key_field, new_fields = through target, fields, true do |key, values|
             next if key.empty? 
-            if type == :single
+            case type
+            when :single
               values = [values]
               values.unshift key
-            else
+            when :double
               values = values.dup
               values.unshift [key]
+            when :list, :flat
+              values = values.dup
+              values.unshift key
             end
 
             values.each_with_index do |list, i|
