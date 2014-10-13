@@ -6,46 +6,6 @@ module Association
   def self.add_reciprocal(tsv)
     new = TSV.open(tsv.dumper_stream)
     tsv.with_unnamed do
-      tsv.through do |source, values|
-        next if values.flatten.compact.empty?
-        if values.length > 1
-          Misc.zip_fields(values).each do |_target_values|
-            target, *target_values = _target_values
-            if new[target].nil?
-              new_values = [[source]] + target_values.collect{|v| [v] }
-              new[target] = new_values
-            else
-              new_values = new[target].collect{|l| l.dup }
-              targets = new_values.shift
-              targets << source
-              rest = new_values.zip(target_values).collect do |o,n|
-                o << n
-                o
-              end
-              new_values = [targets] + rest
-              new[target] = new_values
-            end
-          end
-        else
-          values.first.each do |target|
-            if new[target].nil?
-              new[target] = [[source]]
-            else
-              new[target] = [new[target][0] + [source]]
-            end
-          end
-        end
-      end
-    end
-
-    tsv.annotate(new)
-
-    new
-  end
-
-  def self.add_reciprocal(tsv)
-    new = TSV.open(tsv.dumper_stream)
-    tsv.with_unnamed do
       case tsv.type
       when :double
         tsv.through do |source, values|
@@ -66,11 +26,18 @@ module Association
   def self.translate(tsv, source_final_format, target_final_format, options = {})
     source_field = tsv.key_field
     target_field = tsv.fields.first
+    namespace = tsv.namespace
 
     if source_final_format and source_field != source_final_format 
       Log.debug("Changing source format from #{tsv.key_field} to #{source_final_format}")
 
-      tsv = TSV.translate(tsv, source_field, source_final_format, options)
+      identifier_files = tsv.identifier_files.dup
+      identifier_files.concat Entity.identifier_files(source_final_format) if defined? Entity
+      identifier_files.uniq!
+      identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
+      identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
+
+      tsv = TSV.translate(tsv, source_field, source_final_format, options.merge(:identifier_files => identifier_files))
     end
 
     # Translate target 
@@ -78,7 +45,14 @@ module Association
       Log.debug("Changing target format from #{target_field} to #{target_final_format}")
       old_key_field = tsv.key_field 
       tsv.key_field = "MASK"
-      tsv = TSV.translate(tsv, target_field, target_final_format, options)
+
+      identifier_files = tsv.identifier_files.dup 
+      identifier_files.concat Entity.identifier_files(target_final_format) if defined? Entity
+      identifier_files.uniq!
+      identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
+      identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
+
+      tsv = TSV.translate(tsv, target_field, target_final_format, options.merge(:identifier_files => identifier_files))
       tsv.key_field = old_key_field
     end
 
@@ -87,7 +61,6 @@ module Association
 
   def self.reorder_tsv(tsv, options = {})
     fields, undirected, persist = Misc.process_options options, :fields, :undirected, :persist 
-    fields = tsv.fields if fields.nil?
     all_fields = tsv.all_fields
 
     source_pos, field_pos, source_header, field_headers, source_format, target_format = headers(all_fields, fields, options)
@@ -96,7 +69,7 @@ module Association
     info_fields = field_pos.collect{|f| f == :key ? :key : all_fields[f]}
     options = options.merge({:key_field => source_field, :fields =>  info_fields})
 
-    tsv = tsv.reorder source_field, fields
+    tsv = tsv.reorder source_field, fields, :zipped => true
 
     tsv.key_field = source_header
     tsv.fields = field_headers
@@ -114,7 +87,6 @@ module Association
     parser = TSV::Parser.new stream, options.merge(:fields => nil, :key_field => nil)
 
     key_field, *_fields = all_fields = parser.all_fields
-    fields = _fields if fields.nil?
 
     source_pos, field_pos, source_header, field_headers, source_format, target_format = headers parser.all_fields, fields, options
 
@@ -122,10 +94,22 @@ module Association
     parser.fields = field_pos
 
     case parser.type
+    when :single
+      class << parser
+        def get_values(parts)
+          [parts[@key_field], parts.values_at(*@fields).first]
+        end
+      end
+    when :list
+      class << parser
+        def get_values(parts)
+          [parts[@key_field], parts.values_at(*@fields)]
+        end
+      end
     when :double, :list, :single
       class << parser
         def get_values(parts)
-          [parts[@key_field].split(@sep2,-1), parts.values_at(*@fields).collect{|v| v.split(@sep2,-1) }]
+          [parts[@key_field].split(@sep2,-1), parts.values_at(*@fields).collect{|v| v.nil? ? [] : v.split(@sep2,-1) }]
         end
       end
     when :flat

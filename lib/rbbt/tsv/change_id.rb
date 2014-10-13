@@ -1,4 +1,6 @@
 require 'rbbt/tsv'
+require 'rbbt/persist'
+
 
 module TSV
   def self.change_key(tsv, format, options = {}, &block)
@@ -101,21 +103,32 @@ module TSV
     end
 
     files.each do |file|
-      tsv = TSV === file ? file : TSV.open(file)
+      all_fields = TSV === file ? file.all_fields : TSV.parse_header(file).all_fields 
 
       files.each do |other_file|
         next if file == other_file
-        other_tsv = TSV === other_file ? other_file : TSV.open(other_file)
 
-        common_field = (tsv.all_fields & other_tsv.all_fields).first
+        other_all_fields = TSV === other_file ? other_file.all_fields : TSV.parse_header(other_file).all_fields 
 
-        if common_field and (source.nil? or tsv.fields.include? source) and tsv.fields.include? common_field and 
-          other_tsv.fields.include? common_field and other_tsv.fields.include? target 
+        common_field = (all_fields & other_all_fields).first
 
-          index = file.index(options.merge(:target => common_field, :fields => fields)).
-            attach(other_file.index(options.merge(:target => target, :fields => [common_field]))).slice([target]).to_flat
+        if common_field and (source.nil? or fields.include? source) and all_fields.include? common_field and 
+          other_all_fields.include? common_field and other_all_fields.include? target 
 
-          return index
+          return Persist.persist_tsv(nil, Misc.fingerprint(files), {:files => files, :source => source, :target => target}, :prefix => "Translation index", :persist => options[:persist]) do |data|
+            index = TSV === file ? 
+              file.index(options.merge(:target => common_field, :fields => fields)) :
+              TSV.index(file, options.merge(:target => common_field, :fields => fields))
+
+            other_index = TSV === other_file ? 
+              other_file.index(options.merge(:target => target, :fields => [common_field])) :
+              TSV.index(other_file, options.merge(:target => target, :fields => [common_field]))
+
+            data.serializer = :clean
+            data.merge! index.to_list.attach(other_index.to_list).slice([target]).to_single
+
+            data
+          end
         end
       end
     end
@@ -129,13 +142,10 @@ module TSV
   end
 
   def self.translate_stream(tsv, field, format, options = {}, &block)
-    require 'rbbt/sources/organism'
     options = Misc.add_defaults options, :persist => false, :identifier_files => tsv.identifier_files, :compact => true
 
     identifier_files, identifiers, persist_input, compact = Misc.process_options options, :identifier_files, :identifiers, :persist, :compact
     identifier_files = [tsv, identifiers].compact if identifier_files.nil? or identifier_files.empty?
-
-    identifier_files << Organism.identifiers(tsv.namespace).find if tsv.respond_to? :namespace and tsv.namespace 
 
     identifier_files.uniq!
 

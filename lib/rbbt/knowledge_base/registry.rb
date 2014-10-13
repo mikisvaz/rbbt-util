@@ -41,22 +41,23 @@ class KnowledgeBase
       begin 
         Persist.memory("Index:" << [key, dir] * "@") do
           options = options.dup
-          persist_file = dir.indices[key]
+          persist_dir = dir
+          persist_file = persist_dir[key]
           file, registered_options = registry[name]
 
-          options = Misc.add_defaults options, :persist_file => persist_file, :namespace => namespace, :format => format, :persist => true
+          options = Misc.add_defaults options, :persist_file => persist_file, :persist_dir => persist_dir, :namespace => namespace, :format => format, :persist => true
           options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
 
           persist_options = Misc.pull_keys options, :persist
 
           index = if persist_file.exists? and persist_options[:persist] and not persist_options[:update]
                     Log.low "Re-opening index #{ name } from #{ Misc.fingerprint persist_file }. #{options}"
-                    Association.index(nil, options, persist_options)
+                    Association.index(nil, options, persist_options.dup)
                   else
                     options = Misc.add_defaults options, registered_options if registered_options
                     raise "Repo #{ name } not found and not registered" if file.nil?
-                    Log.low "Opening index #{ name } from #{ Misc.fingerprint file }. #{options}"
-                    Association.index(file, options, persist_options)
+                    Log.medium "Opening index #{ name } from #{ Misc.fingerprint file }. #{options}"
+                    Association.index(file, options, persist_options.dup)
                   end
 
           index.namespace = self.namespace
@@ -87,7 +88,7 @@ class KnowledgeBase
                   else
                     options = Misc.add_defaults options, registered_options if registered_options
                     raise "Repo #{ name } not found and not registered" if file.nil?
-                    Log.low "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
+                    Log.medium "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
                     Association.open(file, options, persist_options)
                   end
 
@@ -102,33 +103,4 @@ class KnowledgeBase
     get_index(name).fields
   end
 
-  def identifier_files(name)
-    get_database(name).identifier_files
-  end
-
-  def source_index(name)
-    identifier_files = identifier_files(name)
-    identifier_files << Organism.identifiers(namespace).find
-    identifier_files.uniq!
-    TSV.translation_index identifier_files, source(name), nil, :persist => true
-  end
-  
-  def identify_source(name, entity)
-    return :all if entity == :all
-    index = source_index(name)
-    index.values_at *entity
-  end
-
-  def target_index(name)
-    identifier_files = identifier_files(name)
-    identifier_files << Organism.identifiers(namespace).find
-    identifier_files.uniq!
-    TSV.translation_index identifier_files, target(name), nil, :persist => true
-  end
-  
-  def identify_target(name, entity)
-    return :all if entity == :all
-    index = target_index(name)
-    index.values_at *entity
-  end
 end

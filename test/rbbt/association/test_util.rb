@@ -7,6 +7,9 @@ require 'rbbt/association/util'
 class TestAssociationUtil < Test::Unit::TestCase
 
   def test_specs
+    spec = Association.parse_field_specification "=~Associated Gene Name=>Ensembl Gene ID"
+    assert_equal [nil, "Associated Gene Name", "Ensembl Gene ID"], spec
+
     spec = Association.parse_field_specification "TG=~Associated Gene Name=>Ensembl Gene ID"
     assert_equal ["TG", "Associated Gene Name", "Ensembl Gene ID"], spec
 

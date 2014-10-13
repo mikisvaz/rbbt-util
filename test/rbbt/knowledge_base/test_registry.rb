@@ -25,17 +25,22 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   EFFECT_TSV = TSV.open EFFECT, EFFECT_OPTIONS.dup 
 
-  KNOWLEDGE_BASE = KnowledgeBase.new '/tmp/kb.foo'
+  KNOWLEDGE_BASE = KnowledgeBase.new '/tmp/kb.foo2'
 
   KNOWLEDGE_BASE.register :effects, EFFECT_TSV, EFFECT_OPTIONS.dup
 
   def test_database
-    assert_equal "Associated Gene Name", KNOWLEDGE_BASE.get_database(:effects).key_field
+    assert_equal "Associated Gene Name", KNOWLEDGE_BASE.get_database(:effects, :source_format => "Associated Gene Name").key_field
   end
 
   def test_index
     assert KNOWLEDGE_BASE.get_index(:effects, :source_format => "Associated Gene Name", :target_format => "Ensembl Gene ID", :persist => false).include? "MDM2~ENSG00000141510"
   end
+
+  def test_index_persist
+    assert KNOWLEDGE_BASE.get_index(:effects, :source_format => "Associated Gene Name", :target_format => "Ensembl Gene ID", :persist => true).include? "MDM2~ENSG00000141510"
+  end
+
 
   def test_index_flat
     require 'rbbt/sources/tfacts'

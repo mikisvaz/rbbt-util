@@ -11,14 +11,14 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
     head = 100
 
-    tsv = Organism.identifiers("Hsa").tsv :head => head
+    tsv = datafile_test('identifiers').tsv :head => head
     res = {}
     TSV.traverse tsv do |k,v|
        res[k] = v
     end
     assert_equal head, res.keys.compact.sort.length
 
-    tsv = Organism.identifiers("Hsa").tsv :head => head
+    tsv = datafile_test('identifiers').tsv :head => head
     TSV.traverse tsv, :into => res do |k,v|
       [k,v]
     end
@@ -30,7 +30,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
     head = 100
 
-    tsv = Organism.identifiers("Hsa").tsv :head => head
+    tsv = datafile_test('identifiers').tsv :head => head
     res = {}
     TSV.traverse tsv do |k,v|
        res[k] = v
@@ -38,7 +38,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal head, res.keys.compact.sort.length
     assert res.values.compact.flatten.uniq.length > 0
 
-    tsv = Organism.identifiers("Hsa").tsv :head => head
+    tsv = datafile_test('identifiers').tsv :head => head
     TSV.traverse tsv, :into => res, :cpus => 5 do |k,v|
       [k,v]
     end
@@ -52,7 +52,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
     head = 1000
 
-    tsv = Organism.identifiers("Hsa").open
+    tsv = datafile_test('identifiers').open
     res = {}
     TSV.traverse tsv, :head => head, :into => res do |k,v|
       [k,v]
@@ -66,7 +66,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
     head = 1000
 
-    tsv = Organism.identifiers("Hsa")
+    tsv = datafile_test('identifiers')
     res = {}
     TSV.traverse tsv, :head => head, :cpus => 5, :into => res do |k,v|
       [k,v]
@@ -80,23 +80,23 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
     head = 1000
 
-    tsv = Organism.identifiers("Hsa").open
+    tsv = datafile_test('identifiers').open
     res = []
 
     TSV.traverse tsv, :head => head, :type => :keys do |v|
        res << v
     end
 
-    assert_equal res, Organism.identifiers("Hsa").tsv(:head => head).keys
+    assert_equal res, datafile_test('identifiers').tsv(:head => head).keys
 
-    tsv = Organism.identifiers("Hsa").open
+    tsv = datafile_test('identifiers').open
     res = []
 
     TSV.traverse tsv, :head => head, :type => :keys, :into => res do |v|
       v
     end
 
-    assert_equal res.sort, Organism.identifiers("Hsa").tsv(:head => head).keys.sort
+    assert_equal res.sort, datafile_test('identifiers').tsv(:head => head).keys.sort
   end
   
   def test_traverse_array
@@ -160,9 +160,9 @@ class TestTSVParallelThrough < Test::Unit::TestCase
   def test_traverse_benchmark
     require 'rbbt/sources/organism'
 
-    head = 2_000
+    head = 5_000
 
-    tsv = Organism.identifiers("Hsa").open
+    tsv = datafile_test('identifiers').open
     Misc.benchmark do
       res = {}
       TSV.traverse tsv, :head => head do |k,v|
@@ -170,7 +170,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
       end
     end
 
-    tsv = Organism.identifiers("Hsa").open
+    tsv = datafile_test('identifiers').open
     Misc.benchmark do
       res = {}
       TSV.traverse tsv, :head => head, :cpus => 5, :into => res do |k,v|
@@ -184,8 +184,8 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
     head = 2_000
 
-    stream = Organism.identifiers("Hsa").open 
-    dumper = TSV::Dumper.new Organism.identifiers("Hsa").tsv_options
+    stream = datafile_test('identifiers').open 
+    dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
     dumper.init
     TSV.traverse stream, :head => head, :into => dumper do |k,v|
       k = k.first
@@ -203,8 +203,8 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     head = 2_000
     threads = 10
 
-    stream = Organism.identifiers("Hsa").open 
-    dumper = TSV::Dumper.new Organism.identifiers("Hsa").tsv_options
+    stream = datafile_test('identifiers').open 
+    dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
     dumper.init
 
     TSV.traverse stream, :threads => threads, :head => head, :into => dumper do |k,v|
@@ -223,8 +223,8 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     head = 2_000
     cpus = 10
 
-    stream = Organism.identifiers("Hsa").open 
-    dumper = TSV::Dumper.new Organism.identifiers("Hsa").tsv_options
+    stream = datafile_test('identifiers').open 
+    dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
     dumper.init
     TSV.traverse stream, :cpus => cpus, :head => head, :into => dumper do |k,v|
       k = k.first
@@ -243,7 +243,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
     head = 2_000
 
-    tsv = TSV::Parser.new Organism.identifiers("Hsa").open, :head => head
+    tsv = TSV::Parser.new datafile_test('identifiers').open, :head => head
     dumper = TSV::Dumper.new tsv.options
 
     TSV.traverse tsv, :head => head, :into => dumper do |k,v|
@@ -265,7 +265,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     head = 2_000
     threads = 3
 
-    tsv = TSV::Parser.new Organism.identifiers("Hsa").open, :head => head
+    tsv = TSV::Parser.new datafile_test('identifiers').open, :head => head
 
     dumper = TSV::Dumper.new tsv.options
     dumper.init
@@ -286,11 +286,12 @@ class TestTSVParallelThrough < Test::Unit::TestCase
   def test_traverse_dumper_cpus
     require 'rbbt/sources/organism'
 
-    head = 10_000
+    head = 5_000
     cpus = 4
 
-    stream = Organism.identifiers("Hsa").open 
-    dumper = TSV::Dumper.new Organism.identifiers("Hsa").tsv_options
+    stream = datafile_test('identifiers').open 
+    dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
+    dumper.init
 
     TSV.traverse stream, :head => head, :cpus => cpus, :into => dumper do |k,v|
       k = k.first
@@ -302,6 +303,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
       [k, v.length]
     end
 
+    
     assert_equal head, res.size
   end
 
@@ -311,8 +313,8 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     head = 2_000
 
     Log.info Log.color :red, "TRAVERSE EXCEPTION"
-    stream = Organism.identifiers(Organism.default_code("Hsa")).open 
-    dumper = TSV::Dumper.new Organism.identifiers(Organism.default_code("Hsa")).tsv_options
+    stream = datafile_test('identifiers').open
+    dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
     dumper.init
 
     assert_raise StopException do
@@ -332,8 +334,8 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     cpus = 2
 
     Log.info Log.color :red, "TRAVERSE EXCEPTION"
-    stream = Organism.identifiers(Organism.default_code("Hsa")).open 
-    dumper = TSV::Dumper.new Organism.identifiers(Organism.default_code("Hsa")).tsv_options
+    stream = datafile_test('identifiers').open 
+    dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
     dumper.init
 
     assert_raise ProcessFailed do

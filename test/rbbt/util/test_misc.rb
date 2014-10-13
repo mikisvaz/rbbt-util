@@ -265,7 +265,7 @@ eum fugiat quo voluptas nulla pariatur?"
     time_spent = Time.new - time
 
     assert time_spent >= t * sleep_time
-    assert time_spent <= t * 1.2 * sleep_time
+    assert time_spent <= t * 1.5 * sleep_time
     assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }".reverse}, lines1
     assert_equal (0..t-1).to_a.collect{|i| "LINE #{ i }".downcase}, lines2
   end

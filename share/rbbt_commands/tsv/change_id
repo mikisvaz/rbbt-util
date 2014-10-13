@@ -11,7 +11,7 @@ $ rbbt command command [options] -f file
 
 Use - to read from STDIN. The `field` is the tsv column to change.
 the `target` is the target format, as appearing in the `identifiers`
-file or in `Organism.identifiers("Hsa")`.
+file or in `Organism.identifiers(Organism.default_code("Hsa"))`.
 
 -f--file* File to process
 -f--field* Field to change
@@ -26,7 +26,7 @@ SOPT.require options, :file, :field, :target
 
 require 'rbbt/sources/organism'
 
-identifiers = options[:identifiers] || Organism.identifiers("Hsa").find
+identifiers = options[:identifiers] || Organism.identifiers(Organism.default_code("Hsa")).find
 
 begin
   index = TSV.index(identifiers, :persist => true, :target => target, :merge => true)

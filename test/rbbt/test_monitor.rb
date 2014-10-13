@@ -2,8 +2,6 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '..', 'test_helper.r
 require 'rbbt/monitor'
 
 class TestMonitor < Test::Unit::TestCase
-  def _test_locks
-  end
 end
 
 if __FILE__ == $0

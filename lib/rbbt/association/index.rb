@@ -12,9 +12,10 @@ module Association
     file = version_file(file, options[:namespace]) if options[:namespace] and String === file
 
     undirected = options[:undirected]
-    Persist.persist_tsv(file, "Association Index", options, persist_options) do |data|
+    Persist.persist_tsv(file, "Association Index", options, persist_options.dup) do |data|
       recycle = options[:recycle]
 
+      persist_options[:file] = persist_options[:file] + '.database' if persist_options[:file]
       database = open(file, options, persist_options.dup)
 
       fields = database.fields
@@ -31,6 +32,14 @@ module Association
 
       database.with_unnamed do
         database.through do |source, values|
+          case database.type
+          when :single
+            values = [[values]]
+          when :list
+            values = values.collect{|v| [v] }
+          when :flat
+            values = [values]
+          end
           next if values.empty?
           next if source.nil? or source.empty?
           next if values.empty?

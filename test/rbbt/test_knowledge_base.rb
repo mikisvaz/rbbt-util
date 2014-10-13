@@ -4,33 +4,100 @@ require 'test/unit'
 
 require 'rbbt/workflow'
 require 'rbbt/entity'
+require 'rbbt/entity/identifiers'
 
 require 'rbbt/association'
 require 'rbbt/knowledge_base'
 
+require 'rbbt/sources/organism'
+require 'rbbt/sources/tfacts'
+require 'rbbt/sources/kegg'
+
+module Gene
+  extend Entity
+  add_identifiers Organism.identifiers("NAMESPACE"), "Ensembl Gene ID", "Associated Gene Name"
+  add_identifiers KEGG.identifiers
+
+  property :follow => :single do |kb,name,annotate=nil|
+    if annotate.nil? or annotate
+      l = kb.children(name, self).target_entity
+      self.annotate l if annotate and kb.source(name) == format
+      l
+    else
+      kb._children(name, self).collect{|v| v.partition("~").last }
+    end
+  end
+
+  property :backtrack => :single do |kb,name,annotate=nil|
+    if annotate.nil? or annotate
+      l = kb.parents(name, self).target_entity
+      self.annotate l if annotate and kb.target(name) == format
+      l
+    else
+      kb._parents(name, self).collect{|v| v.partition("~").last }
+    end
+  end
+
+  property :expand => :single do |kb,name,annotate=nil|
+    if annotate.nil? or annotate
+      n = kb.neighbours(name, self)
+      if kb.source(name) == kb.target(name) 
+        self.annotate n.collect{|k,v| v.target}.flatten
+      else
+        n.collect{|k,v| v.target_entity.to_a}.flatten
+      end
+    else
+      n = kb._neighbours(name, self)
+      n.values.flatten.collect{|v| v.partition("~").last}
+    end
+  end
+end
+
 
 class TestKnowledgeBase < Test::Unit::TestCase
 
-  EFFECT =StringIO.new <<-END
-#: :sep=" "#:type=:double
-#SG TG Effect
-MDM2 TP53 inhibition
-TP53 NFKB1|GLI1 activation|activation true|true
-  END
+  def test_knowledge_base
+    organism = Organism.default_code("Hsa")
+    TmpFile.with_file do |tmpdir|
+      kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
+      kb.format = {"Gene" => "Ensembl Gene ID"}
 
-  EFFECT_OPTIONS = {
-    :source => "SG=~Associated Gene Name",
-    :target => "TG=~Associated Gene Name=>Ensembl Gene ID",
-    :persist => false,
-    :identifiers => datafile_test('identifiers'),
-    :undirected => true,
-    :namespace => "Hsa"
-  }
+      kb.register :tfacts, TFacts.regulators, :source =>"=~Associated Gene Name"
 
-  EFFECT_TSV = TSV.open EFFECT, EFFECT_OPTIONS.dup 
+      assert_equal "Ensembl Gene ID", kb.get_database(:tfacts).key_field
 
-  KNOWLEDGE_BASE = KnowledgeBase.new '/tmp/kb.foo'
+      kb.register :kegg, KEGG.gene_pathway, :source_format => "Ensembl Gene ID"
+      assert_match "Ensembl Gene ID", kb.get_database(:kegg).key_field
 
-  KNOWLEDGE_BASE.register :effects, EFFECT_TSV, EFFECT_OPTIONS.dup
+      gene = Gene.setup("TP53", "Associated Gene Name", organism)
+      assert_equal "TP53", gene.name
+      assert_equal "ENSG00000141510", gene.ensembl
+
+      downstream = gene.follow kb, :tfacts
+      upstream = gene.backtrack kb, :tfacts
+      close = gene.expand kb, :tfacts
+
+      assert downstream.length < downstream.follow(kb, :tfacts,false).flatten.length
+      assert downstream.follow(kb, :tfacts,false).flatten.length < Annotated.flatten(downstream.follow(kb, :tfacts)).follow(kb, :tfacts).flatten.length
+
+      Misc.benchmark(50) do
+        downstream.follow(kb, :tfacts,false)
+        downstream.backtrack(kb, :tfacts,false)
+        downstream.expand(kb, :tfacts,false)
+      end
+
+      Misc.benchmark(50) do
+        downstream.follow(kb, :tfacts)
+        downstream.backtrack(kb, :tfacts)
+        downstream.expand(kb, :tfacts)
+      end
+      
+      Misc.benchmark(50) do
+        downstream.follow(kb, :tfacts, true)
+        downstream.backtrack(kb, :tfacts, true)
+        downstream.expand(kb, :tfacts, true)
+      end
+    end
+  end
 end
 

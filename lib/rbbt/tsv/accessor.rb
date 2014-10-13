@@ -1,6 +1,8 @@
 require 'yaml'
 require 'rbbt/annotations'
 require 'rbbt/tsv/dumper'
+require 'set'
+
 module TSV
 
   TSV_SERIALIZER = YAML
@@ -601,6 +603,7 @@ module TSV
   end
 
   def summary
+
     key = nil
     values = nil
     self.each do |k, v|
@@ -608,6 +611,7 @@ module TSV
       values = v
       break
     end
+
     with_unnamed do
       <<-EOF
 Filename = #{Path === filename ? filename.find : (filename || "No filename")}

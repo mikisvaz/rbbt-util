@@ -167,7 +167,11 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     util.rb
     annotated_array.rb
    }
+
    entity.rb
+   entity=entity{
+    identifiers.rb
+   }
 
    association.rb
    association.rb.old
@@ -182,29 +186,34 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    knowledge_base.rb
    knowledge_base=knowledge_base{
     registry.rb
+    syndicate.rb
     entity.rb
+    enrichment.rb
     query.rb
    }
    knowledge_base.rb.old
   }
  }
  test=test {
+  test_helper.rb
   data=data filter="*"{
    Test.xls
    dose_response
    dose_response2
    dose_response3
    example.pdf
+   gene_ages
    identifiers
    test.tsv
   }
-  test_helper.rb
   rbbt=rbbt{
    test_annotations.rb
    test_association.rb
    test_entity.rb
    test_fix_width_table.rb
    test_knowledge_base.rb
+   test_monitor.rb
+   test_packed_index.rb
    test_persist.rb
    test_resource.rb
    test_tsv.rb
@@ -216,9 +225,17 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     test_task.rb
    }
    association=association{
+    test_database.rb
     test_index.rb
     test_item.rb
+    test_open.rb
+    test_util.rb
    }
+   knowledge_base=knowledge_base{
+    test_enrichment.rb
+    test_query.rb
+    test_registry.rb
+    }
    persist=persist{
     test_tsv.rb
    }
@@ -230,28 +247,25 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     test_filter.rb
     test_index.rb
     test_manipulate.rb
+    test_matrix.rb
     test_parallel.rb
+    test_parser.rb
+    test_stream.rb
+    test_util.rb
     parallel=parallel{
      test_through.rb
      test_traverse.rb
     }
-    test_parser.rb
-    test_util.rb
-    }
+   }
+   entity=entity{
+    test_identifiers.rb
+   }
    util=util{
-    simpleopt=simpleopt{
-     test_get.rb
-     test_parse.rb
-     test_setup.rb
-    }
-    concurrency=concurrency{
-     test_processes.rb
-     test_threads.rb
-     }
     test_R.rb
     test_chain_methods.rb
     test_cmd.rb
     test_colorize.rb
+    test_concurrency.rb
     test_excel2tsv.rb
     test_filecache.rb
     test_log.rb
@@ -261,6 +275,15 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     test_simpleDSL.rb
     test_simpleopt.rb
     test_tmpfile.rb
+    simpleopt=simpleopt{
+     test_get.rb
+     test_parse.rb
+     test_setup.rb
+    }
+    concurrency=concurrency{
+     test_processes.rb
+     test_threads.rb
+     }
    }
   }
  }

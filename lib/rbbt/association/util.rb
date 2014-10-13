@@ -14,7 +14,9 @@ module Association
     spec = spec.split "=>" unless Array === spec
     field_part, final_format = spec
 
-    field, format = field_part.split "=~"
+    field, format = field_part.split "=~", -1
+
+    field = nil if field.nil? or field.empty?
 
     [field, format, final_format]
   end
@@ -23,7 +25,6 @@ module Association
     return nil if spec.nil?
     field, header, format = parse_field_specification spec 
 
-    return nil if field.nil?
     specs = if all_fields.nil? or all_fields.include? field
                [field, header, format]
              else
@@ -31,10 +32,10 @@ module Association
                  begin
                    identify_entity_format field, all_fields 
                  rescue
-                   [field, nil, nil]
+                   [field, header, format]
                  end
                else
-                 [field, nil, nil]
+                 [field, header, format]
                end
              end
     specs
@@ -45,8 +46,8 @@ module Association
 
     key_field, *fields = all_fields.nil? ? [nil] : all_fields
 
-    source_specs = normalize_specs  source || source_format, all_fields
-    target_specs = normalize_specs  target || target_format, all_fields
+    source_specs = normalize_specs  source, all_fields
+    target_specs = normalize_specs  target, all_fields
 
     source_specs = [nil, nil, nil] if source_specs.nil?
     target_specs = [nil, nil, nil] if target_specs.nil?
@@ -71,15 +72,14 @@ module Association
       end
     end
 
-
     {:source => source_specs, :target => target_specs}
   end
 
   def self.process_formats(field, default_format = {})
     return nil if default_format.nil? or default_format.empty?
-    default_format.each do |type, field|
-      entity_type = Entity.formats[field] || field
-      return field if entity_type.to_s === type 
+    default_format.each do |type, format|
+      entity_type = Entity.formats[field] || format
+      return format if entity_type.to_s === type 
     end
     return nil
   end
@@ -96,7 +96,7 @@ module Association
     source_header = specs[:source][1] || specs[:source][0]
     target_header = specs[:target][1] || specs[:target][0]
 
-    info_fields.unshift all_fields.first
+    info_fields = all_fields.dup if info_fields.nil?
     info_fields.delete source_field
     info_fields.delete target_field
     info_fields.unshift target_field
@@ -116,7 +116,7 @@ module Association
       field_headers << header
     end
 
-    field_pos = info_fields.collect{|f| f == :key ? 0 : all_fields.index(f) || f }
+    field_pos = info_fields.collect{|f| raise "Field #{f} not found. Options: #{info_fields* ", "}" unless all_fields.include?(f); f == :key ? 0 : all_fields.index(f);  }
 
     source_format = specs[:source][2]
     target_format = specs[:target][2]
@@ -127,6 +127,7 @@ module Association
       target_format = process_formats(specs[:target][1] || specs[:target][0], format) || target_format
     end
 
+    Log.low "Headers -- #{[source_pos, field_pos, source_header, field_headers, source_format, target_format]}"
     [source_pos, field_pos, source_header, field_headers, source_format, target_format]
   end
 end

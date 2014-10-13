@@ -77,4 +77,6 @@ TP53 NFKB1|GLI1 activation|activation true|true
     tsv = Association.index(file,  :type => :flat, :source => "Transcription Factor Associated Gene Name=~Associated Gene Name", :merge => true)
     assert tsv.match("TP53").length > 10
   end
+
+
 end

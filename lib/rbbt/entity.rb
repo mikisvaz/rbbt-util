@@ -1,4 +1,5 @@
 require 'rbbt/annotations'
+require 'rbbt/entity/identifiers'
 
 module Entity 
 

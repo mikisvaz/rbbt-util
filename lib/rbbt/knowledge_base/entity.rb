@@ -30,6 +30,14 @@ class KnowledgeBase
     options
   end
 
+  def translate(entities, type)
+    if format = @format[type] and (entities.respond_to? :format and format != entities.format)
+      entities.to format
+    else
+      entities
+    end
+  end
+
   def annotate(entities, type, database = nil)
     format = @format[type] || type
     Misc.prepare_entity(entities, format, entity_options_for(type, database))
@@ -49,6 +57,51 @@ class KnowledgeBase
 
   def entity_types
     entities.collect{|entity| Entity.formats[entity] }.uniq
+  end
+
+  def identifier_files(name)
+    get_database(name).identifier_files.dup
+  end
+
+  def source_index(name)
+    Persist.memory("Source index #{name}: KB directory #{dir}") do
+      identifier_files = identifier_files(name)
+      identifier_files.concat Entity.identifier_files(source(name)) if defined? Entity
+      identifier_files.uniq!
+      identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
+      identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
+      TSV.translation_index identifier_files, source(name), nil, :persist => true
+    end
+  end
+  
+  def target_index(name)
+    Persist.memory("Target index #{name}: KB directory #{dir}") do
+      identifier_files = identifier_files(name)
+      identifier_files.concat Entity.identifier_files(source(name)) if defined? Entity
+      identifier_files.uniq!
+      identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
+      identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
+      TSV.translation_index identifier_files, target(name), nil, :persist => true
+    end
+  end
+
+  def identify_source(name, entity)
+    return :all if entity == :all
+    index = source_index(name)
+    return nil if index.nil?
+    index.values_at *entity
+  end
+
+  
+  def identify_target(name, entity)
+    return :all if entity == :all
+    index = target_index(name)
+    return nil if index.nil?
+    index.values_at *entity
+  end
+
+  def identify(name, entity)
+    identify_source(name, entity) || identify_target(name, entity)
   end
 end
 

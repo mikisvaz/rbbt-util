@@ -1,13 +1,17 @@
 require 'rbbt'
-require 'rbbt/util/open'
-require 'rbbt/util/cmd'
-require 'rbbt/util/tmpfile'
-require 'rbbt/util/filecache'
-require 'rbbt/tsv'
-require 'rbbt/persist'
 require 'rbbt/util/misc'
-
-FileCache.cachedir   = Rbbt.var.cache.filecache.find :user
+require 'rbbt/util/open'
 Open.cachedir        = Rbbt.var.cache["open-remote"].find :user
-TmpFile.tmpdir       = Rbbt.tmp.find :user
+
+require 'rbbt/persist'
 Persist.cachedir = Rbbt.var.cache.persistence
+
+require 'rbbt/util/filecache'
+FileCache.cachedir   = Rbbt.var.cache.filecache.find :user
+
+require 'rbbt/util/tmpfile'
+TmpFile.tmpdir       = Rbbt.tmp.find :user
+
+require 'rbbt/util/cmd'
+require 'rbbt/tsv'
+

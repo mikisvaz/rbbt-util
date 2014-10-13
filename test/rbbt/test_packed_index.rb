@@ -2,7 +2,7 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '..', 'test_helper.r
 require 'rbbt/packed_index'
 
 class TestPackedIndex < Test::Unit::TestCase
-  def _test_index
+  def _test_packed_index
 
     TmpFile.with_file do |tmpfile|
       pi = PackedIndex.new tmpfile, true, %w(i i 23s f f f f f)

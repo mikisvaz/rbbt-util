@@ -161,7 +161,7 @@ module Misc
 
       end
 
-      str << "_" << hash2md5(v.info) if defined? Annotated and Annotated === v and not AssociationItem === v
+      str << "_" << hash2md5(v.info) if defined? Annotated and Annotated === v and not (defined? AssociationItem and AssociationItem === v)
     end
     hash.unnamed = unnamed if hash.respond_to? :unnamed
 

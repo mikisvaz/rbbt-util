@@ -4,10 +4,6 @@ require 'test/unit'
 require 'rbbt/knowledge_base'
 require 'rbbt/knowledge_base/query'
 
-require 'rbbt/workflow'
-Workflow.require_workflow "Genomics"
-require 'rbbt/knowledge_base/Genomics'
-
 class TestKnowledgeBaseQuery < Test::Unit::TestCase
 
   EFFECT =StringIO.new <<-END

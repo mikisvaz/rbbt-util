@@ -3,6 +3,7 @@ require 'rbbt/association'
 require 'rbbt/association/item'
 require 'rbbt/knowledge_base/entity'
 require 'rbbt/knowledge_base/query'
+require 'rbbt/knowledge_base/syndicate'
 
 class KnowledgeBase
 

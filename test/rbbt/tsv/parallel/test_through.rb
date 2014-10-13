@@ -5,8 +5,7 @@ require 'rbbt/tsv/parallel'
 class TestTSVParallelThrough < Test::Unit::TestCase
 
   def test_pthrough
-    require 'rbbt/sources/organism'
-    tsv = Organism.identifiers("Hsa").tsv :unnamed => true, :persist => false, :fields => ["Associated Gene Name"]
+    tsv = datafile_test('identifiers').tsv :unnamed => true, :persist => false, :fields => ["Associated Gene Name"]
 
     h = {}
     tsv.monitor = true
@@ -21,8 +20,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
 
   def test_ppthrough
-    require 'rbbt/sources/organism'
-    tsv = Organism.identifiers("Hsa").tsv :unnamed => true, :persist => false, :fields => ["Associated Gene Name"]
+    tsv = datafile_test('identifiers').tsv :unnamed => true, :persist => false, :fields => ["Associated Gene Name"]
 
     h = {}
 

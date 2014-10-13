@@ -1,5 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
-require 'rbbt/util/misc'
+require 'rbbt-util'
 require 'rbbt/association'
 require 'rbbt/association'
 require 'rbbt/association/database'
@@ -51,4 +51,11 @@ TP53 NFKB1|GLI1 activation|activation true|true
     assert_equal %w(inhibition), EFFECT_DATABASE["MDM2"]["Effect"]
     assert_equal %w(activation activation), EFFECT_DATABASE["TP53"]["Effect"]
   end
+
+  def test_index_list
+    file = datafile_test('gene_ages')
+    tsv = Association.database(file)
+    assert_equal [["Bilateria"], ["Euteleostomi"], ["Duplicate"]], tsv["ENSG00000000003"]
+  end
+
 end

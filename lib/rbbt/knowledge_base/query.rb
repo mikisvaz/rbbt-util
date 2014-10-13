@@ -38,5 +38,46 @@ class KnowledgeBase
 
     matches
   end
+
+  def all(name, options={})
+    repo = get_index name, options
+    setup name, repo.keys
+  end
+
+  def _children(name, entity)
+    repo = get_index name
+    repo.match(entity)
+  end
+
+  def children(name, entity)
+    entity = identify_source(name, entity)
+    setup(name, _children(name, entity))
+  end
+
+  def _parents(name, entity)
+    repo = get_index name
+    repo.reverse.match(entity)
+  end
+
+  def parents(name, entity)
+    entity = identify_target(name, entity)
+    setup(name, _parents(name, entity), true)
+  end
+
+  def _neighbours(name, entity)
+    if undirected(name) and source(name) == target(name)
+      {:children => _children(name, entity)}
+    else
+      {:parents => _parents(name, entity), :children => _children(name, entity)}
+    end
+  end
+
+  def neighbours(name, entity)
+    hash = _neighbours(name, entity)
+    IndiferentHash.setup(hash)
+    setup(name, hash[:children]) if hash[:children] 
+    setup(name, hash[:parents], true) if hash[:parents]
+    hash
+  end
 end
 

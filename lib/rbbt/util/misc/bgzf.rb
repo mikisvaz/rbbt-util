@@ -1,3 +1,5 @@
+require 'rbbt/persist'
+require 'set'
 
 module Bgzf
   attr_accessor :data_offset, :compressed_stream, :block_cache_size
