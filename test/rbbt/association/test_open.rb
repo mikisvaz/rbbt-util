@@ -28,11 +28,6 @@ TP53 NFKB1|GLI1 activation|activation true|true
     assert_equal ["false"], tsv["MDM2"]["directed?"]
   end
 
-  def test_open_no_persist_undirected
-    tsv = Association.open(EFFECT_TSV, :source => "SG=~Gene", :target => "TG=~Gene", :undirected => true, :persist => false)
-    assert_equal "TP53", tsv["MDM2"]["Gene"].first
-    assert tsv["TP53"]["Gene"].include? "MDM2"
-  end
 
   def test_open_persist
     tsv = Association.open(EFFECT_TSV, EFFECT_OPTIONS, :persist => true, :update => true)

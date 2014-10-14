@@ -45,8 +45,8 @@ class KnowledgeBase
           persist_file = persist_dir[key]
           file, registered_options = registry[name]
 
-          options = Misc.add_defaults options, :persist_file => persist_file, :persist_dir => persist_dir, :namespace => namespace, :format => format, :persist => true
           options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
+          options = Misc.add_defaults options, :persist_file => persist_file, :persist_dir => persist_dir, :namespace => namespace, :format => format, :persist => true
 
           persist_options = Misc.pull_keys options, :persist
 
@@ -77,12 +77,13 @@ class KnowledgeBase
           persist_file = dir.indices[key]
           file, registered_options = registry[name]
 
-          options = Misc.add_defaults options, :persist_file => persist_file, :namespace => namespace, :format => format, :persist => true
+
           options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
+          options = Misc.add_defaults options, :persist_file => persist_file, :namespace => namespace, :format => format, :persist => true
 
           persist_options = Misc.pull_keys options, :persist
 
-          database = if persist_file.exists?
+          database = if persist_file.exists? and persist_options[:persist] and not persist_options[:update]
                     Log.low "Re-opening database #{ name } from #{ Misc.fingerprint persist_file }. #{options}"
                     Association.open(nil, options, persist_options)
                   else

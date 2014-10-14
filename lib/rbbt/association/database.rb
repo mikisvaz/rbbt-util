@@ -11,7 +11,9 @@ module Association
         tsv.through do |source, values|
           Misc.zip_fields(values).each do |info|
             target, *rest = info
-            new.zip_new target, [source] + rest
+            next if target == source
+            rest.unshift source
+            new.zip_new target, rest
           end
         end
       else
@@ -60,7 +62,7 @@ module Association
   end
 
   def self.reorder_tsv(tsv, options = {})
-    fields, undirected, persist = Misc.process_options options, :fields, :undirected, :persist 
+    fields, persist = Misc.process_options options, :fields, :persist 
     all_fields = tsv.all_fields
 
     source_pos, field_pos, source_header, field_headers, source_format, target_format = headers(all_fields, fields, options)
@@ -69,20 +71,18 @@ module Association
     info_fields = field_pos.collect{|f| f == :key ? :key : all_fields[f]}
     options = options.merge({:key_field => source_field, :fields =>  info_fields})
 
-    tsv = tsv.reorder source_field, fields, :zipped => true
+    tsv = tsv.reorder source_field, fields if true or source_field != tsv.key_field or (fields and tsv.fields != fields)
 
     tsv.key_field = source_header
     tsv.fields = field_headers
 
     tsv = translate tsv, source_format, target_format, :persist => persist if source_format or target_format
 
-    tsv = add_reciprocal tsv if undirected
-
     tsv
   end
 
   def self.open_stream(stream, options = {})
-    fields, undirected, persist = Misc.process_options options, :fields, :undirected, :persist
+    fields, persist = Misc.process_options options, :fields, :persist
 
     parser = TSV::Parser.new stream, options.merge(:fields => nil, :key_field => nil)
 
@@ -131,8 +131,6 @@ module Association
     tsv = tsv.to_double unless tsv.type == :double
 
     tsv = translate tsv, source_format, target_format, :persist => persist if source_format or target_format
-
-    tsv = add_reciprocal tsv if undirected
 
     tsv
   end

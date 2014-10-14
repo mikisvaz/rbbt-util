@@ -116,6 +116,8 @@ module Misc
   HASH2MD5_MAX_STRING_LENGTH = 1000
   HASH2MD5_MAX_ARRAY_LENGTH = 100
   def self.hash2md5(hash)
+    return "" if hash.nil? or hash.empty?
+
     str = ""
     keys = hash.keys
     keys = keys.clean_annotations if keys.respond_to? :clean_annotations
@@ -161,7 +163,10 @@ module Misc
 
       end
 
-      str << "_" << hash2md5(v.info) if defined? Annotated and Annotated === v and not (defined? AssociationItem and AssociationItem === v)
+      if defined? Annotated and Annotated === v and not (defined? AssociationItem and AssociationItem === v)
+        info = Annotated.purge(v.info)
+        str << "_" << hash2md5(info) 
+      end
     end
     hash.unnamed = unnamed if hash.respond_to? :unnamed
 

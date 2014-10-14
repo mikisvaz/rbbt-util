@@ -602,6 +602,16 @@ module TSV
     peek
   end
 
+  def head(times=10)
+    stream = dumper_stream
+    str = ""
+    times.times do |i|
+      break if stream.eof?
+      str << stream.gets
+    end
+    str
+  end
+
   def summary
 
     key = nil

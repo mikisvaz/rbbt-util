@@ -112,10 +112,11 @@ module TSV
 
         common_field = (all_fields & other_all_fields).first
 
-        if common_field and (source.nil? or fields.include? source) and all_fields.include? common_field and 
+        if common_field and (source.nil? or all_fields.include? source) and all_fields.include? common_field and 
           other_all_fields.include? common_field and other_all_fields.include? target 
 
           return Persist.persist_tsv(nil, Misc.fingerprint(files), {:files => files, :source => source, :target => target}, :prefix => "Translation index", :persist => options[:persist]) do |data|
+
             index = TSV === file ? 
               file.index(options.merge(:target => common_field, :fields => fields)) :
               TSV.index(file, options.merge(:target => common_field, :fields => fields))
@@ -125,6 +126,8 @@ module TSV
               TSV.index(other_file, options.merge(:target => target, :fields => [common_field]))
 
             data.serializer = :clean
+            
+            # ToDo: remove the need to to the `to_list` transformation
             data.merge! index.to_list.attach(other_index.to_list).slice([target]).to_single
 
             data

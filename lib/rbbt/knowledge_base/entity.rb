@@ -88,8 +88,8 @@ class KnowledgeBase
   def identify_source(name, entity)
     return :all if entity == :all
     index = source_index(name)
-    return nil if index.nil?
-    index.values_at *entity
+    return entity if index.nil?
+    Array === entity ? index.values_at(*entity) : index[entity]
   end
 
   
@@ -97,7 +97,7 @@ class KnowledgeBase
     return :all if entity == :all
     index = target_index(name)
     return nil if index.nil?
-    index.values_at *entity
+    Array === entity ? index.values_at(*entity) : index[entity]
   end
 
   def identify(name, entity)

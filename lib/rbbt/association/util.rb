@@ -123,8 +123,8 @@ module Association
 
 
     if format = options[:format]
-      source_format = process_formats(specs[:source][1] || specs[:source][0], format) || source_format
-      target_format = process_formats(specs[:target][1] || specs[:target][0], format) || target_format
+      source_format = process_formats(specs[:source][1] || specs[:source][0], format) || source_format unless source_format
+      target_format = process_formats(specs[:target][1] || specs[:target][0], format) || target_format unless target_format
     end
 
     Log.low "Headers -- #{[source_pos, field_pos, source_header, field_headers, source_format, target_format]}"

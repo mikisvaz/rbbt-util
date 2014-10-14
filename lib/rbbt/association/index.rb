@@ -11,12 +11,14 @@ module Association
 
     file = version_file(file, options[:namespace]) if options[:namespace] and String === file
 
-    undirected = options[:undirected]
     Persist.persist_tsv(file, "Association Index", options, persist_options.dup) do |data|
       recycle = options[:recycle]
+      undirected = options[:undirected]
 
       persist_options[:file] = persist_options[:file] + '.database' if persist_options[:file]
-      database = open(file, options, persist_options.dup)
+      database = open(file, options, persist_options.dup.merge(:engine => "HDB"))
+
+      undirected = true if undirected.nil? and database.key_field == database.fields.first
 
       fields = database.fields
       source_field = database.key_field
@@ -67,6 +69,10 @@ module Association
               old_info = data[key]
               info = old_info.zip(info).collect{|p| p * ";;" }
               data[key] = info
+            end
+            if undirected
+              reverse_key = [target,source] * "~"
+              data[reverse_key] = info unless data.include? reverse_key
             end
           end
         end
