@@ -94,11 +94,16 @@ module TSV
       if TSV === file
         all_fields = file.all_fields
         target = file.fields.first if target.nil?
-        return file.index(options.merge(:target => target, :fields => fields, :order => true)) if (source.nil? or all_fields.include? source) and all_fields.include? target
+        if (source.nil? or all_fields.include? source) and all_fields.include? target
+          return file.index(options.merge(:target => target, :fields => fields, :order => true)) 
+        end
       else
         all_fields = TSV.parse_header(file).all_fields
         target = all_fields[1] if target.nil?
-        return TSV.index(file, options.merge(:target => target, :fields => fields, :order => true)) if (source.nil? or all_fields.include? source) and all_fields.include? target
+        if (source.nil? or all_fields.include? source) and all_fields.include? target
+          index = TSV.index(file, options.merge(:target => target, :fields => fields, :order => true)) 
+          return index
+        end
       end
     end
 
@@ -112,10 +117,9 @@ module TSV
 
         common_field = (all_fields & other_all_fields).first
 
-        if common_field and (source.nil? or all_fields.include? source) and all_fields.include? common_field and 
-          other_all_fields.include? common_field and other_all_fields.include? target 
+        if common_field and (source.nil? or all_fields.include? source) and other_all_fields.include? target 
 
-          return Persist.persist_tsv(nil, Misc.fingerprint(files), {:files => files, :source => source, :target => target}, :prefix => "Translation index", :persist => options[:persist]) do |data|
+          index = Persist.persist_tsv(nil, Misc.fingerprint(files), {:files => files, :source => source, :target => target}, :prefix => "Translation index", :persist => options[:persist]) do |data|
 
             index = TSV === file ? 
               file.index(options.merge(:target => common_field, :fields => fields)) :
@@ -129,9 +133,8 @@ module TSV
             
             # ToDo: remove the need to to the `to_list` transformation
             data.merge! index.to_list.attach(other_index.to_list).slice([target]).to_single
-
-            data
           end
+          return index
         end
       end
     end

@@ -29,6 +29,7 @@ module Entity
             source ||= self.respond_to?(:format)? self.format : nil
 
             index = TSV.translation_index(identifier_files, format, source, :persist => true)
+            raise "No index from #{ source } to #{ format }: #{Misc.fingerprint identifier_files}" if index.nil?
             index.unnamed = true
             index
           end
@@ -98,6 +99,7 @@ module Entity
 
     @identifier_files ||= []
     @identifier_files << file
+    @identifier_files.uniq!
 
 
     self.include Entity::Identified unless Entity::Identified === self

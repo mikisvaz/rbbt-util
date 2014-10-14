@@ -1,4 +1,5 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
+require 'rbbt-util'
 require 'rbbt/tsv'
 require 'rbbt/tsv/change_id'
 
