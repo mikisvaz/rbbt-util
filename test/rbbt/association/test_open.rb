@@ -55,7 +55,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
   end
 
   def test_index_persist_reverse
-    tsv = Association.index(EFFECT, EFFECT_OPTIONS.merge(:source => "TG", :target => "SG=~Associated Gene Name"), :persist => true).reverse
+    tsv = Association.index(EFFECT, EFFECT_OPTIONS.merge( :source => "TG", :target => "SG=~Associated Gene Name"), :persist => true).reverse
     tsv.unnamed = false
     assert_equal "inhibition", tsv["MDM2~TP53"]["Effect"]
     assert_equal %w(MDM2~TP53), tsv.match("MDM2")

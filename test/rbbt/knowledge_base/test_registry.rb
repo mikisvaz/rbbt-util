@@ -73,9 +73,10 @@ TP53 NFKB1|GLI1 activation|activation true|true
     assert_equal count, count2
   end
 
-
   def test_pina2
+    KNOWLEDGE_BASE.entity_options["Gene"] = {:organism => "Mmu"}
     index = KNOWLEDGE_BASE.get_index(:pina, :persist => true, :source_format => "Ensembl Gene ID", :target_format => "Ensembl Gene ID", :undirected => true)
+    assert_equal "Mmu", index.entity_options["Gene"][:organism]
   end
 end
 

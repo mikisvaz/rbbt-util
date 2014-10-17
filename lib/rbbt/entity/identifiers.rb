@@ -1,5 +1,4 @@
 module Entity
-
   def self.identifier_files(field)
     entity_type = Entity.formats[field]
     return [] unless entity_type and entity_type.include? Entity::Identified 
@@ -11,6 +10,12 @@ module Entity
     def self.included(base)
       base.annotation :format
       base.annotation :organism
+
+
+
+      class << base
+        attr_accessor :identifier_files, :formats, :default_format, :name_format, :description_format
+      end
 
       base.module_eval do
         def identity_type
@@ -50,6 +55,7 @@ module Entity
                         end
 
         return self if target_format == format
+
         if Array === self
           self.annotate(identifier_index(target_format, self.format).values_at(*self))
         else
@@ -73,8 +79,6 @@ module Entity
 
   end
 
-  attr_accessor :identifier_files, :formats, :default_format, :name_format, :description_format
-
   def add_identifiers(file, default = nil, name = nil, description = nil)
     if TSV === file
       all_fields = file.all_fields
@@ -88,6 +92,8 @@ module Entity
       end
     end
 
+    self.include Entity::Identified unless Entity::Identified === self
+
     self.format = all_fields
     @formats ||= []
     @formats.concat all_fields
@@ -100,9 +106,6 @@ module Entity
     @identifier_files ||= []
     @identifier_files << file
     @identifier_files.uniq!
-
-
-    self.include Entity::Identified unless Entity::Identified === self
   end
 
 end

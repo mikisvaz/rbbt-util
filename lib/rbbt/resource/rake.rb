@@ -52,6 +52,7 @@ module Rake
         Log.exception $!
         Kernel.exit! -1
       end
+      Kernel.exit! 0
     }
     Process.waitpid(pid)
     raise "Rake failed" unless $?.success?

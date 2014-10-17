@@ -116,7 +116,7 @@ module Association
       field_headers << header
     end
 
-    field_pos = info_fields.collect{|f| raise "Field #{f} not found. Options: #{info_fields* ", "}" unless all_fields.include?(f); f == :key ? 0 : all_fields.index(f);  }
+    field_pos = info_fields.collect{|f| raise "Field #{f} not found. Options: #{all_fields * ", "}" unless all_fields.include?(f); f == :key ? 0 : all_fields.index(f);  }
 
     source_format = specs[:source][2]
     target_format = specs[:target][2]

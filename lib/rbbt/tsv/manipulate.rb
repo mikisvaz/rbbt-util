@@ -253,15 +253,16 @@ module TSV
           case type 
           when :double
             new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
-              if current = data[key] 
+              if data[key] 
+                current = data[key].dup
                 value.each_with_index do |v, i|
-                  if _c = current[i]
-                    _c.concat v if v
+                  if current[i]
+                    current[i] += v if v
                   else
                     current[i] = v || []
                   end
                 end
-                data[key] = current if data.respond_to? :tokyocabinet_class
+                data[key] = current 
               else
                 data[key] = value.collect{|v| v.nil? ? nil : v.dup}
               end
@@ -269,7 +270,7 @@ module TSV
           when :flat
             new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
               data[key] ||= []
-              data[key].concat value
+              data[key] += value
             end
           end
         end

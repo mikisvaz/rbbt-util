@@ -174,7 +174,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
 
    association.rb
-   association.rb.old
    association=association{
     util.rb
     database.rb
@@ -191,7 +190,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     enrichment.rb
     query.rb
    }
-   knowledge_base.rb.old
   }
  }
  test=test {
@@ -374,6 +372,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     json
     subset
     slice
+    head
     assemble_pdf_table
    }
    stat=stat{

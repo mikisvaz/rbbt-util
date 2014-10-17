@@ -71,6 +71,7 @@ module Association
     info_fields = field_pos.collect{|f| f == :key ? :key : all_fields[f]}
     options = options.merge({:key_field => source_field, :fields =>  info_fields})
 
+
     tsv = tsv.reorder source_field, fields if true or source_field != tsv.key_field or (fields and tsv.fields != fields)
 
     tsv.key_field = source_header
@@ -136,16 +137,20 @@ module Association
   end
 
   def self.database(file,  options = {})
-    case file
-    when TSV
-      file = file.to_double unless file.type == :double
-      reorder_tsv(file, options.dup)
-    when IO
-      open_stream(file, options.dup)
-    else
-      stream = TSV.get_stream(file)
-      open_stream(stream, options.dup)
-    end
+    database = case file
+               when TSV
+                 file = file.to_double unless file.type == :double
+                 reorder_tsv(file, options.dup)
+               when IO
+                 open_stream(file, options.dup)
+               else
+                 stream = TSV.get_stream(file)
+                 open_stream(stream, options.dup)
+               end
+
+    database.entity_options = options[:entity_options] if options[:entity_options]
+
+    database
   end
   
 end

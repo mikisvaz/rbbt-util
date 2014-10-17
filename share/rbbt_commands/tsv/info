@@ -42,7 +42,7 @@ when options[:tokyocabinet_bd]
   tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
   puts tsv.summary
 else
-  header = TSV.parse_header(Open.open(file), options)
+  header = TSV.parse_header(Open.open(file, :nocache => true), options)
 
   puts "File: #{ file }"
   puts "Type: #{header.type}"

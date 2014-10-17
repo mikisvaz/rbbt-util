@@ -78,5 +78,12 @@ TP53 NFKB1|GLI1 activation|activation true|true
     assert tsv.match("TP53").length > 10
   end
 
+  def test_index_flat_to_matrix
+    require 'rbbt/sources/tfacts'
+    file = TFacts.regulators
+    tsv = Association.index(file,  :type => :flat, :source => "Transcription Factor Associated Gene Name=~Associated Gene Name", :merge => true)
+    assert(tsv.to_matrix(false))
+  end
+
 
 end

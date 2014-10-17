@@ -1,5 +1,6 @@
 require 'rbbt/tsv'
 require 'rbbt/association/open'
+require 'rbbt/association/item'
 
 module Association
   def self.index(file, options = nil, persist_options = nil)
@@ -16,13 +17,16 @@ module Association
       undirected = options[:undirected]
 
       persist_options[:file] = persist_options[:file] + '.database' if persist_options[:file]
+
       database = open(file, options, persist_options.dup.merge(:engine => "HDB"))
 
-      undirected = true if undirected.nil? and database.key_field == database.fields.first
+      source_field = database.key_field
 
       fields = database.fields
-      source_field = database.key_field
       target_field = fields.first.split(":").last
+
+      undirected = true if undirected.nil? and source_field == target_field
+
       key_field = [source_field, target_field, undirected ? "undirected" : nil].compact * "~"
 
       TSV.setup(data, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => :list)
@@ -33,46 +37,48 @@ module Association
       data.serializer = :list 
 
       database.with_unnamed do
-        database.through do |source, values|
-          case database.type
-          when :single
-            values = [[values]]
-          when :list
-            values = values.collect{|v| [v] }
-          when :flat
-            values = [values]
-          end
-          next if values.empty?
-          next if source.nil? or source.empty?
-          next if values.empty?
-
-          targets, *rest = values
-
-          size = targets ? targets.length : 0
-
-          rest.each_with_index do |list,i|
-            list.replace [list.first] * size if list.length == 1
-          end if recycle and size > 1
-
-          rest = Misc.zip_fields rest
-
-          annotations = rest.length > 1 ?
-            targets.zip(rest) :
-            targets.zip(rest * targets.length) 
-
-          annotations.each do |target, info|
-            next if target.nil? or target.empty?
-            key = [source, target] * "~"
-            if data[key].nil? or info.nil?
-              data[key] = info
-            else
-              old_info = data[key]
-              info = old_info.zip(info).collect{|p| p * ";;" }
-              data[key] = info
+        database.with_monitor(options[:monitor]) do
+          database.through do |source, values|
+            case database.type
+            when :single
+              values = [[values]]
+            when :list
+              values = values.collect{|v| [v] }
+            when :flat
+              values = [values]
             end
-            if undirected
-              reverse_key = [target,source] * "~"
-              data[reverse_key] = info unless data.include? reverse_key
+            next if values.empty?
+            next if source.nil? or source.empty?
+            next if values.empty?
+
+            targets, *rest = values
+
+            size = targets ? targets.length : 0
+
+            rest.each_with_index do |list,i|
+              list.replace [list.first] * size if list.length == 1
+            end if recycle and size > 1
+
+            rest = Misc.zip_fields rest
+
+            annotations = rest.length > 1 ?
+              targets.zip(rest) :
+              targets.zip(rest * targets.length) 
+
+            annotations.each do |target, info|
+              next if target.nil? or target.empty?
+              key = [source, target] * "~"
+              if data[key].nil? or info.nil?
+                data[key] = info
+              else
+                old_info = data[key]
+                info = old_info.zip(info).collect{|p| p * ";;" }
+                data[key] = info
+              end
+              if undirected
+                reverse_key = [target,source] * "~"
+                data[reverse_key] = info unless data.include? reverse_key
+              end
             end
           end
         end
@@ -83,9 +89,11 @@ module Association
     end.tap do |data|
       data.read if not Hash === data and data.respond_to? :read
       Association::Index.setup data
+      data.entity_options = options[:entity_options] if options[:entity_options]
       data
     end
   end
+
   module Index
 
     attr_accessor :source_field, :target_field, :undirected
@@ -154,6 +162,26 @@ module Association
         end
         acc
       end
+    end
+
+    def to_matrix(value_field = nil, &block)
+      value_field = fields.first if value_field.nil? and fields.length == 1
+      value_pos = identify_field value_field if value_field and String === value_field
+      key_field = source_field
+
+      tsv = if value_pos
+              AssociationItem.incidence self.keys, key_field do |key|
+                if block_given? 
+                  yield self[key][value_pos]
+                else
+                  self[key][value_pos]
+                end
+              end
+            elsif block_given?
+              AssociationItem.incidence self.keys, key_field, &block
+            else
+              AssociationItem.incidence self.keys, key_field 
+            end
     end
 
     #{{{ Subset

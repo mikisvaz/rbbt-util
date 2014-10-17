@@ -2,15 +2,19 @@ require 'rbbt/annotations'
 require 'rbbt/entity/identifiers'
 
 module Entity 
+  
+  UNPERSISTED_PREFIX = "entity_unpersisted_property_"
 
   class << self
     attr_accessor :formats, :entity_property_cache
   end
-
-  self.entity_property_cache = "var/entity_property"
   self.formats = {}
-  
-  UNPERSISTED_PREFIX = "entity_unpersisted_property_"
+  dir = (defined?(Rbbt)? Rbbt.var.entity_property : 'var/entity_property')
+  self.entity_property_cache = dir
+
+  def self.entity_property_cache=(dir)
+    @entity_property_cache = dir
+  end
 
   attr_accessor :all_formats
   def self.extended(base)
@@ -22,17 +26,17 @@ module Entity
 
       attr_accessor :template, :list_template, :action_template, :list_action_template, :keep_id
 
-      def _ary_property_cache
-        @_ary_property_cache ||= {}
-      end
-
       def self.format=(formats)
         formats = [formats] unless Array === formats
         self.all_formats ||= []
         self.all_formats = self.all_formats.concat(formats).uniq
         formats.each do |format|
-          Entity.formats[format] = self
+          Entity.formats[format] ||= self
         end
+      end
+
+      def _ary_property_cache
+        @_ary_property_cache ||= {}
       end
 
       def base_entity
@@ -90,7 +94,7 @@ module Entity
           define_method single_name, &block 
           define_method name do |*args|
             if Array === self
-              self.collect{|e| e.send(name, *args)}
+              self.collect{|e| e.send(single_name, *args)}
             else
               self.send(single_name, *args)
             end

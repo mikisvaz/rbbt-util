@@ -523,6 +523,7 @@ module TSV
                else
                  stream.stat.size
                end
+        size = nil if size.to_i == 0
         desc = "Parsing Stream"
         step = 100
         if Hash === monitor

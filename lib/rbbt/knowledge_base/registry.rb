@@ -36,9 +36,11 @@ class KnowledgeBase
 
   def get_index(name, options = {})
     name = name.to_s
-    key = name.to_s + "_" + Misc.digest(Misc.fingerprint([name,options]))
-    @indices[key] ||= 
+    @indices[[name, options]] ||= 
       begin 
+        fp = Misc.fingerprint([name,options])
+        key = name.to_s + "_" + Misc.digest(fp)
+
         Persist.memory("Index:" << [key, dir] * "@") do
           options = options.dup
           persist_dir = dir
@@ -47,6 +49,14 @@ class KnowledgeBase
 
           options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
           options = Misc.add_defaults options, :persist_file => persist_file, :persist_dir => persist_dir, :namespace => namespace, :format => format, :persist => true
+
+          if entity_options
+            options[:entity_options] ||= {}
+            entity_options.each do |type, info|
+              options[:entity_options][type] ||= {}
+              options[:entity_options][type] = Misc.add_defaults options[:entity_options][type], info
+            end
+          end
 
           persist_options = Misc.pull_keys options, :persist
 
@@ -80,6 +90,14 @@ class KnowledgeBase
 
           options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
           options = Misc.add_defaults options, :persist_file => persist_file, :namespace => namespace, :format => format, :persist => true
+
+          if entity_options
+            options[:entity_options] ||= {}
+            entity_options.each do |type, info|
+              options[:entity_options][type] ||= {}
+              options[:entity_options][type] = Misc.add_defaults options[:entity_options][type], info
+            end
+          end
 
           persist_options = Misc.pull_keys options, :persist
 

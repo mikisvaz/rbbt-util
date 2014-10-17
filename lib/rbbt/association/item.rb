@@ -54,23 +54,27 @@ module AssociationItem
     reverse ? knowledge_base.target(database) : knowledge_base.source(database)
   end
 
+  property :undirected => :both do
+    knowledge_base.undirected(database)
+  end
+
   property :target_entity => :array2single do
     type = reverse ? knowledge_base.source(database) : knowledge_base.target(database)
     knowledge_base.annotate self.target, type, database #if self.target.any?
   end
 
-  property :undirected => :both do
-    knowledge_base.undirected(database)
-  end
-
   property :source_entity => :array2single do
     type = reverse ? knowledge_base.target(database) : knowledge_base.source(database)
-    knowledge_base.annotate self.source, type #if self.source.any?
+    knowledge_base.annotate self.source, type, database #if self.source.any?
   end
 
+  property :index => :both do |database|
+    @index ||= knowledge_base.get_index(database)
+  end
   property :value => :array2single do
-    value = (reverse ? knowledge_base.get_index(database).reverse : knowledge_base.get_index(database)).chunked_values_at self
-    value.collect{|v| NamedArray.setup(v, knowledge_base.get_index(database).fields)}
+    index = index(database)
+    value = (reverse ? index.reverse : index).chunked_values_at self
+    value.collect{|v| NamedArray.setup(v, index.fields)}
   end
 
   property :info_fields => :both do
@@ -126,7 +130,7 @@ module AssociationItem
         value = block.call p
         matches[s][t] = value unless value.nil? or (mv = matches[s][t] and value > mv)
       else
-        matches[s] ||= Hash.new{true}
+        matches[s] ||= Hash.new{false}
         matches[s][t] ||= true 
       end
     end

@@ -64,6 +64,7 @@ module Misc
           Process.kill :INT, parent_pid
           Kernel.exit! -1
         end
+        Kernel.exit! 0
       }
       sin.close 
       ConcurrentStream.setup sout, :pids => [pid]

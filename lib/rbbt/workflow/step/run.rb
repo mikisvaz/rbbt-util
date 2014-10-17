@@ -409,7 +409,9 @@ class Step
     if stream
       begin
         Misc.consume_stream stream 
+        stream.join if stream.respond_to? :join
       rescue Exception
+        stream.abort
         self._abort
         raise $!
       end
@@ -427,7 +429,7 @@ class Step
 
     grace
 
-    join_stream if status == :streaming
+    join_stream if status.to_s == "streaming"
 
     return self if not Open.exists? info_file
 

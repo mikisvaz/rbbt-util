@@ -89,7 +89,7 @@ module TSV
   def self.translation_index(files, target = nil, source = nil, options = {})
     return nil if source == target
     options = Misc.add_defaults options.dup, :persist => true
-    fields = source ? [source] : nil
+    fields = (source and not source.empty?) ? [source] : nil
     files.each do |file|
       if TSV === file
         all_fields = file.all_fields
@@ -117,7 +117,7 @@ module TSV
 
         common_field = (all_fields & other_all_fields).first
 
-        if common_field and (source.nil? or all_fields.include? source) and other_all_fields.include? target 
+        if common_field and (source.nil? or source.empty? or all_fields.include? source) and other_all_fields.include? target 
 
           index = Persist.persist_tsv(nil, Misc.fingerprint(files), {:files => files, :source => source, :target => target}, :prefix => "Translation index", :persist => options[:persist]) do |data|
 

@@ -84,7 +84,7 @@ module TSV
 
   def with_monitor(value = true)
     saved_monitor = @monitor
-    @monitor = value
+    @monitor = value.nil? ? false : value
     res = yield
     @monitor = saved_monitor
     res
@@ -471,10 +471,8 @@ module TSV
   end
 
   def namespace=(value)
-    #self.send(:[]=, "__tsv_hash_namespace", value.nil? ? SERIALIZED_NIL : TSV::TSV_SERIALIZER.dump(value), true)
     self.send(:[]=, "__tsv_hash_namespace", dump_entry_value(value), true)
     @namespace = value
-    @entity_options = nil
   end
 
   def fields=(value)

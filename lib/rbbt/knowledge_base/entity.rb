@@ -19,15 +19,24 @@ class KnowledgeBase
 
 
   def entity_options_for(type, database_name = nil)
-    options = entity_options[Entity.formats[type]] || {}
+    entity_options = self.entity_options
+    IndiferentHash.setup entity_options if entity_options and not IndiferentHash === entity_options
+    options = entity_options[type.to_s] || entity_options[Entity.formats[type.to_s].to_s] || {}
     options[:format] = @format[type] if @format.include? :type
     options = {:organism => namespace}.merge(options)
-    if database_name and 
-      (database = get_database(database_name)).entity_options and
-      (database = get_database(database_name)).entity_options[type]
-      options = options.merge database.entity_options[type] 
+    if database_name  
+      database = get_database(database_name)
+      if database.entity_options and (database.entity_options[type] or database.entity_options[Entity.formats[type.to_s].to_s])
+        options = options.merge(database.entity_options[type] || database.entity_options[Entity.formats[type.to_s].to_s])
+      end
     end
     options
+  end
+
+  def annotate(entities, type, database = nil)
+    format = @format[type] || type
+    entity_options = entity_options_for(type, database)
+    Misc.prepare_entity(entities, format, entity_options)
   end
 
   def translate(entities, type)
@@ -36,11 +45,6 @@ class KnowledgeBase
     else
       entities
     end
-  end
-
-  def annotate(entities, type, database = nil)
-    format = @format[type] || type
-    Misc.prepare_entity(entities, format, entity_options_for(type, database))
   end
 
   def source_type(name)

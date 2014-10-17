@@ -31,7 +31,6 @@ class RbbtProcessQueue
       rescue ClosedStream
       rescue Aborted, Interrupt
         Log.warn "Worker #{Process.pid} aborted"
-        Kernel.exit! 0
       rescue Exception
         Log.exception $!
         @callback_queue.push($!) if @callback_queue
@@ -39,6 +38,7 @@ class RbbtProcessQueue
       ensure
         @callback_queue.close_write if @callback_queue 
       end
+      Kernel.exit! 0
     end
 
     def run_with_respawn(multiplier = nil)

@@ -5,6 +5,7 @@ module Path
   attr_accessor :resource, :pkgdir, :search_paths
 
   def self.setup(string, pkgdir = nil, resource = nil, search_paths = nil)
+    string = string.dup if string.frozen?
     string.extend Path
     string.pkgdir = pkgdir || 'rbbt'
     string.resource = resource

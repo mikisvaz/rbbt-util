@@ -21,17 +21,20 @@ module Association
     data = Persist.persist_tsv(file, "Association Database", options, persist_options) do |data|
       tsv = Association.database(file, options.merge(:persist => persist))
       tsv = tsv.to_double unless tsv.type == :double
+
       tsv.annotate data
 
       data.serializer = :double if data.respond_to? :serializer
-      tsv.each do |k,v|
-        data[k] = v
+      tsv.with_monitor(options[:monitor]) do
+        tsv.through do |k,v|
+          data[k] = v
+        end
       end
-
 
       data
     end
-      data
+    data.entity_options = options[:entity_options] if options[:entity_options]
+    data
   end
   
 end

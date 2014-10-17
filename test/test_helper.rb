@@ -14,9 +14,10 @@ class Test::Unit::TestCase
 
   def setup
     Random.new
-    if defined? Persist
-      Persist.cachedir = Rbbt.tmp.test.persistence.find :user
-    end
+
+    Persist.cachedir = Rbbt.tmp.test.persistence.find :user if defined? Persist
+
+    Entity.entity_property_cache = Rbbt.tmp.test.entity_property.find(:user) if defined? Entity
   end
 
   def teardown
@@ -25,11 +26,16 @@ class Test::Unit::TestCase
     #  Persist::CONNECTIONS.values.each do |c| c.close end
     #  Persist::CONNECTIONS.clear
     #end
+
+    #if defined? Entity
+    #  FileUtils.rm_rf Entity.entity_property_cache.find(:user) if Entity.entity_property_cache =~ /tmp\/test/
+    #end
   end
 
   def self.datafile_test(file)
     Path.setup(File.join(File.dirname(__FILE__), 'data', file.to_s))
   end
+
   def datafile_test(file)
     Test::Unit::TestCase.datafile_test(file)
   end
