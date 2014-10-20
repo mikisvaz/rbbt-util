@@ -27,7 +27,11 @@ module TSV
   end
 
   def entity_options=(options)
-    @entity_options = options
+    @entity_options = options || {}
+    if namespace
+      @entity_options[:organism] ||= namespace
+      @entity_options[:namespace] ||= namespace
+    end
     @entity_templates = nil
   end
 
