@@ -631,6 +631,34 @@ module TSV
     self
   end
 
+  def add_fields(names = [])
+    old_monitor = @monitor
+    @monitor = {:desc => "Adding field #{ names * ", " }"} if TrueClass === monitor
+
+    through do |key, values|
+      new_values = yield(key, values)
+
+      case type
+      when :double
+        new_values = new_values.collect{|v| [v] } if Array === new_values and new_values.first and not Array === new_values.first
+        values += new_values
+      when :list
+        values += new_values
+      end
+
+      self[key] = values
+    end
+    @monitor = old_monitor
+
+    if not fields.nil? and not (names.nil? or names.empty?)
+      new_fields = self.fields + names
+      self.fields = new_fields
+    end
+
+    self
+  end
+
+
   def transpose(key_field="Unkown ID")
     raise "Transposing only works for TSVs of type :list" unless type == :list
     new_fields = keys

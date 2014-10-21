@@ -81,7 +81,7 @@ class Step
       end
 
       begin
-        @info_cache = Misc.insist(2, 3, info_file) do
+        @info_cache = Misc.insist(3, 1.6, info_file) do
           Misc.insist(2, 1, info_file) do
             Misc.insist(3, 0.2, info_file) do
               raise TryAgain, "Info locked" if check_lock and info_lock.locked?
@@ -97,7 +97,7 @@ class Step
     rescue Exception
       Log.debug{"Error loading info file: " + info_file}
       Log.exception $!
-      Open.sensiblewrite(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
       raise $!
     end
   end

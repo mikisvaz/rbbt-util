@@ -276,7 +276,7 @@ module Misc
     end
   end
 
-  def self.bootstrap(elems, num = :current, file = nil, &block)
+  def self.bootstrap(elems, num = :current, file = nil, options = {}, &block)
     num = :current if num.nil?
     cpus = case num
            when :current
@@ -291,8 +291,11 @@ module Misc
              end
            end
 
+
+    options = Misc.add_defaults options, :cpus => cpus, :bar => "Bootstrap in #{ cpus } cpus: #{ Misc.fingerprint Annotated.purge(elems) }", :into => Set.new 
+
     index = (0..elems.length-1).to_a.collect{|v| v.to_s }
-    TSV.traverse index, :cpus => cpus, :bar => "Bootstrap in #{ cpus } cpus: #{ Misc.fingerprint Annotated.purge(elems) }", :into => Set.new do |pos|
+    TSV.traverse index, options do |pos|
       elem = elems[pos.to_i]
       elems.annotate elem if elems.respond_to? :annotate
       begin
