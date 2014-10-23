@@ -79,14 +79,15 @@ class KnowledgeBase
 
   def get_database(name, options = {})
     name = name.to_s
-    key = "Index:" + name.to_s + "_" + Misc.digest(Misc.fingerprint([name,options.dup]))
-    @indices[key] ||= 
+    @indices[[name, options, 'database']] ||= 
       begin 
+        fp = Misc.fingerprint([name,options])
+        key = name.to_s + "_" + Misc.digest(fp) + '.database'
         Persist.memory("Database:" << [key, dir] * "@") do
           options = options.dup
-          persist_file = dir.indices[key]
+          persist_dir = dir
+          persist_file = persist_dir[key]
           file, registered_options = registry[name]
-
 
           options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
           options = Misc.add_defaults options, :persist_file => persist_file, :namespace => namespace, :format => format, :persist => true
