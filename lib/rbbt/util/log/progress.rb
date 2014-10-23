@@ -27,24 +27,29 @@ module Log
       return if ENV["RBBT_NO_PROGRESS"] == "true"
       @ticks += 1
 
-      time = Time.now
-      if @last_time.nil?
-        @last_time = time
-        @last_count = @ticks
-        @start = time
-        return
-      end
+      begin
+        time = Time.now
+        if @last_time.nil?
+          @last_time = time
+          @last_count = @ticks
+          @start = time
+          return
+        end
 
-      diff = time - @last_time
-      report and return if diff > @frequency
-      return unless max
+        diff = time - @last_time
+        report and return if diff > @frequency
+        return unless max
 
-      percent = self.percent
-      if @last_percent.nil?
-        @last_percent = percent
-        return
+        percent = self.percent
+        if @last_percent.nil?
+          @last_percent = percent
+          return
+        end
+        report and return if percent > @last_percent and diff > 0.3
+      rescue Exception
+        Log.warn "Exception during report: " << $!.message
+        Log.exception $!
       end
-      report and return if percent > @last_percent and diff > 0.3
     end
   end
 end

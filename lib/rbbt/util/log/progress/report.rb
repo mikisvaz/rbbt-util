@@ -64,7 +64,7 @@ module Log
       indicator << " #{Log.color(:blue, percent.to_s << "%")}"
 
       used = time - @start
-      if @mean_max and @mean_max > 0
+      if @mean_max and @mean_max > 0 and @mean > 0
         eta =  (@max - @ticks) / @mean
       else
         eta =  (@max - @ticks) / (@ticks/used)

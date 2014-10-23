@@ -30,7 +30,7 @@ class RbbtProcessQueue
         Kernel.exit! 28
       rescue ClosedStream
       rescue Aborted, Interrupt
-        Log.warn "Worker #{Process.pid} aborted"
+        Log.info "Worker #{Process.pid} aborted"
       rescue Exception
         Log.exception $!
         @callback_queue.push($!) if @callback_queue
@@ -56,17 +56,22 @@ class RbbtProcessQueue
         @current = Process.fork do
           run
         end
-        Log.warn "Worker #{Process.pid} started with #{@current}"
+        @asked = false
+
+        initial = Misc.memory_use(Process.pid)
+        memory_cap = multiplier * initial
+        Log.medium "Worker #{Process.pid} started with #{@current} -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap}"
 
         @monitor_thread = Thread.new do
           begin
             while true
               current = Misc.memory_use(@current) 
-              initial = Misc.memory_use(Process.pid)
-              if current > multiplier * initial
+              if current > memory_cap and not @asked
+                Log.medium "Worker #{@current} for #{Process.pid} asked to respawn -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap} - current: #{current}"
                 Process.kill "USR1", @current
+                @asked = true
               end
-              sleep 1
+              sleep 3 + rand(5)
             end
           rescue
             Log.exception $!
@@ -80,7 +85,8 @@ class RbbtProcessQueue
           @current = Process.fork do
             run
           end
-          Log.warn "Worker #{Process.pid} respawning to #{@current}"
+          @asked = false
+          Log.high "Worker #{Process.pid} respawning to #{@current}"
         end
       rescue Aborted, Interrupt
         Log.warn "Worker #{Process.pid} aborted"

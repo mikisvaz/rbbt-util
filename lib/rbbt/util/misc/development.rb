@@ -6,7 +6,7 @@ module Misc
   end
 
   def self.pre_fork
-    Persist::CONNECTIONS.values.each do |db| db.close if db.write? end
+    Persist::CONNECTIONS.values.each do |db| iii db.persistence_path; db.close if db.write? end
     ObjectSpace.each_object(Mutex) do |m| 
       begin 
         m.unlock 
@@ -276,7 +276,8 @@ module Misc
     end
   end
 
-  def self.bootstrap(elems, num = :current, file = nil, options = {}, &block)
+  def self.bootstrap(elems, num = :current, options = {}, &block)
+    IndiferentHash.setup options
     num = :current if num.nil?
     cpus = case num
            when :current
@@ -289,10 +290,14 @@ module Misc
              else
                32000 / num
              end
+           else
+             raise "Parameter 'num' not understood: #{Misc.fingerprint num}"
            end
 
 
-    options = Misc.add_defaults options, :cpus => cpus, :bar => "Bootstrap in #{ cpus } cpus: #{ Misc.fingerprint Annotated.purge(elems) }", :into => Set.new 
+    options = Misc.add_defaults options, :respawn => true, :cpus => cpus, :into => Set.new 
+    options = Misc.add_defaults options, :bar => "Bootstrap in #{ options[:cpus] } cpus: #{ Misc.fingerprint Annotated.purge(elems) }"
+    respawn = options[:respawn] and options[:cpus] and options[:cpus].to_i > 1
 
     index = (0..elems.length-1).to_a.collect{|v| v.to_s }
     TSV.traverse index, options do |pos|
@@ -303,6 +308,7 @@ module Misc
       rescue Interrupt
         Log.warn "Process #{Process.pid} was aborted"
       end
+      raise RbbtProcessQueue::RbbtProcessQueueWorker::Respawn if respawn == :always and cpus > 1
       nil
     end
   end
