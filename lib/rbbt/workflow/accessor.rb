@@ -167,7 +167,7 @@ class Step
     end
   end
 
-  def self.log_block(staus, message, path, &block)
+  def self.log_block(status, message, path, &block)
     start = Time.now
     status = status.to_s
     status_color = self.status_color status
@@ -185,7 +185,7 @@ class Step
     eend = Time.now
     Log.info do 
       now = Time.now
-      str = "#{ Log.color :cyan, status.to_s } +#{Log.color :green, "%.1g" % (eend - start)}"
+      str = "#{ Log.color :cyan, status.to_s } +#{Log.color :green, "%.2f" % (eend - start)}"
       str << " -- #{Log.color :blue, path.to_s}" if path
       str << " #{Log.color :yellow, Process.pid}"
       str
