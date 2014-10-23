@@ -6,7 +6,9 @@ module Misc
   end
 
   def self.pre_fork
-    Persist::CONNECTIONS.values.each do |db| iii db.persistence_path; db.close if db.write? end
+    Persist::CONNECTIONS.values.each do |db| 
+      db.close if db.write? 
+    end
     ObjectSpace.each_object(Mutex) do |m| 
       begin 
         m.unlock 
