@@ -636,14 +636,15 @@ module TSV
     @monitor = {:desc => "Adding field #{ names * ", " }"} if TrueClass === monitor
 
     through do |key, values|
+      values ||= fields ? [nil] * fields : []
       new_values = yield(key, values)
 
       case type
       when :double
         new_values = new_values.collect{|v| [v] } if Array === new_values and new_values.first and not Array === new_values.first
-        values += new_values
+        values += new_values || [nil] * names.length
       when :list
-        values += new_values
+        values += new_values || [nil] * names.length
       end
 
       self[key] = values
