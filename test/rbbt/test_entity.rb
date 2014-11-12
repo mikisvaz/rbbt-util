@@ -53,9 +53,8 @@ module ReversableString
     }
   end
 
-  persist :reverse_text_ary_p, :string
+  persist :reverse_text_ary_p, :marshal
   persist :reverse_text_single_p, :memory
-  #persist :_single_reverse_text_single_p, :string
 
   persist :reverse_text_ary_p_array, :array, :dir => TmpFile.tmp_file
 
@@ -64,7 +63,7 @@ end
 
 class TestEntity < Test::Unit::TestCase
 
-  def _test_property_ary
+  def test_property_ary
     a = ["String1", "String2"]
     ReversableString.setup(a)
 
@@ -84,7 +83,7 @@ class TestEntity < Test::Unit::TestCase
     end
   end
 
-  def _test_property_single
+  def test_property_single
     a = ["String1", "String2"]
     ReversableString.setup a
 
@@ -96,7 +95,7 @@ class TestEntity < Test::Unit::TestCase
     assert_equal 3, $count
   end
 
-  def _test_property_ary_p
+  def test_property_ary_p
     a = ["String1", "String2"]
     ReversableString.setup a
 
@@ -104,7 +103,7 @@ class TestEntity < Test::Unit::TestCase
 
     assert_equal "2gnirtS", a.reverse_text_ary_p.last
     assert_equal "2gnirtS", a.collect{|e| e.reverse_text_ary_p }[1]
-    assert_equal 1, $count
+    assert_equal 0, $count
   end
 
   def test_property_single_p
@@ -122,10 +121,10 @@ class TestEntity < Test::Unit::TestCase
     assert_equal "2gnirtS", a.reverse_text_single_p.last
     assert_equal 0, $count
     assert_equal "2gnirtS", a[1].reverse_text_single_p
-    assert_equal 0, $count
+    assert_equal 1, $count
   end
 
-  def _test_property_ary_p_array
+  def test_property_ary_p_array
     a = ["String1", "String2"]
     ReversableString.setup a
 
@@ -134,12 +133,12 @@ class TestEntity < Test::Unit::TestCase
     $count = 0
 
     assert_equal "2gnirtS", a.reverse_text_ary_p_array.last
-    assert_equal 1, $count
+    assert_equal 0, $count
     assert_equal "2gnirtS", a.reverse_text_ary_p_array.last
-    assert_equal 1, $count
+    assert_equal 0, $count
   end
 
-  def _test_unpersist
+  def test_unpersist
     a = ["String1", "String2"]
     ReversableString.setup a
 
@@ -168,14 +167,14 @@ class TestEntity < Test::Unit::TestCase
 
   end
 
-  def _test_persist_annotations
+  def test_persist_annotations
     string = 'aaabbbccc'
     ReversableString.setup(string)
     assert_equal string.length, string.annotation_list.length
     assert_equal string.length, string.annotation_list.length
   end
 
-  def _test_clean_annotations
+  def test_clean_annotations
 
     string = "test_string"
     ReversableString.setup string

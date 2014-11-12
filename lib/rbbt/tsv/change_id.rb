@@ -98,11 +98,16 @@ module TSV
           return file.index(options.merge(:target => target, :fields => fields, :order => true)) 
         end
       else
-        all_fields = TSV.parse_header(file).all_fields
-        target = all_fields[1] if target.nil?
-        if (source.nil? or all_fields.include? source) and all_fields.include? target
-          index = TSV.index(file, options.merge(:target => target, :fields => fields, :order => true)) 
-          return index
+        next unless file.exists?
+        begin
+          all_fields = TSV.parse_header(file).all_fields
+          target = all_fields[1] if target.nil?
+          if (source.nil? or all_fields.include? source) and all_fields.include? target
+            index = TSV.index(file, options.merge(:target => target, :fields => fields, :order => true)) 
+            return index
+          end
+        rescue Exception
+          Log.error "Exception reading identifier file: #{file.find}"
         end
       end
     end

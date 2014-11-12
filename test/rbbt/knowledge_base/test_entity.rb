@@ -1,4 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '../../../test_helper')
+require 'rbbt-util'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
 require 'rbbt/knowledge_base'
@@ -28,7 +29,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   EFFECT_TSV = TSV.open EFFECT, EFFECT_OPTIONS.dup 
 
-  KNOWLEDGE_BASE = KnowledgeBase.new '/tmp/kb.foo2', "Hsa"
+  KNOWLEDGE_BASE = KnowledgeBase.new '/tmp/kb.foo3', "Hsa"
   KNOWLEDGE_BASE.format = {"Gene" => "Associated Gene Name"}
 
   KNOWLEDGE_BASE.register :effects, EFFECT_TSV, EFFECT_OPTIONS.dup

@@ -75,7 +75,7 @@ data = rbbt.model.inpute(data, CI ~ Dose, method=drm, classes='numeric', fct=LL.
     rppa = rppa.slice([antibody,"Compound", "Dose"])
     rppa.rename_field antibody, "RPPA"
 
-    model = R::Model.new "viability", "Effect ~ Dose", "Compound" => :factor
+    model = R::Model.new "viability", "Effect ~ Dose", nil, "Compound" => :factor
 
     model.fit(viability.select("Compound"){|c| ! c.include? "-"}, 'lm')
 
@@ -84,5 +84,29 @@ data = rbbt.model.inpute(data, CI ~ Dose, method=drm, classes='numeric', fct=LL.
     plot_script = "plot<-ggplot(data=data) + geom_point(aes(x=RPPA, y=Prediction, color=Compound));"
 
     R::SVG.ggplotSVG rppa, plot_script, 7, 7, :R_method => :eval 
+  end
+
+  def test_fit_fast
+    data = TSV.setup({}, :key_field => "Dose", :fields => ["Response"], :type => :single)
+    10.times do 
+      x = rand(10)
+      y = 10 + 3 * x + rand * 4
+      data[x] = y
+    end
+
+    model = R::Model.new "Test fit 2", "Response ~ Dose", data, :fit => 'lm'
+
+    x = 5
+    y = 10 + 3 * x 
+
+    pred = model.predict x
+    assert pred > y and pred < y + 4
+
+    pred = model.predict [x, 2*x, 3*x]
+    assert pred.first > y and pred.first  < y + 4
+
+
+    pred = model.predict "Dose" => x
+    assert pred > y and pred < y + 4
   end
 end

@@ -44,7 +44,7 @@ class KnowledgeBase
         Persist.memory("Index:" << [key, dir] * "@") do
           options = options.dup
           persist_dir = dir
-          persist_file = persist_dir[key]
+          persist_file = persist_dir[key].find
           file, registered_options = registry[name]
 
           options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
@@ -79,14 +79,14 @@ class KnowledgeBase
 
   def get_database(name, options = {})
     name = name.to_s
-    @indices[[name, options, 'database']] ||= 
+    @databases[[name, options]] ||= 
       begin 
         fp = Misc.fingerprint([name,options])
         key = name.to_s + "_" + Misc.digest(fp) + '.database'
         Persist.memory("Database:" << [key, dir] * "@") do
           options = options.dup
           persist_dir = dir
-          persist_file = persist_dir[key]
+          persist_file = persist_dir[key].find
           file, registered_options = registry[name]
 
           options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?

@@ -31,9 +31,9 @@ module R
   end
 
   def self.clear
-    Log.warn "Clearing Rserver session #{SESSION}, PID #{@@instance_process}"
     @@instance = nil
     if defined? @@instance_process and @@instance_process and Misc.pid_exists? @@instance_process
+      Log.warn "Clearing Rserver session #{SESSION}, PID #{@@instance_process}"
       begin
         Process.kill :INT, @@instance_process
       rescue Exception

@@ -55,7 +55,11 @@ class RbbtProcessQueue
         payload = Misc.read_stream stream, size
         case type
         when "S"
-          @serializer.load(payload)
+          begin
+            @serializer.load(payload)
+          rescue Exception
+            raise $!
+          end
         when "C"
           payload
         end

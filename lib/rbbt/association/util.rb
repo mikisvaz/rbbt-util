@@ -55,6 +55,18 @@ module Association
     source_specs[2] = source_format if source_format
     target_specs[2] = target_format if target_format
 
+    if source_specs.first and not all_fields.include? source_specs.first and defined? Entity and (_format = Entity.formats[source_specs.first.to_s])
+      _source = all_fields.select{|f| Entity.formats[f.to_s] == _format }.first
+      raise "Source not found #{source_specs}. Options: #{Misc.fingerprint all_fields}" if _target.nil?
+      source_specs[0] = _source
+    end
+
+    if target_specs.first and  not all_fields.include? target_specs.first and defined? Entity and (_format = Entity.formats[target_specs.first.to_s])
+      _target = all_fields.select{|f| Entity.formats[f.to_s].to_s == _format.to_s }.first
+      raise "Target not found #{target_specs}. Options: #{Misc.fingerprint all_fields}" if _target.nil?
+      target_specs[0] = _target
+    end
+
     if source_specs[0].nil? and target_specs[0].nil?
       source_specs[0] = key_field 
       target_specs[0] = fields[0]

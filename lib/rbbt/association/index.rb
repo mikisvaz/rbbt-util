@@ -7,12 +7,12 @@ module Association
     options = options.nil? ? {} : options.dup
     persist_options = persist_options.nil? ?  Misc.pull_keys(options, :persist)  : persist_options.dup 
 
-    persist_options = Misc.add_defaults persist_options.dup, :persist => true, :engine => "BDB"
+    persist_options = Misc.add_defaults persist_options.dup, :persist => true
     persist = persist_options[:persist]
 
     file = version_file(file, options[:namespace]) if options[:namespace] and String === file
-
-    Persist.persist_tsv(file, "Association Index", options, persist_options.dup) do |data|
+    Persist.persist_tsv(file, "Association Index", options, persist_options.merge(:engine => "BDB")) do |data|
+      options = Misc.add_defaults options.dup, :monitor => "Building index for #{Misc.fingerprint file}"
       recycle = options[:recycle]
       undirected = options[:undirected]
 
@@ -117,29 +117,39 @@ module Association
 
                      if File.exists?(reverse_filename)
                        new = Persist.open_tokyocabinet(reverse_filename, false, serializer, TokyoCabinet::BDB)
+                       raise "Index has no info: #{reverse_filename}" if new.key_field.nil?
+                       Association::Index.setup new
                        new
                      else
-                       FileUtils.mkdir_p File.dirname(reverse_filename) unless File.exists?(File.basename(reverse_filename))
+                       FileUtils.mkdir_p File.dirname(reverse_filename) unless File.exists?(File.dirname(reverse_filename))
+
                        new = Persist.open_tokyocabinet(reverse_filename, true, serializer, TokyoCabinet::BDB)
-                       new.write
+                       
                        self.with_unnamed do
-                         through do |key, value|
-                           new_key = key.split("~").reverse.join("~")
-                           new[new_key] = value
+                         self.with_monitor :desc => "Reversing #{ persistence_path }" do
+                           self.through do |key, value|
+                             new_key = key.split("~").reverse.join("~")
+                             new[new_key] = value
+                           end
                          end
                        end
                        annotate(new)
                        new.key_field = key_field.split("~").values_at(1,0,2).compact * "~"
+                       new.read_and_close do
+                         Association::Index.setup new
+                       end
                        new.read
                      end
 
                      new.unnamed = true
 
-                     Association::Index.setup new
-
                      new.undirected = undirected
 
                      new
+                   rescue Exception
+                     Log.error "Deleting after error reversing database: #{ reverse_filename }"
+                     FileUtils.rm reverse_filename if File.exists? reverse_filename
+                     raise $!
                    end
     end
 

@@ -418,6 +418,13 @@ class Step
     end
   end
 
+  def soft_grace
+    until Open.exists? info_file
+      sleep 1 
+    end
+    self
+  end
+
   def grace
     until done? or result or error? or aborted? or streaming? 
       sleep 1 

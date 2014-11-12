@@ -73,7 +73,7 @@ module Log
       used = Misc.format_seconds(used) 
       eta = [eta/3600, eta/60 % 60, eta % 60].map{|t| "%02i" % t }.join(':')
 
-      indicator << " #{Log.color :yellow, used} used #{Log.color :yellow, eta} left"
+      indicator << " #{Log.color :yellow, used} used #{Log.color :yellow, eta} left - #{Log.color :yellow, ticks.to_s} of #{Log.color :yellow, @max.to_s}"
 
       indicator
     end
@@ -83,7 +83,7 @@ module Log
       return str << " " << Log.color(:yellow, "waiting") if @ticks == 0
       str << " " << thr_msg
       if max
-        str << Log.color(:blue, " -- ") << eta_msg 
+        str << Log.color(:blue, " -- ") << eta_msg
       else
         str << Log.color(:blue, " -- ") << ticks.to_s
       end

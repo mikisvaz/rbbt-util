@@ -3,9 +3,10 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-f--finder:-R--Rserve_session*"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-f--finder:-R--Rserve_session*:-ho--host*"
 options[:Port] ||= options[:port]
-
+options[:Host] ||= "0.0.0.0"
+options[:Bind] ||= "0.0.0.0"
 
 app = ARGV.shift
 

@@ -77,12 +77,13 @@ module ConcurrentStream
   end
 
   def join
-    @joined = true
 
     join_threads
     join_pids
 
     join_callback
+
+    @joined = true
 
     lockfile.unlock if lockfile and lockfile.locked?
     close unless closed?

@@ -7,9 +7,9 @@ require 'rbbt/knowledge_base/syndicate'
 
 class KnowledgeBase
 
-  attr_accessor :namespace, :dir, :indices, :registry, :format, :databases, :entity_options
+  attr_accessor :namespace, :dir, :databases, :indices, :registry, :format, :entity_options
   def initialize(dir, namespace = nil)
-    @dir = Path.setup(dir.dup).find
+    @dir = Path.setup(dir.dup)
 
     @namespace = namespace
     @format = IndiferentHash.setup({})

@@ -3,7 +3,6 @@ require 'rbbt/association'
 module TSV
   def self.read_matrix(tsv, field_format = "ID", value_format = "Value", *others)
     tsv = TSV.open(tsv) unless TSV === tsv
-    
 
     if others.any?
       other_tsv = tsv.slice(others)

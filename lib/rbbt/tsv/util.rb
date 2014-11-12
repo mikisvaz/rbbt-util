@@ -186,6 +186,24 @@ module TSV
     self
   end
 
+  def unzip_replicates
+    raise "Can only unzip replicates in :double TSVs" unless type == :double
+
+    new = {}
+    self.with_unnamed do
+      through do |k,vs|
+        Misc.zip_fields(vs).each_with_index do |v,i|
+          new[k + "(#{i})"] = v
+        end
+      end
+    end
+
+    self.annotate(new)
+    new.type = :list
+
+    new
+  end
+
   def to_list
     new = {}
     case type

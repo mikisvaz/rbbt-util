@@ -14,7 +14,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
   END
 
   EFFECT_OPTIONS = {
-    :source => "SG=~Associated Gene Name",
+    :source => "SG=~Associated Gene Name=>Ensembl Gene ID",
     :target => "TG=~Associated Gene Name=>Ensembl Gene ID",
     :persist => false,
     :identifiers => datafile_test('identifiers'),
@@ -32,6 +32,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
   def test_subset_all_persist
     Misc.benchmark(1000) do
       assert_equal 6, KNOWLEDGE_BASE.subset(:effects, :all).length
+
       assert_equal 4, KNOWLEDGE_BASE.subset(:effects, :all).target_entity.uniq.length
       assert_equal %w(Effect), KNOWLEDGE_BASE.subset(:effects, :all).info.first.keys 
     end

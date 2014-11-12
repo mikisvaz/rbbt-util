@@ -56,6 +56,18 @@ end
 
 class TestKnowledgeBase < Test::Unit::TestCase
 
+  def test_knowledge_base_reverse
+    organism = Organism.default_code("Hsa")
+    TmpFile.with_file do |tmpdir|
+      kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
+      kb.format = {"Gene" => "Ensembl Gene ID"}
+
+      kb.register :tfacts, TFacts.regulators, :source =>"=~Associated Gene Name"
+
+      kb.get_index(:tfacts).reverse
+    end
+  end
+
   def test_knowledge_base
     organism = Organism.default_code("Hsa")
     TmpFile.with_file do |tmpdir|
@@ -69,7 +81,7 @@ class TestKnowledgeBase < Test::Unit::TestCase
       kb.register :kegg, KEGG.gene_pathway, :source_format => "Ensembl Gene ID"
       assert_match "Ensembl Gene ID", kb.get_database(:kegg).key_field
 
-      gene = Gene.setup("TP53", "Associated Gene Name", organism)
+      gene = Gene.setup("TP53", "Associated Gene Name", organism).ensembl
       assert_equal "TP53", gene.name
       assert_equal "ENSG00000141510", gene.ensembl
 

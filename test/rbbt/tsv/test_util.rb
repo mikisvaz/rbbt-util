@@ -36,4 +36,19 @@ row2    A    B    Id3
       assert_equal({1 => 1}, Marshal.load(Marshal.dump({1 => 1})))
     end
   end
+
+  def test_replicates
+   content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b|bb|bbb    Id1|Id2|Id3
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+
+      assert_equal 4, tsv.unzip_replicates.length
+      assert_equal %w(aa bb Id2), tsv.unzip_replicates["row1(1)"]
+    end
+  end
 end

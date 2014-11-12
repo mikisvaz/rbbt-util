@@ -71,8 +71,9 @@ module Association
     info_fields = field_pos.collect{|f| f == :key ? :key : all_fields[f]}
     options = options.merge({:key_field => source_field, :fields =>  info_fields})
 
-
-    tsv = tsv.reorder source_field, fields if true or source_field != tsv.key_field or (fields and tsv.fields != fields)
+    tsv.with_monitor(options[:monitor]) do
+      tsv = tsv.reorder source_field, fields if true or source_field != tsv.key_field or (fields and tsv.fields != fields)
+    end
 
     tsv.key_field = source_header
     tsv.fields = field_headers
@@ -124,6 +125,7 @@ module Association
     end
 
     open_options = options.merge(parser.options).merge(:parser => parser)
+    open_options = Misc.add_defaults open_options, :monitor => {:desc => "Parsing #{ Misc.fingerprint stream }"}
 
     tsv = TSV.parse parser.stream, {}, open_options
     tsv.key_field = source_header

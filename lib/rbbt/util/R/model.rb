@@ -19,13 +19,18 @@ module R
     R_METHOD = :eval
 
     attr_accessor :name, :formula
-    def initialize(name, formula, options = {})
+    def initialize(name, formula, data = nil, options = {})
       @name = name
       @formula = formula
       @options = options || {}
+      if data and not model_file.exists?
+        method = Misc.process_options options, :fit
+        fit(data, method || "lm", options)
+      end
     end
 
     def colClasses(tsv)
+      return nil unless TSV === tsv
       "c('character', " << 
       (tsv.fields.collect{|f| R.ruby2R(@options[f] ? @options[f].to_s : ":NA") } * ", ") <<
       ")"
@@ -63,12 +68,31 @@ data = NULL
     end
 
     def predict(tsv, field = "Prediction")
-      tsv = Model.groom tsv, formula 
-      tsv.R <<-EOF, r_options(tsv)
+      case tsv
+      when TSV
+        tsv = Model.groom tsv, formula 
+        tsv.R <<-EOF, r_options(tsv)
 model = rbbt.model.load('#{model_file}');
 data.groomed = rbbt.model.groom(data,formula=#{formula})
 data$#{field} = predict(model, data.groomed);
-      EOF
+        EOF
+      when Hash
+        res = R.eval_a <<-EOF
+model = rbbt.model.load('#{model_file}');
+predict(model, data.frame(#{R.ruby2R tsv}));
+        EOF
+        Array === tsv.values.first ? res : res.first
+      when Fixnum, Array, Float, String
+        field = formula.split("~").last.strip
+
+        res = R.eval_a <<-EOF
+model = rbbt.model.load('#{model_file}');
+predict(model, data.frame(#{field} = #{R.ruby2R tsv}));
+        EOF
+        Array === tsv ? res : res.first
+      else
+        raise "Unknown object for predict: #{Misc.fingerprint tsv}"
+      end
     end
 
     def exists?
