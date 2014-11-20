@@ -58,6 +58,7 @@ class RbbtProcessQueue
           begin
             @serializer.load(payload)
           rescue Exception
+            Log.exception $!
             raise $!
           end
         when "C"
@@ -88,6 +89,7 @@ class RbbtProcessQueue
     
     def push(obj)
       RbbtSemaphore.synchronize(@write_sem) do
+        obj = Annotated.purge(obj)
         self.dump(obj, @swrite)
       end
     end

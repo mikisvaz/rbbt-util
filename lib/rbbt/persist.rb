@@ -253,16 +253,20 @@ module Persist
   end
 
   def self.persist_file(path, type, persist_options, &block)
-    begin
-      if is_persisted?(path, persist_options)
-        Log.low "Persist up-to-date: #{ path } - #{Misc.fingerprint persist_options}"
-        return path if persist_options[:no_load]
-        return load_file(path, type) 
-      else
+    Misc.insist do
+      begin
+        if is_persisted?(path, persist_options)
+          Log.low "Persist up-to-date: #{ path } - #{Misc.fingerprint persist_options}"
+          return path if persist_options[:no_load]
+          return load_file(path, type) 
+        else
+          Open.rm path if Open.exists? path
+        end
+      rescue Exception
+        Log.warn "Exception loading persistence (#{ type }) #{ path }: #{$!.message}. Erase and retry."
         Open.rm path if Open.exists? path
+        raise $!
       end
-    rescue Exception
-      Open.rm path if Open.exists? path
     end
 
     lock_filename = Persist.persistence_path(path + '.persist', {:dir => Persist.lock_dir})

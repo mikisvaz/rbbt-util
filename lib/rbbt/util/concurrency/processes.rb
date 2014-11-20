@@ -24,8 +24,13 @@ class RbbtProcessQueue
         begin
           loop do
             p = @callback_queue.pop
-            raise p if Exception === p
-            raise p.first if Array === p and Exception === p.first
+
+            if Exception === p or (Array === p and Exception === p.first)
+              e = Array === p ? p.first : p
+              Log.warn "Callback recieved exception from worker: #{e.message}" unless Aborted === e or ClosedStream === e
+              raise e 
+            end
+
             @callback.call p
           end
         rescue Aborted
@@ -34,8 +39,7 @@ class RbbtProcessQueue
           raise $!
         rescue ClosedStream
         rescue Exception
-          Log.warn "Callback thread exception: #{$!.message}"
-          Log.exception $!
+          Log.warn "Exception captured in callback: #{$!.message}"
           @process_monitor.raise $!
           raise $!
         ensure

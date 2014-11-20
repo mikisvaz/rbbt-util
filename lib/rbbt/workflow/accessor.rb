@@ -74,29 +74,32 @@ class Step
   def info(check_lock = true)
     return {} if info_file.nil? or not Open.exists? info_file
     begin
-      begin
-        return @info_cache if @info_cache and File.ctime(info_file) < @info_cache_time
-      rescue Exception
-        raise $!
-      end
+      Misc.insist do
+        begin
+          return @info_cache if @info_cache and File.ctime(info_file) < @info_cache_time
+        rescue Exception
+          raise $!
+        end
 
-      begin
-        @info_cache = Misc.insist(3, 1.6, info_file) do
-          Misc.insist(2, 1, info_file) do
-            Misc.insist(3, 0.2, info_file) do
-              raise TryAgain, "Info locked" if check_lock and info_lock.locked?
-              Open.open(info_file) do |file|
-                INFO_SERIALIAZER.load(file) #|| {}
+        begin
+          @info_cache = Misc.insist(3, 1.6, info_file) do
+            Misc.insist(2, 1, info_file) do
+              Misc.insist(3, 0.2, info_file) do
+                raise TryAgain, "Info locked" if check_lock and info_lock.locked?
+                Open.open(info_file) do |file|
+                  INFO_SERIALIAZER.load(file) #|| {}
+                end
               end
             end
           end
+          @info_cache_time = Time.now
+          @info_cache
         end
-        @info_cache_time = Time.now
-        @info_cache
       end
     rescue Exception
       Log.debug{"Error loading info file: " + info_file}
       Log.exception $!
+      Open.rm info_file
       Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
       raise $!
     end

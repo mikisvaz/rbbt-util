@@ -68,7 +68,9 @@ class RbbtProcessQueue
               current = Misc.memory_use(@current) 
               if current > memory_cap and not @asked
                 Log.medium "Worker #{@current} for #{Process.pid} asked to respawn -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap} - current: #{current}"
-                Process.kill "USR1", @current
+                RbbtSemaphore.synchronize(@callback_queue.write_sem) do
+                  Process.kill "USR1", @current
+                end
                 @asked = true
               end
               sleep 3 + rand(5)

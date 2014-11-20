@@ -335,7 +335,7 @@ module TSV
   def self.traverse_cpus(num, obj, options, &block)
     begin
       callback, cleanup, join, respawn = Misc.process_options options, :callback, :cleanup, :join, :respawn
-      respawn = true if ENV["RBBT_RESPAWN"]
+      respawn = true if ENV["RBBT_RESPAWN"] and ENV["RBBT_RESPAWN"] == "true"
 
       Log.low "Traversing in #{ num } cpus: #{respawn ? "respawn" : "no respawn"}"
       q = RbbtProcessQueue.new num, cleanup, join, respawn

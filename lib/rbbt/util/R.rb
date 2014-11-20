@@ -86,8 +86,12 @@ source('#{UTIL}');
 
   def self.ruby2R(object)
     case object
+    when Float::INFINITY
+      "Inf"
     when nil
       "NULL"
+    when "NA"
+      "NA"
     when TSV
       "matrix(#{R.ruby2R object.values},dimnames=list(#{R.ruby2R object.keys}, #{R.ruby2R object.fields}))"
     when Symbol
