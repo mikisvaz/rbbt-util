@@ -13,10 +13,11 @@ require 'rbbt/rest/file_server'
 require 'rbbt/rest/knowledge_base'
 require 'rbbt/rest/helpers'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder"
 
 workflow = ARGV.first
 
+ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
 ENV["RServe-session"] = options[:RServe_session] || workflow
 
 raise rbbt_usage unless workflow
@@ -37,6 +38,10 @@ app.instance_eval Rbbt.etc['app.d/base.rb'].read
 app.use Rack::Deflater
 
 load Rbbt.etc['app.d/resources.rb'].find
+
+app.class_eval do
+  eval Rbbt.etc['app.d/finder.rb'].read
+end
 
 WorkflowRest.add_workflow wf, true
 
