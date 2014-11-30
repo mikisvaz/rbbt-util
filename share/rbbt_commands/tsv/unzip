@@ -8,7 +8,7 @@ $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_c
 options = SOPT.setup <<EOF
 Zip fields in a TSV file 
 
-$ rbbt tsv info [options] file.tsv
+$ rbbt tsv unzip [options] file.tsv
 
 Display summary information. Works with Tokyocabinet HDB and BDB as well.
 

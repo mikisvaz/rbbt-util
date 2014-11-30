@@ -3,7 +3,7 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-f--finder:-R--Rserve_session*:-ho--host*"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-f--finder:-R--Rserve_session*:-ho--host*:--views*"
 options[:Port] ||= options[:port]
 options[:Host] ||= "0.0.0.0"
 options[:Bind] ||= "0.0.0.0"
@@ -21,6 +21,7 @@ Misc.in_dir(app_dir) do
   require 'rack'
   ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
   ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
+  ENV["RBBT_VIEWS_DIR"] = options[:views] if options.include?(:views)
 
   config_ru_file = File.exists?('./config.ru') ? './config.ru' : Rbbt.share['config.ru'].find
 

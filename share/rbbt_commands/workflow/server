@@ -13,7 +13,7 @@ require 'rbbt/rest/file_server'
 require 'rbbt/rest/knowledge_base'
 require 'rbbt/rest/helpers'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*"
 
 workflow = ARGV.first
 
@@ -44,6 +44,10 @@ app.class_eval do
 end
 
 WorkflowRest.add_workflow wf, true
+
+if options[:views] and not options[:views].empty?
+  Sinatra::RbbtRESTMain.add_resource_path(Path.setup(options[:views]))
+end
 
 WorkflowRest.port = options[:port] || 4567
 WorkflowRest.bind = options[:bind] || "0.0.0.0"

@@ -36,7 +36,7 @@ def run_task(workflow, task, name)
       end
     end
     sleep 0.5
-    path = Open.read(res).strip if File.exists? res
+    path = Open.read(res).strip.split("\n").last if File.exists? res
   end
   path = "NO RESULT" if path.nil? or path.empty?
 
