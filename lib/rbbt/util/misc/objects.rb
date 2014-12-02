@@ -7,11 +7,11 @@ module Misc
 
     dup_array = options.delete :dup_array
 
-    if Entity === field or (Entity.respond_to?(:formats) and Entity.formats.include? field)
+    if Entity === field or (Entity.respond_to?(:formats) and (_format = Entity.formats.find(field)))
       params = options.dup
 
       params[:format] ||= params.delete "format"
-      params.merge!(:format => field) unless params.include?(:format) and not ((f = params[:format]).nil? or (String === f and f.empty?))
+      params.merge!(:format => _format) unless _format.nil? or (params.include?(:format) and not ((f = params[:format]).nil? or (String === f and f.empty?)))
 
       mod = Entity === field ? field : Entity.formats[field]
       entity = mod.setup(

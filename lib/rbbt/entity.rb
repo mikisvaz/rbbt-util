@@ -8,7 +8,38 @@ module Entity
   class << self
     attr_accessor :formats, :entity_property_cache
   end
-  self.formats = {}
+  FORMATS = begin
+              hash = {}
+              class << hash
+                alias orig_include? include?
+
+                def find(value)
+                  return value if orig_include? value
+                  each do |k,v|
+                    return k if value =~ /\b#{Regexp.quote k}$/
+                  end
+                  nil
+                end
+
+                def [](value)
+                  res = super
+                  return res if res
+                  key = find(value)
+                  key ? super(key) : nil
+                end
+
+                def include?(value)
+                  orig_include? value or find(value) != nil
+                end
+              end
+
+              hash
+            end
+
+  def self.formats
+    FORMATS
+  end
+
   dir = (defined?(Rbbt)? Rbbt.var.entity_property : 'var/entity_property')
   self.entity_property_cache = dir
 
