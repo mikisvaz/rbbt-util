@@ -89,7 +89,9 @@ class RbbtProcessQueue
     
     def push(obj)
       RbbtSemaphore.synchronize(@write_sem) do
+        multiple = MultipleResult === obj
         obj = Annotated.purge(obj)
+        obj.extend MultipleResult if multiple
         self.dump(obj, @swrite)
       end
     end
