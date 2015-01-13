@@ -13,12 +13,14 @@ rowa    a|aa    b|BB  C|CC
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(File.open(filename), :sep => /\s+/, :type => :double)
+      Log.tsv tsv
+      Log.tsv tsv.reorder("ValueA", nil, :zipped => true)
       assert_equal ["A", "AA", "a", "aa"].sort, tsv.reorder("ValueA", nil, :zipped => true).keys.sort
     end
   end
 
 
-  def test_through
+  def _test_through
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -37,7 +39,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_reorder_simple
+  def _test_reorder_simple
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -59,7 +61,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_reorder_remove_field
+  def _test_reorder_remove_field
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -81,7 +83,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_slice
+  def _test_slice
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a b c
@@ -94,7 +96,7 @@ row2 A B C
     end
   end
 
-  def test_select
+  def _test_select
      content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -132,7 +134,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_select_invert
+  def _test_select_invert
      content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -163,7 +165,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_process
+  def _test_process
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -182,7 +184,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_add_field
+  def _test_add_field
      content =<<-EOF
 #Id    LetterValue:ValueA    LetterValue:ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -200,7 +202,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_add_field_double_with_list_result
+  def _test_add_field_double_with_list_result
      content =<<-EOF
 #Id    LetterValue:ValueA    LetterValue:ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -219,7 +221,7 @@ row3    a    C    Id4
     end
   end
 
-  def test_through_headless
+  def _test_through_headless
      content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -229,17 +231,17 @@ row3    a    C    Id4
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/)
 
-      test = false
+      _test = false
       tsv.through do
-        test = true
+        _test = true
       end
-      assert test
+      assert _test
 
     end
  
   end
 
-  def test_reorder_flat
+  def _test_reorder_flat
     content =<<-EOF
 #Id    ValueA    
 row1    a aa aaa
@@ -255,7 +257,7 @@ row3    a
     end
   end
 
-  def test_transpose
+  def _test_transpose
      content =<<-EOF
 #: :type=:list
 #Row   vA   vB   vID
@@ -273,7 +275,7 @@ row3    a    C    Id4
  
   end
 
-  def test_through_flat
+  def _test_through_flat
      content =<<-EOF
 #: :type=:flat
 #Row   vA

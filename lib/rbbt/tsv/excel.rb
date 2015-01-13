@@ -85,6 +85,21 @@ module TSV
         end
       end
 
+      cells = cells.collect do |v| 
+        case v
+        when Float
+          v.to_s.sub(/e(-?\d+)$/,'E\1')
+        when String
+          if v =~ /^-?[\d\.]+e(-?\d+)$/
+            v.sub(/e(-?\d+)$/,'E\1') 
+          else
+            v
+          end
+        else
+          v
+        end
+      end
+
       sheet1.row(i).concat cells
       i += 1
     end

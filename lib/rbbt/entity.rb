@@ -13,12 +13,28 @@ module Entity
               class << hash
                 alias orig_include? include?
 
+                attr_accessor :find_cache
+
                 def find(value)
-                  return value if orig_include? value
-                  each do |k,v|
-                    return k if value =~ /\b#{Regexp.quote k}$/
+                  self.find_cache ||= {}
+                  if self.find_cache.include? value
+                    self.find_cache[value]
+                  else
+                    self.find_cache[value] = begin
+                                               if orig_include? value
+                                                 self.find_cache[value] = value
+                                               else
+                                                 found = nil
+                                                 each do |k,v|
+                                                   if value =~ /\b#{Regexp.quote k}$/
+                                                     found = k
+                                                     break
+                                                   end
+                                                 end
+                                                 found
+                                               end
+                                             end
                   end
-                  nil
                 end
 
                 def [](value)
@@ -28,8 +44,13 @@ module Entity
                   key ? super(key) : nil
                 end
 
+                def []=(key,value)
+                  self.find_cache = nil
+                  super
+                end
+
                 def include?(value)
-                  orig_include? value or find(value) != nil
+                  find(value) != nil
                 end
               end
 

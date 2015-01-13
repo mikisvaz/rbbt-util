@@ -383,6 +383,7 @@ module TSV
     def initialize(stream = nil, options = {})
       @header_hash = Misc.process_options(options, :header_hash) || "#"
       @sep = Misc.process_options(options, :sep) || "\t"
+      @tsv_grep = Misc.process_options(options, :tsv_grep) 
       stream = TSV.get_stream stream
       @stream = stream
 
@@ -414,6 +415,8 @@ module TSV
       fix_fields(options)
 
       @type = @type.strip.to_sym if String === @type
+      #@type ||= :double if merge == true
+
       case @type
       when :double 
         self.instance_eval do alias get_values get_values_double end
@@ -502,17 +505,23 @@ module TSV
       raise "No block given in TSV::Parser#traverse" unless block_given?
 
       stream = @stream
-      # get parser
 
-      # grep
-      #if grep and false
-      #  stream.rewind if stream.eof?
-      #  stream = Open.grep(stream, grep, invert_grep)
-      #  self.first_line = stream.gets
-      #end
 
       # first line
       line = self.rescue_first_line
+
+      if @tsv_grep
+
+        stream = Open.grep(stream, @tsv_grep, invert_grep)
+        stream.no_fail = true
+        begin
+          match = Open.grep(StringIO.new(line), @tsv_grep, invert_grep).read
+          line = stream.gets if match.empty?
+        rescue Exception
+          Log.exception $!
+          line = stream.gets 
+        end
+      end
 
       progress_monitor, monitor = monitor, nil if Log::ProgressBar === monitor
       # setup monitor

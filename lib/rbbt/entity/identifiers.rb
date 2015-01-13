@@ -25,12 +25,15 @@ module Entity
         def identifier_files 
           files = identity_type.identifier_files.dup
           files.collect!{|f| f.annotate f.gsub(/\bNAMESPACE\b/, organism) } if annotations.include? :organism and self.organism
+          if files.select{|f| f =~ /\bNAMESPACE\b/ }.any?
+            Log.warn "Rejecting some identifier files for lack of 'organism': " << files.select{|f| f =~ /\bNAMESPACE\b/ } * ", "
+          end
           files.reject!{|f| f =~ /\bNAMESPACE\b/ } 
           files
         end
 
         def identifier_index(format = nil, source = nil)
-          Persist.memory("Entity index #{identity_type}: #{format} (from #{source || "All"})", :format => format, :source => source) do
+          Persist.memory("Entity index #{identity_type}: #{format} (from #{source || "All"})", :format => format, :source => source, :update => true) do
             source ||= self.respond_to?(:format)? self.format : nil
 
             index = TSV.translation_index(identifier_files, format, source, :persist => true)

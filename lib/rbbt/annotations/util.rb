@@ -25,8 +25,12 @@ module Annotated
     entity_id = info.delete(:entity_id) || info.delete("entity_id")
 
     annotation_types.each do |mod|
-      mod = Misc.string2const(mod) if String === mod
-      object.extend mod unless mod === object
+      begin
+        mod = Misc.string2const(mod) if String === mod
+        object.extend mod unless mod === object
+      rescue Exception
+        Log.warn "Exception loading annotation into object: #{$!.message}"
+      end
     end
 
     object.instance_variable_set(:@annotation_values, info) 

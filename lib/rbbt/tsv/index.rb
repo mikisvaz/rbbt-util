@@ -16,7 +16,7 @@ module TSV
     persist_options = Misc.pull_keys options, :persist
     persist_options[:prefix] ||= "Index[#{options[:target] || :key}]"
 
-    Log.debug "Index: #{ filename } - #{options.inspect}"
+    Log.debug "Index: #{ filename } - #{Misc.fingerprint options}"
     Persist.persist_tsv self, filename, options, persist_options do |new|
       with_unnamed do
         target, fields, index_type, order = Misc.process_options options, :target, :fields, :type, :order
@@ -116,7 +116,7 @@ module TSV
           end
         end
 
-        TSV.setup(new, :type => index_type, :filename => filename, :fields => [new_key_field], :key_field => new_fields * ", ")
+        TSV.setup(new, :type => index_type, :filename => filename, :fields => [new_key_field], :key_field => new_fields * ", ", :namespace => namespace)
       end
     end
   end
@@ -125,12 +125,12 @@ module TSV
     persist_options = Misc.pull_keys options, :persist
     persist_options[:prefix] ||= "StaticIndex[#{options[:target] || :key}]"
      
-    Log.debug "Static Index: #{ file } - #{options.inspect}"
+    Log.debug "Static Index: #{ file } - #{Misc.fingerprint options}"
     Persist.persist_tsv nil, file, options, persist_options do |data|
       data_options = Misc.pull_keys options, :data
       identifiers = TSV.open(file, data_options)
       identifiers.with_monitor :desc => "Creating Index for #{ file }" do
-        index = identifiers.index(options.merge :persist_data => data, :persist => persist_options[:persist])
+        identifiers.index(options.merge :persist_data => data, :persist => persist_options[:persist])
       end
     end
   end

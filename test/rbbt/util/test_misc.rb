@@ -440,7 +440,7 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal "COSMIC", Misc.camel_case("COSMIC")
   end
 
-  def test_texar
+  def _test_texar
     ppp Misc.html_tag('textarea', "hola\nadios\nagain")
   end
 
@@ -452,6 +452,10 @@ eum fugiat quo voluptas nulla pariatur?"
       TSV.open step.path
     end
     puts `ls -l /proc/#{ Process.pid }/fd`
+  end
+
+  def test_snake_case
+    ppp Misc.snake_case("KinaseSARfari")
   end
 
 end

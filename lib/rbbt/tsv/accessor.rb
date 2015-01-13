@@ -646,35 +646,7 @@ Example:
     new
   end
 
-  def unzip(field = 0, merge = false)
-    new = {}
-    field_pos = self.identify_field field
-
-    self.through do |key,values|
-      field_values = values.delete_at field_pos
-      zipped = values.zip_fields
-      field_values.zip(zipped).each do |value, *rest|
-        k = [key,value]*":"
-        if merge and new.include? k
-          new[k] = Misc.zip_fields(rest)
-        else
-          new[k] = Misc.zip_fields(rest)
-        end
-      end
-    end
-
-    self.annotate new
-    new.type = :list
-
-    new.key_field = [self.key_field, self.fields[field_pos]] * ":"
-    new_fields = self.fields.dup
-    new_fields.delete_at field_pos
-    new.fields = new_fields
-
-    new
-  end
-
-  def unzip(field = 0, merge = false)
+  def unzip(field = 0, merge = false, sep = ":")
     new = {}
     self.annotate new
 
@@ -686,7 +658,7 @@ Example:
           next if field_values.nil?
           zipped = Misc.zip_fields(values)
           field_values.zip(zipped).each do |field_value,rest|
-            k = [key,field_value]*":"
+            k = [key,field_value]*sep
             if new.include? k
               new[k] = Misc.zip_fields(Misc.zip_fields(new[k]) << rest)
             else
@@ -701,7 +673,7 @@ Example:
           next if field_values.nil?
           zipped = Misc.zip_fields(values)
           field_values.zip(zipped).each do |field_value,rest|
-            k = [key,field_value]*":"
+            k = [key,field_value]*sep
             new[k] = rest
           end
         end

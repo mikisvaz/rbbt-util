@@ -397,6 +397,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   }
   Rlib=Rlib{
    util.R
+   plot.R
   }
   software=install/software{
    zran=zran{

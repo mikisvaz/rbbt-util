@@ -4,8 +4,9 @@ require 'rbbt/util/R/eval'
 
 module R
 
-  LIB_DIR = File.join(File.expand_path(File.dirname(__FILE__)),'../../../share/Rlib')
+  LIB_DIR = Path.setup(File.join(File.expand_path(File.dirname(__FILE__)),'../../../share/Rlib'))
   UTIL    = File.join(LIB_DIR, 'util.R')
+  PLOT    = File.join(LIB_DIR, 'plot.R')
 
   def self.run(command, options = {})
     cmd =<<-EOF
@@ -127,10 +128,11 @@ module TSV
     open_options, source = source, nil if Hash === source
 
     source ||= Misc.process_options open_options, :source
-    source = [source] if String === source
+    source = [source] unless Array === source 
 
     require_sources  = source.collect{|source|
-      "source('#{source}');"
+      source = R::LIB_DIR["plot.R"] if source == :plot
+      "source('#{source}')"
     } * ";\n" if Array === source and source.any?
 
     script = require_sources + "\n\n" + script if require_sources

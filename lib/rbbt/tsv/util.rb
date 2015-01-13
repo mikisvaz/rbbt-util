@@ -152,7 +152,7 @@ module TSV
       pos = fields.index field
       return pos if pos
       return identify_field(key_field, fields, field.to_i) if field =~ /^\d+$/
-      raise "Field #{ field } was not found. Options: #{fields * ", "}" if pos.nil?
+      raise "Field #{ field } was not found. Options: (#{key_field || "NO_KEY_FIELD"}), #{(fields || ["NO_FIELDS"]) * ", "}" if pos.nil?
     else
       raise "Field #{ field } was not found. Options: (#{key_field || "NO_KEY_FIELD"}), #{(fields || ["NO_FIELDS"]) * ", "}"
     end

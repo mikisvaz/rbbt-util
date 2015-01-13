@@ -18,11 +18,14 @@ module R
   class Model
     R_METHOD = :eval
 
-    attr_accessor :name, :formula
+    attr_accessor :name, :formula, :model_file
     def initialize(name, formula, data = nil, options = {})
       @name = name
       @formula = formula
       @options = options || {}
+      @model_file = options[:model_file] if options[:model_file]
+      @model_file ||= Misc.sanitize_filename(File.join(options[:model_dir], name)) if options[:model_dir]
+
       if data and not model_file.exists?
         method = Misc.process_options options, :fit
         fit(data, method || "lm", options)

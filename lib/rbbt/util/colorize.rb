@@ -15,12 +15,13 @@ module Colorize
     start_color = Color.new from_name(start)
     end_color = Color.new from_name(eend)
 
-    array = array.collect{|v| v.to_f}
+    array = array.collect{|v| n = v.to_f; n = n > 100 ? 100 : n; n < 0.001 ? 0.001 : n}
     max = array.max
     min = array.min
     range = max - min
     array.collect do |v|
-      start_color.blend end_color, (v - min) / range
+      ratio = (v-min) / range
+      start_color.blend end_color, ratio
     end
   end
 

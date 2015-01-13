@@ -60,6 +60,7 @@ module TSV
     unnamed = Misc.process_options options, :unnamed
     entity_options = Misc.process_options options, :entity_options
 
+
     Log.debug "TSV open: #{ filename } - #{Misc.fingerprint options }.#{unnamed ? " [unnamed]" : "[not unnamed]"}"
 
     data = nil
@@ -72,10 +73,12 @@ module TSV
           data.serializer = serializer
         end
 
+        tsv_grep = Misc.process_options options, :tsv_grep
+        tsv_grep ||= Misc.process_options options, :grep
         open_options = Misc.pull_keys options, :open
 
         stream = get_stream source, options.merge(open_options)
-        parse stream, data, options
+        parse stream, data, options.merge(:tsv_grep => tsv_grep)
 
         data.filename = filename.to_s unless filename.nil?
 

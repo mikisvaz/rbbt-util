@@ -308,6 +308,22 @@ b 2
     end
   end
 
+  def test_tsv_grep
+    content =<<-EOF
+#: :sep=/\\s+/#:type=:single
+#Id Value
+a 1
+b 2
+b 3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :key_field => "Value", :tsv_grep => "2")
+      assert(tsv.include?("2"))
+      assert(! tsv.include?("3"))
+    end
+  end
+
   def test_grep_invert
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single
@@ -317,8 +333,9 @@ b 2
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :key_field => "Value", :grep => "#\\|2", :invert_grep => true)
+      tsv = TSV.open(filename, :key_field => "Value", :tsv_grep => "2", :invert_grep => true)
       assert(! tsv.include?("2"))
+      assert(tsv.include?("1"))
     end
   end
 
@@ -326,6 +343,7 @@ b 2
     content =<<-EOF
 #: :sep=/\\s+/#:type=:single#:namespace=Test
 #Id Value
+a 7
 a 1
 b 2
     EOF
@@ -334,6 +352,7 @@ b 2
       tsv = TSV.open(filename, :key_field => "Value", :grep => "#\\|2")
       assert(! tsv.include?("1"))
       assert(tsv.include?("2"))
+      assert(! tsv.include?("7"))
     end
   end
 
@@ -532,5 +551,9 @@ row2    A AA AAA
     end
     tsv = datafile_test('identifiers').tsv :persist => true, :shard_function => shard_function
     assert_equal 10000, tsv.keys.length + 2
+  end
+
+  def test_merge_key_field
+    assert TSV.open('/home/mvazquezg/git/workflows/genomics/share/gene_ages', :key_field => "FamilyAge", :merge => true,  :persist => false, :zipped => true, :type => :double).values.first.length > 1
   end
 end

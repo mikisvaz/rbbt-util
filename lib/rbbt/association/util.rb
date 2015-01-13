@@ -124,11 +124,11 @@ module Association
                  all_fields.first
                end
 
-
       field_headers << header
     end
 
     field_pos = info_fields.collect{|f| raise "Field #{f} not found. Options: #{all_fields * ", "}" unless all_fields.include?(f); f == :key ? 0 : all_fields.index(f);  }
+    field_pos.delete source_pos
 
     source_format = specs[:source][2]
     target_format = specs[:target][2]

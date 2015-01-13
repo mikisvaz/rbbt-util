@@ -89,7 +89,11 @@ module TSV
   def self.translation_index(files, target = nil, source = nil, options = {})
     return nil if source == target
     options = Misc.add_defaults options.dup, :persist => true
+
+    target = Entity.formats.find(target) if Entity.formats.find(target)
+    source = Entity.formats.find(source) if Entity.formats.find(source)
     fields = (source and not source.empty?) ? [source] : nil
+
     files.each do |file|
       if TSV === file
         all_fields = file.all_fields
@@ -126,6 +130,7 @@ module TSV
 
           index = Persist.persist_tsv(nil, Misc.fingerprint(files), {:files => files, :source => source, :target => target}, :prefix => "Translation index", :persist => options[:persist]) do |data|
 
+            iii options.merge(:target => common_field, :fields => fields)
             index = TSV === file ? 
               file.index(options.merge(:target => common_field, :fields => fields)) :
               TSV.index(file, options.merge(:target => common_field, :fields => fields))

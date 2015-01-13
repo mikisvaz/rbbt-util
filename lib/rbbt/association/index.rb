@@ -68,6 +68,7 @@ module Association
             annotations.each do |target, info|
               next if target.nil? or target.empty?
               key = [source, target] * "~"
+
               if data[key].nil? or info.nil?
                 data[key] = info
               else
@@ -75,12 +76,22 @@ module Association
                 info = old_info.zip(info).collect{|p| p * ";;" }
                 data[key] = info
               end
-              if undirected
-                reverse_key = [target,source] * "~"
-                data[reverse_key] = info unless data.include? reverse_key
-              end
             end
           end
+
+          if undirected
+            new_data = {}
+
+            data.through do |key,values|
+              reverse_key = key.split("~").reverse * "~"
+              new_data[reverse_key] = values
+            end 
+
+            new_data.each do |key,values|
+              data[key] = values
+            end
+          end
+
         end
       end
     end.tap do |data|
@@ -219,7 +230,7 @@ module Association
 
       matches.each{|code| 
         s,sep,t = code.partition "~"
-        next if undirected and t > s 
+        next if undirected and t > s and source.include? t
         target_matches[t] ||= []
         target_matches[t] << code
       }

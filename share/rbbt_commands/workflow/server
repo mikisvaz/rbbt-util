@@ -31,6 +31,8 @@ load Rbbt.etc['app.d/init.rb'].find
 app = class WorkflowRest < Sinatra::Base; self end
 
 app.register Sinatra::RbbtRESTWorkflow
+app.register Sinatra::RbbtRESTKnowledgeBase
+
 app.get '/' do
   redirect to(File.join('/', wf.to_s))
 end
@@ -48,6 +50,7 @@ WorkflowRest.add_workflow wf, true
 if options[:views] and not options[:views].empty?
   Sinatra::RbbtRESTMain.add_resource_path(Path.setup(options[:views]))
 end
+
 
 WorkflowRest.port = options[:port] || 4567
 WorkflowRest.bind = options[:bind] || "0.0.0.0"
