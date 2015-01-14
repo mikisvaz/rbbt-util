@@ -45,10 +45,10 @@ app.class_eval do
   eval Rbbt.etc['app.d/finder.rb'].read
 end
 
-WorkflowRest.add_workflow wf, true
+WorkflowRest.add_workflow wf, :all
 
 if options[:views] and not options[:views].empty?
-  Sinatra::RbbtRESTMain.add_resource_path(Path.setup(options[:views]))
+  Sinatra::RbbtRESTMain.add_resource_path(Path.setup(options[:views]), true)
 end
 
 
