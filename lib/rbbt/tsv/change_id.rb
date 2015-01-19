@@ -130,7 +130,6 @@ module TSV
 
           index = Persist.persist_tsv(nil, Misc.fingerprint(files), {:files => files, :source => source, :target => target}, :prefix => "Translation index", :persist => options[:persist]) do |data|
 
-            iii options.merge(:target => common_field, :fields => fields)
             index = TSV === file ? 
               file.index(options.merge(:target => common_field, :fields => fields)) :
               TSV.index(file, options.merge(:target => common_field, :fields => fields))
