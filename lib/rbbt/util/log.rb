@@ -70,7 +70,6 @@ module Log
   self.nocolor = ENV["RBBT_NOCOLOR"] == 'true'
 
   self.ignore_stderr do
-    require 'nokogiri'
     self.tty_size = begin
                       require "highline/system_extensions.rb"
                       HighLine::SystemExtensions.terminal_size.first 
