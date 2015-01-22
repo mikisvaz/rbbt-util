@@ -23,7 +23,7 @@ begin
     gem.add_dependency('bio-bgzf')
     #gem.add_dependency('narray')
     gem.add_dependency('term-ansicolor')
-    gem.add_dependency('sass-css-importer')
+    #gem.add_dependency('sass-css-importer')
     #gem.add_dependency('simplews')
     #gem.add_dependency('ruby-prof')
     #gem.add_dependency('RubyInline')

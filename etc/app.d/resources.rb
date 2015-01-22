@@ -6,7 +6,7 @@ load Rbbt.etc['app.d']['grid_system.rb'].find if Rbbt.etc['app.d']['grid_system.
 
 require 'sass-css-importer'
 
-Sinatra::RbbtRESTMain.add_resource_path(Path.setup(ENV["RBBT_VIEWS_DIR"])) if ENV["RBBT_VIEWS_DIR"] and not ENV["RBBT_VIEWS_DIR"].empty?
+Sinatra::RbbtRESTMain.add_resource_path(Path.setup(ENV["RBBT_VIEWS_DIR"]), true) if ENV["RBBT_VIEWS_DIR"] and not ENV["RBBT_VIEWS_DIR"].empty?
 
 Compass::Frameworks::ALL.each do |importer|
   next unless importer.respond_to? :path

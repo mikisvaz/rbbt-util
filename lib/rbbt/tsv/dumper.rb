@@ -32,7 +32,7 @@ module TSV
           sep + ([""] * fields.length) * sep << "\n"
         end
       when Array
-        sep + values.collect{|v| Array === v ? v * "|" : v} * sep << "\n"
+        sep + (values.collect{|v| Array === v ? v * "|" : v} * sep) << "\n"
       else
         sep + values.to_s << "\n"
       end
