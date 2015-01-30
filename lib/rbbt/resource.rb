@@ -74,7 +74,11 @@ module Resource
     begin
       @server_missing_resource_cache ||= Set.new
       raise "Resource Not Found" if @server_missing_resource_cache.include? url
-      lock_filename = Persist.persistence_path(final_path, {:dir => Resource.lock_dir})
+      
+      #lock_filename = Persist.persistence_path(final_path, {:dir => Resource.lock_dir})
+      
+      lock_filename = nil # it seems like this was locked already.
+
       Misc.lock lock_filename do
         Net::HTTP.get_response URI(url) do |response|
           case response

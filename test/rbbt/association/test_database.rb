@@ -61,4 +61,19 @@ TP53 NFKB1|GLI1 activation|activation true|true
   def test_gene_ages
     assert Association.database('/home/mvazquezg/git/workflows/genomics/share/gene_ages', :source => "FamilyAge", :merge => true, :target => "Ensembl Gene ID", :persist => false).values.first.length > 1
   end
+
+  def __test_reorder_multiple_mismatch
+
+    text =<<-EOF
+#: :filename=BLADDER_11_and_12#:namespace=Hsa/feb2014#:type=:double
+#Genomic Mutation	Ensembl Gene ID	affected	damaged	splicing	broken	Sample
+12:54423561:A	ENSG00000273049|ENSG00000197757|ENSG00000198353|ENSG00000273046	false|true|false|false	false|true|false|false	false|false|false|false	false|true|false|false	51106212
+    EOF
+
+    tsv = TSV.open(StringIO.new(text))
+  
+    index =  Association.index(tsv, :source => "Sample", :target => "Genomic Mutation", :merge => true, :persist_update => true)
+    assert_equal 4, index["51106212~12:54423561:A"][0].split(";;").length
+
+  end
 end

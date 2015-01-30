@@ -116,6 +116,7 @@ module TSV
           end
         end
 
+        new_fields = [] if new_fields.nil?
         TSV.setup(new, :type => index_type, :filename => filename, :fields => [new_key_field], :key_field => new_fields * ", ", :namespace => namespace)
       end
     end

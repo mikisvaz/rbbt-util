@@ -59,9 +59,11 @@ module Association
               list.replace [list.first] * size if list.length == 1
             end if recycle and size > 1
 
+
             rest = Misc.zip_fields rest
 
-            annotations = rest.length > 1 ?
+
+            annotations = (Array === rest.first and rest.first.length > 1) ?
               targets.zip(rest) :
               targets.zip(rest * targets.length) 
 
