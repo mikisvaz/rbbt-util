@@ -61,8 +61,7 @@ module TSV
         fields        << parser.fields
         sizes         << parser.fields.length if parser.fields
         input_options << parser.options
-        preambles     << parser.preamble      if TrueClass === preamble and 
-                                                 not parser.preamble.empty?
+        preambles     << parser.preamble      if preamble and not parser.preamble.empty?
 
         parser.stream
       end
@@ -76,7 +75,11 @@ module TSV
                      when TrueClass
                        preambles * "\n"
                      when String
-                       preamble
+                       if preamble[0] == '+'
+                         preambles * "\n" + "\n" + preamble[1..-1]
+                       else
+                         preamble
+                       end
                      else
                        nil
                      end

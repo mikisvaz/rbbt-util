@@ -1,4 +1,3 @@
-require 'rbbt/entity'
 require 'rbbt/knowledge_base/registry'
 
 class KnowledgeBase

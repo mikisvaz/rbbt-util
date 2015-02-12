@@ -71,7 +71,7 @@ module Entity
       end
 
       base.property :default => :both do
-        to(:name)
+        to(:default)
       end
 
       base.property :ensembl => :both do
