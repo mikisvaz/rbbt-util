@@ -1,66 +1,66 @@
 #!/usr/bin/env ruby
 
-require 'rbbt'
-require 'rbbt/resource'
-require 'rbbt-util'
 require 'rbbt/util/simpleopt'
+require 'rbbt/workflow'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-h--host*:-f--finder"
-options[:Port] ||= options[:port]
+require 'zurb-foundation'
+require 'modular-scale'
 
-file = ARGV.shift
+require 'rbbt/rest/main'
+require 'rbbt/rest/entity'
+require 'rbbt/rest/workflow'
+require 'rbbt/rest/file_server'
+require 'rbbt/rest/knowledge_base'
+require 'rbbt/rest/helpers'
+require 'rbbt/rest/web_tool'
+
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*:-w--workflows*"
+
+template = ARGV.first
+
+template = template.sub('.haml','')
+
+ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
+ENV["RServe-session"] = options[:RServe_session] 
+
+raise rbbt_usage unless template
+
+$title = File.basename(template)
 
 load Rbbt.etc['app.d/init.rb'].find
 
-$class_name = class_name = "SingleTemplate"
+app = class SingleTemplate < Sinatra::Base; self end
 
-$app = app = eval "class #{class_name} < Sinatra::Base; self end"
+if options[:workflows]
+  app.register Sinatra::RbbtRESTWorkflow
+  options[:workflows].split(/[\s,]+/).each do |name|
+    wf = Workflow.require_workflow name
+    app.add_workflow wf, :all
+  end
+end
 
-#$LOAD_PATH.unshift('lib')
+app.register Sinatra::RbbtRESTKnowledgeBase
 
-#{{{ PRE
-Log.info{"Loading: " << Rbbt.etc['app.d/pre.rb'].find if Rbbt.etc['app.d/pre.rb'].exists?}
-load Rbbt.etc['app.d/pre.rb'].find if Rbbt.etc['app.d/pre.rb'].exists?
+app.helpers Sinatra::RbbtMiscHelpers
+app.helpers Sinatra::RbbtToolHelper
 
 app.get '/' do
-  file = file.sub(/\.haml/,'')
-  template_render(file)
+  template_render(template, @clean_params)
 end
+app.instance_eval Rbbt.etc['app.d/base.rb'].read
+app.use Rack::Deflater
 
-#{{{ BASE
-app.class_eval do
-  Log.info{"Loading: " << Rbbt.etc['app.d/base.rb'].find}
-  eval Rbbt.etc['app.d/base.rb'].read, nil, Rbbt.etc['app.d/base.rb'].find
-end
-
-#{{{ RESOURCES
-Log.info{"Loading: " << Rbbt.etc['app.d/resources.rb'].find}
 load Rbbt.etc['app.d/resources.rb'].find
 
-#{{{ ENTITIES
-Log.info{"Loading: " << Rbbt.etc['app.d/entities.rb'].find}
-load Rbbt.etc['app.d/entities.rb'].find
-
-#{{{ FINDER
 app.class_eval do
-  Log.info{"Loading: " << Rbbt.etc['app.d/finder.rb'].find}
   eval Rbbt.etc['app.d/finder.rb'].read
 end
 
-#{{{ POST
-Log.info{"Loading: " << Rbbt.etc['app.d/post.rb'].find if Rbbt.etc['app.d/post.rb'].exists?}
-load Rbbt.etc['app.d/post.rb'].find if Rbbt.etc['app.d/post.rb'].exists?
+Sinatra::RbbtRESTMain.add_resource_path(Path.setup('/home/mvazquezg/'), true)
 
-#{{{ RUN
-$title = class_name
-require 'rack'
 
-ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
-ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
-
-RbbtRESTHelpers.template_resources.unshift Path.setup(File.expand_path(File.dirname(file)))
-
-app.port = options[:port] if options[:port]
-app.server = options[:server] if options[:server]
-app.environment = options[:environment] if options[:environment]
-app.run!
+SingleTemplate.port = options[:port] || 4567
+SingleTemplate.bind = options[:bind] || "0.0.0.0"
+SingleTemplate.environment = options[:environment] || "development"
+SingleTemplate.server = options[:server] if options[:server]
+SingleTemplate.run!
