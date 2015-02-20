@@ -90,6 +90,11 @@ module Log
       str
     end
 
+    def save
+      info = {:start => @start, :last_time => @last_time, :last_count => @last_count, :last_percent => @last_percent, :desc => @desc, :ticks => @ticks, :max => @max}
+      Open.write(@file, info.to_yaml)
+    end
+
     def report(io = STDERR)
       if Log::LAST != "progress"
         length = Log::ProgressBar.cleanup_bars
@@ -106,6 +111,7 @@ module Log
       @last_time = Time.now
       @last_count = ticks
       @last_percent = percent if max
+      save if @file
     end
 
     def done(io = STDERR)
@@ -121,6 +127,7 @@ module Log
       @last_time = @start
       done_msg << " (" << thr_msg << ")"
       print(io, up_lines(@depth) << done_msg << down_lines(@depth)) 
+      Open.rm @file if @file and Open.exists? @file
     end
   end
 end

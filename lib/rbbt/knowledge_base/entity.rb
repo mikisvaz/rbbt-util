@@ -81,7 +81,7 @@ class KnowledgeBase
   def target_index(name)
     Persist.memory("Target index #{name}: KB directory #{dir}") do
       identifier_files = identifier_files(name)
-      identifier_files.concat Entity.identifier_files(source(name)) if defined? Entity
+      identifier_files.concat Entity.identifier_files(target(name)) if defined? Entity
       identifier_files.uniq!
       identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
       identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
@@ -100,7 +100,7 @@ class KnowledgeBase
   def identify_target(name, entity)
     return :all if entity == :all
     index = target_index(name)
-    return nil if index.nil?
+    return entity if index.nil?
     Array === entity ? index.values_at(*entity) : index[entity]
   end
 

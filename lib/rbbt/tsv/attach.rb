@@ -195,21 +195,28 @@ module TSV
     other_filename = other.respond_to?(:filename) ? other.filename : other.inspect
     Log.low("Attaching fields:#{Misc.fingerprint fields } from #{other_filename}.")
 
-    case
-    when key_field == other.key_field 
-      Log.debug "Attachment with same key: #{other.key_field}"
-      attach_same_key other, fields
-    when (not in_namespace and self.fields.include?(other.key_field))
-      Log.debug "Found other key field: #{other.key_field}"
-      attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
-    when (in_namespace and self.fields_in_namespace.include?(other.key_field))
-      Log.debug "Found other key field in #{in_namespace}: #{other.key_field}"
-      attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
-    else
-      index = TSV.find_traversal(self, other, options)
-      raise FieldNotFoundError, "Cannot traverse identifiers" if index.nil?
-      Log.debug "Attachment with index: #{other.key_field}"
-      attach_index other, index, fields
+    same_key = true
+    begin
+      case
+      when (key_field == other.key_field and same_key)
+        Log.debug "Attachment with same key: #{other.key_field}"
+        attach_same_key other, fields
+      when (not in_namespace and self.fields.include?(other.key_field))
+        Log.debug "Found other key field: #{other.key_field}"
+        attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
+      when (in_namespace and self.fields_in_namespace.include?(other.key_field))
+        Log.debug "Found other key field in #{in_namespace}: #{other.key_field}"
+        attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
+      else
+        index = TSV.find_traversal(self, other, options)
+        raise FieldNotFoundError, "Cannot traverse identifiers" if index.nil?
+        Log.debug "Attachment with index: #{other.key_field}"
+        attach_index other, index, fields
+      end
+    rescue Exception
+      Log.exception $!
+      same_key = false
+      retry
     end
     Log.debug("Attachment of fields:#{Misc.fingerprint fields } from #{other.filename.inspect} finished.")
 

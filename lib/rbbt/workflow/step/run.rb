@@ -134,6 +134,9 @@ class Step
       dependency.dup_inputs
     end
 
+    return if @seen.empty?
+
+    log :dependencies, "#{Log.color :magenta, "Dependencies"} #{Log.color :yellow, task.name.to_s || ""}"
     @seen.each do |dependency| 
       next if dependency == self
       next unless dependencies.include? dependency

@@ -1,7 +1,7 @@
 require 'rbbt/entity'
 
 module AssociationItem
-  extend Entity
+  extend Object::Entity
 
   annotation :knowledge_base
   annotation :database
@@ -15,11 +15,21 @@ module AssociationItem
     database ? [database, name] * ":" : name
   end 
 
-  property :invert => :single do
-    s,_sep,t= self.partition "~"
-    inverted = self.annotate([t,s] * _sep)
-    inverted.reverse = ! reverse
-    inverted
+  property :invert => :both do
+    if Array === self
+      inverted = self.collect do |item|
+        s,_sep,t= item.partition "~"
+        new = [t,s] * _sep
+      end
+      self.annotate inverted
+      inverted.reverse = ! reverse
+      inverted
+    else
+      s,_sep,t= self.partition "~"
+      inverted = self.annotate([t,s] * _sep)
+      inverted.reverse = ! reverse
+      inverted
+    end
   end
 
   property :namespace => :both do

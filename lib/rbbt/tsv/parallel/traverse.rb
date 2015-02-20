@@ -535,6 +535,9 @@ module TSV
     bar = Misc.process_options options, :bar
     bar ||= Misc.process_options options, :progress
     options[:bar] = case bar
+                    when Step
+                      max = guess_max(obj)
+                      Log::ProgressBar.new_bar(max, {:desc => bar.status, :file => bar.file(:progress)}) 
                     when String
                       max = guess_max(obj)
                       Log::ProgressBar.new_bar(max, {:desc => bar}) 
@@ -547,6 +550,9 @@ module TSV
                     when Hash
                       max = Misc.process_options(bar, :max) || max
                       Log::ProgressBar.new_bar(max, bar) 
+                    when Log::ProgressBar
+                      bar.max ||= guess_max(obj)
+                      bar
                     else
                       bar
                     end

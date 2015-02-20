@@ -211,8 +211,8 @@ class Step
     end
   end
 
-  def self.log_progress(status, options, path, &block)
-    options = Misc.add_defaults options, :severity => Log::INFO
+  def self.log_progress(status, options = {}, path = nil, &block)
+    options = Misc.add_defaults options, :severity => Log::INFO, :file => path
     max = Misc.process_options options, :max
     Log::ProgressBar.with_bar(max, options) do |bar|
       begin
@@ -223,6 +223,14 @@ class Step
         Log.exception $!
       end
     end
+  end
+
+  def log_progress(status, options = {}, &block)
+    Step.log_progress(status, options, file(:progress), &block)
+  end
+
+  def progress_bar(msg, options = {})
+    Log::ProgressBar.new nil, {:desc => msg, :file => file(:progress)}.merge(options)
   end
 
   def self.log(status, message, path, &block)

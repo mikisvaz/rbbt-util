@@ -12,8 +12,9 @@ require 'rbbt/rest/workflow'
 require 'rbbt/rest/file_server'
 require 'rbbt/rest/knowledge_base'
 require 'rbbt/rest/helpers'
+require 'rbbt/rest/web_tool'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*:-w--workflows*"
 
 workflow = ARGV.first
 
@@ -32,6 +33,7 @@ app = class WorkflowRest < Sinatra::Base; self end
 
 app.register Sinatra::RbbtRESTWorkflow
 app.register Sinatra::RbbtRESTKnowledgeBase
+app.helpers Sinatra::RbbtToolHelper
 
 app.get '/' do
   redirect to(File.join('/', wf.to_s))
@@ -46,6 +48,13 @@ app.class_eval do
 end
 
 WorkflowRest.add_workflow wf, :all
+if options[:workflows]
+  options[:workflows].split(/[\s,]+/).each do |name|
+    _wf = Workflow.require_workflow name
+    WorkflowRest.add_workflow _wf, :all
+  end
+end
+
 
 if options[:views] and not options[:views].empty?
   Sinatra::RbbtRESTMain.add_resource_path(Path.setup(options[:views]), true)

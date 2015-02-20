@@ -78,5 +78,6 @@ class KnowledgeBase
     setup(name, hash[:parents], true) if hash[:parents]
     hash
   end
+
 end
 

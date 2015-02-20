@@ -189,6 +189,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     entity.rb
     enrichment.rb
     query.rb
+    traverse.rb
    }
   }
  }
@@ -353,9 +354,10 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     }
    }
    app=app{
-    template
     start
     install
+    template
+    template2
    }
    association=association{
     subset
