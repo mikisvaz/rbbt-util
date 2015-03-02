@@ -41,7 +41,12 @@ module Workflow
 
   def self.load_workflow_file(filename)
     begin
-      $LOAD_PATH.unshift(File.join(File.dirname(File.expand_path(filename)), 'lib'))
+      workflow_lib_dir = File.join(File.dirname(File.expand_path(filename)), 'lib')
+      #$LOAD_PATH.unshift(File.join(File.dirname(File.expand_path(filename)), 'lib'))
+      if File.directory? workflow_lib_dir
+        Log.debug "Adding workflow lib directory to LOAD_PATH: #{workflow_lib_dir}"
+        $LOAD_PATH.unshift(workflow_lib_dir)
+      end
 
       filename = File.expand_path(filename)
 

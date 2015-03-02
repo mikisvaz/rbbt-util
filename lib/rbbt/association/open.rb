@@ -20,7 +20,7 @@ module Association
 
     data = Persist.persist_tsv(file, "Association Database", options, persist_options) do |data|
       options = options.dup
-      tsv = Association.database(file, options.merge(:persist => persist))
+      tsv = Association.database(file, options.merge(:persist => persist, :unnamed => true))
       tsv = tsv.to_double unless tsv.type == :double
 
       tsv.annotate data

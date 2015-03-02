@@ -46,11 +46,12 @@ class KnowledgeBase
       assignments[target] = (matches.any? ? matches.target.uniq : []) if is_wildcard? target
     end
 
-    def find_paths(rules, all_matches, assignments)
+    def clean_matches(rules, all_matches, assignments)
       paths = {}
 
       rules.zip(all_matches).each do |rule, matches|
         source, db, target = rule.split /\s+/
+
         if is_wildcard? source
           assigned = assignments[source]
           matches = matches.select{|m| assigned.include? m.source }
@@ -63,11 +64,78 @@ class KnowledgeBase
 
         paths[rule] = matches
       end
+
       paths
     end
 
+    def _fp(rules, clean_matches, assignments)
+      return true if rules.empty?
+
+      rule, *rest = rules
+      source, db, target = rule.split /\s+/
+
+      paths = {}
+      matches = clean_matches[rule]
+      Annotated.purge(matches).each do |match|
+        new_assignments = nil
+        match_source, _sep, match_target = match.partition "~"
+
+        if is_wildcard? source
+          next if assignments[source] and assignments[source]  != match_source
+          new_assignments ||= assignments.dup
+          new_assignments[source] = match_source
+        end
+
+        if is_wildcard? target
+          next if assignments[target] and assignments[target]  != match_target
+          new_assignments ||= assignments.dup
+          new_assignments[target] = match_target
+        end
+
+        new_paths = _fp(rest, clean_matches, new_assignments)
+        next unless new_paths
+        paths[match] = new_paths
+      end
+
+      return false if paths.empty?
+
+      paths 
+    end
+
+    def _ep(paths)
+      found = []
+      paths.each do |match,_next|
+        case _next
+        when TrueClass
+          found << [match]
+        when FalseClass
+          next
+        else
+          _ep(_next).each do |_n|
+            found << [match] + _n
+          end
+        end
+      end
+      found
+    end
+
+    def find_paths(rules, all_matches, assignments)
+      clean_matches = clean_matches(rules, all_matches, assignments)
+
+      path_hash = _fp(rules, clean_matches, {})
+
+      return [] unless path_hash
+      _ep(path_hash).collect do |path|
+        path.zip(clean_matches.values_at(*rules)).collect do |item, matches|
+          matches.first.annotate item.dup
+        end
+      end
+    end
+
+
     def traverse
       all_matches = []
+
       rules.each do |rule|
         rule = rule.strip
         next if rule.empty?
@@ -76,6 +144,7 @@ class KnowledgeBase
         source_entities, target_entities = identify db, source, target
 
         matches = kb.subset(db, :source => source_entities, :target => target_entities)
+
         if conditions
           conditions.split(/\s+/).each do |condition|
             if condition.index "="
@@ -88,6 +157,7 @@ class KnowledgeBase
         end
 
         reassign matches, source, target
+
         all_matches << matches
       end
 

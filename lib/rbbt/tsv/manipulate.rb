@@ -284,6 +284,8 @@ module TSV
 
       data.extend TSV unless TSV === data
       self.annotate(data)
+      data.entity_options = self.entity_options
+      data.entity_templates = self.entity_templates
 
       data.key_field = new_key_field_name
       data.fields = new_field_names

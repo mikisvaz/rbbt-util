@@ -16,7 +16,7 @@ module Log
       @last_count = nil
       @last_percent = nil
       @depth = depth
-      @desc = desc
+      @desc = desc.nil? ? nil : desc.gsub(/\n/,' ')
       @file = file
     end
 
@@ -24,9 +24,9 @@ module Log
       (@ticks * 100) / @max
     end
 
-    def tick(step = nil)
+    def tick(step = 1)
       return if ENV["RBBT_NO_PROGRESS"] == "true"
-      @ticks += 1
+      @ticks += step
 
       begin
         time = Time.now

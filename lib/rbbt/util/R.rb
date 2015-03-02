@@ -8,12 +8,19 @@ module R
   UTIL    = File.join(LIB_DIR, 'util.R')
   PLOT    = File.join(LIB_DIR, 'plot.R')
 
-  def self.run(command, options = {})
+  def self.run(command, source = nil, options = {})
     cmd =<<-EOF
 # Loading basic rbbt environment
 source('#{UTIL}');
 
     EOF
+
+    require_sources  = source.collect{|source|
+      source = R::LIB_DIR["plot.R"] if source == :plot
+      "source('#{source}')"
+    } * ";\n" if Array === source and source.any?
+
+    cmd << require_sources + "\n\n" if require_sources
 
     case
     when IO === command

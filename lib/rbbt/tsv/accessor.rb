@@ -252,9 +252,16 @@ module TSV
       if self.include? key
         new = []
         self[key, true].each_with_index do |v,i|
-          new << (v << values[i])
+          _v = values[i]
+          case _v
+          when Array
+            _n = v + _v
+          else
+            _n = v << _v
+          end
+          new << _n
         end
-        self[key] == new
+        self[key] = new
       else
         self[key] = Array === values.first ? values.dup : values.collect{|v| [v] }
       end

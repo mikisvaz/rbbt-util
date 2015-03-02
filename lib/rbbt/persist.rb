@@ -72,7 +72,7 @@ module Persist
     Path.setup(persistence_dir) unless Path === persistence_dir
 
     filename = perfile.gsub(/\s/,'_').gsub(/\//,'>')
-    clean_options = options
+    clean_options = options.dup
     clean_options.delete :unnamed
     clean_options.delete "unnamed"
 

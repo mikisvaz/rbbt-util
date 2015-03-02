@@ -284,6 +284,8 @@ module TSV
 
     def cast_values_single(value)
       case
+      when (value.nil? or value.empty?)
+        nil
       when Symbol === cast
         value.send(cast)
       when Proc === cast
@@ -294,27 +296,27 @@ module TSV
     def cast_values_list(values)
       case
       when Symbol === cast
-        values.collect{|v| v.send(cast)}
+        values.collect{|v| v.nil? or v.empty? ? nil : v.send(cast)}
       when Proc === cast
-        values.collect{|v| cast.call v}
+        values.collect{|v| v.nil? or v.empty? ? nil : cast.call(v)}
       end
     end
 
     def cast_values_flat(values)
       case
       when Symbol === cast
-        values.collect{|v| v.send(cast)}
+        values.collect{|v| v.nil? or v.empty? ? nil : v.send(cast)}
       when Proc === cast
-        values.collect{|v| cast.call v }
+        values.collect{|v| v.nil? or v.empty? ? nil : cast.call(v) }
       end
     end
 
     def cast_values_double(values)
       case
       when Symbol === cast
-        values.collect{|list| list.collect{|v| v.send(cast)}}
+        values.collect{|list| list.collect{|v| v.nil? or v.empty? ? nil : v.send(cast)}}
       when Proc === cast
-        values.collect{|list| list.collect{|v| cast.call v }}
+        values.collect{|list| list.collect{|v| v.nil? or v.empty? ? nil : cast.call(v) }}
       end
     end
 
@@ -539,7 +541,7 @@ module TSV
           desc = monitor[:desc] if monitor.include? :desc 
           step = monitor[:step] if monitor.include? :step 
         end
-        progress_monitor = Log::ProgressBar.new(size, :desc => desc)
+        progress_monitor = Log::ProgressBar.new_bar(size, :desc => desc)
       end
 
       # parser 
@@ -548,8 +550,9 @@ module TSV
 
         while not line.nil? 
           begin
-            #progress_monitor.tick(stream.pos) if progress_monitor 
-            progress_monitor.tick if progress_monitor 
+            if progress_monitor
+              progress_monitor.tick(line.bytesize)
+            end
 
             raise SKIP_LINE if line.empty?
 
@@ -588,6 +591,7 @@ module TSV
           end
         end
       ensure
+        Log::ProgressBar.remove_bar(progress_monitor)
         stream.close unless stream.closed?
         stream.join if stream.respond_to? :join and not stream.joined?
       end
