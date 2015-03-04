@@ -96,8 +96,8 @@ module Resource
               Misc.in_dir tmp_dir do
                 CMD.cmd('tar xvfz -', :in => Open.open(location, :nocache => true))
               end
+              FileUtils.mv tmp_dir, final_path
             end
-            File.utils tmp_dir, final_path
           when Net::HTTPInternalServerError
             @server_missing_resource_cache << url
             raise "Resource Not Found"
