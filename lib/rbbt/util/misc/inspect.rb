@@ -118,6 +118,8 @@ module Misc
   def self.hash2md5(hash)
     return "" if hash.nil? or hash.empty?
 
+    hash = Annotated.purge(hash)
+
     str = ""
     keys = hash.keys
     keys = keys.clean_annotations if keys.respond_to? :clean_annotations
@@ -127,6 +129,8 @@ module Misc
       unnamed = hash.unnamed
       hash.unnamed = true 
     end
+
+
     keys.each do |k|
       next if k == :monitor or k == "monitor" or k == :in_situ_persistence or k == "in_situ_persistence"
       v = hash[k]
@@ -160,7 +164,6 @@ module Misc
         else
           str << k.to_s << "=>" << v_ins
         end
-
       end
 
       if defined? Annotated and Annotated === v and not (defined? AssociationItem and AssociationItem === v)
