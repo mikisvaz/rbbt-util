@@ -518,10 +518,11 @@ module Workflow
           case v
           when Symbol
             rec_dependency = real_dependencies.collect{|d| [d, d.rec_dependencies].compact.flatten}.flatten.select{|d| d.task.name == v }.first
-            if (dependency.first.tasks[dependency[1]].input_options[i] || {})[:stream]
+            input_options = dependency.first.task_info(dependency[1])[:input_options][i] || {}
+            if input_options[:stream]
               inputs[i] = rec_dependency.run(true).grace.join.path 
             else
-              inputs[i] = rec_dependency.run(true).join.load
+              inputs[i] = rec_dependency.run
             end
           else
             inputs[i] = v
