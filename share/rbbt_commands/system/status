@@ -116,7 +116,7 @@ jobs = Rbbt.job_info workflow, task
 workflows = {}
 
 jobs.each do |file,info|
-  next unless all or not info[:done]
+  next unless all or not info[:done] or not File.exists? file
   workflow = info[:workflow]
   task = info[:task]
   workflows[workflow] ||= {}
@@ -141,7 +141,13 @@ workflows.sort.each do |workflow,tasks|
       status = info[:status]
       status = :missing if status == :done and not File.exists? file
       status = status.to_s
-      status << Log.color(:red, " (dead)") if status != "done" and pid and not Misc.pid_exists?(pid)
+      if status != "done" and pid and not Misc.pid_exists?(pid)
+        if File.exists? file
+          status << Log.color(:red, " (out of sync)") 
+        else
+          status << Log.color(:red, " (dead)") 
+        end
+      end
       str = file.dup
       str << " #{ status_msg status }"
       str << "; #{pid_msg pid}" unless status == "done"

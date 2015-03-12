@@ -76,7 +76,6 @@ jobs = Rbbt.job_info workflow, task
 workflows = {}
 
 jobs.each do |file,i|
-  next if i[:done]
   info = begin
            Open.open(i[:info_file]) do |f|
              Marshal.load(f)
@@ -87,12 +86,13 @@ jobs.each do |file,i|
 
   pid = info[:pid]
 
-  status = info[:status]
-  status = :missing if status == :done and not File.exists? file
+  status = info[:status].to_s
+  status = :missing if status == "done" and not File.exists? file
   status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
+  status = :sync if status != "done" and File.exists? file
 
   status = status.to_s
-  next unless status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status == "" or (force and status == 'noinfo')
+  next unless status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" or (force and status == 'noinfo')
   puts "  Removing #{ file } - #{status}" 
   Step.clean(file) 
 end
