@@ -53,7 +53,11 @@ def report_msg(status, name, path)
   task = Log.color(:yellow, parts.pop)
   workflow = Log.color(:magenta, parts.pop)
 
-  status_msg(status) << " " << [workflow, task, path] * " " << "\n"
+  if $main_mtime and ($main_mtime - File.mtime(path)) < 0
+    status_msg(status) << " " << [workflow, task, path] * " " << " (#{Log.color(:red, "Mtime out of sync") })\n"
+  else
+    status_msg(status) << " " << [workflow, task, path] * " " << "\n"
+  end
 end
 
 def report(step, offset = 0)
@@ -61,6 +65,7 @@ def report(step, offset = 0)
   path  = step.path
   status = info[:status] || :missing
   name = info[:name] || File.basename(path)
+  status = :unsync if status == :done and not File.exists? path
   str = " " * offset
   str << report_msg(status, name, path)
   info[:dependencies].each do |task,name,path|
@@ -76,5 +81,6 @@ def report(step, offset = 0)
 end
 
 step = get_step file
+$main_mtime = File.exists?(step.path) ? File.mtime(step.path) : nil
 
 puts report(step).strip

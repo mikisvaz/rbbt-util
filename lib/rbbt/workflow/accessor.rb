@@ -272,7 +272,7 @@ class Step
   end
 
   def streaming?
-    IO === @result or status == :streaming
+    IO === @result or @saved_stream or status == :streaming
   end
 
   def running?
@@ -430,29 +430,31 @@ module Workflow
   end
 
   def rec_dependencies(taskname)
-    if task_dependencies.include? taskname
-      deps = task_dependencies[taskname]
-      all_deps = deps.select{|dep| String === dep or Symbol === dep or Array === dep}
-      deps.each do |dep| 
-        case dep
-        when Array
-          dep.first.rec_dependencies(dep.last).each do |d|
-            if Array === d
-              all_deps << d
-            else
-              all_deps << [dep.first, d]
-            end
-          end
-        when String, Symbol
-          all_deps.concat rec_dependencies(dep.to_sym)
-        when DependencyBlock
-          all_deps << dep.dependency
-        end
-      end
-      all_deps.uniq
-    else
-      []
-    end
+    @rec_dependencies ||= begin
+                            if task_dependencies.include? taskname
+                              deps = task_dependencies[taskname]
+                              all_deps = deps.select{|dep| String === dep or Symbol === dep or Array === dep}
+                              deps.each do |dep| 
+                                case dep
+                                when Array
+                                  dep.first.rec_dependencies(dep.last).each do |d|
+                                    if Array === d
+                                      all_deps << d
+                                    else
+                                      all_deps << [dep.first, d]
+                                    end
+                                  end
+                                when String, Symbol
+                                  all_deps.concat rec_dependencies(dep.to_sym)
+                                when DependencyBlock
+                                  all_deps << dep.dependency
+                                end
+                              end
+                              all_deps.uniq
+                            else
+                              []
+                            end
+                          end
   end
 
   def task_from_dep(dep)

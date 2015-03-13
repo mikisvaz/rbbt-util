@@ -144,10 +144,12 @@ module Misc
       when Symbol === v
         str << k.to_s << "=>" << v.to_s
       when (String === v and v.length > HASH2MD5_MAX_STRING_LENGTH)
+        #str << k.to_s << "=>" << v[0..HASH2MD5_MAX_STRING_LENGTH] << v[v.length-3..v.length+3] << v[-3..-1] << "; #{ v.length }"
         str << k.to_s << "=>" << v[0..HASH2MD5_MAX_STRING_LENGTH] << "; #{ v.length }"
       when String === v
         str << k.to_s << "=>" << v
       when (Array === v and v.length > HASH2MD5_MAX_ARRAY_LENGTH)
+        #str << k.to_s << "=>[" << (v[0..HASH2MD5_MAX_ARRAY_LENGTH] + v[v.length-3..v.length+3] + v[-3..-1]) * "," << "; #{ v.length }]"
         str << k.to_s << "=>[" << v[0..HASH2MD5_MAX_ARRAY_LENGTH] * "," << "; #{ v.length }]"
       when TSV::Parser === v
         str << remove_long_items(v)

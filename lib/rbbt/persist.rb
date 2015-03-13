@@ -27,7 +27,7 @@ module Persist
 
   def self.newer?(path, file)
     return true if not Open.exists? file
-    return true if File.mtime(path) < File.mtime(file)
+    return File.mtime(path) - File.mtime(file) if File.mtime(path) < File.mtime(file)
     return false
   end
 
@@ -38,8 +38,9 @@ module Persist
     check = persist_options[:check]
     if not check.nil?
       if Array === check
-        if check.select{|file| newer? path, file}.any?
-          Log.medium "Persistence check for #{path} failed in: #{ check.select{|file| newer? path, file} * ", "}"
+        newer = check.select{|file| newer? path, file}
+        if newer.any?
+          Log.medium "Persistence check for #{path} failed in: #{ newer * ", "}"
           return false 
         end
      else

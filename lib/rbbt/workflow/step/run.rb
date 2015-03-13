@@ -98,6 +98,10 @@ class Step
   def checks
     rec_dependencies.collect{|dependency| dependency.path }.uniq
   end
+  
+  def dirty?
+    rec_dependencies.collect{|dependency| dependency.path }.uniq.reject{|path| path.exists?}.any?
+  end
 
   def kill_children
     begin
@@ -128,13 +132,24 @@ class Step
       @seen.uniq!
     end
 
+    return if @seen.empty?
+
+    @seen.each do |dependency|
+      next if dependency == self
+      if dependency.streaming? and not dependency.running?
+        dependency.clean 
+      else
+        dependency.clean if dependency.error? or dependency.aborted? or dependency.status.nil? or 
+                            (dependency.done? and dependency.dirty?) or 
+                            not (dependency.done? or dependency.running?)
+      end
+    end
+
     @seen.each do |dependency|
       next if dependency == self
       next unless dependencies.include? dependency
       dependency.dup_inputs
     end
-
-    return if @seen.empty?
 
     log :dependencies, "#{Log.color :magenta, "Dependencies"} #{Log.color :yellow, task.name.to_s || ""}"
     @seen.each do |dependency| 
@@ -142,16 +157,7 @@ class Step
       next unless dependencies.include? dependency
       Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} -- #{Log.color :blue, dependency.path}"
       begin
-        if dependency.streaming? 
-          next if dependency.running?
-          dependency.clean 
-        else
-          dependency.clean if (dependency.error? or dependency.aborted? or dependency.status.nil? or not (dependency.done? or dependency.running?))
-        end
-
-        unless dependency.started? 
-          dependency.run(true)
-        end
+        dependency.run(true) unless dependency.started? 
       rescue Aborted
         Log.error "Aborted dep. #{Log.color :red, dependency.task.name.to_s}"
         raise $!
@@ -439,7 +445,9 @@ class Step
 
     grace
 
-    join_stream if status.to_s == "streaming"
+    if streaming?
+      join_stream 
+    end
 
     return self if not Open.exists? info_file
 
