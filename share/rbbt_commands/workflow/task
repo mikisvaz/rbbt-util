@@ -410,7 +410,7 @@ when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
 when Step
   if IO === res.result
     begin
-      io = res.result
+      io = res.get_stream
       while block = io.read(2048) do
         out.write block
       end #unless io.closed? 
