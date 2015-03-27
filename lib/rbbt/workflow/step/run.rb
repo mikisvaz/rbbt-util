@@ -415,6 +415,7 @@ class Step
 
   def join_stream
     stream = get_stream if @result
+    @result = nil
     if stream
       begin
         Misc.consume_stream stream 
