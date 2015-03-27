@@ -305,7 +305,7 @@ module Persist
       Log.medium "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"
 
       begin
-        FileUtils.rm path 
+        Open.rm path 
       rescue
       end if Open.exists? path 
 
