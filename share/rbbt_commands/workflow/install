@@ -29,6 +29,9 @@ Misc.in_dir(workflow_dir) do
       repo = File.join(repo_base_url, Misc.snake_case(workflow) + '.git')
     end
     Log.warn "Cloning #{ repo }"
-    `git clone "#{repo}"`
+    Misc.insist do
+      `git clone "#{repo}"`
+      raise unless $?.success?
+    end
   end
 end
