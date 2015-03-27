@@ -4,7 +4,7 @@ RbbtRESTHelpers.template_resources.unshift Rbbt.www.views.find if Rbbt.www.views
   
 load Rbbt.etc['app.d']['grid_system.rb'].find if Rbbt.etc['app.d']['grid_system.rb'].exists?
 
-require 'sass-css-importer'
+#require 'sass-css-importer'
 
 Sinatra::RbbtRESTMain.add_resource_path(Path.setup(ENV["RBBT_VIEWS_DIR"]), true) if ENV["RBBT_VIEWS_DIR"] and not ENV["RBBT_VIEWS_DIR"].empty?
 

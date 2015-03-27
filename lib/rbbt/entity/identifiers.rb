@@ -95,7 +95,7 @@ module Entity
       end
     end
 
-    self.include Entity::Identified unless Entity::Identified === self
+    self.send(:include, Entity::Identified) unless Entity::Identified === self
 
     self.format = all_fields
     @formats ||= []
