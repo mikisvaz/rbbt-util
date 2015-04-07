@@ -87,11 +87,14 @@ predict(model, data.frame(#{R.ruby2R tsv}));
         Array === tsv.values.first ? res : res.first
       when Fixnum, Array, Float, String
         field = formula.split("~").last.strip
+        field.gsub!(/log\((.*)\)/,'\1')
 
-        res = R.eval_a <<-EOF
+        script = <<-EOF
 model = rbbt.model.load('#{model_file}');
 predict(model, data.frame(#{field} = #{R.ruby2R tsv}));
         EOF
+
+        res = R.eval_a script
         Array === tsv ? res : res.first
       else
         raise "Unknown object for predict: #{Misc.fingerprint tsv}"
@@ -110,7 +113,8 @@ predict(model, data.frame(#{field} = #{R.ruby2R tsv}));
       tsv = Model.groom(tsv, formula)
 
       FileUtils.mkdir_p File.dirname(model_file) unless File.exists?(File.dirname(model_file))
-      tsv.R <<-EOF, r_options(tsv)
+      roptions = r_options(tsv)
+      tsv.R <<-EOF, roptions
 model = rbbt.model.fit(data, #{formula}, method=#{method}#{args_str})
 save(model, file='#{model_file}')
 data = NULL

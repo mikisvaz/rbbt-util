@@ -8,7 +8,11 @@ module R
   UTIL    = File.join(LIB_DIR, 'util.R')
   PLOT    = File.join(LIB_DIR, 'plot.R')
 
-  def self.run(command, source = nil, options = {})
+  def self.run(command, source = nil, options = nil)
+    source, options = nil, source if options.nil? and Hash === source
+    options = {} if options.nil?
+    monitor = options.delete :monitor
+
     cmd =<<-EOF
 # Loading basic rbbt environment
 source('#{UTIL}');
@@ -33,7 +37,7 @@ source('#{UTIL}');
 
     Log.debug{"R Script:\n#{ cmd }"}
 
-    if options.delete :monitor
+    if monitor
       io = CMD.cmd('R --vanilla --quiet', options.merge(:in => cmd, :pipe => true, :log => true))
       while line = io.gets
         puts line
