@@ -157,7 +157,7 @@ class Step
       next unless dependencies.include? dependency
       Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} -- #{Log.color :blue, dependency.path}"
       begin
-        dependency.run(true) unless dependency.started? 
+        dependency.run(true) unless dependency.done? or dependency.started? 
       rescue Aborted
         Log.error "Aborted dep. #{Log.color :red, dependency.task.name.to_s}"
         raise $!

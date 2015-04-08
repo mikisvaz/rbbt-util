@@ -513,24 +513,28 @@ module Workflow
     dependencies.each do |dependency|
       real_dependencies << case dependency
       when Array
-        inputs = inputs.dup
         workflow, task, options = dependency
+
         options = dependency.last if Hash === dependency.last
+        _inputs = inputs.dup
         options.each{|i,v|
           case v
           when Symbol
-            rec_dependency = real_dependencies.collect{|d| [d, d.rec_dependencies].compact.flatten}.flatten.select{|d| d.task.name == v }.first
-            input_options = dependency.first.task_info(dependency[1])[:input_options][i] || {}
+            rec_dependency = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies}).flatten.compact.uniq.select{|d| d.task.name.to_sym == v }.first
+            raise "Dependency for parameter #{i} not found: #{v}" if rec_dependency.nil?
+            input_options = workflow.task_info(task)[:input_options][i] || {}
             if input_options[:stream]
-              inputs[i] = rec_dependency.run(true).grace.join.path 
+              rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
+              _inputs[i] = rec_dependency
             else
-              inputs[i] = rec_dependency.run
+              _inputs[i] = rec_dependency.run
             end
           else
-            inputs[i] = v
+            _inputs[i] = v
           end
         } if options
-        res = dependency.first.job(dependency[1], jobname, inputs)
+
+        res = dependency.first.job(dependency[1], jobname, _inputs)
         res
       when Step
         dependency

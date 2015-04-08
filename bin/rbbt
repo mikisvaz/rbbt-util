@@ -44,7 +44,7 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 --nostream              #{Log.color :yellow, "Disable persistance/job streaming"}
 --locate_file           #{Log.color :yellow, "Report the location of the script instead of executing it"}
 --dump_mem*             #{Log.color :yellow, "Dump strings in memory each second into file"}
---no_lock_id            #{Log.color :yellow, "Do not track lockfiles with ids (for high-througput and high-concurrency"}
+--no_lock_id            #{Log.color :yellow, "Do not track lockfiles with ids (prevent stale file handlers for high-througput and high-concurrency)"}
 EOF
 
 
