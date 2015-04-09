@@ -384,6 +384,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
    study=study{
     task
+    maf2study
    }
    file_server=file_server{
     list

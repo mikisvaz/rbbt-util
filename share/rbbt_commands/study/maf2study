@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Convert MAF file to Rbbt study
+
+$ rbbt study maf2study [options] <filename.maf> <directory>
+
+-h--help Print this help
+-o--organism* Organism code 
+-w--watson Mutations reported in Watson strand
+
+EOF
+rbbt_usage and exit 0 if options[:help]
+
+raise ParameterException, "Need MAF file and directory" unless ARGV.length == 2
+
+file, directory = ARGV
+
+
+fields = ['Chrom', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2','Tumor_Sample_Barcode']
+all_fields = TSV.parse_header(file, :header_hash => '').all_fields
+field_pos = fields.collect{|f| all_fields.index f}
+
+sample_mutations = {}
+first = true
+TSV.traverse file, :header_hash => '', :type => :array do |line|
+  if first
+    first = false
+    next
+  end
+  chr, pos, ref, mut, sample = line.split("\t").values_at *field_pos
+  pos, muts = Misc.correct_icgc_mutation(pos, ref, mut)
+  muts.each do |mut|
+    mut = [chr, pos, mut] * ":"
+    sample = sample.split("-").values_at(0,1,2) * "-" if sample =~ /TCGA/
+      sample_mutations[sample] ||= []
+    sample_mutations[sample] << mut
+  end
+end
+
+genotype_dir = File.join(directory, 'genotypes')
+FileUtils.mkdir_p genotype_dir
+
+sample_mutations.each do |sample, mutations|
+  Open.write(File.join(genotype_dir, sample), mutations * "\n")
+end
+
+
+metadata_yaml = File.join(directory, 'metadata.yaml')
+
+metadata = {:organism => "Hsa/feb2014", :watson => "true"}.merge options
+Open.write(metadata_yaml, metadata.to_yaml)
