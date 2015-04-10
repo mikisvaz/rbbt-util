@@ -230,7 +230,8 @@ class Step
   end
 
   def progress_bar(msg, options = {})
-    Log::ProgressBar.new nil, {:desc => msg, :file => file(:progress)}.merge(options)
+    max = options[:max]
+    Log::ProgressBar.new max, {:desc => msg, :file => file(:progress)}.merge(options)
   end
 
   def self.log(status, message, path, &block)
@@ -414,6 +415,7 @@ module Workflow
              end
 
 
+    iii inputs
     dependencies = task_dependencies[name].select{|dep| String === dep or Symbol === dep}
     { :id => File.join(self.to_s, name.to_s),
       :description => description,
@@ -430,7 +432,8 @@ module Workflow
   end
 
   def rec_dependencies(taskname)
-    @rec_dependencies ||= begin
+    @rec_dependencies ||= {}
+    @rec_dependencies[taskname] ||= begin
                             if task_dependencies.include? taskname
                               deps = task_dependencies[taskname]
                               all_deps = deps.select{|dep| String === dep or Symbol === dep or Array === dep}
@@ -470,13 +473,15 @@ module Workflow
     task
   end
 
-  def rec_inputs(taskname)
-    [taskname].concat(rec_dependencies(taskname)).inject([]){|acc, tn| acc.concat(task_from_dep(tn).inputs) }.uniq
-  end
+  #def rec_inputs(taskname)
+  #  [taskname].concat(rec_dependencies(taskname)).inject([]){|acc, tn| acc.concat(task_from_dep(tn).inputs) }.uniq
+  #end
 
   def rec_inputs(taskname)
     task = task_from_dep(taskname)
+    iii rec_dependencies(taskname)
     dep_inputs = task.dep_inputs rec_dependencies(taskname), self
+    iii dep_inputs
     task.inputs + dep_inputs.values.flatten
   end
 
