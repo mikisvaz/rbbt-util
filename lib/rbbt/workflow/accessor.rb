@@ -415,7 +415,6 @@ module Workflow
              end
 
 
-    iii inputs
     dependencies = task_dependencies[name].select{|dep| String === dep or Symbol === dep}
     { :id => File.join(self.to_s, name.to_s),
       :description => description,
@@ -479,9 +478,7 @@ module Workflow
 
   def rec_inputs(taskname)
     task = task_from_dep(taskname)
-    iii rec_dependencies(taskname)
     dep_inputs = task.dep_inputs rec_dependencies(taskname), self
-    iii dep_inputs
     task.inputs + dep_inputs.values.flatten
   end
 
