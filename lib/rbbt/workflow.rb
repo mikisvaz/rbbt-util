@@ -284,7 +284,8 @@ module Workflow
     Workflow.resolve_locals(inputs)
 
     task_inputs = task_info(taskname)[:inputs]
-    defaults = IndiferentHash.setup(task_info(taskname)[:input_defaults])
+    #defaults = IndiferentHash.setup(task_info(taskname)[:input_defaults])
+    defaults = task.input_defaults
 
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
 

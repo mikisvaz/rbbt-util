@@ -517,7 +517,7 @@ module Workflow
       when Array
         workflow, task, options = dependency
 
-        options = dependency.last if Hash === dependency.last
+        #options = dependency.last if Hash === dependency.last
         _inputs = inputs.dup
         options.each{|i,v|
           case v
@@ -536,7 +536,7 @@ module Workflow
           end
         } if options
 
-        res = dependency.first.job(dependency[1], jobname, _inputs)
+        res = workflow.job(task, jobname, _inputs)
         res
       when Step
         dependency
