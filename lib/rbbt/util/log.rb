@@ -88,8 +88,19 @@ module Log
     end
   end
 
-  def self.logfile
-    @logfile = nil
+  def self.logfile(file=nil)
+    if file.nil?
+      @logfile
+    else
+      case file
+      when String
+        @logfile = File.open(file, :mode => 'a')
+      when IO, File
+        @logfile = file
+      else
+        raise "Unkown logfile format: #{file.inspect}"
+      end
+    end
   end
 
   WHITE, DARK, GREEN, YELLOW, RED = Color::SOLARIZED.values_at :base0, :base00, :green, :yellow, :magenta
