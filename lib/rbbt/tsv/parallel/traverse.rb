@@ -512,7 +512,8 @@ module TSV
       obj_options = obj.respond_to?(:options) ? obj.options : {}
       dumper = TSV::Dumper.new obj_options.merge(options)
       dumper.init
-      traverse(obj, obj_options.merge(:into => dumper), &block)                                                                                                                                  
+      _options = options.merge(obj_options).merge(:into => dumper)
+      traverse(obj, _options, &block)                                                                                                                                  
       return dumper
     end
 
