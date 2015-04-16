@@ -124,36 +124,33 @@ class Step
 
   def run_dependencies
     @seen ||= []
+    seen_paths ||= Set.new
+    
     dependencies.uniq.each do |dependency| 
-      next if seen.collect{|d| d.path}.include?(dependency.path)
-      dependency.seen = seen
-      @seen.concat dependency.rec_dependencies.collect{|d| d } 
+      dependency_path = dependency.path
+      next if seen_paths.include? dependency_path
+      @seen.concat dependency.rec_dependencies
+      seen_paths.union(dependency.rec_dependencies.collect{|d| d.path})
       @seen << dependency
-      @seen.uniq!
+      seen_paths << dependency_path
     end
+
+    @seen.uniq!
+    @seen.delete self
 
     return if @seen.empty?
 
-    @seen.each do |dependency|
-      next if dependency == self
-      if dependency.streaming? and not dependency.running?
-        dependency.clean 
-      else
-        dependency.clean if dependency.error? or dependency.aborted? or dependency.status.nil? or 
-                            (dependency.done? and dependency.dirty?) or 
-                            not (dependency.done? or dependency.running?)
-      end
-    end
-
-    @seen.each do |dependency|
-      next if dependency == self
-      next unless dependencies.include? dependency
-      dependency.dup_inputs
-    end
-
     log :dependencies, "#{Log.color :magenta, "Dependencies"} #{Log.color :yellow, task.name.to_s || ""}"
+    dupping = []
+    @seen.each do |dependency|
+      next if (dependency.done? and not dependency.dirty?) or (dependency.streaming? and dependency.running?)
+      dependency.clean
+      dupping << dependency unless dependencies.include? dependency
+    end
+
+    dupping.each{|dep| dep.dup_inputs}
+
     @seen.each do |dependency| 
-      next if dependency == self
       next unless dependencies.include? dependency
       Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} -- #{Log.color :blue, dependency.path}"
       begin

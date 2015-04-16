@@ -66,8 +66,11 @@ class Step
   end
 
   def path
-    @path = Misc.sanitize_filename(Path.setup(@path.call)) if Proc === @path
-    @path
+    if Proc === @path
+      @path = Path.setup(Misc.sanitize_filename(@path.call))
+    else
+      @path
+    end
   end
 
   class << self
@@ -182,6 +185,27 @@ class Step
     self
   end
 
+  #def rec_dependencies
+
+  #  # A step result with no info_file means that it was manually
+  #  # placed. In that case, do not consider its dependencies
+  #  return [] if Open.exists?(self.path.to_s) and not Open.exists? self.info_file
+
+  #  return [] if dependencies.nil? or dependencies.empty?
+
+  #  new_dependencies = []
+  #  dependencies.each{|step| 
+  #    new_dependencies.concat step.rec_dependencies
+  #    new_dependencies << step
+  #  }
+  #  new_dependencies.uniq!
+
+  #  dependencies = self.dependencies ? self.dependencies + new_dependencies : new_dependencies
+  #  dependencies.flatten!
+  #  dependencies.uniq!
+  #  dependencies
+  #end
+
   def rec_dependencies
 
     # A step result with no info_file means that it was manually
@@ -189,14 +213,13 @@ class Step
     return [] if Open.exists?(self.path.to_s) and not Open.exists? self.info_file
 
     return [] if dependencies.nil? or dependencies.empty?
-    new_dependencies = dependencies.collect{|step| 
-      step.rec_dependencies 
-    }.flatten.uniq.compact
 
-    dependencies = self.dependencies ? self.dependencies + new_dependencies : new_dependencies
-    dependencies.flatten!
-    dependencies.uniq!
-    dependencies
+    new_dependencies = []
+    dependencies.each{|step| 
+      new_dependencies.concat step.rec_dependencies
+      new_dependencies << step
+    }
+    new_dependencies.uniq
   end
 
   def recursive_clean
