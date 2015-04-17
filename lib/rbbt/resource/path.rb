@@ -167,7 +167,7 @@ module Path
 
     search_paths.keys.
       collect{|where| Dir.glob(find(where, Path.caller_lib_dir, search_paths))}.
-      compact.flatten.collect{|path| Path.setup(path, self.resource, self.pkgdir)}
+      compact.flatten.uniq.collect{|path| Path.setup(path, self.resource, self.pkgdir)}
   end
   #{{{ Methods
 
