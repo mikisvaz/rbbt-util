@@ -176,6 +176,28 @@ row1 A B C
     assert_equal ["AA", "BB", "CC", ""], tsv["row2"]
   end
 
+  def test_paste_stream_same_field
+    text1=<<-EOF
+#: :sep=" "
+#Row LabelA
+row1 A
+row2 AA
+    EOF
+
+    text2=<<-EOF
+#: :sep=" "
+#Row LabelA
+row2 AAA
+    EOF
+
+    s1 = StringIO.new text1
+    s2 = StringIO.new text2
+    tsv = TSV.open TSV.paste_streams([s1,s2], :sep => " ", :type => :double, :sort => false, :same_fields => true)
+    ppp tsv.to_s
+    assert_equal "Row", tsv.key_field
+    assert_equal ["AA", "AAA"], tsv["row2"][0]
+  end
+
   def test_flat2double
     text1=<<-EOF
 #: :sep= #:type=:flat

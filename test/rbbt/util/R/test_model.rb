@@ -109,4 +109,22 @@ data = rbbt.model.inpute(data, CI ~ Dose, method=drm, classes='numeric', fct=LL.
     pred = model.predict "Dose" => x
     assert pred > y and pred < y + 4
   end
+
+  def test_interval
+    data = TSV.setup({}, :key_field => "Dose", :fields => ["Response"], :type => :single)
+    10.times do 
+      x = rand(10)
+      y = 10 + 3 * x + rand * 4
+      data[x] = y
+    end
+
+    model = R::Model.new "Test fit 2", "Response ~ Dose", data, :fit => 'lm'
+
+    x = 5
+    y = 10 + 3 * x 
+
+    pred = model.predict x
+    iii model.predict_interval(x)
+    assert pred > y and pred < y + 4
+  end
 end

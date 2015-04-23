@@ -18,7 +18,7 @@ module TSV
  
   def self.paste_streams(streams, options = {})
     options = Misc.add_defaults options, :sep => "\t", :sort => true
-    sort, sep, preamble = Misc.process_options options, :sort, :sep, :preamble
+    sort, sep, preamble, same_fields = Misc.process_options options, :sort, :sep, :preamble, :same_fields
 
     out = Misc.open_pipe do |sin|
 
@@ -67,7 +67,11 @@ module TSV
       end
 
       key_field = key_fields.compact.first
-      fields = fields.compact.flatten
+      if same_fields
+        fields = fields.first
+      else
+        fields = fields.compact.flatten
+      end
       options = options.merge(input_options.first)
       options[:type] = :list if options[:type] == :single
 
@@ -150,13 +154,30 @@ module TSV
             end
           end
 
-          values = str.inject(nil) do |acc,part| 
-            if acc.nil?
-              acc = part.dup
-            else
-              acc << sep << part
+          if same_fields
+
+            values = nil
+            str.each do |part|
+              next if part.nil? or part.empty?
+              _p = part.split(sep,-1)
+              if values.nil?
+                values = _p.collect{|v| [v]}
+              else
+                _p.each_with_index{|v,i| values[i] << v}
+              end
             end
-            acc
+
+            values = values.collect{|list| list * "|" } * sep
+
+          else
+            values = str.inject(nil) do |acc,part| 
+              if acc.nil?
+                acc = part.dup
+              else
+                acc << sep << part
+              end
+              acc
+            end
           end
           text = [min, values] * sep
           sin.puts text

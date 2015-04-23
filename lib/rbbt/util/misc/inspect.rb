@@ -118,8 +118,6 @@ module Misc
   def self.hash2md5(hash)
     return "" if hash.nil? or hash.empty?
 
-    hash = Annotated.purge(hash)
-
     str = ""
     keys = hash.keys
     keys = keys.clean_annotations if keys.respond_to? :clean_annotations
@@ -133,7 +131,11 @@ module Misc
 
     keys.each do |k|
       next if k == :monitor or k == "monitor" or k == :in_situ_persistence or k == "in_situ_persistence"
-      v = hash[k]
+      _v = hash[k]
+      _k = k
+      v = Annotated.purge(_v)
+      k = Annotated.purge(k)
+
       case
       when TrueClass === v
         str << k.to_s << "=>true" 
@@ -168,8 +170,8 @@ module Misc
         end
       end
 
-      if defined? Annotated and Annotated === v and not (defined? AssociationItem and AssociationItem === v)
-        info = Annotated.purge(v.info)
+      if defined? Annotated and Annotated === _v and not (defined? AssociationItem and AssociationItem === _v)
+        info = Annotated.purge(_v.info)
         str << "_" << hash2md5(info) 
       end
     end

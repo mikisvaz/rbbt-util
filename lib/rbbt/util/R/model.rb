@@ -70,6 +70,19 @@ data = NULL
       tsv
     end
 
+    def predict_interval(value, interval='confidence')
+      field = formula.split("~").last.strip
+      field.gsub!(/log\((.*)\)/,'\1')
+
+      script = <<-EOF
+model = rbbt.model.load('#{model_file}');
+predict(model, data.frame(#{field} = #{R.ruby2R value}), interval=#{R.ruby2R interval});
+      EOF
+
+      res = R.eval_a script
+      Hash[*%w(fit lower upper).zip(res).flatten]
+    end
+
     def predict(tsv, field = "Prediction")
       case tsv
       when TSV

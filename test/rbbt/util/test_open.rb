@@ -3,7 +3,7 @@ require 'rbbt/util/open'
 require 'rbbt/util/tmpfile'
 require 'rbbt/persist'
 require 'test/unit'
-require 'iconv'
+
 
 class TestOpen < Test::Unit::TestCase
 
