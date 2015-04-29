@@ -523,13 +523,16 @@ module Workflow
           case v
           when Symbol
             rec_dependency = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies}).flatten.compact.uniq.select{|d| d.task.name.to_sym == v }.first
-            raise "Dependency for parameter #{i} not found: #{v}" if rec_dependency.nil?
-            input_options = workflow.task_info(task)[:input_options][i] || {}
-            if input_options[:stream]
-              rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
-              _inputs[i] = rec_dependency
+            if rec_dependency.nil?
+              _inputs[i] = v
             else
-              _inputs[i] = rec_dependency.run
+              input_options = workflow.task_info(task)[:input_options][i] || {}
+              if input_options[:stream]
+                #rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
+                _inputs[i] = rec_dependency
+              else
+                _inputs[i] = rec_dependency.run
+              end
             end
           else
             _inputs[i] = v

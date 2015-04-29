@@ -373,11 +373,14 @@ module Misc
       keys = []
       parts = []
       lines.each_with_index do |line,i|
-        key, *p = line.strip.split(sep, -1) 
-        keys[i] = key
-        parts[i] = p
+        if line.nil?
+          key, *p = line.strip.split(sep, -1) 
+          keys[i] = key
+          parts[i] = p
+        else
+        end
       end
-      sizes = parts.collect{|p| p.length }
+      sizes = parts.collect{|p| p.nil? ? 0 : p.length }
       last_min = nil
       while lines.compact.any?
         min = keys.compact.sort.first

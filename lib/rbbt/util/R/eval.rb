@@ -12,7 +12,7 @@ module Rserve
 end
 
 module R
-  SESSION = ENV["RServe-session"] || "Session-PID-" + Process.pid.to_s
+  SESSION = ENV["RServeSession"] || "Session-PID-" + Process.pid.to_s
 
   def self.socket_file
     @@socket_file ||= Rbbt.tmp.R_sockets[R::SESSION].find
@@ -20,6 +20,16 @@ module R
 
   def self.lockfile
     @@lockfile ||= socket_file + '.lock'
+  end
+
+  def self.semfile
+    if defined? @@semfile and not @@semfile.nil?
+      @@semfile 
+    else
+      @@semfile = File.basename(socket_file) + '.sem'
+      RbbtSemaphore.create_semaphore(@@semfile,1) 
+      @@semfile
+    end
   end
 
   def self.workdir
@@ -37,6 +47,7 @@ module R
       begin
         Process.kill :INT, @@instance_process
       rescue Exception
+        Log.warn "Error killing Rserve (#{@@instance_process}): #{$!.message}"
       end
     end
     FileUtils.rm_rf pid_file if File.exists? pid_file
@@ -103,8 +114,8 @@ module R
   end
 
   def self._eval(cmd)
-    Misc.lock lockfile do 
-      times = 2
+    RbbtSemaphore.synchronize(semfile) do 
+      times = 1
       begin
         instance.eval(cmd)
       rescue Rserve::Connection::EvalError
