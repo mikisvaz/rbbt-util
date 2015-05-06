@@ -192,4 +192,63 @@ module Misc
     end
   end
 
+
+  def self.intersect_streams_read(io, sep=":")
+    line = io.gets.strip
+    parts = line.split(sep)
+    chr, start, eend, *rest = parts
+    [line,chr, start.to_i, eend.to_i, rest]
+  end
+
+  def self.intersect_streams(f1, f2, out, sep=":")
+    finish = false
+    line1, chr1, start1, eend1, rest1 = intersect_streams_read(f1,sep)
+    line2, chr2, start2, eend2, rest2 = intersect_streams_read(f2,sep)
+    Misc.profile do
+    while not finish
+      case chr1 <=> chr2
+      when -1
+        move = 1
+      when 1
+        move = 2
+      else
+        if eend1 < start2
+          move = 1
+        elsif eend2 < start1
+          move = 2
+        else
+          pos2 = f2.pos
+
+          sline2, schr2, sstart2, seend2, srest2 = line2, chr2, start2, eend2, rest2
+          while chr1 == chr2 and ((start1 <= eend2 and eend1 >= start2)) 
+            out.puts line1 + "\t" + line2
+            if f2.eof?
+              chr2 = 'next2'
+            else
+              line2, chr2, start2, eend2, rest2 = intersect_streams_read(f2,sep)
+            end
+          end
+          line2, chr2, start2, eend2, rest2 = sline2, schr2, sstart2, seend2, srest2 
+          f2.seek(pos2)
+          move = 1
+        end
+      end
+
+      case move
+      when 1
+        if f1.eof?
+          finish = true
+        else
+          line1, chr1, start1, eend1, rest1 = intersect_streams_read(f1,sep)
+        end
+      when 2
+        if f2.eof?
+          finish = true
+        else
+          line2, chr2, start2, eend2, rest2 = intersect_streams_read(f2,sep)
+        end
+      end
+    end
+    end
+  end
 end

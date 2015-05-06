@@ -279,7 +279,7 @@ module Workflow
     task = tasks[taskname]
     raise "Task not found: #{ taskname }" if task.nil?
 
-    IndiferentHash.setup(inputs)
+    inputs = IndiferentHash.setup(inputs)
 
     Workflow.resolve_locals(inputs)
 

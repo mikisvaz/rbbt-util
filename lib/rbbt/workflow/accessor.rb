@@ -518,7 +518,7 @@ module Workflow
         workflow, task, options = dependency
 
         #options = dependency.last if Hash === dependency.last
-        _inputs = inputs.dup
+        _inputs = IndiferentHash.setup(inputs.dup)
         options.each{|i,v|
           case v
           when Symbol
@@ -544,9 +544,11 @@ module Workflow
       when Step
         dependency
       when Symbol
-        job(dependency, jobname, inputs)
+        _inputs = IndiferentHash.setup(inputs.dup)
+        job(dependency, jobname, _inputs)
       when Proc
-        dependency.call jobname, inputs, real_dependencies
+        _inputs = IndiferentHash.setup(inputs.dup)
+        dependency.call jobname, _inputs, real_dependencies
       end
     end
     real_dependencies.flatten.compact

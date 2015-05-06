@@ -239,4 +239,23 @@ class TestPersistTSVTC < Test::Unit::TestCase
       assert_equal "2", persisted_annotations.sort.last.test_annotation
     end
   end
+
+  def test_fdb
+    TmpFile.with_file do |tmp|
+      repo = Persist.open_tokyocabinet(tmp, true, :list, TokyoCabinet::FDB)
+      repo.write
+      repo.put(1, "hola")
+      repo.put(2, "adios")
+      47000.times do |i|
+        repo.put(i*500, "key: " << i.to_s)
+      end
+      repo.read
+      Misc.profile do
+        repo.values_at *repo.range("[100,1000]")
+      end
+      Misc.benchmark(60_000) do
+        repo.values_at *repo.range("[100,1000]")
+      end
+    end
+  end
 end
