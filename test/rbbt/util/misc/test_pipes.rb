@@ -40,7 +40,7 @@ row3 ccc
     s1 = StringIO.new text1
     s2 = StringIO.new text2
     s3 = StringIO.new text3
-    tsv = TSV.open Misc.paste_streams([s1,s2,s3],nil, " "), :sep => " ", :type => :list
+    tsv = TSV.open Misc.paste_streams([s1,s2,s3], nil, " "), :sep => " ", :type => :list
     assert_equal ["A", "B", "C", "a", "b", "c"], tsv["row1"]
     assert_equal ["AA", "BB", "CC", "aa", "bb", "cc"], tsv["row2"]
     assert_equal ["AAA", "BBB", "CCC", "", "", "ccc"], tsv["row3"]

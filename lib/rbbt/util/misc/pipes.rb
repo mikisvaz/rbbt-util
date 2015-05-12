@@ -374,10 +374,12 @@ module Misc
       parts = []
       lines.each_with_index do |line,i|
         if line.nil?
+          keys[i] = nil
+          parts[i] = []
+        else
           key, *p = line.strip.split(sep, -1) 
           keys[i] = key
           parts[i] = p
-        else
         end
       end
       sizes = parts.collect{|p| p.nil? ? 0 : p.length }
