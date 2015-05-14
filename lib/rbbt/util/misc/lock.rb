@@ -3,19 +3,19 @@ module Misc
     if use
       Log.medium "Activating lockfile ids"
       Lockfile.dont_use_lock_id = false
-      Lockfile.refresh = 20 
-      Lockfile.max_age = 60 * 10
-      Lockfile.suspend = 10
+      #Lockfile.refresh = 20 
+      #Lockfile.max_age = 60 * 10
+      #Lockfile.suspend = 10
     else
       Log.medium "De-activating lockfile ids"
       Lockfile.dont_use_lock_id = true
-      Lockfile.refresh = 5
-      Lockfile.max_age = 30
-      Lockfile.suspend = 5
+      #Lockfile.refresh = 5
+      #Lockfile.max_age = 30
+      #Lockfile.suspend = 5
     end
 
-    Lockfile.refresh = 3
-    Lockfile.max_age = 10
+    Lockfile.refresh = 10
+    Lockfile.max_age = 60
     Lockfile.suspend = 2
   end
 

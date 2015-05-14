@@ -14,7 +14,18 @@ class Step
     jobs = [jobs] if Step === jobs
     begin
       threads = []
-      jobs.each do |j| threads << Thread.new{j.join} end
+
+      threads = jobs.collect do |j| 
+        Thread.new do
+          begin
+            j.join 
+          rescue Exception
+            Log.error "Exception waiting for job: #{Log.color :blue, j.path}"
+            raise $!
+          end
+        end
+      end
+
       threads.each{|t| t.join }
     rescue Exception
       threads.each{|t| t.exit }
@@ -112,7 +123,7 @@ class Step
       i = info(false)
       i[key] = value 
       @info_cache = i
-      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => true)
       @info_cache_time = Time.now
       value
     end
@@ -125,7 +136,7 @@ class Step
       i = info(false)
       i.merge! hash
       @info_cache = i
-      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true)
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => true)
       @info_cache_time = Time.now
       value
     end
