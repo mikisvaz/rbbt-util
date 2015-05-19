@@ -4,13 +4,13 @@ module Misc
       Log.medium "Activating lockfile ids"
       Lockfile.dont_use_lock_id = false
       #Lockfile.refresh = 20 
-      #Lockfile.max_age = 60 * 10
-      #Lockfile.suspend = 10
+      #Lockfile.max_age = 60
+      #Lockfile.suspend = 2
     else
       Log.medium "De-activating lockfile ids"
       Lockfile.dont_use_lock_id = true
       #Lockfile.refresh = 5
-      #Lockfile.max_age = 30
+      #Lockfile.max_age = 60 * 10
       #Lockfile.suspend = 5
     end
 
@@ -22,7 +22,6 @@ module Misc
   self.use_lock_id = ENV["RBBT_NO_LOCKFILE_ID"] != "true"
 
   LOCK_MUTEX = Mutex.new
-  #def self.lock(file, unlock = true, options = {})
   def self.lock(file, unlock = true, options = {})
     unlock, options = true, unlock if Hash === unlock
     return yield if file.nil?
@@ -35,7 +34,12 @@ module Misc
       lockfile = options[:lock]
       lockfile.lock unless lockfile.locked?
     when FalseClass
+      lockfile = nil
       unlock = false
+    when Path, String
+      lock_path = options[:lock]
+      lockfile = Lockfile.new(lock_path, options)
+      lockfile.lock 
     else
       lock_path = File.expand_path(file + '.lock')
       lockfile = Lockfile.new(lock_path, options)

@@ -76,10 +76,11 @@ class Step
   end
 
   def info_lock
-    @info_lock ||= begin
-                     path = Persist.persistence_path(info_file + '.lock', {:dir => Step.lock_dir})
-                     Lockfile.new path
-                   end
+    @info_lock = begin
+                   path = Persist.persistence_path(info_file + '.lock', {:dir => Step.lock_dir})
+                   Lockfile.new path, :refresh => false, :dont_use_lock_id => true
+                 end if @info_lock.nil?
+    @info_lock
   end
 
   def info(check_lock = true)
@@ -123,7 +124,7 @@ class Step
       i = info(false)
       i[key] = value 
       @info_cache = i
-      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => true)
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
       @info_cache_time = Time.now
       value
     end
@@ -136,7 +137,7 @@ class Step
       i = info(false)
       i.merge! hash
       @info_cache = i
-      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => true)
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
       @info_cache_time = Time.now
       value
     end
@@ -259,7 +260,9 @@ class Step
 
   def log(status, message = nil, &block)
     self.status = status
-    self.message Log.uncolor(message)
+    if message
+      self.message Log.uncolor(message)
+    end
     Step.log(status, message, path, &block)
   end
 
@@ -528,7 +531,6 @@ module Workflow
       when Array
         workflow, task, options = dependency
 
-        #options = dependency.last if Hash === dependency.last
         _inputs = IndiferentHash.setup(inputs.dup)
         options.each{|i,v|
           case v

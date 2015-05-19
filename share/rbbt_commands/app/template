@@ -3,7 +3,6 @@
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
 
-require 'zurb-foundation'
 require 'modular-scale'
 
 require 'rbbt/rest/main'

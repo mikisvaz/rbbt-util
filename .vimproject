@@ -71,8 +71,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
     R.rb
     R=R{
-     model.rb
      eval.rb
+     model.rb
+     plot.rb
     }
 
     excel2tsv.rb
@@ -357,7 +358,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     start
     install
     template
-    template2
    }
    association=association{
     subset
@@ -399,8 +399,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    check_bgzf
   }
   Rlib=Rlib{
-   util.R
    plot.R
+   svg.R
+   util.R
   }
   software=install/software{
    zran=zran{

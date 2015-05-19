@@ -224,6 +224,9 @@ module Misc
     lock_options = lock_options[:lock] if Hash === lock_options[:lock]
     tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
     tmp_path_lock = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_lock_dir})
+
+    tmp_path_lock = nil if FalseClass === options[:lock]
+
     Misc.lock tmp_path_lock, lock_options do
 
       if Open.exists? path and not force
@@ -264,6 +267,7 @@ module Misc
         Open.rm path if File.exists? path
       rescue Exception
         Log.medium "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
+        Log.exception $!
         content.abort if content.respond_to? :abort
         Open.rm path if File.exists? path
         raise $!

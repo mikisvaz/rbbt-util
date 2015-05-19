@@ -295,11 +295,9 @@ module Persist
       end
 
     rescue Lockfile::StolenLockError
-      begin
-        Log.medium "Lockfile stolen: #{path}"
-        sleep 1 + rand(2)
-      rescue Exception
-      end
+      Log.medium "Lockfile stolen: #{path} - #{lock_filename}"
+      Log.exception $!
+      sleep 1 + rand(2)
       retry
     rescue Exception
       Log.medium "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"

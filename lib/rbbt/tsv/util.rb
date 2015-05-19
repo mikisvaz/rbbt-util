@@ -4,9 +4,11 @@ module TSV
   def self.reorder_stream(stream, positions, sep = "\t")
     Misc.open_pipe do |sin|
       line = stream.gets
+      line.strip! unless line.nil?
       while line =~ /^#\:/
         sin.puts line
         line = stream.gets
+        line.strip! unless line.nil?
       end
       while line  =~ /^#/
         if Hash === positions
@@ -19,6 +21,7 @@ module TSV
         end
         sin.puts "#" + line.sub!(/^#/,'').strip.split(sep).values_at(*positions).compact * sep
         line = stream.gets
+        line.strip! unless line.nil?
       end
       while line
         if Hash === positions
@@ -31,6 +34,7 @@ module TSV
         end
         sin.puts line.strip.split(sep).values_at(*positions) * sep
         line = stream.gets
+        line.strip! unless line.nil?
       end
     end
   end
