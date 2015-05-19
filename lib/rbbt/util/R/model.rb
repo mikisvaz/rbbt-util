@@ -1,4 +1,3 @@
-require 'rbbt/util/R'
 
 module R
 

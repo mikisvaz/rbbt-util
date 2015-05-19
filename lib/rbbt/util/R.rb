@@ -1,6 +1,8 @@
 require 'rbbt/util/cmd'
 require 'rbbt/tsv'
 require 'rbbt/util/R/eval'
+require 'rbbt/util/R/plot'
+require 'rbbt/util/R/model'
 
 module R
 
