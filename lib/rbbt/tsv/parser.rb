@@ -542,6 +542,16 @@ module TSV
           step = monitor[:step] if monitor.include? :step 
         end
         progress_monitor = Log::ProgressBar.new_bar(size, :desc => desc)
+      elsif progress_monitor and not progress_monitor.max
+
+        size = case
+               when stream.respond_to?(:size)
+                 stream.size
+               else
+                 stream.stat.size
+               end
+
+        progress_monitor.max =  size unless size.to_i == 0
       end
 
       # parser 
