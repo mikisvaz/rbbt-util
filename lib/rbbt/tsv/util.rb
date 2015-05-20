@@ -5,11 +5,13 @@ module TSV
     Misc.open_pipe do |sin|
       line = stream.gets
       line.strip! unless line.nil?
+
       while line =~ /^#\:/
         sin.puts line
         line = stream.gets
         line.strip! unless line.nil?
       end
+
       while line  =~ /^#/
         if Hash === positions
           new = (0..line.split(sep).length-1).to_a
@@ -19,10 +21,11 @@ module TSV
           end
           positions = new
         end
-        sin.puts "#" + line.sub!(/^#/,'').strip.split(sep).values_at(*positions).compact * sep
+        sin.puts "#" + line.sub(/^#/,'').strip.split(sep).values_at(*positions).compact * sep
         line = stream.gets
         line.strip! unless line.nil?
       end
+
       while line
         if Hash === positions
           new = (0..line.split(sep).length-1).to_a
@@ -32,7 +35,9 @@ module TSV
           end
           positions = new
         end
-        sin.puts line.strip.split(sep).values_at(*positions) * sep
+        values = line.split(sep)
+        new_values = values.values_at(*positions)
+        sin.puts new_values * sep
         line = stream.gets
         line.strip! unless line.nil?
       end
