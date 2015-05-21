@@ -319,6 +319,8 @@ module Misc
         while block = sorted.read(2048)
           sin.write block
         end
+
+        sorted.join if sorted.respond_to? :join
       rescue
         if defined? step and step
           step.abort
