@@ -3,20 +3,16 @@ module Misc
     if use
       Log.medium "Activating lockfile ids"
       Lockfile.dont_use_lock_id = false
-      #Lockfile.refresh = 20 
-      #Lockfile.max_age = 60
-      #Lockfile.suspend = 2
+      Lockfile.refresh = 2 
+      Lockfile.max_age = 30
+      Lockfile.suspend = 4
     else
       Log.medium "De-activating lockfile ids"
       Lockfile.dont_use_lock_id = true
-      #Lockfile.refresh = 5
-      #Lockfile.max_age = 60 * 10
-      #Lockfile.suspend = 5
+      Lockfile.refresh = 4
+      Lockfile.max_age = 60
+      Lockfile.suspend = 8
     end
-
-    Lockfile.refresh = 10
-    Lockfile.max_age = 60
-    Lockfile.suspend = 2
   end
 
   self.use_lock_id = ENV["RBBT_NO_LOCKFILE_ID"] != "true"

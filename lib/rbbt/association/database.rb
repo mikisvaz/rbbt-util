@@ -140,6 +140,11 @@ module Association
 
   def self.database(file,  options = {})
     database = case file
+               when Step
+                 file.clean if file.error? or file.aborted? or file.dirty?
+                 file.run(true) unless file.done? or file.started?
+                 file.join unless file.done?
+                 open_stream(TSV.get_stream(file), options.dup)
                when TSV
                  file = file.to_double unless file.type == :double
                  reorder_tsv(file, options.dup)

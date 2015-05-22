@@ -18,7 +18,7 @@ module TSV
  
   def self.paste_streams(streams, options = {})
     options = Misc.add_defaults options, :sep => "\t", :sort => true
-    sort, sep, preamble, same_fields = Misc.process_options options, :sort, :sep, :preamble, :same_fields
+    sort, sep, preamble, header, same_fields, fix_flat = Misc.process_options options, :sort, :sep, :preamble, :header, :same_fields, :fix_flat
 
     out = Misc.open_pipe do |sin|
 
@@ -63,7 +63,11 @@ module TSV
         input_options << parser.options
         preambles     << parser.preamble      if preamble and not parser.preamble.empty?
 
-        parser.stream
+        if fix_flat and parser.type == :flat
+          TSV.stream_flat2double(parser.stream).stream
+        else
+          parser.stream
+        end
       end
 
       key_field = key_fields.compact.first
@@ -74,6 +78,7 @@ module TSV
       end
       options = options.merge(input_options.first)
       options[:type] = :list if options[:type] == :single
+      options[:type] = :double if fix_flat
 
       preamble_txt = case preamble
                      when TrueClass
@@ -88,7 +93,7 @@ module TSV
                        nil
                      end
 
-      header = TSV.header_lines(key_field, fields, options.merge(:preamble => preamble_txt))
+      header ||= TSV.header_lines(key_field, fields, options.merge(:preamble => preamble_txt))
       sin.puts header
 
       empty_pos = empty.collect{|stream| streams.index stream }
@@ -210,6 +215,7 @@ module TSV
     dumper = TSV::Dumper.new dumper_options
     dumper.init
     TSV.traverse parser, :into => dumper do |key,values|
+      key = key.first if Array === key
       [key, [values]]
     end
     dumper

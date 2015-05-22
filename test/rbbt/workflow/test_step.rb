@@ -204,14 +204,18 @@ class TestStep < Test::Unit::TestCase
           end
         end
         Step.wait_for_jobs(jobs)
-        #jobs.each do |job|
-        #  while not job.done?
-        #    sleep 1
-        #  end
-        #end
       ensure
         RbbtSemaphore.delete_semaphore(semaphore)
       end
     end
+  end
+
+  def __test_load_return_description
+    require 'rbbt/workflow'
+    Workflow.require_workflow "Study"
+    study = Study.setup("LICA-FR")
+    job = study.recurrent_mutations(:job)
+    iii job.load.organism
+    iii study.recurrent_mutations.organism
   end
 end
