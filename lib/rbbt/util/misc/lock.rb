@@ -20,10 +20,10 @@ module Misc
   LOCK_MUTEX = Mutex.new
   def self.lock(file, unlock = true, options = {})
     unlock, options = true, unlock if Hash === unlock
-    return yield if file.nil?
+    return yield if file.nil? and not Lockfile === options[:lock]
+
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
 
-    res = nil
 
     case options[:lock]
     when Lockfile
@@ -42,6 +42,8 @@ module Misc
       lockfile.lock 
     end
 
+    res = nil
+
     begin
       res = yield lockfile
     rescue KeepLocked
@@ -50,8 +52,13 @@ module Misc
     ensure
       if unlock 
         begin
-          lockfile.unlock #if lockfile.locked?
+          if lockfile.locked?
+            lockfile.unlock 
+          else
+          end
         rescue Exception
+          Log.warn "Exception unlocking: #{lockfile.path}"
+          Log.exception $!
         end
       end
     end

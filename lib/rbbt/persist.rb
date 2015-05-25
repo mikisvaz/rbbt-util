@@ -194,6 +194,7 @@ module Persist
 
     saver_thread = Thread.new(Thread.current) do |parent|
       begin
+        file.threads = []
         Thread.current["name"] = "file saver: " + path
         save_file(path, type, file, lockfile)
       rescue Aborted
@@ -205,12 +206,15 @@ module Persist
         file.abort if file.respond_to? :abort
         parent.raise $!
         raise $!
+      rescue Exception
+        Log.exception $!
+        raise $!
       end
     end
     ConcurrentStream.setup(out, :threads => saver_thread, :filename => path)
     out.callback = callback
     out.abort_callback = abort_callback
-    out.lockfile = stream.lockfile if stream.respond_to? :lockfile
+    out.lockfile = stream.lockfile if stream.respond_to? :lockfile and stream.lockfile
     out
   end
 
@@ -225,8 +229,12 @@ module Persist
 
     if stream
       if persist_options[:no_load] == :stream 
-        res = tee_stream(stream, path, type, stream.respond_to?(:callback)? stream.callback : nil, stream.respond_to?(:abort_callback)? stream.abort_callback : nil, lockfile)
-        #res.lockfile = lockfile
+        callback = stream.respond_to?(:callback)? stream.callback : nil
+        abort_callback = stream.respond_to?(:abort_callback)? stream.abort_callback : nil
+
+        res = tee_stream(stream, path, type, callback, abort_callback, lockfile)
+
+        res.lockfile = lockfile
 
         raise KeepLocked.new res 
       else
@@ -278,6 +286,7 @@ module Persist
         Misc.insist do
           if is_persisted?(path, persist_options)
             Log.low "Persist up-to-date (suddenly): #{ path } - #{Misc.fingerprint persist_options}"
+            lockfile.unlock if lockfile.locked?
             return path if persist_options[:no_load]
             return load_file(path, type) 
           end

@@ -121,7 +121,7 @@ class Step
     return nil if @exec or info_file.nil?
     value = Annotated.purge value if defined? Annotated
     Open.lock(info_file, :lock => info_lock) do
-      i = info(false)
+      i = info(false).dup
       i[key] = value 
       @info_cache = i
       Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
