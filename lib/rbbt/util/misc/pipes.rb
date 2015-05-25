@@ -466,13 +466,11 @@ module Misc
     Misc.open_pipe do |sin|
       continue = true
       while continue
-        line1 = streams.first.gets unless streams.first.eof?
-        line2 = streams.last.gets unless streams.first.eof?
-        continue = false if line1.nil? and line2.nil?
-        sin.puts line1.strip if line1
-        sin.puts line2.strip if line2
-        line1 = nil
-        line2 = nil
+        lines = streams.collect{|stream| stream.eof? ? nil : stream.gets }.compact
+        lines.each do |line|
+          sin.puts line
+        end
+        continue = false if lines.empty?
       end
       streams.each do |stream| 
         stream.join if stream.respond_to? :join
