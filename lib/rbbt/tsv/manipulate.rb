@@ -21,6 +21,14 @@ module TSV
       [key, new]
     end
 
+    def process_reorder_single(key, values)
+      new_key = @new_key_field == :key ? key : values
+      new_value = @new_fields.collect{|field| field == :key ?  key : values }.first
+      return [new_key, new_value]
+      [ [values[@new_key_field]], 
+        @new_fields.collect{|field| field == :key ?  key : values[field] }]
+    end
+
     def process_reorder_list(key, values)
       [ [values[@new_key_field]], 
         @new_fields.collect{|field| field == :key ?  key : values[field] }]
@@ -141,6 +149,8 @@ module TSV
           end
         when :flat
           self.instance_eval do alias process process_reorder_flat end
+        when :single
+          self.instance_eval do alias process process_reorder_single end
         else
           self.instance_eval do alias process process_reorder_list end
         end
@@ -561,7 +571,6 @@ module TSV
     field_pos = identify_field field
 
     through do |key, values|
-
       case
       when type == :single
         field_values = values

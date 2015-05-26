@@ -83,6 +83,7 @@ module R
 
                            bin_path = File.join(ENV["R_HOME"], "bin/Rserve")
                            cmd = bin_path + " " + args*" "
+                           $stdout.reopen File.new('/dev/null', 'w')
                            exec(ENV, cmd)
                          end
                          while not File.exists? pid_file

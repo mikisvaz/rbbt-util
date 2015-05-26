@@ -187,6 +187,8 @@ the job dependencies recursively.
 --load_inputs* Load inputs from a directory
 --info Show the job info:
 --provenance Report the jobs provenance:
+-W--workflows* Load a list of workflows
+-R--requires* Require a list of files
 EOF
 
 workflow = ARGV.shift
@@ -216,6 +218,22 @@ end
 
 workflow = Workflow.require_workflow workflow
 
+if options[:workflows]
+  require 'rbbt/workflow'
+  workflows = options[:workflows].split(',')
+  workflows.each do |workflow|
+    workflow.strip!
+    Workflow.require_workflow workflow
+  end
+end
+
+if options[:requires]
+  requires = options[:requires].split(',')
+  requires.each do |req|
+    req.strip!
+    require req
+  end
+end
 # Set task
 namespace = nil, nil
 

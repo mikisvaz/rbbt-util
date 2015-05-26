@@ -1,7 +1,11 @@
 class KnowledgeBase
   def syndicate(name, kb)
     kb.all_databases.each do |database|
-      db_name = [database, name] * "@"
+      if name.nil?
+        db_name = database
+      else
+        db_name = [database, name] * "@"
+      end
       file, kb_options = kb.registry[database]
       options = {}
       options[:entity_options] = kb_options[:entity_options]
