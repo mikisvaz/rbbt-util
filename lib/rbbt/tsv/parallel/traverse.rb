@@ -29,20 +29,19 @@ module TSV
       when Array, Hash
         obj.size
       when File
-        return nil if Misc.gzip?(file) or Misc.bgzip?(file)
+        return nil if Open.gzip?(file) or Open.bgzip?(file)
         CMD.cmd("wc -l '#{obj.filename}'").read.to_i
-      when Path
-        return nil if Misc.gzip?(file) or Misc.bgzip?(file)
-        CMD.cmd("wc -l '#{obj.find}'").read.to_i
-      when String
+      when Path, String
+        obj = obj.find if Path === obj
         if File.exists? obj
-          return nil if Misc.gzip?(file) or Misc.bgzip?(file)
+          return nil if Open.gzip?(obj) or Open.bgzip?(obj)
           CMD.cmd("wc -l '#{obj}'").read.to_i
         else
           nil
         end
       end
     rescue Exception
+      Log.exception $!
       nil
     end
   end

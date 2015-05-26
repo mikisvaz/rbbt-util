@@ -197,16 +197,35 @@ module Misc
     line = io.gets.strip
     parts = line.split(sep)
     chr, start, eend, *rest = parts
-    [line,chr, start.to_i, eend.to_i, rest]
+    start = start.to_i
+    if eend =~ /^\d+$/
+      eend = eend.to_i
+    else
+      eend = start.to_i
+    end
+    [line,chr, start, eend, rest]
+  end
+
+  def self.intersect_streams_cmp_chr(chr1, chr2)
+    return chr1 <=> chr2
+    if chr1 =~ /^\d+$/ and chr2 =~ /^\d+$/
+      chr1 <=> chr2
+    elsif chr1 =~ /^\d+$/
+      -1
+    elsif chr2 =~ /^\d+$/
+      1
+    else
+      chr1 <=> chr2
+    end
   end
 
   def self.intersect_streams(f1, f2, out, sep=":")
     finish = false
     line1, chr1, start1, eend1, rest1 = intersect_streams_read(f1,sep)
     line2, chr2, start2, eend2, rest2 = intersect_streams_read(f2,sep)
-    Misc.profile do
     while not finish
-      case chr1 <=> chr2
+      cmp = intersect_streams_cmp_chr(chr1,chr2)
+      case cmp
       when -1
         move = 1
       when 1
@@ -249,6 +268,11 @@ module Misc
         end
       end
     end
+  end
+
+  def self.select_ranges(stream1, stream2, sep = "\t")
+    Misc.open_pipe do |sin|
+      intersect_streams(stream1, stream2,sin, sep)
     end
   end
 end
