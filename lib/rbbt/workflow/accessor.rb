@@ -6,10 +6,6 @@ class Step
 
   INFO_SERIALIAZER = Marshal
 
-  def self.started?
-    info_file.exists?
-  end
-  
   def self.wait_for_jobs(jobs)
     jobs = [jobs] if Step === jobs
     begin
@@ -280,6 +276,10 @@ class Step
 
   def started?
     Open.exists? info_file or Open.exists? path
+  end
+
+  def dirty?
+    rec_dependencies.collect{|dependency| dependency.path }.uniq.reject{|path| path.exists?}.any?
   end
 
   def done?

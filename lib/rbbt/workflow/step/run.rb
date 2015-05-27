@@ -99,9 +99,6 @@ class Step
     rec_dependencies.collect{|dependency| dependency.path }.uniq
   end
   
-  def dirty?
-    rec_dependencies.collect{|dependency| dependency.path }.uniq.reject{|path| path.exists?}.any?
-  end
 
   def kill_children
     begin
