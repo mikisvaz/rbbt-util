@@ -82,9 +82,9 @@ module Log
       str = Log.color :magenta, desc
       if @ticks == 0
         if @max
-          return str << " " << Log.color(:yellow, "waiting on #{@max}") 
+          return str << " " << Log.color(:yellow, "waiting on #{@max} - #{Process.pid}") 
         else
-          return str << " " << Log.color(:yellow, "waiting") 
+          return str << " " << Log.color(:yellow, "waiting - #{Process.pid}") 
         end
       end
       str << " " << thr_msg
@@ -107,7 +107,11 @@ module Log
         bars = BARS
         print(io, Log.color(:yellow, "...Progress\n"))
         bars.sort_by{|b| b.depth }.reverse.each do |bar|
-          print(io, Log.color(:yellow ,bar.report_msg) << "\n")
+          if SILENCED.include? bar
+            print(io, Log.color(:yellow ,bar.report_msg) << "\n") 
+          else
+            print(io, "\n") 
+          end
         end
       else
         bars = BARS

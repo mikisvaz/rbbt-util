@@ -9,6 +9,7 @@ module Misc
     Persist::CONNECTIONS.values.each do |db| 
       db.close if db.write? 
     end
+    Log::ProgressBar::BARS.clear
     ObjectSpace.each_object(Mutex) do |m| 
       begin 
         m.unlock 
@@ -311,6 +312,7 @@ module Misc
       rescue Interrupt
         Log.warn "Process #{Process.pid} was aborted"
       end
+      res = nil unless options[:into]
       raise RbbtProcessQueue::RbbtProcessQueueWorker::Respawn, res if respawn == :always and cpus > 1
       res
     end

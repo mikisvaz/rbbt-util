@@ -3,6 +3,7 @@ module Log
     BAR_MUTEX = Mutex.new
     BARS = []
     REMOVE = []
+    SILENCED = []
 
     def self.new_bar(max, options = {})
       cleanup_bars
@@ -21,6 +22,13 @@ module Log
           if index
             BARS.delete_at index
             BARS.each_with_index do |bar,i|
+              bar.depth = i
+            end
+          end
+          index = SILENCED.index bar
+          if index
+            SILENCED.delete_at index
+            SILENCED.each_with_index do |bar,i|
               bar.depth = i
             end
           end

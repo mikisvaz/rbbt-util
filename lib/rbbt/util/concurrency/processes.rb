@@ -32,7 +32,11 @@ class RbbtProcessQueue
               raise e 
             end
 
-            @callback.call p
+            if @callback.arity == 0
+              @callback.call
+            else
+              @callback.call p
+            end
           end
         rescue Aborted
           Log.warn "Callback thread aborted"

@@ -279,6 +279,14 @@ class Step
     end
   end
 
+  def produce
+    return if done? and not dirty?
+    clean if dirty?
+    run(true) unless started?
+    join unless done?
+    self
+  end
+
   def fork(semaphore = nil)
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil? and not Process.pid == @pid and Misc.pid_exists?(@pid) and not done? and info[:forked]
     @pid = Process.fork do
