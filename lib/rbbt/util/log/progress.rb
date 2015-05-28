@@ -24,6 +24,12 @@ module Log
       (@ticks * 100) / @max
     end
 
+    def init
+      @start = @last_time = Time.now
+      @last_count = 0
+      report
+    end
+
     def tick(step = 1)
       return if ENV["RBBT_NO_PROGRESS"] == "true"
       @ticks += step

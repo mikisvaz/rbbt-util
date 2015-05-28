@@ -16,6 +16,7 @@ class RbbtProcessQueue
   attr_accessor :callback, :callback_queue, :callback_thread
   def callback(&block)
     if block_given?
+    
       @callback = block
 
       @callback_queue = RbbtProcessSocket.new
@@ -43,6 +44,7 @@ class RbbtProcessQueue
           @process_monitor.raise $!
           raise $!
         ensure
+
           @callback_queue.sread.close unless @callback_queue.sread.closed?
         end
       end

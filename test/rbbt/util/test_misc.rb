@@ -458,4 +458,12 @@ eum fugiat quo voluptas nulla pariatur?"
     ppp Misc.snake_case("KinaseSARfari")
   end
 
+  def test_bootstrap
+    Log.severity = 0
+    res = Misc.bootstrap((1..10).to_a, 2, :bar => "Test bootstrap ticks", :respawn => :always, :into => []) do |num|
+      sleep 1 + rand(2)
+      num
+    end
+  end
+
 end

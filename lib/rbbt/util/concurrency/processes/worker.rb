@@ -3,7 +3,12 @@ class RbbtProcessQueue
   class RbbtProcessQueueWorker
     attr_reader :pid, :queue, :callback_queue, :cleanup, :block
 
-    class Respawn < Exception; end
+    class Respawn < Exception
+      attr_accessor :payload 
+      def initialize(payload)
+        @payload = payload
+      end
+    end
 
     def run
       begin
@@ -20,9 +25,14 @@ class RbbtProcessQueue
           p = @queue.pop
           next if p.nil?
           raise p if Exception === p
-          raise p.first if Exception === p.first
-          res = @block.call *p
-          @callback_queue.push res if @callback_queue
+          raise p.first if Array === p and Exception === p.first
+          begin
+            res = @block.call *p
+            @callback_queue.push res if @callback_queue
+          rescue Respawn
+            @callback_queue.push $!.payload 
+            raise $!
+          end
           raise Respawn if @stop
         end
         Kernel.exit! 0

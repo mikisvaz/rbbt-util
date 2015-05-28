@@ -80,7 +80,13 @@ module Log
 
     def report_msg
       str = Log.color :magenta, desc
-      return str << " " << Log.color(:yellow, "waiting") if @ticks == 0
+      if @ticks == 0
+        if @max
+          return str << " " << Log.color(:yellow, "waiting on #{@max}") 
+        else
+          return str << " " << Log.color(:yellow, "waiting") 
+        end
+      end
       str << " " << thr_msg
       if max
         str << Log.color(:blue, " -- ") << eta_msg
