@@ -207,7 +207,6 @@ module Misc
   end
 
   def self.intersect_streams_cmp_chr(chr1, chr2)
-    return chr1 <=> chr2
     if chr1 =~ /^\d+$/ and chr2 =~ /^\d+$/
       chr1 <=> chr2
     elsif chr1 =~ /^\d+$/

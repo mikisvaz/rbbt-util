@@ -45,7 +45,7 @@ module Log
 
         diff = time - @last_time
         report and return if diff > @frequency
-        return unless max
+        return unless max and max > 0
 
         percent = self.percent
         if @last_percent.nil?
