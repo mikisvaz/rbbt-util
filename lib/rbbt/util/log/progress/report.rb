@@ -120,7 +120,7 @@ module Log
       print(io, up_lines(@depth) << report_msg << down_lines(@depth)) 
       @last_time = Time.now
       @last_count = ticks
-      @last_percent = percent if max
+      @last_percent = percent if max and max > 0
       save if @file
     end
 
