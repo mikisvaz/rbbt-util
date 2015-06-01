@@ -280,7 +280,7 @@ class Step
   end
 
   def produce
-    return if done? and not dirty?
+    return self if done? and not dirty?
     clean if dirty?
     run(true) unless started?
     join unless done?

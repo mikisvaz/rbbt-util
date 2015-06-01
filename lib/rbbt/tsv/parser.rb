@@ -527,7 +527,7 @@ module TSV
 
       progress_monitor, monitor = monitor, nil if Log::ProgressBar === monitor
       # setup monitor
-      if monitor and (stream.respond_to?(:size) or (stream.respond_to?(:stat) and stream.stat.respond_to? :size)) and stream.respond_to?(:pos)
+      if monitor and (stream.respond_to?(:size) or (stream.respond_to?(:stat) and stream.stat.respond_to? :size and stream.respond_to?(:pos)))
         size = case
                when stream.respond_to?(:size)
                  stream.size
@@ -542,7 +542,7 @@ module TSV
           step = monitor[:step] if monitor.include? :step 
         end
         progress_monitor = Log::ProgressBar.new_bar(size, :desc => desc)
-      elsif progress_monitor and not progress_monitor.max
+      elsif progress_monitor 
 
         size = case
                when stream.respond_to?(:size)
