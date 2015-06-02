@@ -5,7 +5,7 @@ class RbbtProcessQueue
 
     class Respawn < Exception
       attr_accessor :payload 
-      def initialize(payload)
+      def initialize(payload = nil)
         @payload = payload
       end
     end
