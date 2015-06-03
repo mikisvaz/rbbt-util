@@ -31,7 +31,7 @@ module Log
     def thr_msg
       thr = self.thr
       if @history.nil?
-        @history ||= []
+        @history ||= [thr]
       else
         @history << thr
         @history.shift if @history.length > 20
@@ -73,7 +73,8 @@ module Log
       used = Misc.format_seconds(used) 
       eta = [eta/3600, eta/60 % 60, eta % 60].map{|t| "%02i" % t }.join(':')
 
-      indicator << " #{Log.color :yellow, used} used #{Log.color :yellow, eta} left - #{Log.color :yellow, ticks.to_s} of #{Log.color :yellow, @max.to_s}"
+      #indicator << " #{Log.color :yellow, used} used #{Log.color :yellow, eta} left - #{Log.color :yellow, ticks.to_s} of #{Log.color :yellow, @max.to_s} #{bytes ? 'bytes' : 'items'}"
+      indicator << " #{Log.color :yellow, eta} => #{Log.color :yellow, used} - #{Log.color :yellow, ticks.to_s} of #{Log.color :yellow, @max.to_s} #{bytes ? 'bytes' : 'items'}"
 
       indicator
     end
@@ -82,7 +83,7 @@ module Log
       str = Log.color :magenta, desc
       if @ticks == 0
         if @max
-          return str << " " << Log.color(:yellow, "waiting on #{@max} - #{Process.pid}") 
+          return str << " " << Log.color(:yellow, "waiting on #{@max} #{bytes ? 'bytes' : 'items'} - #{Process.pid}") 
         else
           return str << " " << Log.color(:yellow, "waiting - #{Process.pid}") 
         end
@@ -91,7 +92,7 @@ module Log
       if max
         str << Log.color(:blue, " -- ") << eta_msg
       else
-        str << Log.color(:blue, " -- ") << ticks.to_s
+        str << Log.color(:blue, " -- ") << ticks.to_s << " #{bytes ? 'bytes' : 'items'}"
       end
       str
     end
@@ -116,6 +117,7 @@ module Log
       else
         bars = BARS
       end
+
       print(io, up_lines(bars.length) << Log.color(:yellow, "...Progress\n") << down_lines(bars.length)) 
       print(io, up_lines(@depth) << report_msg << down_lines(@depth)) 
       @last_time = Time.now

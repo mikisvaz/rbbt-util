@@ -239,7 +239,7 @@ class Step
 
   def progress_bar(msg, options = {})
     max = options[:max]
-    Log::ProgressBar.new max, {:desc => msg, :file => file(:progress)}.merge(options)
+    Log::ProgressBar.new_bar(max, {:desc => msg, :file => file(:progress)}.merge(options))
   end
 
   def self.log(status, message, path, &block)

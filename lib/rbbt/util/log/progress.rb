@@ -4,10 +4,10 @@ require 'rbbt/util/log/progress/report'
 module Log
   class ProgressBar
 
-    attr_accessor :max, :ticks, :frequency, :depth, :desc, :file
+    attr_accessor :max, :ticks, :frequency, :depth, :desc, :file, :bytes
     def initialize(max = nil, options = {})
       options = Misc.add_defaults options, :depth => 0, :num_reports => 100, :desc => "Progress", :io => STDERR, :severity => Log.severity
-      depth, num_reports, desc, io, severity, file = Misc.process_options options, :depth, :num_reports, :desc, :io, :severity, :file
+      depth, num_reports, desc, io, severity, file, bytes = Misc.process_options options, :depth, :num_reports, :desc, :io, :severity, :file, :bytes
 
       @max = max
       @ticks = 0

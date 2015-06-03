@@ -8,7 +8,7 @@ module Log
     def self.new_bar(max, options = {})
       cleanup_bars
       BAR_MUTEX.synchronize do
-        Log::LAST.replace "new_bar" if Log::LAST == "progress"
+        #Log::LAST.replace "new_bar" if Log::LAST == "progress"
         options = Misc.add_defaults options, :depth => BARS.length
         BARS << (bar = ProgressBar.new(max, options))
         bar

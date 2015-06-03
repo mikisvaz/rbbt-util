@@ -279,9 +279,16 @@ class Step
     end
   end
 
-  def produce
+  def produce(force=true)
     return self if done? and not dirty?
-    clean if dirty?
+    if error? or aborted?
+      if force
+        clean
+      else
+        raise "Error in job: #{status}"
+      end
+    end
+    clean if dirty? 
     run(true) unless started?
     join unless done?
     self
