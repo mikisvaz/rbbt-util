@@ -280,9 +280,9 @@ class Step
                        deps = rec_dependencies.select{|step| 
                          step.task_name.to_sym == name.to_sym
                        }
+                       raise "Dependency step not found: #{ name }"
                        deps.first
                      end
-
   end
 end
 
