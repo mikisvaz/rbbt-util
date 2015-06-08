@@ -72,7 +72,7 @@ end
 
 if mem_dump = options.delete(:dump_mem)
   require 'rbbt/monitor'
-  Rbbt.dump_memory(mem_dump, Symbol)
+  Rbbt.dump_memory(mem_dump, String)
 end
 
 
