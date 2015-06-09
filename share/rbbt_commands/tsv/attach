@@ -3,12 +3,40 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
-file = ARGV.shift
-identifiers = ARGV.shift
-format = ARGV.shift
+options = SOPT.setup <<EOF
 
-file = STDIN if file == '-'
+Description
 
-puts TSV.open(file).attach identifiers, :fields => [format]
+$ rbbt tsv attach <file1> <file2> [<file3> ...] [options]
 
+Use - to read from STDIN
+
+-f--fields* Fields to attach (all if not specified)
+-h--help Print this help
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.usage
+  end
+  exit 0
+end
+
+file1, *rest = ARGV
+fields = options[:fields]
+
+fields = fields ? fields.split(/[,|]/).collect{|f| f.strip} : nil
+
+tsv = TSV.open(file1)
+
+rest.each do |file2|
+  file_fields = TSV.parse_header(file2).all_fields - tsv.all_fields
+  these_fields = fields ? fields & file_fields : nil
+  tsv = tsv.attach file2, :fields => these_fields
+end
+
+puts tsv.to_s

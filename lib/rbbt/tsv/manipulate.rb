@@ -262,19 +262,21 @@ module TSV
         else
           case type 
           when :double
-            new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
-              if data[key] 
-                current = data[key].dup
-                value.each_with_index do |v, i|
-                  if current[i]
-                    current[i] += v if v
-                  else
-                    current[i] = v || []
+            new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |keys, value|
+              keys.each do |key|
+                if data[key] 
+                  current = data[key].dup
+                  value.each_with_index do |v, i|
+                    if current[i]
+                      current[i] += v if v
+                    else
+                      current[i] = v || []
+                    end
                   end
+                  data[key] = current 
+                else
+                  data[key] = value.collect{|v| v.nil? ? nil : v.dup}
                 end
-                data[key] = current 
-              else
-                data[key] = value.collect{|v| v.nil? ? nil : v.dup}
               end
             end
           when :flat

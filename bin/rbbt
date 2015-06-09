@@ -195,6 +195,9 @@ begin
         load dir[$command].find
         exit 0
       end
+    when File.exists?($command)
+      load $command
+      exit 0
     else
       error = "Command '#{$command }' not understood"
       rbbt_usage($previous_commands)
