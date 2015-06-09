@@ -263,6 +263,7 @@ module TSV
           case type 
           when :double
             new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |keys, value|
+              keys = [keys] unless Array === keys
               keys.each do |key|
                 if data[key] 
                   current = data[key].dup
