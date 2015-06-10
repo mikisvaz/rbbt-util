@@ -32,7 +32,7 @@ Log.nocolor = true if ARGV.include? "--nocolor"
 options = SOPT.setup <<EOF
 Ruby bioinformatics toolkit
 
-$ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value'"
+$ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value'
 
 
 --log*                  #{Log.color :yellow, "Log level from 0 (debug) 6 (errors)"}
