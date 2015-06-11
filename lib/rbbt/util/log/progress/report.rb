@@ -83,7 +83,7 @@ module Log
       str = Log.color :magenta, desc
       if @ticks == 0
         if @max
-          return str << " " << Log.color(:yellow, "waiting on #{@max} #{bytes ? 'bytes' : 'items'} - #{Process.pid}") 
+          return str << " " << Log.color(:yellow, "waiting on #{@max} #{bytes ? 'bytes' : 'items'}") 
         else
           return str << " " << Log.color(:yellow, "waiting - #{Process.pid}") 
         end
