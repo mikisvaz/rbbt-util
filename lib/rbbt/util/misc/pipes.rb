@@ -322,7 +322,7 @@ module Misc
           end
         end
 
-        sorted = CMD.cmd("sort #{cmd_args || ""}", :in => line_stream, :pipe => true)
+        sorted = CMD.cmd("env LC_ALL=C sort #{cmd_args || ""}", :in => line_stream, :pipe => true)
 
         while block = sorted.read(2048)
           sin.write block

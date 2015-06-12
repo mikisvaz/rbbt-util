@@ -24,11 +24,11 @@ file = ARGV.shift
 file = STDIN if file == '-' or file.nil?
 
 
-field = options[:field]
+field = options[:field] || '2'
 if field =~ /^\d+$/
   field_pos = field.to_i
 else
-  field_pos = TSV.parse_header(file).all_fields.index(field) + 1
+  field_pos = TSV.parse_header(file, options).all_fields.index(field) + 1
 end
 
 rest = ARGV.inject("-t\"\t\" -g -k#{field_pos}"){|acc,e| acc << " '#{e}'" }

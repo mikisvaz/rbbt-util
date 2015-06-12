@@ -13,10 +13,11 @@ require 'rbbt/rest/knowledge_base'
 require 'rbbt/rest/helpers'
 require 'rbbt/rest/web_tool'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*:-w--workflows*"
 
 template = ARGV.first
 
+template = File.expand_path(template)
 template = template.sub('.haml','')
 
 ENV["RBBT_FINDER"] = "true" if options.include?(:finder)

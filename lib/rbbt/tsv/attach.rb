@@ -10,9 +10,9 @@ module TSV
 
     is = case
          when (String === input and not input.index("\n") and input.length < 250 and File.exists?(input))
-           CMD.cmd("sort -k1,1 -t'#{sep}' #{ input } | grep -v '^#{sep}' ", :pipe => true)
+           CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' #{ input } | grep -v '^#{sep}' ", :pipe => true)
          when (String === input or StringIO === input)
-           CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => input, :pipe => true)
+           CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => input, :pipe => true)
          else
            input
          end
@@ -70,22 +70,22 @@ module TSV
     case
     when (String === file1 and not file1 =~ /\n/ and file1.length < 250 and File.exists?(file1))
       size = CMD.cmd("wc -c '#{file1}'").read.to_f if monitor
-      file1 = CMD.cmd("sort -k1,1 -t'#{sep}' #{ file1 } | grep -v '^#{sep}' ", :pipe => true)
+      file1 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' #{ file1 } | grep -v '^#{sep}' ", :pipe => true)
     when (String === file1 or StringIO === file1)
       size = file1.length if monitor
-      file1 = CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file1, :pipe => true)
+      file1 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file1, :pipe => true)
     when TSV === file1
       size = file1.size if monitor
-      file1 = CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file1.to_s(:sort, true), :pipe => true)
+      file1 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file1.to_s(:sort, true), :pipe => true)
     end
 
     case
     when (String === file2 and not file2 =~ /\n/ and file2.length < 250 and File.exists?(file2))
-      file2 = CMD.cmd("sort -k1,1 -t'#{sep}' #{ file2 } | grep -v '^#{sep}' ", :pipe => true)
+      file2 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' #{ file2 } | grep -v '^#{sep}' ", :pipe => true)
     when (String === file2 or StringIO === file2)
-      file2 = CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file2, :pipe => true)
+      file2 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file2, :pipe => true)
     when TSV === file2
-      file2 = CMD.cmd("sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file2.to_s(:sort, true), :pipe => true)
+      file2 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file2.to_s(:sort, true), :pipe => true)
     end
 
     begin
