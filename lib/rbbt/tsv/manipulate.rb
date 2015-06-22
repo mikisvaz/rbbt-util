@@ -247,7 +247,7 @@ module TSV
     persist_options = Misc.pull_keys options, :persist
     persist_options[:prefix] = "Reorder"
 
-    Persist.persist_tsv self, self.filename, {:key_field => new_key_field, :fields => new_fields}, persist_options do |data|
+    Persist.persist_tsv self, self.filename, self.options.merge({:key_field => new_key_field, :fields => new_fields}), persist_options do |data|
       if data.respond_to? :persistence_path
         real_data = data 
         data = {}

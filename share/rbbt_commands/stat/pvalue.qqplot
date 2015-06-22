@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Produce a qq-plot for p-values
+
+$ rbbt stat pvalue.qqplot [options] <filename1.tsv> <filename2.tsv> ...
+
+-h--help Print this help
+-f--field* P-value field in files
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.usage
+  end
+  exit 0
+end
+
+files = ARGV
+
+raise "No files" if files.empty?
+
+field = options[:field]
+
+raise "No p-value field specified" if field.nil?
+
+
+file_values = []
+
+files.each do |file|
+ values = []
+ TSV.traverse file, :fields => [field], :type => :single, :into => values do |key,value|
+  - Math.log10(value.to_f)
+ end
+ file_values << values.sort.reverse
+end
+
+max = file_values.collect{|l| l.length}.min
+
+TmpFile.with_file(nil, false) do |dir|
+ Path.setup(dir)
+ names = []
+ names << 'proportional'
+ Open.write(dir["proportional"], (1..max+1).collect{|v| - Math.log10(v / max+1)} * "\n")
+ files.each_with_index do |file,i|
+   name = File.basename(file)
+   file = dir[name]
+   Open.write(dir[name], file_values[i][0..max].reverse * "\n")
+   names << name
+ end
+ puts `eplot -A -m #{names.collect{|n| "'#{dir[n]}'" } * " "}`
+ ppp "eplot -A -m #{names.collect{|n| "'#{dir[n]}'" } * " "}"
+
+end
+
+

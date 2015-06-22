@@ -23,7 +23,6 @@ file = ARGV.shift
 
 file = STDIN if file == '-' or file.nil?
 
-
 field = options[:field] || '2'
 if field =~ /^\d+$/
   field_pos = field.to_i

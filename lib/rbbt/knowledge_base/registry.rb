@@ -36,6 +36,7 @@ class KnowledgeBase
 
   def get_index(name, options = {})
     name = name.to_s
+    options[:organism] ||= options[:namespace] ||= self.namespace
     @indices[[name, options]] ||= 
       begin 
         fp = Misc.fingerprint([name,options])
@@ -79,6 +80,7 @@ class KnowledgeBase
 
   def get_database(name, options = {})
     name = name.to_s
+    options[:organism] ||= options[:namespace] ||= self.namespace
     @databases[[name, options]] ||= 
       begin 
         fp = Misc.fingerprint([name,options])
