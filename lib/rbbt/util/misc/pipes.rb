@@ -90,9 +90,9 @@ module Misc
     stream_out1, stream_in1 = Misc.pipe
     stream_out2, stream_in2 = Misc.pipe
 
-    if ConcurrentStream === stream 
-      stream.annotate stream_out1
-    end
+    #if ConcurrentStream === stream 
+    #  stream.annotate stream_out1
+    #end
 
     splitter_thread = Thread.new(Thread.current) do |parent|
       begin
@@ -133,11 +133,11 @@ module Misc
     ConcurrentStream.setup stream_out1, :threads => splitter_thread
     ConcurrentStream.setup stream_out2, :threads => splitter_thread
 
-    stream_out1.callback = stream.callback if stream.respond_to? :callback
-    stream_out1.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
+    #stream_out1.callback = stream.callback if stream.respond_to? :callback
+    #stream_out1.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
 
-    stream_out2.callback = stream.callback if stream.respond_to? :callback
-    stream_out2.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
+    #stream_out2.callback = stream.callback if stream.respond_to? :callback
+    #stream_out2.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
 
     [stream_out1, stream_out2]
   end

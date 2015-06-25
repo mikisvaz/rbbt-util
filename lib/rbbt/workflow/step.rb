@@ -226,27 +226,6 @@ class Step
     self
   end
 
-  #def rec_dependencies
-
-  #  # A step result with no info_file means that it was manually
-  #  # placed. In that case, do not consider its dependencies
-  #  return [] if Open.exists?(self.path.to_s) and not Open.exists? self.info_file
-
-  #  return [] if dependencies.nil? or dependencies.empty?
-
-  #  new_dependencies = []
-  #  dependencies.each{|step| 
-  #    new_dependencies.concat step.rec_dependencies
-  #    new_dependencies << step
-  #  }
-  #  new_dependencies.uniq!
-
-  #  dependencies = self.dependencies ? self.dependencies + new_dependencies : new_dependencies
-  #  dependencies.flatten!
-  #  dependencies.uniq!
-  #  dependencies
-  #end
-
   def rec_dependencies
 
     # A step result with no info_file means that it was manually
