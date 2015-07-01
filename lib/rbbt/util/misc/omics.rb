@@ -116,11 +116,44 @@ module Misc
     "TGA" => "*",
   }
 
+  def self.correct_mutation(pos, ref, mut_str)
+  end
+
   def self.correct_icgc_mutation(pos, ref, mut_str)
     mut = mut_str
     mut = '-' * (mut_str.length - 1) if mut =~/^-[ACGT]/
       mut = "+" << mut if ref == '-'
     [pos, [mut]]
+  end
+
+  def self.correct_mutation(pos, ref, mut_str)
+    muts = mut_str.nil? ? [] : mut_str.split(',')
+    muts.collect!{|m| m == '<DEL>' ? '-' : m }
+
+    ref = '' if ref == '-'
+    while ref.length >= 1 and muts.reject{|m| m[0] == ref[0]}.empty?
+      ref = ref[1..-1]
+      raise "REF nil" if ref.nil?
+      pos = pos + 1
+      muts = muts.collect{|m| m[1..-1]}
+    end
+
+    muts = muts.collect do |m|
+      m = '' if m == '-'
+      case
+      when ref.empty?
+        "+" << m
+      when (m.length < ref.length and (m.empty? or ref.index(m)))
+        "-" * (ref.length - m.length)
+      when (ref.length == 1 and m.length == 1)
+        m
+      else
+        Log.debug{"Cannot understand: #{[ref, m]} (#{ muts })"}
+        '-' * ref.length + m
+      end
+    end
+
+    [pos, muts]
   end
 
   def self.correct_vcf_mutation(pos, ref, mut_str)

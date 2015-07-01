@@ -47,11 +47,11 @@ app.class_eval do
   eval Rbbt.etc['app.d/finder.rb'].read
 end
 
-WorkflowRest.add_workflow wf, :all
+WorkflowRest.add_workflow wf, :priority
 if options[:workflows]
   options[:workflows].split(/[\s,]+/).each do |name|
     _wf = Workflow.require_workflow name
-    WorkflowRest.add_workflow _wf, :all
+    WorkflowRest.add_workflow _wf, true
   end
 end
 
@@ -59,7 +59,6 @@ end
 if options[:views] and not options[:views].empty?
   Sinatra::RbbtRESTMain.add_resource_path(Path.setup(options[:views]), true)
 end
-
 
 WorkflowRest.port = options[:port] || 4567
 WorkflowRest.bind = options[:bind] || "0.0.0.0"

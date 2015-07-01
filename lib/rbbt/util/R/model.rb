@@ -75,7 +75,7 @@ data = NULL
 
       script = <<-EOF
 model = rbbt.model.load('#{model_file}');
-predict(model, data.frame(#{field} = #{R.ruby2R value}), interval=#{R.ruby2R interval});
+predict(model, data.frame(#{field} = #{R.ruby2R value}), interval=#{R.ruby2R interval}, level=0.90);
       EOF
 
       res = R.eval_a script

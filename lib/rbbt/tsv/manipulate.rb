@@ -548,7 +548,7 @@ module TSV
     all = []
     through :key, field do |k,values|
       values = Array === values ? values.flatten : [values]
-      all.concat value
+      all.concat values
     end
     prepare_entity(all, field, options = {})
   end
