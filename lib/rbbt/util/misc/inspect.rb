@@ -46,7 +46,7 @@ module Misc
     when (defined? TSV and TSV::Parser)
       "<TSVStream:" + (obj.filename || "NOFILENAME") + "--" << Misc.fingerprint(obj.options) << ">"
     when IO
-      (obj.respond_to?(:filename) and obj.filename ) ? "<IO:" + (obj.filename || obj.inspect) + ">" : obj.inspect
+      (obj.respond_to?(:filename) and obj.filename ) ? "<IO:" + (obj.filename || obj.inspect + rand(100000)) + ">" : obj.inspect
     when File
       "<File:" + obj.path + ">"
     when Array
