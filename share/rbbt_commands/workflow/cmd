@@ -31,6 +31,12 @@ begin
       load dir[command].find
       exit 0
     else
+      if command == 'bootstrap'
+        Log.info "No bootstrap for #{ workflow }, running examples instead"
+        puts `rbbt workflow example #{ workflow }`
+        exit 0
+      end
+
       puts "Error: Command not understood"
       puts
       break
