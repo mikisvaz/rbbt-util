@@ -68,6 +68,7 @@ module Resource
   attr_accessor :server_missing_resource_cache
   def get_from_server(path, final_path, remote_server = nil)
     remote_server ||= self.remote_server
+    remote_server = "http://" + remote_server unless remote_server =~ /^[a-z]+:\/\//
     url = File.join(remote_server, '/resource/', self.to_s, 'get_file')
     url << "?" << Misc.hash2GET_params(:file => path, :create => false)
 
