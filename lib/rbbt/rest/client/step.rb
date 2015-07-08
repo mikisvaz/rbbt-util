@@ -132,7 +132,7 @@ class WorkflowRESTClient
                       end
                     end
       end
-      noload ? path : @result
+      noload ? path + '?_format=raw' : @result
     end
 
     def exec(*args)

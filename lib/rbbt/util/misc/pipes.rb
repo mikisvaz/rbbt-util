@@ -174,6 +174,8 @@ module Misc
     else
       Log.medium "Consuming stream #{Misc.fingerprint io}"
       begin
+        into = into.find if Path === into
+        into = Open.open(into, :mode => 'w') if String === into 
         into.sync == true if IO === into
         while not io.closed? and block = io.read(2048)
           into << block if into
@@ -295,7 +297,7 @@ module Misc
     end
   end
 
-  def self.sort_stream(stream, header_hash = "#", cmd_args = " -u ")
+  def self.sort_stream(stream, header_hash = "#", cmd_args = "-u")
     Misc.open_pipe do |sin|
       begin
         if defined? Step and Step === stream
