@@ -464,7 +464,7 @@ module Workflow
                                 when String, Symbol
                                   all_deps.concat rec_dependencies(dep.to_sym)
                                 when DependencyBlock
-                                  all_deps << dep.dependency
+                                  all_deps << dep.dependency if dep.dependency
                                   case dep.dependency
                                   when Array
                                     dep_wf, dep_task = dep.dependency

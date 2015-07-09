@@ -61,6 +61,7 @@ dependencies = info[:dependencies]
 inputs = info[:inputs]
 status = info[:status]
 time = info[:time_elapsed]
+total_time = info[:total_time_elapsed]
 messages = info[:messages]
 backtrace = info[:backtrace]
 pid = info[:pid]
@@ -71,6 +72,7 @@ puts Log.color(:magenta, "File") << ": " << step.path
 puts Log.color(:magenta, "Status") << ": " << status_msg(status)
 puts Log.color(:magenta, "Pid") << ": " << pid_msg(pid, status.to_s == "done")
 puts Log.color(:magenta, "Time") << ": " << time.to_i.to_s << " sec." if time
+puts Log.color(:magenta, "Total time") << ": " << total_time.to_i.to_s << " sec." if time
 if inputs and inputs.any?
   puts Log.color(:magenta, "Inputs")
   inputs.each do |input,value|

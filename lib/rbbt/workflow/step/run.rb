@@ -183,7 +183,7 @@ class Step
 
           merge_info({
             :pid => Process.pid,
-            :issued => Time.now,
+            :issued => (issue_time = Time.now),
             :name => name,
             :clean_name => clean_name,
             :dependencies => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]},
@@ -240,8 +240,9 @@ class Step
                 if status != :done
                   Misc.insist do
                     set_info :done, (done_time = Time.now)
+                    set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
                     set_info :time_elapsed, (time_elapsed = done_time - start_time)
-                    log :done, "#{Log.color :magenta, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i} sec."
+                    log :done, "#{Log.color :magenta, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
                   end
                 end
               rescue
@@ -259,8 +260,9 @@ class Step
             end
           else
             set_info :done, (done_time = Time.now)
+            set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
             set_info :time_elapsed, (time_elapsed = done_time - start_time)
-            log :done, "#{Log.color :magenta, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i} sec."
+            log :done, "#{Log.color :magenta, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
           end
 
           result
