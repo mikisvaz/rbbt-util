@@ -465,6 +465,15 @@ module Workflow
                                   all_deps.concat rec_dependencies(dep.to_sym)
                                 when DependencyBlock
                                   all_deps << dep.dependency
+                                  case dep.dependency
+                                  when Array
+                                    dep_wf, dep_task = dep.dependency
+                                    dep_rec_dependencies = dep_wf.rec_dependencies(dep_task.to_sym)
+                                    dep_rec_dependencies.collect!{|d| Array === d ? d : [dep_wf, d]}
+                                    all_deps.concat dep_rec_dependencies
+                                  when Symbol, String
+                                    all_deps.concat rec_dependencies(dep.dependency.to_sym)
+                                  end
                                 end
                               end
                               all_deps.uniq
