@@ -250,6 +250,7 @@ module Misc
 
   def self.intersect_streams(f1, f2, out, sep=":")
     finish = false
+    return if f1.eof? or f2.eof?
     line1, chr1, start1, eend1, rest1 = intersect_streams_read(f1,sep)
     line2, chr2, start2, eend2, rest2 = intersect_streams_read(f2,sep)
     while not finish

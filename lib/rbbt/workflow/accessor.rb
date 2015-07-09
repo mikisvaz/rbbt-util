@@ -453,7 +453,8 @@ module Workflow
                               deps.each do |dep| 
                                 case dep
                                 when Array
-                                  dep.first.rec_dependencies(dep.last).each do |d|
+                                  wf, t = dep
+                                  wf.rec_dependencies(t).each do |d|
                                     if Array === d
                                       all_deps << d
                                     else
