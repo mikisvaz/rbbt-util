@@ -300,10 +300,12 @@ module Misc
   def self.sort_stream(stream, header_hash = "#", cmd_args = "-u")
     Misc.open_pipe do |sin|
       begin
-        if defined? Step and Step === stream
-          step = stream
-          stream = stream.get_stream || stream.path.open
-        end
+        #if defined? Step and Step === stream
+        #  step = stream
+        #  stream = stream.get_stream || stream.path.open
+        #end
+
+        stream = TSV.get_stream stream
 
         line = stream.gets
         while line =~ /^#{header_hash}/ do
@@ -489,6 +491,38 @@ module Misc
         stream.close if stream.respond_to? :close and not stream.closed?
       end
     end
+  end
+
+  def self.compare_lines(stream1, stream2, args, sort = false)
+    if sort
+      stream1 = Misc.sort_stream stream1
+      stream2 = Misc.sort_stream stream2
+      remove_lines(stream1, stream2, false)
+    else
+      erase = []
+
+      if Path === stream1 or (String === stream1 and File.exists? stream1)
+        file1 = stream1
+      else
+        file1 = TmpFile.tmp_file
+        erase << file1
+        Open.write(file1, TSV.get_stream(stream1))
+      end
+
+      if Path === stream2 or (String === stream2 and File.exists? stream2)
+        file2 = stream2
+      else
+        file2 = TmpFile.tmp_file
+        erase << file2
+        Open.write(file2, TSV.get_stream(stream2))
+      end
+
+      CMD.cmd("comm #{args} '#{file1}' '#{file2}'", :pipe => true, :post => Proc.new{ erase.each{|f| FileUtils.rm f } }) 
+    end
+  end
+
+  def self.remove_lines(stream1, stream2, sort)
+    self.compare_lines(stream1, stream2, '-2 -3', sort)
   end
 
 end

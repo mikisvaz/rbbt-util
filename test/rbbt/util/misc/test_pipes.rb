@@ -87,4 +87,24 @@ row1 A B C
       assert_equal text, io.read
     end
   end
+
+  def test_remove_lines
+    text1 =<<-EOF
+line1
+line2
+line3
+line4
+    EOF
+    text2 =<<-EOF
+line3
+line1
+    EOF
+
+    Log.severity = 0
+    TmpFile.with_file(text1) do |file1|
+      TmpFile.with_file(text2) do |file2|
+        ppp Misc.remove_lines(file1, file2, true).read
+      end
+    end
+  end
 end

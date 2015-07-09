@@ -85,7 +85,7 @@ module Log
         if @max
           return str << " " << Log.color(:yellow, "waiting on #{@max} #{bytes ? 'bytes' : 'items'}") 
         else
-          return str << " " << Log.color(:yellow, "waiting - #{Process.pid}") 
+          return str << " " << Log.color(:yellow, "waiting - PID: #{Process.pid}") 
         end
       end
       str << " " << thr_msg
