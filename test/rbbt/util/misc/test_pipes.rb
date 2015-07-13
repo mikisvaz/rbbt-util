@@ -103,7 +103,31 @@ line1
     Log.severity = 0
     TmpFile.with_file(text1) do |file1|
       TmpFile.with_file(text2) do |file2|
-        ppp Misc.remove_lines(file1, file2, true).read
+        assert ! Misc.remove_lines(file1, file2, true).read.split("\n").include?("line1")
+        assert Misc.remove_lines(file1, file2, true).read.split("\n").include?("line2")
+      end
+    end
+  end
+
+
+
+  def test_select_lines
+    text1 =<<-EOF
+line1
+line2
+line3
+line4
+    EOF
+    text2 =<<-EOF
+line3
+line1
+    EOF
+
+    Log.severity = 0
+    TmpFile.with_file(text1) do |file1|
+      TmpFile.with_file(text2) do |file2|
+        assert Misc.select_lines(file1, file2, true).read.split("\n").include?("line1")
+        assert ! Misc.select_lines(file1, file2, true).read.split("\n").include?("line2")
       end
     end
   end

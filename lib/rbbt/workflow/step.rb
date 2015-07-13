@@ -260,7 +260,11 @@ class Step
                          step.task_name.to_sym == name.to_sym
                        }
                        raise "Dependency step not found: #{ name }" if deps.empty?
-                       deps.first
+                       if (deps & self.dependencies).any?
+                         (deps & self.dependencies).first
+                       else
+                         deps.first
+                       end
                      end
   end
 end

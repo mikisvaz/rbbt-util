@@ -497,7 +497,7 @@ module Misc
     if sort
       stream1 = Misc.sort_stream stream1
       stream2 = Misc.sort_stream stream2
-      remove_lines(stream1, stream2, false)
+      compare_lines(stream1, stream2, args, false)
     else
       erase = []
 
@@ -524,5 +524,10 @@ module Misc
   def self.remove_lines(stream1, stream2, sort)
     self.compare_lines(stream1, stream2, '-2 -3', sort)
   end
+
+  def self.select_lines(stream1, stream2, sort)
+    self.compare_lines(stream1, stream2, '-1 -2', sort)
+  end
+
 
 end
