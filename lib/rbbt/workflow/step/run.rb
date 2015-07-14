@@ -96,7 +96,7 @@ class Step
   end
 
   def checks
-    rec_dependencies.collect{|dependency| dependency.path }.uniq
+    rec_dependencies.collect{|dependency| (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) ? nil : dependency.path }.compact.uniq
   end
   
 

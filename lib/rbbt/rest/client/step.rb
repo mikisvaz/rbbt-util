@@ -11,6 +11,7 @@ class WorkflowRESTClient
         end
       end
     end
+
     def initialize(base_url, task = nil, base_name = nil, inputs = nil, result_type = nil, result_description = nil, is_exec = false)
       @base_url, @task, @base_name, @inputs, @result_type, @result_description, @is_exec = base_url, task, base_name, inputs, result_type, result_description, is_exec
       @mutex = Mutex.new
@@ -23,10 +24,12 @@ class WorkflowRESTClient
     end
 
     def task_name
+      init_job
       (Array === @url ? @url.first : @url).split("/")[-2]
     end
 
     def info(check_lock=false)
+      @info = nil unless @info and @info[:status] and @info[:status].to_sym == :done
       @info ||= begin
                   init_job unless url
                   info = WorkflowRESTClient.get_json(File.join(url, 'info'))
@@ -58,8 +61,10 @@ class WorkflowRESTClient
 
     #{{{ MANAGEMENT
     
-    def init_job(cache_type = :asynchronous)
-      @name ||= Persist.memory("RemoteSteps", :jobname => @name, :inputs => inputs) do
+    def init_job(cache_type = nil)
+      cache_type = :asynchronous if cache_type.nil? and not @is_exec
+      cache_type = :exec if cache_type.nil?
+      @name ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
         WorkflowRESTClient.post_jobname(File.join(base_url, task.to_s), inputs.merge(:jobname => @name||@base_name, :_cache_type => cache_type))
       end
       @url = File.join(base_url, task.to_s, @name)
@@ -118,7 +123,8 @@ class WorkflowRESTClient
     end
 
     def path
-      url
+      init_job
+      @url + '?_format=raw'
     end
 
     def run(noload = false)

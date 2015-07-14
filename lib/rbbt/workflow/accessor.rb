@@ -279,7 +279,7 @@ class Step
   end
 
   def dirty?
-    rec_dependencies.collect{|dependency| dependency.path }.uniq.reject{|path| path.exists?}.any?
+    rec_dependencies.collect{|dependency| dependency.path }.uniq.reject{|path| not Path === path or path.exists?}.any?
   end
 
   def done?
@@ -545,7 +545,9 @@ module Workflow
         options.each{|i,v|
           case v
           when Symbol
-            rec_dependency = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies}).flatten.compact.uniq.select{|d| d.task.name.to_sym == v }.first
+            all_d = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
+            rec_dependency = all_d.select{|d| d.task_name.to_sym == v }.first
+
             if rec_dependency.nil?
               _inputs[i] = v
             else

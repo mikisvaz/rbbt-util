@@ -107,6 +107,15 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     soap.rb
    }
 
+   rest=rest{
+    client.rb
+    client=client{
+     adaptor.rb
+     get.rb
+     step.rb
+    }
+   }
+
    tsv.rb
    tsv=tsv{
     parser.rb

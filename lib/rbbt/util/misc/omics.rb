@@ -222,6 +222,9 @@ module Misc
     end
   end
 
+  def self.sort_genomic_locations(stream)
+    sort_stream(stream, '#', '-k1,1 -k2,2n -t:')
+  end
 
   def self.intersect_streams_read(io, sep=":")
     line = io.gets.strip

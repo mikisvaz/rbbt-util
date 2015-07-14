@@ -33,6 +33,7 @@ class WorkflowRESTClient
       if TSV === v
         fixed_inputs[k] = v.to_s
       else
+        next if input_types[k].nil?
         case input_types[k].to_sym
         when :tsv, :array, :file, :text
           fixed_inputs[k] = (String === v and Open.exists?(v)) ? Open.open(v) : v

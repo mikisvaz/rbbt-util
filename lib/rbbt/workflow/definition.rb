@@ -55,7 +55,7 @@ module Workflow
       DependencyBlock.setup block, dependency if dependency.any?
       @dependencies << block
     else
-      if Module === dependency.first
+      if Module === dependency.first or (defined? WorkflowRESTClient and WorkflowRESTClient === dependency.first)
         @dependencies << dependency
       else
         @dependencies.concat dependency
