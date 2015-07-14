@@ -153,7 +153,7 @@ class WorkflowRESTClient
 
     def recursive_clean
       begin
-        WorkflowRESTClient.get_raw(url, params.merge(:_update => :recursive_clean))
+        WorkflowRESTClient.get_raw(url, inputs.merge(:_update => :recursive_clean))
       rescue Exception
         Log.exception $!
       end
@@ -162,7 +162,7 @@ class WorkflowRESTClient
 
     def clean
       begin
-        WorkflowRESTClient.get_raw(url, params.merge(:_update => :clean))
+        WorkflowRESTClient.get_raw(url, inputs.merge(:_update => :clean))
       rescue Exception
         Log.exception $!
       end
