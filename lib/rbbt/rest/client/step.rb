@@ -7,7 +7,7 @@ class WorkflowRESTClient
       inputs.each do |k,v|
         if Step === v
           stream = v.get_stream
-          inputs[k] = stream || v.load
+          inputs[k] = stream || v.run
         end
       end
     end
@@ -29,8 +29,8 @@ class WorkflowRESTClient
     end
 
     def info(check_lock=false)
-      @info = nil unless @info and @info[:status] and @info[:status].to_sym == :done
-      @info ||= begin
+      done = @info and @info[:status] and @info[:status].to_sym == :done
+      @info ||= Persist.memory("RemoteSteps Info", :url => @url, :persist => !done) do
                   init_job unless url
                   info = WorkflowRESTClient.get_json(File.join(url, 'info'))
                   info = WorkflowRESTClient.fix_hash(info)
@@ -153,16 +153,18 @@ class WorkflowRESTClient
 
     def recursive_clean
       begin
-        inputs[:_update] = :recursive_clean
+        WorkflowRESTClient.get_raw(url, params.merge(:_update => :recursive_clean))
       rescue Exception
+        Log.exception $!
       end
       self
     end
 
     def clean
       begin
-        inputs[:_update] = :clean
+        WorkflowRESTClient.get_raw(url, params.merge(:_update => :clean))
       rescue Exception
+        Log.exception $!
       end
       self
     end
