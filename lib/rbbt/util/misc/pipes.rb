@@ -517,7 +517,7 @@ module Misc
         Open.write(file2, TSV.get_stream(stream2))
       end
 
-      CMD.cmd("comm #{args} '#{file1}' '#{file2}'", :pipe => true, :post => Proc.new{ erase.each{|f| FileUtils.rm f } }) 
+      CMD.cmd("env LC_ALL=C comm #{args} '#{file1}' '#{file2}'", :pipe => true, :post => Proc.new{ erase.each{|f| FileUtils.rm f } }) 
     end
   end
 
