@@ -154,7 +154,7 @@ module Resource
                        content.call final_path
                      end
               case data
-              when String, IO
+              when String, IO, StringIO
                 Misc.sensiblewrite(final_path, data) 
               when Array
                 Misc.sensiblewrite(final_path, data * "\n")

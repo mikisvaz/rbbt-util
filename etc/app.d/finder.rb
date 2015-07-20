@@ -4,6 +4,12 @@ if ENV['RBBT_FINDER']
   organism = Organism.default_code("Hsa")
   finder.add_instance(KEGG.pathways, :grep => '^hsa\|^#', :fields => ["Pathway Name"], :namespace => organism, :fix => Proc.new{|l| l.sub(/ - Homo sapiens.*/,'')}) if defined? KEGG
   finder.add_instance(Organism.lexicon(organism), :persist => true, :namespace => organism, :grep => Organism.blacklist_genes(organism).list, :invert_grep => true) if defined? Organism
+
+  mutation_hash = {"Genomic Mutation" => /\w+:\d+:[ACTG\-\+]+/}
+  finder.add_instance(mutation_hash, :namespace => organism) 
+
+  organism_hash = {"organism" => /[A-Z][a-z]{2}(?:\/[a-z]{3}20\d\d)?/}
+  finder.add_instance(organism_hash, :namespace => organism) 
 end
 set :finder, finder
 Log.debug("Finder started with: #{finder.instances.length} instances")
