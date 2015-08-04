@@ -179,7 +179,7 @@ class Step
 
           Open.rm info_file if Open.exists? info_file
 
-          log :setup, "#{Log.color :cyan, "Setup"} #{Log.color :yellow, task.name.to_s || ""}"
+          log :setup, "#{Log.color :green, "Setup"} #{Log.color :yellow, task.name.to_s || ""}"
 
           merge_info({
             :pid => Process.pid,
