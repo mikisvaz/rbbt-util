@@ -31,6 +31,14 @@ module R
       end
     end
 
+    def self.load(model_file)
+      model = Model.new nil, nil, nil, :model_file => model_file
+      formula = Open.read(model_file + '.formula')
+      model.formula = formula
+      model
+    end
+
+
     def colClasses(tsv)
       return nil unless TSV === tsv
       "c('character', " << 
@@ -131,6 +139,7 @@ model = rbbt.model.fit(data, #{formula}, method=#{method}#{args_str})
 save(model, file='#{model_file}')
 data = NULL
       EOF
+      Open.write(model_file + '.formula', formula)
     end
   end
 end
