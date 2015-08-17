@@ -169,16 +169,23 @@ module Resource
             when :install
               Log.debug "Installing software: #{path}"
               software_dir = path.resource.root.software.find :user
+              helper_file = File.expand_path(Rbbt.share.install.software.lib.install_helpers.find(:lib, caller_lib_dir(__FILE__)))
+              #helper_file = File.expand_path(Rbbt.share.install.software.lib.install_helpers.find)
+
               preamble = <<-EOF
 #!/bin/bash
 
 RBBT_SOFTWARE_DIR="#{software_dir}"
 
-INSTALL_HELPER_FILE="#{Rbbt.share.install.software.lib.install_helpers.find :lib, caller_lib_dir(__FILE__)}"
+INSTALL_HELPER_FILE="#{helper_file}"
 source "$INSTALL_HELPER_FILE"
               EOF
 
-              CMD.cmd('bash', :in => preamble + "\n" + Open.read(content))
+              script = preamble + "\n" + Open.read(content)
+              install_io = CMD.cmd('bash', :in => script, :log => true, :pipe => true)
+              while line = install_io.gets
+                Log.debug line
+              end
 
               set_software_env(software_dir)
             else
