@@ -107,6 +107,7 @@ class WorkflowRESTClient
       sleep 0.2 unless self.done?
       sleep 1 unless self.done?
       sleep 3 while not self.done?
+      self
     end
 
     def get
