@@ -348,7 +348,7 @@ begin
   if options.delete(:printpath)
     job.join
     if Open.remote? job.path
-      puts job.path + Log.color(:blue, "?_format=raw")
+      puts job.url + Log.color(:blue, "?_format=raw")
     else
       puts job.path
     end

@@ -29,14 +29,14 @@ class WorkflowRESTClient
     end
 
     def info(check_lock=false)
-      done = @info and @info[:status] and @info[:status].to_sym == :done
-      @info ||= Persist.memory("RemoteSteps Info", :url => @url, :persist => !done) do
-                  init_job unless url
-                  info = WorkflowRESTClient.get_json(File.join(url, 'info'))
-                  info = WorkflowRESTClient.fix_hash(info)
-                  info[:status] = info[:status].to_sym if String === info[:status]
-                  info
-                end
+      @done = @info and @info[:status] and @info[:status].to_sym == :done
+      @info = Persist.memory("RemoteSteps Info", :url => @url, :persist => !!@done) do
+        init_job unless url
+        info = WorkflowRESTClient.get_json(File.join(url, 'info'))
+        info = WorkflowRESTClient.fix_hash(info)
+        info[:status] = info[:status].to_sym if String === info[:status]
+        info
+      end
     end
     
     def status
@@ -71,48 +71,6 @@ class WorkflowRESTClient
       nil
     end
 
-    def load_res(res, result_type = nil)
-      result_type ||= self.result_type
-      case result_type
-      when :string
-        res
-      when :boolean
-        res == "true"
-      when :tsv
-        TSV.open(StringIO.new(res))
-      when :annotations
-        Annotated.load_tsv(TSV.open(StringIO.new(res)))
-      when :array
-        res.split("\n")
-      else
-        JSON.parse res
-      end
-    end
-
-    def get
-      params ||= {}
-      params = params.merge(:_format => [:string, :boolean, :tsv, :annotations,:array].include?(result_type.to_sym) ? :raw : :json )
-      Misc.insist 3, rand(2) + 1 do
-        begin
-          WorkflowRESTClient.get_raw(url, params)
-        rescue
-          Log.exception $!
-          raise $!
-        end
-      end
-    end
-
-    def load
-      params = {}
-      load_res get
-    end
-    
-    def exec_job
-      res = WorkflowRESTClient.capture_exception do
-        RestClient.post(URI.encode(File.join(base_url, task.to_s)), inputs.merge(:_cache_type => :exec, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json))
-      end
-      load_res res, result_type == :array ? :json : result_type
-    end
 
     def fork
       init_job(:asynchronous)
@@ -133,7 +91,7 @@ class WorkflowRESTClient
                       if @is_exec
                         exec_job 
                       else
-                        init_job(:synchronous) 
+                        init_job 
                         self.load
                       end
                     end
@@ -146,16 +104,77 @@ class WorkflowRESTClient
     end
 
     def join
-      return if self.done?
-      self.load
-      self
+      sleep 0.2 unless self.done?
+      sleep 1 unless self.done?
+      sleep 3 while not self.done?
+    end
+
+    def get
+      params ||= {}
+      params = params.merge(:_format => [:string, :boolean, :tsv, :annotations,:array].include?(result_type.to_sym) ? :raw : :json )
+      Misc.insist 3, rand(2) + 1 do
+        begin
+          WorkflowRESTClient.get_raw(url, params)
+        rescue
+          Log.exception $!
+          raise $!
+        end
+      end
+    end
+
+    def load_res(res, result_type = nil)
+      join
+      result_type ||= self.result_type
+      case result_type
+      when :string
+        res
+      when :boolean
+        res == "true"
+      when :tsv
+        TSV.open(StringIO.new(res))
+      when :annotations
+        Annotated.load_tsv(TSV.open(StringIO.new(res)))
+      when :array
+        res.split("\n")
+      else
+        JSON.parse res
+      end
+    end
+
+    def load
+      params = {}
+      load_res get
+    end
+    
+    def exec_job
+      res = WorkflowRESTClient.capture_exception do
+        RestClient.post(URI.encode(File.join(base_url, task.to_s)), inputs.merge(:_cache_type => :exec, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json))
+      end
+      load_res res, result_type == :array ? :json : result_type
+    end
+
+    def _restart
+      @done = nil
+      @name = nil
+      new_inputs = {}
+      inputs.each do |k,i| 
+        if File === i 
+          new_inputs[k] = File.open(i.path)
+        else
+          new_inputs[k] = i
+        end
+      end
+      @inputs = new_inputs
     end
 
     def recursive_clean
       begin
         inputs = Array === self.inputs ? Hash[*self.inputs.flatten] : self.inputs
         params = inputs.merge(:_update => :recursive_clean)
+        init_job
         WorkflowRESTClient.get_raw(url, params)
+        _restart
+        init_job
       rescue Exception
         Log.exception $!
       end
@@ -166,7 +185,10 @@ class WorkflowRESTClient
       begin
         inputs = Array === self.inputs ? Hash[*self.inputs.flatten] : self.inputs
         params = inputs.merge(:_update => :clean)
+        init_job
         WorkflowRESTClient.get_raw(url, params)
+        _restart
+        init_job
       rescue Exception
         Log.exception $!
       end
