@@ -26,7 +26,7 @@ module TSV
         case stream
         when (defined? Step and Step) 
           stream.grace
-          stream.get_stream || stream.join.path.open
+          stream.get_stream || Open.open(stream.join.path)
         when Path
           stream.open
         when TSV::Dumper
