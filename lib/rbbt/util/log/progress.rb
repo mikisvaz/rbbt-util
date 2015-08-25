@@ -22,6 +22,7 @@ module Log
 
     def percent
       return 0 if @ticks == 0
+      return 100 if @max == 0
       (@ticks * 100) / @max
     end
 

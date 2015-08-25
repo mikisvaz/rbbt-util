@@ -61,11 +61,11 @@ class WorkflowRESTClient
 
     #{{{ MANAGEMENT
     
-    def init_job(cache_type = nil)
+    def init_job(cache_type = nil, other_params = {})
       cache_type = :asynchronous if cache_type.nil? and not @is_exec
       cache_type = :exec if cache_type.nil?
       @name ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
-        WorkflowRESTClient.post_jobname(File.join(base_url, task.to_s), inputs.merge(:jobname => @name||@base_name, :_cache_type => cache_type))
+        WorkflowRESTClient.post_jobname(File.join(base_url, task.to_s), inputs.merge(other_params).merge(:jobname => @name||@base_name, :_cache_type => cache_type))
       end
       @url = File.join(base_url, task.to_s, @name)
       nil
@@ -171,10 +171,9 @@ class WorkflowRESTClient
     def recursive_clean
       begin
         params = {:_update => :recursive_clean}
-        init_job
+        init_job(nil, params)
         WorkflowRESTClient.get_raw(url, params)
         _restart
-        init_job
       rescue Exception
         Log.exception $!
       end
@@ -184,10 +183,9 @@ class WorkflowRESTClient
     def clean
       begin
         params = {:_update => :clean}
-        init_job
+        init_job(nil, params)
         WorkflowRESTClient.get_raw(url, params)
         _restart
-        init_job
       rescue Exception
         Log.exception $!
       end

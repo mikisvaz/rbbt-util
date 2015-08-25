@@ -30,7 +30,7 @@ module TSV
         obj.size
       when File
         return nil if Open.gzip?(obj) or Open.bgzip?(obj)
-        CMD.cmd("wc -l '#{obj.filename}'").read.to_i
+        CMD.cmd("wc -l '#{obj.path}'").read.to_i
       when Path, String
         obj = obj.find if Path === obj
         if File.exists? obj

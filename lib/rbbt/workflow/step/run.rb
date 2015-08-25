@@ -140,8 +140,10 @@ class Step
     log :dependencies, "#{Log.color :magenta, "Dependencies"} #{Log.color :yellow, task.name.to_s || ""}"
     dupping = []
     @seen.each do |dependency|
-      next if (dependency.done? and not dependency.dirty?) or (dependency.streaming? and dependency.running?)
-      dependency.clean
+      next if (dependency.done? and not dependency.dirty?) or 
+              (dependency.streaming? and dependency.running?) or 
+              (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency and not (dependency.error? or dependency.aborted?))
+      dependency.clean if dependency.started? and dependency
       dupping << dependency unless dependencies.include? dependency
     end
 
