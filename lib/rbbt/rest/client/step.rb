@@ -170,8 +170,7 @@ class WorkflowRESTClient
 
     def recursive_clean
       begin
-        inputs = Array === self.inputs ? Hash[*self.inputs.flatten] : self.inputs
-        params = inputs.merge(:_update => :recursive_clean)
+        params = {:_update => :recursive_clean}
         init_job
         WorkflowRESTClient.get_raw(url, params)
         _restart
@@ -184,8 +183,7 @@ class WorkflowRESTClient
 
     def clean
       begin
-        inputs = Array === self.inputs ? Hash[*self.inputs.flatten] : self.inputs
-        params = inputs.merge(:_update => :clean)
+        params = {:_update => :clean}
         init_job
         WorkflowRESTClient.get_raw(url, params)
         _restart
