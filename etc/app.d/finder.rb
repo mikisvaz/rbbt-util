@@ -8,6 +8,9 @@ if ENV['RBBT_FINDER']
   mutation_hash = {"Genomic Mutation" => /\w+:\d+:[ACTG\-\+]+/}
   finder.add_instance(mutation_hash, :namespace => organism) 
 
+  mi_hash = {"Mutated Isoform" => /ENSP\w+:.+/}
+  finder.add_instance(mi_hash, :namespace => organism) 
+
   organism_hash = {"organism" => /[A-Z][a-z]{2}(?:\/[a-z]{3}20\d\d)?/}
   finder.add_instance(organism_hash, :namespace => organism) 
 end
