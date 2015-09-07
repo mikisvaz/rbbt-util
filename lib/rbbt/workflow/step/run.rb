@@ -137,7 +137,7 @@ class Step
 
     return if @seen.empty?
 
-    log :dependencies, "#{Log.color :magenta, "Dependencies"} #{Log.color :yellow, task.name.to_s || ""}"
+    log :dependencies, "#{Log.color :magenta, "Dependencies"} for step #{Log.color :yellow, task.name.to_s || ""}"
     dupping = []
     @seen.each do |dependency|
       next if (dependency.done? and not dependency.dirty?) or 
@@ -181,7 +181,7 @@ class Step
 
           Open.rm info_file if Open.exists? info_file
 
-          log :setup, "#{Log.color :green, "Setup"} #{Log.color :yellow, task.name.to_s || ""}"
+          log :setup, "#{Log.color :green, "Setup"} step #{Log.color :yellow, task.name.to_s || ""}"
 
           merge_info({
             :pid => Process.pid,
@@ -203,7 +203,7 @@ class Step
           set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 
           set_info :started, (start_time = Time.now)
-          log :started, "#{Log.color :magenta, "Starting"} #{Log.color :yellow, task.name.to_s || ""}"
+          log :started, "#{Log.color :magenta, "Starting"} step #{Log.color :yellow, task.name.to_s || ""}"
 
           begin
             result = _exec
@@ -236,7 +236,7 @@ class Step
                    end
 
           if stream
-            log :streaming, "#{Log.color :magenta, "Streaming"} #{Log.color :yellow, task.name.to_s || ""}"
+            log :streaming, "#{Log.color :magenta, "Streaming"} step #{Log.color :yellow, task.name.to_s || ""}"
             ConcurrentStream.setup stream do
               begin
                 if status != :done
@@ -244,7 +244,7 @@ class Step
                     set_info :done, (done_time = Time.now)
                     set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
                     set_info :time_elapsed, (time_elapsed = done_time - start_time)
-                    log :done, "#{Log.color :magenta, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
+                    log :done, "#{Log.color :magenta, "Completed"} step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
                   end
                 end
               rescue
@@ -255,7 +255,7 @@ class Step
             end
             stream.abort_callback = Proc.new do
               begin
-                log :aborted, "#{Log.color :red, "Aborted"} #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
+                log :aborted, "#{Log.color :red, "Aborted"} step #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
               rescue
                 Log.exception $!
               end
@@ -264,7 +264,7 @@ class Step
             set_info :done, (done_time = Time.now)
             set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
             set_info :time_elapsed, (time_elapsed = done_time - start_time)
-            log :done, "#{Log.color :magenta, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
+            log :done, "#{Log.color :magenta, "Completed"} step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
           end
 
           result

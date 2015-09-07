@@ -228,7 +228,7 @@ module Path
   end
 
   def tsv(*args)
-    TSV.open(self.produce.find, *args)
+    TSV.open(self.produce, *args)
   end
 
   def tsv_options(options = {})
