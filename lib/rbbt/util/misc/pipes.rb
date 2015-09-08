@@ -4,8 +4,8 @@ module Misc
   class << self
     attr_accessor :sensiblewrite_lock_dir
     
-    def sensible_write_locks
-      @sensiblewrite_locks ||= Rbbt.tmp.sensiblewrite_locks.find
+    def sensiblewrite_lock_dir
+      @sensiblewrite_lock_dir ||= Rbbt.tmp.sensiblewrite_locks.find
     end
   end
 

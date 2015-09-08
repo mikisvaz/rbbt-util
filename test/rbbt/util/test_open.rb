@@ -7,11 +7,11 @@ require 'test/unit'
 
 class TestOpen < Test::Unit::TestCase
 
-  def _test_wget
+  def test_wget
     assert(Misc.fixutf8(Open.wget('http://google.com', :quiet => true).read) =~ /html/)
   end
 
-  def _test_nice
+  def test_nice
     nice =  0.5
 
     t = Time.now
@@ -24,16 +24,16 @@ class TestOpen < Test::Unit::TestCase
     assert(Time.now - t + 0.5 >= nice)
   end
 
-  def _test_remote?
+  def test_remote?
     assert(Open.remote?('http://google.com'))
     assert(! Open.remote?('~/.bashrc'))
   end
 
-  def _test_open
-    assert(Open.read('http://google.com', :quiet => true) =~ /html/)
+  def test_open
+    assert(Open.read('http://google.com', :quiet => true, :nocache => :update) =~ /html/)
   end
 
-  def _test_read
+  def test_read
     content =<<-EOF
 1
 2
@@ -48,7 +48,7 @@ class TestOpen < Test::Unit::TestCase
     end
   end
 
-  def _test_read_grep
+  def test_read_grep
     content =<<-EOF
 1
 2
@@ -68,7 +68,7 @@ class TestOpen < Test::Unit::TestCase
     end
   end
 
-  def _test_read_grep_invert
+  def test_read_grep_invert
     content =<<-EOF
 1
 2
@@ -105,7 +105,7 @@ class TestOpen < Test::Unit::TestCase
     end
   end
 
-  def _test_repo_dir
+  def test_repo_dir
     file1 = "TEST"
     file2 = "TEST" * 1000
     TmpFile.with_file do |tmpdir|
@@ -133,7 +133,7 @@ class TestOpen < Test::Unit::TestCase
     end
   end
   
-  def _test_repo_dir
+  def test_repo_dir2
     TmpFile.with_file do |tmpdir|
       tmpdir = "/home/mvazquezg/tmp/repo_dir"
       repo = File.join(tmpdir, 'repo')

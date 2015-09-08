@@ -120,7 +120,7 @@ module Open
   
   def self.add_cache(url, data, options = {})
     file = File.join(REMOTE_CACHEDIR, digest_url(url, options))
-    Misc.sensiblewrite(file, data)
+    Misc.sensiblewrite(file, data, :force => true)
   end
 
   # Grep
