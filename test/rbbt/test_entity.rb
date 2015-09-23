@@ -182,4 +182,9 @@ class TestEntity < Test::Unit::TestCase
     assert ! string.clean_annotations.respond_to?(:reverse_text_single)
 
   end
+
+  def test_all_properties
+    puts ReversableString.setup("TEST").all_properties
+    puts ReversableString.all_properties
+  end
 end

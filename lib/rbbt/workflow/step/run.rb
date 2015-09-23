@@ -292,7 +292,7 @@ class Step
         raise "Error in job: #{status}"
       end
     end
-    clean if dirty? 
+    clean if dirty? or not running?
     run(true) unless started?
     join unless done?
     self
@@ -424,6 +424,7 @@ class Step
   def abort
     _abort
     log(:aborted, "Job aborted") unless aborted? or error?
+    self
   end
 
   def join_stream

@@ -36,7 +36,11 @@ module R
             ":NA"
           end
         end
-        options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')'
+        if field_classes.any?
+          options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')'
+        else
+          options[:R_open] ||= "colClasses=c('character')"
+        end
 
         TmpFile.with_file nil, true, :extension => 'svg' do |tmpfile|
           data.R <<-EOF, sources, options

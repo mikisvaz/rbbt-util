@@ -68,7 +68,7 @@ module Entity
     @entity_property_cache = dir
   end
 
-  attr_accessor :all_formats
+  attr_accessor :all_formats, :all_properties
   def self.extended(base)
     base.extend Annotation
     Entity.formats[base.to_s] = base
@@ -120,6 +120,10 @@ module Entity
             acc.concat e
           end
         }
+      end
+
+      def all_properties
+        annotation_types.select{|m| Entity === m}.collect{|e| e.all_properties}.flatten.uniq
       end
 
       def self.property(name, &block)
@@ -174,8 +178,9 @@ module Entity
           end
         else 
           raise "Type not undestood in property: #{ type }"
-
         end
+        @all_properties ||= []
+        @all_properties << name
       end
 
       def self.persist(method_name, type = nil, options = {})

@@ -447,3 +447,45 @@ rbbt.model.inpute <- function(data, formula, ...){
 #    data$Prediction = NULL
     data
 }
+
+rbbt.tsv.melt <- function(tsv, key_field = 'ID'){
+    tsv[key_field] = rownames(tsv)
+    return(melt(tsv))
+}
+
+rbbt.ranks <- function(x){
+    l = sum(!is.na(x))
+    i = sort(x, index.return=T, na.last=NA)$ix 
+    vv = rep(NA,length(x))
+
+    c = 1
+    for (pos in i){
+        vv[pos] = c / l
+        c = c + 1
+    }
+    return(vv)
+}
+
+rbbt.ranks <- function(x){
+    x = as.numeric(x)
+    missing = is.na(x)
+    l = sum(!missing)
+    x.fixed = x[!missing]
+    x.i = sort(x.fixed, index.return=T, na.last=NA)$ix 
+
+    vv = rep(NA,length(x))
+
+    c = 1
+    for (pos in x.i){
+        vv[pos] = c / l
+        c = c + 1
+    }
+
+    vv.complete = rep(NA,length(x))
+    vv.complete[!missing] = vv
+    return(vv.complete)
+}
+
+rbbt.default_code <- function(organism){
+    return(organism + "/feb2014")
+}
