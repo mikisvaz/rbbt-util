@@ -33,6 +33,7 @@ app = class WorkflowRest < Sinatra::Base; self end
 
 app.register Sinatra::RbbtRESTWorkflow
 app.register Sinatra::RbbtRESTKnowledgeBase
+app.register Sinatra::MultiRoute
 app.helpers Sinatra::RbbtToolHelper
 
 app.get '/' do
