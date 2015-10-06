@@ -176,7 +176,7 @@ module TSV
 
   def attach(other, options = {})
     options      = Misc.add_defaults options, :in_namespace => false, :persist_input => true
-    fields, one2one = Misc.process_options options, :fields, :one2one
+    fields, one2one, complete = Misc.process_options options, :fields, :one2one, :complete
     in_namespace = options[:in_namespace]
 
     unless TSV === other
@@ -194,6 +194,29 @@ module TSV
 
     other_filename = other.respond_to?(:filename) ? other.filename : other.inspect
     Log.low("Attaching fields:#{Misc.fingerprint fields } from #{other_filename}.")
+
+    if complete
+      fill = TrueClass === complete ? nil : complete
+      missing = other.keys - self.keys
+      case type
+      when :single
+        missing.each do |k|
+          self[k] = nil
+        end
+      when :list
+        missing.each do |k|
+          self[k] = [nil] * field_length
+        end
+      when :double
+        missing.each do |k|
+          self[k] = [[]] * field_length
+        end
+      when :flat
+        missing.each do |k|
+          self[k] = []
+        end
+      end
+    end
 
     same_key = true
     begin

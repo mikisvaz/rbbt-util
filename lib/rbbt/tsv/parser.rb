@@ -25,7 +25,7 @@ module TSV
 
       # Process options line
 
-      if line and line =~ /^#{@header_hash}: (.*)/
+      if line and (String === @header_hash and line =~ /^#{@header_hash}: (.*)/)
         options = Misc.string2hash $1.chomp
         line = stream.gets
         line = Misc.fixutf8 line.chomp if line
@@ -38,15 +38,16 @@ module TSV
       # Process fields line
 
       preamble << line if line
-      while line and Misc.fixutf8(line) =~ /^#{@header_hash}/ 
+      while line and (TrueClass === @header_hash or (String === @header_hash and Misc.fixutf8(line) =~ /^#{@header_hash}/ ))
         @fields = line.split(@sep)
         @key_field = @fields.shift
-        @key_field = @key_field[(0 + header_hash.length)..-1] # Remove initial hash character
+        @key_field = @key_field[(0 + header_hash.length)..-1] if String === @header_hash
 
         #Thread.pass while IO.select([stream], nil, nil, 1).nil? if IO === stream
         line = (@header_hash != "" ?  stream.gets : nil)
         line = Misc.fixutf8 line.chomp if line
         preamble << line if line
+        @header_hash = false if TrueClass === @header_hash
       end
 
       @preamble = preamble[0..-3] * "\n"

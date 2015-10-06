@@ -140,7 +140,7 @@ module Association
 
   def self.database(file,  options = {})
     database = case file
-               when Step
+               when (defined? Step and Step)
                  file.clean if file.error? or file.aborted? or file.dirty?
                  file.run(true) unless file.done? or file.started?
                  file.join unless file.done?

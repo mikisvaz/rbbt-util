@@ -1,6 +1,11 @@
 require 'rbbt/resource/path'
 module TSV
 
+  def self.guess_id(identifier_file, values, options = {})
+    field_matches = TSV.field_match_counts(identifier_file, values, options)
+    field_matches.sort_by{|field, count| count.to_i}.last
+  end
+
   def self.reorder_stream(stream, positions, sep = "\t")
     Misc.open_pipe do |sin|
       line = stream.gets
@@ -50,7 +55,7 @@ module TSV
 
     filename = TSV === file ? file.filename : file
     path = Persist.persist filename, :string, persist_options.merge(:no_load => true) do
-      tsv = TSV === file ? file : TSV.open(file)
+      tsv = TSV === file ? file : TSV.open(file, options)
 
       text = ""
       fields = nil
@@ -64,8 +69,8 @@ module TSV
       text
     end
 
-    TmpFile.with_file(values.uniq * "\n") do |value_file|
-      cmd = "cat '#{ path }' | sed 's/\\t/\\tHEADERNOMATCH/' | grep -w -F -f '#{ value_file }' |cut -f 2 | sed 's/HEADERNOMATCH//' | sort|uniq -c|sed 's/^ *//;s/ /\t/'"
+    TmpFile.with_file(values.uniq * "\n", false) do |value_file|
+      cmd = "cat '#{ path }' | sed 's/\\t/\\tHEADERNOMATCH/' | grep -w -F -f '#{ value_file }' | sed 's/HEADERNOMATCH//' |sort -u|cut -f 2  |sort|uniq -c|sed 's/^ *//;s/ /\t/'"
       begin
         TSV.open(CMD.cmd(cmd), :key_field => 1, :type => :single, :cast => :to_i)
       rescue

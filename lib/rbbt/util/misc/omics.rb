@@ -145,8 +145,15 @@ module Misc
       when (ref.length == 1 and m.length == 1)
         m
       else
-        Log.debug{"Cannot understand: #{[ref, m]} (#{ muts })"}
-        '-' * ref.length + m
+        if ref == '-'
+          res = '+' + m
+        else
+          res = '-' * ref.length 
+          res << m unless m == '-'
+        end
+        Log.debug{"Non-standard annotation: #{[ref, m]} (#{ muts }) => #{ res }"}
+        
+        res
       end
     end
 
@@ -173,8 +180,15 @@ module Misc
       when (ref.length == 1 and m.length == 1)
         m
       else
-        Log.debug{"Cannot understand: #{[ref, m]} (#{ muts })"}
-        '-' * ref.length + m
+        if ref == '-'
+          res = '+' + m
+        else
+          res = '-' * ref.length 
+          res << m unless m == '-'
+        end
+        Log.debug{"Non-standard annotation: #{[ref, m]} (#{ muts }) => #{ res }"}
+        
+        res
       end
     end
 
