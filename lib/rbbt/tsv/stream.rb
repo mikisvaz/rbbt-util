@@ -64,6 +64,8 @@ module TSV
         preambles     << parser.preamble      if preamble and not parser.preamble.empty?
 
         if fix_flat and parser.type == :flat
+          parts = lines[-1].split("\t")
+          lines[-1] = [parts[0], parts[1..-1]*"|"] * "\t"
           TSV.stream_flat2double(parser.stream).stream
         else
           parser.stream
@@ -210,13 +212,13 @@ module TSV
   end
 
   def self.stream_flat2double(stream, options = {})
-    parser = TSV::Parser.new TSV.get_stream(stream)
+    parser = TSV::Parser.new TSV.get_stream(stream), :type => :flat
     dumper_options = parser.options.merge(options).merge(:type => :double)
     dumper = TSV::Dumper.new dumper_options
-    dumper.init
     TSV.traverse parser, :into => dumper do |key,values|
       key = key.first if Array === key
-      [key, [values]]
+      values = [values] unless Array === values
+      [key, [values.flatten]]
     end
     dumper
   end
