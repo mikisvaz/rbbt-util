@@ -18,6 +18,10 @@ class KnowledgeBase
     @registry.keys 
   end
 
+  def fields(name)
+    @fields[name] ||= get_index(name).fields
+  end
+
   def description(name)
     @descriptions[name] ||= get_index(name).key_field.split("~")
   end

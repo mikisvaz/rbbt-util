@@ -32,8 +32,8 @@ load Rbbt.etc['app.d/init.rb'].find
 app = class WorkflowRest < Sinatra::Base; self end
 
 app.register Sinatra::RbbtRESTWorkflow
-app.register Sinatra::RbbtRESTKnowledgeBase
 app.register Sinatra::MultiRoute
+app.register Sinatra::RbbtRESTKnowledgeBase
 app.helpers Sinatra::RbbtToolHelper
 
 app.get '/' do

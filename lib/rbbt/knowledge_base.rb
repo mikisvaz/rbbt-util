@@ -20,6 +20,7 @@ class KnowledgeBase
     @indices = IndiferentHash.setup({})
     @databases = IndiferentHash.setup({})
     @identifiers = IndiferentHash.setup({})
+    @fields = {}
     @descriptions = {}
     @databases = {}
   end
