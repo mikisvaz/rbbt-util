@@ -63,7 +63,7 @@ module TSV
         input_options << parser.options
         preambles     << parser.preamble      if preamble and not parser.preamble.empty?
 
-        if fix_flat and parser.type == :flat
+        if fix_flat and parser.type == :flat and parser.first_line
           parts = lines[-1].split("\t")
           lines[-1] = [parts[0], parts[1..-1]*"|"] * "\t"
           TSV.stream_flat2double(parser.stream).stream

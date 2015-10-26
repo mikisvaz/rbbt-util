@@ -171,17 +171,29 @@ module Workflow
 
   #{{{ ATTR DEFAULTS
   
+  
+  def self.workdir=(path)
+    path = Path.setup path.dup unless Path === path
+    @@workdir = path
+  end
+
+  def self.workdir
+    @@workdir ||= if defined? Rbbt
+                   Rbbt.var.jobs.find
+                 else
+                   Path.setup('var/jobs')
+                 end
+  end
+
   def workdir=(path)
     path = Path.setup path.dup unless Path === path
     @workdir = path
   end
 
   def workdir
-    @workdir ||= if defined? Rbbt
+    @workdir ||= begin
                    text = Module === self ? self.to_s : "Misc"
-                   Rbbt.var.jobs[text].find
-                 else
-                   Path.setup('var/jobs')
+                   Workflow.workdir[text].find
                  end
   end
 

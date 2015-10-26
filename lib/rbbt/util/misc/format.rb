@@ -56,7 +56,7 @@ module Misc
   def self.format_definition_list_item(dt, dd, size = 80, indent = 20, color = :yellow)
     dd = "" if dd.nil?
     dt = Log.color color, dt if color
-    dt = dt.to_s + ":" unless dd.empty?
+    dt = dt.to_s  unless dd.empty?
     len = Log.uncolor(dt).length
 
     if indent < 0

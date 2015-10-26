@@ -267,6 +267,7 @@ module Misc
             lock_options[:lock].unlock
           end
           FileUtils.touch path if File.exists? path
+          Open.notify_write(path) 
         rescue Aborted
           Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
           content.abort if content.respond_to? :abort

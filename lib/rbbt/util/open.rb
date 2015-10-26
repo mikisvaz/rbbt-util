@@ -427,6 +427,20 @@ module Open
     end
   end
 
+  def self.notify_write(file)
+    begin
+      notification_file = file + '.notify'
+      if File.exists? notification_file
+        key = Open.read(notification_file).strip
+        key = nil if key.empty?
+        Misc.notify("Wrote " << file, nil, key)
+        FileUtils.rm notification_file
+      end
+    rescue
+      Log.warn "Error notifying write of #{ file }"
+    end
+  end
+
   def self.write(file, content = nil, options = {})
     options = Misc.add_defaults options, :mode => 'w'
 
@@ -463,5 +477,6 @@ module Open
       end
       content.close
     end
+    notify_write(file) 
   end
 end
