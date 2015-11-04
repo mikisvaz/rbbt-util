@@ -1,7 +1,32 @@
+
 #!/usr/bin/env ruby
 
-require 'rbbt'
-require 'highline/import'
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Description
+
+$ rbbt conf web_user add [options] <user> 
+
+Use - to read from STDIN
+
+-h--help Print this help
+-p--password* Set password (ask otherwise)
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.usage
+  end
+  exit 0
+end
+
 
 if Rbbt.etc.web_users.exists?
   web_users = Rbbt.etc.web_users.yaml
@@ -13,13 +38,20 @@ user = ARGV.shift
 
 raise "No user provided" if user.nil?
 
-password = ask("Enter your password:  ") { |q| q.echo = "x" }
+if options[:password].nil?
+  require 'highline/import'
 
-raise "No password provided" if password.nil?
+  password = ask("Enter your password:  ") { |q| q.echo = "x" }
 
-password_check = ask("Re-enter your password:  ") { |q| q.echo = "x" }
+  raise "No password provided" if password.nil?
 
-raise "Passwords don't match" if password != password_check
+  password_check = ask("Re-enter your password:  ") { |q| q.echo = "x" }
+
+  raise "Passwords don't match" if password != password_check
+
+else
+  password = options[:password]
+end
 
 web_users[user] = password
 

@@ -556,4 +556,20 @@ row2    A AA AAA
   def test_merge_key_field
     assert TSV.open('/home/mvazquezg/git/workflows/genomics/share/gene_ages', :key_field => "FamilyAge", :merge => true,  :persist => false, :zipped => true, :type => :double).values.first.length > 1
   end
+
+  def test_flat_merge
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A|aAa    B    Id3
+row3    AA    BB|BBB    Id3|Id2
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :key_field => "OtherID", :fields => ["ValueA"], :type => :flat, :merge => true)
+      assert_equal %w(A aAa AA).sort, tsv["Id3"].sort 
+      assert_equal %w(a aa aaa AA).sort, tsv["Id2"].sort 
+ 
+    end
+  end
 end
