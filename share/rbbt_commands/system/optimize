@@ -58,7 +58,8 @@ end
 
 Log.info Log.color(:magenta, "Processing Tokyo Cabinet files")
 
-all_files = directory.glob('**/*')
+all_files = directory.glob('**/*') + directory.glob('**/.*')
+all_files.uniq!
 TSV.traverse all_files, :type => :array, :bar => "Processing Tokyo Cabinet files" do |file|
   cmd = 'file "' << file << '"'
   file_type = CMD.cmd(cmd).read.strip.partition(/:\s+/).last
