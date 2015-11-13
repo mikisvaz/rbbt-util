@@ -85,5 +85,43 @@ TP53 NFKB1|GLI1 activation|activation true|true
     assert(tsv.to_matrix(false))
   end
 
+  def test_filter_no_block
+    require 'rbbt/sources/tfacts'
+    file = TFacts.regulators
+    tsv = Association.index(EFFECT, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
+    tsv.unnamed = false
+    matches = tsv.filter :directed?
+    assert_equal 2, matches.length
+  end
 
+  def test_filter_no_block_value
+    require 'rbbt/sources/tfacts'
+    file = TFacts.regulators
+    tsv = Association.index(EFFECT, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
+    tsv.unnamed = false
+    matches = tsv.filter :Effect, "inhibition"
+    assert_equal ["MDM2~TP53"], matches
+  end
+
+  def test_filter_block_value_field
+    require 'rbbt/sources/tfacts'
+    file = TFacts.regulators
+    tsv = Association.index(EFFECT, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
+    tsv.unnamed = false
+    matches = tsv.filter :Effect do |value|
+      return value.include? "inhibition"
+    end
+    assert_equal ["MDM2~TP53"], matches
+  end
+
+  def test_filter_block_no_value_field
+    require 'rbbt/sources/tfacts'
+    file = TFacts.regulators
+    tsv = Association.index(EFFECT, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
+    tsv.unnamed = false
+    matches = tsv.filter do |key,values|
+      return values.flatten.include? "inhibition"
+    end
+    assert_equal ["MDM2~TP53"], matches
+  end
 end
