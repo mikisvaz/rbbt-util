@@ -348,4 +348,20 @@ module Misc
       `curl -s --header "Authorization: Bearer #{key}" -X POST https://api.pushbullet.com/v2/pushes --header 'Content-Type: application/json' --data-binary '{"type": "note", "title": "#{event}", "body": "#{description}"}'`
     end
   end
+
+  def self.unzip_in_dir(file, dir)
+    raise "Target is not a directory: #{file}" if File.exists?(dir) and not File.directory?(dir)
+    if Open.remote? file
+      file = file.find if Path === file
+      Open.open(file) do |stream|
+        TmpFile.with_file(stream.read, true, :extension => 'zip') do |zip_file|
+          CMD.cmd("unzip '#{zip_file}' -d '#{dir}'")
+        end
+      end
+    else
+      file = file.find if Path === file
+      zip_file = file
+      CMD.cmd("unzip '#{zip_file}' -d '#{dir}'")
+    end
+  end
 end

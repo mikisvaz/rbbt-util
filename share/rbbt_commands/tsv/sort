@@ -27,7 +27,9 @@ field = options[:field] || '2'
 if field =~ /^\d+$/
   field_pos = field.to_i
 else
-  field_pos = TSV.parse_header(file, options).all_fields.index(field) + 1
+  parser = TSV.parse_header(file, options)
+  field_pos = parser.all_fields.index(field) + 1
+  saved_line = parser.line
 end
 
 rest = ARGV.inject("-t\"\t\" -g -k#{field_pos}"){|acc,e| acc << " '#{e}'" }

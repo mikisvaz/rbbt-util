@@ -13,10 +13,14 @@ Entity.entity_property_cache = Rbbt.var.sinatra.find.entity_properties
 #{{{ Prepare REST entities
 Rbbt.etc.entities.read.split("\n").each do |name|
   next if name.empty?
-  mod = Kernel.const_get name
-  Log.debug("Including Entity::REST for #{ name }")
-  mod.module_eval do
-    include Entity::REST
+  begin
+    mod = Kernel.const_get name
+    Log.debug("Including Entity::REST for #{ name }")
+    mod.module_eval do
+      include Entity::REST
+    end
+  rescue
+    Log.warn "Could extend REST entity: #{ name }"
   end
 end if Rbbt.etc.entities.exists?
 
