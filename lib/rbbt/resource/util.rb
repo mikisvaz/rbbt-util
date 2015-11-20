@@ -8,6 +8,7 @@ module Path
       l =~ /progress-monitor\.rb/ 
     }.first.sub(/\.rb[^\w].*/,'.rb') if file.nil?
 
+    file = File.expand_path(file)
     return Path.setup(file) if File.exists? File.join(file, relative_to)
 
     while file != '/'
