@@ -285,6 +285,7 @@ class Step
 
   def produce(force=true)
     return self if done? and not dirty?
+
     if error? or aborted?
       if force
         clean
@@ -292,9 +293,13 @@ class Step
         raise "Error in job: #{status}"
       end
     end
+
     clean if dirty? or not running?
+
     run(true) unless started?
+
     join unless done?
+
     self
   end
 
