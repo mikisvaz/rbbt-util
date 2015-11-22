@@ -466,4 +466,50 @@ eum fugiat quo voluptas nulla pariatur?"
     end
   end
 
+  def test_obj2md5
+    str = "string" *  1000000
+    obj1 = [1,2,"test", 0.3, [1,2,3], {:a => [1,2], :b => str}]
+    obj2 = [1,2,"test", 0.3, [1,2,3], {:a => [1,2,3], :b => str}]
+    obj3 = [1,2,:test, 0.3, [1,2,3], {:a => [1,2,"3"], :b => str}]
+    assert_not_equal Misc.obj2md5(obj1), Misc.obj2md5(obj2)
+    assert_equal Misc.obj2md5(obj2), Misc.obj2md5(obj3)
+    hash = Hash[*(0..obj1.length).zip(obj1).flatten]
+
+    Misc.benchmark(10000) do
+      Misc.hash2md5(hash)
+    end
+    Misc.benchmark(10000) do
+      Misc.obj2md5(obj1)
+    end
+    Misc.profile do
+      10.times do
+        Misc.hash2md5(hash)
+      end
+    end
+    Misc.profile do
+      10.times do
+        Misc.obj2md5(obj1)
+      end
+    end
+  end
+
+  def test_sample_large_string
+    str = "string" *  1000000
+
+    max = 100
+    assert_equal Misc.sample_large_obj(str, max).length, max+51
+
+    max = 1000
+    assert_equal Misc.sample_large_obj(str, max).length, max+51
+  end
+
+  def test_sample_large_array
+    str = (0..1000000).to_a
+
+    max = 100
+    assert_equal Misc.sample_large_obj(str, max).length, max+29
+
+    max = 1000
+    assert_equal Misc.sample_large_obj(str, max).length, max+29
+  end
 end

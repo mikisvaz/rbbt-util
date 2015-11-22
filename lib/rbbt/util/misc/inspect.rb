@@ -113,6 +113,18 @@ module Misc
     Digest::MD5.hexdigest(text)
   end
 
+  def self.sample_large_obj(obj, max = 100)
+    length = obj.length
+    head = obj[0..max/2]
+    tail = obj[-max/2..-1]
+    middle = (1..9).to_a.collect{|i| pos = (length / 10) * i + i; obj[pos-1..pos+1]}.flatten 
+    if Array === obj 
+      head + middle + tail + ["LENGTH: #{obj.length}"]
+    else
+      head << "..." << middle*"," << "..." << tail << "(#{obj.length})"
+    end
+  end
+
   HASH2MD5_MAX_STRING_LENGTH = 1000
   HASH2MD5_MAX_ARRAY_LENGTH = 100
   def self.hash2md5(hash)
@@ -184,4 +196,61 @@ module Misc
     end
   end
 
+
+  def self.obj2str(obj)
+    _obj = obj
+    obj = Annotated.purge(obj) if Annotated === obj
+
+    str = case obj
+          when TrueClass
+            'true'
+          when FalseClass
+            'false'
+          when Hash
+            "{"<< obj.collect{|k,v| obj2str(k) << '=>' << obj2str(v)}*"," << "}"
+          when Symbol
+            obj.to_s
+          when String
+            if obj.length > HASH2MD5_MAX_STRING_LENGTH
+              sample_large_obj(obj, HASH2MD5_MAX_STRING_LENGTH)
+            else
+              obj
+            end
+          when Array
+            if obj.length > HASH2MD5_MAX_ARRAY_LENGTH
+              "[" << sample_large_obj(obj, HASH2MD5_MAX_ARRAY_LENGTH).collect{|v| obj2str(v)} * "," << "]"
+            else
+              "[" << obj.collect{|v| obj2str(v)} * "," << "]"
+            end
+          when TSV::Parser
+            remove_long_items(obj)
+          when File 
+            "[File:" << obj.path << "]"
+          else
+            obj_ins = obj.inspect
+            if obj_ins =~ /:0x0/
+              obj_ins.sub(/:0x[a-f0-9]+@/,'')
+            else
+              obj_ins
+            end
+          end
+
+    if defined? Annotated and Annotated === _obj and not (defined? AssociationItem and AssociationItem === _obj)
+      info = Annotated.purge(_obj.info)
+      str << "_" << hash2str(info) 
+    end
+
+    str
+  end
+
+
+  def self.obj2md5(obj)
+    str = obj2str(obj)
+
+    if str.empty?
+      ""
+    else
+      digest(str)
+    end
+  end
 end
