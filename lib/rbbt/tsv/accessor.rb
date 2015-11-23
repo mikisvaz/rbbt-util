@@ -415,12 +415,14 @@ module TSV
         sorted = elems.sort do |a, b| 
           a_value = a.last
           b_value = b.last
+          a_empty = a_value.nil? or (a_value.respond_to?(:empty?) and a_value.empty?)
+          b_empty = b_value.nil? or (b_value.respond_to?(:empty?) and b_value.empty?)
           case
-          when ((a_value.nil? or (a_value.respond_to?(:empty?) and a_value.empty?)) and (b_value.nil? or (b_value.respond_to?(:empty?) and b_value.empty?)))
+          when (a_empty and b_empty)
             0
-          when (a_value.nil? or (a_value.respond_to?(:empty?) and a_value.empty?))
+          when a_empty
             -1
-          when (b_value.nil? or (b_value.respond_to?(:empty?) and b_value.empty?))
+          when b_empty
             1
           when Array === a_value
             if a_value.length == 1 and b_value.length == 1

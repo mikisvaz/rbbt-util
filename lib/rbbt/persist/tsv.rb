@@ -98,9 +98,14 @@ module Persist
 
     path = persistence_path(filename, persist_options, options)
 
-    lock_filename = Persist.persistence_path(path, {:dir => TSV.lock_dir})
+    if ENV["RBBT_UPDATE_TSV_PERSIST"] == 'true' and filename
+      check_options = {:check => [filename]}
+    else
+      check_options = {}
+    end
 
-    if is_persisted?(path) and not persist_options[:update]
+    if is_persisted?(path, check_options) and not persist_options[:update]
+      path = path.find if Path === path
       Log.debug "TSV persistence up-to-date: #{ path }"
       if persist_options[:shard_function]
         return open_sharder(path, false, nil, persist_options[:engine], persist_options, &persist_options[:shard_function]) 
@@ -109,9 +114,11 @@ module Persist
       end
     end
 
+    lock_filename = Persist.persistence_path(path, {:dir => TSV.lock_dir})
     Misc.lock lock_filename do
       begin
-        if is_persisted?(path) and not persist_options[:update]
+        if is_persisted?(path, check_options) and not persist_options[:update]
+          path = path.find if Path === path
           Log.debug "TSV persistence (suddenly) up-to-date: #{ path }"
 
           if persist_options[:shard_function]
@@ -120,6 +127,7 @@ module Persist
             return open_database(path, false, nil, persist_options[:engine] || TokyoCabinet::HDB, persist_options) 
           end
         end
+        path = path.find if Path === path
 
         FileUtils.rm_rf path if File.exists? path
 

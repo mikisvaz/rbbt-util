@@ -270,6 +270,7 @@ module Open
       dir_sub_path.push file
       exists_in_repo(*dir_sub_path)
     else
+      file = file.find if Path === file
       File.exists? file
     end
   end

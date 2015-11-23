@@ -120,6 +120,7 @@ module Path
                          path = find(w, caller_lib, paths)
                          return path if File.exists? path
                        end
+
                        if paths.include? :default
                          find((paths[:default] || :user), caller_lib, paths)
                        else

@@ -237,7 +237,7 @@ module Misc
 
     if defined? Annotated and Annotated === _obj and not (defined? AssociationItem and AssociationItem === _obj)
       info = Annotated.purge(_obj.info)
-      str << "_" << hash2str(info) 
+      str << "_" << obj2str(info) 
     end
 
     str

@@ -298,7 +298,6 @@ module Misc
            end
 
 
-    #options = Misc.add_defaults options, :respawn => true, :cpus => cpus, :into => Set.new 
     options = Misc.add_defaults options, :respawn => true, :cpus => cpus
     options = Misc.add_defaults options, :bar => "Bootstrap in #{ options[:cpus] } cpus: #{ Misc.fingerprint Annotated.purge(elems) }"
     respawn = options[:respawn] and options[:cpus] and options[:cpus].to_i > 1
@@ -311,6 +310,7 @@ module Misc
         res = yield elem
       rescue Interrupt
         Log.warn "Process #{Process.pid} was aborted"
+        raise $!
       end
       res = nil unless options[:into]
       raise RbbtProcessQueue::RbbtProcessQueueWorker::Respawn, res if respawn == :always and cpus > 1

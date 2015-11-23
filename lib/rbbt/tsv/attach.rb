@@ -237,9 +237,13 @@ module TSV
         attach_index other, index, fields
       end
     rescue Exception
-      Log.exception $!
-      same_key = false
-      retry
+      if same_key
+        Log.warn "Could not translate identifiers with same_key"
+        same_key = false
+        retry
+      else
+        raise $!
+      end
     end
     Log.debug("Attachment of fields:#{Misc.fingerprint fields } from #{other.filename.inspect} finished.")
 

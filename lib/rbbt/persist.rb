@@ -27,6 +27,8 @@ module Persist
 
   def self.newer?(path, file)
     return true if not Open.exists? file
+    path = path.find if Path === path
+    file = file.find if Path === file
     return File.mtime(path) - File.mtime(file) if File.mtime(path) < File.mtime(file)
     return false
   end
@@ -82,7 +84,7 @@ module Persist
     options_md5 = Misc.hash2md5 clean_options
     filename  << ":" << options_md5 unless options_md5.empty?
 
-    persistence_dir[filename].find
+    persistence_dir[filename]
   end
 
   TRUE_STRINGS = Set.new ["true", "True", "TRUE", "t", "T", "1", "yes", "Yes", "YES", "y", "Y", "ON", "on"] unless defined? TRUE_STRINGS
@@ -333,10 +335,17 @@ module Persist
       other_options = Misc.process_options persist_options, :other
       path = persistence_path(name, persist_options, other_options || {})
 
+      if ENV["RBBT_UPDATE_TSV_PERSIST"] == 'true' and name and Open.exists?(name)
+        persist_options[:check] ||= []
+        persist_options[:check] << name
+      else
+        check_options = {}
+      end
+
       case 
       when type.to_sym == :memory
         repo = persist_options[:repo] || Persist::MEMORY
-        repo[path] ||= yield
+        repo[path.find] ||= yield
 
       when (type.to_sym == :annotations and persist_options.include? :annotation_repo)
 
@@ -419,7 +428,7 @@ module Persist
         end
 
       else
-        persist_file(path, type, persist_options, &block)
+        persist_file(path.find, type, persist_options, &block)
       end
 
     end
