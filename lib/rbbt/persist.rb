@@ -29,7 +29,10 @@ module Persist
     return true if not Open.exists? file
     path = path.find if Path === path
     file = file.find if Path === file
-    return File.mtime(path) - File.mtime(file) if File.mtime(path) < File.mtime(file)
+    patht = File.mtime(path)
+    filet = File.mtime(file)
+    diff = patht - filet
+    return diff if diff < 0
     return false
   end
 

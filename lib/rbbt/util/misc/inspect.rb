@@ -225,7 +225,9 @@ module Misc
           when TSV::Parser
             remove_long_items(obj)
           when File 
-            "[File:" << obj.path << "]"
+            "<File:" << obj.path << ">"
+          when (defined? Step and Step)
+            "<Step #{obj.path}>"
           else
             obj_ins = obj.inspect
             if obj_ins =~ /:0x0/
