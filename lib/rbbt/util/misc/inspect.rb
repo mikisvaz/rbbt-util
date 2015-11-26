@@ -231,7 +231,7 @@ module Misc
           else
             obj_ins = obj.inspect
             if obj_ins =~ /:0x0/
-              obj_ins.sub(/:0x[a-f0-9]+@/,'')
+              obj_ins.gsub(/:0x[a-f0-9]+/,'')
             else
               obj_ins
             end

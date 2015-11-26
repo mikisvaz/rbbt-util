@@ -106,19 +106,20 @@ def fix_options(workflow, task, job_options)
                 if Array === value
                   value
                 else
+                  array_separator = $array_separator
                   str = case
                         when value == '-'
-                          $array_separator ||= "\n"
+                          array_separator ||= "\n"
                           STDIN.read
                         when (String === value and File.exists?(value))
-                          $array_separator ||= "\n"
+                          array_separator ||= "\n"
                           Open.read(value)
                         else
                           value
                         end
 
-                  if $array_separator
-                    str.split(/#{$array_separator}/)
+                  if array_separator
+                    str.split(/#{array_separator}/)
                   else
                     str.split(/[,|\s]/)
                   end

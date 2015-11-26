@@ -68,6 +68,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     chain_methods.rb
 
     tmpfile.rb
+    tc_cache.rb
     filecache.rb
 
     R.rb
