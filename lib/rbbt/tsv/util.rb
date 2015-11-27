@@ -65,6 +65,7 @@ module TSV
           next if list.empty?
           text << list.collect{|name| [name, format] * "\t"} * "\n" << "\n"
         end
+        text << [gene, tsv.key_field] * "\t" << "\n"
       end
       text
     end
