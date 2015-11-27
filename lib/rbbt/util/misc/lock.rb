@@ -22,7 +22,8 @@ module Misc
     unlock, options = true, unlock if Hash === unlock
     return yield if file.nil? and not Lockfile === options[:lock]
 
-    FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
+    file = file.find if Path === file
+    FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists? File.dirname(File.expand_path(file))
 
 
     case options[:lock]
@@ -33,7 +34,7 @@ module Misc
       lockfile = nil
       unlock = false
     when Path, String
-      lock_path = options[:lock]
+      lock_path = options[:lock].find
       lockfile = Lockfile.new(lock_path, options)
       lockfile.lock 
     else
