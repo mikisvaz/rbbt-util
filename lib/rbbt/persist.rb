@@ -288,7 +288,6 @@ module Persist
       lock_options = Misc.pull_keys persist_options, :lock
       lock_options = lock_options[:lock] if Hash === lock_options[:lock]
       Misc.lock lock_filename, lock_options do |lockfile|
-        iii lockfile
         Misc.insist do
           if is_persisted?(path, persist_options)
             Log.low "Persist up-to-date (suddenly): #{ path } - #{Misc.fingerprint persist_options}"
