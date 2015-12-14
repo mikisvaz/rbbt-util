@@ -19,6 +19,7 @@ module R
         end
         values = [values] unless Array === values
         field_classes = values.collect do |v| 
+          v = v.first if Array === v
           case v
           when FalseClass, TrueClass
             "'logical'"

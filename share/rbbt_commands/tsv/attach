@@ -14,6 +14,7 @@ $ rbbt tsv attach <file1> <file2> [<file3> ...] [options]
 Use - to read from STDIN
 
 -f--fields* Fields to attach (all if not specified)
+-i--identifiers* Identifier file
 -h--help Print this help
 
 EOF
@@ -28,15 +29,21 @@ end
 
 file1, *rest = ARGV
 fields = options[:fields]
+identifiers = options[:identifiers] 
+
+if identifiers.nil?
+  require 'rbbt/sources/organism'
+  Organism.identifiers(Organism.default_code("Hsa"))
+end
 
 fields = fields ? fields.split(/[,|]/).collect{|f| f.strip} : nil
 
-tsv = TSV.open(file1)
+tsv = TSV.open(file1, :unnamed => true)
 
 rest.each do |file2|
   file_fields = TSV.parse_header(file2).all_fields - tsv.all_fields
   these_fields = fields ? fields & file_fields : nil
-  tsv = tsv.attach file2, :fields => these_fields
+  tsv = tsv.attach file2, :fields => these_fields, :identifiers => identifiers
 end
 
 puts tsv.to_s

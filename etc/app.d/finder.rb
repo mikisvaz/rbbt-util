@@ -17,6 +17,9 @@ if ENV['RBBT_FINDER']
 
   organism_hash = {"organism" => /[A-Z][a-z]{2}(?:\/[a-z]{3}20\d\d)?/}
   finder.add_instance(organism_hash, :namespace => organism) 
+
+  snp_hash = {"SNP" => /^rs\d+$/}
+  finder.add_instance(snp_hash, :namespace => organism) 
 end
 set :finder, finder
 Log.debug("Finder started with: #{finder.instances.length} instances")
