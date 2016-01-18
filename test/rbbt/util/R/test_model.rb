@@ -124,7 +124,6 @@ data = rbbt.model.inpute(data, CI ~ Dose, method=drm, classes='numeric', fct=LL.
     y = 10 + 3 * x 
 
     pred = model.predict x
-    iii model.predict_interval(x)
     assert pred > y and pred < y + 4
   end
 end

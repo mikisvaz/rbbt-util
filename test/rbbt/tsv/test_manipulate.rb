@@ -20,7 +20,7 @@ rowa    a|aa    b|BB  C|CC
   end
 
 
-  def _test_through
+  def test_through
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -39,7 +39,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_reorder_simple
+  def test_reorder_simple
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -61,7 +61,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_reorder_remove_field
+  def test_reorder_remove_field
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -83,7 +83,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_slice
+  def test_slice
     content =<<-EOF
 #ID ValueA ValueB Comment
 row1 a b c
@@ -96,7 +96,7 @@ row2 A B C
     end
   end
 
-  def _test_select
+  def test_select
      content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -134,7 +134,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_select_invert
+  def test_select_invert
      content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -165,7 +165,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_process
+  def test_process
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -184,7 +184,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_add_field
+  def test_add_field
      content =<<-EOF
 #Id    LetterValue:ValueA    LetterValue:ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -202,7 +202,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_add_field_double_with_list_result
+  def test_add_field_double_with_list_result
      content =<<-EOF
 #Id    LetterValue:ValueA    LetterValue:ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -221,7 +221,7 @@ row3    a    C    Id4
     end
   end
 
-  def _test_through_headless
+  def test_through_headless
      content =<<-EOF
 row1    a|aa|aaa    b    Id1|Id2
 row2    A    B    Id3
@@ -231,17 +231,17 @@ row3    a    C    Id4
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/)
 
-      _test = false
+      test = false
       tsv.through do
-        _test = true
+        test = true
       end
-      assert _test
+      assert test
 
     end
  
   end
 
-  def _test_reorder_flat
+  def test_reorder_flat
     content =<<-EOF
 #Id    ValueA    
 row1    a aa aaa
@@ -257,7 +257,7 @@ row3    a
     end
   end
 
-  def _test_transpose
+  def test_transpose
      content =<<-EOF
 #: :type=:list
 #Row   vA   vB   vID
@@ -275,7 +275,7 @@ row3    a    C    Id4
  
   end
 
-  def _test_through_flat
+  def test_through_flat
      content =<<-EOF
 #: :type=:flat
 #Row   vA

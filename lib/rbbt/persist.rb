@@ -431,7 +431,8 @@ module Persist
         end
 
       else
-        persist_file(path.find, type, persist_options, &block)
+        path = path.find if Path === path
+        persist_file(path, type, persist_options, &block)
       end
 
     end
