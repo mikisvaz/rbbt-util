@@ -24,10 +24,10 @@ class KnowledgeBase
 
     def identify(db, source, target)
       source_entities = if is_wildcard? source
-                        assignments[source] || :all
-                      else
-                        kb.identify_source db, source
-                      end
+                          assignments[source] || :all
+                        else
+                          kb.identify_source db, source
+                        end
 
       target_entities = if is_wildcard? target
                           assignments[target] || :all
@@ -42,8 +42,8 @@ class KnowledgeBase
     end
     
     def reassign(matches, source, target)
-      assignments[source] = (matches.any? ? matches.source.uniq : []) if is_wildcard? source
-      assignments[target] = (matches.any? ? matches.target.uniq : []) if is_wildcard? target
+      assignments[source] = (matches.any? ? matches.collect{|m|m.partition("~").first}.uniq : nil) if is_wildcard? source
+      assignments[target] = (matches.any? ? matches.collect{|m|m.partition("~").last}.uniq : nil) if is_wildcard? target
     end
 
     def clean_matches(rules, all_matches, assignments)
@@ -53,13 +53,13 @@ class KnowledgeBase
         source, db, target = rule.split /\s+/
 
         if is_wildcard? source
-          assigned = assignments[source]
-          matches = matches.select{|m| assigned.include? m.source }
+          assigned = assignments[source] || []
+          matches = matches.select{|m| assigned.include? m.partition("~").first }
         end
         
         if is_wildcard? target
-          assigned = assignments[target]
-          matches = matches.select{|m| assigned.include? m.target }
+          assigned = assignments[target] || []
+          matches = matches.select{|m| assigned.include? m.partition("~").last }
         end
 
         paths[rule] = matches
@@ -127,9 +127,29 @@ class KnowledgeBase
       return [] unless path_hash
       _ep(path_hash).collect do |path|
         path.zip(clean_matches.values_at(*rules)).collect do |item, matches|
-          matches.first.annotate item.dup
+          matches.select{|m| m == item}.first
         end
       end
+    end
+
+    def traverse_db(db, source, target, conditions)
+      source_entities, target_entities = identify db, source, target
+
+      options = {:source => source_entities, :target => target_entities}
+      matches = kb.subset(db, options)
+
+      if conditions
+        Misc.tokenize(conditions).each do |condition|
+          if condition.index "="
+            key, value = conditions.split("=")
+            matches = matches.select{|m| Misc.match_value(m.info[key.strip], value)}
+          else
+            matches = matches.select{|m| m.info[condition.strip].to_s =~ /\btrue\b/}
+          end
+        end
+      end
+
+      matches
     end
 
 
@@ -139,32 +159,92 @@ class KnowledgeBase
       rules.each do |rule|
         rule = rule.strip
         next if rule.empty?
-        source, db, target, conditions = rule.match(/([^\s]+)\s+([^\s]+)\s+([^\s]+)(?:\s+-\s+([^\s]+))?/).captures
 
-        source_entities, target_entities = identify db, source, target
+        if m = rule.match(/([^\s]+)\s+([^\s]+)\s+([^\s]+)(?:\s+-\s+([^\s]+))?/)
 
-        matches = kb.subset(db, :source => source_entities, :target => target_entities)
+          source, db, target, conditions = m.captures
+          if db.include? '?'
+            all_dbs = kb.registry.keys
+            _name, _sep, _kb = db.partition("@")
+            case
+            when _kb[0] == '?'
+              dbs = all_dbs.select{|_db| _db.partition("@").first == _name}
+            when _name[0] == '?'
+              dbs = all_dbs.select{|_db| _db.include?("@") ? db.partition("@").last == _kb : true}
+            end
+          else
+            dbs = [db]
+          end
 
-        if conditions
-          conditions.split(/\s+/).each do |condition|
-            if condition.index "="
-              key, value = conditions.split("=")
-              matches = matches.select{|m| m.info[key.strip].to_s =~ /\b#{value.strip}\b/}
-            else
-              matches = matches.select{|m| m.info[condition.strip].to_s =~ /\btrue\b/}
+          rule_matches = []
+          dbs.each do |_db|
+            matches = traverse_db(_db, source, target, conditions)
+
+            next if matches.nil? or matches.empty?
+
+            if db.include? '?'
+              _name, _sep, _kb = db.partition("@")
+              case
+              when _kb[0] == '?'
+                assignments[_kb] ||= []
+                assignments[_kb] << _db.partition("@").reject{|p| p.empty?}.last
+              when _name[0] == '?'
+                assignments[_name] ||= []
+                assignments[_name] << _db.partition("@").first
+              end
+            end
+
+            matches.each do |m|
+              rule_matches << m
             end
           end
+
+          reassign rule_matches, source, target
+
+          all_matches << rule_matches
+        else
+          raise "Rule not understood: #{rule}"
         end
-
-        reassign matches, source, target
-
-        all_matches << matches
       end
 
       paths = find_paths rules, all_matches, assignments
-      
+
       [assignments, paths]
     end
+
+    #def traverse
+    #  all_matches = []
+
+    #  rules.each do |rule|
+    #    rule = rule.strip
+    #    next if rule.empty?
+    #    source, db, target, conditions = rule.match(/([^\s]+)\s+([^\s]+)\s+([^\s]+)(?:\s+-\s+([^\s]+))?/).captures
+
+    #    source_entities, target_entities = identify db, source, target
+
+    #    matches = kb.subset(db, :source => source_entities, :target => target_entities)
+
+    #    if conditions
+    #      conditions.split(/\s+/).each do |condition|
+    #        if condition.index "="
+    #          key, value = conditions.split("=")
+    #          matches = matches.select{|m| m.info[key.strip].to_s =~ /\b#{value.strip}\b/}
+    #        else
+    #          matches = matches.select{|m| m.info[condition.strip].to_s =~ /\btrue\b/}
+    #        end
+    #      end
+    #    end
+
+    #    reassign matches, source, target
+
+    #    all_matches << matches
+    #  end
+
+    #  paths = find_paths rules, all_matches, assignments
+
+    #  [assignments, paths]
+    #end
+
   end
 
   def traverse(rules)

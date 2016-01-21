@@ -23,6 +23,7 @@ begin
     gem.add_dependency('bio-bgzf')
     gem.add_dependency('term-ansicolor')
     gem.add_dependency('rest-client')
+    gem.add_dependency('to_regexp')
     #gem.add_dependency('narray')
     #gem.add_dependency('sass-css-importer')
     #gem.add_dependency('simplews')

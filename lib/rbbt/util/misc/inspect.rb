@@ -207,7 +207,7 @@ module Misc
           when FalseClass
             'false'
           when Hash
-            "{"<< obj.collect{|k,v| obj2str(k) << '=>' << obj2str(v)}*"," << "}"
+            "{"<< obj.collect{|k,v| obj2str(k) + '=>' << obj2str(v)}*"," << "}"
           when Symbol
             obj.to_s
           when String

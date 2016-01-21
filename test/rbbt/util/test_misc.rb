@@ -512,4 +512,18 @@ eum fugiat quo voluptas nulla pariatur?"
     max = 1000
     assert_equal Misc.sample_large_obj(str, max).length, max+29
   end
+
+  def test_match_value
+    assert Misc.match_value("10", "10")
+    assert Misc.match_value("Hi", /hi/i)
+    assert Misc.match_value("Hi", /Hi/)
+    assert Misc.match_value("Hi", "/Hi/")
+    assert Misc.match_value("Hi", "/hi/i")
+    assert Misc.match_value("15", "<=20")
+    assert Misc.match_value("15", ">14")
+    assert Misc.match_value("15", "! >15")
+    assert Misc.match_value("15", "! >15")
+    assert Misc.match_value("15", [14, 15, 25])
+    assert ! Misc.match_value("15", [14, 25])
+  end
 end
