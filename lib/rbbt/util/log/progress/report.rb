@@ -43,8 +43,14 @@ module Log
         @mean_max = mean if mean > @mean_max
       end
 
-      str = "#{ Log.color :blue, thr.to_i.to_s } per sec."
-      str << " #{ Log.color :yellow, mean.to_i.to_s } avg. #{Log.color :yellow, @mean_max.to_i.to_s} max." if @mean_max > 0
+      if mean.nil? or mean.to_i > 1
+        str = "#{ Log.color :blue, thr.to_i.to_s } per sec."
+        str << " #{ Log.color :yellow, mean.to_i.to_s } avg. #{Log.color :yellow, @mean_max.to_i.to_s} max." if @mean_max > 0
+      else
+        str = "#{ Log.color :blue, (1/thr).ceil.to_s } secs each"
+        str << " #{ Log.color :yellow, (1/mean).ceil.to_s } avg. #{Log.color :yellow, (1/@mean_max).ceil.to_s} min." if @mean_max > 0
+      end
+
       str
     end
 
