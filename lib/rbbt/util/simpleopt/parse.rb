@@ -41,7 +41,12 @@ module SOPT
     info = {}
 
     inputs = []
-    opt_str.split(/[:\n]+/).each do |entry|
+    if opt_str.include? "\n"
+      re = /\n+/
+    else
+      re = /:/
+    end
+    opt_str.split(re).each do |entry|
       entry.strip!
       next if entry.empty?
       names, _sep, description = entry.partition /\s+/
