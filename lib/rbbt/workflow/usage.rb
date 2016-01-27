@@ -19,7 +19,9 @@ module Task
       puts
     end
 
+    selects = []
     if inputs.any?
+      inputs.zip(input_types.values_at(*inputs)).select{|i,t| t.to_sym == :select and input_options[i][:select_options] }.each{|i,t| selects << [i, input_options[i][:select_options]]  }
       puts SOPT.input_doc(inputs, input_types, input_descriptions, input_defaults, true)
       puts
     end
@@ -30,6 +32,7 @@ module Task
       seen = []
       task_inputs = dep_inputs deps, workflow
       task_inputs.each do |task,new_inputs|
+        task.inputs.zip(task.input_types.values_at(*task.inputs)).select{|i,t| t.to_sym == :select and task.input_options[i][:select_options] }.each{|i,t| selects << [i, task.input_options[i][:select_options]]  }
         puts "  #{Log.color :yellow, task.name.to_s}:"
         puts
         puts SOPT.input_doc(new_inputs, task.input_types, task.input_descriptions, task.input_defaults, true)
@@ -39,6 +42,15 @@ module Task
 
     puts Log.color(:magenta, "Returns: ") << Log.color(:blue, result_type.to_s) << "\n"
     puts
+    
+    if selects.any?
+      puts Log.color(:magenta, "Input options: ") << Log.color(:blue, result_type.to_s) << "\n"
+      puts
+      selects.each do |input,options|
+        puts Log.color(:blue, input.to_s + ": ") << Misc.format_paragraph(options.collect{|o| o.to_s} * ", ") << "\n"
+        puts
+      end
+    end
   end
 end
 
