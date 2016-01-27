@@ -22,6 +22,7 @@ template = template.sub('.haml','')
 
 ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
 ENV["RServe-session"] = options[:RServe_session] 
+ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
 
 raise rbbt_usage unless template
 
@@ -45,7 +46,7 @@ app.helpers Sinatra::RbbtMiscHelpers
 app.helpers Sinatra::RbbtToolHelper
 
 app.get '/' do
-  template_render(template, @clean_params)
+  template_render(template, @clean_params, "Template cache", :cache_type => :asynchronous)
 end
 app.instance_eval Rbbt.etc['app.d/base.rb'].read
 app.use Rack::Deflater
