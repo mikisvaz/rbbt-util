@@ -44,13 +44,16 @@ module R
         end
 
         TmpFile.with_file nil, true, :extension => 'svg' do |tmpfile|
+
           data.R <<-EOF, sources, options
   plot = { #{script} }
 
   rbbt.SVG.save('#{tmpfile}', plot, width = #{R.ruby2R width}, height = #{R.ruby2R height})
   data = NULL
           EOF
-        Open.read(tmpfile).gsub(/(glyph\d+-\d+)/, '\1-' + File.basename(tmpfile))
+
+          Open.read(tmpfile).gsub(/(glyph\d+-\d+)/, '\1-' + File.basename(tmpfile))
+
         end
       else
 
@@ -68,7 +71,6 @@ module R
   end
 
   module PNG
-
     def self.ggplotPNG(filename, data, script = nil, width = nil, height = nil, options = {})
       width ||= 3
       height ||= 3
@@ -107,6 +109,51 @@ module R
 plot = { #{script} }
 
 ggsave('#{filename}', plot, width = #{R.ruby2R width}, height = #{R.ruby2R height})
+data = NULL
+      EOF
+    end
+
+    def self.plot(filename, data, script = nil, width = nil, height = nil, options = {})
+      width ||= 3
+      height ||= 3
+      values = []
+
+      sources = [:plot, options[:source]].flatten.compact
+
+      data.each do |k,v|
+        v = Array === v ? v : [v]
+        next if v == "NA" or v.nil? or v.include? "NA" or v.include? nil
+        values = v
+        break
+      end
+
+      values = [values] unless Array === values
+
+      field_classes = values.collect do |v| 
+        case v
+        when FalseClass, TrueClass
+          "'logical'"
+        when Fixnum, Float
+          "'numeric'"
+        when String
+          if v.strip =~ /^[-+]?[\d\.]+$/
+            "'numeric'"
+          else
+            "'character'"
+          end
+        when Symbol
+          "'factor'"
+        else
+          ":NA"
+        end
+      end
+
+      options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')' if field_classes.any?
+
+      data.R <<-EOF, :plot, options
+png("#{ filename }", #{ width }, #{ height })
+{ #{script} }
+dev.off()
 data = NULL
       EOF
     end
