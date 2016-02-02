@@ -44,7 +44,7 @@ module Task
     puts
     
     if selects.any?
-      puts Log.color(:magenta, "Input options: ") << Log.color(:blue, result_type.to_s) << "\n"
+      puts Log.color(:magenta, "Input select options")
       puts
       selects.each do |input,options|
         puts Log.color(:blue, input.to_s + ": ") << Misc.format_paragraph(options.collect{|o| o.to_s} * ", ") << "\n"

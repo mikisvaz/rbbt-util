@@ -6,31 +6,31 @@ require 'rbbt/persist/tsv/packed_index'
 begin
   require 'rbbt/persist/tsv/tokyocabinet'
 rescue Exception
-  Log.warn "The tokyocabinet gem could not be loaded: persistence over TSV files will fail"
+  Log.warn "The tokyocabinet gem could not be loaded. Persistence using this engine will fail."
 end
 
 begin
   require 'rbbt/persist/tsv/lmdb'
 rescue Exception
-  Log.debug "The lmdb gem could not be loaded. Persistance using this engine will fail."
+  Log.debug "The lmdb gem could not be loaded. Persistence using this engine will fail."
 end
 
 begin
   require 'rbbt/persist/tsv/leveldb'
 rescue Exception
-  Log.debug "The LevelDB gem could not be loaded. Persistance using this engine will fail."
+  Log.debug "The LevelDB gem could not be loaded. Persistence using this engine will fail."
 end
 
 begin
   require 'rbbt/persist/tsv/cdb'
 rescue Exception
-  Log.debug "The CDB gem could not be loaded. Persistance using this engine will fail."
+  Log.debug "The CDB gem could not be loaded. Persistence using this engine will fail."
 end
 
 begin
   require 'rbbt/persist/tsv/kyotocabinet'
 rescue Exception
-  Log.debug "The kyotocabinet gem could not be loaded. Persistance using this engine will fail."
+  Log.debug "The kyotocabinet gem could not be loaded. Persistence using this engine will fail."
 end
 
 module Persist

@@ -35,13 +35,15 @@ raise ParameterException, "Not a valid directory" unless File.directory? directo
 directory = Path.setup directory.dup
 keep = options[:keep]
 
+require 'rbbt/util/misc/bgzf'
+
 Log.info Log.color(:magenta, "Processing chromosomes")
 chromosome_files = directory.glob('**/chromosome_*')
 TSV.traverse chromosome_files, :type => :array, :bar => "Processing chromosomes" do |chr_file|
   next if chr_file =~ /.bgz$/
   compressed_file = chr_file + '.bgz'
   Log.info "Compressing #{ chr_file } into #{ compressed_file }"
-  CMD.cmd("bgzip '#{ chr_file }' -c > #{ compressed_file }")
+  CMD.cmd("#{Bgzf.bgzip_cmd} '#{ chr_file }' -c > #{ compressed_file }")
   begin
     Open.read(compressed_file)
     if keep
