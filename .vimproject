@@ -419,7 +419,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    util.R
   }
   software=install/software filter="*"{
-   TABIX
+   HTSLIB
    zran=zran{
     zran.c
    }
