@@ -3,20 +3,17 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-#options = SOPT.get "-e--environment*:-p--port*:-s--server*:-f--finder:-R--Rserve_session*:-ho--host*:--views*"
-
 $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
 options = SOPT.setup <<EOF
-Description
+Start an rbbt app
 
-$ rbbt command command [options] <filename.tsv|->
-
-Use - to read from STDIN
+$ rbbt app start [options] <app_name>
 
 -h--help Print this help
 -e--environment* Execution environment: production or development
--ho--host* Host name
+-Ho--Host* Host name
+-B--Bind* Bind IP
 -p--port* TCP port
 -s--server* Server type:  thin, webrick, unicorn, etc
 -f--finder Start server with finder functionality

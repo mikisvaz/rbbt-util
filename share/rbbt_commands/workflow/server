@@ -14,7 +14,32 @@ require 'rbbt/rest/knowledge_base'
 require 'rbbt/rest/helpers'
 require 'rbbt/rest/web_tool'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*:-w--workflows*"
+#options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*:-w--workflows*"
+
+options = SOPT.setup <<EOF
+Start an rbbt app
+
+$ rbbt app start [options] <app_name>
+
+-h--help Print this help
+-e--environment* Execution environment: production or development
+-b--bind* Bind to a particular IP (net interface)
+-p--port* TCP port
+-s--server* Server type:  thin, webrick, unicorn, etc
+-f--finder Start server with finder functionality
+-R--Rserve_session* Rserve session to use, otherwise start new one
+-w--workflows* List of additional workflows to load
+--views* Directory with view templates
+EOF
+
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.usage
+  end
+  exit 0
+end
 
 workflow = ARGV.first
 
