@@ -151,9 +151,25 @@ class Step
 
     @seen.each do |dependency| 
       next unless dependencies.include? dependency
-      Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} -- #{Log.color :blue, dependency.path}"
+
       begin
-        dependency.run(true) unless dependency.done? or dependency.started? 
+
+        if not dependency.done?
+          if dependency.started?
+            if dependency.streaming?
+              Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} streaming -- #{Log.color :blue, dependency.path}"
+            else
+              Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joining -- #{Log.color :blue, dependency.path}"
+              dependency.join unless dependency.streaming?
+            end
+          else
+            Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} starting -- #{Log.color :blue, dependency.path}"
+            dependency.run(true) 
+          end
+        else
+          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} done -- #{Log.color :blue, dependency.path}"
+        end
+
       rescue Aborted
         Log.error "Aborted dep. #{Log.color :red, dependency.task.name.to_s}"
         raise $!
