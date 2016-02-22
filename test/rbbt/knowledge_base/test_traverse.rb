@@ -17,6 +17,43 @@ class TestKnowledgeBaseTraverse < Test::Unit::TestCase
     assert res.first.include? "?1"
   end
 
+  def test_traverse2
+    rules = []
+    rules << "?target =pina SF3B1"
+    rules << "?1 pina ?target - Method=MI:0006"
+    rules << "TP53 pina ?2"
+    rules << "?2 pina ?1"
+    res =  kb.traverse rules
+    assert res.first.include? "?1"
+  end
+
+  def test_traverse3
+    rules = []
+    rules << "?target = ENSG00000115524"
+    rules << "?1 pina ?target - Method=MI:0006"
+    rules << "TP53 pina ?2"
+    rules << "?2 pina ?1"
+    res =  kb.traverse rules
+    assert res.first.include? "?1"
+  end
+
+
+  def test_traverse_acc
+    Log.severity = 0
+    rules_str=<<-EOF
+?target{
+  ?target pina SF3B1
+}
+?1 pina TP53
+?1 pina ?target
+    EOF
+    rules = rules_str.split "\n"
+    res =  kb.traverse rules
+    iii res
+    assert res.first.include? "?1"
+  end
+
+
   def test_path
     rules = []
     rules << "?1 pina ARPC2"

@@ -13,14 +13,18 @@ $ rbbt tsv assemble_pdf_table file.txt
 When extracting tables from PDF they are often laid out one column at a time, divided by pages.
 This command takes a file with the following structure:
 
-1 A few lines containing table headers, one per line
-2 A group of lines containing the values for the first column of the first page, ending in an empty line
-3 More groups of lines corresponding to other columns
-4 Repetitions of 2 and 3 for more pages
+1. A few lines containing table headers, one per line
+
+2. A group of lines containing the values for the first column of the first page, ending in an empty line
+
+3. More groups of lines corresponding to other columns
+
+4. Repetitions of 2 and 3 for more pages
 
 This script will take care of matching the columns read with the headers specified
 
 -h--help Help
+-r--row Each block of lines is a row, not a column
 EOF
 
 SOPT.usage if options[:help]
@@ -50,19 +54,28 @@ while lines and lines.any?
   lines = lines[block_size+1..-1]
   columns[0] << first_block
   (1..num_columns-1).each do |pos|
+    next if lines.nil?
     block = lines[0..block_size-1]
     lines = lines[block_size+1..-1]
     columns[pos] << block
   end
 end
 
-full_columns = []
-num_columns.times do |i|
-  column = columns[i]
-  full_columns << column.flatten
-end
+if options[:row]
+  columns.each do |n,list|
+    list.each do |values|
+      puts values * "\t"
+    end
+  end
+else
+  full_columns = []
+  num_columns.times do |i|
+    column = columns[i]
+    full_columns << column.flatten
+  end
 
-puts "#" << fields * "\t"
-Misc.zip_fields(full_columns).zip do |values|
-  puts values * "\t"
+  puts "#" << fields * "\t"
+  Misc.zip_fields(full_columns).zip do |values|
+    puts values * "\t"
+  end
 end

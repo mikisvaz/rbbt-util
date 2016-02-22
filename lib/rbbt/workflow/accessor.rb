@@ -295,7 +295,11 @@ class Step
     return nil if info[:pid].nil?
 
     pid = @pid || info[:pid]
-    return Misc.pid_exists?(pid) 
+    if Misc.pid_exists?(pid) 
+      pid
+    else
+      false
+    end
   end
 
   def error?

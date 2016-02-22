@@ -237,6 +237,11 @@ module Persist
         callback = stream.respond_to?(:callback)? stream.callback : nil
         abort_callback = stream.respond_to?(:abort_callback)? stream.abort_callback : nil
 
+        # This is to avoid calling the callbacks twice, since they have been
+        # moved to the new 'res' stream
+        stream.callback = nil
+        stream.abort_callback = nil
+
         res = tee_stream(stream, path, type, callback, abort_callback, lockfile)
 
         res.lockfile = lockfile

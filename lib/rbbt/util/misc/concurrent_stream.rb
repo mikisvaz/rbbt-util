@@ -171,4 +171,12 @@ module ConcurrentStream
     end
   end
 
+  def add_callback(&block)
+    old_callback = callback
+    @callback = Proc.new do 
+      old_callback.call if old_callback
+      block.call
+    end
+  end
+
 end

@@ -38,7 +38,7 @@ module Entity
 
             begin
               index = TSV.translation_index(identifier_files, format, source, :persist => true)
-              raise "No index from #{ source } to #{ format }: #{Misc.fingerprint identifier_files}" if index.nil?
+              raise "No index from #{ Misc.fingerprint source } to #{ Misc.fingerprint format }: #{Misc.fingerprint identifier_files}" if index.nil?
               index.unnamed = true
               index
             rescue

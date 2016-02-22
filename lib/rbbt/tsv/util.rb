@@ -179,14 +179,17 @@ module TSV
     if Hash === entry_hash 
       sep = entry_hash[:sep] ? entry_hash[:sep] : "\t"
       preamble = entry_hash[:preamble]
+      header_hash = entry_hash[:header_hash]
     end
+
+    header_hash = "#" if header_hash.nil?
 
     preamble = "#: " << Misc.hash2string(entry_hash.merge(:key_field => nil, :fields => nil)) << "\n" if preamble.nil? and entry_hash and entry_hash.values.compact.any?
 
     str = "" 
     str << preamble.strip << "\n" if preamble and not preamble.empty?
     if fields
-      str << "#" << (key_field || "ID").to_s << sep << (fields * sep) << "\n" 
+      str << header_hash << (key_field || "ID").to_s << sep << (fields * sep) << "\n" 
     end
 
     str

@@ -1,8 +1,9 @@
 module Docker
-  def self.run(image,cmd, options)
+  def self.run(image, cmd, options)
     mounts, job_inputs, directory, pipe = Misc.process_options options, :mounts, :job_inputs, :directory, :pipe
 
     if mounts
+      mounts.each{|t,s| FileUtils.mkdir_p s unless File.exists? s}
       mount_cmd = mounts.sort.collect{|t,s| "-v " + ["'" + s + "'", "'" + t + "'"] * ":" } * " "
     else
       mount_cmd = ""

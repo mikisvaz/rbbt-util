@@ -51,6 +51,7 @@ class KnowledgeBase
 
       rules.zip(all_matches).each do |rule, matches|
         source, db, target = rule.split /\s+/
+        next if matches.nil?
 
         if is_wildcard? source
           assigned = assignments[source] || []
@@ -74,19 +75,22 @@ class KnowledgeBase
       rule, *rest = rules
       source, db, target = rule.split /\s+/
 
+      wildcard_source = is_wildcard? source
+      wildcard_target = is_wildcard? target
+
       paths = {}
       matches = clean_matches[rule]
       Annotated.purge(matches).each do |match|
         new_assignments = nil
         match_source, _sep, match_target = match.partition "~"
 
-        if is_wildcard? source
+        if wildcard_source
           next if assignments[source] and assignments[source]  != match_source
           new_assignments ||= assignments.dup
           new_assignments[source] = match_source
         end
 
-        if is_wildcard? target
+        if wildcard_target
           next if assignments[target] and assignments[target]  != match_target
           new_assignments ||= assignments.dup
           new_assignments[target] = match_target
@@ -136,6 +140,7 @@ class KnowledgeBase
       source_entities, target_entities = identify db, source, target
 
       options = {:source => source_entities, :target => target_entities}
+      Log.debug "Traversing #{ db }: #{Misc.fingerprint options}"
       matches = kb.subset(db, options)
 
       if conditions
@@ -152,29 +157,41 @@ class KnowledgeBase
       matches
     end
 
+    def id_dbs(db)
+      if db.include? '?'
+        all_dbs = kb.registry.keys
+        _name, _sep, _kb = db.partition("@")
+        case
+        when _name[0] == '?'
+          dbs = all_dbs.select{|_db| 
+            n,_s,d=_db.partition("@"); 
+            d.nil? or d.empty? or (d == _kd and assignments[_name].include?(n))
+          }
+        when _kb[0] == '?'
+          dbs = all_dbs.select{|_db| n,_s,d=_db.partition("@"); n == _name and assignments[_kb].include?(d)}
+        end
+      else
+        dbs = [db]
+      end
+
+      dbs
+    end
 
     def traverse
       all_matches = []
-
+      path_rules = []
+      acc_var = nil
       rules.each do |rule|
         rule = rule.strip
         next if rule.empty?
 
-        if m = rule.match(/([^\s]+)\s+([^\s]+)\s+([^\s]+)(?:\s+-\s+([^\s]+))?/)
+        if m = rule.match(/([^\s]+)\s+([^\s=]+)\s+([^\s]+)(?:\s+-\s+([^\s]+))?/)
+          Log.debug "Traverse rule: #{rule}"
+          path_rules << rule
 
           source, db, target, conditions = m.captures
-          if db.include? '?'
-            all_dbs = kb.registry.keys
-            _name, _sep, _kb = db.partition("@")
-            case
-            when _kb[0] == '?'
-              dbs = all_dbs.select{|_db| _db.partition("@").first == _name}
-            when _name[0] == '?'
-              dbs = all_dbs.select{|_db| _db.include?("@") ? db.partition("@").last == _kb : true}
-            end
-          else
-            dbs = [db]
-          end
+
+          dbs = id_dbs(db)
 
           rule_matches = []
           dbs.each do |_db|
@@ -197,17 +214,52 @@ class KnowledgeBase
             matches.each do |m|
               rule_matches << m
             end
+
+            assignments.each{|k,v| v.uniq! if v}
           end
 
           reassign rule_matches, source, target
 
           all_matches << rule_matches
+
+        elsif m = rule.match(/([^\s=]+)\s*=([^\s]*)\s*(.*)/)
+          Log.debug "Assign rule: #{rule}"
+          var, db, value_str = m.captures
+          names = value_str.split(",").collect{|v| v.strip}
+          if db.empty?
+            ids = names
+          else
+            dbs = id_dbs(db)
+            ids = names.collect{|name| 
+              id = nil
+              dbs.each do |db|
+                sid, tid = identify db, name, name
+                id = (sid + tid).compact.first
+                break if id
+              end
+              id
+            }
+          end
+          assignments[var] = ids
+
+        elsif m = rule.match(/(\?[^\s{]+)\s*{/)
+          acc_var = m.captures.first
+          Log.debug "Start assign block: #{acc_var}"
+        elsif m = rule.match(/^\s*}\s*$/)
+          Log.debug "Close assign block: #{acc_var}"
+          saved_assign = assignments[acc_var]
+          assignments.clear
+          assignments[acc_var] = saved_assign
+          all_matches = []
+          path_rules = []
         else
           raise "Rule not understood: #{rule}"
         end
       end
 
-      paths = find_paths rules, all_matches, assignments
+      Log.debug "Finding paths: #{all_matches.length}"
+      paths = find_paths path_rules, all_matches, assignments
+      Log.debug "Found paths: #{paths.length}"
 
       [assignments, paths]
     end
