@@ -36,5 +36,37 @@ class TestEntityIdentifiers < Test::Unit::TestCase
     assert_match "hsa", Gene.setup("ENSG00000141510", "Ensembl Gene ID", "Hsa/feb2014").to("KEGG Gene ID")
     assert_match "TP53", Gene.setup("ENSG00000141510", "Ensembl Gene ID", "Hsa/feb2014").to("KEGG Gene ID").to(:name)
   end
-end
 
+  def ___test_complex
+
+    file = Path.setup('/home/mvazquezg/git/workflows/PanCancer/share/network/gene_sets/CORUM_protein_complexes.gmt')
+    name = File.basename(file).sub(/\.gmt$/,'')
+    organism = "Hsa/feb2014"
+    key_field = "#{ name } Pathway ID"
+    description_field = "#{name} Pathway Description"
+    description_file = file.find + '.identifiers'
+    tsv = TSV.open(file, :fix => Proc.new{|l| p=l.split"\t"; [p[0], p[1], p[2..-1]*"|"]*"\t"})
+    tsv.namespace = organism
+    tsv.unnamed = true
+    gene_field, count = Organism.guess_id(organism, tsv.values.collect{|l| l.last}.flatten.uniq )
+    tsv.key_field = key_field
+    tsv.fields = [description_field, gene_field]
+    descriptions = tsv.slice(description_field)
+    Open.write(description_file, descriptions.to_single.to_s) #unless File.exists? description_file
+    values = tsv.slice(gene_field)
+    values.identifiers = description_file
+
+    mod = Module.new
+    mod_name = Misc.camel_case(key_field.gsub(/\s+/,'_').sub(/_ID$/,''))
+    Object.const_set(mod_name, mod)
+    mod.instance_eval do
+      extend Entity
+      add_identifiers Path.setup(description_file), key_field, description_field
+      
+      annotation :format
+    end
+    entity = "CORUM:6052"
+    mod.setup(entity, :format => key_field)
+    puts entity.name
+  end
+end

@@ -111,6 +111,7 @@ module TSV
             return index
           end
         rescue Exception
+          Log.exception $!
           Log.error "Exception reading identifier file: #{file.find}"
         end
       end

@@ -31,8 +31,10 @@ def usage(workflow = nil, task = nil, exception=nil)
   else
     puts Log.color :magenta, workflow.to_s
     puts Log.color :magenta, "=" * workflow.to_s.length
-    puts
-    puts workflow.documentation[:description]
+    if workflow.documentation[:description] and not workflow.documentation[:description].empty?
+      puts
+      puts workflow.documentation[:description]
+    end
     puts
     workflow.doc(task)
   end
@@ -106,19 +108,20 @@ def fix_options(workflow, task, job_options)
                 if Array === value
                   value
                 else
+                  array_separator = $array_separator
                   str = case
                         when value == '-'
-                          $array_separator ||= "\n"
+                          array_separator ||= "\n"
                           STDIN.read
                         when (String === value and File.exists?(value))
-                          $array_separator ||= "\n"
+                          array_separator ||= "\n"
                           Open.read(value)
                         else
                           value
                         end
 
-                  if $array_separator
-                    str.split(/#{$array_separator}/)
+                  if array_separator
+                    str.split(/#{array_separator}/)
                   else
                     str.split(/[,|\s]/)
                   end
@@ -169,24 +172,26 @@ The first time a job is executed it will save the result. Once the job is done
 you can re-doit using the `clean` parameter. The `recursive_clean` cleans all
 the job dependencies recursively.
 
--h--help Show this help:
--wd--workdir* Change the working directory of the workflow:
--as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default:
--fs--field_separator* Change the character that separates fields of TSV files '\\t' by default:
--jn--jobname* Job name to use. The name 'Default' is used by default:
--pn--printname Print the name of the job and exit without starting it:
--pf--printpath Print the path of the job result:
--cl--clean Clean the last step of the job so that it gets recomputed:
--rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely:
---fork Run job asyncronously and monitor progress. It monitors detached processes as well:
---detach Run job asyncronously and detach process:
---exec Run job with no persistence:
--O--output* Save job result into file:
--jf--job_file* Output one of the job produced files:
--ljf--list_job_files List all the files produced in that step:
+-h--help Show this help
+-wd--workdir* Change the working directory of the workflow
+-as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default
+-fs--field_separator* Change the character that separates fields of TSV files '\\t' by default
+-jn--jobname* Job name to use. The name 'Default' is used by default
+-pn--printname Print the name of the job and exit without starting it
+-pf--printpath Print the path of the job result
+-cl--clean Clean the last step of the job so that it gets recomputed
+-rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely
+--fork Run job asyncronously and monitor progress. It monitors detached processes as well
+--detach Run job asyncronously and detach process
+--exec Run job with no persistence
+-O--output* Save job result into file
+-jf--job_file* Output one of the job produced files
+-ljf--list_job_files List all the files produced in that step
 --load_inputs* Load inputs from a directory
---info Show the job info:
---provenance Report the jobs provenance:
+--info Show the job info
+--provenance Report the jobs provenance
+-W--workflows* Load a list of workflows
+-R--requires* Require a list of files
 EOF
 
 workflow = ARGV.shift
@@ -216,6 +221,22 @@ end
 
 workflow = Workflow.require_workflow workflow
 
+if options[:workflows]
+  require 'rbbt/workflow'
+  workflows = options[:workflows].split(',')
+  workflows.each do |workflow|
+    workflow.strip!
+    Workflow.require_workflow workflow
+  end
+end
+
+if options[:requires]
+  requires = options[:requires].split(',')
+  requires.each do |req|
+    req.strip!
+    require req
+  end
+end
 # Set task
 namespace = nil, nil
 
@@ -330,7 +351,7 @@ begin
   if options.delete(:printpath)
     job.join
     if Open.remote? job.path
-      puts job.path + Log.color(:blue, "?_format=raw")
+      puts job.url + Log.color(:blue, "?_format=raw")
     else
       puts job.path
     end

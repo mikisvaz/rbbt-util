@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 
 require 'rbbt/util/R'
 
@@ -8,10 +9,6 @@ Calculate density
 
 $ rbbt stat density <file>
 
-Display summary information. Works with Tokyocabinet HDB and BDB as well.
-
--tch--tokyocabinet File is a TC HDB
--tcb--tokyocabinet_bd File is a TC BDB
 -h--help Help
 EOF
 

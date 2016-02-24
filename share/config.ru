@@ -40,6 +40,9 @@ app_eval app, Rbbt.etc['app.d/base.rb'].find
 #{{{ RESOURCES
 load_file Rbbt.etc['app.d/resources.rb'].find
 
+#{{{ KNOWLEDGEBASE
+load_file Rbbt.etc['app.d/knowledge_bases.rb'].find
+
 #{{{ ENTITIES
 load_file Rbbt.etc['app.d/entities.rb'].find
 

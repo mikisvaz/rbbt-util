@@ -34,6 +34,7 @@ module Association
       Log.debug("Changing source format from #{tsv.key_field} to #{source_final_format}")
 
       identifier_files = tsv.identifier_files.dup
+      identifier_files = [Organism.identifiers("NAMESPACE")] if identifier_files.empty?
       identifier_files.concat Entity.identifier_files(source_final_format) if defined? Entity
       identifier_files.uniq!
       identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
@@ -140,6 +141,11 @@ module Association
 
   def self.database(file,  options = {})
     database = case file
+               when (defined? Step and Step)
+                 file.clean if file.error? or file.aborted? or file.dirty?
+                 file.run(true) unless file.done? or file.started?
+                 file.join unless file.done?
+                 open_stream(TSV.get_stream(file), options.dup)
                when TSV
                  file = file.to_double unless file.type == :double
                  reorder_tsv(file, options.dup)

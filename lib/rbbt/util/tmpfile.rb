@@ -34,7 +34,11 @@ module TmpFile
       tmpfile += ".#{options[:extension]}"
     end
 
-    File.open(tmpfile, 'w') do |f| f.write content end if content != nil
+    if IO === content
+      Misc.consume_stream(content, false, tmpfile)
+    else
+      File.open(tmpfile, 'w') do |f| f.write content end if content != nil
+    end
 
     result = yield(tmpfile)
 

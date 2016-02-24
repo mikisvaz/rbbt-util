@@ -16,9 +16,10 @@ module Association
     persist = persist_options[:persist]
 
     file = version_file(file, options[:namespace]) if options[:namespace] and String === file
-    file = file.call if Proc === file
 
     data = Persist.persist_tsv(file, "Association Database", options, persist_options) do |data|
+      file = file.call if Proc === file
+
       options = options.dup
       tsv = Association.database(file, options.merge(:persist => persist, :unnamed => true))
       tsv = tsv.to_double unless tsv.type == :double

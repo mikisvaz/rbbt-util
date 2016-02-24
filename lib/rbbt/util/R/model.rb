@@ -1,4 +1,3 @@
-require 'rbbt/util/R'
 
 module R
 
@@ -31,6 +30,14 @@ module R
         fit(data, method || "lm", options)
       end
     end
+
+    def self.load(model_file)
+      model = Model.new nil, nil, nil, :model_file => model_file
+      formula = Open.read(model_file + '.formula')
+      model.formula = formula
+      model
+    end
+
 
     def colClasses(tsv)
       return nil unless TSV === tsv
@@ -76,7 +83,7 @@ data = NULL
 
       script = <<-EOF
 model = rbbt.model.load('#{model_file}');
-predict(model, data.frame(#{field} = #{R.ruby2R value}), interval=#{R.ruby2R interval});
+predict(model, data.frame(#{field} = #{R.ruby2R value}), interval=#{R.ruby2R interval}, level=0.90);
       EOF
 
       res = R.eval_a script
@@ -132,6 +139,7 @@ model = rbbt.model.fit(data, #{formula}, method=#{method}#{args_str})
 save(model, file='#{model_file}')
 data = NULL
       EOF
+      Open.write(model_file + '.formula', formula)
     end
   end
 end

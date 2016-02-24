@@ -31,7 +31,7 @@ module Log
     def thr_msg
       thr = self.thr
       if @history.nil?
-        @history ||= []
+        @history ||= [thr]
       else
         @history << thr
         @history.shift if @history.length > 20
@@ -43,8 +43,14 @@ module Log
         @mean_max = mean if mean > @mean_max
       end
 
-      str = "#{ Log.color :blue, thr.to_i.to_s } per sec."
-      str << " #{ Log.color :yellow, mean.to_i.to_s } avg. #{Log.color :yellow, @mean_max.to_i.to_s} max." if @mean_max > 0
+      if mean.nil? or mean.to_i > 1
+        str = "#{ Log.color :blue, thr.to_i.to_s } per sec."
+        str << " #{ Log.color :yellow, mean.to_i.to_s } avg. #{Log.color :yellow, @mean_max.to_i.to_s} max." if @mean_max > 0
+      else
+        str = "#{ Log.color :blue, (1/thr).ceil.to_s } secs each"
+        str << " #{ Log.color :yellow, (1/mean).ceil.to_s } avg. #{Log.color :yellow, (1/@mean_max).ceil.to_s} min." if @mean_max > 0
+      end
+
       str
     end
 
@@ -73,19 +79,26 @@ module Log
       used = Misc.format_seconds(used) 
       eta = [eta/3600, eta/60 % 60, eta % 60].map{|t| "%02i" % t }.join(':')
 
-      indicator << " #{Log.color :yellow, used} used #{Log.color :yellow, eta} left - #{Log.color :yellow, ticks.to_s} of #{Log.color :yellow, @max.to_s}"
+      #indicator << " #{Log.color :yellow, used} used #{Log.color :yellow, eta} left - #{Log.color :yellow, ticks.to_s} of #{Log.color :yellow, @max.to_s} #{bytes ? 'bytes' : 'items'}"
+      indicator << " #{Log.color :yellow, eta} => #{Log.color :yellow, used} - #{Log.color :yellow, ticks.to_s} of #{Log.color :yellow, @max.to_s} #{bytes ? 'bytes' : 'items'}"
 
       indicator
     end
 
     def report_msg
       str = Log.color :magenta, desc
-      return str << " " << Log.color(:yellow, "waiting") if @ticks == 0
+      if @ticks == 0
+        if @max
+          return str << " " << Log.color(:yellow, "waiting on #{@max} #{bytes ? 'bytes' : 'items'}") 
+        else
+          return str << " " << Log.color(:yellow, "waiting - PID: #{Process.pid}") 
+        end
+      end
       str << " " << thr_msg
       if max
         str << Log.color(:blue, " -- ") << eta_msg
       else
-        str << Log.color(:blue, " -- ") << ticks.to_s
+        str << Log.color(:blue, " -- ") << ticks.to_s << " #{bytes ? 'bytes' : 'items'}"
       end
       str
     end
@@ -101,16 +114,21 @@ module Log
         bars = BARS
         print(io, Log.color(:yellow, "...Progress\n"))
         bars.sort_by{|b| b.depth }.reverse.each do |bar|
-          print(io, Log.color(:yellow ,bar.report_msg) << "\n")
+          if SILENCED.include? bar
+            print(io, Log.color(:yellow ,bar.report_msg) << "\n") 
+          else
+            print(io, "\n") 
+          end
         end
       else
         bars = BARS
       end
+
       print(io, up_lines(bars.length) << Log.color(:yellow, "...Progress\n") << down_lines(bars.length)) 
       print(io, up_lines(@depth) << report_msg << down_lines(@depth)) 
       @last_time = Time.now
       @last_count = ticks
-      @last_percent = percent if max
+      @last_percent = percent if max and max > 0
       save if @file
     end
 

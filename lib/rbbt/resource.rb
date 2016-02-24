@@ -68,6 +68,7 @@ module Resource
   attr_accessor :server_missing_resource_cache
   def get_from_server(path, final_path, remote_server = nil)
     remote_server ||= self.remote_server
+    remote_server = "http://" + remote_server unless remote_server =~ /^[a-z]+:\/\//
     url = File.join(remote_server, '/resource/', self.to_s, 'get_file')
     url << "?" << Misc.hash2GET_params(:file => path, :create => false)
 
@@ -153,7 +154,7 @@ module Resource
                        content.call final_path
                      end
               case data
-              when String, IO
+              when String, IO, StringIO
                 Misc.sensiblewrite(final_path, data) 
               when Array
                 Misc.sensiblewrite(final_path, data * "\n")
@@ -168,16 +169,23 @@ module Resource
             when :install
               Log.debug "Installing software: #{path}"
               software_dir = path.resource.root.software.find :user
+              helper_file = File.expand_path(Rbbt.share.install.software.lib.install_helpers.find(:lib, caller_lib_dir(__FILE__)))
+              #helper_file = File.expand_path(Rbbt.share.install.software.lib.install_helpers.find)
+
               preamble = <<-EOF
 #!/bin/bash
 
 RBBT_SOFTWARE_DIR="#{software_dir}"
 
-INSTALL_HELPER_FILE="#{Rbbt.share.install.software.lib.install_helpers.find :lib, caller_lib_dir(__FILE__)}"
+INSTALL_HELPER_FILE="#{helper_file}"
 source "$INSTALL_HELPER_FILE"
               EOF
 
-              CMD.cmd('bash', :in => preamble + "\n" + Open.read(content))
+              script = preamble + "\n" + Open.read(content)
+              install_io = CMD.cmd('bash', :in => script, :log => true, :pipe => true)
+              while line = install_io.gets
+                Log.debug line
+              end
 
               set_software_env(software_dir)
             else

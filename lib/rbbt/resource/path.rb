@@ -5,6 +5,7 @@ module Path
   attr_accessor :resource, :pkgdir, :search_paths
 
   def self.setup(string, pkgdir = nil, resource = nil, search_paths = nil)
+    return string if string.nil?
     string = string.dup if string.frozen?
     string.extend Path
     string.pkgdir = pkgdir || 'rbbt'
@@ -93,7 +94,8 @@ module Path
   def find(where = nil, caller_lib = nil, paths = nil)
     @path ||= {}
     rsearch_paths = (resource and resource.respond_to?(:search_paths)) ? resource.search_paths : nil 
-    key = Misc.digest([where, caller_lib, rsearch_paths, paths].inspect)
+    key_elems = [where, caller_lib, rsearch_paths, paths]
+    key = Misc.digest(key_elems.inspect)
     @path[key] ||= begin
                      paths = [paths, rsearch_paths, self.search_paths, SEARCH_PATHS].reverse.compact.inject({}){|acc,h| acc.merge! h; acc }
                      where = paths[:default] if where == :default
@@ -118,6 +120,7 @@ module Path
                          path = find(w, caller_lib, paths)
                          return path if File.exists? path
                        end
+
                        if paths.include? :default
                          find((paths[:default] || :user), caller_lib, paths)
                        else
@@ -228,7 +231,7 @@ module Path
   end
 
   def tsv(*args)
-    TSV.open(self.produce.find, *args)
+    TSV.open(self.produce, *args)
   end
 
   def tsv_options(options = {})

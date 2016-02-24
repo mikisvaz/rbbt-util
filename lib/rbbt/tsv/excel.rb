@@ -46,10 +46,19 @@ module TSV
     book.write filename
   end
 
+  def remove_link(value)
+    if value =~ /<([\w]+)[^>]*>(.*?)<\/\1>/
+      $2
+    else
+      value
+    end
+  end
+
   def excel(filename, options ={})
     name = Misc.process_options options, :name
     sort_by = Misc.process_options options, :sort_by
     sort_by_cast = Misc.process_options options, :sort_by_cast
+    remove_links = Misc.process_options options, :remove_links
 
     book = Spreadsheet::Workbook.new
     sheet1 = book.create_worksheet 
@@ -79,8 +88,10 @@ module TSV
       values.each do |value|
         v = (name and value.respond_to?(:name)) ?  value.name || value : value 
         if Array === v
+          v = v.collect{|_v| remove_link(_v)} if remove_links
           cells.push v * ", "
         else
+          v = remove_link(v) if remove_links
           cells.push v
         end
       end

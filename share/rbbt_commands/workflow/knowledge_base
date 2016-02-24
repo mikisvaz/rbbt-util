@@ -13,7 +13,6 @@ $ rbbt workflow knowledge_base <workflow> [<database>] [<action>] [<options>]
 Access workflow knowledge base
 
 -h--help Show this help:
--cl--clean Clean the last step of the job so that it gets recomputed:
 -s--source_entities* Source entities
 -sf--source_format* Source format
 -t--target_entities* Target entities

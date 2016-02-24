@@ -184,6 +184,43 @@ module Association
       end
     end
 
+    def filter(value_field = nil, target_value = nil, &block)
+      if block_given?
+        matches = []
+        if value_field
+          through :key, value_field do |key,values|
+            pass = block.call values
+            matches << key if pass
+          end
+        else
+          through do |key,values|
+            pass = block.call [key, values]
+            matches << key if pass
+          end
+        end
+        matches
+
+      else
+        matches = []
+        if target_value
+          target_value = [target_value] unless Array === target_value
+          through :key, value_field do |key,values|
+            pass = (values & target_value).any?
+            matches << key if pass
+          end
+        else
+          through :key, value_field do |key,values|
+            pass = false
+            values.each do |value|
+              pass = true unless value.nil? or value.empty? or value.downcase == 'false'
+            end
+            matches << key if pass
+          end
+        end
+        matches
+      end
+    end
+
     def to_matrix(value_field = nil, &block)
       value_field = fields.first if value_field.nil? and fields.length == 1
       value_pos = identify_field value_field if value_field and String === value_field

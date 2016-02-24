@@ -42,7 +42,7 @@ module Association
   end
 
   def self.extract_specs(all_fields=nil, options = {})
-    source, source_format, target, target_format = Misc.process_options options, :source, :source_format, :target, :target_format
+    source, source_format, target, target_format, format = Misc.process_options options, :source, :source_format, :target, :target_format, :format
 
     key_field, *fields = all_fields.nil? ? [nil] : all_fields
 
@@ -82,6 +82,19 @@ module Association
       else
         target_specs[0] = fields.first 
       end
+    end
+
+    # If format is specified, then perhaps we need to change the
+    if target_specs[2].nil? 
+      target_type = Entity.formats[target_specs[1] || target_specs[0]]
+      target_specs[2] = format[target_type.to_s] if format
+      target_specs[2] = nil if target_specs[2] == target_specs[0] or target_specs[2] == target_specs[1]
+    end
+
+    if source_specs[2].nil? 
+      source_type = Entity.formats[source_specs[1] || source_specs[0]]
+      source_specs[2] = format[source_type.to_s] if format
+      source_specs[2] = nil if source_specs[2] == source_specs[0] or source_specs[2] == source_specs[1]
     end
 
     {:source => source_specs, :target => target_specs}

@@ -96,12 +96,9 @@ class Step
   end
 
   def checks
-    rec_dependencies.collect{|dependency| dependency.path }.uniq
+    rec_dependencies.collect{|dependency| (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) ? nil : dependency.path }.compact.uniq
   end
   
-  def dirty?
-    rec_dependencies.collect{|dependency| dependency.path }.uniq.reject{|path| path.exists?}.any?
-  end
 
   def kill_children
     begin
@@ -140,11 +137,13 @@ class Step
 
     return if @seen.empty?
 
-    log :dependencies, "#{Log.color :magenta, "Dependencies"} #{Log.color :yellow, task.name.to_s || ""}"
+    log :dependencies, "#{Log.color :magenta, "Dependencies"} for step #{Log.color :yellow, task.name.to_s || ""}"
     dupping = []
     @seen.each do |dependency|
-      next if (dependency.done? and not dependency.dirty?) or (dependency.streaming? and dependency.running?)
-      dependency.clean
+      next if (dependency.done? and not dependency.dirty?) or 
+              (dependency.streaming? and dependency.running?) or 
+              (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency and not (dependency.error? or dependency.aborted?))
+      dependency.clean if dependency.started? and dependency
       dupping << dependency unless dependencies.include? dependency
     end
 
@@ -152,9 +151,25 @@ class Step
 
     @seen.each do |dependency| 
       next unless dependencies.include? dependency
-      Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} -- #{Log.color :blue, dependency.path}"
+
       begin
-        dependency.run(true) unless dependency.done? or dependency.started? 
+
+        if not dependency.done?
+          if dependency.started?
+            if dependency.streaming?
+              Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} streaming -- #{Log.color :blue, dependency.path}"
+            else
+              Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joining -- #{Log.color :blue, dependency.path}"
+              dependency.join unless dependency.streaming?
+            end
+          else
+            Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} starting -- #{Log.color :blue, dependency.path}"
+            dependency.run(true) 
+          end
+        else
+          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} done -- #{Log.color :blue, dependency.path}"
+        end
+
       rescue Aborted
         Log.error "Aborted dep. #{Log.color :red, dependency.task.name.to_s}"
         raise $!
@@ -182,11 +197,11 @@ class Step
 
           Open.rm info_file if Open.exists? info_file
 
-          log :setup, "#{Log.color :cyan, "Setup"} #{Log.color :yellow, task.name.to_s || ""}"
+          log :setup, "#{Log.color :green, "Setup"} step #{Log.color :yellow, task.name.to_s || ""}"
 
           merge_info({
             :pid => Process.pid,
-            :issued => Time.now,
+            :issued => (issue_time = Time.now),
             :name => name,
             :clean_name => clean_name,
             :dependencies => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]},
@@ -204,7 +219,7 @@ class Step
           set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 
           set_info :started, (start_time = Time.now)
-          log :started, "#{Log.color :magenta, "Starting"} #{Log.color :yellow, task.name.to_s || ""}"
+          log :started, "#{Log.color :magenta, "Starting"} step #{Log.color :yellow, task.name.to_s || ""}"
 
           begin
             result = _exec
@@ -237,14 +252,15 @@ class Step
                    end
 
           if stream
-            log :streaming, "#{Log.color :magenta, "Streaming"} #{Log.color :yellow, task.name.to_s || ""}"
+            log :streaming, "#{Log.color :magenta, "Streaming"} step #{Log.color :yellow, task.name.to_s || ""}"
             ConcurrentStream.setup stream do
               begin
                 if status != :done
                   Misc.insist do
                     set_info :done, (done_time = Time.now)
+                    set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
                     set_info :time_elapsed, (time_elapsed = done_time - start_time)
-                    log :done, "#{Log.color :magenta, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i} sec."
+                    log :done, "#{Log.color :magenta, "Completed"} step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
                   end
                 end
               rescue
@@ -255,15 +271,16 @@ class Step
             end
             stream.abort_callback = Proc.new do
               begin
-                log :aborted, "#{Log.color :red, "Aborted"} #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
+                log :aborted, "#{Log.color :red, "Aborted"} step #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
               rescue
                 Log.exception $!
               end
             end
           else
             set_info :done, (done_time = Time.now)
+            set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
             set_info :time_elapsed, (time_elapsed = done_time - start_time)
-            log :done, "#{Log.color :magenta, "Completed"} #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i} sec."
+            log :done, "#{Log.color :magenta, "Completed"} step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
           end
 
           result
@@ -280,6 +297,26 @@ class Step
       exception $!
       raise $!
     end
+  end
+
+  def produce(force=true)
+    return self if done? and not dirty?
+
+    if error? or aborted?
+      if force
+        clean
+      else
+        raise "Error in job: #{status}"
+      end
+    end
+
+    clean if dirty? or not running?
+
+    run(true) unless started?
+
+    join unless done?
+
+    self
   end
 
   def fork(semaphore = nil)
@@ -408,6 +445,7 @@ class Step
   def abort
     _abort
     log(:aborted, "Job aborted") unless aborted? or error?
+    self
   end
 
   def join_stream

@@ -1,13 +1,22 @@
 require 'rbbt/resource/path'
 module TSV
 
+  def self.guess_id(identifier_file, values, options = {})
+    field_matches = TSV.field_match_counts(identifier_file, values, options)
+    field_matches.sort_by{|field, count| count.to_i}.last
+  end
+
   def self.reorder_stream(stream, positions, sep = "\t")
     Misc.open_pipe do |sin|
       line = stream.gets
+      line.strip! unless line.nil?
+
       while line =~ /^#\:/
         sin.puts line
         line = stream.gets
+        line.strip! unless line.nil?
       end
+
       while line  =~ /^#/
         if Hash === positions
           new = (0..line.split(sep).length-1).to_a
@@ -17,9 +26,11 @@ module TSV
           end
           positions = new
         end
-        sin.puts "#" + line.sub!(/^#/,'').strip.split(sep).values_at(*positions).compact * sep
+        sin.puts "#" + line.sub(/^#/,'').strip.split(sep).values_at(*positions).compact * sep
         line = stream.gets
+        line.strip! unless line.nil?
       end
+
       while line
         if Hash === positions
           new = (0..line.split(sep).length-1).to_a
@@ -29,8 +40,11 @@ module TSV
           end
           positions = new
         end
-        sin.puts line.strip.split(sep).values_at(*positions) * sep
+        values = line.split(sep)
+        new_values = values.values_at(*positions)
+        sin.puts new_values * sep
         line = stream.gets
+        line.strip! unless line.nil?
       end
     end
   end
@@ -41,7 +55,7 @@ module TSV
 
     filename = TSV === file ? file.filename : file
     path = Persist.persist filename, :string, persist_options.merge(:no_load => true) do
-      tsv = TSV === file ? file : TSV.open(file)
+      tsv = TSV === file ? file : TSV.open(file, options)
 
       text = ""
       fields = nil
@@ -51,12 +65,13 @@ module TSV
           next if list.empty?
           text << list.collect{|name| [name, format] * "\t"} * "\n" << "\n"
         end
+        text << [gene, tsv.key_field] * "\t" << "\n"
       end
       text
     end
 
-    TmpFile.with_file(values.uniq * "\n") do |value_file|
-      cmd = "cat '#{ path }' | sed 's/\\t/\\tHEADERNOMATCH/' | grep -w -F -f '#{ value_file }' |cut -f 2 | sed 's/HEADERNOMATCH//' | sort|uniq -c|sed 's/^ *//;s/ /\t/'"
+    TmpFile.with_file(values.uniq * "\n", false) do |value_file|
+      cmd = "cat '#{ path }' | sed 's/\\t/\\tHEADERNOMATCH/' | grep -w -F -f '#{ value_file }' | sed 's/HEADERNOMATCH//' |sort -u|cut -f 2  |sort|uniq -c|sed 's/^ *//;s/ /\t/'"
       begin
         TSV.open(CMD.cmd(cmd), :key_field => 1, :type => :single, :cast => :to_i)
       rescue
@@ -164,14 +179,17 @@ module TSV
     if Hash === entry_hash 
       sep = entry_hash[:sep] ? entry_hash[:sep] : "\t"
       preamble = entry_hash[:preamble]
+      header_hash = entry_hash[:header_hash]
     end
+
+    header_hash = "#" if header_hash.nil?
 
     preamble = "#: " << Misc.hash2string(entry_hash.merge(:key_field => nil, :fields => nil)) << "\n" if preamble.nil? and entry_hash and entry_hash.values.compact.any?
 
     str = "" 
     str << preamble.strip << "\n" if preamble and not preamble.empty?
     if fields
-      str << "#" << (key_field || "ID").to_s << sep << (fields * sep) << "\n" 
+      str << header_hash << (key_field || "ID").to_s << sep << (fields * sep) << "\n" 
     end
 
     str

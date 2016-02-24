@@ -23,7 +23,8 @@ Task 2
 
   EOF
   def test_parse
-    ddd Workflow.parse_workflow_doc(TEMPLATE)
+    i = Workflow.parse_workflow_doc(TEMPLATE)
+    assert_equal "Title of the template", i[:title]
   end
 end
 

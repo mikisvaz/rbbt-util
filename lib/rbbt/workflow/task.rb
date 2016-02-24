@@ -77,6 +77,7 @@ module Task
     deps.each do |dep|
       wf, task = (Array === dep ? [dep.first, dep.first.tasks[dep[1].to_sym]] : [workflow, workflow.tasks[dep.to_sym]])
       maps = (Array === dep and Hash === dep.last) ? dep.last.keys : []
+      raise "Dependency task not found: #{dep}" if task.nil?
       next if seen.include? [wf, task.name]
       seen << [wf, task.name]
       new_inputs = task.inputs - maps

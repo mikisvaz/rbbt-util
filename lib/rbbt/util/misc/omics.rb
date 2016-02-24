@@ -123,6 +123,43 @@ module Misc
     [pos, [mut]]
   end
 
+  def self.correct_mutation(pos, ref, mut_str)
+    muts = mut_str.nil? ? [] : mut_str.split(',')
+    muts.collect!{|m| m == '<DEL>' ? '-' : m }
+
+    ref = '' if ref == '-'
+    while ref.length >= 1 and muts.reject{|m| m[0] == ref[0]}.empty?
+      ref = ref[1..-1]
+      raise "REF nil" if ref.nil?
+      pos = pos + 1
+      muts = muts.collect{|m| m[1..-1]}
+    end
+
+    muts = muts.collect do |m|
+      m = '' if m == '-'
+      case
+      when ref.empty?
+        "+" << m
+      when (m.length < ref.length and (m.empty? or ref.index(m)))
+        "-" * (ref.length - m.length)
+      when (ref.length == 1 and m.length == 1)
+        m
+      else
+        if ref == '-'
+          res = '+' + m
+        else
+          res = '-' * ref.length 
+          res << m unless m == '-'
+        end
+        Log.debug{"Non-standard annotation: #{[ref, m]} (#{ muts }) => #{ res }"}
+        
+        res
+      end
+    end
+
+    [pos, muts]
+  end
+
   def self.correct_vcf_mutation(pos, ref, mut_str)
     muts = mut_str.nil? ? [] : mut_str.split(',')
     muts.collect!{|m| m == '<DEL>' ? '-' : m }
@@ -143,8 +180,15 @@ module Misc
       when (ref.length == 1 and m.length == 1)
         m
       else
-        Log.debug{"Cannot understand: #{[ref, m]} (#{ muts })"}
-        '-' * ref.length + m
+        if ref == '-'
+          res = '+' + m
+        else
+          res = '-' * ref.length 
+          res << m unless m == '-'
+        end
+        Log.debug{"Non-standard annotation: #{[ref, m]} (#{ muts }) => #{ res }"}
+        
+        res
       end
     end
 
@@ -192,21 +236,43 @@ module Misc
     end
   end
 
+  def self.sort_genomic_locations(stream)
+    sort_stream(stream, '#', '-k1,1 -k2,2n -t:')
+  end
 
   def self.intersect_streams_read(io, sep=":")
     line = io.gets.strip
     parts = line.split(sep)
     chr, start, eend, *rest = parts
-    [line,chr, start.to_i, eend.to_i, rest]
+    start = start.to_i
+    if eend =~ /^\d+$/
+      eend = eend.to_i
+    else
+      eend = start.to_i
+    end
+    [line,chr, start, eend, rest]
+  end
+
+  def self.intersect_streams_cmp_chr(chr1, chr2)
+    if chr1 =~ /^\d+$/ and chr2 =~ /^\d+$/
+      chr1 <=> chr2
+    elsif chr1 =~ /^\d+$/
+      -1
+    elsif chr2 =~ /^\d+$/
+      1
+    else
+      chr1 <=> chr2
+    end
   end
 
   def self.intersect_streams(f1, f2, out, sep=":")
     finish = false
+    return if f1.eof? or f2.eof?
     line1, chr1, start1, eend1, rest1 = intersect_streams_read(f1,sep)
     line2, chr2, start2, eend2, rest2 = intersect_streams_read(f2,sep)
-    Misc.profile do
     while not finish
-      case chr1 <=> chr2
+      cmp = intersect_streams_cmp_chr(chr1,chr2)
+      case cmp
       when -1
         move = 1
       when 1
@@ -249,6 +315,11 @@ module Misc
         end
       end
     end
+  end
+
+  def self.select_ranges(stream1, stream2, sep = "\t")
+    Misc.open_pipe do |sin|
+      intersect_streams(stream1, stream2,sin, sep)
     end
   end
 end

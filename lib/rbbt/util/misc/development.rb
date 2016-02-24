@@ -9,6 +9,7 @@ module Misc
     Persist::CONNECTIONS.values.each do |db| 
       db.close if db.write? 
     end
+    Log::ProgressBar::BARS.clear
     ObjectSpace.each_object(Mutex) do |m| 
       begin 
         m.unlock 
@@ -297,7 +298,7 @@ module Misc
            end
 
 
-    options = Misc.add_defaults options, :respawn => true, :cpus => cpus, :into => Set.new 
+    options = Misc.add_defaults options, :respawn => true, :cpus => cpus
     options = Misc.add_defaults options, :bar => "Bootstrap in #{ options[:cpus] } cpus: #{ Misc.fingerprint Annotated.purge(elems) }"
     respawn = options[:respawn] and options[:cpus] and options[:cpus].to_i > 1
 
@@ -306,16 +307,61 @@ module Misc
       elem = elems[pos.to_i]
       elems.annotate elem if elems.respond_to? :annotate
       begin
-        yield elem
+        res = yield elem
       rescue Interrupt
         Log.warn "Process #{Process.pid} was aborted"
+        raise $!
       end
-      raise RbbtProcessQueue::RbbtProcessQueueWorker::Respawn if respawn == :always and cpus > 1
-      nil
+      res = nil unless options[:into]
+      raise RbbtProcessQueue::RbbtProcessQueueWorker::Respawn, res if respawn == :always and cpus > 1
+      res
     end
   end
 
   def self.memory_use(pid=nil)
     `ps -o rss -p #{pid || $$}`.strip.split.last.to_i
+  end
+
+  PUSHBULLET_KEY=begin
+                   if ENV["PUSHBULLET_KEY"]
+                     ENV["PUSHBULLET_KEY"] 
+                   else
+                     config_api = File.join(ENV['HOME'], 'config/apps/pushbullet/apikey')
+                     if File.exists? config_api
+                       File.read(config_api).strip
+                     else
+                       nil
+                     end
+                   end
+                 end
+
+  def self.notify(description, event='notification', key = nil)
+    if PUSHBULLET_KEY.nil? and key.nil?
+      Log.warn "Could not notify, no PUSHBULLET_KEY"
+      return
+    end
+
+    Thread.new do
+      application = 'rbbt'
+      event ||= 'notification'
+      key ||= PUSHBULLET_KEY
+      `curl -s --header "Authorization: Bearer #{key}" -X POST https://api.pushbullet.com/v2/pushes --header 'Content-Type: application/json' --data-binary '{"type": "note", "title": "#{event}", "body": "#{description}"}'`
+    end
+  end
+
+  def self.unzip_in_dir(file, dir)
+    raise "Target is not a directory: #{file}" if File.exists?(dir) and not File.directory?(dir)
+    if Open.remote? file
+      file = file.find if Path === file
+      Open.open(file) do |stream|
+        TmpFile.with_file(stream.read, true, :extension => 'zip') do |zip_file|
+          CMD.cmd("unzip '#{zip_file}' -d '#{dir}'")
+        end
+      end
+    else
+      file = file.find if Path === file
+      zip_file = file
+      CMD.cmd("unzip '#{zip_file}' -d '#{dir}'")
+    end
   end
 end

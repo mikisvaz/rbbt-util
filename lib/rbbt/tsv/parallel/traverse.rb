@@ -29,20 +29,19 @@ module TSV
       when Array, Hash
         obj.size
       when File
-        return nil if Misc.gzip?(file) or Misc.bgzip?(file)
-        CMD.cmd("wc -l '#{obj.filename}'").read.to_i
-      when Path
-        return nil if Misc.gzip?(file) or Misc.bgzip?(file)
-        CMD.cmd("wc -l '#{obj.find}'").read.to_i
-      when String
+        return nil if Open.gzip?(obj) or Open.bgzip?(obj)
+        CMD.cmd("wc -l '#{obj.path}'").read.to_i
+      when Path, String
+        obj = obj.find if Path === obj
         if File.exists? obj
-          return nil if Misc.gzip?(file) or Misc.bgzip?(file)
+          return nil if Open.gzip?(obj) or Open.bgzip?(obj)
           CMD.cmd("wc -l '#{obj}'").read.to_i
         else
           nil
         end
       end
     rescue Exception
+      Log.exception $!
       nil
     end
   end
@@ -67,6 +66,7 @@ module TSV
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
 
     if callback
+      bar.init if bar
       tsv.through options[:key_field], options[:fields] do |k,v|
         begin
           callback.call yield(k,v)
@@ -75,6 +75,7 @@ module TSV
         end
       end
     else
+      bar.init if bar
       tsv.through options[:key_field], options[:fields] do |k,v|
         begin
           yield k,v 
@@ -115,6 +116,7 @@ module TSV
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
 
     if callback
+      bar.init if bar
       array.each do |e|
         begin
           callback.call yield(e)
@@ -123,9 +125,13 @@ module TSV
         end
       end
     else
+      bar.init if bar
       array.each do |e|
         begin
           yield e
+        rescue Exception
+          Log.exception $!
+          raise $!
         ensure
           bar.tick if bar
         end
@@ -148,6 +154,7 @@ module TSV
     end
 
     if callback
+      bar.init if bar
       while line = io.gets
         if line[-1] != "\n"
           while c = io.getc
@@ -162,6 +169,7 @@ module TSV
         end
       end
     else
+      bar.init if bar
       while line = io.gets
         begin
           yield line.strip
@@ -187,6 +195,7 @@ module TSV
     end
 
     if callback
+      bar.init if bar
       TSV::Parser.traverse(io, options) do |k,v|
         begin
           callback.call yield k, v
@@ -334,19 +343,22 @@ module TSV
 
   def self.traverse_cpus(num, obj, options, &block)
     begin
-      callback, cleanup, join, respawn = Misc.process_options options, :callback, :cleanup, :join, :respawn
+      callback, cleanup, join, respawn, bar = Misc.process_options options, :callback, :cleanup, :join, :respawn, :bar
       respawn = true if ENV["RBBT_RESPAWN"] and ENV["RBBT_RESPAWN"] == "true"
 
       Log.low "Traversing in #{ num } cpus: #{respawn ? "respawn" : "no respawn"}"
       q = RbbtProcessQueue.new num, cleanup, join, respawn
+      callback = Proc.new{ bar.tick } if callback.nil? and bar
       q.callback &callback
       q.init &block
 
+      bar.init if bar
       traverse_obj(obj, options) do |*p|
         q.process *p
       end
 
       q.join
+
     rescue Interrupt, Aborted
       q.abort
       Log.medium{"Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"}
@@ -365,6 +377,7 @@ module TSV
       raise $!
     ensure
       q.clean
+      Log::ProgressBar.remove_bar(bar) if bar
     end
   end
 
@@ -587,6 +600,7 @@ module TSV
         end
       end
 
+      bar.init if bar
       case into
       when TSV::Dumper, IO
         traverse_stream(obj, threads, cpus, options, &block)

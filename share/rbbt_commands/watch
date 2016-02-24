@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Notify on completion of file
+
+$ rbbt notify [options] <filename>
+
+Creates a <filename>.notify that will trigger a notification when a process creates it
+
+-h--help Print this help
+-k--key* Pushbullet apikey (optinal)
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.usage
+  end
+  exit 0
+end
+
+key = options[:key] || ''
+file = ARGV.shift
+notify_file = file + '.notify'
+Open.write(notify_file, key)
+
+

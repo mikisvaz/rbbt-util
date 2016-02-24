@@ -69,7 +69,7 @@ module Misc
           when Array === v
             v * ","
           else
-            CGI.escape(v.to_s)
+            CGI.escape(v.to_s).gsub('%2F','/')
           end
       [ Symbol === k ? k.to_s : k,  v] * "="
     }.compact * "&"

@@ -34,19 +34,19 @@ module Workflow
     @result_description = description
   end
 
-  def dep(*dependency_list, &block)
-    @dependencies ||= []
-    if Module === dependency_list.first or Hash === dependency_list.last
-      @dependencies << dependency_list
-    else
-      @dependency_list ||= []
-      if block_given?
-        dependency_list.unshift self if dependency_list.length == 1
-        dependency_list << block 
-      end
-      dependencies.concat dependency_list
-    end
-  end
+  #def dep(*dependency_list, &block)
+  #  @dependencies ||= []
+  #  if Module === dependency_list.first or Hash === dependency_list.last
+  #    @dependencies << dependency_list
+  #  else
+  #    @dependency_list ||= []
+  #    if block_given?
+  #      dependency_list.unshift self if dependency_list.length == 1
+  #      dependency_list << block 
+  #    end
+  #    dependencies.concat dependency_list
+  #  end
+  #end
 
   def dep(*dependency, &block)
     @dependencies ||= []
@@ -55,7 +55,7 @@ module Workflow
       DependencyBlock.setup block, dependency if dependency.any?
       @dependencies << block
     else
-      if Module === dependency.first
+      if Module === dependency.first or (defined? WorkflowRESTClient and WorkflowRESTClient === dependency.first)
         @dependencies << dependency
       else
         @dependencies.concat dependency
@@ -80,7 +80,8 @@ module Workflow
       :inputs             => consume_inputs,
       :description        => consume_description,
       :input_types        => consume_input_types,
-      :result_type        => (Array === type ? type.to_sym : type),
+      :result_type        => (String === type ? type.to_sym : type),
+      :result_description => consume_result_description,
       :input_defaults     => consume_input_defaults,
       :input_descriptions => consume_input_descriptions,
       :extension          => consume_extension,

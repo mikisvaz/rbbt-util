@@ -94,8 +94,8 @@ class Step
     self
   end
 
-  def prepare_result(value, description = nil, info = {})
-    case 
+  def prepare_result(value, description = nil, entity_info = nil)
+    res = case 
     when IO === value
       begin
         res = case @task.result_type
@@ -127,13 +127,44 @@ class Step
       value
     when Annotated === value
       annotations = value.annotations
-      info.each do |k,v|
+      entity_info ||= begin 
+                        entity_info = info.dup
+                        entity_info.merge! info[:inputs] if info[:inputs]
+                        entity_info
+                      end
+      entity_info.each do |k,v|
         value.send("#{h}=", v) if annotations.include? k
       end
+                        
       value
     else
-      Entity.formats[description].setup(value, info.merge(:format => description))
+      entity_info ||= begin 
+                        entity_info = info.dup
+                        entity_info.merge! info[:inputs] if info[:inputs]
+                        entity_info
+                      end
+      Entity.formats[description].setup(value, entity_info.merge(:format => description))
     end
+
+    if Annotated === res
+      dep_hash = nil
+      res.annotations.each do |a|
+        a = a.to_s
+        varname = "@" + a
+        next unless res.instance_variable_get(varname).nil? 
+
+        dep_hash ||= begin
+                       h = {}
+                       rec_dependencies.each{|dep| h[dep.task.name.to_s] ||= dep }
+                       h
+                     end
+        dep = dep_hash[a]
+        next if dep.nil?
+        res.send(a.to_s+"=", dep.load)
+      end 
+    end
+
+    res
   end
 
 
@@ -152,10 +183,20 @@ class Step
 
 
   def load
-    return prepare_result @result, @task.result_description if @result and not @path == @result
-    join if not done?
-    return Persist.load_file(@path, @task.result_type) if @path.exists?
-    exec
+    res = if @result and not @path == @result
+            res = @result
+          else
+            join if not done?
+            @path.exists? ? Persist.load_file(@path, @task.result_type) : exec
+          end
+
+    if @task.result_description
+      entity_info = info.dup
+      entity_info.merge! info[:inputs] if info[:inputs]
+      res = prepare_result res, @task.result_description, entity_info 
+    end
+
+    res
   end
 
   def self.clean(path)
@@ -185,32 +226,11 @@ class Step
     self
   end
 
-  #def rec_dependencies
-
-  #  # A step result with no info_file means that it was manually
-  #  # placed. In that case, do not consider its dependencies
-  #  return [] if Open.exists?(self.path.to_s) and not Open.exists? self.info_file
-
-  #  return [] if dependencies.nil? or dependencies.empty?
-
-  #  new_dependencies = []
-  #  dependencies.each{|step| 
-  #    new_dependencies.concat step.rec_dependencies
-  #    new_dependencies << step
-  #  }
-  #  new_dependencies.uniq!
-
-  #  dependencies = self.dependencies ? self.dependencies + new_dependencies : new_dependencies
-  #  dependencies.flatten!
-  #  dependencies.uniq!
-  #  dependencies
-  #end
-
   def rec_dependencies
 
     # A step result with no info_file means that it was manually
     # placed. In that case, do not consider its dependencies
-    return [] if Open.exists?(self.path.to_s) and not Open.exists? self.info_file
+    return [] if not (defined? WorkflowRESTClient and  WorkflowRESTClient::RemoteStep === self) and Open.exists?(self.path.to_s) and not Open.exists? self.info_file
 
     return [] if dependencies.nil? or dependencies.empty?
 
@@ -239,9 +259,13 @@ class Step
                        deps = rec_dependencies.select{|step| 
                          step.task_name.to_sym == name.to_sym
                        }
-                       deps.first
+                       raise "Dependency step not found: #{ name }" if deps.empty?
+                       if (deps & self.dependencies).any?
+                         (deps & self.dependencies).first
+                       else
+                         deps.first
+                       end
                      end
-
   end
 end
 

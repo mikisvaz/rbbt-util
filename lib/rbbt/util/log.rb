@@ -156,7 +156,9 @@ module Log
 
     sev_str = severity.to_s
 
-    prefix = time << "[" << color(severity) << sev_str << color(0)<<"]"
+    #prefix = time << "[" << color(severity) << sev_str << color(0)<<"]"
+    prefix = time << color(severity) << "["  << sev_str << "]" << color(0)
+    #prefix = color(severity) << time << color(0) << "[" << sev_str  << "]"
     message = "" << highlight << message << color(0) if severity >= INFO
     str = prefix << " " << message
 

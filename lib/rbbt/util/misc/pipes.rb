@@ -4,8 +4,8 @@ module Misc
   class << self
     attr_accessor :sensiblewrite_lock_dir
     
-    def sensible_write_locks
-      @sensiblewrite_locks ||= Rbbt.tmp.sensiblewrite_locks.find
+    def sensiblewrite_lock_dir
+      @sensiblewrite_lock_dir ||= Rbbt.tmp.sensiblewrite_locks.find
     end
   end
 
@@ -90,9 +90,9 @@ module Misc
     stream_out1, stream_in1 = Misc.pipe
     stream_out2, stream_in2 = Misc.pipe
 
-    if ConcurrentStream === stream 
-      stream.annotate stream_out1
-    end
+    #if ConcurrentStream === stream 
+    #  stream.annotate stream_out1
+    #end
 
     splitter_thread = Thread.new(Thread.current) do |parent|
       begin
@@ -133,11 +133,11 @@ module Misc
     ConcurrentStream.setup stream_out1, :threads => splitter_thread
     ConcurrentStream.setup stream_out2, :threads => splitter_thread
 
-    stream_out1.callback = stream.callback if stream.respond_to? :callback
-    stream_out1.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
+    #stream_out1.callback = stream.callback if stream.respond_to? :callback
+    #stream_out1.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
 
-    stream_out2.callback = stream.callback if stream.respond_to? :callback
-    stream_out2.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
+    #stream_out2.callback = stream.callback if stream.respond_to? :callback
+    #stream_out2.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
 
     [stream_out1, stream_out2]
   end
@@ -174,6 +174,8 @@ module Misc
     else
       Log.medium "Consuming stream #{Misc.fingerprint io}"
       begin
+        into = into.find if Path === into
+        into = Open.open(into, :mode => 'w') if String === into 
         into.sync == true if IO === into
         while not io.closed? and block = io.read(2048)
           into << block if into
@@ -224,51 +226,64 @@ module Misc
     lock_options = lock_options[:lock] if Hash === lock_options[:lock]
     tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
     tmp_path_lock = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_lock_dir})
+
+    tmp_path_lock = nil if FalseClass === options[:lock]
+
     Misc.lock tmp_path_lock, lock_options do
 
       if Open.exists? path and not force
+        Log.warn "Path exists in sensiblewrite, not forcing update: #{ path }"
         Misc.consume_stream content 
-        return
-      end
-
-      FileUtils.mkdir_p File.dirname(tmp_path) unless File.directory? File.dirname(tmp_path)
-      FileUtils.rm_f tmp_path if File.exists? tmp_path
-      begin
-        case
-        when block_given?
-          File.open(tmp_path, 'wb', &block)
-        when String === content
-          File.open(tmp_path, 'wb') do |f| f.write content end
-        when (IO === content or StringIO === content or File === content)
-
-          Open.write(tmp_path) do |f|
-            f.sync = true
-            while block = content.read(2048)
-              f.write block
-            end
-          end
-        else
-          File.open(tmp_path, 'wb') do |f|  end
-        end
-
-        begin
-          Open.mv tmp_path, path, lock_options
-        rescue
-          raise $! unless File.exists? path
-        end
-        content.join if content.respond_to? :join
-        FileUtils.touch path if File.exists? path
-      rescue Aborted
-        Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
-        content.abort if content.respond_to? :abort
-        Open.rm path if File.exists? path
-      rescue Exception
-        Log.medium "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
-        content.abort if content.respond_to? :abort
-        Open.rm path if File.exists? path
-        raise $!
-      ensure
+      else
+        FileUtils.mkdir_p File.dirname(tmp_path) unless File.directory? File.dirname(tmp_path)
         FileUtils.rm_f tmp_path if File.exists? tmp_path
+        begin
+          case
+          when block_given?
+            File.open(tmp_path, 'wb', &block)
+          when String === content
+            File.open(tmp_path, 'wb') do |f| f.write content end
+          when (IO === content or StringIO === content or File === content)
+
+            Open.write(tmp_path) do |f|
+              f.sync = true
+              while block = content.read(2048)
+                f.write block
+              end
+            end
+          else
+            File.open(tmp_path, 'wb') do |f|  end
+          end
+
+          begin
+            Open.mv tmp_path, path, lock_options
+          rescue Exception
+            raise $! unless File.exists? path
+          end
+
+          content.join if content.respond_to? :join and not content.joined?  
+
+          if Lockfile === lock_options[:lock] and lock_options[:lock].locked?
+            lock_options[:lock].unlock
+          end
+          FileUtils.touch path if File.exists? path
+          Open.notify_write(path) 
+        rescue Aborted
+          Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
+          content.abort if content.respond_to? :abort
+          Open.rm path if File.exists? path
+        rescue Exception
+          Log.medium "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
+          Log.exception $!
+          content.abort if content.respond_to? :abort
+          Open.rm path if File.exists? path
+          raise $!
+        rescue
+          Log.exception $!
+          raise $!
+        ensure
+          FileUtils.rm_f tmp_path if File.exists? tmp_path
+        end
       end
     end
   end
@@ -283,13 +298,15 @@ module Misc
     end
   end
 
-  def self.sort_stream(stream, header_hash = "#", cmd_args = " -u ")
+  def self.sort_stream(stream, header_hash = "#", cmd_args = "-u")
     Misc.open_pipe do |sin|
       begin
-        if defined? Step and Step === stream
-          step = stream
-          stream = stream.get_stream || stream.path.open
-        end
+        #if defined? Step and Step === stream
+        #  step = stream
+        #  stream = stream.get_stream || stream.path.open
+        #end
+
+        stream = TSV.get_stream stream
 
         line = stream.gets
         while line =~ /^#{header_hash}/ do
@@ -310,11 +327,13 @@ module Misc
           end
         end
 
-        sorted = CMD.cmd("sort #{cmd_args || ""}", :in => line_stream, :pipe => true)
+        sorted = CMD.cmd("env LC_ALL=C sort #{cmd_args || ""}", :in => line_stream, :pipe => true)
 
         while block = sorted.read(2048)
           sin.write block
         end
+
+        sorted.join if sorted.respond_to? :join
       rescue
         if defined? step and step
           step.abort
@@ -440,6 +459,8 @@ module Misc
 
   def self.save_stream(file, stream)
     out, save = Misc.tee_stream stream
+    out.filename = file
+    save.filename = file
 
     Thread.new(Thread.current) do |parent|
       begin
@@ -455,5 +476,59 @@ module Misc
 
     out
   end
+
+  def self.intercalate_streams(streams)
+    Misc.open_pipe do |sin|
+      continue = true
+      while continue
+        lines = streams.collect{|stream| stream.eof? ? nil : stream.gets }.compact
+        lines.each do |line|
+          sin.puts line
+        end
+        continue = false if lines.empty?
+      end
+      streams.each do |stream| 
+        stream.join if stream.respond_to? :join
+        stream.close if stream.respond_to? :close and not stream.closed?
+      end
+    end
+  end
+
+  def self.compare_lines(stream1, stream2, args, sort = false)
+    if sort
+      stream1 = Misc.sort_stream stream1
+      stream2 = Misc.sort_stream stream2
+      compare_lines(stream1, stream2, args, false)
+    else
+      erase = []
+
+      if Path === stream1 or (String === stream1 and File.exists? stream1)
+        file1 = stream1
+      else
+        file1 = TmpFile.tmp_file
+        erase << file1
+        Open.write(file1, TSV.get_stream(stream1))
+      end
+
+      if Path === stream2 or (String === stream2 and File.exists? stream2)
+        file2 = stream2
+      else
+        file2 = TmpFile.tmp_file
+        erase << file2
+        Open.write(file2, TSV.get_stream(stream2))
+      end
+
+      CMD.cmd("env LC_ALL=C comm #{args} '#{file1}' '#{file2}'", :pipe => true, :post => Proc.new{ erase.each{|f| FileUtils.rm f } }) 
+    end
+  end
+
+  def self.remove_lines(stream1, stream2, sort)
+    self.compare_lines(stream1, stream2, '-2 -3', sort)
+  end
+
+  def self.select_lines(stream1, stream2, sort)
+    self.compare_lines(stream1, stream2, '-1 -2', sort)
+  end
+
 
 end

@@ -18,6 +18,10 @@ class KnowledgeBase
     @registry.keys 
   end
 
+  def fields(name)
+    @fields[name] ||= get_index(name).fields
+  end
+
   def description(name)
     @descriptions[name] ||= get_index(name).key_field.split("~")
   end
@@ -36,10 +40,11 @@ class KnowledgeBase
 
   def get_index(name, options = {})
     name = name.to_s
+    options[:organism] ||= options[:namespace] ||= self.namespace
     @indices[[name, options]] ||= 
       begin 
-        fp = Misc.fingerprint([name,options])
-        key = name.to_s + "_" + Misc.digest(fp)
+        fp = Misc.hash2md5(options)
+        key = name.to_s + "_" + fp
 
         Persist.memory("Index:" << [key, dir] * "@") do
           options = options.dup
@@ -62,7 +67,7 @@ class KnowledgeBase
 
           index = if persist_file.exists? and persist_options[:persist] and not persist_options[:update]
                     Log.low "Re-opening index #{ name } from #{ Misc.fingerprint persist_file }. #{options}"
-                    Association.index(nil, options, persist_options.dup)
+                    Association.index(file, options, persist_options.dup)
                   else
                     options = Misc.add_defaults options, registered_options if registered_options
                     raise "Repo #{ name } not found and not registered" if file.nil?
@@ -79,6 +84,7 @@ class KnowledgeBase
 
   def get_database(name, options = {})
     name = name.to_s
+    options[:organism] ||= options[:namespace] ||= self.namespace
     @databases[[name, options]] ||= 
       begin 
         fp = Misc.fingerprint([name,options])
@@ -104,7 +110,7 @@ class KnowledgeBase
 
           database = if persist_file.exists? and persist_options[:persist] and not persist_options[:update]
                     Log.low "Re-opening database #{ name } from #{ Misc.fingerprint persist_file }. #{options}"
-                    Association.open(nil, options, persist_options)
+                    Association.open(file, options, persist_options)
                   else
                     options = Misc.add_defaults options, registered_options if registered_options
                     raise "Repo #{ name } not found and not registered" if file.nil?

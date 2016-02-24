@@ -32,7 +32,7 @@ Log.nocolor = true if ARGV.include? "--nocolor"
 options = SOPT.setup <<EOF
 Ruby bioinformatics toolkit
 
-$ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value'"
+$ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value'
 
 
 --log*                  #{Log.color :yellow, "Log level from 0 (debug) 6 (errors)"}
@@ -43,9 +43,10 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 --nocolor               #{Log.color :yellow, "Disable colored output"}
 --nobar                 #{Log.color :yellow, "Disable progress report"}
 --nostream              #{Log.color :yellow, "Disable persistance/job streaming"}
+--update_persist        #{Log.color :yellow, "Update persisted TSV files if source has been updated"}
 --locate_file           #{Log.color :yellow, "Report the location of the script instead of executing it"}
 --dump_mem*             #{Log.color :yellow, "Dump strings in memory each second into file"}
---no_lock_id            #{Log.color :yellow, "Do not track lockfiles with ids (prevent stale file handlers for high-througput and high-concurrency)"}
+-nolock--no_lock_id            #{Log.color :yellow, "Do not track lockfiles with ids (prevent stale file handlers for high-througput and high-concurrency)"}
 EOF
 
 
@@ -54,6 +55,7 @@ locate = options.delete :locate_file
 if options[:log_file]
   Log.logfile(options[:log_file])
 end
+
 if options[:log]
   Log.severity = options[:log].to_i
 else
@@ -72,7 +74,12 @@ end
 
 if mem_dump = options.delete(:dump_mem)
   require 'rbbt/monitor'
-  Rbbt.dump_memory(mem_dump, Symbol)
+  Rbbt.dump_memory(mem_dump, String)
+end
+
+
+if options.delete(:update_persist)
+  ENV["RBBT_UPDATE_TSV_PERSIST"] = "true"
 end
 
 if options.delete :nostream
@@ -194,6 +201,9 @@ begin
         load dir[$command].find
         exit 0
       end
+    when File.exists?($command)
+      load $command
+      exit 0
     else
       error = "Command '#{$command }' not understood"
       rbbt_usage($previous_commands)

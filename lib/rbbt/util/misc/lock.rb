@@ -3,44 +3,47 @@ module Misc
     if use
       Log.medium "Activating lockfile ids"
       Lockfile.dont_use_lock_id = false
-      #Lockfile.refresh = 20 
-      #Lockfile.max_age = 60 * 10
-      #Lockfile.suspend = 10
+      Lockfile.refresh = 2 
+      Lockfile.max_age = 30
+      Lockfile.suspend = 4
     else
       Log.medium "De-activating lockfile ids"
       Lockfile.dont_use_lock_id = true
-      #Lockfile.refresh = 5
-      #Lockfile.max_age = 30
-      #Lockfile.suspend = 5
+      Lockfile.refresh = 4
+      Lockfile.max_age = 60
+      Lockfile.suspend = 8
     end
-
-    Lockfile.refresh = 10
-    Lockfile.max_age = 60
-    Lockfile.suspend = 2
   end
 
   self.use_lock_id = ENV["RBBT_NO_LOCKFILE_ID"] != "true"
 
   LOCK_MUTEX = Mutex.new
-  #def self.lock(file, unlock = true, options = {})
   def self.lock(file, unlock = true, options = {})
     unlock, options = true, unlock if Hash === unlock
-    return yield if file.nil?
-    FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists?  File.dirname(File.expand_path(file))
+    return yield if file.nil? and not Lockfile === options[:lock]
 
-    res = nil
+    file = file.find if Path === file
+    FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists? File.dirname(File.expand_path(file))
+
 
     case options[:lock]
     when Lockfile
       lockfile = options[:lock]
       lockfile.lock unless lockfile.locked?
     when FalseClass
+      lockfile = nil
       unlock = false
+    when Path, String
+      lock_path = options[:lock].find
+      lockfile = Lockfile.new(lock_path, options)
+      lockfile.lock 
     else
       lock_path = File.expand_path(file + '.lock')
       lockfile = Lockfile.new(lock_path, options)
       lockfile.lock 
     end
+
+    res = nil
 
     begin
       res = yield lockfile
@@ -50,8 +53,13 @@ module Misc
     ensure
       if unlock 
         begin
-          lockfile.unlock #if lockfile.locked?
+          if lockfile.locked?
+            lockfile.unlock 
+          else
+          end
         rescue Exception
+          Log.warn "Exception unlocking: #{lockfile.path}"
+          Log.exception $!
         end
       end
     end

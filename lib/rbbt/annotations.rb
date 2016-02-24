@@ -241,7 +241,7 @@ module Annotation
         next
       end
 
-      value = value.split("|") if String === value and value.index "|"
+      value = value.split("|") if String === value and value.include? "|"
 
       annotation_values[key] = value
     end

@@ -7,10 +7,11 @@ class WorkflowRESTClient
       inputs.each do |k,v|
         if Step === v
           stream = v.get_stream
-          inputs[k] = stream || v.load
+          inputs[k] = stream || v.run
         end
       end
     end
+
     def initialize(base_url, task = nil, base_name = nil, inputs = nil, result_type = nil, result_description = nil, is_exec = false)
       @base_url, @task, @base_name, @inputs, @result_type, @result_description, @is_exec = base_url, task, base_name, inputs, result_type, result_description, is_exec
       @mutex = Mutex.new
@@ -23,17 +24,19 @@ class WorkflowRESTClient
     end
 
     def task_name
+      init_job
       (Array === @url ? @url.first : @url).split("/")[-2]
     end
 
     def info(check_lock=false)
-      @info ||= begin
-                  init_job unless url
-                  info = WorkflowRESTClient.get_json(File.join(url, 'info'))
-                  info = WorkflowRESTClient.fix_hash(info)
-                  info[:status] = info[:status].to_sym if String === info[:status]
-                  info
-                end
+      @done = @info and @info[:status] and @info[:status].to_sym == :done
+      @info = Persist.memory("RemoteSteps Info", :url => @url, :persist => !!@done) do
+        init_job unless url
+        info = WorkflowRESTClient.get_json(File.join(url, 'info'))
+        info = WorkflowRESTClient.fix_hash(info)
+        info[:status] = info[:status].to_sym if String === info[:status]
+        info
+      end
     end
     
     def status
@@ -58,15 +61,70 @@ class WorkflowRESTClient
 
     #{{{ MANAGEMENT
     
-    def init_job(cache_type = :asynchronous)
-      @name ||= Persist.memory("RemoteSteps", :jobname => @name, :inputs => inputs) do
-        WorkflowRESTClient.post_jobname(File.join(base_url, task.to_s), inputs.merge(:jobname => @name||@base_name, :_cache_type => cache_type))
+    def init_job(cache_type = nil, other_params = {})
+      cache_type = :asynchronous if cache_type.nil? and not @is_exec
+      cache_type = :exec if cache_type.nil?
+      @name ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
+        WorkflowRESTClient.post_jobname(File.join(base_url, task.to_s), inputs.merge(other_params).merge(:jobname => @name||@base_name, :_cache_type => cache_type))
       end
       @url = File.join(base_url, task.to_s, @name)
       nil
     end
 
+
+    def fork
+      init_job(:asynchronous)
+    end
+
+    def running?
+      ! %w(done error aborted).include? status.to_s
+    end
+
+    def path
+      init_job
+      @url + '?_format=raw'
+    end
+
+    def run(noload = false)
+      @mutex.synchronize do
+        @result ||= begin
+                      if @is_exec
+                        exec_job 
+                      else
+                        init_job 
+                        self.load
+                      end
+                    end
+      end
+      noload ? path + '?_format=raw' : @result
+    end
+
+    def exec(*args)
+      exec_job
+    end
+
+    def join
+      sleep 0.2 unless self.done?
+      sleep 1 unless self.done?
+      sleep 3 while not self.done?
+      self
+    end
+
+    def get
+      params ||= {}
+      params = params.merge(:_format => [:string, :boolean, :tsv, :annotations,:array].include?(result_type.to_sym) ? :raw : :json )
+      Misc.insist 3, rand(2) + 1 do
+        begin
+          WorkflowRESTClient.get_raw(url, params)
+        rescue
+          Log.exception $!
+          raise $!
+        end
+      end
+    end
+
     def load_res(res, result_type = nil)
+      join
       result_type ||= self.result_type
       case result_type
       when :string
@@ -84,19 +142,6 @@ class WorkflowRESTClient
       end
     end
 
-    def get
-      params ||= {}
-      params = params.merge(:_format => [:string, :boolean, :tsv, :annotations,:array].include?(result_type.to_sym) ? :raw : :json )
-      Misc.insist 3, rand(2) + 1 do
-        begin
-          WorkflowRESTClient.get_raw(url, params)
-        rescue
-          Log.exception $!
-          raise $!
-        end
-      end
-    end
-
     def load
       params = {}
       load_res get
@@ -109,54 +154,40 @@ class WorkflowRESTClient
       load_res res, result_type == :array ? :json : result_type
     end
 
-    def fork
-      init_job(:asynchronous)
-    end
-
-    def running?
-      ! %w(done error aborted).include? status.to_s
-    end
-
-    def path
-      url
-    end
-
-    def run(noload = false)
-      @mutex.synchronize do
-        @result ||= begin
-                      if @is_exec
-                        exec_job 
-                      else
-                        init_job(:synchronous) 
-                        self.load
-                      end
-                    end
+    def _restart
+      @done = nil
+      @name = nil
+      new_inputs = {}
+      inputs.each do |k,i| 
+        if File === i 
+          new_inputs[k] = File.open(i.path)
+        else
+          new_inputs[k] = i
+        end
       end
-      noload ? path : @result
-    end
-
-    def exec(*args)
-      exec_job
-    end
-
-    def join
-      return if self.done?
-      self.load
-      self
+      @inputs = new_inputs
     end
 
     def recursive_clean
       begin
-        inputs[:_update] = :recursive_clean
+        params = {:_update => :recursive_clean}
+        init_job(nil, params)
+        WorkflowRESTClient.get_raw(url, params)
+        _restart
       rescue Exception
+        Log.exception $!
       end
       self
     end
 
     def clean
       begin
-        inputs[:_update] = :clean
+        params = {:_update => :clean}
+        init_job(nil, params)
+        WorkflowRESTClient.get_raw(url, params)
+        _restart
       rescue Exception
+        Log.exception $!
       end
       self
     end

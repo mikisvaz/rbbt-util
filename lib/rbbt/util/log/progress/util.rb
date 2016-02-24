@@ -3,11 +3,12 @@ module Log
     BAR_MUTEX = Mutex.new
     BARS = []
     REMOVE = []
+    SILENCED = []
 
     def self.new_bar(max, options = {})
       cleanup_bars
       BAR_MUTEX.synchronize do
-        Log::LAST.replace "new_bar" if Log::LAST == "progress"
+        #Log::LAST.replace "new_bar" if Log::LAST == "progress"
         options = Misc.add_defaults options, :depth => BARS.length
         BARS << (bar = ProgressBar.new(max, options))
         bar
@@ -21,6 +22,13 @@ module Log
           if index
             BARS.delete_at index
             BARS.each_with_index do |bar,i|
+              bar.depth = i
+            end
+          end
+          index = SILENCED.index bar
+          if index
+            SILENCED.delete_at index
+            SILENCED.each_with_index do |bar,i|
               bar.depth = i
             end
           end

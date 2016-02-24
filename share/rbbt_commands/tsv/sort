@@ -13,6 +13,7 @@ $ rbbt tsv sort file.tsv
 Display summary information. Works with Tokyocabinet HDB and BDB as well.
 
 -hh--header_hash* Change the character used to mark the header line (defaults to #)
+-f--field* Field to sort by (name or number)
 -h--help Help
 EOF
 
@@ -22,7 +23,16 @@ file = ARGV.shift
 
 file = STDIN if file == '-' or file.nil?
 
-rest = ARGV.inject(""){|acc,e| acc << " '#{e}'" }
+field = options[:field] || '2'
+if field =~ /^\d+$/
+  field_pos = field.to_i
+else
+  parser = TSV.parse_header(file, options)
+  field_pos = parser.all_fields.index(field) + 1
+  saved_line = parser.line
+end
+
+rest = ARGV.inject("-t\"\t\" -g -k#{field_pos}"){|acc,e| acc << " '#{e}'" }
 
 file_io = TSV.get_stream(file)
 stream = Misc.sort_stream(file_io, options[:header_hash] || "#", rest)

@@ -141,9 +141,10 @@ class TestStep < Test::Unit::TestCase
       end
       TmpFile.with_file do |tmp|
         step = Step.new tmp, task
-        job = step.fork
-        while not job.done? do sleep 1 end
-        assert_equal "TEST", Open.read(job.file("test"))
+        #job = step.fork
+        #while not job.done? do sleep 1 end
+        step.run
+        assert_equal "TEST", Open.read(step.file("test"))
       end
     end
   end
@@ -153,6 +154,8 @@ class TestStep < Test::Unit::TestCase
       task  = Task.setup do 
         message "WRITE"
         Open.write(file("test"),"TEST")
+        Open.write(path,"done")
+        nil
       end
       
       TmpFile.with_file do |tmp|
@@ -175,10 +178,11 @@ class TestStep < Test::Unit::TestCase
 
       TmpFile.with_file do |tmp|
         step = Step.new File.join(tmp, 'subdir1', 'subdir2'), task
-        job = step.fork
-        while not job.done? do sleep 1 end
-        assert_equal "TEST", Open.read(job.file("test"))
-        assert job.messages.include? "WRITE"
+        #job = step.fork
+        #while not job.done? do sleep 1 end
+        step.run
+        assert_equal "TEST", Open.read(step.file("test"))
+        assert step.messages.include? "WRITE"
       end
     end
   end
@@ -204,14 +208,18 @@ class TestStep < Test::Unit::TestCase
           end
         end
         Step.wait_for_jobs(jobs)
-        #jobs.each do |job|
-        #  while not job.done?
-        #    sleep 1
-        #  end
-        #end
       ensure
         RbbtSemaphore.delete_semaphore(semaphore)
       end
     end
+  end
+
+  def __test_load_return_description
+    require 'rbbt/workflow'
+    Workflow.require_workflow "Study"
+    study = Study.setup("LICA-FR")
+    job = study.recurrent_mutations(:job)
+    iii job.load.organism
+    iii study.recurrent_mutations.organism
   end
 end

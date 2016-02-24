@@ -120,7 +120,7 @@ module Open
   
   def self.add_cache(url, data, options = {})
     file = File.join(REMOTE_CACHEDIR, digest_url(url, options))
-    Misc.sensiblewrite(file, data)
+    Misc.sensiblewrite(file, data, :force => true)
   end
 
   # Grep
@@ -270,12 +270,13 @@ module Open
       dir_sub_path.push file
       exists_in_repo(*dir_sub_path)
     else
+      file = file.find if Path === file
       File.exists? file
     end
   end
 
   def self.lock(file, options = {}, &block)
-    if (dir_sub_path = find_repo_dir(file))
+    if file and (dir_sub_path = find_repo_dir(file))
       dir, sub_path = dir_sub_path
       repo = get_repo_from_dir(dir)
       Misc.lock_in_repo(repo, sub_path, &block)
@@ -293,7 +294,7 @@ module Open
    
   def self.gunzip(stream)
     #Zlib::GzipReader.new(stream)
-    CMD.cmd('zcat', :in => stream, :pipe => true)
+    CMD.cmd('zcat', :in => stream, :pipe => true, :no_fail => true, :no_wait => true)
   end
 
   def self.unzip(stream)
@@ -427,6 +428,20 @@ module Open
     end
   end
 
+  def self.notify_write(file)
+    begin
+      notification_file = file + '.notify'
+      if File.exists? notification_file
+        key = Open.read(notification_file).strip
+        key = nil if key.empty?
+        Misc.notify("Wrote " << file, nil, key)
+        FileUtils.rm notification_file
+      end
+    rescue
+      Log.warn "Error notifying write of #{ file }"
+    end
+  end
+
   def self.write(file, content = nil, options = {})
     options = Misc.add_defaults options, :mode => 'w'
 
@@ -463,5 +478,6 @@ module Open
       end
       content.close
     end
+    notify_write(file) 
   end
 end

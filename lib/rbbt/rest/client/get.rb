@@ -41,9 +41,22 @@ class WorkflowRESTClient
     end
   end
 
+  def self.fix_params(params)
+    new_params = {}
+    params.each do |k,v|
+      if Array === v and v.empty?
+        new_params[k] = "EMPTY_ARRAY"
+      else
+        new_params[k] = v
+      end
+    end
+    new_params
+  end
+
   def self.get_raw(url, params = {})
     Log.debug{ "RestClient get_raw: #{ url } - #{Misc.fingerprint params}" }
     params = params.merge({ :_format => 'raw' })
+    params = fix_params params
     capture_exception do
       Misc.insist(2, 0.5) do
         RestClient.get(URI.encode(url), :params => params)
@@ -51,21 +64,15 @@ class WorkflowRESTClient
     end
   end
  
-  def self.post_jobname(url, params = {})
-    Log.debug{ "RestClient post_jobname: #{ url } - #{Misc.fingerprint params}" }
-    params = params.merge({ :_format => 'jobname' })
-
-    capture_exception do
-      RestClient.post(URI.encode(url), params)
-    end
-  end
-  
   def self.get_json(url, params = {})
     Log.debug{ "RestClient get_json: #{ url } - #{Misc.fingerprint params }" }
     params = params.merge({ :_format => 'json' })
+    params = fix_params params
 
     res = capture_exception do
-      RestClient.get(URI.encode(url), :params => params)
+      Misc.insist(2, 0.5) do
+        RestClient.get(URI.encode(url), :params => params)
+      end
     end
 
     begin
@@ -75,11 +82,22 @@ class WorkflowRESTClient
     end
   end
 
+  def self.post_jobname(url, params = {})
+    Log.debug{ "RestClient post_jobname: #{ url } - #{Misc.fingerprint params}" }
+    params = params.merge({ :_format => 'jobname' })
+    params = fix_params params
+
+    capture_exception do
+      RestClient.post(URI.encode(url), params)
+    end
+  end
+  
   def self.post_json(url, params = {})
     if url =~ /_cache_type=:exec/
       JSON.parse(Open.open(url, :nocache => true))
     else
       params = params.merge({ :_format => 'json' })
+      params = fix_params params
 
       res = capture_exception do
         RestClient.post(URI.encode(url), params)

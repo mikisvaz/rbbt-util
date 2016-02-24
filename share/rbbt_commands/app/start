@@ -3,7 +3,33 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-f--finder:-R--Rserve_session*:-ho--host*:--views*"
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Start an rbbt app
+
+$ rbbt app start [options] <app_name>
+
+-h--help Print this help
+-e--environment* Execution environment: production or development
+-Ho--Host* Host name
+-B--Bind* Bind IP
+-p--port* TCP port
+-s--server* Server type:  thin, webrick, unicorn, etc
+-f--finder Start server with finder functionality
+-R--Rserve_session* Rserve session to use, otherwise start new one
+--views* Directory with view templates
+EOF
+
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.usage
+  end
+  exit 0
+end
+
 options[:Port] ||= options[:port]
 options[:Host] ||= "0.0.0.0"
 options[:Bind] ||= "0.0.0.0"
@@ -32,3 +58,14 @@ Misc.in_dir(app_dir) do
     Rack::Server.start(options)
   end
 end
+
+
+
+
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+
+

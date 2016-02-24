@@ -16,6 +16,7 @@ class RbbtProcessQueue
   attr_accessor :callback, :callback_queue, :callback_thread
   def callback(&block)
     if block_given?
+    
       @callback = block
 
       @callback_queue = RbbtProcessSocket.new
@@ -31,7 +32,11 @@ class RbbtProcessQueue
               raise e 
             end
 
-            @callback.call p
+            if @callback.arity == 0
+              @callback.call
+            else
+              @callback.call p
+            end
           end
         rescue Aborted
           Log.warn "Callback thread aborted"
@@ -43,6 +48,7 @@ class RbbtProcessQueue
           @process_monitor.raise $!
           raise $!
         ensure
+
           @callback_queue.sread.close unless @callback_queue.sread.closed?
         end
       end

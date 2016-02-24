@@ -4,10 +4,10 @@ require 'rbbt/util/log/progress/report'
 module Log
   class ProgressBar
 
-    attr_accessor :max, :ticks, :frequency, :depth, :desc, :file
+    attr_accessor :max, :ticks, :frequency, :depth, :desc, :file, :bytes
     def initialize(max = nil, options = {})
       options = Misc.add_defaults options, :depth => 0, :num_reports => 100, :desc => "Progress", :io => STDERR, :severity => Log.severity
-      depth, num_reports, desc, io, severity, file = Misc.process_options options, :depth, :num_reports, :desc, :io, :severity, :file
+      depth, num_reports, desc, io, severity, file, bytes = Misc.process_options options, :depth, :num_reports, :desc, :io, :severity, :file, :bytes
 
       @max = max
       @ticks = 0
@@ -21,7 +21,15 @@ module Log
     end
 
     def percent
+      return 0 if @ticks == 0
+      return 100 if @max == 0
       (@ticks * 100) / @max
+    end
+
+    def init
+      @start = @last_time = Time.now
+      @last_count = 0
+      report
     end
 
     def tick(step = 1)
@@ -39,7 +47,7 @@ module Log
 
         diff = time - @last_time
         report and return if diff > @frequency
-        return unless max
+        return unless max and max > 0
 
         percent = self.percent
         if @last_percent.nil?

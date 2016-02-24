@@ -6,10 +6,6 @@ class Step
 
   INFO_SERIALIAZER = Marshal
 
-  def self.started?
-    info_file.exists?
-  end
-  
   def self.wait_for_jobs(jobs)
     jobs = [jobs] if Step === jobs
     begin
@@ -76,10 +72,11 @@ class Step
   end
 
   def info_lock
-    @info_lock ||= begin
-                     path = Persist.persistence_path(info_file + '.lock', {:dir => Step.lock_dir})
-                     Lockfile.new path
-                   end
+    @info_lock = begin
+                   path = Persist.persistence_path(info_file + '.lock', {:dir => Step.lock_dir})
+                   Lockfile.new path, :refresh => false, :dont_use_lock_id => true
+                 end if @info_lock.nil?
+    @info_lock
   end
 
   def info(check_lock = true)
@@ -120,10 +117,10 @@ class Step
     return nil if @exec or info_file.nil?
     value = Annotated.purge value if defined? Annotated
     Open.lock(info_file, :lock => info_lock) do
-      i = info(false)
+      i = info(false).dup
       i[key] = value 
       @info_cache = i
-      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => true)
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
       @info_cache_time = Time.now
       value
     end
@@ -136,7 +133,7 @@ class Step
       i = info(false)
       i.merge! hash
       @info_cache = i
-      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => true)
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
       @info_cache_time = Time.now
       value
     end
@@ -242,7 +239,7 @@ class Step
 
   def progress_bar(msg, options = {})
     max = options[:max]
-    Log::ProgressBar.new max, {:desc => msg, :file => file(:progress)}.merge(options)
+    Log::ProgressBar.new_bar(max, {:desc => msg, :file => file(:progress)}.merge(options))
   end
 
   def self.log(status, message, path, &block)
@@ -259,7 +256,9 @@ class Step
 
   def log(status, message = nil, &block)
     self.status = status
-    self.message Log.uncolor(message)
+    if message
+      self.message Log.uncolor(message)
+    end
     Step.log(status, message, path, &block)
   end
 
@@ -279,6 +278,10 @@ class Step
     Open.exists? info_file or Open.exists? path
   end
 
+  def dirty?
+    rec_dependencies.collect{|dependency| dependency.path }.uniq.reject{|path| not Path === path or path.exists?}.any?
+  end
+
   def done?
     path and File.exists? path
   end
@@ -292,7 +295,11 @@ class Step
     return nil if info[:pid].nil?
 
     pid = @pid || info[:pid]
-    return Misc.pid_exists?(pid) 
+    if Misc.pid_exists?(pid) 
+      pid
+    else
+      false
+    end
   end
 
   def error?
@@ -450,7 +457,8 @@ module Workflow
                               deps.each do |dep| 
                                 case dep
                                 when Array
-                                  dep.first.rec_dependencies(dep.last).each do |d|
+                                  wf, t = dep
+                                  wf.rec_dependencies(t).each do |d|
                                     if Array === d
                                       all_deps << d
                                     else
@@ -460,7 +468,16 @@ module Workflow
                                 when String, Symbol
                                   all_deps.concat rec_dependencies(dep.to_sym)
                                 when DependencyBlock
-                                  all_deps << dep.dependency
+                                  all_deps << dep.dependency if dep.dependency
+                                  case dep.dependency
+                                  when Array
+                                    dep_wf, dep_task = dep.dependency
+                                    dep_rec_dependencies = dep_wf.rec_dependencies(dep_task.to_sym)
+                                    dep_rec_dependencies.collect!{|d| Array === d ? d : [dep_wf, d]}
+                                    all_deps.concat dep_rec_dependencies
+                                  when Symbol, String
+                                    all_deps.concat rec_dependencies(dep.dependency.to_sym)
+                                  end
                                 end
                               end
                               all_deps.uniq
@@ -528,12 +545,13 @@ module Workflow
       when Array
         workflow, task, options = dependency
 
-        #options = dependency.last if Hash === dependency.last
         _inputs = IndiferentHash.setup(inputs.dup)
         options.each{|i,v|
           case v
           when Symbol
-            rec_dependency = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies}).flatten.compact.uniq.select{|d| d.task.name.to_sym == v }.first
+            all_d = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
+            rec_dependency = all_d.select{|d| d.task_name.to_sym == v }.first
+
             if rec_dependency.nil?
               _inputs[i] = v
             else
@@ -572,10 +590,8 @@ module Workflow
       if inputs.any? or dependencies.any?
         tagged_jobname = case TAG
                          when :hash
-                           input_str = ""
-                           input_str << inputs.collect{|i| Misc.fingerprint(i) } * "," 
-                           input_str << ";" << dependencies.collect{|dep| dep.name } * "\n"
-                           jobname + '_' << Misc.digest(input_str)
+                           hash_str = Misc.obj2md5({:inputs => inputs, :dependencies => dependencies})
+                           jobname + '_' << hash_str
                          else
                            jobname
                          end

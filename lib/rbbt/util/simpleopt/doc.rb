@@ -47,7 +47,10 @@ module SOPT
   def self.input_doc(inputs, input_types = nil, input_descriptions = nil, input_defaults = nil, input_shortcuts = nil)
     type = description = default = nil
     shortcut = ""
+    seen = []
     inputs.collect do |name|
+      next if seen.include? name
+      seen << name
 
       type = input_types[name] unless input_types.nil?
       description = input_descriptions[name] unless input_descriptions.nil?

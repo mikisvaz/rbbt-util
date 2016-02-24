@@ -21,6 +21,14 @@ module TSV
       [key, new]
     end
 
+    def process_reorder_single(key, values)
+      new_key = @new_key_field == :key ? key : values
+      new_value = @new_fields.collect{|field| field == :key ?  key : values }.first
+      return [new_key, new_value]
+      [ [values[@new_key_field]], 
+        @new_fields.collect{|field| field == :key ?  key : values[field] }]
+    end
+
     def process_reorder_list(key, values)
       [ [values[@new_key_field]], 
         @new_fields.collect{|field| field == :key ?  key : values[field] }]
@@ -141,6 +149,8 @@ module TSV
           end
         when :flat
           self.instance_eval do alias process process_reorder_flat end
+        when :single
+          self.instance_eval do alias process process_reorder_single end
         else
           self.instance_eval do alias process process_reorder_list end
         end
@@ -237,7 +247,7 @@ module TSV
     persist_options = Misc.pull_keys options, :persist
     persist_options[:prefix] = "Reorder"
 
-    Persist.persist_tsv self, self.filename, {:key_field => new_key_field, :fields => new_fields}, persist_options do |data|
+    Persist.persist_tsv self, self.filename, self.options.merge({:key_field => new_key_field, :fields => new_fields}), persist_options do |data|
       if data.respond_to? :persistence_path
         real_data = data 
         data = {}
@@ -252,19 +262,22 @@ module TSV
         else
           case type 
           when :double
-            new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
-              if data[key] 
-                current = data[key].dup
-                value.each_with_index do |v, i|
-                  if current[i]
-                    current[i] += v if v
-                  else
-                    current[i] = v || []
+            new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |keys, value|
+              keys = [keys] unless Array === keys
+              keys.each do |key|
+                if data[key] 
+                  current = data[key].dup
+                  value.each_with_index do |v, i|
+                    if current[i]
+                      current[i] += v if v
+                    else
+                      current[i] = v || []
+                    end
                   end
+                  data[key] = current 
+                else
+                  data[key] = value.collect{|v| v.nil? ? nil : v.dup}
                 end
-                data[key] = current 
-              else
-                data[key] = value.collect{|v| v.nil? ? nil : v.dup}
               end
             end
           when :flat
@@ -535,7 +548,7 @@ module TSV
     all = []
     through :key, field do |k,values|
       values = Array === values ? values.flatten : [values]
-      all.concat value
+      all.concat values
     end
     prepare_entity(all, field, options = {})
   end
@@ -561,7 +574,6 @@ module TSV
     field_pos = identify_field field
 
     through do |key, values|
-
       case
       when type == :single
         field_values = values

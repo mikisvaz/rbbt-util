@@ -1,37 +1,71 @@
 #!/usr/bin/env ruby
 
-require 'rbbt'
 require 'rbbt-util'
+require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
+
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Description
+
+$ rbbt workflow install <workflow> [<repo>]
+
+Install a workflow, or a coma separated list of workflows, from its source. If
+repo is not specified then 'http://github.com/Rbbt-Workflows/' will be used. If
+the workflow is already installed it will be updated. If 'all' is specified
+instead of a particular workflow, all installed workflows will be updated.
+
+-h--help Print this help
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.usage
+  end
+  exit 0
+end
 
 workflow = ARGV[0]
 repo = ARGV[1]
 
 raise "No workflow specified" if workflow.nil?
 
-workflow_dir = Rbbt.etc.workflow_dir.exists? ? Rbbt.etc.workflow_dir.read.strip : Rbbt.workflows.find(:user)
+workflow_dir = Rbbt.etc.workflow_dir.exists? ? Path.setup(Rbbt.etc.workflow_dir.read.strip) : Rbbt.workflows.find(:user)
 
 FileUtils.mkdir_p workflow_dir unless File.exists? workflow_dir
 
+all_workflows = workflow_dir.glob("*/.git").collect{|d| File.basename(File.dirname(d))}
+workflows = workflow == 'all' ? all_workflows : workflow.split(",")
+
 Misc.in_dir(workflow_dir) do
-  case
-  when File.exists?(Misc.snake_case(workflow))
-    Misc.in_dir(Misc.snake_case(workflow)) do
-      `git pull`
-    end
-  when File.exists?(workflow)
-    Misc.in_dir(workflow) do
-      `git pull`
-    end
-  else
-    if repo.nil?
-      repo_base_url = Rbbt.etc.workflow_repo.exists? ? Rbbt.etc.workflow_repo.read.strip : 'https://github.com/Rbbt-Workflows/'
-      repo = File.join(repo_base_url, Misc.snake_case(workflow) + '.git')
-    end
-    Log.warn "Cloning #{ repo }"
-    Misc.insist do
-      `git clone "#{repo}"`
-      raise unless $?.success?
+  workflows.each do |workflow|
+    case
+    when File.exists?(Misc.snake_case(workflow))
+      Log.info "Updating: " + workflow
+      Misc.in_dir(Misc.snake_case(workflow)) do
+        `git pull`
+      end
+    when File.exists?(workflow)
+      Misc.in_dir(workflow) do
+        Log.info "Updating: " + workflow
+        `git pull`
+      end
+    else
+      Log.info "Installing: " + workflow
+      if repo.nil?
+        repo_base_url = Rbbt.etc.workflow_repo.exists? ? Rbbt.etc.workflow_repo.read.strip : 'https://github.com/Rbbt-Workflows/'
+        repo = File.join(repo_base_url, Misc.snake_case(workflow) + '.git')
+      end
+      Log.warn "Cloning #{ repo }"
+      Misc.insist do
+        `git clone "#{repo}"`
+        raise unless $?.success?
+      end
     end
   end
 end

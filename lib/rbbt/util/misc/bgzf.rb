@@ -1,8 +1,22 @@
+
 require 'rbbt/persist'
 require 'set'
 
 module Bgzf
   attr_accessor :data_offset, :compressed_stream, :block_cache_size
+
+  def self.bgzip_cmd
+    @@bgzip_cmd ||= begin
+                      path = `bash -c "type -p bgzips"`.strip
+                      if path.empty?
+                        Rbbt.claim Rbbt.software.opt.htslib, :install, Rbbt.share.install.software.HTSLIB.find(:lib)
+                        Rbbt.software.opt.htslib.produce
+                        Rbbt.software.opt.htslib.bin.bgzip.find
+                      else
+                        path
+                      end
+                    end
+  end
 
   def self.setup(compressed_stream)
     require 'bio-bgzf'

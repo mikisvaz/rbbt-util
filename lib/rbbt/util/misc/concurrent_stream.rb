@@ -50,10 +50,17 @@ module ConcurrentStream
   def join_threads
     if @threads and @threads.any?
       @threads.each do |t| 
-        t.join unless t == Thread.current
+        next if t == Thread.current
+        begin
+          #t.join if t.status == 'run'
+          t.join unless FalseClass === t.status 
+        rescue Exception
+          Log.warn "Exception joining thread in ConcurrenStream: #{filename}"
+          raise $!
+        end
       end
-      @threads = []
     end
+    @threads = []
   end
 
   def join_pids
@@ -161,6 +168,14 @@ module ConcurrentStream
       end
     else
       super(*args)
+    end
+  end
+
+  def add_callback(&block)
+    old_callback = callback
+    @callback = Proc.new do 
+      old_callback.call if old_callback
+      block.call
     end
   end
 

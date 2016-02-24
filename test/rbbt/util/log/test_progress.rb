@@ -53,5 +53,22 @@ class TestProgress < Test::Unit::TestCase
     t1.join
     t2.join
   end
+
+  def test_bar_nested
+    Log::ProgressBar.with_bar(20, :desc => "Bar 1") do |bar|
+      bar.init
+      20.times do
+        Log::ProgressBar.with_bar(5, :desc => "Bar 2") do |bar|
+          5.times do
+            bar.tick
+            sleep 0.2
+          end
+        end
+        bar.tick
+        sleep 0.2
+      end
+    end
+
+  end
 end
 

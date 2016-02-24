@@ -38,11 +38,11 @@ module TSV
       end
     end
 
-    def init
+    def init(init_options = {})
       options = @options.dup
       key_field, fields = Misc.process_options options, :key_field, :fields
 
-      str = TSV.header_lines(key_field, fields, options)
+      str = TSV.header_lines(key_field, fields, options.merge(init_options || {}))
 
       Thread.pass while IO.select(nil, [@in_stream],nil,1).nil?
 

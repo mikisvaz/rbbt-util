@@ -27,7 +27,12 @@ module Persist
 
   def self.newer?(path, file)
     return true if not Open.exists? file
-    return File.mtime(path) - File.mtime(file) if File.mtime(path) < File.mtime(file)
+    path = path.find if Path === path
+    file = file.find if Path === file
+    patht = File.mtime(path)
+    filet = File.mtime(file)
+    diff = patht - filet
+    return diff if diff < 0
     return false
   end
 
@@ -82,7 +87,7 @@ module Persist
     options_md5 = Misc.hash2md5 clean_options
     filename  << ":" << options_md5 unless options_md5.empty?
 
-    persistence_dir[filename].find
+    persistence_dir[filename]
   end
 
   TRUE_STRINGS = Set.new ["true", "True", "TRUE", "t", "T", "1", "yes", "Yes", "YES", "y", "Y", "ON", "on"] unless defined? TRUE_STRINGS
@@ -194,6 +199,7 @@ module Persist
 
     saver_thread = Thread.new(Thread.current) do |parent|
       begin
+        file.threads = []
         Thread.current["name"] = "file saver: " + path
         save_file(path, type, file, lockfile)
       rescue Aborted
@@ -205,12 +211,15 @@ module Persist
         file.abort if file.respond_to? :abort
         parent.raise $!
         raise $!
+      rescue Exception
+        Log.exception $!
+        raise $!
       end
     end
     ConcurrentStream.setup(out, :threads => saver_thread, :filename => path)
     out.callback = callback
     out.abort_callback = abort_callback
-    out.lockfile = stream.lockfile if stream.respond_to? :lockfile
+    out.lockfile = stream.lockfile if stream.respond_to? :lockfile and stream.lockfile
     out
   end
 
@@ -225,8 +234,17 @@ module Persist
 
     if stream
       if persist_options[:no_load] == :stream 
-        res = tee_stream(stream, path, type, stream.respond_to?(:callback)? stream.callback : nil, stream.respond_to?(:abort_callback)? stream.abort_callback : nil, lockfile)
-        #res.lockfile = lockfile
+        callback = stream.respond_to?(:callback)? stream.callback : nil
+        abort_callback = stream.respond_to?(:abort_callback)? stream.abort_callback : nil
+
+        # This is to avoid calling the callbacks twice, since they have been
+        # moved to the new 'res' stream
+        stream.callback = nil
+        stream.abort_callback = nil
+
+        res = tee_stream(stream, path, type, callback, abort_callback, lockfile)
+
+        res.lockfile = lockfile
 
         raise KeepLocked.new res 
       else
@@ -278,6 +296,7 @@ module Persist
         Misc.insist do
           if is_persisted?(path, persist_options)
             Log.low "Persist up-to-date (suddenly): #{ path } - #{Misc.fingerprint persist_options}"
+            lockfile.unlock if lockfile.locked?
             return path if persist_options[:no_load]
             return load_file(path, type) 
           end
@@ -295,11 +314,9 @@ module Persist
       end
 
     rescue Lockfile::StolenLockError
-      begin
-        Log.medium "Lockfile stolen: #{path}"
-        sleep 1 + rand(2)
-      rescue Exception
-      end
+      Log.medium "Lockfile stolen: #{path} - #{lock_filename}"
+      Log.exception $!
+      sleep 1 + rand(2)
       retry
     rescue Exception
       Log.medium "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"
@@ -326,10 +343,17 @@ module Persist
       other_options = Misc.process_options persist_options, :other
       path = persistence_path(name, persist_options, other_options || {})
 
+      if ENV["RBBT_UPDATE_TSV_PERSIST"] == 'true' and name and Open.exists?(name)
+        persist_options[:check] ||= []
+        persist_options[:check] << name
+      else
+        check_options = {}
+      end
+
       case 
       when type.to_sym == :memory
         repo = persist_options[:repo] || Persist::MEMORY
-        repo[path] ||= yield
+        repo[path.find] ||= yield
 
       when (type.to_sym == :annotations and persist_options.include? :annotation_repo)
 
@@ -412,6 +436,7 @@ module Persist
         end
 
       else
+        path = path.find if Path === path
         persist_file(path, type, persist_options, &block)
       end
 

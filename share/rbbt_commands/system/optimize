@@ -1,0 +1,85 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Optimize the files in a directory. 
+
+$ rbbt system optimize [options] <directory>
+
+Compresses the chromosome files with BGZ and optimizes TokyoCabinet databases. Some files
+do not compress correctly with BGZ and are left un-compressed.
+
+-h--help Print this help
+-k--keep Keep original files
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.usage
+  end
+  exit 0
+end
+
+directory = ARGV.shift
+raise ParameterException, "No directory given" if directory.nil?
+
+raise ParameterException, "Not a valid directory" unless File.directory? directory
+
+directory = Path.setup directory.dup
+keep = options[:keep]
+
+require 'rbbt/util/misc/bgzf'
+
+Log.info Log.color(:magenta, "Processing chromosomes")
+chromosome_files = directory.glob('**/chromosome_*')
+TSV.traverse chromosome_files, :type => :array, :bar => "Processing chromosomes" do |chr_file|
+  next if chr_file =~ /.bgz$/
+  compressed_file = chr_file + '.bgz'
+  Log.info "Compressing #{ chr_file } into #{ compressed_file }"
+  CMD.cmd("#{Bgzf.bgzip_cmd} '#{ chr_file }' -c > #{ compressed_file }")
+  begin
+    Open.read(compressed_file)
+    if keep
+      Log.info "File #{ chr_file } was correctly compressed. Keeping original"
+    else
+      Log.info "File #{ chr_file } was correctly compressed. Removing original"
+      FileUtils.rm chr_file
+    end
+  rescue
+    Log.warn "File #{ chr_file } was not correctly compressed. Removing compressed version and leaving original"
+    FileUtils.rm compressed_file
+  end
+end
+
+Log.info Log.color(:magenta, "Processing Tokyo Cabinet files")
+
+all_files = directory.glob('**/*') + directory.glob('**/.*')
+all_files.uniq!
+TSV.traverse all_files, :type => :array, :bar => "Processing Tokyo Cabinet files" do |file|
+  cmd = 'file "' << file << '"'
+  file_type = CMD.cmd(cmd).read.strip.partition(/:\s+/).last
+  next unless file_type =~ /Tokyo/
+  type = file_type.split(", ")[1]
+  case type
+  when "Hash"
+    cmd = 'tchmgr optimize "' << file << '"'
+  when "B+ tree"
+    cmd = 'tcbmgr optimize "' << file << '"'
+  else
+    next
+  end
+  size = File.size(file)
+  cmd << ' -td -tl' if size > 2_000_000_000 or file_type =~ /deflate/
+  Log.info "Optimizing #{type} database #{file}"
+  io = CMD.cmd(cmd)
+  while line = io.gets
+    Log.debug line
+  end
+end
