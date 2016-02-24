@@ -50,6 +50,7 @@ while lines and lines.any?
   lines = lines[block_size+1..-1]
   columns[0] << first_block
   (1..num_columns-1).each do |pos|
+    next if lines.nil?
     block = lines[0..block_size-1]
     lines = lines[block_size+1..-1]
     columns[pos] << block
