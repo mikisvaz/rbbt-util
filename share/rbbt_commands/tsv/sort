@@ -29,7 +29,7 @@ if field =~ /^\d+$/
 else
   parser = TSV.parse_header(file, options)
   field_pos = parser.all_fields.index(field) + 1
-  saved_line = parser.line
+  saved_line = parser.first_line
 end
 
 rest = ARGV.inject("-t\"\t\" -g -k#{field_pos}"){|acc,e| acc << " '#{e}'" }

@@ -164,7 +164,7 @@ class Step
             end
           else
             Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} starting -- #{Log.color :blue, dependency.path}"
-            dependency.run(true) 
+            dependency.run(true).grace
           end
         else
           Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} done -- #{Log.color :blue, dependency.path}"
@@ -214,7 +214,6 @@ class Step
             stop_dependencies
             raise $!
           end
-
 
           set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 

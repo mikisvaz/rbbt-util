@@ -37,7 +37,7 @@ module Misc
       ":" << obj.to_s
     when String
       if obj.length > 100
-        "'" << obj.slice(0,30) << "<...#{obj.length}...>" << obj.slice(-10,30) << " " << "'"
+        "'" << obj.slice(0,30) << "<...#{obj.length}...>" << obj.slice(-10,30)<< "'"
       else 
         "'" << obj << "'"
       end

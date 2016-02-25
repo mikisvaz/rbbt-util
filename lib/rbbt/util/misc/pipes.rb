@@ -256,7 +256,9 @@ module Misc
           end
 
           begin
-            Open.mv tmp_path, path, lock_options
+            Misc.insist do
+              Open.mv tmp_path, path, lock_options
+            end
           rescue Exception
             raise $! unless File.exists? path
           end
@@ -273,7 +275,7 @@ module Misc
           content.abort if content.respond_to? :abort
           Open.rm path if File.exists? path
         rescue Exception
-          Log.medium "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
+          Log.medium "Exception in sensiblewrite: [#{Process.pid}] #{$!.message} -- #{ Log.color :blue, path }"
           Log.exception $!
           content.abort if content.respond_to? :abort
           Open.rm path if File.exists? path
