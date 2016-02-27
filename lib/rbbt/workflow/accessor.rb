@@ -84,7 +84,7 @@ class Step
     begin
       Misc.insist do
         begin
-          return @info_cache if @info_cache and File.ctime(info_file) < @info_cache_time
+          return @info_cache if @info_cache and @info_cache_time and File.ctime(info_file) < @info_cache_time
         rescue Exception
           raise $!
         end
@@ -94,8 +94,13 @@ class Step
             Misc.insist(2, 1, info_file) do
               Misc.insist(3, 0.2, info_file) do
                 raise TryAgain, "Info locked" if check_lock and info_lock.locked?
-                Open.open(info_file) do |file|
-                  INFO_SERIALIAZER.load(file) #|| {}
+                info_lock.lock if check_lock and false
+                begin
+                  Open.open(info_file) do |file|
+                    INFO_SERIALIAZER.load(file) #|| {}
+                  end
+                ensure
+                  info_lock.unlock if check_lock and false
                 end
               end
             end

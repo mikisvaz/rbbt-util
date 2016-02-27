@@ -13,7 +13,7 @@ Clean orphaned files
 
 $ rbbt system clean <workflow> <task>
 
--a--all Print all jobs, not only uncompleted
+-a--all Apply to all jobs, not only uncompleted
 -f--force Remove regardless of been active
 -h--help Print this help
 EOF

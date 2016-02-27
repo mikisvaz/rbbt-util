@@ -78,7 +78,7 @@ module TSV
       else
         fields = fields.compact.flatten
       end
-      options = options.merge(input_options.first)
+      options = options.merge(input_options.first || {})
       options[:type] = :list if options[:type] == :single
       options[:type] = :double if fix_flat
 
