@@ -61,6 +61,7 @@ module TSV
       fields = nil
       tsv.tap{|e| e.unnamed =  true; fields = e.fields}.through do |gene, names|
         names.zip(fields).each do |list, format|
+          list = [list] unless Array === list
           list.delete_if do |name| name.empty? end
           next if list.empty?
           text << list.collect{|name| [name, format] * "\t"} * "\n" << "\n"
@@ -255,7 +256,7 @@ module TSV
     new = {}
     case type
     when :double
-      self
+      return self
     when :flat
       through do |k,v|
         new[k] = [v]

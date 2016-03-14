@@ -81,7 +81,11 @@ module R
                            args << "--RS-pidfile"
                            args << "'#{pid_file}'"
 
-                           bin_path = File.join(ENV["R_HOME"], "bin/Rserve")
+                           if ENV["R_HOME"]
+                             bin_path = File.join(ENV["R_HOME"], "bin/Rserve") 
+                           else
+                             bin_path = "Rserve"
+                           end
                            cmd = bin_path + " " + args*" "
                            $stdout.reopen File.new('/dev/null', 'w')
                            exec(ENV, cmd)

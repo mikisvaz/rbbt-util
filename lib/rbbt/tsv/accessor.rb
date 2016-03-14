@@ -633,15 +633,17 @@ module TSV
       break
     end
 
+    filename = Path === filename ? filename.find : (filename || "No filename")
+    filename + " [" + persistence_path + "]" if respond_to?(:persistence_path) and persistence_path
     with_unnamed do
       <<-EOF
-Filename = #{Path === filename ? filename.find : (filename || "No filename")}
+Filename = #{filename}
 Key field = #{key_field || "*No key field*"}
 Fields = #{fields ? Misc.fingerprint(fields) : "*No field info*"}
 Type = #{type}
 Serializer = #{serializer.inspect}
 Size = #{size}
-namespace = #{namespace}
+namespace = #{Misc.fingerprint namespace}
 identifiers = #{Misc.fingerprint identifiers}
 Example:
   - #{key} -- #{Misc.fingerprint values }

@@ -8,6 +8,8 @@ module TSV
 
     identifiers, persist_input = Misc.process_options options, :identifiers, :persist_input
 
+    identifiers = Organism.identifiers(tsv.namespace) if identifiers.nil? and tsv.namespace
+
     if not tsv.fields.include? format
       new = {}
       tsv.each do |k,v|
