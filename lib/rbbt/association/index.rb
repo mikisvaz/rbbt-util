@@ -29,7 +29,7 @@ module Association
 
       key_field = [source_field, target_field, undirected ? "undirected" : nil].compact * "~"
 
-      TSV.setup(data, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => :list)
+      TSV.setup(data, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => :list, :namespace => database.namespace)
 
       data.key_field = key_field
       data.fields = fields[1..-1]
@@ -69,6 +69,8 @@ module Association
 
             annotations.each do |target, info|
               next if target.nil? or target.empty?
+              source.gsub!('~','-..-')
+              target.gsub!('~','-..-')
               key = [source, target] * "~"
 
               if data[key].nil? or info.nil?

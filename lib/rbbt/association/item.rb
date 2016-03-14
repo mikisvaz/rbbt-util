@@ -83,7 +83,8 @@ module AssociationItem
   end
   property :value => :array2single do
     index = index(database)
-    value = (reverse ? index.reverse : index).chunked_values_at self
+    #value = (reverse ? index.reverse : index).chunked_values_at self
+    value = index.chunked_values_at self
     value.collect{|v| NamedArray.setup(v, index.fields)}
   end
 

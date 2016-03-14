@@ -9,7 +9,7 @@ class KnowledgeBase
       Log.debug("Registering #{ name } from code block")
       @registry[name] = [block, options]
     else
-      Log.debug("Registering #{ name }: #{ Misc.fingerprint file }")
+      Log.debug("Registering #{ name }: #{ Misc.fingerprint file } #{Misc.fingerprint options}")
       @registry[name] = [file, options]
     end
   end
@@ -40,20 +40,26 @@ class KnowledgeBase
 
   def get_index(name, options = {})
     name = name.to_s
-    options[:organism] ||= options[:namespace] ||= self.namespace
     @indices[[name, options]] ||= 
       begin 
-        fp = Misc.hash2md5(options)
-        key = name.to_s + "_" + fp
+        if options.empty?
+          key = name.to_s
+        else
+          fp = Misc.hash2md5(options)
+          key = name.to_s + "_" + fp
+        end
 
         Persist.memory("Index:" << [key, dir] * "@") do
           options = options.dup
+
+          options[:organism] ||= options[:namespace] ||= self.namespace unless self.namespace.nil?
+
           persist_dir = dir
           persist_file = persist_dir[key].find
           file, registered_options = registry[name]
 
           options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
-          options = Misc.add_defaults options, :persist_file => persist_file, :persist_dir => persist_dir, :namespace => namespace, :format => format, :persist => true
+          options = Misc.add_defaults options, :persist_file => persist_file, :persist_dir => persist_dir, :format => format, :persist => true
 
           if entity_options
             options[:entity_options] ||= {}
@@ -75,7 +81,7 @@ class KnowledgeBase
                     Association.index(file, options, persist_options.dup)
                   end
 
-          index.namespace = self.namespace
+          index.namespace = self.namespace unless self.namespace
 
           index
         end
@@ -84,19 +90,30 @@ class KnowledgeBase
 
   def get_database(name, options = {})
     name = name.to_s
-    options[:organism] ||= options[:namespace] ||= self.namespace
+
     @databases[[name, options]] ||= 
       begin 
         fp = Misc.fingerprint([name,options])
-        key = name.to_s + "_" + Misc.digest(fp) + '.database'
+
+        if options.empty?
+          key = name.to_s
+        else
+          fp = Misc.hash2md5(options)
+          key = name.to_s + "_" + fp
+        end
+
+        key += '.database'
         Persist.memory("Database:" << [key, dir] * "@") do
           options = options.dup
+
+          options[:organism] ||= options[:namespace] ||= self.namespace unless self.namespace.nil?
+
           persist_dir = dir
           persist_file = persist_dir[key].find
           file, registered_options = registry[name]
 
           options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
-          options = Misc.add_defaults options, :persist_file => persist_file, :namespace => namespace, :format => format, :persist => true
+          options = Misc.add_defaults options, :persist_file => persist_file, :format => format, :persist => true
 
           if entity_options
             options[:entity_options] ||= {}
@@ -118,7 +135,7 @@ class KnowledgeBase
                     Association.open(file, options, persist_options)
                   end
 
-          database.namespace = self.namespace
+          database.namespace = self.namespace if self.namespace
 
           database
         end
@@ -127,6 +144,36 @@ class KnowledgeBase
 
   def index_fields(name)
     get_index(name).fields
+  end
+
+  def produce(name, *rest,&block)
+    register(name, *rest, &block)
+    get_index(name)
+  end
+
+  def info(name)
+
+    source = self.source(name)
+    target = self.target(name)
+    source_type = self.source_type(name)
+    target_type = self.target_type(name)
+    fields = self.fields(name)
+    source_entity_options = self.entity_options_for source_type, name
+    target_entity_options = self.entity_options_for target_type, name
+    undirected = self.undirected(name) == 'undirected'
+
+    info = {
+      :source => source,
+      :target => target,
+      :source_type => source_type,
+      :target_type => target_type,
+      :source_entity_options => source_entity_options,
+      :target_entity_options => target_entity_options,
+      :fields => fields,
+      :undirected => undirected,
+    }
+
+    info
   end
 
 end
