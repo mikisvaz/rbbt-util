@@ -219,7 +219,7 @@ module CMD
 
       Process.waitpid pid
 
-      if not $?.success?
+      if not $?.success? and not no_fail
         raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"
       else
         Log.log err, stderr if Integer === stderr and log

@@ -242,7 +242,7 @@ module TSV
   end
 
   def reorder(new_key_field = nil, new_fields = nil, options = {}) 
-    zipped, uniq = Misc.process_options options, :zipped, :uniq
+    zipped, uniq, merge = Misc.process_options options, :zipped, :uniq, :merge
 
     persist_options = Misc.pull_keys options, :persist
     persist_options[:prefix] = "Reorder"
@@ -257,7 +257,15 @@ module TSV
       with_unnamed do
         if zipped or (type != :double and type != :flat)
           new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
-            data[key] = value.clone if Array === value
+            if merge and data[key]
+              new_values = data[key].dup
+              value.each_with_index do |v,i|
+                new_values[i] = [new_values[i], v].flatten
+              end
+              data[key] = new_values if Array === value
+            else
+              data[key] = value.clone if Array === value
+            end
           end
         else
           case type 
