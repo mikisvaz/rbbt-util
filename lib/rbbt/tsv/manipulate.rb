@@ -317,7 +317,7 @@ module TSV
       data.fields.each do |field|
         data.entity_templates[field] = entity_templates[field] if entity_templates.include? field
       end
-      data.type = zipped ? :list : type
+      data.type = zipped ? (merge ? :double : :list) : type
     end
   end
 
