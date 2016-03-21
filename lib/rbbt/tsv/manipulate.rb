@@ -257,12 +257,16 @@ module TSV
       with_unnamed do
         if zipped or (type != :double and type != :flat)
           new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
-            if merge and data[key]
-              new_values = data[key].dup
-              value.each_with_index do |v,i|
-                new_values[i] = [new_values[i], v].flatten
+            if merge 
+              if data[key]
+                new_values = data[key].dup
+                value.each_with_index do |v,i|
+                  new_values[i] = [new_values[i], v].flatten
+                end
+                data[key] = new_values if Array === value
+              else
+                data[key] = value.collect{|v| [v]} if Array === value
               end
-              data[key] = new_values if Array === value
             else
               data[key] = value.clone if Array === value
             end
