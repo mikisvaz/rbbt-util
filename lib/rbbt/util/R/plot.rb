@@ -114,8 +114,8 @@ data = NULL
     end
 
     def self.plot(filename, data, script = nil, width = nil, height = nil, options = {})
-      width ||= 3
-      height ||= 3
+      width ||= 200
+      height ||= 200
       values = []
 
       sources = [:plot, options[:source]].flatten.compact
