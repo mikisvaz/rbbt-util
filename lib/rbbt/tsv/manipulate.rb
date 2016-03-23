@@ -261,7 +261,7 @@ module TSV
               if data[key]
                 new_values = data[key].dup
                 value.each_with_index do |v,i|
-                  new_values[i] = [new_values[i], v].flatten
+                  new_values[i] += [v]
                 end
                 data[key] = new_values if Array === value
               else

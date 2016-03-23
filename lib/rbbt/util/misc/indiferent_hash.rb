@@ -19,9 +19,13 @@ module IndiferentHash
     super(key,value)
   end
 
+  def _default?
+    @_default ||= self.default or self.default_proc
+  end
+
   def [](key)
     res = super(key) 
-    return res unless res.nil?
+    return res unless res.nil? or (_default? and not keys.include? key)
 
     case key
     when Symbol, Module
@@ -29,7 +33,7 @@ module IndiferentHash
     when String
       super(key.to_sym)
     else
-      super(key)
+      res
     end
   end
 
