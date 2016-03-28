@@ -583,6 +583,8 @@ module Workflow
       when Proc
         _inputs = IndiferentHash.setup(inputs.dup)
         dependency.call jobname, _inputs, real_dependencies
+      else
+        raise "Dependency for #{task.name} not understood: #{Misc.fingerprint dependency}"
       end
     end
     real_dependencies.flatten.compact

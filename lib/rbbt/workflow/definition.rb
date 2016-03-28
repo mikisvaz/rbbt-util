@@ -55,7 +55,11 @@ module Workflow
       DependencyBlock.setup block, dependency if dependency.any?
       @dependencies << block
     else
-      if Module === dependency.first or (defined? WorkflowRESTClient and WorkflowRESTClient === dependency.first)
+      if Module === dependency.first or 
+        (defined? WorkflowRESTClient and WorkflowRESTClient === dependency.first) or
+        Hash === dependency.last
+
+        dependency = ([self] + dependency) unless Module === dependency.first 
         @dependencies << dependency
       else
         @dependencies.concat dependency
