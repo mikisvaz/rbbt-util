@@ -7,12 +7,17 @@ module TCCache
   end
 
   def cache(key)
-    if self.include? key
-      return self[key]
-    else
-      self.write_and_read do
-        self[key] = yield
-      end
+
+    self.read_and_close do
+      return self[key] if self.include? key
     end
+
+    value = yield
+
+    self.write_and_close do
+      self[key] = value
+    end
+
+    value
   end
 end
