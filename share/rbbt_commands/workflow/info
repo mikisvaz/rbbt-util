@@ -121,8 +121,12 @@ end
 if recursive
   puts Log.color(:magenta, "Recursive inputs") << ": "
   inputs = step.info[:inputs]
-  step.rec_dependencies.each do |dep|
-    inputs.merge(dep.info[:inputs])
+  deps = step.info[:dependencies].collect{|v| get_step v.last }
+
+  while deps.any? do
+    dep = deps.shift
+    inputs = inputs.merge(dep.info[:inputs])
+    deps.concat dep.info[:dependencies].collect{|v| get_step v.last }
   end
 
   inputs.each do |key,value|
