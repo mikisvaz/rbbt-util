@@ -15,12 +15,14 @@ $ rbbt workflow info <job-result>
 
 -h--help Help
 -a--all Print all info entries
+-r--recursive Print recursive input values
 EOF
 
 SOPT.usage if options[:help]
 
 file = ARGV.shift
 all = options.delete :all
+recursive = options.delete :recursive
 
 def get_step(file)
   file = file.sub(/\.(info|files)/,'')
@@ -113,5 +115,17 @@ if all
   puts Log.color(:magenta, "Other entries") << ": "
   rest.each do |key|
     puts Misc.format_definition_list_item(key, info[key].to_s)
+  end
+end
+
+if recursive
+  puts Log.color(:magenta, "Recursive inputs") << ": "
+  inputs = step.info[:inputs]
+  step.rec_dependencies.each do |dep|
+    inputs.merge(dep.info[:inputs])
+  end
+
+  inputs.each do |key,value|
+    puts Misc.format_definition_list_item(key, value.to_s)
   end
 end
