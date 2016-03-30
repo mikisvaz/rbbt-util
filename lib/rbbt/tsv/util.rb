@@ -292,7 +292,7 @@ module TSV
         through do |k,v| new[k] = v[pos] end
       end
     when :flat
-      self
+      return self
     when :single
       through do |k,v|
         new[k] = [v]

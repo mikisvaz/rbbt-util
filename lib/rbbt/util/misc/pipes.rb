@@ -365,6 +365,10 @@ module Misc
                 current_parts[i] = current_parts[i] << "|" << part
               end
             end
+
+            (parts.length..current_parts.length-1).to_a.each do |pos|
+              current_parts[pos] = current_parts[pos] << "|" << ""
+            end
           when current_key != key
             sin.puts [current_key, current_parts].flatten * sep
             current_key = key

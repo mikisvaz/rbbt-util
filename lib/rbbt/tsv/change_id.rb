@@ -51,8 +51,10 @@ module TSV
     options = Misc.add_defaults options, :persist => false, :identifiers => tsv.identifiers, :compact => true
 
     identifiers, persist_input, compact = Misc.process_options options, :identifiers, :persist, :compact
+    identifiers = tsv.identifier_files.first if identifiers.nil?
+    identifiers = Organism.identifiers(tsv.namespace) if identifiers.nil? and tsv.namespace and Organism.identifiers(tsv.namespace).exists?
 
-    fields = identifiers.all_fields.include?(field)? [field] : nil
+    fields = (identifiers and identifiers.all_fields.include?(field))? [field] : nil 
     index = identifiers.index :target => format, :fields => fields, :persist => persist_input
 
     orig_type = tsv.type 

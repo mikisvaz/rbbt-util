@@ -29,7 +29,7 @@ module TSV
               end
             end
 
-            new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
+            new_values.collect!{|v| [v]}     if     type == :double and not (other.type == :double or other.type == :flat)
             new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
 
             new_values.flatten if type == :flat

@@ -18,7 +18,7 @@ module TSV
  
   def self.paste_streams(streams, options = {})
     options = Misc.add_defaults options, :sep => "\t", :sort => true
-    sort, sep, preamble, header, same_fields, fix_flat = Misc.process_options options, :sort, :sep, :preamble, :header, :same_fields, :fix_flat
+    sort, sep, preamble, header, same_fields, fix_flat, all_match = Misc.process_options options, :sort, :sep, :preamble, :header, :same_fields, :fix_flat, :all_match
 
     out = Misc.open_pipe do |sin|
 
@@ -127,6 +127,9 @@ module TSV
           min = keys.compact.sort.first
           break if min.nil?
           str = []
+
+          skip = all_match && keys.uniq != [min]
+
           keys.each_with_index do |key,i|
             case key
             when min
@@ -160,6 +163,8 @@ module TSV
               end
             end
           end
+
+          next if skip
 
           if same_fields
 
