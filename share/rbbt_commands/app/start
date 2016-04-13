@@ -18,6 +18,7 @@ $ rbbt app start [options] <app_name>
 -s--server* Server type:  thin, webrick, unicorn, etc
 -f--finder Start server with finder functionality
 -R--Rserve_session* Rserve session to use, otherwise start new one
+-wd--workdir* Change the working directory of the workflow
 --views* Directory with view templates
 EOF
 
@@ -28,6 +29,11 @@ if options[:help]
     puts SOPT.usage
   end
   exit 0
+end
+
+if options[:workdir]
+  require 'rbbt/workflow'
+  Workflow.workdir = options[:workdir]
 end
 
 options[:Port] ||= options[:port]

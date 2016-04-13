@@ -197,6 +197,7 @@ module TSV
 
     if complete
       fill = TrueClass === complete ? nil : complete
+      field_length = self.fields.length 
       missing = other.keys - self.keys
       case type
       when :single

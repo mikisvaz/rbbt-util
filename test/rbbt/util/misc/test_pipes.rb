@@ -19,6 +19,34 @@ row2 aa bb cc
     assert_equal ["BB", "bb"], tsv["row2"][1]
   end
 
+  def test_collapse_stream_gap
+    text=<<-EOF
+row2 AA BB 
+row2 aa bb cc
+    EOF
+
+    s = StringIO.new text
+    assert Misc.collapse_stream(s, nil, " ").read =~  /\|cc$/
+    
+    text=<<-EOF
+row2 aa bb cc
+row2 AA BB 
+    EOF
+
+    s = StringIO.new text
+    assert Misc.collapse_stream(s, nil, " ").read =~  /cc\|$/
+
+    text=<<-EOF
+row2 AA BB
+row2 aa bb cc
+    EOF
+
+    s = StringIO.new text
+    assert Misc.collapse_stream(s, nil, " ").read =~  /\|cc$/
+
+  end
+
+
   def test_paste_stream
     text1=<<-EOF
 row1 A B C

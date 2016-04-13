@@ -353,14 +353,16 @@ module Misc
 
         current_parts = []
         while line 
-          key, *parts = line.strip.split(sep, -1)
-          current_key ||= key
+          key, *parts = line.chomp.split(sep, -1)
           case
           when key.nil?
+          when current_parts.nil?
+            current_parts = parts
+            current_key = key
           when current_key == key
             parts.each_with_index do |part,i|
               if current_parts[i].nil?
-                current_parts[i] = part
+                current_parts[i] = "|" << part
               else
                 current_parts[i] = current_parts[i] << "|" << part
               end
