@@ -13,7 +13,11 @@ module TSV
     if not tsv.fields.include? format
       new = {}
       tsv.each do |k,v|
-        new[k] = v.dup if v === String or v === Array
+        if v === String or v === Array
+          new[k] = v.dup 
+        else
+          new[k] = v
+        end
       end
       orig_fields = tsv.fields
       tsv = tsv.annotate new
