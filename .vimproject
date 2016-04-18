@@ -306,15 +306,16 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
  }
  etc=etc filter="*"{
   app.d=app.d{
-   init.rb
-   workflows.rb
    base.rb
+   requires.rb
    entities.rb
    finder.rb
    foundation.rb
    grid_system.rb
+   init.rb
    knowledge_bases.rb
    resources.rb
+   workflows.rb
   }
  }
  share=share{

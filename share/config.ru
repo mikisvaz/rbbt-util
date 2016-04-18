@@ -43,6 +43,9 @@ load_file Rbbt.etc['app.d/resources.rb'].find
 #{{{ KNOWLEDGEBASE
 load_file Rbbt.etc['app.d/knowledge_bases.rb'].find
 
+#{{{ REQUIRES
+load_file Rbbt.etc['app.d/requires.rb'].find
+
 #{{{ ENTITIES
 load_file Rbbt.etc['app.d/entities.rb'].find
 

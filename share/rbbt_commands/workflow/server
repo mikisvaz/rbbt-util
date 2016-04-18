@@ -14,8 +14,6 @@ require 'rbbt/rest/knowledge_base'
 require 'rbbt/rest/helpers'
 require 'rbbt/rest/web_tool'
 
-#options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*:-w--workflows*"
-
 options = SOPT.setup <<EOF
 Start an rbbt app
 
@@ -68,6 +66,10 @@ app.instance_eval Rbbt.etc['app.d/base.rb'].read
 app.use Rack::Deflater
 
 load Rbbt.etc['app.d/resources.rb'].find
+
+load Rbbt.etc['app.d/requires.rb'].find
+
+load Rbbt.etc['app.d/entities.rb'].find
 
 app.class_eval do
   eval Rbbt.etc['app.d/finder.rb'].read

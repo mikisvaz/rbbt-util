@@ -359,7 +359,7 @@ module TSV
     new.entity_options = entity_options
     new.entity_templates = entity_templates
     
-   case
+    case
     when (method.nil? and block_given?)
       through do |key, values|
         new[key] = values if invert ^ (yield key, values)
