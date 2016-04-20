@@ -10,7 +10,7 @@ Access workflow knowledge_base
 
 $ rbbt workflow knowledge_base <workflow> [<database>] [<action>] [<options>]
 
-Access workflow knowledge base
+Access workflow knowledge base. Allowed actions are: list_databases, summary, and subset
 
 -h--help Show this help:
 -s--source_entities* Source entities
@@ -78,4 +78,6 @@ when :subset
       end
     end
   end
+else
+  raise ParameterException, "Action not understood: #{ action }"
 end

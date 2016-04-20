@@ -113,7 +113,11 @@ module AssociationItem
       index.chunked_values_at(self).each_with_index do |v,i|
         p = self[i]
         source, _sep, target = p.partition("~")
-        tsv[p] = [source, target].concat v
+        if info_fields.empty?
+          tsv[p] = [source, target]
+        else
+          tsv[p] = [source, target].concat v 
+        end
       end
     end
     tsv.entity_options = {:organism => namespace}
