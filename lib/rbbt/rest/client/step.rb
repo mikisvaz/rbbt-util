@@ -1,3 +1,4 @@
+require 'excon'
 class WorkflowRESTClient
   class RemoteStep < Step
 
@@ -89,18 +90,25 @@ class WorkflowRESTClient
       @mutex.synchronize do
         @result ||= begin
                       if @is_exec
-                        exec_job 
+                        exec(noload)
+                      elsif noload == :stream
+                        _run_job(:stream)
                       else
                         init_job 
                         self.load
                       end
                     end
       end
+      return @result if noload == :stream
       noload ? path + '?_format=raw' : @result
     end
 
-    def exec(*args)
-      exec_job
+    def exec(noload = false)
+      if noload == :stream
+        _run_job(:exec)
+      else
+        exec_job 
+      end
     end
 
     def join
@@ -124,18 +132,28 @@ class WorkflowRESTClient
     end
 
     def load_res(res, result_type = nil)
-      join
+      stream = true if res.respond_to? :read
+      join unless stream
       result_type ||= self.result_type
       case result_type
       when :string
-        res
+        stream ? res.read : res
       when :boolean
-        res == "true"
+        (stream ? res.read : res) == 'true'
       when :tsv
-        TSV.open(StringIO.new(res))
+        if stream
+          TSV.open(res, :monitor => true)
+        else
+          TSV.open(StringIO.new(res))
+        end
       when :annotations
-        Annotated.load_tsv(TSV.open(StringIO.new(res)))
+        if stream
+          Annotated.load_tsv(TSV.open(res))
+        else
+          Annotated.load_tsv(TSV.open(StringIO.new(res)))
+        end
       when :array
+        (stream ? res.read : res).split("\n")
         res.split("\n")
       else
         JSON.parse res
@@ -147,10 +165,33 @@ class WorkflowRESTClient
       load_res get
     end
     
-    def exec_job
-      res = WorkflowRESTClient.capture_exception do
-        RestClient.post(URI.encode(File.join(base_url, task.to_s)), inputs.merge(:_cache_type => :exec, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json))
+    def _run_job(cache_type = :async)
+      WorkflowRESTClient.capture_exception do
+        url = URI.encode(File.join(base_url, task.to_s))
+        task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
+
+        sout, sin = Misc.pipe
+        streamer = lambda do |c|
+          sin.write c
+        end
+
+        Thread.new do
+          bl = lambda do |rok|
+            rok.read_body do |c,_a, _b|
+              sin.write c
+            end
+            sin.close
+          end
+
+          RestClient::Request.execute(:method => :post, :url => url, :payload => task_params, :block_response => bl)
+        end
+
+        Zlib::GzipReader.new(sout)
       end
+    end
+
+    def exec_job
+      res = _run_job(:exec)
       load_res res, result_type == :array ? :json : result_type
     end
 

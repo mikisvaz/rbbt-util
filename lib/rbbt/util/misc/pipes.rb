@@ -159,7 +159,7 @@ module Misc
     str
   end
 
-  def self.consume_stream(io, in_thread = false, into = nil)
+  def self.consume_stream(io, in_thread = false, into = nil, into_close = true)
     return if Path === io
     return unless io.respond_to? :read 
     if io.respond_to? :closed? and io.closed?
@@ -169,10 +169,15 @@ module Misc
 
     if in_thread
       Thread.new do
-        consume_stream(io, false)
+        consume_stream(io, false, into, into_close)
       end
     else
-      Log.medium "Consuming stream #{Misc.fingerprint io}"
+      if into
+        Log.medium "Consuming stream #{Misc.fingerprint io} -> #{Misc.fingerprint into}"
+      else
+        Log.medium "Consuming stream #{Misc.fingerprint io}"
+      end
+
       begin
         into = into.find if Path === into
         into = Open.open(into, :mode => 'w') if String === into 
@@ -182,6 +187,8 @@ module Misc
         end
         io.join if io.respond_to? :join
         io.close unless io.closed?
+        into.close if into and into_close and not into.closed?
+        into.join if into and into_close and into.respond_to?(:joined?) and not into.joined?
       rescue Aborted
         Log.medium "Consume stream aborted #{Misc.fingerprint io}"
         io.abort if io.respond_to? :abort
@@ -344,7 +351,7 @@ module Misc
     end
   end
 
-  def self.collapse_stream(s, line = nil, sep = "\t", header = nil)
+  def self.collapse_stream(s, line = nil, sep = "\t", header = nil, &block)
     sep ||= "\t"
     Misc.open_pipe do |sin|
       sin.puts header if header
@@ -371,15 +378,28 @@ module Misc
             (parts.length..current_parts.length-1).to_a.each do |pos|
               current_parts[pos] = current_parts[pos] << "|" << ""
             end
+          when current_key.nil?
+            current_key = key
+            current_parts = parts
           when current_key != key
-            sin.puts [current_key, current_parts].flatten * sep
+            if block_given?
+              res = block.call(current_parts)
+              sin.puts [current_key, res] * sep
+            else
+              sin.puts [current_key, current_parts].flatten * sep
+            end 
             current_key = key
             current_parts = parts
           end
           line = s.gets
         end
 
-        sin.puts [current_key, current_parts].flatten * sep unless current_key.nil?
+        if block_given?
+          res = block.call(current_parts)
+          sin.puts [current_key, res] * sep
+        else
+          sin.puts [current_key, current_parts].flatten * sep
+        end unless current_key.nil?
       end
     end
   end

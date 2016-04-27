@@ -554,6 +554,15 @@ module TSV
 
         progress_monitor.bytes = true
         progress_monitor.max =  size unless size.to_i == 0
+      elsif monitor
+        desc = "Parsing Stream"
+        step = 100
+        size = nil
+        if Hash === monitor
+          desc = monitor[:desc] if monitor.include? :desc 
+          step = monitor[:step] if monitor.include? :step 
+        end
+        progress_monitor = Log::ProgressBar.new_bar(size, :desc => desc, :bytes => true)
       end
 
       # parser 

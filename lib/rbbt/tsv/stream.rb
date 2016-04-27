@@ -1,18 +1,21 @@
 require 'rbbt/tsv/dumper'
 module TSV
 
-  def self.collapse_stream(input, options = {})
-    options = Misc.add_defaults options, :sep => "\t"
+  def self.collapse_stream(input, options = {}, &block)
+    options = Misc.add_defaults options, :sep => "\t", :header_hash => '#', :uniq => true
     input_stream = TSV.get_stream input
 
-    sorted_input_stream = Misc.sort_stream input_stream
+    header_hash = options[:header_hash]
+    cmd_args = options[:uniq] ? "-u" : nil
+
+    sorted_input_stream = Misc.sort_stream input_stream, header_hash, cmd_args
 
     parser = TSV::Parser.new sorted_input_stream, options.dup
     dumper = TSV::Dumper.new parser
     header = TSV.header_lines(parser.key_field, parser.fields, parser.options)
     dumper.close_in
     dumper.close_out
-    dumper.stream = Misc.collapse_stream parser.stream, parser.first_line, parser.sep, header
+    dumper.stream = Misc.collapse_stream parser.stream, parser.first_line, parser.sep, header, &block
     dumper
   end
  
@@ -65,7 +68,7 @@ module TSV
 
         if fix_flat and parser.type == :flat and parser.first_line
           parts = lines[-1].split("\t")
-          lines[-1] = [parts[0], parts[1..-1]*"|"] * "\t"
+          lines[-1] = [parts[0], (parts[1..-1] || [])*"|"] * "\t"
           TSV.stream_flat2double(parser.stream).stream
         else
           parser.stream
@@ -220,6 +223,7 @@ module TSV
     parser = TSV::Parser.new TSV.get_stream(stream), :type => :flat
     dumper_options = parser.options.merge(options).merge(:type => :double)
     dumper = TSV::Dumper.new dumper_options
+    dumper.init
     TSV.traverse parser, :into => dumper do |key,values|
       key = key.first if Array === key
       values = [values] unless Array === values

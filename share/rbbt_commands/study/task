@@ -203,7 +203,7 @@ if do_fork
   end
   raise job.messages.last if job.error?
 else
-  res = job.run(true)
+  res = job.run(:stream)
 end
 
 if options.delete(:printname)
@@ -216,7 +216,13 @@ end
 if Step === res
   puts Open.read(res.path) if File.exists? res.path
 else
-  puts res
+  if res.respond_to? :gets
+    while line = res.gets
+      puts line
+    end
+  else
+    puts res
+  end
 end
 
 exit 0

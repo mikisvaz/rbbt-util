@@ -242,7 +242,13 @@ class Step
     Step.log_progress(status, options, file(:progress), &block)
   end
 
-  def progress_bar(msg = "Progress", options = {})
+  def progress_bar(msg = "Progress", options = nil)
+    if Hash === msg and options.nil?
+      options = msg
+      msg = nil
+    end
+    options = {} if options.nil?
+
     max = options[:max]
     Log::ProgressBar.new_bar(max, {:desc => msg, :file => file(:progress)}.merge(options))
   end
@@ -565,7 +571,14 @@ module Workflow
                 #rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
                 _inputs[i] = rec_dependency
               else
-                _inputs[i] = rec_dependency.run
+                rec_dependency.abort if rec_dependency.streaming? and not rec_dependency.running?
+                rec_dependency.clean if rec_dependency.error? or rec_dependency.aborted?
+                if rec_dependency.streaming? and rec_dependency.running?
+                  _inputs[i] = rec_dependency.join.load
+                else
+                  rec_dependency.run(true).join
+                  _inputs[i] = rec_dependency.load
+                end
               end
             end
           else

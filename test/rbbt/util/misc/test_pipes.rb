@@ -19,6 +19,23 @@ row2 aa bb cc
     assert_equal ["BB", "bb"], tsv["row2"][1]
   end
 
+  def test_collapse_sum
+    text=<<-EOF
+row1 12
+row1 4
+row2 10
+row2 6
+    EOF
+
+    s = StringIO.new text
+    stream = Misc.collapse_stream(s,nil, " ") do |parts|
+      next nil if parts.empty?
+      parts.first.split("|").collect{|p| p.to_f}.inject(0){|acc,e| acc += e}.to_s
+    end
+    tsv = TSV.open  stream, :sep => " " 
+    ppp tsv.to_s
+  end
+
   def test_collapse_stream_gap
     text=<<-EOF
 row2 AA BB 

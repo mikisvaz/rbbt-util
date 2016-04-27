@@ -20,7 +20,11 @@ module Docker
         when File 
           FileUtils.cp obj.filename, directory[name]
         when IO
-          Open.write(tmpfile[name], obj)
+          begin
+            Open.write(directory[name], obj)
+          ensure
+            obj.join if obj.respond_to?(:join) and not obj.joined?
+          end
         when String
           if obj.length < 256 and File.exists?(obj)
             FileUtils.cp obj, directory[name]
@@ -39,7 +43,11 @@ module Docker
           when File 
             FileUtils.cp obj.filename, tmpfile[name]
           when IO
-            Open.write(tmpfile[name], obj)
+            begin
+              Open.write(tmpfile[name], obj)
+            ensure
+              obj.join if obj.respond_to?(:join) and not obj.joined?
+            end
           when String
             if obj.length < 256 and File.exists?(obj)
               FileUtils.cp obj, tmpfile[name]

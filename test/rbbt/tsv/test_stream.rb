@@ -193,7 +193,6 @@ row2 AAA
     s1 = StringIO.new text1
     s2 = StringIO.new text2
     tsv = TSV.open TSV.paste_streams([s1,s2], :sep => " ", :type => :double, :sort => false, :same_fields => true)
-    ppp tsv.to_s
     assert_equal "Row", tsv.key_field
     assert_equal ["AA", "AAA"], tsv["row2"][0]
   end
