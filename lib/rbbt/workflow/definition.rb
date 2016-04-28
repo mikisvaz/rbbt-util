@@ -59,7 +59,7 @@ module Workflow
         (defined? WorkflowRESTClient and WorkflowRESTClient === dependency.first) or
         Hash === dependency.last
 
-        dependency = ([self] + dependency) unless Module === dependency.first 
+        dependency = ([self] + dependency) unless Module === dependency.first or (defined? WorkflowRESTClient and WorkflowRESTClient === dependency.first)
         @dependencies << dependency
       else
         @dependencies.concat dependency

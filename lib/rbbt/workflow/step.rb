@@ -236,7 +236,8 @@ class Step
 
     new_dependencies = []
     dependencies.each{|step| 
-      new_dependencies.concat step.rec_dependencies
+      r = step.rec_dependencies
+      new_dependencies.concat r
       new_dependencies << step
     }
     new_dependencies.uniq

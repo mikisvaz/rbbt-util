@@ -90,7 +90,7 @@ module Log
 
   def self.logfile(file=nil)
     if file.nil?
-      @logfile
+      @logfile ||= nil
     else
       case file
       when String

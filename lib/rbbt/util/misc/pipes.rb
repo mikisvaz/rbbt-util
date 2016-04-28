@@ -159,7 +159,7 @@ module Misc
     str
   end
 
-  def self.consume_stream(io, in_thread = false, into = nil, into_close = true)
+  def self.consume_stream(io, in_thread = false, into = nil, into_close = true, &block)
     return if Path === io
     return unless io.respond_to? :read 
     if io.respond_to? :closed? and io.closed?
@@ -189,6 +189,7 @@ module Misc
         io.close unless io.closed?
         into.close if into and into_close and not into.closed?
         into.join if into and into_close and into.respond_to?(:joined?) and not into.joined?
+        block.call if block_given?
       rescue Aborted
         Log.medium "Consume stream aborted #{Misc.fingerprint io}"
         io.abort if io.respond_to? :abort

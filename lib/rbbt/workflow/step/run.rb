@@ -164,20 +164,21 @@ class Step
             end
           else
             Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} starting -- #{Log.color :blue, dependency.path}"
-            dependency.run(true).grace
+            dependency.run(:stream)
+            dependency.grace
           end
         else
           Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} done -- #{Log.color :blue, dependency.path}"
         end
 
       rescue Aborted
-        Log.error "Aborted dep. #{Log.color :red, dependency.task.name.to_s}"
+        Log.error "Aborted dep. #{Log.color :red, dependency.task_name.to_s}"
         raise $!
       rescue Interrupt
-        Log.error "Interrupted while in dep. #{Log.color :red, dependency.task.name.to_s}"
+        Log.error "Interrupted while in dep. #{Log.color :red, dependency.task_name.to_s}"
         raise $!
       rescue Exception
-        Log.error "Exception in dep. #{ Log.color :red, dependency.task.name.to_s }"
+        Log.error "Exception in dep. #{ Log.color :red, dependency.task_name.to_s }"
         raise $!
       end
     end
@@ -204,7 +205,6 @@ class Step
             :issued => (issue_time = Time.now),
             :name => name,
             :clean_name => clean_name,
-            :dependencies => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]},
           })
 
           dup_inputs
@@ -214,6 +214,7 @@ class Step
             stop_dependencies
             raise $!
           end
+          set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
 
           set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 

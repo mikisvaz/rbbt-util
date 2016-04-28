@@ -83,13 +83,18 @@ class WorkflowRESTClient
   end
 
   def self.post_jobname(url, params = {})
+    Log.stack caller
     Log.debug{ "RestClient post_jobname: #{ url } - #{Misc.fingerprint params}" }
     params = params.merge({ :_format => 'jobname' })
     params = fix_params params
 
-    capture_exception do
+    name = capture_exception do
       RestClient.post(URI.encode(url), params)
     end
+
+    Log.debug{ "RestClient post_jobname: #{ url } - #{Misc.fingerprint params}: #{name}" }
+
+    name
   end
   
   def self.post_json(url, params = {})

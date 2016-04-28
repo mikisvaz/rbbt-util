@@ -19,6 +19,7 @@ module TSV
   end
 
   def entity_options
+    @entity_options ||= nil
     if @entity_options.nil?
       @entity_options = namespace ? {:namespace => namespace, :organism => namespace} : {}
       @entity_templates = nil
@@ -122,7 +123,7 @@ module TSV
   end
 
   def write?
-    @writable
+    @writable ||= false
   end
 
   def self._extended(data)

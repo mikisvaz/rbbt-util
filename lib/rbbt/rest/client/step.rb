@@ -1,30 +1,36 @@
-require 'excon'
 class WorkflowRESTClient
   class RemoteStep < Step
 
     attr_accessor :url, :base_url, :task, :base_name, :inputs, :result_type, :result_description, :is_exec
 
     def self.get_streams(inputs)
+      new_inputs = {}
       inputs.each do |k,v|
-        if Step === v
-          stream = v.get_stream
-          inputs[k] = stream || v.run
+        if Step === v or RemoteStep ===  v
+          v.run
+          new_inputs[k] = v.load
+        else
+          new_inputs[k] = v
         end
       end
+      new_inputs
     end
+
 
     def initialize(base_url, task = nil, base_name = nil, inputs = nil, result_type = nil, result_description = nil, is_exec = false)
       @base_url, @task, @base_name, @inputs, @result_type, @result_description, @is_exec = base_url, task, base_name, inputs, result_type, result_description, is_exec
       @mutex = Mutex.new
-      RemoteStep.get_streams @inputs
+      @inputs = RemoteStep.get_streams @inputs
     end
 
     def name
       return nil if @is_exec
+      return @path if @url.nil?
       (Array === @url ? @url.first : @url).split("/").last
     end
 
     def task_name
+      return task unless @url
       init_job
       (Array === @url ? @url.first : @url).split("/")[-2]
     end
@@ -41,6 +47,7 @@ class WorkflowRESTClient
     end
     
     def status
+      return nil if @url.nil?
       begin
         info[:status]
       ensure
@@ -82,8 +89,11 @@ class WorkflowRESTClient
     end
 
     def path
-      init_job
-      @url + '?_format=raw'
+      if @url
+        @url + '?_format=raw'
+      else
+        [base_url, task, Misc.fingerprint(inputs)] * "/"
+      end
     end
 
     def run(noload = false)
@@ -99,6 +109,7 @@ class WorkflowRESTClient
                       end
                     end
       end
+
       return @result if noload == :stream
       noload ? path + '?_format=raw' : @result
     end
@@ -186,7 +197,18 @@ class WorkflowRESTClient
           RestClient::Request.execute(:method => :post, :url => url, :payload => task_params, :block_response => bl)
         end
 
-        Zlib::GzipReader.new(sout)
+        reader = Zlib::GzipReader.new(sout)
+        Misc.open_pipe do |sin|
+          while c = reader.read(1015)
+            sin.write c
+          end
+          sin.close
+          @done = true
+        end
+        #nsout, nsin = Misc.pipe
+        #Misc.consume_stream(reader, true, nsin, true) do @done = true end
+        #iii :ret
+        #nsout
       end
     end
 

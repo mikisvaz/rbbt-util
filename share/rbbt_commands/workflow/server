@@ -63,7 +63,6 @@ app.get '/' do
   redirect to(File.join('/', wf.to_s))
 end
 app.instance_eval Rbbt.etc['app.d/base.rb'].read
-app.use Rack::Deflater
 
 load Rbbt.etc['app.d/resources.rb'].find
 
@@ -88,8 +87,12 @@ if options[:views] and not options[:views].empty?
   Sinatra::RbbtRESTMain.add_resource_path(Path.setup(options[:views]), true)
 end
 
+app.use Rack::Deflater
+
 WorkflowRest.port = options[:port] || 4567
 WorkflowRest.bind = options[:bind] || "0.0.0.0"
 WorkflowRest.environment = options[:environment] || "development"
 WorkflowRest.server = options[:server] if options[:server]
 WorkflowRest.run!
+
+

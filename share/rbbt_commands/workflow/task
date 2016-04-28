@@ -441,8 +441,8 @@ when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
     puts res.to_s
   end
 when Step
-  if step.streaming?
-    io = res.get_stream
+  if res.streaming?
+    io = TSV.get_stream res
     while block = io.read(2048) do
       out.write block
     end #unless io.closed? 

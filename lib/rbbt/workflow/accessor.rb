@@ -468,13 +468,22 @@ module Workflow
                               deps.each do |dep| 
                                 case dep
                                 when Array
-                                  wf, t = dep
+                                  wf, t, o = dep
                                   wf.rec_dependencies(t).each do |d|
                                     if Array === d
-                                      all_deps << d
+                                      new = d
                                     else
-                                      all_deps << [dep.first, d]
+                                      new = [dep.first, d]
                                     end
+                                    if Hash === o and not o.empty? 
+                                      if Hash === new.last
+                                        hash = new.last
+                                        o.each{|k,v| hash[k] ||= v}
+                                      else
+                                        new.push o
+                                      end
+                                    end
+                                    all_deps << new
                                   end
                                 when String, Symbol
                                   all_deps.concat rec_dependencies(dep.to_sym)

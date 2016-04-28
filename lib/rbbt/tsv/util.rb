@@ -133,13 +133,17 @@ module TSV
         StringIO.new file
       end
     when (defined? Step and Step)
-      file.grace
-      stream = file.get_stream
-      if stream
-        stream
+      if file.respond_to?(:base_url) and file.result
+        file.result
       else
-        file.join
-        get_stream(file.path)
+        file.grace
+        stream = file.get_stream
+        if stream
+          stream
+        else
+          file.join
+          get_stream(file.path)
+        end
       end
     when Array
       Misc.open_pipe do |sin|
