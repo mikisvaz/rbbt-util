@@ -10,6 +10,14 @@ module R
       sources = [:plot, Rbbt.share.Rlib["svg.R"].find(:lib), options[:source]].flatten.compact
       options.delete :source
 
+      fast = options[:fast]
+
+      if fast
+        save_method = "rbbt.SVG.save.fast"
+      else
+        save_method = "rbbt.SVG.save"
+      end
+
       if data
         data.each do |k,v|
           v = Array === v ? v : [v]
@@ -48,7 +56,7 @@ module R
           data.R <<-EOF, sources, options
   plot = { #{script} }
 
-  rbbt.SVG.save('#{tmpfile}', plot, width = #{R.ruby2R width}, height = #{R.ruby2R height})
+  #{save_method}('#{tmpfile}', plot, width = #{R.ruby2R width}, height = #{R.ruby2R height})
   data = NULL
           EOF
 
@@ -61,7 +69,7 @@ module R
           R.run <<-EOF, sources, options
   plot = { #{script} }
 
-  rbbt.SVG.save('#{tmpfile}', plot, width = #{R.ruby2R width}, height = #{R.ruby2R height})
+  #{save_method}('#{tmpfile}', plot, width = #{R.ruby2R width}, height = #{R.ruby2R height})
   data = NULL
           EOF
           Open.read(tmpfile).gsub(/(glyph\d+-\d+)/, '\1-' + File.basename(tmpfile))

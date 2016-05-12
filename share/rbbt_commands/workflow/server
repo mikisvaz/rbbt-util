@@ -1,33 +1,28 @@
 #!/usr/bin/env ruby
 
+require 'rbbt-util'
 require 'rbbt/util/simpleopt'
-require 'rbbt/workflow'
 
-#require 'zurb-foundation'
-#require 'modular-scale'
-
-require 'rbbt/rest/main'
-require 'rbbt/rest/entity'
-require 'rbbt/rest/workflow'
-require 'rbbt/rest/file_server'
-require 'rbbt/rest/knowledge_base'
-require 'rbbt/rest/helpers'
-require 'rbbt/rest/web_tool'
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
 options = SOPT.setup <<EOF
 Start an rbbt app
 
-$ rbbt app start [options] <app_name>
+$ rbbt workflow server [options] <Workflow>
 
 -h--help Print this help
 -e--environment* Execution environment: production or development
--b--bind* Bind to a particular IP (net interface)
+-Ho--Host* Host name
+-B--Bind* Bind IP
 -p--port* TCP port
 -s--server* Server type:  thin, webrick, unicorn, etc
 -f--finder Start server with finder functionality
 -R--Rserve_session* Rserve session to use, otherwise start new one
+-wd--workdir* Change the working directory of the workflow
 -w--workflows* List of additional workflows to load
 --views* Directory with view templates
+--stream Activate streaming of workflow tasks
+--options* Additional options for server (e.g. option1=value1;option2=value2)
 EOF
 
 if options[:help]
@@ -39,60 +34,59 @@ if options[:help]
   exit 0
 end
 
-workflow = ARGV.first
+if options[:workdir]
+  require 'rbbt/workflow'
+  Workflow.workdir = options[:workdir]
+end
 
-ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
+options[:Port] ||= options[:port]
+options[:Host] ||= "0.0.0.0"
+options[:Bind] ||= "0.0.0.0"
+
+workflow = ARGV.shift
+workflows = options[:workflows] || "" 
+
+workflow = File.expand_path(workflow) if File.exists?(workflow)
+
 ENV["RServe-session"] = options[:RServe_session] || workflow
 
-raise rbbt_usage unless workflow
+server = options[:server] || 'puma'
 
-wf = Workflow.require_workflow workflow
+TmpFile.with_file do |app_dir|
+  Misc.in_dir(app_dir) do
+    app_dir = Path.setup(app_dir.dup)
+    Open.write(app_dir.etc.target_workflow.find, workflow)
+    Open.write(app_dir.etc.workflows.find, workflows.split(/,\s/)*"\n") if workflows 
 
-$title = wf.to_s
+    require 'rack'
+    ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
+    ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
+    ENV["RBBT_VIEWS_DIR"] = options[:views] if options.include?(:views)
 
-load Rbbt.etc['app.d/init.rb'].find
+    if options[:stream]
+      raise "No streaming available for any server other than puma" unless options[:server] == 'puma'
+      ENV["RBBT_WORKFLOW_TASK_STREAM"] = 'true'
+    end
 
-app = class WorkflowRest < Sinatra::Base; self end
+    config_ru_file = File.exists?('./workflow_config.ru') ? './config.ru' : Rbbt.share['workflow_config.ru'].find
 
-app.register Sinatra::RbbtRESTWorkflow
-app.register Sinatra::MultiRoute
-app.register Sinatra::RbbtRESTKnowledgeBase
-app.helpers Sinatra::RbbtToolHelper
 
-app.get '/' do
-  redirect to(File.join('/', wf.to_s))
-end
-app.instance_eval Rbbt.etc['app.d/base.rb'].read
+    if options[:options]
+      options[:options].split(";").each do |pair|
+        name, _sep, value = pair.partition("=")
+        name = name[1..-1].to_sym if name[0] == ':'
+        options[name] = value
+      end
+    end
 
-load Rbbt.etc['app.d/resources.rb'].find
-
-app.class_eval do
-  eval Rbbt.etc['app.d/finder.rb'].read
-end
-
-WorkflowRest.add_workflow wf, :priority
-if options[:workflows]
-  options[:workflows].split(/[\s,]+/).each do |name|
-    _wf = Workflow.require_workflow name
-    WorkflowRest.add_workflow _wf, true
+    case server
+    when 'unicorn'
+      `unicorn -c #{ Rbbt.share['unicorn.rb'].find } '#{config_ru_file}' -p #{options[:port] || "2887"}`
+    when 'puma_alt'
+      `puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 3 -t 8:32 --preload`
+    else
+      options[:config] = config_ru_file
+      Rack::Server.start(options)
+    end
   end
 end
-
-load Rbbt.etc['app.d/requires.rb'].find
-
-load Rbbt.etc['app.d/entities.rb'].find
-
-
-if options[:views] and not options[:views].empty?
-  Sinatra::RbbtRESTMain.add_resource_path(Path.setup(options[:views]), true)
-end
-
-app.use Rack::Deflater
-
-WorkflowRest.port = options[:port] || 4567
-WorkflowRest.bind = options[:bind] || "0.0.0.0"
-WorkflowRest.environment = options[:environment] || "development"
-WorkflowRest.server = options[:server] if options[:server]
-WorkflowRest.run!
-
-

@@ -208,7 +208,7 @@ module Misc
             'false'
           when Hash
             "{"<< obj.collect{|k,v| obj2str(k) + '=>' << obj2str(v)}*"," << "}"
-          when Symbol
+          when Symbol 
             obj.to_s
           when String
             if obj.length > HASH2MD5_MAX_STRING_LENGTH

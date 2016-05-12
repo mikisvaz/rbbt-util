@@ -36,6 +36,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      objects.rb
      manipulation.rb
      bgzf.rb
+     multipart_payload.rb
     }
     tar.rb
     color.rb
@@ -306,13 +307,15 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
  }
  etc=etc filter="*"{
   app.d=app.d{
+   init.rb
+
    base.rb
+
    requires.rb
    entities.rb
    finder.rb
    foundation.rb
    grid_system.rb
-   init.rb
    knowledge_bases.rb
    resources.rb
    workflows.rb
@@ -320,6 +323,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
  }
  share=share{
   config.ru
+  workflow_config.ru
   unicorn.rb
   color=color filter="*"{
    diverging_colors.hex
