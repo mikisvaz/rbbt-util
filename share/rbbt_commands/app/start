@@ -58,7 +58,7 @@ Misc.in_dir(app_dir) do
   ENV["RBBT_VIEWS_DIR"] = options[:views] if options.include?(:views)
 
   if options[:stream]
-    raise "No streaming available for any server other than puma" unless options[:server] =~ /^puma|unico/
+    raise "No streaming available for any server other than puma" unless options[:server] =~ /^puma/
     ENV["RBBT_WORKFLOW_TASK_STREAM"] = 'true'
   end
 

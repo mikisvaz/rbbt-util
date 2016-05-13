@@ -1,7 +1,7 @@
 class WorkflowRESTClient
   class RemoteStep < Step
 
-    attr_accessor :url, :base_url, :task, :base_name, :inputs, :result_type, :result_description, :is_exec
+    attr_accessor :url, :base_url, :task, :base_name, :inputs, :result_type, :result_description, :is_exec, :stream_input
 
     def self.get_streams(inputs)
       new_inputs = {}
@@ -17,9 +17,10 @@ class WorkflowRESTClient
     end
 
 
-    def initialize(base_url, task = nil, base_name = nil, inputs = nil, result_type = nil, result_description = nil, is_exec = false)
+    def initialize(base_url, task = nil, base_name = nil, inputs = nil, result_type = nil, result_description = nil, is_exec = false, stream_input = nil)
       @base_url, @task, @base_name, @inputs, @result_type, @result_description, @is_exec = base_url, task, base_name, inputs, result_type, result_description, is_exec
       @mutex = Mutex.new
+      @stream_input = stream_input
       @inputs = RemoteStep.get_streams @inputs
     end
 
@@ -176,7 +177,34 @@ class WorkflowRESTClient
       load_res get
     end
     
+    def _stream_job(stream_input, cache_type = :exec)
+      require 'rbbt/util/misc/multipart_payload'
+      WorkflowRESTClient.capture_exception do
+        url = URI.encode(File.join(base_url, task.to_s))
+        Log.debug{ "RestClient stream: #{ url } #{stream_input} #{cache_type} - #{Misc.fingerprint inputs}" }
+        task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
+        res = RbbtMutiplartPayload.issue url, task_params, :mutations, nil, nil, true
+        type = res.gets
+        case type.strip
+        when "LOCATION"
+          url = res.gets
+          url.sub!(/\?.*/,'')
+          WorkflowRESTClient.get_raw(url)
+        when "STREAM"
+          res
+        when "BULK"
+          res.read
+        else
+          raise "What? " + type
+        end
+      end
+    end
+
     def _run_job(cache_type = :async)
+      #if cache_type == :stream and stream_input
+      if cache_type == :stream or cache_type == :exec and stream_input
+        return _stream_job(stream_input, cache_type) 
+      end
       WorkflowRESTClient.capture_exception do
         url = URI.encode(File.join(base_url, task.to_s))
         task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
@@ -205,10 +233,6 @@ class WorkflowRESTClient
           sin.close
           @done = true
         end
-        #nsout, nsin = Misc.pipe
-        #Misc.consume_stream(reader, true, nsin, true) do @done = true end
-        #iii :ret
-        #nsout
       end
     end
 

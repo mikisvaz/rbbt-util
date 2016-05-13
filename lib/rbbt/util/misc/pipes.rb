@@ -560,4 +560,13 @@ module Misc
   end
 
 
+  def self.add_stream_filename(io, filename)
+    if ! io.respond_to? :filename
+      class << io
+        attr_accessor :filename
+      end
+      io.filename = filename
+    end
+  end
+
 end

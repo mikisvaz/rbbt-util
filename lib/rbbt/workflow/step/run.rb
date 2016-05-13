@@ -172,11 +172,13 @@ class Step
         dependency.grace
 
         if dependency.aborted?
+          Log.warn "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} aborted (clean and retry) -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
           dependency.clean
           raise TryAgain
         end
 
         if dependency.error?
+          Log.error "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} error -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
           raise DependencyError, [dependency.path, dependency.messages.last] * ": " if dependency.error?
         end
 
@@ -185,45 +187,14 @@ class Step
           next
         end
 
-        Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joining -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
         begin
+          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joining -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
           dependency.join
           raise TryAgain unless dependency.done?
+          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joined -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
         rescue Aborted
           raise TryAgain
         end
-        Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joined -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
-
-        #if not dependency.done?
-        #  if dependency.started?
-        #    dependency.grace
-        #    if dependency.error?
-        #      raise DependencyError, [dependency.path, dependency.messages.last] * ": " if dependency.error?
-        #    elsif dependency.streaming?
-        #      Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} streaming -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}"
-        #    else
-        #      Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joining -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}"
-        #      begin
-        #        dependency.join unless dependency.streaming?
-        #      rescue Aborted
-        #        Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} #{Log.color :red, "aborted"} -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}"
-        #        if dependency.aborted?
-        #          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} #{Log.color :red, "aborted cleaning"} -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}" 
-        #          dependency.clean
-        #          raise TryAgain
-        #        end
-        #      end
-        #      Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joined -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}"
-        #    end
-        #  else
-        #    Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} starting -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}"
-        #    dependency.run(:stream)
-        #    dependency.grace
-        #    dependency.join unless dependency.streaming?
-        #  end
-        #else
-        #  Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} done -- #{Log.color :blue, dependency.short_path}"
-        #end
 
       rescue TryAgain
         retry

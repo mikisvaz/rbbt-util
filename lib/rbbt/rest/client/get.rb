@@ -57,11 +57,14 @@ class WorkflowRESTClient
     Log.debug{ "RestClient get_raw: #{ url } - #{Misc.fingerprint params}" }
     params = params.merge({ :_format => 'raw' })
     params = fix_params params
-    capture_exception do
+    res = capture_exception do
       Misc.insist(2, 0.5) do
-        RestClient.get(URI.encode(url), :params => params)
+        res = RestClient.get(URI.encode(url), :params => params)
+        raise TryAgain if res.code == 202
+        res
       end
     end
+    res
   end
  
   def self.get_json(url, params = {})
@@ -83,7 +86,6 @@ class WorkflowRESTClient
   end
 
   def self.post_jobname(url, params = {})
-    Log.stack caller
     Log.debug{ "RestClient post_jobname: #{ url } - #{Misc.fingerprint params}" }
     params = params.merge({ :_format => 'jobname' })
     params = fix_params params
@@ -96,7 +98,7 @@ class WorkflowRESTClient
 
     name
   end
-  
+
   def self.post_json(url, params = {})
     if url =~ /_cache_type=:exec/
       JSON.parse(Open.open(url, :nocache => true))

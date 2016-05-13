@@ -229,11 +229,15 @@ module Misc
           when (defined? Step and Step)
             "<Step #{obj.path}>"
           else
-            obj_ins = obj.inspect
-            if obj_ins =~ /:0x0/
-              obj_ins.gsub(/:0x[a-f0-9]+/,'')
+            if obj.respond_to? :filename
+              "<IO:" << obj.filename << ">"
             else
-              obj_ins
+              obj_ins = obj.inspect
+              if obj_ins =~ /:0x0/
+                obj_ins.gsub(/:0x[a-f0-9]+/,'')
+              else
+                obj_ins
+              end
             end
           end
 

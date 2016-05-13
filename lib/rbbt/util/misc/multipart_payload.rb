@@ -43,8 +43,11 @@ module RbbtMutiplartPayload
     header = input_header(name, filename)
     io.write "--" + BOUNDARY + EOL + header + EOL  + EOL
 
-    while c = content.read(1024)
-      io.write c
+    #while c = content.read(1024)
+    #  io.write c
+    #end
+    while line = content.gets
+      io.puts line
     end
     content.close
   end
@@ -56,9 +59,10 @@ module RbbtMutiplartPayload
   end
 
   def self.post_data_stream(inputs = nil, stream_input = nil, stream_io = nil, stream_filename = nil)
-    sout, sin = Misc.pipe
+    #sout, sin = Misc.pipe
 
-    Thread.new do
+    #Thread.new do
+    Misc.open_pipe do |sin|
       inputs.each do |input,content|
         input = input.to_s
         next if stream_input and input == stream_input.to_s
@@ -82,12 +86,11 @@ module RbbtMutiplartPayload
 
       RbbtMutiplartPayload.add_stream(sin, stream_input.to_s, stream_io, stream_filename) if stream_input
       RbbtMutiplartPayload.close_stream(sin)
+      sin.close unless sin.closed?
     end
-
-    sout
   end
 
-  def self.issue(url, inputs = nil, stream_input = nil, stream_io = nil, stream_filename = nil)
+  def self.issue(url, inputs = nil, stream_input = nil, stream_io = nil, stream_filename = nil, report_type = false)
 
     uri = URI(url)
     req = Net::HTTP::Post.new(uri.path)
@@ -100,7 +103,7 @@ module RbbtMutiplartPayload
                           when String
                             inputs[stream_input]
                           when File
-                            inputs[stream_input].filename
+                            inputs[stream_input].path
                           else
                             'file'
                           end
@@ -121,12 +124,15 @@ module RbbtMutiplartPayload
       Net::HTTP.start(uri.hostname, uri.port) do |http|
         http.request(req) do |res|
           if Net::HTTPRedirection === res
+            sin.puts "LOCATION" if report_type
             sin.write res["location"]
           elsif stream_input
+            sin.puts "STREAM" if report_type
             res.read_body do |c|
               sin.write c
             end
           else
+            sin.puts "BULK" if report_type
             sin.write res.body
           end
           sin.close

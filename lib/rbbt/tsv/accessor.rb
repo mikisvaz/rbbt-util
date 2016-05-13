@@ -75,7 +75,8 @@ module TSV
 
   def setup_array(*args)
     res = NamedArray.setup(*args)
-    res.instance_variable_set(:@entity_templates, entity_templates)
+    return res if res.nil?
+    res.instance_variable_set(:@entity_templates, entity_templates) 
     res
   end
 
