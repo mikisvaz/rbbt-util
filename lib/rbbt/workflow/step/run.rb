@@ -143,7 +143,11 @@ class Step
       next if (dependency.done? and not dependency.dirty?) or 
               (dependency.streaming? and dependency.running?) or 
               (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency and not (dependency.error? or dependency.aborted?))
-      dependency.clean if dependency.started? and dependency
+
+      dependency.clean if dependency.aborted? or (dependency.started? and not dependency.running? and not dependency.error?)
+
+      raise DependencyError, [dependency.short_path, dependency.messages.last] * ": " if dependency.error?
+
       dupping << dependency unless dependencies.include? dependency
     end
 
@@ -154,23 +158,75 @@ class Step
 
       begin
 
-        if not dependency.done?
-          if dependency.started?
-            if dependency.streaming?
-              Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} streaming -- #{Log.color :blue, dependency.path}"
-            else
-              Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joining -- #{Log.color :blue, dependency.path}"
-              dependency.join unless dependency.streaming?
-            end
-          else
-            Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} starting -- #{Log.color :blue, dependency.path}"
-            dependency.run(:stream)
-            dependency.grace
-          end
-        else
-          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} done -- #{Log.color :blue, dependency.path}"
+        if dependency.done?
+          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} done -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+          next
         end
 
+        if not dependency.started?
+          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} starting -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+          dependency.run(:stream)
+          raise TryAgain
+        end
+
+        dependency.grace
+
+        if dependency.aborted?
+          dependency.clean
+          raise TryAgain
+        end
+
+        if dependency.error?
+          raise DependencyError, [dependency.path, dependency.messages.last] * ": " if dependency.error?
+        end
+
+        if dependency.streaming?
+          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} streaming -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+          next
+        end
+
+        Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joining -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+        begin
+          dependency.join
+          raise TryAgain unless dependency.done?
+        rescue Aborted
+          raise TryAgain
+        end
+        Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joined -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+
+        #if not dependency.done?
+        #  if dependency.started?
+        #    dependency.grace
+        #    if dependency.error?
+        #      raise DependencyError, [dependency.path, dependency.messages.last] * ": " if dependency.error?
+        #    elsif dependency.streaming?
+        #      Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} streaming -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}"
+        #    else
+        #      Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joining -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}"
+        #      begin
+        #        dependency.join unless dependency.streaming?
+        #      rescue Aborted
+        #        Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} #{Log.color :red, "aborted"} -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}"
+        #        if dependency.aborted?
+        #          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} #{Log.color :red, "aborted cleaning"} -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}" 
+        #          dependency.clean
+        #          raise TryAgain
+        #        end
+        #      end
+        #      Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joined -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}"
+        #    end
+        #  else
+        #    Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} starting -- #{Log.color :blue, dependency.path} -- #{Log.color :blue, self.short_path}"
+        #    dependency.run(:stream)
+        #    dependency.grace
+        #    dependency.join unless dependency.streaming?
+        #  end
+        #else
+        #  Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} done -- #{Log.color :blue, dependency.short_path}"
+        #end
+
+      rescue TryAgain
+        retry
       rescue Aborted
         Log.error "Aborted dep. #{Log.color :red, dependency.task_name.to_s}"
         raise $!
@@ -190,13 +246,14 @@ class Step
     begin
       @mutex.synchronize do
         no_load = no_load ? :stream : false
-        result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load do |lockfile|
+        result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load do 
           if Step === Step.log_relay_step and not self == Step.log_relay_step
             relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
           end
-          @exec = false
 
-          Open.rm info_file if Open.exists? info_file
+          @exec = false
+          Open.write(pid_file, Process.pid.to_s)
+          init_info
 
           log :setup, "#{Log.color :green, "Setup"} step #{Log.color :yellow, task.name.to_s || ""}"
 
@@ -211,6 +268,7 @@ class Step
           begin
             run_dependencies
           rescue Exception
+            FileUtils.rm pid_file if File.exists?(pid_file)
             stop_dependencies
             raise $!
           end
@@ -224,7 +282,6 @@ class Step
           begin
             result = _exec
           rescue Aborted
-            stop_dependencies
             log(:aborted, "Aborted")
             raise $!
           rescue Exception
@@ -232,9 +289,9 @@ class Step
 
             # HACK: This fixes an strange behaviour in 1.9.3 where some
             # backtrace strings are coded in ASCII-8BIT
+            backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
             set_info :backtrace, backtrace 
             log(:error, "#{$!.class}: #{$!.message}")
-            backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
             stop_dependencies
             raise $!
           end
@@ -267,6 +324,7 @@ class Step
                 Log.exception $!
               ensure
                 join
+                FileUtils.rm pid_file if File.exists?(pid_file)
               end
             end
             stream.abort_callback = Proc.new do
@@ -274,6 +332,8 @@ class Step
                 log :aborted, "#{Log.color :red, "Aborted"} step #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
               rescue
                 Log.exception $!
+                stop_dependencies
+                FileUtils.rm pid_file if File.exists?(pid_file)
               end
             end
           else
@@ -281,6 +341,7 @@ class Step
             set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
             set_info :time_elapsed, (time_elapsed = done_time - start_time)
             log :done, "#{Log.color :magenta, "Completed"} step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
+            FileUtils.rm pid_file if File.exists?(pid_file)
           end
 
           result
@@ -295,6 +356,7 @@ class Step
       end
     rescue Exception
       exception $!
+      stop_dependencies
       raise $!
     end
   end
@@ -303,10 +365,10 @@ class Step
     return self if done? and not dirty?
 
     if error? or aborted?
-      if force
+      if force or aborted?
         clean
       else
-        raise "Error in job: #{status}"
+        raise "Error in job: #{status} - #{self.path}"
       end
     end
 
@@ -327,6 +389,7 @@ class Step
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         FileUtils.mkdir_p File.dirname(path) unless File.exists? File.dirname(path)
         begin
+          @forked = true
           res = run true
           set_info :forked, true
         rescue Aborted
@@ -387,13 +450,14 @@ class Step
       Log.medium "Could not abort #{path}: same process"
       false
     else
-      Log.medium "Aborting #{path}: #{ @pid }"
+      Log.medium "Aborting pid #{path}: #{ @pid }"
       begin
-        Process.kill("KILL", @pid)
+        Process.kill("INT", @pid)
         Process.waitpid @pid
       rescue Exception
         Log.debug("Aborted job #{@pid} was not killed: #{$!.message}")
       end
+      Log.medium "Aborted pid #{path}: #{ @pid }"
       true
     end
   end
@@ -423,7 +487,7 @@ class Step
     begin
       stop_dependencies
       abort_stream
-      abort_pid
+      abort_pid if defined? @forked and @forked
     rescue Aborted
       Log.medium{"#{Log.color :red, "Aborting ABORTED RETRY"} #{Log.color :blue, path}"}
       retry
@@ -464,7 +528,7 @@ class Step
   end
 
   def soft_grace
-    until Open.exists? info_file
+    until done? or File.exists?(info_file)
       sleep 1 
     end
     self
@@ -507,7 +571,7 @@ class Step
         pid = nil
         dependencies.each{|dep| dep.join }
       end
-      sleep 1 until path.exists?
+      sleep 1 until path.exists? or error? or aborted?
       self
     ensure
       set_info :joined, true

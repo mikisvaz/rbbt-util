@@ -70,7 +70,7 @@ class RbbtProcessQueue
 
         initial = Misc.memory_use(Process.pid)
         memory_cap = multiplier * initial
-        Log.medium "Worker #{Process.pid} started with #{@current} -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap}"
+        Log.medium "Worker for #{Process.pid} started with pid #{@current} -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap}"
 
         @monitor_thread = Thread.new do
           begin

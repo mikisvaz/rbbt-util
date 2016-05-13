@@ -8,6 +8,8 @@ class Aborted < Exception; end
 
 class RemoteServerError < Exception; end
 
+class DependencyError < Exception; end
+
 class KeepLocked < Exception
   attr_accessor :payload
   def initialize(payload)

@@ -38,6 +38,10 @@ class Step
     path.nil? ? nil : path + '.info'
   end
 
+  def self.pid_file(path)
+    path.nil? ? nil : path + '.pid'
+  end
+
   def self.step_info(path)
     begin
       Open.open(info_file(path)) do |f|
@@ -61,6 +65,10 @@ class Step
     path.sub(/.*\/#{Regexp.quote task.name.to_s}\/(.*)/, '\1')
   end
 
+  def short_path
+    [task_name, name] * "/"
+  end
+
   def task_name
     @task_name ||= task.name
   end
@@ -69,6 +77,10 @@ class Step
 
   def info_file
     @info_file ||= Step.info_file(path)
+  end
+
+  def pid_file
+    @pid_file ||= Step.pid_file(path)
   end
 
   def info_lock
@@ -115,6 +127,16 @@ class Step
       Open.rm info_file
       Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
       raise $!
+    end
+  end
+
+  def init_info
+    return nil if @exec or info_file.nil?
+    Open.lock(info_file, :lock => info_lock) do
+      i = {:status => :init}
+      @info_cache = i
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
+      @info_cache_time = Time.now
     end
   end
 
@@ -286,7 +308,7 @@ class Step
   end
 
   def started?
-    Open.exists? info_file or Open.exists? path
+    Open.exists?(path) or Open.exists?(pid_file)
   end
 
   def dirty?
@@ -302,7 +324,7 @@ class Step
   end
 
   def running?
-    return nil if not Open.exists? info_file
+    return nil if not Open.exists? pid_file
     return nil if info[:pid].nil?
 
     pid = @pid || info[:pid]
