@@ -146,7 +146,7 @@ class Step
 
       dependency.clean if dependency.aborted? or (dependency.started? and not dependency.running? and not dependency.error?)
 
-      raise DependencyError, [dependency.short_path, dependency.messages.last] * ": " if dependency.error?
+      raise DependencyError, dependency if dependency.error?
 
       dupping << dependency unless dependencies.include? dependency
     end

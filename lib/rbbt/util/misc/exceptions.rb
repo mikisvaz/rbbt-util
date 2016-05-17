@@ -8,7 +8,19 @@ class Aborted < Exception; end
 
 class RemoteServerError < Exception; end
 
-class DependencyError < Exception; end
+class DependencyError < Exception
+  def initialize(msg)
+    if defined? Step and Step === msg
+      step = msg
+      workflow = step.path.split("/")[-3]
+      new_msg = [workflow, step.short_path, step.messages.last] * " - "
+      new_msg = [step.path, step.messages.last] * ": "
+      super(new_msg)
+    else
+      super(msg)
+    end
+  end
+end
 
 class KeepLocked < Exception
   attr_accessor :payload
