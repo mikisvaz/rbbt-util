@@ -585,7 +585,7 @@ module Workflow
     dependencies.each do |dependency|
       real_dependencies << case dependency
       when Array
-        workflow, task, options = dependency
+        workflow, dep_task, options = dependency
 
         _inputs = IndiferentHash.setup(inputs.dup)
         options.each{|i,v|
@@ -595,9 +595,9 @@ module Workflow
             rec_dependency = all_d.select{|d| d.task_name.to_sym == v }.first
 
             if rec_dependency.nil?
-              _inputs[i] = v
+              _inputs[i] = v unless _inputs.include? i
             else
-              input_options = workflow.task_info(task)[:input_options][i] || {}
+              input_options = workflow.task_info(dep_task)[:input_options][i] || {}
               if input_options[:stream]
                 #rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
                 _inputs[i] = rec_dependency
@@ -617,7 +617,7 @@ module Workflow
           end
         } if options
 
-        res = workflow.job(task, jobname, _inputs)
+        res = workflow.job(dep_task, jobname, _inputs)
         res
       when Step
         dependency
