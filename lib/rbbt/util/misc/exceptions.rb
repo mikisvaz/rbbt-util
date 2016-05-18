@@ -8,7 +8,7 @@ class Aborted < Exception; end
 
 class RemoteServerError < Exception; end
 
-class DependencyError < Exception
+class DependencyError < Aborted
   def initialize(msg)
     if defined? Step and Step === msg
       step = msg

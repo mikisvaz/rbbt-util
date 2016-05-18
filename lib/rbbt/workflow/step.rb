@@ -203,11 +203,8 @@ class Step
     info_file = Step.info_file path
     pid_file = Step.pid_file path
     files_dir = Step.files_dir path
+
     if Open.exists?(path) or Open.exists?(pid_file)
-      begin
-        self.abort if self.running?
-      rescue Exception
-      end
 
       @result = nil
       @pid = nil
@@ -224,6 +221,8 @@ class Step
   end
 
   def clean
+    Log.medium "Cleaning step: #{path}"
+    abort if not done? and running?
     Step.clean(path)
     self
   end
@@ -250,7 +249,16 @@ class Step
     rec_dependencies.each do |step| 
       if Open.exists?(step.info_file) 
         step.clean 
-      else
+      end
+    end
+    self
+  end
+
+  def recursive_clean
+    clean
+    dependencies.each do |step| 
+      if Open.exists?(step.info_file) 
+        step.recursive_clean 
       end
     end
     self

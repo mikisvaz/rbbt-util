@@ -1,31 +1,55 @@
 class Step
 
-  attr_reader :stream, :dupped, :saved_stream
+  attr_reader :stream, :dupped, :saved_stream, :inputs
 
   STREAM_CACHE = {}
   STREAM_CACHE_MUTEX = Mutex.new
+  def self.purge_stream_cache
+    Log.medium "Purging dup. stream cache"
+    STREAM_CACHE_MUTEX.synchronize do
+      #STREAM_CACHE.collect{|k,s| 
+      #  next
+      #  Thread.new do
+      #    Misc.consume_stream s
+      #  end
+      #}
+      STREAM_CACHE.clear
+    end
+  end
+
   def self.dup_stream(stream)
     case stream
-    when IO, File
-      return stream if stream.closed?
+    when IO, File, Step
+      return stream if stream.respond_to?(:closed?) and stream.closed?
+      return stream if stream.respond_to?(:done?) and stream.done?
 
       STREAM_CACHE_MUTEX.synchronize do
-        case current = STREAM_CACHE[stream]
+        stream_key = Misc.fingerprint(stream)
+        current = STREAM_CACHE[stream_key]
+        case current
         when nil
-          Log.medium "Not duplicating stream #{ Misc.fingerprint(stream) }"
-          STREAM_CACHE[stream] = stream
+          Log.medium "Not duplicating stream #{stream_key}"
+          STREAM_CACHE[stream_key] = stream
         when File
           if Open.exists? current.path 
-            Log.medium "Reopening file #{ Misc.fingerprint(current) }"
+            Log.medium "Reopening file #{stream_key}"
             Open.open(current.path)
           else
-            Log.medium "Duplicating file #{ Misc.fingerprint(current) } #{current.inspect}"
-            Misc.dup_stream(current)
+            new = Misc.dup_stream(current)
+            Log.medium "Duplicating file #{stream_key} #{current.inspect} => #{Misc.fingerprint(new)}"
+            new
           end
-
+        when Step
+          job = current
+          current = job.result 
+          new = Misc.dup_stream(current)
+          job.result = current
+          Log.medium "Duplicating step #{stream_key} #{current.inspect} => #{Misc.fingerprint(new)}"
+          new
         else
-          Log.medium "Duplicating stream #{ Misc.fingerprint(stream) }"
-          Misc.dup_stream(current)
+          new = Misc.dup_stream(current)
+          Log.medium "Duplicating stream #{stream_key} #{ Misc.fingerprint(stream) } => #{Misc.fingerprint(new)}"
+          new
         end
       end
     when TSV::Dumper#, TSV::Parser
@@ -47,20 +71,86 @@ class Step
     end
   end
 
-  def self.purge_stream_cache
-    return
-    STREAM_CACHE_MUTEX.synchronize do
-      STREAM_CACHE.collect{|k,s| 
-        Thread.new do
-          Misc.consume_stream s
-        end
-      }
-      STREAM_CACHE.clear
+  def self.prepare_for_execution(job)
+    return if (job.done? and not job.dirty?) or 
+    (job.streaming? and job.running?) or 
+    (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === job and not (job.error? or job.aborted?))
+
+    job.clean if job.aborted? or (job.started? and not job.running? and not job.error?)
+
+    raise DependencyError, job if job.error?
+  end
+
+  def execute_dependency(dependency)
+    task_name = self.task_name
+    begin
+
+      if dependency.done?
+        Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task_name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} done -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+        return
+      end
+
+      if not dependency.started?
+        Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task_name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} starting -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+        dependency.run(:stream)
+        raise TryAgain
+      end
+
+      dependency.grace
+
+      if dependency.aborted?
+        Log.warn "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task_name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} aborted (clean and retry) -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+        dependency.clean
+        raise TryAgain
+      end
+
+      if dependency.error?
+        Log.error "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task_name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} error -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+        raise DependencyError, [dependency.path, dependency.messages.last] * ": " if dependency.error?
+      end
+
+      if dependency.streaming?
+        Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task_name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} streaming -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+        return
+      end
+
+      begin
+        Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task_name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joining -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+        dependency.join
+        raise TryAgain unless dependency.done?
+        Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task_name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joined -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
+      rescue Aborted
+        raise TryAgain
+      end
+
+    rescue TryAgain
+      retry
+    rescue Aborted
+      Log.error "Aborted dep. #{Log.color :red, dependency.task_name.to_s}"
+      raise $!
+    rescue Interrupt
+      Log.error "Interrupted while in dep. #{Log.color :red, dependency.task_name.to_s}"
+      raise $!
+    rescue Exception
+      Log.error "Exception in dep. #{ Log.color :red, dependency.task_name.to_s }"
+      Log.exception $!
+      raise $!
     end
+  end
+
+  def dup_inputs
+    return if @dupped or ENV["RBBT_NO_STREAM"] == 'true'
+    Log.low "Dupping inputs for #{path}"
+    dupped_inputs = @inputs.collect do |input|
+      Step.dup_stream input
+    end
+    @inputs.replace dupped_inputs
+    @dupped = true
   end
 
   def get_stream
     @mutex.synchronize do
+      Log.low "Getting stream from #{path} #{!@saved_stream}"
       begin
         return nil if @saved_stream
         if IO === @result 
@@ -72,13 +162,6 @@ class Step
     end
   end
 
-  def dup_inputs
-    return if @dupped or ENV["RBBT_NO_STREAM"] == 'true'
-    @inputs = @inputs.collect do |input|
-      Step.dup_stream input
-    end
-    @dupped = true
-  end
 
   def _exec
     @exec = true if @exec.nil?
@@ -98,7 +181,7 @@ class Step
   def checks
     rec_dependencies.collect{|dependency| (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) ? nil : dependency.path }.compact.uniq
   end
-  
+
 
   def kill_children
     begin
@@ -138,77 +221,39 @@ class Step
     return if @seen.empty?
 
     log :dependencies, "#{Log.color :magenta, "Dependencies"} for step #{Log.color :yellow, task.name.to_s || ""}"
-    dupping = []
-    @seen.each do |dependency|
-      next if (dependency.done? and not dependency.dirty?) or 
-              (dependency.streaming? and dependency.running?) or 
-              (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency and not (dependency.error? or dependency.aborted?))
-
-      dependency.clean if dependency.aborted? or (dependency.started? and not dependency.running? and not dependency.error?)
-
-      raise DependencyError, dependency if dependency.error?
-
-      dupping << dependency unless dependencies.include? dependency
-    end
-
-    dupping.each{|dep| dep.dup_inputs}
 
     @seen.each do |dependency| 
-      next unless dependencies.include? dependency
+      Step.prepare_for_execution(dependency)
+    end
 
-      begin
-
-        if dependency.done?
-          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} done -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
-          next
+    pre_deps = []
+    last_deps = []
+    @seen.each do |dependency| 
+      if dependencies.include? dependency
+        if dependency.inputs.flatten.select{|i| Step === i}.any?
+          last_deps << dependency
+        else
+          pre_deps << dependency
         end
 
-        if not dependency.started?
-          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} starting -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
-          dependency.run(:stream)
-          raise TryAgain
-        end
-
-        dependency.grace
-
-        if dependency.aborted?
-          Log.warn "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} aborted (clean and retry) -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
-          dependency.clean
-          raise TryAgain
-        end
-
-        if dependency.error?
-          Log.error "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} error -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
-          raise DependencyError, [dependency.path, dependency.messages.last] * ": " if dependency.error?
-        end
-
-        if dependency.streaming?
-          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} streaming -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
-          next
-        end
-
-        begin
-          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joining -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
-          dependency.join
-          raise TryAgain unless dependency.done?
-          Log.info "#{Log.color :cyan, "dependency"} #{Log.color :yellow, task.name.to_s || ""} => #{Log.color :yellow, dependency.task_name.to_s || ""} joined -- #{Log.color :blue, dependency.path} -- #{Log.color :yellow, self.short_path}"
-        rescue Aborted
-          raise TryAgain
-        end
-
-      rescue TryAgain
-        retry
-      rescue Aborted
-        Log.error "Aborted dep. #{Log.color :red, dependency.task_name.to_s}"
-        raise $!
-      rescue Interrupt
-        Log.error "Interrupted while in dep. #{Log.color :red, dependency.task_name.to_s}"
-        raise $!
-      rescue Exception
-        Log.error "Exception in dep. #{ Log.color :red, dependency.task_name.to_s }"
-        raise $!
+      else
+        pre_deps << dependency
       end
     end
+
+    pre_deps.each do |dependency|
+      dependency.dup_inputs
+      execute_dependency(dependency)
+    end
+
+    last_deps.each do |dependency|
+      dependency.dup_inputs
+    end
+
+    last_deps.each do |dependency|
+      execute_dependency(dependency)
+    end
+
   end
 
   def run(no_load = false)
@@ -243,6 +288,7 @@ class Step
             stop_dependencies
             raise $!
           end
+
           set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
 
           set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
@@ -295,6 +341,7 @@ class Step
                 Log.exception $!
               ensure
                 join
+                Step.purge_stream_cache
                 FileUtils.rm pid_file if File.exists?(pid_file)
               end
             end
@@ -312,6 +359,7 @@ class Step
             set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
             set_info :time_elapsed, (time_elapsed = done_time - start_time)
             log :done, "#{Log.color :magenta, "Completed"} step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
+            Step.purge_stream_cache
             FileUtils.rm pid_file if File.exists?(pid_file)
           end
 
@@ -322,6 +370,7 @@ class Step
           @result ||= result
           self
         else
+          Step.purge_stream_cache
           @result = prepare_result result, @task.result_description
         end
       end

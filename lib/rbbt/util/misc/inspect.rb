@@ -28,7 +28,7 @@ module Misc
     when nil
       "nil"
     when (defined? Step and Step)
-      obj.path || Misc.fingerprint([obj.task.name, obj.inputs])
+      "<Step:"  << (obj.path || Misc.fingerprint([obj.task.name, obj.inputs])) << ">"
     when TrueClass
       "true"
     when FalseClass

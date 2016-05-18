@@ -77,6 +77,7 @@ module Misc
           Log.medium "Aborted open_pipe: #{$!.message}"
         rescue Exception
           Log.medium "Exception in open_pipe: #{$!.message}"
+          Log.exception $!
           parent.raise $!
           raise $!
         end
@@ -90,14 +91,12 @@ module Misc
     stream_out1, stream_in1 = Misc.pipe
     stream_out2, stream_in2 = Misc.pipe
 
-    #if ConcurrentStream === stream 
-    #  stream.annotate stream_out1
-    #end
-
     splitter_thread = Thread.new(Thread.current) do |parent|
       begin
+
         skip1 = skip2 = false
-        while block = stream.read(2048)
+        while block = stream.read(1024)
+
           begin 
             stream_in1.write block; 
           rescue IOError
@@ -111,7 +110,9 @@ module Misc
             Log.medium("Tee stream 2 #{Misc.fingerprint stream} IOError: #{$!.message}");
             skip2 = true
           end unless skip2 
+
         end
+
         stream_in1.close unless stream_in1.closed?
         stream.join if stream.respond_to? :join
         stream_in2.close unless stream_in2.closed?

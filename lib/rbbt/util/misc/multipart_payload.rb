@@ -1,23 +1,29 @@
 require 'net/http'
 require 'rbbt-util'
 
-class Net::HTTPGenericRequest
-  alias old_send_request_with_body_stream send_request_with_body_stream
-
-  def send_request_with_body_stream(*args)
-    if chunked?
-      Thread.new do
-        old_send_request_with_body_stream(*args)
-      end
-    else
-      old_send_request_with_body_stream(*args)
-    end
-  end
-end
+#class Net::HTTPGenericRequest
+#  alias old_send_request_with_body_stream send_request_with_body_stream
+#
+#  def __send_request_with_body_stream(*args)
+#    begin
+#      pid = Process.fork do
+#        iii [:pre_chunk, Thread.current]
+#        return old_send_request_with_body_stream(*args)
+#      end
+#      Process.wait pid
+#    ensure
+#      iii [:pre_chunk_done, Thread.current]
+#    end
+#  end
+#end
 
 module RbbtMutiplartPayload
   BOUNDARY = "Rbbt_Param_Stream"
   EOL = "\r\n"
+
+  def self.mutex
+    @mutex ||= Mutex.new
+  end
 
   def self.input_header(name, filename = nil)
 
@@ -43,9 +49,6 @@ module RbbtMutiplartPayload
     header = input_header(name, filename)
     io.write "--" + BOUNDARY + EOL + header + EOL  + EOL
 
-    #while c = content.read(1024)
-    #  io.write c
-    #end
     while line = content.gets
       io.puts line
     end
@@ -59,9 +62,6 @@ module RbbtMutiplartPayload
   end
 
   def self.post_data_stream(inputs = nil, stream_input = nil, stream_io = nil, stream_filename = nil)
-    #sout, sin = Misc.pipe
-
-    #Thread.new do
     Misc.open_pipe do |sin|
       inputs.each do |input,content|
         input = input.to_s
@@ -86,6 +86,7 @@ module RbbtMutiplartPayload
 
       RbbtMutiplartPayload.add_stream(sin, stream_input.to_s, stream_io, stream_filename) if stream_input
       RbbtMutiplartPayload.close_stream(sin)
+
       sin.close unless sin.closed?
     end
   end
@@ -105,7 +106,7 @@ module RbbtMutiplartPayload
                           when File
                             inputs[stream_input].path
                           else
-                            'file'
+                            'file-rand-' + rand(10000000).to_s
                           end
     end
 
@@ -120,14 +121,17 @@ module RbbtMutiplartPayload
       req.body = sout.read
     end
 
-    Misc.open_pipe do |sin|
+    Misc.open_pipe(true) do |sin|
+      sleep rand(10).to_f / 5
       Net::HTTP.start(uri.hostname, uri.port) do |http|
         http.request(req) do |res|
+          url_path = res["RBBT-STREAMING-JOB-URL"]
           if Net::HTTPRedirection === res
             sin.puts "LOCATION" if report_type
             sin.write res["location"]
-          elsif stream_input
-            sin.puts "STREAM" if report_type
+          elsif stream_input and url_path
+            url = URI::HTTP.build(:host => uri.hostname, :post => uri.port, :path => url_path)
+            sin.puts "STREAM: #{url.to_s}" if report_type
             res.read_body do |c|
               sin.write c
             end

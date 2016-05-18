@@ -6,9 +6,8 @@ class WorkflowRESTClient
     def self.get_streams(inputs)
       new_inputs = {}
       inputs.each do |k,v|
-        if Step === v or RemoteStep ===  v
-          v.run
-          new_inputs[k] = v.load
+        if Step === v 
+          new_inputs[k] = TSV.get_stream v
         else
           new_inputs[k] = v
         end
@@ -16,12 +15,27 @@ class WorkflowRESTClient
       new_inputs
     end
 
+    def get_streams
+      @inputs = WorkflowRESTClient::RemoteStep.get_streams @inputs
+    end
+
 
     def initialize(base_url, task = nil, base_name = nil, inputs = nil, result_type = nil, result_description = nil, is_exec = false, stream_input = nil)
       @base_url, @task, @base_name, @inputs, @result_type, @result_description, @is_exec = base_url, task, base_name, inputs, result_type, result_description, is_exec
       @mutex = Mutex.new
       @stream_input = stream_input
-      @inputs = RemoteStep.get_streams @inputs
+      #@inputs = RemoteStep.get_streams @inputs
+    end
+
+    def dup_inputs
+      return if @dupped or ENV["RBBT_NO_STREAM"] == 'true'
+      Log.low "Dupping inputs for remote #{path}"
+      new_inputs = {}
+      @inputs.each do |name,input|
+        new_inputs[name] = Step.dup_stream input
+      end
+      @inputs = RemoteStep.get_streams new_inputs
+      @dupped = true
     end
 
     def name
@@ -31,7 +45,7 @@ class WorkflowRESTClient
     end
 
     def task_name
-      return task unless @url
+      return task if task
       init_job
       (Array === @url ? @url.first : @url).split("/")[-2]
     end
@@ -39,21 +53,25 @@ class WorkflowRESTClient
     def info(check_lock=false)
       @done = @info and @info[:status] and @info[:status].to_sym == :done
       @info = Persist.memory("RemoteSteps Info", :url => @url, :persist => !!@done) do
-        init_job unless url
-        info = WorkflowRESTClient.get_json(File.join(url, 'info'))
+        init_job unless @url
+        info = WorkflowRESTClient.get_json(File.join(@url, 'info'))
         info = WorkflowRESTClient.fix_hash(info)
         info[:status] = info[:status].to_sym if String === info[:status]
         info
       end
     end
-    
+
     def status
-      return nil if @url.nil?
+      return nil unless url or started?
       begin
         info[:status]
       ensure
         @info = nil
       end
+    end
+
+    def started?
+      @result != nil or @started
     end
 
     def done?
@@ -68,9 +86,24 @@ class WorkflowRESTClient
       WorkflowRESTClient.get_raw(File.join(url, 'file', file))
     end
 
+    def get_stream
+      case @result
+      when IO 
+        @result
+      when String
+        StringIO.new @result
+      else
+        nil
+      end
+    end
+
+    def grace
+    end
+
     #{{{ MANAGEMENT
-    
+
     def init_job(cache_type = nil, other_params = {})
+      Log.stack caller
       cache_type = :asynchronous if cache_type.nil? and not @is_exec
       cache_type = :exec if cache_type.nil?
       @name ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
@@ -108,6 +141,8 @@ class WorkflowRESTClient
                         init_job 
                         self.load
                       end
+                    ensure
+                      @started = true
                     end
       end
 
@@ -116,11 +151,15 @@ class WorkflowRESTClient
     end
 
     def exec(noload = false)
-      if noload == :stream
-        _run_job(:exec)
-      else
-        exec_job 
-      end
+      @result ||= begin
+                     if noload == :stream
+                       _run_job(:exec)
+                     else
+                       exec_job 
+                     end
+                    ensure
+                      @started = true
+                   end
     end
 
     def join
@@ -180,20 +219,29 @@ class WorkflowRESTClient
     def _stream_job(stream_input, cache_type = :exec)
       require 'rbbt/util/misc/multipart_payload'
       WorkflowRESTClient.capture_exception do
-        url = URI.encode(File.join(base_url, task.to_s))
-        Log.debug{ "RestClient stream: #{ url } #{stream_input} #{cache_type} - #{Misc.fingerprint inputs}" }
+        task_url = URI.encode(File.join(base_url, task.to_s))
+        Log.debug{ "RestClient stream: #{ task_url } #{stream_input} #{cache_type} - #{Misc.fingerprint inputs}" }
         task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
-        res = RbbtMutiplartPayload.issue url, task_params, :mutations, nil, nil, true
+        res = RbbtMutiplartPayload.issue task_url, task_params, stream_input, nil, nil, true
         type = res.gets
         case type.strip
         when "LOCATION"
-          url = res.gets
-          url.sub!(/\?.*/,'')
-          WorkflowRESTClient.get_raw(url)
-        when "STREAM"
+          @url = res.gets
+          @url.sub!(/\?.*/,'')
+          WorkflowRESTClient.get_raw(@url)
+        when /STREAM: (.*)/
+          @url = $1.strip
+          ConcurrentStream.setup(res)
+          res.callback = Proc.new do
+            @done = true
+          end
           res
         when "BULK"
-          res.read
+          begin
+            res.read
+          ensure
+            @done = true
+          end
         else
           raise "What? " + type
         end
@@ -206,7 +254,7 @@ class WorkflowRESTClient
         return _stream_job(stream_input, cache_type) 
       end
       WorkflowRESTClient.capture_exception do
-        url = URI.encode(File.join(base_url, task.to_s))
+        @url = URI.encode(File.join(base_url, task.to_s))
         task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
 
         sout, sin = Misc.pipe
@@ -244,6 +292,7 @@ class WorkflowRESTClient
     def _restart
       @done = nil
       @name = nil
+      @started = nil
       new_inputs = {}
       inputs.each do |k,i| 
         if File === i 
