@@ -27,7 +27,7 @@ load_file Rbbt.etc['app.d/init.rb'].find
 
 #{{{ Workflow
 workflow = Rbbt.etc['target_workflow'].read
-wf = Workflow.require_workflow workflow
+wf = Workflow.require_workflow workflow, true
 
 $title = wf.to_s
 $class_name = class_name = wf.to_s + "REST"

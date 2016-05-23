@@ -10,7 +10,7 @@ begin
     gem.email = "miguel.vazquez@cnio.es"
     gem.homepage = "http://github.com/mikisvaz/rbbt-util"
     gem.authors = ["Miguel Vazquez"]
-    gem.files = Dir['lib/**/*.rb', 'share/**/*.rb', 'share/**/Rakefile','share/rbbt_commands/**/*', 'share/config.ru', 'share/Rlib/*.R', 'share/color/*', 'share/install/software/*', 'share/install/software/lib/install_helpers', 'LICENSE', 'bin/rbbt_commands/*', 'etc/app.d/*']
+    gem.files = Dir['lib/**/*.rb', 'share/**/*.rb', 'share/**/Rakefile','share/rbbt_commands/**/*', 'share/*.ru', 'share/Rlib/*.R', 'share/color/*', 'share/install/software/*', 'share/install/software/lib/install_helpers', 'LICENSE', 'bin/rbbt_commands/*', 'etc/app.d/*']
     gem.executables = ['rbbt_query.rb', 'rbbt_exec.rb', 'rbbt_Rutil.rb', 'rbbt', 'rbbt_dangling_locks.rb']
     gem.test_files = Dir['test/**/test_*.rb']
 
@@ -24,6 +24,7 @@ begin
     gem.add_dependency('term-ansicolor')
     gem.add_dependency('rest-client')
     gem.add_dependency('to_regexp')
+    gem.add_dependency('nakayoshi_fork')
     #gem.add_dependency('narray')
     #gem.add_dependency('sass-css-importer')
     #gem.add_dependency('simplews')
