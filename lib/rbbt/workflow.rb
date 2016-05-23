@@ -109,7 +109,7 @@ module Workflow
     end
   end
 
-  def self.require_workflow(wf_name)
+  def self.require_workflow(wf_name, force_local=false)
     # Already loaded
     begin
       workflow = Misc.string2const wf_name
@@ -119,7 +119,7 @@ module Workflow
     end
 
     # Load remotely
-    if Rbbt.etc.remote_workflows.exists?
+    if not force_local and Rbbt.etc.remote_workflows.exists?
       remote_workflows = Rbbt.etc.remote_workflows.yaml
       if Hash === remote_workflows and remote_workflows.include?(wf_name)
         url = remote_workflows[wf_name]
