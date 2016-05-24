@@ -70,6 +70,7 @@ module Workflow
                         case
                         when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
                           dir = Rbbt.etc.workflow_dir.read.strip
+                          dir = File.expand_path(dir)
                           Path.setup(dir)
                         when defined?(Rbbt)
                           Rbbt.workflows
