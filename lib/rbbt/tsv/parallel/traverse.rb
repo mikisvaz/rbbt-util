@@ -20,7 +20,13 @@ module TSV
       case obj
       when (defined? Step and Step)
         if obj.done?
-          CMD.cmd("wc -l '#{obj.path.find}'").read.to_i
+          path = obj.path
+          path = path.find if path.respond_to? :find
+          if File.exists? path
+            CMD.cmd("wc -l '#{path}'").read.to_i 
+          else
+            nil
+          end
         else
           nil
         end
