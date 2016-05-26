@@ -204,7 +204,7 @@ class Step
     pid_file = Step.pid_file path
     files_dir = Step.files_dir path
 
-    if Open.exists?(path) or Open.exists?(pid_file)
+    if Open.exists?(path) or Open.exists?(pid_file) or Open.exists?(info_file)
 
       @result = nil
       @pid = nil
@@ -245,22 +245,10 @@ class Step
   end
 
   def recursive_clean
-    clean
-    rec_dependencies.each do |step| 
-      if Open.exists?(step.info_file) 
-        step.clean 
-      end
-    end
-    self
-  end
-
-  def recursive_clean
-    clean
     dependencies.each do |step| 
-      if Open.exists?(step.info_file) 
-        step.recursive_clean 
-      end
+      step.recursive_clean 
     end
+    clean if Open.exists?(self.info_file)
     self
   end
 

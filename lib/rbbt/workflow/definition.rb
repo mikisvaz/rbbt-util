@@ -34,20 +34,6 @@ module Workflow
     @result_description = description
   end
 
-  #def dep(*dependency_list, &block)
-  #  @dependencies ||= []
-  #  if Module === dependency_list.first or Hash === dependency_list.last
-  #    @dependencies << dependency_list
-  #  else
-  #    @dependency_list ||= []
-  #    if block_given?
-  #      dependency_list.unshift self if dependency_list.length == 1
-  #      dependency_list << block 
-  #    end
-  #    dependencies.concat dependency_list
-  #  end
-  #end
-
   def dep(*dependency, &block)
     @dependencies ||= []
     if block_given?

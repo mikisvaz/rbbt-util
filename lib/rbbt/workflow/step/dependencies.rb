@@ -1,73 +1,73 @@
 
 class Step
 
-  STREAM_CACHE = {}
-  STREAM_CACHE_MUTEX = Mutex.new
-  def self.purge_stream_cache
-    Log.medium "Purging dup. stream cache"
-    STREAM_CACHE_MUTEX.synchronize do
-      #STREAM_CACHE.collect{|k,s| 
-      #  Thread.new do
-      #    Misc.consume_stream s
-      #  end
-      #}
-      STREAM_CACHE.clear
-    end
-  end
+  ##STREAM_CACHE = {}
+  ##STREAM_CACHE_MUTEX = Mutex.new
+  ##def self.purge_stream_cache
+  ##  Log.medium "Purging dup. stream cache"
+  ##  STREAM_CACHE_MUTEX.synchronize do
+  ##    #STREAM_CACHE.collect{|k,s| 
+  ##    #  Thread.new do
+  ##    #    Misc.consume_stream s
+  ##    #  end
+  ##    #}
+  ##    STREAM_CACHE.clear
+  ##  end
+  ##end
 
-  def self.dup_stream(stream)
-    case stream
-    when IO, File, Step
-      return stream if stream.respond_to?(:closed?) and stream.closed?
-      return stream if stream.respond_to?(:done?) and stream.done?
+  ##def self.dup_stream(stream)
+  ##  case stream
+  ##  when IO, File, Step
+  ##    return stream if stream.respond_to?(:closed?) and stream.closed?
+  ##    return stream if stream.respond_to?(:done?) and stream.done?
 
-      STREAM_CACHE_MUTEX.synchronize do
-        stream_key = Misc.fingerprint(stream)
-        current = STREAM_CACHE[stream_key]
-        case current
-        when nil
-          Log.medium "Not duplicating stream #{stream_key}"
-          STREAM_CACHE[stream_key] = stream
-        when File
-          if Open.exists? current.path 
-            Log.medium "Reopening file #{stream_key}"
-            Open.open(current.path)
-          else
-            new = Misc.dup_stream(current)
-            Log.medium "Duplicating file #{stream_key} #{current.inspect} => #{Misc.fingerprint(new)}"
-            new
-          end
-        when Step
-          job = current
-          current = job.result 
-          new = Misc.dup_stream(current)
-          job.result = current
-          Log.medium "Duplicating step #{stream_key} #{current.inspect} => #{Misc.fingerprint(new)}"
-          new
-        else
-          new = Misc.dup_stream(current)
-          Log.medium "Duplicating stream #{stream_key} #{ Misc.fingerprint(stream) } => #{Misc.fingerprint(new)}"
-          new
-        end
-      end
-    when TSV::Dumper#, TSV::Parser
-      stream = stream.stream
-      return stream if stream.closed?
+  ##    STREAM_CACHE_MUTEX.synchronize do
+  ##      stream_key = Misc.fingerprint(stream)
+  ##      current = STREAM_CACHE[stream_key]
+  ##      case current
+  ##      when nil
+  ##        Log.medium "Not duplicating stream #{stream_key}"
+  ##        STREAM_CACHE[stream_key] = stream
+  ##      when File
+  ##        if Open.exists? current.path 
+  ##          Log.medium "Reopening file #{stream_key}"
+  ##          Open.open(current.path)
+  ##        else
+  ##          new = Misc.dup_stream(current)
+  ##          Log.medium "Duplicating file #{stream_key} #{current.inspect} => #{Misc.fingerprint(new)}"
+  ##          new
+  ##        end
+  ##      when Step
+  ##        job = current
+  ##        current = job.result 
+  ##        new = Misc.dup_stream(current)
+  ##        job.result = current
+  ##        Log.medium "Duplicating step #{stream_key} #{current.inspect} => #{Misc.fingerprint(new)}"
+  ##        new
+  ##      else
+  ##        new = Misc.dup_stream(current)
+  ##        Log.medium "Duplicating stream #{stream_key} #{ Misc.fingerprint(stream) } => #{Misc.fingerprint(new)}"
+  ##        new
+  ##      end
+  ##    end
+  ##  when TSV::Dumper#, TSV::Parser
+  ##    stream = stream.stream
+  ##    return stream if stream.closed?
 
-      STREAM_CACHE_MUTEX.synchronize do
-        if STREAM_CACHE[stream].nil?
-          Log.high "Not duplicating dumper #{ stream.inspect }"
-          STREAM_CACHE[stream] = stream
-        else
-          new = Misc.dup_stream(STREAM_CACHE[stream])
-          Log.high "Duplicating dumper #{ stream.inspect } into #{new.inspect}"
-          new
-        end
-      end
-    else
-      stream
-    end
-  end
+  ##    STREAM_CACHE_MUTEX.synchronize do
+  ##      if STREAM_CACHE[stream].nil?
+  ##        Log.high "Not duplicating dumper #{ stream.inspect }"
+  ##        STREAM_CACHE[stream] = stream
+  ##      else
+  ##        new = Misc.dup_stream(STREAM_CACHE[stream])
+  ##        Log.high "Duplicating dumper #{ stream.inspect } into #{new.inspect}"
+  ##        new
+  ##      end
+  ##    end
+  ##  else
+  ##    stream
+  ##  end
+  ##end
 
   def self.prepare_for_execution(job)
     return if (job.done? and not job.dirty?) or 

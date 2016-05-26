@@ -1,6 +1,14 @@
 require 'rbbt/util/open' 
 require 'yaml'
 
+module ComputeDependency
+  attr_accessor :compute
+  def self.setup(dep, value)
+    dep.extend ComputeDependency
+    dep.compute = value
+  end
+end
+
 class Step
 
 
@@ -553,43 +561,60 @@ module Workflow
   end
 
   def rec_input_defaults(taskname)
+    rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject(IndiferentHash.setup({})){|acc, tn|
       new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_defaults
       acc = new.merge(acc) 
+      acc.delete_if{|input,defaults| not rec_inputs.include? input}
+      acc
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_types(taskname)
+    rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
       new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_types
       acc = new.merge(acc) 
+      acc.delete_if{|input,defaults| not rec_inputs.include? input}
+      acc
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_descriptions(taskname)
+    rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
       new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_descriptions
       acc = new.merge(acc) 
+      acc.delete_if{|input,defaults| not rec_inputs.include? input}
+      acc
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_options(taskname)
+    rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
       new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_options
       acc = new.merge(acc) 
+      acc = acc.delete_if{|input,defaults| not rec_inputs.include? input}
+      acc
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def real_dependencies(task, jobname, inputs, dependencies)
     real_dependencies = []
+    path_deps = {}
     dependencies.each do |dependency|
-      real_dependencies << case dependency
+      real_dep = case dependency
       when Array
         workflow, dep_task, options = dependency
 
         _inputs = IndiferentHash.setup(inputs.dup)
+        compute = options[:compute] if options
         options.each{|i,v|
+          next if i == :compute or i == "compute"
           case v
+          when :compute
+            compute = v
           when Symbol
             all_d = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
             rec_dependency = all_d.select{|d| d.task_name.to_sym == v }.first
@@ -617,8 +642,9 @@ module Workflow
           end
         } if options
 
-        res = workflow.job(dep_task, jobname, _inputs)
-        res
+        job = workflow.job(dep_task, jobname, _inputs)
+        ComputeDependency.setup(job, compute) if compute
+        job
       when Step
         dependency
       when Symbol
@@ -626,10 +652,28 @@ module Workflow
         job(dependency, jobname, _inputs)
       when Proc
         _inputs = IndiferentHash.setup(inputs.dup)
-        dependency.call jobname, _inputs, real_dependencies
+        dep = dependency.call jobname, _inputs, real_dependencies
+
+        if DependencyBlock === dependency
+          orig_dep = dependency.dependency 
+          if Hash === orig_dep.last
+            options = orig_dep.last
+            compute = options[:compute]
+
+            if Array === dep
+              dep.each{|d| ComputeDependency.setup(d, compute)}
+            elsif dep
+              ComputeDependency.setup(dep, compute)
+            end if compute
+          end
+        end
+
+        dep
       else
         raise "Dependency for #{task.name} not understood: #{Misc.fingerprint dependency}"
       end
+
+      real_dependencies << real_dep
     end
     real_dependencies.flatten.compact
   end
@@ -641,7 +685,7 @@ module Workflow
       if inputs.any? or dependencies.any?
         tagged_jobname = case TAG
                          when :hash
-                           hash_str = Misc.obj2md5({:inputs => inputs, :dependencies => dependencies})
+                           hash_str = Misc.obj2digest({:inputs => inputs, :dependencies => dependencies})
                            jobname + '_' << hash_str
                          else
                            jobname
@@ -679,4 +723,5 @@ module Workflow
     dir = File.dirname(path)
     Misc.path_relative_to(workdir_find, dir).sub(/([^\/]+)\/.*/,'\1')
   end
+
 end

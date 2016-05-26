@@ -82,7 +82,7 @@ module ComputeWorkflow
 end
 
 class TestWorkflowDependency < Test::Unit::TestCase
-  def _test_task1
+  def test_task1
     size = 10000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
     TmpFile.with_file(content) do |input_file|
@@ -98,7 +98,7 @@ class TestWorkflowDependency < Test::Unit::TestCase
     end
   end
 
-  def _test_task2
+  def test_task2
     size = 10000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
     TmpFile.with_file(content) do |input_file|
@@ -114,22 +114,21 @@ class TestWorkflowDependency < Test::Unit::TestCase
     end
   end
 
-  def _test_task4
+  def test_task4
     size = 1000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
     last_line = nil
     TmpFile.with_file(content) do |input_file|
       job = DepWorkflow.job(:task4, "TEST", :input_file => input_file)
-      io = TSV.get_stream job.run(:stream)
-      while line = io.gets
-        last_line = line.strip
+      io = TSV.get_stream job.run(:stream) while line = io.gets last_line = line.strip
       end
       io.join
     end
+
     assert_equal "Line #{size}\tTask1\tTask2\tTask1\tTask3", last_line
   end
   
-  def _test_task5
+  def test_task5
     size = 1000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
     last_line = nil
@@ -144,7 +143,7 @@ class TestWorkflowDependency < Test::Unit::TestCase
     assert_equal "Line #{size}\tTask1\tTask2\tTask1\tTask3\tTask5", last_line
   end
   
-  def _test_task6
+  def test_task6
     size = 100000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
     last_line = nil
@@ -188,7 +187,7 @@ class TestWorkflowDependency < Test::Unit::TestCase
     assert_equal "Line #{size}\tTask1\tTask2\tTask1\tTask2\tTask1\tTask3\tTask5\tTask7", last_line
   end
 
-  def _test_compute
+  def test_compute
     size = 10000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
     TmpFile.with_file(content) do |input_file|
