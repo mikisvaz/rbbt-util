@@ -65,7 +65,7 @@ module Misc
       else
         new = "{"
         obj.each do |k,v|
-          new << k.to_s << '=>' << fingerprint(v) << ' '
+          new << fingerprint(k) << '=>' << fingerprint(v) << ' '
         end
         if new.length > 1
            new[-1] =  "}"
@@ -249,8 +249,8 @@ module Misc
     str
   end
 
-
-  def self.obj2md5(obj)
+  
+  def self.obj2digest(obj)
     str = obj2str(obj)
 
     if str.empty?
@@ -258,5 +258,9 @@ module Misc
     else
       digest(str)
     end
+  end
+
+  def self.obj2md5(obj)
+    obj2digest(obj)
   end
 end
