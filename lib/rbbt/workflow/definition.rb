@@ -103,4 +103,6 @@ module Workflow
     synchronous_exports.uniq!
     synchronous_exports
   end
+
+  alias export export_asynchronous
 end
