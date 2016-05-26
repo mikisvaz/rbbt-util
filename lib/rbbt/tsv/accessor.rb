@@ -594,7 +594,7 @@ module TSV
     io = dumper_stream(keys, no_options)
 
     str = ''
-    while block = io.read(2048)
+    while block = io.read(Misc::BLOCK_SIZE)
       str << block
     end
 

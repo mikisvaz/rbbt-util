@@ -175,7 +175,7 @@ module CMD
         begin
           loop do
             break if in_content.closed?
-            block = in_content.read 1024
+            block = in_content.read Misc::BLOCK_SIZE
             break if block.nil? or block.empty?
             sin.write block
           end
