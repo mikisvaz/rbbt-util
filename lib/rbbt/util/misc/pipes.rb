@@ -152,23 +152,25 @@ module Misc
       begin
 
         skip = [false] * num
-        while block = stream.read(BLOCK_SIZE)
+        begin
+          while block = stream.readpartial(BLOCK_SIZE)
 
-          in_pipes.each_with_index do |sin,i|
-            begin 
-              sin.write block; 
-            rescue IOError
-              Log.medium("Tee stream #{i} #{Misc.fingerprint stream} IOError: #{$!.message}");
-              skip[i] = true
-            end unless skip[i] 
-          end
+            in_pipes.each_with_index do |sin,i|
+              begin 
+                sin.write block; 
+              rescue IOError
+                Log.medium("Tee stream #{i} #{Misc.fingerprint stream} IOError: #{$!.message}");
+                skip[i] = true
+              end unless skip[i] 
+            end
+        end
+        rescue IOError
         end
 
         in_pipes.each do |sin|
           sin.close unless sin.closed?
         end
         stream.join if stream.respond_to? :join
-
       rescue Aborted, Interrupt
         stream.abort if stream.respond_to? :abort
         out_pipes.each do |sout|
@@ -248,11 +250,17 @@ module Misc
       begin
         into = into.find if Path === into
         into = Open.open(into, :mode => 'w') if String === into 
-        into.sync == true if IO === into
+        into.sync = true if IO === into
         into_close = false unless into.respond_to? :close
-        while not io.closed? and block = io.read(BLOCK_SIZE)
-          into << block if into
+        io.sync = true
+
+        begin
+          while block = io.readpartial(BLOCK_SIZE)
+            into << block if into
+          end
+        rescue EOFError
         end
+
         io.join if io.respond_to? :join
         io.close unless io.closed?
         into.close if into and into_close and not into.closed?

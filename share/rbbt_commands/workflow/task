@@ -433,9 +433,13 @@ case res
 when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
   res = job.result
   if res.respond_to? :gets
-    while block = res.read(2048) do
-      out.write block
-    end #unless io.closed? 
+    begin
+      Misc.consume_stream(res, false, out)
+      #while block = res.readpartial(Misc::BLOCK_SIZE) do
+      #  out.write block
+      #end #unless io.closed? 
+    rescue EOFError, IOError
+    end
     res.join if res.respond_to? :join
   else
     puts res.to_s
@@ -443,16 +447,24 @@ when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
 when Step
   if res.streaming?
     io = TSV.get_stream res
-    while block = io.read(2048) do
-      out.write block
-    end #unless io.closed? 
+    Misc.consume_stream(io, false, out)
+    #begin
+    #  while block = io.readpartial(Misc::BLOCK_SIZE) do
+    #    out.write block
+    #  end #unless io.closed? 
+    #rescue EOFError, IOError
+    #end
     io.join if io.respond_to? :join
   elsif IO === res.result
     begin
       io = res.get_stream
-      while block = io.read(2048) do
-        out.write block
-      end #unless io.closed? 
+      Misc.consume_stream(io, false, out)
+      #begin
+      #  while block = io.readpartial(Misc::BLOCK_SIZE) do
+      #    out.write block
+      #  end #unless io.closed? 
+      #rescue EOFError, IOError
+      #end
       io.join if io.respond_to? :join
     rescue Aborted, Interrupt
       Log.error "Process interrupted. Aborting step"
