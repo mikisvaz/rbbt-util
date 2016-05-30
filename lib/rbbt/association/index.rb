@@ -59,18 +59,16 @@ module Association
               list.replace [list.first] * size if list.length == 1
             end if recycle and size > 1
 
-
             rest = Misc.zip_fields rest
-
 
             annotations = (Array === rest.first and rest.first.length > 1) ?
               targets.zip(rest) :
               targets.zip(rest * targets.length) 
 
+            source = source.gsub('~','-..-')
             annotations.each do |target, info|
               next if target.nil? or target.empty?
-              source.gsub!('~','-..-')
-              target.gsub!('~','-..-')
+              target = target.gsub('~','-..-')
               key = [source, target] * "~"
 
               if data[key].nil? or info.nil?
@@ -160,6 +158,7 @@ module Association
 
                      new.undirected = undirected
 
+                     Log.tsv new
                      new
                    rescue Exception
                      Log.error "Deleting after error reversing database: #{ reverse_filename }"
