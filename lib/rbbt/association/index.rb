@@ -158,7 +158,6 @@ module Association
 
                      new.undirected = undirected
 
-                     Log.tsv new
                      new
                    rescue Exception
                      Log.error "Deleting after error reversing database: #{ reverse_filename }"
