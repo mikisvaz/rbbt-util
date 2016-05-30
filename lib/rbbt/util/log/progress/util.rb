@@ -5,11 +5,30 @@ module Log
     REMOVE = []
     SILENCED = []
 
+    def self.add_offset
+      @@offset = offset + 1
+      @@offset = 0 if @@offset < 0
+      @@offset
+    end
+
+    def self.remove_offset
+      @@offset = offset - 1
+      @@offset = 0 if @@offset < 0
+      @@offset
+    end
+
+
+    def self.offset
+      @@offset ||= 0
+      @@offset = 0 if @@offset < 0
+      @@offset
+    end
+
     def self.new_bar(max, options = {})
       cleanup_bars
       BAR_MUTEX.synchronize do
         #Log::LAST.replace "new_bar" if Log::LAST == "progress"
-        options = Misc.add_defaults options, :depth => BARS.length
+        options = Misc.add_defaults options, :depth => BARS.length + Log::ProgressBar.offset
         BARS << (bar = ProgressBar.new(max, options))
         bar
       end

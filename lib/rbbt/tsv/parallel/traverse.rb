@@ -355,7 +355,7 @@ module TSV
       respawn = true if ENV["RBBT_RESPAWN"] and ENV["RBBT_RESPAWN"] == "true"
 
       Log.low "Traversing in #{ num } cpus: #{respawn ? "respawn" : "no respawn"}"
-      q = RbbtProcessQueue.new num, cleanup, join, respawn
+      q = RbbtProcessQueue.new num, cleanup, join, respawn, !!bar
       callback = Proc.new{ bar.tick } if callback.nil? and bar
       q.callback &callback
       q.init &block
