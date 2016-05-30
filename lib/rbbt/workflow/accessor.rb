@@ -501,7 +501,7 @@ module Workflow
                                   wf, t, o = dep
                                   wf.rec_dependencies(t).each do |d|
                                     if Array === d
-                                      new = d
+                                      new = d.dup
                                     else
                                       new = [dep.first, d]
                                     end
@@ -521,10 +521,12 @@ module Workflow
                                   all_deps << dep.dependency if dep.dependency
                                   case dep.dependency
                                   when Array
-                                    dep_wf, dep_task = dep.dependency
-                                    dep_rec_dependencies = dep_wf.rec_dependencies(dep_task.to_sym)
-                                    dep_rec_dependencies.collect!{|d| Array === d ? d : [dep_wf, d]}
-                                    all_deps.concat dep_rec_dependencies
+                                    dep_wf, dep_task, dep_options = dep.dependency
+                                    if dep_task === Symbol
+                                      dep_rec_dependencies = dep_wf.rec_dependencies(dep_task.to_sym)
+                                      dep_rec_dependencies.collect!{|d| Array === d ? d : [dep_wf, d]}
+                                      all_deps.concat dep_rec_dependencies
+                                    end
                                   when Symbol, String
                                     all_deps.concat rec_dependencies(dep.dependency.to_sym)
                                   end
@@ -563,7 +565,13 @@ module Workflow
   def rec_input_defaults(taskname)
     rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject(IndiferentHash.setup({})){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_defaults
+      if Array === tn and tn.first
+        new = tn.first.tasks[tn[1].to_sym].input_types
+      elsif Symbol === tn
+        new = tasks[tn.to_sym].input_types
+      else
+        next acc
+      end
       acc = new.merge(acc) 
       acc.delete_if{|input,defaults| not rec_inputs.include? input}
       acc
@@ -573,7 +581,13 @@ module Workflow
   def rec_input_types(taskname)
     rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_types
+      if Array === tn and tn.first
+        new = tn.first.tasks[tn[1].to_sym].input_types
+      elsif Symbol === tn
+        new = tasks[tn.to_sym].input_types
+      else
+        next acc
+      end
       acc = new.merge(acc) 
       acc.delete_if{|input,defaults| not rec_inputs.include? input}
       acc
@@ -583,7 +597,13 @@ module Workflow
   def rec_input_descriptions(taskname)
     rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_descriptions
+      if Array === tn and tn.first
+        new = tn.first.tasks[tn[1].to_sym].input_types
+      elsif Symbol === tn
+        new = tasks[tn.to_sym].input_types
+      else
+        next acc
+      end
       acc = new.merge(acc) 
       acc.delete_if{|input,defaults| not rec_inputs.include? input}
       acc
@@ -593,7 +613,13 @@ module Workflow
   def rec_input_options(taskname)
     rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_options
+      if Array === tn and tn.first
+        new = tn.first.tasks[tn[1].to_sym].input_types
+      elsif Symbol === tn
+        new = tasks[tn.to_sym].input_types
+      else
+        next acc
+      end
       acc = new.merge(acc) 
       acc = acc.delete_if{|input,defaults| not rec_inputs.include? input}
       acc
@@ -623,7 +649,7 @@ module Workflow
               _inputs[i] = v unless _inputs.include? i
             else
               input_options = workflow.task_info(dep_task)[:input_options][i] || {}
-              if input_options[:stream]
+              if true or input_options[:stream]
                 #rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
                 _inputs[i] = rec_dependency
               else

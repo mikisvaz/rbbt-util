@@ -18,7 +18,28 @@ class Step
     end
   end
 
+  def resolve_input_steps
+    step = false
+    new_inputs = @inputs.collect do |i| 
+      if Step === i
+        step = true
+        if i.done?
+          i.load
+        elsif i.streaming?
+          TSV.get_stream i
+        else
+          i.join
+          i.load
+        end
+      else
+        i
+      end
+    end
+    @inputs.replace new_inputs if step
+  end
+
   def _exec
+    resolve_input_steps
     @exec = true if @exec.nil?
     @task.exec_in((bindings ? bindings : self), *@inputs)
   end

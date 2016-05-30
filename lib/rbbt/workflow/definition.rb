@@ -37,8 +37,13 @@ module Workflow
   def dep(*dependency, &block)
     @dependencies ||= []
     if block_given?
-      dependency.unshift self if dependency.length == 1
-      DependencyBlock.setup block, dependency if dependency.any?
+      if dependency.any?
+        wf, task, opt = dependency
+
+        opt, wf = wf, nil if Hash === wf
+        wf, task = self, wf if task.nil? and wf
+        DependencyBlock.setup block, [wf, task, opt] 
+      end
       @dependencies << block
     else
       if Module === dependency.first or 
@@ -62,7 +67,7 @@ module Workflow
     end
 
     name = name.to_sym
-
+   
     block = self.method(name) unless block_given?
 
     task_info = {

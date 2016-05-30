@@ -155,7 +155,7 @@ class Step
 
         dep_hash ||= begin
                        h = {}
-                       rec_dependencies.each{|dep| h[dep.task.name.to_s] ||= dep }
+                       rec_dependencies.each{|dep| h[dep.task_name.to_s] ||= dep }
                        h
                      end
         dep = dep_hash[a]

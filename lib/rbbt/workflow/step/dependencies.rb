@@ -98,6 +98,8 @@ class Step
     task_name = self.task_name
     begin
 
+      dependency.resolve_input_steps
+
       if dependency.done?
         log_dependency_exec(dependency, :done) if log
         return
