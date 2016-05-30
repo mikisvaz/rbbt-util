@@ -22,7 +22,7 @@ module RbbtMutiplartPayload
   EOL = "\r\n"
 
   def self.mutex
-    @mutex ||= Mutex.new
+    @@mutex ||= Mutex.new
   end
 
   def self.input_header(name, filename = nil)
@@ -47,17 +47,19 @@ module RbbtMutiplartPayload
 
   def self.add_stream(io, name, content, filename = nil)
     header = input_header(name, filename)
-    io.write "--" + BOUNDARY + EOL + header + EOL  + EOL
+    io.write "--" + BOUNDARY + EOL + header + EOL
 
-    while line = content.gets
-      io.puts line
+    begin
+      while c = content.readpartial(Misc::BLOCK_SIZE)
+        io.write c
+      end
+    rescue EOFError
     end
     content.close
   end
 
   def self.close_stream(io)
     io.write "--" + BOUNDARY + "--" + EOL + EOL
-    io.write EOL
     io.close
   end
 
@@ -121,8 +123,7 @@ module RbbtMutiplartPayload
       req.body = sout.read
     end
 
-    Misc.open_pipe(true) do |sin|
-      sleep rand(10).to_f / 5
+    Misc.open_pipe do |sin|
       Net::HTTP.start(uri.hostname, uri.port) do |http|
         http.request(req) do |res|
           url_path = res["RBBT-STREAMING-JOB-URL"]
@@ -139,7 +140,6 @@ module RbbtMutiplartPayload
             sin.puts "BULK" if report_type
             sin.write res.body
           end
-          sin.close
         end
       end
     end
