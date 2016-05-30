@@ -36,9 +36,14 @@ matches = file.subset(source, target)
 if options[:tsv]
   puts matches.tsv.to_s
 else
+  fields = file.fields
   matches.each do |item|
     puts Log.color(:magenta, item)
-    info = file.fields.zip(file[item])
+    if fields.any?
+      info = file.fields.zip(file[item])
+    else
+      info = {}
+    end
     source,_sep, target = item.partition "~"
     puts "  " << Misc.format_definition_list_item("source", source)
     puts "  " << Misc.format_definition_list_item("target", target)
