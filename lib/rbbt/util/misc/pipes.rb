@@ -79,7 +79,6 @@ module Misc
           Log.medium "Aborted open_pipe: #{$!.message}"
         rescue Exception
           Log.medium "Exception in open_pipe: #{$!.message}"
-          Log.exception $!
           parent.raise $!
           raise $!
         end

@@ -20,19 +20,32 @@ class Step
 
   def resolve_input_steps
     step = false
+    pos = 0
     new_inputs = @inputs.collect do |i| 
-      if Step === i
-        step = true
-        if i.done?
-          i.load
-        elsif i.streaming?
-          TSV.get_stream i
+      begin
+        if Step === i
+          step = true
+          if i.done?
+            if (task.input_options[task.inputs[pos]] || {})[:stream]
+              TSV.get_stream i
+            else
+              i.load
+            end
+          elsif i.streaming?
+            TSV.get_stream i
+          else
+            i.join
+            if (task.input_options[task.inputs[pos]] || {})[:stream]
+              TSV.get_stream i
+            else
+              i.load
+            end
+          end
         else
-          i.join
-          i.load
+          i
         end
-      else
-        i
+      ensure
+        pos += 1
       end
     end
     @inputs.replace new_inputs if step
@@ -100,7 +113,7 @@ class Step
             :clean_name => clean_name,
           })
 
-          #dup_inputs
+          dup_inputs
           begin
             run_dependencies
           rescue Exception
@@ -161,7 +174,7 @@ class Step
                 Log.exception $!
               ensure
                 join
-                #Step.purge_stream_cache
+                Step.purge_stream_cache
                 FileUtils.rm pid_file if File.exists?(pid_file)
               end
             end
@@ -179,7 +192,7 @@ class Step
             set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
             set_info :time_elapsed, (time_elapsed = done_time - start_time)
             log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
-            #Step.purge_stream_cache
+            Step.purge_stream_cache
             FileUtils.rm pid_file if File.exists?(pid_file)
           end
 
@@ -190,7 +203,7 @@ class Step
           @result ||= result
           self
         else
-          #Step.purge_stream_cache
+          Step.purge_stream_cache
           @result = prepare_result result, @task.result_description
         end
       end

@@ -1,73 +1,76 @@
 
 class Step
 
-  ##STREAM_CACHE = {}
-  ##STREAM_CACHE_MUTEX = Mutex.new
-  ##def self.purge_stream_cache
-  ##  Log.medium "Purging dup. stream cache"
-  ##  STREAM_CACHE_MUTEX.synchronize do
-  ##    #STREAM_CACHE.collect{|k,s| 
-  ##    #  Thread.new do
-  ##    #    Misc.consume_stream s
-  ##    #  end
-  ##    #}
-  ##    STREAM_CACHE.clear
-  ##  end
-  ##end
+  STREAM_CACHE = {}
+  STREAM_CACHE_MUTEX = Mutex.new
+  def self.purge_stream_cache
+    Log.medium "Purging dup. stream cache"
+    STREAM_CACHE_MUTEX.synchronize do
+      #STREAM_CACHE.collect{|k,s| 
+      #  Thread.new do
+      #    Misc.consume_stream s
+      #  end
+      #}
+      STREAM_CACHE.clear
+    end
+  end
 
-  ##def self.dup_stream(stream)
-  ##  case stream
-  ##  when IO, File, Step
-  ##    return stream if stream.respond_to?(:closed?) and stream.closed?
-  ##    return stream if stream.respond_to?(:done?) and stream.done?
+  def self.dup_stream(stream)
+    case stream
+    when IO, File, Step
+      return stream if stream.respond_to?(:closed?) and stream.closed?
+      return stream if stream.respond_to?(:done?) and stream.done?
 
-  ##    STREAM_CACHE_MUTEX.synchronize do
-  ##      stream_key = Misc.fingerprint(stream)
-  ##      current = STREAM_CACHE[stream_key]
-  ##      case current
-  ##      when nil
-  ##        Log.medium "Not duplicating stream #{stream_key}"
-  ##        STREAM_CACHE[stream_key] = stream
-  ##      when File
-  ##        if Open.exists? current.path 
-  ##          Log.medium "Reopening file #{stream_key}"
-  ##          Open.open(current.path)
-  ##        else
-  ##          new = Misc.dup_stream(current)
-  ##          Log.medium "Duplicating file #{stream_key} #{current.inspect} => #{Misc.fingerprint(new)}"
-  ##          new
-  ##        end
-  ##      when Step
-  ##        job = current
-  ##        current = job.result 
-  ##        new = Misc.dup_stream(current)
-  ##        job.result = current
-  ##        Log.medium "Duplicating step #{stream_key} #{current.inspect} => #{Misc.fingerprint(new)}"
-  ##        new
-  ##      else
-  ##        new = Misc.dup_stream(current)
-  ##        Log.medium "Duplicating stream #{stream_key} #{ Misc.fingerprint(stream) } => #{Misc.fingerprint(new)}"
-  ##        new
-  ##      end
-  ##    end
-  ##  when TSV::Dumper#, TSV::Parser
-  ##    stream = stream.stream
-  ##    return stream if stream.closed?
+      STREAM_CACHE_MUTEX.synchronize do
+        stream_key = Misc.fingerprint(stream)
+        current = STREAM_CACHE[stream_key]
+        case current
+        when nil, Step
+          Log.medium "Not duplicating stream #{stream_key}"
+          STREAM_CACHE[stream_key] = stream
+        when File
+          if Open.exists? current.path 
+            Log.medium "Reopening file #{stream_key}"
+            Open.open(current.path)
+          else
+            new = Misc.dup_stream(current)
+            Log.medium "Duplicating file #{stream_key} #{current.inspect} => #{Misc.fingerprint(new)}"
+            new
+          end
+        else
+          new = Misc.dup_stream(current)
+          Log.medium "Duplicating stream #{stream_key} #{ Misc.fingerprint(stream) } => #{Misc.fingerprint(new)}"
+          new
+        end
+      end
+    when TSV::Dumper#, TSV::Parser
+      stream = stream.stream
+      return stream if stream.closed?
 
-  ##    STREAM_CACHE_MUTEX.synchronize do
-  ##      if STREAM_CACHE[stream].nil?
-  ##        Log.high "Not duplicating dumper #{ stream.inspect }"
-  ##        STREAM_CACHE[stream] = stream
-  ##      else
-  ##        new = Misc.dup_stream(STREAM_CACHE[stream])
-  ##        Log.high "Duplicating dumper #{ stream.inspect } into #{new.inspect}"
-  ##        new
-  ##      end
-  ##    end
-  ##  else
-  ##    stream
-  ##  end
-  ##end
+      STREAM_CACHE_MUTEX.synchronize do
+        if STREAM_CACHE[stream].nil?
+          Log.high "Not duplicating dumper #{ stream.inspect }"
+          STREAM_CACHE[stream] = stream
+        else
+          new = Misc.dup_stream(STREAM_CACHE[stream])
+          Log.high "Duplicating dumper #{ stream.inspect } into #{new.inspect}"
+          new
+        end
+      end
+    else
+      stream
+    end
+  end
+
+  def dup_inputs
+    return if @dupped or ENV["RBBT_NO_STREAM"] == 'true'
+    Log.low "Dupping inputs for #{path}"
+    dupped_inputs = @inputs.collect do |input|
+      Step.dup_stream input
+    end
+    @inputs.replace dupped_inputs
+    @dupped = true
+  end
 
   def self.prepare_for_execution(job)
     return if (job.done? and not job.dirty?) or 
@@ -75,6 +78,8 @@ class Step
     (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === job and not (job.error? or job.aborted?))
 
     job.clean if job.error? or job.aborted? or (job.started? and not job.running? and not job.error?)
+
+    job.dup_inputs
 
     raise DependencyError, job if job.error?
   end
@@ -152,26 +157,16 @@ class Step
     end
   end
 
-  #def dup_inputs
-  #  return if true or @dupped or ENV["RBBT_NO_STREAM"] == 'true'
-  #  Log.low "Dupping inputs for #{path}"
-  #  dupped_inputs = @inputs.collect do |input|
-  #    Step.dup_stream input
+  #def consolidate_dependencies(path_deps = {})
+  #  return false if @consolidated  or dependencies.nil? or dependencies.empty?
+  #  consolidated_deps = dependencies.collect do |dep|
+  #    dep.consolidate_dependencies(path_deps)
+  #    path = dep.path
+  #    path_deps[path] ||= dep
   #  end
-  #  @inputs.replace dupped_inputs
-  #  @dupped = true
+  #  dependencies.replace consolidated_deps
+  #  @consolidated = true
   #end
-
-  def consolidate_dependencies(path_deps = {})
-    return false if @consolidated  or dependencies.nil? or dependencies.empty?
-    consolidated_deps = dependencies.collect do |dep|
-      dep.consolidate_dependencies(path_deps)
-      path = dep.path
-      path_deps[path] ||= dep
-    end
-    dependencies.replace consolidated_deps
-    @consolidated = true
-  end
 
   #def prepare_dependencies
   #  dep_step = {}
@@ -210,9 +205,9 @@ class Step
   #end
 
   def execute_and_dup(step, dep_step, log = true)
-    dup = ! step.result
+    dup = step.result.nil?
     execute_dependency(step, log)
-    if dup and step.streaming? and step.result
+    if dup and step.streaming? and not step.result.nil?
       if dep_step[step.path] and dep_step[step.path].length > 1
         stream = step.result
         other_steps = dep_step[step.path] - [step]
@@ -255,6 +250,10 @@ class Step
   def run_dependencies
     dep_step = {}
 
+    rec_dependencies = self.rec_dependencies
+
+    return if rec_dependencies.empty?
+
     all_deps = rec_dependencies + [self]
 
     dependencies.each do |dep|
@@ -282,12 +281,15 @@ class Step
       end
     end
 
+    self.dup_inputs
+
     required_dep_paths = []
     dep_step.each do |path,list|
       required_dep_paths << path if list.length > 1
     end
 
     required_dep_paths.concat dependencies.collect{|dep| dep.path }
+
 
     log :dependencies, "Dependencies for step #{Log.color :yellow, task.name.to_s || ""}"
 
@@ -317,20 +319,24 @@ class Step
       end
     end
 
+    Log.medium "Processing pre dependencies: #{Misc.fingerprint(pre_deps)} - #{Log.color :blue, self.path}" if pre_deps.any?
     pre_deps.each do |step|
       next if compute_deps.include? step
       execute_and_dup(step, dep_step, false)
     end
 
+    Log.medium "Computing pre dependencies: #{Misc.fingerprint(compute_pre_deps)} - #{Log.color :blue, self.path}" if pre_deps.any?
     compute_pre_deps.each do |type,list|
       run_compute_dependencies(type, list, dep_step)
     end
 
+    Log.medium "Processing last dependencies: #{Misc.fingerprint(last_deps)} - #{Log.color :blue, self.path}" if pre_deps.any?
     last_deps.each do |step|
       next if compute_deps.include? step
       execute_and_dup(step, dep_step)
     end
 
+    Log.medium "Computing last dependencies: #{Misc.fingerprint(compute_last_deps)} - #{Log.color :blue, self.path}" if pre_deps.any?
     compute_last_deps.each do |type,list|
       run_compute_dependencies(type, list, dep_step)
     end

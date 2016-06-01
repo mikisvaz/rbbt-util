@@ -566,9 +566,9 @@ module Workflow
     rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject(IndiferentHash.setup({})){|acc, tn|
       if Array === tn and tn.first
-        new = tn.first.tasks[tn[1].to_sym].input_types
+        new = tn.first.tasks[tn[1].to_sym].input_defaults
       elsif Symbol === tn
-        new = tasks[tn.to_sym].input_types
+        new = tasks[tn.to_sym].input_defaults
       else
         next acc
       end
@@ -598,9 +598,9 @@ module Workflow
     rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
       if Array === tn and tn.first
-        new = tn.first.tasks[tn[1].to_sym].input_types
+        new = tn.first.tasks[tn[1].to_sym].input_descriptions
       elsif Symbol === tn
-        new = tasks[tn.to_sym].input_types
+        new = tasks[tn.to_sym].input_descriptions
       else
         next acc
       end
@@ -614,9 +614,9 @@ module Workflow
     rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
       if Array === tn and tn.first
-        new = tn.first.tasks[tn[1].to_sym].input_types
+        new = tn.first.tasks[tn[1].to_sym].input_options
       elsif Symbol === tn
-        new = tasks[tn.to_sym].input_types
+        new = tasks[tn.to_sym].input_options
       else
         next acc
       end
