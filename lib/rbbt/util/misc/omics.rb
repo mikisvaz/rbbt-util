@@ -148,11 +148,11 @@ module Misc
         if ref == '-'
           res = '+' + m
         else
-          res = '-' * ref.length 
+          res = '-' * ref.length
           res << m unless m == '-'
         end
         Log.debug{"Non-standard annotation: #{[ref, m]} (#{ muts }) => #{ res }"}
-        
+
         res
       end
     end
@@ -183,16 +183,82 @@ module Misc
         if ref == '-'
           res = '+' + m
         else
-          res = '-' * ref.length 
+          res = '-' * ref.length
           res << m unless m == '-'
         end
         Log.debug{"Non-standard annotation: #{[ref, m]} (#{ muts }) => #{ res }"}
-        
+
         res
       end
     end
 
     [pos, muts]
+  end
+
+
+  def self.translate_dna_mutation_hgvs2rbbt(cds)
+    change = case
+             when cds =~ />/
+               cds.split(">").last
+             when cds =~ /del/
+               deletion = cds.split("del").last
+               case
+               when deletion =~ /^\d+$/
+                 "-" * deletion.to_i
+               when deletion =~ /^[ACTG]+$/i
+                 "-" * deletion.length
+               else
+                 Log.debug "Unknown deletion: #{ deletion }"
+                 deletion
+               end
+             when cds =~ /ins/
+               insertion = cds.split("ins").last
+               case
+               when insertion =~ /^\d+$/
+                 "+" + "N" * insertion.to_i
+               when insertion =~ /^[NACTG]+$/i
+                 "+" + insertion
+               else
+                 Log.debug "Unknown insertion: #{insertion }"
+                 insertion
+               end
+             else
+               Log.debug "Unknown change: #{cds}"
+               "?(" << cds << ")"
+             end
+    change
+  end
+
+  def self.translate_prot_mutation_hgvs2rbbt(mutation)
+    one_aa_code = THREE_TO_ONE_AA_CODE.values
+    one_aa_code << "X" << "B" << "Z" << "J" << "*" << "?"
+    one_aa_code_re = one_aa_code*""
+    subs = Regexp.new("^[#{one_aa_code_re}]\\d+[#{one_aa_code_re}]")
+    f_aa = Regexp.new("^[#{one_aa_code_re}]\\d+")
+    mutation.sub!('p.', '')
+    mutation = case
+               when mutation =~ subs
+                 mutation
+               when mutation =~ /fs/
+                 mutation =~ f_aa
+                 if Regexp.last_match(0).nil?
+                   Log.debug "Unknown Frameshift: #{mutation}"
+                   mutation
+                 else
+                   Regexp.last_match(0) + "Frameshift"
+                 end
+               when mutation =~ /ins|del|>/
+                 mutation =~ f_aa
+                 if Regexp.last_match(0).nil?
+                   Log.debug "Unknown Indel"
+                   mutation
+                 else
+                   Regexp.last_match(0) + "Indel"
+                 end
+               else
+                 Log.debug "Unknown change: #{mutation}"
+                 "?(#{mutation})"
+               end
   end
 
   def self.IUPAC_to_base(iupac)
@@ -286,7 +352,7 @@ module Misc
           pos2 = f2.pos
 
           sline2, schr2, sstart2, seend2, srest2 = line2, chr2, start2, eend2, rest2
-          while chr1 == chr2 and ((start1 <= eend2 and eend1 >= start2)) 
+          while chr1 == chr2 and ((start1 <= eend2 and eend1 >= start2))
             out.puts line1 + "\t" + line2
             if f2.eof?
               chr2 = 'next2'
@@ -294,7 +360,7 @@ module Misc
               line2, chr2, start2, eend2, rest2 = intersect_streams_read(f2,sep)
             end
           end
-          line2, chr2, start2, eend2, rest2 = sline2, schr2, sstart2, seend2, srest2 
+          line2, chr2, start2, eend2, rest2 = sline2, schr2, sstart2, seend2, srest2
           f2.seek(pos2)
           move = 1
         end
