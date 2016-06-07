@@ -35,7 +35,7 @@ class WorkflowRESTClient
         stream = stream_input.to_s == k.to_s
         if Step === v 
           v.run(true) and v.grace unless v.done? or v.streaming?
-          new_inputs[k] = (stream and (v.done? or v.streaming?)) ? TSV.get_stream(v) : v.path
+          new_inputs[k] = stream ? TSV.get_stream(v) : v.load
         else
           new_inputs[k] = v
         end
@@ -223,7 +223,7 @@ class WorkflowRESTClient
     
     def _run_job(cache_type = :async)
       get_streams
-      if cache_type == :stream or cache_type == :exec and stream_input
+      if cache_type == :stream or cache_type == :exec and stream_input and inputs[stream_input]
         task_url = URI.encode(File.join(base_url, task.to_s))
         task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
         @streaming = true
