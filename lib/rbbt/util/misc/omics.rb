@@ -243,7 +243,7 @@ module Misc
                  mutation =~ f_aa
                  if Regexp.last_match(0).nil?
                    Log.debug "Unknown Frameshift: #{mutation}"
-                   mutation
+                   nil
                  else
                    Regexp.last_match(0) + "Frameshift"
                  end
@@ -251,13 +251,13 @@ module Misc
                  mutation =~ f_aa
                  if Regexp.last_match(0).nil?
                    Log.debug "Unknown Indel"
-                   mutation
+                   nil
                  else
                    Regexp.last_match(0) + "Indel"
                  end
                else
                  Log.debug "Unknown change: #{mutation}"
-                 "?(#{mutation})"
+                 nil
                end
   end
 

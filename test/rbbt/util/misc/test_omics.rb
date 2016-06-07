@@ -48,21 +48,21 @@ class TestMiscOmics < Test::Unit::TestCase
     assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.E746_A750delELREA"), "E746Indel"
     assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.P14fs*?"), "P14Frameshift"
     assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.*588fs?"), "*588Frameshift"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?fs*(46_47)"), "?fs*(46_47)"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.(A443)fs*?"), "(A443)fs*?"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.(574_1542)fs*?"), "(574_1542)fs*?"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?fs"), "?fs"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.fs*?"), "fs*?"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?fs*?"), "?fs*?"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.(P1249)fs*?"), "(P1249)fs*?"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?"), "?(?)"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.WQQSYLD25?"), "?(WQQSYLD25?)"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.(449_514)?"), "?((449_514)?)"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("?"), "?(?)"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.0?"), "?(0?)"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?_?ins?"), "?_?ins?"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?_?insXXXX"), "?_?insXXXX"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.(A775)ins?"), "(A775)ins?"
-    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?del"), "?del"
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?fs*(46_47)"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.(A443)fs*?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.(574_1542)fs*?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?fs"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.fs*?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?fs*?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.(P1249)fs*?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.WQQSYLD25?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.(449_514)?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.0?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?_?ins?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?_?insXXXX"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.(A775)ins?"), nil
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?del"), nil
   end
 end
