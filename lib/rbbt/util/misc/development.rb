@@ -318,6 +318,42 @@ module Misc
     end
   end
 
+  def self.bootstrap_in_threads(elems, num = :current, options = {}, &block)
+    IndiferentHash.setup options
+    num = :current if num.nil?
+    threads = case num
+           when :current
+            10
+           when String
+             num.to_i
+           when Integer
+             if num < 100
+               num
+             else
+               32000 / num
+             end
+           else
+             raise "Parameter 'num' not understood: #{Misc.fingerprint num}"
+           end
+
+
+    options = Misc.add_defaults options, :respawn => true, :threads => threads
+    options = Misc.add_defaults options, :bar => "Bootstrap in #{ options[:threads] } threads: #{ Misc.fingerprint Annotated.purge(elems) }"
+
+    index = (0..elems.length-1).to_a.collect{|v| v.to_s }
+    TSV.traverse index, options do |pos|
+      elem = elems[pos.to_i]
+      elems.annotate elem if elems.respond_to? :annotate
+      begin
+        res = yield elem
+      rescue Interrupt
+        Log.warn "Process #{Process.pid} was aborted"
+        raise $!
+      end
+      res = nil unless options[:into]
+      res
+    end
+  end
   def self.memory_use(pid=nil)
     `ps -o rss -p #{pid || $$}`.strip.split.last.to_i
   end

@@ -79,7 +79,7 @@ class Step
 
     job.clean if job.error? or job.aborted? or (job.started? and not job.running? and not job.error?)
 
-    job.dup_inputs
+    job.dup_inputs unless job.done? or job.started?
 
     raise DependencyError, job if job.error?
   end
@@ -157,64 +157,18 @@ class Step
     end
   end
 
-  #def consolidate_dependencies(path_deps = {})
-  #  return false if @consolidated  or dependencies.nil? or dependencies.empty?
-  #  consolidated_deps = dependencies.collect do |dep|
-  #    dep.consolidate_dependencies(path_deps)
-  #    path = dep.path
-  #    path_deps[path] ||= dep
-  #  end
-  #  dependencies.replace consolidated_deps
-  #  @consolidated = true
-  #end
-
-  #def prepare_dependencies
-  #  dep_step = {}
-
-  #  all_deps = rec_dependencies + [self]
-
-  #  seen_paths = Set.new
-  #  all_deps.uniq.each do |step|
-  #    next if seen_paths.include? step.path
-  #    Step.prepare_for_execution(step)
-  #    seen_paths << step.path
-  #    step.dependencies.each do |step_dep|
-  #      dep_step[step_dep.path] ||= []
-  #      dep_step[step_dep.path] << step_dep
-  #    end
-  #  end
-
-  #  seen_paths = Set.new
-  #  rec_dependencies.uniq.each do |step|
-  #    next if seen_paths.include? step.path
-  # = {}    seen_paths << step.path
-  #    execute_dependency(step)
-  #    if step.streaming? and step.result
-  #      if dep_step[step.path] and dep_step[step.path].length > 1
-  #        stream = step.result
-  #        other_steps = dep_step[step.path] - [step]
-  #        copies = Misc.dup_stream_multiple(stream, other_steps.length)
-  #        other_steps.zip(copies).each do |other,dupped_stream|
-  #          other.instance_variable_set(:@result, dupped_stream)
-  #        end
-  #      end
-  #    end
-  #  end
-
-  #  Step.purge_stream_cache
-  #end
-
   def execute_and_dup(step, dep_step, log = true)
     dup = step.result.nil?
     execute_dependency(step, log)
     if dup and step.streaming? and not step.result.nil?
       if dep_step[step.path] and dep_step[step.path].length > 1
         stream = step.result
-        other_steps = dep_step[step.path] - [step]
-        copies = Misc.dup_stream_multiple(stream, other_steps.length)
+        other_steps = dep_step[step.path]
+        return unless other_steps.length > 1
+        copies = Misc.tee_stream_thread_multiple(stream, other_steps.length)
         log_dependency_exec(step, "duplicating #{copies.length}") 
         other_steps.zip(copies).each do |other,dupped_stream|
-          other.instance_variable_set(:@result, dupped_stream)
+          other.instance_variable_set("@result", dupped_stream)
         end
       end
     end
@@ -233,10 +187,10 @@ class Step
       end
     when :bootstrap
       cpus = rest.nil? ? nil : rest.first 
-      cpus = 30 if cpus.nil?
+      cpus = 5 if cpus.nil?
       cpus = list.length / 2 if cpus > list.length / 2
 
-      Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{path}", :_respawn => :always) do |dep|
+      Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{path}", :respawn => :always) do |dep|
         dep.produce
         nil
       end
@@ -280,7 +234,7 @@ class Step
         dep_step[step_dep.path] << step_dep
       end
     end
-
+    
     self.dup_inputs
 
     required_dep_paths = []
@@ -325,18 +279,18 @@ class Step
       execute_and_dup(step, dep_step, false)
     end
 
-    Log.medium "Computing pre dependencies: #{Misc.fingerprint(compute_pre_deps)} - #{Log.color :blue, self.path}" if pre_deps.any?
+    Log.medium "Computing pre dependencies: #{Misc.fingerprint(compute_pre_deps)} - #{Log.color :blue, self.path}" if compute_pre_deps.any?
     compute_pre_deps.each do |type,list|
       run_compute_dependencies(type, list, dep_step)
     end
 
-    Log.medium "Processing last dependencies: #{Misc.fingerprint(last_deps)} - #{Log.color :blue, self.path}" if pre_deps.any?
+    Log.medium "Processing last dependencies: #{Misc.fingerprint(last_deps)} - #{Log.color :blue, self.path}" if last_deps.any?
     last_deps.each do |step|
       next if compute_deps.include? step
       execute_and_dup(step, dep_step)
     end
 
-    Log.medium "Computing last dependencies: #{Misc.fingerprint(compute_last_deps)} - #{Log.color :blue, self.path}" if pre_deps.any?
+    Log.medium "Computing last dependencies: #{Misc.fingerprint(compute_last_deps)} - #{Log.color :blue, self.path}" if compute_last_deps.any?
     compute_last_deps.each do |type,list|
       run_compute_dependencies(type, list, dep_step)
     end
@@ -350,108 +304,4 @@ class Step
     kill_children
   end
 
-  #def run_dependencies
-  #  @seen ||= []
-  #  seen_paths ||= Set.new
-  #  
-  #  consolidate_dependencies
-  #  dependencies.uniq.each do |dependency| 
-  #    dependency_path = dependency.path
-  #    next if seen_paths.include? dependency_path
-  #    @seen.concat dependency.rec_dependencies
-  #    seen_paths.union(dependency.rec_dependencies.collect{|d| d.path})
-  #    @seen << dependency
-  #    seen_paths << dependency_path
-  #  end
-
-  #  @seen.uniq!
-  #  @seen.delete self
-
-  #  return if @seen.empty?
-
-  #  log :dependencies, "#{Log.color :magenta, "Dependencies"} for step #{Log.color :yellow, task.name.to_s || ""}"
-
-  #  @seen.each do |dependency| 
-  #    Step.prepare_for_execution(dependency)
-  #  end
-
-  #  pre_deps = []
-  #  compute_pre_deps = {}
-  #  last_deps = []
-  #  compute_last_deps = {}
-  #  @seen.each do |dependency| 
-  #    if dependencies.include?(dependency) and dependency.inputs.flatten.select{|i| Step === i}.any?
-  #      if ComputeDependency === dependency
-  #        compute_last_deps[dependency.compute] ||= []
-  #        compute_last_deps[dependency.compute] << dependency
-  #      else
-  #        last_deps << dependency
-  #      end
-  #    else
-  #      if ComputeDependency === dependency
-  #        compute_pre_deps[dependency.compute] ||= []
-  #        compute_pre_deps[dependency.compute] << dependency
-  #      else
-  #        pre_deps << dependency if dependencies.include?(dependency)
-  #      end
-  #    end
-  #  end
-
-  #  pre_deps.each do |dependency|
-  #    dependency.dup_inputs
-  #    execute_dependency(dependency)
-  #  end
-
-  #  compute_pre_deps.each do |type,list|
-  #    if Array === type
-  #      type, *rest = type
-  #    end
-
-  #    case type
-  #    when :bootstrap
-  #      cpus = rest.nil? ? nil : rest.first 
-  #      cpus = 10 if cpus.nil?
-
-  #      list.each do |dependency|
-  #        dependency.dup_inputs
-  #      end
-
-  #      Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{path}", :_respawn => :always) do |dep|
-  #        dep.produce
-  #        nil
-  #      end
-  #    else
-  #      list.each do |dependency|
-  #        dependency.dup_inputs
-  #        execute_dependency(dependency)
-  #      end
-  #    end
-  #  end
-
-  #  last_deps.each do |dependency|
-  #    dependency.dup_inputs
-  #  end
-
-  #  last_deps.each do |dependency|
-  #    execute_dependency(dependency)
-  #  end
-
-  #  compute_last_deps.each do |type,list|
-  #    case type
-  #    when :_bootstrap
-  #      list.each do |dependency|
-  #        dependency.dup_inputs
-  #      end
-  #      Misc.bootstrap(list, 3, :bar => "Boostrapping dependencies for #{path}", :respawn => :always) do |dependency|
-  #        dependency.produce
-  #        nil
-  #      end
-  #    else
-  #      list.each do |dependency|
-  #        dependency.dup_inputs
-  #        execute_dependency(dependency)
-  #      end
-  #    end
-  #  end
-  #end
 end

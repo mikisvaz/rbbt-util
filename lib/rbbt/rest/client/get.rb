@@ -118,4 +118,34 @@ class WorkflowRESTClient
     end
   end
 
+  def self.stream_job(task_url, task_params, stream_input, cache_type = :exec)
+    require 'rbbt/util/misc/multipart_payload'
+    WorkflowRESTClient.capture_exception do
+      Log.debug{ "RestClient stream #{Process.pid}: #{ task_url } #{stream_input} #{cache_type} - #{Misc.fingerprint task_params}" }
+      res = RbbtMutiplartPayload.issue task_url, task_params, stream_input, nil, nil, true
+      type = res.gets
+      case type.strip
+      when "LOCATION"
+        @url = res.gets
+        @url.sub!(/\?.*/,'')
+        WorkflowRESTClient.get_raw(@url)
+      when /STREAM: (.*)/
+        @url = $1.strip
+        res.callback = Proc.new do
+          Log.medium "Done streaming result from #{@url}"
+          @done = true
+        end
+        res
+      when "BULK"
+        begin
+          res.read
+        ensure
+          @done = true
+        end
+      else
+        raise "What? " + type
+      end
+    end
+  end
+
 end

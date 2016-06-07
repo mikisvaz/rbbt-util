@@ -54,13 +54,12 @@ module RbbtMutiplartPayload
         io.write c
       end
     rescue EOFError
+      io.write "\r\n"
     end
-    content.close
   end
 
   def self.close_stream(io)
     io.write "--" + BOUNDARY + "--" + EOL + EOL
-    io.close
   end
 
   def self.post_data_stream(inputs = nil, stream_input = nil, stream_io = nil, stream_filename = nil)
@@ -88,16 +87,12 @@ module RbbtMutiplartPayload
 
       RbbtMutiplartPayload.add_stream(sin, stream_input.to_s, stream_io, stream_filename) if stream_input
       RbbtMutiplartPayload.close_stream(sin)
-
-      sin.close unless sin.closed?
     end
   end
 
   def self.issue(url, inputs = nil, stream_input = nil, stream_io = nil, stream_filename = nil, report_type = false)
 
     uri = URI(url)
-    req = Net::HTTP::Post.new(uri.path)
-
     IndiferentHash.setup(inputs)
 
     if stream_input
@@ -112,37 +107,47 @@ module RbbtMutiplartPayload
                           end
     end
 
-    sout = RbbtMutiplartPayload.post_data_stream inputs, stream_input, stream_io, stream_filename
+    post_data_stream = RbbtMutiplartPayload.post_data_stream inputs, stream_input, stream_io, stream_filename
 
+    jobname = inputs["jobname"] 
+
+    req = Net::HTTP::Post.new(uri.path)
     if stream_input
       req.content_type = "multipart/form-data; boundary=" + RbbtMutiplartPayload::BOUNDARY + '; stream=' + stream_input.to_s
-      req.body_stream = sout
-      req.add_field "Transfer-Encoding", "chunked"
+      req.body_stream = post_data_stream
     else
       req.content_type = "multipart/form-data; boundary=" + RbbtMutiplartPayload::BOUNDARY
-      req.body = sout.read
+      req.body = post_data_stream.read
     end
 
+    req.add_field "Transfer-Encoding", 'chunked'
+    req.add_field "RBBT_ID", (jobname || "No name")
     Misc.open_pipe do |sin|
       Net::HTTP.start(uri.hostname, uri.port) do |http|
         http.request(req) do |res|
-          url_path = res["RBBT-STREAMING-JOB-URL"]
-          if Net::HTTPRedirection === res
-            sin.puts "LOCATION" if report_type
-            sin.write res["location"]
-          elsif stream_input and url_path
-            url = URI::HTTP.build(:host => uri.hostname, :post => uri.port, :path => url_path)
-            sin.puts "STREAM: #{url.to_s}" if report_type
-            res.read_body do |c|
-              sin.write c
+          if Net::HTTPSuccess === res
+            url_path = res["RBBT-STREAMING-JOB-URL"]
+            if Net::HTTPRedirection === res
+              Log.medium "Response recieved REDIRECT: #{ url_path }"
+              sin.puts "LOCATION" if report_type
+              sin.write res["location"]
+            elsif stream_input and url_path
+              Log.medium "Response recieved STREAM: #{ url_path }"
+              url = URI::HTTP.build(:host => uri.hostname, :post => uri.port, :path => url_path)
+              sin.puts "STREAM: #{url.to_s}" if report_type
+              Log.medium "Read body: #{ url_path }"
+              res.read_body(sin)
+              Log.medium "Read body DONE: #{ url_path }"
+            else
+              Log.medium "Response recieved BULK: #{ url_path }"
+              sin.puts "BULK" if report_type
+              sin.write res.body
             end
           else
-            sin.puts "BULK" if report_type
-            sin.write res.body
+            raise "Error: #{res.code}"
           end
         end
       end
     end
   end
-
 end

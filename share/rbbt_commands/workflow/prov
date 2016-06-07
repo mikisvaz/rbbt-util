@@ -40,8 +40,6 @@ def status_msg(status)
             :yellow
           when :done
             :green
-          else
-            nil
           end
   Log.color(color, status)
 end

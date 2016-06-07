@@ -125,8 +125,8 @@ if recursive
 
   while deps.any? do
     dep = deps.shift
-    inputs = inputs.merge(dep.info[:inputs])
-    deps.concat dep.info[:dependencies].collect{|v| get_step v.last }
+    inputs = inputs.merge(dep.info[:inputs] || {})
+    deps.concat (dep.info[:dependencies] || []).collect{|v| get_step v.last }
   end
 
   inputs.each do |input,value|

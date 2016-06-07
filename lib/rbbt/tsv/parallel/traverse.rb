@@ -54,8 +54,8 @@ module TSV
 
   def self.stream_name(obj)
     return "nil" if obj.nil?
-    filename_obj   = obj.respond_to?(:filename) ? obj.filename : nil
-    filename_obj ||= obj.respond_to?(:path) ? obj.path : nil
+    #filename_obj   = obj.respond_to?(:filename) ? obj.filename : nil
+    #filename_obj ||= obj.respond_to?(:path) ? obj.path : nil
     stream_obj = obj_stream(obj) || obj
     obj.class.to_s << "-" << Misc.fingerprint(stream_obj)
   end
@@ -223,7 +223,8 @@ module TSV
       options[:type] = :single
     end
 
-    Log.medium{"Traversing #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"}
+    name = stream_name(obj)
+    Log.medium{"Traversing #{name} #{Log.color :green, "->"} #{stream_name(options[:into])}"}
     begin
       case obj
       when TSV

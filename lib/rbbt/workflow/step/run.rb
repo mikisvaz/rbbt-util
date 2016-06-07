@@ -6,7 +6,7 @@ class Step
 
   def get_stream
     @mutex.synchronize do
-      Log.low "Getting stream from #{path} #{!@saved_stream} [#{object_id}]"
+      Log.low "Getting stream from #{path} #{!@saved_stream} [#{object_id}-#{Misc.fingerprint(@result)}]"
       begin
         return nil if @saved_stream
         if IO === @result 
@@ -113,7 +113,6 @@ class Step
             :clean_name => clean_name,
           })
 
-          dup_inputs
           begin
             run_dependencies
           rescue Exception

@@ -54,27 +54,32 @@ module Misc
     sout, sin = Misc.pipe
 
     if do_fork
+
       parent_pid = Process.pid
       pid = Process.fork {
         purge_pipes(sin)
         sout.close
         begin
+
           yield sin
           sin.close if close and not sin.closed? 
-        rescue
+
+        rescue Exception
           Log.exception $!
           Process.kill :INT, parent_pid
           Kernel.exit! -1
         end
         Kernel.exit! 0
       }
-      sin.close 
+
       ConcurrentStream.setup sout, :pids => [pid]
     else
       thread = Thread.new(Thread.current) do |parent|
         begin
+          
           yield sin
           sin.close if close and not sin.closed?
+
         rescue Aborted
           Log.medium "Aborted open_pipe: #{$!.message}"
         rescue Exception
@@ -83,8 +88,10 @@ module Misc
           raise $!
         end
       end
+
       ConcurrentStream.setup sout, :threads => [thread]
     end
+
     sout
   end
 
@@ -147,6 +154,8 @@ module Misc
       out_pipes << sout
     end
 
+    filename = stream.filename if stream.respond_to? :filename
+
     splitter_thread = Thread.new(Thread.current) do |parent|
       begin
 
@@ -156,9 +165,9 @@ module Misc
 
             in_pipes.each_with_index do |sin,i|
               begin 
-                sin.write block; 
+                sin.write block
               rescue IOError
-                Log.medium("Tee stream #{i} #{Misc.fingerprint stream} IOError: #{$!.message}");
+                Log.error("Tee stream #{i} #{Misc.fingerprint stream} IOError: #{$!.message}");
                 skip[i] = true
               end unless skip[i] 
             end
@@ -169,6 +178,7 @@ module Misc
         in_pipes.each do |sin|
           sin.close unless sin.closed?
         end
+
         stream.join if stream.respond_to? :join
       rescue Aborted, Interrupt
         stream.abort if stream.respond_to? :abort
@@ -188,7 +198,7 @@ module Misc
     end
 
     out_pipes.each do |sout|
-      ConcurrentStream.setup sout, :threads => splitter_thread
+      ConcurrentStream.setup sout, :threads => splitter_thread, :filename => filename
     end
 
     out_pipes
@@ -205,13 +215,15 @@ module Misc
       stream.clear
     end
     tee1, *rest = Misc.tee_stream stream_dup, num + 1
-    stream.reopen(tee1)
     rest
+  end
+
+  def Misc.dup_stream (stream)
+    dup_stream_multiple(stream, 1).first
   end
 
   class << self
     alias tee_stream tee_stream_thread_multiple
-    alias dup_stream dup_stream_multiple
   end
 
   def self.read_full_stream(io)
@@ -254,8 +266,8 @@ module Misc
         io.sync = true
 
         begin
-          while block = io.readpartial(BLOCK_SIZE)
-            into << block if into
+          while c = io.readpartial(BLOCK_SIZE)
+            into << c if into
           end
         rescue EOFError
         end

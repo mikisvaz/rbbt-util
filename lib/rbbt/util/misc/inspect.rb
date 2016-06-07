@@ -229,7 +229,7 @@ module Misc
           when (defined? Step and Step)
             "<Step #{obj.path}>"
           else
-            if obj.respond_to? :filename
+            if obj.respond_to? :filename and obj.filename
               "<IO:" << obj.filename << ">"
             else
               obj_ins = obj.inspect
