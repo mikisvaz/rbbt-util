@@ -45,7 +45,7 @@ module Persist
       if Array === check
         newer = check.select{|file| newer? path, file}
         if newer.any?
-          Log.medium "Persistence check for #{path} failed in: #{ newer * ", "}"
+          Log.medium "Persistence check for #{path} failed in: #{ Misc.fingerprint(newer)}"
           return false 
         end
      else
