@@ -38,11 +38,13 @@ module Workflow
     @dependencies ||= []
     if block_given?
       if dependency.any?
-        wf, task, opt = dependency
 
-        opt, wf = wf, nil if Hash === wf
-        wf, task = self, wf if task.nil? and wf
-        DependencyBlock.setup block, [wf, task, opt] 
+        wf, task_name, options = dependency
+        options, task_name = task_name, nil if Hash === task_name
+        options, wf = wf, nil if Hash === wf
+        task_name, wf = wf, self if task_name.nil?
+
+        DependencyBlock.setup block, [wf, task_name, options] 
       end
       @dependencies << block
     else

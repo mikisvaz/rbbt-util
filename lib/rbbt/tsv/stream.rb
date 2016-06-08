@@ -156,7 +156,7 @@ module TSV
                   parts[i] = p.collect{|e| e.nil? ? "" : e }
                 end
               rescue TryAgain
-                Log.warn "Skipping repeated key in stream #{i}: #{keys[i]}"
+                Log.debug "Skipping repeated key in stream #{i}: #{keys[i]}"
                 retry
               end
             else

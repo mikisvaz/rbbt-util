@@ -57,6 +57,25 @@ Returns numer * 2 lines containing TEST
 
   export_synchronous :double
   export_asynchronous :repeat2
+
+  input :letter, :string, "Letter", "D"
+  task :letter => :string do |l|
+    l
+  end
+
+  dep :letter
+  task :letter_repeat => :string do |l|
+    ([step(:letter).load] * 2) * ""
+  end
+
+  dep :letter
+  dep :letter_repeat, :letter => "A"
+  task :two_letters => :string do
+    dependencies.collect{|d| d.load } * ":"
+  end
+
+
+
 end
 
 TestWF.workdir = Rbbt.tmp.test.workflow
@@ -123,6 +142,14 @@ class TestWorkflow < Test::Unit::TestCase
     
     job = a.job(:foo)
     assert_equal 'bar', job.exec
+  end
+
+  def test_letter
+    assert_equal "D", TestWF.job(:letter).run
+    assert_equal "B", TestWF.job(:letter, nil, :letter => "B").run
+    assert_equal "BB", TestWF.job(:letter_repeat, nil, :letter => "B").run
+    job = TestWF.job(:two_letters, nil, :letter => "V")
+    assert_equal "V:AA", job.run
   end
 
 end

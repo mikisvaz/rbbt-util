@@ -77,7 +77,9 @@ class Step
     (job.streaming? and job.running?) or 
     (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === job and not (job.error? or job.aborted?))
 
-    job.clean if job.error? or job.aborted? or (job.started? and not job.running? and not job.error?)
+    if job.error? or job.aborted? or (job.started? and not job.running? and not job.error?)
+      job.clean 
+    end
 
     job.dup_inputs unless job.done? or job.started?
 
@@ -165,9 +167,10 @@ class Step
         stream = step.result
         other_steps = dep_step[step.path]
         return unless other_steps.length > 1
+        log_dependency_exec(step, "duplicating #{other_steps.length}") 
         copies = Misc.tee_stream_thread_multiple(stream, other_steps.length)
-        log_dependency_exec(step, "duplicating #{copies.length}") 
         other_steps.zip(copies).each do |other,dupped_stream|
+          stream.annotate(dupped_stream) if stream.respond_to?(:annotate)
           other.instance_variable_set("@result", dupped_stream)
         end
       end

@@ -227,7 +227,7 @@ module Misc
           when File 
             "<File:" << obj.path << ">"
           when (defined? Step and Step)
-            "<Step #{obj.path}>"
+            "<IO:" << obj.path << ">"
           else
             if obj.respond_to? :filename and obj.filename
               "<IO:" << obj.filename << ">"

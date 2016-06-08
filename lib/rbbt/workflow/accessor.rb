@@ -493,30 +493,45 @@ module Workflow
     @rec_dependencies ||= {}
     @rec_dependencies[taskname] ||= begin
                             if task_dependencies.include? taskname
+
                               deps = task_dependencies[taskname]
-                              all_deps = deps.select{|dep| String === dep or Symbol === dep or Array === dep}
+
+                              #all_deps = deps.select{|dep| String === dep or Symbol === dep or Array === dep}
+
+                              all_deps = []
                               deps.each do |dep| 
+                                if DependencyBlock === dep
+                                  all_deps << dep.dependency if dep.dependency
+                                else
+                                  all_deps << dep unless Proc === dep
+                                end
                                 case dep
                                 when Array
                                   wf, t, o = dep
+
                                   wf.rec_dependencies(t).each do |d|
                                     if Array === d
                                       new = d.dup
                                     else
                                       new = [dep.first, d]
                                     end
+
                                     if Hash === o and not o.empty? 
                                       if Hash === new.last
-                                        hash = new.last
+                                        hash = new.last.dup
                                         o.each{|k,v| hash[k] ||= v}
+                                        new[new.length-1] = hash
                                       else
-                                        new.push o
+                                        new.push o.dup
                                       end
                                     end
+
                                     all_deps << new
                                   end
+
                                 when String, Symbol
-                                  all_deps.concat rec_dependencies(dep.to_sym)
+                                  rec_deps = rec_dependencies(dep.to_sym)
+                                  all_deps.concat rec_deps
                                 when DependencyBlock
                                   all_deps << dep.dependency if dep.dependency
                                   case dep.dependency
@@ -558,14 +573,15 @@ module Workflow
 
   def rec_inputs(taskname)
     task = task_from_dep(taskname)
-    dep_inputs = task.dep_inputs rec_dependencies(taskname), self
+    deps = rec_dependencies(taskname)
+    dep_inputs = task.dep_inputs deps, self
     task.inputs + dep_inputs.values.flatten
   end
 
   def rec_input_defaults(taskname)
     rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject(IndiferentHash.setup({})){|acc, tn|
-      if Array === tn and tn.first
+      if Array === tn and tn[0] and tn[1]
         new = tn.first.tasks[tn[1].to_sym].input_defaults
       elsif Symbol === tn
         new = tasks[tn.to_sym].input_defaults
@@ -581,7 +597,7 @@ module Workflow
   def rec_input_types(taskname)
     rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      if Array === tn and tn.first
+      if Array === tn and tn[0] and tn[1]
         new = tn.first.tasks[tn[1].to_sym].input_types
       elsif Symbol === tn
         new = tasks[tn.to_sym].input_types
@@ -597,7 +613,7 @@ module Workflow
   def rec_input_descriptions(taskname)
     rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      if Array === tn and tn.first
+      if Array === tn and tn[0] and tn[1]
         new = tn.first.tasks[tn[1].to_sym].input_descriptions
       elsif Symbol === tn
         new = tasks[tn.to_sym].input_descriptions
@@ -613,7 +629,7 @@ module Workflow
   def rec_input_options(taskname)
     rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      if Array === tn and tn.first
+      if Array === tn and tn[0] and tn[1]
         new = tn.first.tasks[tn[1].to_sym].input_options
       elsif Symbol === tn
         new = tasks[tn.to_sym].input_options
@@ -646,10 +662,14 @@ module Workflow
             rec_dependency = all_d.select{|d| d.task_name.to_sym == v }.first
 
             if rec_dependency.nil?
-              _inputs[i] = v unless _inputs.include? i
+              if inputs.include? v
+                _inputs[i] = _inputs.delete(v)
+              else
+                _inputs[i] = v unless _inputs.include? i
+              end
             else
               input_options = workflow.task_info(dep_task)[:input_options][i] || {}
-              if true or input_options[:stream]
+              if input_options[:stream]
                 #rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
                 _inputs[i] = rec_dependency
               else

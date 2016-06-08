@@ -302,6 +302,7 @@ module Workflow
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
 
     real_inputs = {}
+    recursive_inputs = rec_inputs(taskname)
 
     inputs.each do |k,v|
       default = defaults[k]
