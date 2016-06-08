@@ -140,5 +140,3 @@ class RbbtProcessQueue
       sin.close unless sin.closed?
       sout.close unless sout.closed?
     end
-  end
-end

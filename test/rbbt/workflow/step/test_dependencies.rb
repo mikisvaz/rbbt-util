@@ -120,14 +120,16 @@ class TestWorkflowDependency < Test::Unit::TestCase
     last_line = nil
     TmpFile.with_file(content) do |input_file|
       job = DepWorkflow.job(:task4, "TEST", :input_file => input_file)
-      io = TSV.get_stream job.run(:stream) while line = io.gets last_line = line.strip
+      io = TSV.get_stream job.run(:stream)
+      while line = io.gets
+        last_line = line.strip
       end
       io.join
     end
 
     assert_equal "Line #{size}\tTask1\tTask2\tTask1\tTask3", last_line
   end
-  
+
   def test_task5
     size = 1000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
@@ -142,7 +144,7 @@ class TestWorkflowDependency < Test::Unit::TestCase
     end
     assert_equal "Line #{size}\tTask1\tTask2\tTask1\tTask3\tTask5", last_line
   end
-  
+
   def test_task6
     size = 100000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
@@ -164,7 +166,7 @@ class TestWorkflowDependency < Test::Unit::TestCase
     end
     assert_equal "Line #{size}\tTask1\tTask2\tTask1\tTask2\tTask1\tTask3\tTask5", last_line
   end
-  
+
   def test_task8
     size = 100000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
@@ -202,5 +204,3 @@ class TestWorkflowDependency < Test::Unit::TestCase
       assert_equal "Line #{size}\tTask1\tTask2", last_line
     end
   end
-end
-
