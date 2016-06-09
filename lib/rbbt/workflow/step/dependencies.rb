@@ -4,7 +4,7 @@ class Step
   STREAM_CACHE = {}
   STREAM_CACHE_MUTEX = Mutex.new
   def self.purge_stream_cache
-    Log.medium "Purging dup. stream cache"
+    Log.debug "Purging dup. stream cache"
     STREAM_CACHE_MUTEX.synchronize do
       #STREAM_CACHE.collect{|k,s| 
       #  Thread.new do
