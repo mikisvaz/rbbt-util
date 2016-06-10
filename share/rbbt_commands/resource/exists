@@ -47,7 +47,7 @@ resource = Kernel.const_get(resource)
 if options[:create]
   exists = resource[path].exists?
 else
-  exists = File.exists? resource[path].find
+  exists = File.exist? resource[path].find
 end
 
 if exists

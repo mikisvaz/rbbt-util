@@ -39,13 +39,13 @@ module FileCache
   end
 
   def self.found(filename)
-    File.exists? FileCache.path(filename)
+    File.exist? FileCache.path(filename)
   end
 
   def self.get(filename)
     path = path(filename)
 
-    return nil if ! File.exists? path
+    return nil if ! File.exist? path
 
     File.open(path)
   end

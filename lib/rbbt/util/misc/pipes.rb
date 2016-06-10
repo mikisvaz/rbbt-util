@@ -331,7 +331,7 @@ module Misc
         Misc.consume_stream content 
       else
         FileUtils.mkdir_p File.dirname(tmp_path) unless File.directory? File.dirname(tmp_path)
-        FileUtils.rm_f tmp_path if File.exists? tmp_path
+        FileUtils.rm_f tmp_path if File.exist? tmp_path
         begin
           case
           when block_given?
@@ -355,7 +355,7 @@ module Misc
               Open.mv tmp_path, path, lock_options
             end
           rescue Exception
-            raise $! unless File.exists? path
+            raise $! unless File.exist? path
           end
 
           content.join if content.respond_to? :join and not content.joined?  
@@ -363,23 +363,23 @@ module Misc
           if Lockfile === lock_options[:lock] and lock_options[:lock].locked?
             lock_options[:lock].unlock
           end
-          FileUtils.touch path if File.exists? path
+          FileUtils.touch path if File.exist? path
           Open.notify_write(path) 
         rescue Aborted
           Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
           content.abort if content.respond_to? :abort
-          Open.rm path if File.exists? path
+          Open.rm path if File.exist? path
         rescue Exception
           Log.medium "Exception in sensiblewrite: [#{Process.pid}] #{$!.message} -- #{ Log.color :blue, path }"
           Log.exception $!
           content.abort if content.respond_to? :abort
-          Open.rm path if File.exists? path
+          Open.rm path if File.exist? path
           raise $!
         rescue
           Log.exception $!
           raise $!
         ensure
-          FileUtils.rm_f tmp_path if File.exists? tmp_path
+          FileUtils.rm_f tmp_path if File.exist? tmp_path
         end
       end
     end
@@ -607,7 +607,7 @@ module Misc
     else
       erase = []
 
-      if Path === stream1 or (String === stream1 and File.exists? stream1)
+      if Path === stream1 or (String === stream1 and File.exist? stream1)
         file1 = stream1
       else
         file1 = TmpFile.tmp_file
@@ -615,7 +615,7 @@ module Misc
         Open.write(file1, TSV.get_stream(stream1))
       end
 
-      if Path === stream2 or (String === stream2 and File.exists? stream2)
+      if Path === stream2 or (String === stream2 and File.exist? stream2)
         file2 = stream2
       else
         file2 = TmpFile.tmp_file

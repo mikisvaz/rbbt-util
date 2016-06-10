@@ -78,9 +78,9 @@ module Persist
 
 
   def self.open_kyotocabinet(path, write, serializer = nil,  kyotocabinet_class= 'kch')
-    write = true unless File.exists? path
+    write = true unless File.exist? path
 
-    FileUtils.mkdir_p File.dirname(path) unless File.exists?(File.dirname(path))
+    FileUtils.mkdir_p File.dirname(path) unless File.exist?(File.dirname(path))
 
     database = Persist::KCAdapter.open(path, write, kyotocabinet_class)
 

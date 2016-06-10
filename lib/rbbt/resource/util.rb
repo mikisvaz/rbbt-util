@@ -9,12 +9,12 @@ module Path
     }.first.sub(/\.rb[^\w].*/,'.rb') if file.nil?
 
     file = File.expand_path(file)
-    return Path.setup(file) if File.exists? File.join(file, relative_to)
+    return Path.setup(file) if File.exist? File.join(file, relative_to)
 
     while file != '/'
       dir = File.dirname file
 
-      return Path.setup(dir) if File.exists? File.join(dir, relative_to)
+      return Path.setup(dir) if File.exist? File.join(dir, relative_to)
 
       file = File.dirname file
     end
@@ -38,12 +38,12 @@ module Resource
 
       Misc.env_add 'PATH', bin_dir
 
-      FileUtils.mkdir_p opt_dir unless File.exists? opt_dir
+      FileUtils.mkdir_p opt_dir unless File.exist? opt_dir
 
       %w(.ld-paths .pkgconfig-paths .aclocal-paths .java-classpaths).each do |file|
         filename = File.join(opt_dir, file)
         begin
-          FileUtils.touch filename unless File.exists? filename
+          FileUtils.touch filename unless File.exist? filename
         rescue
           Log.warn("Could not touch #{ filename }")
         end
@@ -52,25 +52,25 @@ module Resource
       Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
         Misc.env_add('LD_LIBRARY_PATH',line.chomp)
         Misc.env_add('LD_RUN_PATH',line.chomp)
-      end if File.exists? File.join(opt_dir, '.ld-paths')
+      end if File.exist? File.join(opt_dir, '.ld-paths')
 
       Open.read(File.join opt_dir, '.pkgconfig-paths').split(/\n/).each do |line|
         Misc.env_add('PKG_CONFIG_PATH',line.chomp)
-      end if File.exists? File.join(opt_dir, '.pkgconfig-paths')
+      end if File.exist? File.join(opt_dir, '.pkgconfig-paths')
 
       Open.read(File.join opt_dir, '.aclocal-paths').split(/\n/).each do |line|
         Misc.env_add('ACLOCAL_FLAGS', "-I#{File.join(opt_dir, line.chomp)}", ' ')
-      end if File.exists? File.join(opt_dir, '.aclocal-paths')
+      end if File.exist? File.join(opt_dir, '.aclocal-paths')
 
       Open.read(File.join opt_dir, '.java-classpaths').split(/\n/).each do |line|
         Misc.env_add('CLASSPATH', "#{File.join(opt_dir,'java', 'lib', line.chomp)}")
-      end if File.exists? File.join(opt_dir, '.java-classpaths')
+      end if File.exist? File.join(opt_dir, '.java-classpaths')
 
       Dir.glob(File.join opt_dir, 'jars', '*').each do |file|
         Misc.env_add('CLASSPATH', "#{File.expand_path(file)}")
       end
 
-      if File.exists?(File.join(opt_dir, '.post_install')) and File.directory?(File.join(opt_dir, '.post_install'))
+      if File.exist?(File.join(opt_dir, '.post_install')) and File.directory?(File.join(opt_dir, '.post_install'))
         Dir.glob(File.join(opt_dir, '.post_install','*')).each do |file|
           begin
             begin

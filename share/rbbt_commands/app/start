@@ -62,7 +62,7 @@ Misc.in_dir(app_dir) do
     ENV["RBBT_WORKFLOW_TASK_STREAM"] = 'true'
   end
 
-  config_ru_file = File.exists?('./config.ru') ? './config.ru' : Rbbt.share['config.ru'].find
+  config_ru_file = File.exist?('./config.ru') ? './config.ru' : Rbbt.share['config.ru'].find
 
   if options[:options]
     options[:options].split(";").each do |pair|

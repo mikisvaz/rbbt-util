@@ -22,7 +22,7 @@ module TSV
         if obj.done?
           path = obj.path
           path = path.find if path.respond_to? :find
-          if File.exists? path
+          if File.exist? path
             CMD.cmd("wc -l '#{path}'").read.to_i 
           else
             nil
@@ -39,7 +39,7 @@ module TSV
         CMD.cmd("wc -l '#{obj.path}'").read.to_i
       when Path, String
         obj = obj.find if Path === obj
-        if File.exists? obj
+        if File.exist? obj
           return nil if Open.gzip?(obj) or Open.bgzip?(obj)
           CMD.cmd("wc -l '#{obj}'").read.to_i
         else

@@ -46,7 +46,7 @@ options[:Bind] ||= "0.0.0.0"
 workflow = ARGV.shift
 workflows = options[:workflows] || "" 
 
-workflow = File.expand_path(workflow) if File.exists?(workflow)
+workflow = File.expand_path(workflow) if File.exist?(workflow)
 
 ENV["RServe-session"] = options[:RServe_session] || workflow
 
@@ -68,7 +68,7 @@ TmpFile.with_file do |app_dir|
       ENV["RBBT_WORKFLOW_TASK_STREAM"] = 'true'
     end
 
-    config_ru_file = File.exists?('./workflow_config.ru') ? './config.ru' : Rbbt.share['workflow_config.ru'].find
+    config_ru_file = File.exist?('./workflow_config.ru') ? './config.ru' : Rbbt.share['workflow_config.ru'].find
 
 
     if options[:options]

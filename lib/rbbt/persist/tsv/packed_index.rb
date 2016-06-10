@@ -25,7 +25,7 @@ module Persist
     end
 
     def metadata
-      return {} unless File.exists? metadata_file
+      return {} unless File.exist? metadata_file
       Open.open(metadata_file, :mode => "rb") do |f|
         Marshal.load(f)
       end
@@ -96,7 +96,7 @@ module Persist
   end
 
   def self.open_pki(path, write, pattern, &pos_function)
-    FileUtils.mkdir_p File.dirname(path) unless File.exists?(File.dirname(path))
+    FileUtils.mkdir_p File.dirname(path) unless File.exist?(File.dirname(path))
 
     database = Persist::PKIAdapter.open(path, write, pattern, &pos_function)
 

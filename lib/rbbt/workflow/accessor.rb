@@ -324,7 +324,7 @@ class Step
   end
 
   def done?
-    path and File.exists? path
+    path and File.exist? path
   end
 
   def streaming?
@@ -426,8 +426,8 @@ class Step
     provenance = {}
     dependencies.each do |dep|
       next unless dep.path.exists?
-      if File.exists? dep.info_file
-        provenance[dep.path] = dep.provenance if File.exists? dep.path
+      if File.exist? dep.info_file
+        provenance[dep.path] = dep.provenance if File.exist? dep.path
       else
         provenance[dep.path] = nil
       end
@@ -438,7 +438,7 @@ class Step
   def provenance_paths
     provenance = {}
     dependencies.each do |dep|
-      provenance[dep.path] = dep.provenance_paths if File.exists? dep.path
+      provenance[dep.path] = dep.provenance_paths if File.exist? dep.path
     end
     provenance
   end

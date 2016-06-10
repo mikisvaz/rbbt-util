@@ -25,7 +25,7 @@ Dir.glob('/proc/*/fd/*').each do |file|
   rescue
     next
   end
-  next if File.exists? dest
+  next if File.exist? dest
   pids[pid] ||= []
   pids[pid] << dest
 end

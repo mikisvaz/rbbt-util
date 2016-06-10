@@ -4,7 +4,7 @@ class FixWidthTable
   def initialize(filename, value_size = nil, range = nil, update = false, in_memory = true)
     @filename = filename
 
-    if update or %w(memory stringio).include?(filename.to_s.downcase) or not File.exists?(filename)
+    if update or %w(memory stringio).include?(filename.to_s.downcase) or not File.exist?(filename)
       Log.debug "FixWidthTable create: #{ filename }"
       @value_size  = value_size
       @range       = range
@@ -15,8 +15,8 @@ class FixWidthTable
         @filename = :memory
         @file     = StringIO.new
       else
-        FileUtils.rm @filename if File.exists? @filename
-        FileUtils.mkdir_p File.dirname(@filename) unless File.exists? @filename
+        FileUtils.rm @filename if File.exist? @filename
+        FileUtils.mkdir_p File.dirname(@filename) unless File.exist? @filename
         @file = File.open(@filename, 'wb')
       end
 
@@ -57,7 +57,7 @@ class FixWidthTable
   def self.get(filename, value_size = nil, range = nil, update = false)
     return self.new(filename, value_size, range, update) if filename == :memory
     case
-    when (!File.exists?(filename) or update or not Persist::CONNECTIONS.include?(filename))
+    when (!File.exist?(filename) or update or not Persist::CONNECTIONS.include?(filename))
       Persist::CONNECTIONS[filename] = self.new(filename, value_size, range, update)
     end
 

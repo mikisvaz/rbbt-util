@@ -116,7 +116,7 @@ class Step
           begin
             run_dependencies
           rescue Exception
-            FileUtils.rm pid_file if File.exists?(pid_file)
+            FileUtils.rm pid_file if File.exist?(pid_file)
             stop_dependencies
             raise $!
           end
@@ -174,7 +174,7 @@ class Step
               ensure
                 join
                 Step.purge_stream_cache
-                FileUtils.rm pid_file if File.exists?(pid_file)
+                FileUtils.rm pid_file if File.exist?(pid_file)
               end
             end
             stream.abort_callback = Proc.new do
@@ -183,7 +183,7 @@ class Step
               rescue
                 Log.exception $!
                 stop_dependencies
-                FileUtils.rm pid_file if File.exists?(pid_file)
+                FileUtils.rm pid_file if File.exist?(pid_file)
               end
             end
           else
@@ -192,7 +192,7 @@ class Step
             set_info :time_elapsed, (time_elapsed = done_time - start_time)
             log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
             Step.purge_stream_cache
-            FileUtils.rm pid_file if File.exists?(pid_file)
+            FileUtils.rm pid_file if File.exist?(pid_file)
           end
 
           result
@@ -243,7 +243,7 @@ class Step
       Misc.pre_fork
       begin
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
-        FileUtils.mkdir_p File.dirname(path) unless File.exists? File.dirname(path)
+        FileUtils.mkdir_p File.dirname(path) unless File.exist? File.dirname(path)
         begin
           @forked = true
           res = run true
@@ -377,7 +377,7 @@ class Step
   end
 
   def soft_grace
-    until done? or File.exists?(info_file)
+    until done? or File.exist?(info_file)
       sleep 1 
     end
     self

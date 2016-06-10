@@ -74,9 +74,9 @@ module Persist
   end
 
   def self.open_tokyocabinet(path, write, serializer = nil, tokyocabinet_class = TokyoCabinet::HDB)
-    write = true unless File.exists? path
+    write = true unless File.exist? path
 
-    FileUtils.mkdir_p File.dirname(path) unless File.exists?(File.dirname(path))
+    FileUtils.mkdir_p File.dirname(path) unless File.exist?(File.dirname(path))
 
     database = Persist::TCAdapter.open(path, write, serializer, tokyocabinet_class)
 

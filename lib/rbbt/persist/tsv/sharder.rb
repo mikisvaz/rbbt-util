@@ -58,12 +58,12 @@ module Persist
         if shard == 'metadata'
           database ||= begin
                          path = File.join(persistence_path, 'shard-' << shard.to_s)
-                         (writable or File.exists?(path)) ? Persist.open_database(path, writable, :clean, "HDB", @options) : nil
+                         (writable or File.exist?(path)) ? Persist.open_database(path, writable, :clean, "HDB", @options) : nil
                      end
         else
           database ||= begin
                        path = File.join(persistence_path, 'shard-' << shard.to_s)
-                       (writable or File.exists?(path)) ? Persist.open_database(path, writable, :clean, db_type, @options) : nil
+                       (writable or File.exist?(path)) ? Persist.open_database(path, writable, :clean, db_type, @options) : nil
                      end
         end
         if database
@@ -243,9 +243,9 @@ module Persist
   end
 
   def self.open_sharder(path, write, serializer = nil, type = TokyoCabinet::HDB, options, &shard_function)
-    write = true unless File.exists? path
+    write = true unless File.exist? path
 
-    FileUtils.mkdir_p File.dirname(path) unless File.exists?(File.dirname(path))
+    FileUtils.mkdir_p File.dirname(path) unless File.exist?(File.dirname(path))
 
     database = Persist::SharderAdapter.open(path, write, type, options, &shard_function)
 

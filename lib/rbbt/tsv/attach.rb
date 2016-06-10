@@ -9,7 +9,7 @@ module TSV
     sep = options[:sep]
 
     is = case
-         when (String === input and not input.index("\n") and input.length < 250 and File.exists?(input))
+         when (String === input and not input.index("\n") and input.length < 250 and File.exist?(input))
            CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' #{ input } | grep -v '^#{sep}' ", :pipe => true)
          when (String === input or StringIO === input)
            CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => input, :pipe => true)
@@ -68,7 +68,7 @@ module TSV
     sep = options[:sep] || "\t"
 
     case
-    when (String === file1 and not file1 =~ /\n/ and file1.length < 250 and File.exists?(file1))
+    when (String === file1 and not file1 =~ /\n/ and file1.length < 250 and File.exist?(file1))
       size = CMD.cmd("wc -c '#{file1}'").read.to_f if monitor
       file1 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' #{ file1 } | grep -v '^#{sep}' ", :pipe => true)
     when (String === file1 or StringIO === file1)
@@ -80,7 +80,7 @@ module TSV
     end
 
     case
-    when (String === file2 and not file2 =~ /\n/ and file2.length < 250 and File.exists?(file2))
+    when (String === file2 and not file2 =~ /\n/ and file2.length < 250 and File.exist?(file2))
       file2 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' #{ file2 } | grep -v '^#{sep}' ", :pipe => true)
     when (String === file2 or StringIO === file2)
       file2 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file2, :pipe => true)
@@ -172,90 +172,6 @@ module TSV
   # Merge columns from different files
   def self.merge_paste(files, delim = "$")
     CMD.cmd("paste #{ files.collect{|f| "'#{f}'"} * " "} -d'#{delim}' |sed 's/#{delim}[^\\t]*//g'", :pipe => true)
-  end
-
-  def attach(other, options = {})
-    options      = Misc.add_defaults options, :in_namespace => false, :persist_input => true
-    fields, one2one, complete = Misc.process_options options, :fields, :one2one, :complete
-    in_namespace = options[:in_namespace]
-
-    unless TSV === other
-      other_identifier_file = other.identifier_files.first if other.respond_to? :identifier_files
-      other = TSV.open(other, :persist => options[:persist_input].to_s == "true")
-      other.identifiers ||= other_identifier_file
-    end
-
-    fields = other.fields - [key_field].concat(self.fields) if fields.nil?  or fields == :all 
-    if in_namespace
-      fields = other.fields_in_namespace - [key_field].concat(self.fields) if fields.nil?
-    else
-      fields = other.fields - [key_field].concat(self.fields) if fields.nil?
-    end
-
-    other_filename = other.respond_to?(:filename) ? other.filename : other.inspect
-    Log.low("Attaching fields:#{Misc.fingerprint fields } from #{other_filename}.")
-
-    if complete
-      fill = TrueClass === complete ? nil : complete
-      field_length = self.fields.length 
-      missing = other.keys - self.keys
-      case type
-      when :single
-        missing.each do |k|
-          self[k] = nil
-        end
-      when :list
-        missing.each do |k|
-          self[k] = [nil] * field_length
-        end
-      when :double
-        missing.each do |k|
-          self[k] = [[]] * field_length
-        end
-      when :flat
-        missing.each do |k|
-          self[k] = []
-        end
-      end
-    end
-
-    same_key = true
-    begin
-      case
-      when (key_field == other.key_field and same_key)
-        Log.debug "Attachment with same key: #{other.key_field}"
-        attach_same_key other, fields
-      when (not in_namespace and self.fields.include?(other.key_field))
-        Log.debug "Found other key field: #{other.key_field}"
-        attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
-      when (in_namespace and self.fields_in_namespace.include?(other.key_field))
-        Log.debug "Found other key field in #{in_namespace}: #{other.key_field}"
-        attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
-      else
-        index = TSV.find_traversal(self, other, options)
-        raise FieldNotFoundError, "Cannot traverse identifiers" if index.nil?
-        Log.debug "Attachment with index: #{other.key_field}"
-        attach_index other, index, fields
-      end
-    rescue Exception
-      if same_key
-        Log.warn "Could not translate identifiers with same_key"
-        same_key = false
-        retry
-      else
-        raise $!
-      end
-    end
-    Log.debug("Attachment of fields:#{Misc.fingerprint fields } from #{other.filename.inspect} finished.")
-
-    self
-  end
-
-  def detach(file)
-    file_fields = file.fields.collect{|field| field.fullname}
-    detached_fields = []
-    self.fields.each_with_index{|field,i| detached_fields << i if file_fields.include? field.fullname}
-    reorder :key, detached_fields
   end
 
   def merge_different_fields(other, options = {})

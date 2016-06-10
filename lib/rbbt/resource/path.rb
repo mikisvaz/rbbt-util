@@ -85,7 +85,7 @@ module Path
   STANDARD_SEARCH = %w(current user local global lib cache bulk)
 
   search_path_file = File.join(ENV['HOME'], '.rbbt/etc/search_paths')
-  if File.exists?(search_path_file)
+  if File.exist?(search_path_file)
     YAML.load(File.open(search_path_file)).each do |where, location|
       SEARCH_PATHS[where.to_sym] = location
     end
@@ -112,13 +112,13 @@ module Path
                          w = w.to_sym
                          next unless paths.include? w
                          path = find(w, caller_lib, paths)
-                         return path if File.exists? path
+                         return path if File.exist? path
                        end
                        (SEARCH_PATHS.keys - STANDARD_SEARCH).each do |w|
                          w = w.to_sym
                          next unless paths.include? w
                          path = find(w, caller_lib, paths)
-                         return path if File.exists? path
+                         return path if File.exist? path
                        end
 
                        if paths.include? :default
@@ -147,8 +147,8 @@ module Path
                          sub('{PATH}', self).
                          sub('{LIBDIR}', libdir) #, @pkgdir, @resource, @search_paths
 
-                       path = path + '.gz' if File.exists? path + '.gz'
-                       path = path + '.bgz' if File.exists? path + '.bgz'
+                       path = path + '.gz' if File.exist? path + '.gz'
+                       path = path + '.bgz' if File.exist? path + '.bgz'
 
                        self.annotate path
                      end
@@ -325,7 +325,7 @@ module Path
       relative_file = self.sub(/(.*\/)doc\//, '\1').sub(lib_dir + "/",'')
       file = File.join(lib_dir, relative_file)
 
-      if not File.exists?(file)
+      if not File.exist?(file)
         file= Dir.glob(file.sub(/\.[^\.\/]+$/, '.*')).first
       end
 
@@ -333,7 +333,7 @@ module Path
     else
       relative_file = self.sub(/^doc\//, '\1')
 
-      if not File.exists?(relative_file)
+      if not File.exist?(relative_file)
         relative_file = Dir.glob(relative_file.sub(/\.[^\.\/]+$/, '.*')).first
       end
 

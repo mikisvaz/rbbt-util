@@ -63,7 +63,7 @@ module Misc
       result = RubyProf.stop
       printer = RubyProf::MultiPrinter.new(result)
       TmpFile.with_file do |dir|
-        FileUtils.mkdir_p dir unless File.exists? dir
+        FileUtils.mkdir_p dir unless File.exist? dir
         printer.print(:path => dir, :profile => 'profile')
         CMD.cmd("firefox  -no-remote  '#{ dir }'")
       end
@@ -284,7 +284,9 @@ module Misc
     num = :current if num.nil?
     cpus = case num
            when :current
-            10
+            n = 10
+            n = elems.length / 2 if n > elems.length/2
+            n
            when String
              num.to_i
            when Integer
@@ -363,7 +365,7 @@ module Misc
                      ENV["PUSHBULLET_KEY"] 
                    else
                      config_api = File.join(ENV['HOME'], 'config/apps/pushbullet/apikey')
-                     if File.exists? config_api
+                     if File.exist? config_api
                        File.read(config_api).strip
                      else
                        nil
@@ -386,7 +388,7 @@ module Misc
   end
 
   def self.unzip_in_dir(file, dir)
-    raise "Target is not a directory: #{file}" if File.exists?(dir) and not File.directory?(dir)
+    raise "Target is not a directory: #{file}" if File.exist?(dir) and not File.directory?(dir)
     if Open.remote? file
       file = file.find if Path === file
       Open.open(file) do |stream|

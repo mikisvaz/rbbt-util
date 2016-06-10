@@ -128,13 +128,13 @@ module Association
                        raise "Can only reverse a TokyoCabinet::BDB dataset at the time"
                      end
 
-                     if File.exists?(reverse_filename)
+                     if File.exist?(reverse_filename)
                        new = Persist.open_tokyocabinet(reverse_filename, false, serializer, TokyoCabinet::BDB)
                        raise "Index has no info: #{reverse_filename}" if new.key_field.nil?
                        Association::Index.setup new
                        new
                      else
-                       FileUtils.mkdir_p File.dirname(reverse_filename) unless File.exists?(File.dirname(reverse_filename))
+                       FileUtils.mkdir_p File.dirname(reverse_filename) unless File.exist?(File.dirname(reverse_filename))
 
                        new = Persist.open_tokyocabinet(reverse_filename, true, serializer, TokyoCabinet::BDB)
                        
@@ -161,7 +161,7 @@ module Association
                      new
                    rescue Exception
                      Log.error "Deleting after error reversing database: #{ reverse_filename }"
-                     FileUtils.rm reverse_filename if File.exists? reverse_filename
+                     FileUtils.rm reverse_filename if File.exist? reverse_filename
                      raise $!
                    end
     end

@@ -129,7 +129,7 @@ module Persist
         end
         path = path.find if Path === path
 
-        FileUtils.rm_rf path if File.exists? path
+        FileUtils.rm_rf path if File.exist? path
 
         Log.medium "TSV persistence creating: #{ path }"
 
@@ -149,7 +149,7 @@ module Persist
           yield data
         end
 
-        FileUtils.mv data.persistence_path, path if File.exists? data.persistence_path and not File.exists? path
+        FileUtils.mv data.persistence_path, path if File.exist? data.persistence_path and not File.exist? path
         tsv = CONNECTIONS[path] = CONNECTIONS.delete tmp_path
         tsv.persistence_path = path
 
@@ -158,8 +158,8 @@ module Persist
         data
       rescue Exception
         Log.error "Captured error during persist_tsv. Erasing: #{path}"
-        FileUtils.rm_rf tmp_path if tmp_path and File.exists? tmp_path
-        FileUtils.rm_rf path if path and File.exists? path
+        FileUtils.rm_rf tmp_path if tmp_path and File.exist? tmp_path
+        FileUtils.rm_rf path if path and File.exist? path
         raise $!
       end
     end

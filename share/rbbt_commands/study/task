@@ -59,7 +59,7 @@ def fix_options(workflow, task, job_options)
               case
               when value == '-'
                 STDIN.read
-              when (String === value and File.exists?(value) and not File.directory?(value))
+              when (String === value and File.exist?(value) and not File.directory?(value))
                 Open.read(value)
               else
                 value
@@ -71,7 +71,7 @@ def fix_options(workflow, task, job_options)
                 str = case
                 when value == '-'
                   STDIN.read
-                when (String === value and File.exists?(value))
+                when (String === value and File.exist?(value))
                   Open.read(value)
                 else
                   value
@@ -214,7 +214,7 @@ else
 end
 
 if Step === res
-  puts Open.read(res.path) if File.exists? res.path
+  puts Open.read(res.path) if File.exist? res.path
 else
   if res.respond_to? :gets
     while line = res.gets

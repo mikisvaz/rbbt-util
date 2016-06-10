@@ -104,9 +104,9 @@ module Persist
 
 
   def self.open_leveldb(path, write, serializer = nil)
-    write = true unless File.exists? path
+    write = true unless File.exist? path
 
-    FileUtils.mkdir_p File.dirname(path) unless File.exists?(File.dirname(path))
+    FileUtils.mkdir_p File.dirname(path) unless File.exist?(File.dirname(path))
 
     database = Persist::LevelDBAdapter.open(path, write)
 

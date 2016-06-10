@@ -8,7 +8,7 @@ options = SOPT.get("-i--identifiers*:-f--format*:-o--organism*:-p--persistence:-
 
 file   = ARGV[0]
 
-if not File.exists? file
+if not File.exist? file
   base, path = file.match(/([^.]*)\.(.*)/).values_at 1, 2
   require 'rbbt/sources/' << base.to_s.downcase
   klass = Misc.string2const base

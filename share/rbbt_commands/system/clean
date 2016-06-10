@@ -87,9 +87,9 @@ jobs.each do |file,i|
   pid = info[:pid]
 
   status = info[:status].to_s
-  status = :missing if status == "done" and not File.exists? file
+  status = :missing if status == "done" and not File.exist? file
   status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
-  status = :sync if status != "done" and File.exists? file
+  status = :sync if status != "done" and File.exist? file
 
   status = status.to_s
   next unless status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" or (force and status == 'noinfo')

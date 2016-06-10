@@ -122,7 +122,7 @@ predict(model, data.frame(#{field} = #{R.ruby2R tsv}));
     end
 
     def exists?
-      File.exists? model_file
+      File.exist? model_file
     end
 
     def fit(tsv, method='lm', args = {})
@@ -132,7 +132,7 @@ predict(model, data.frame(#{field} = #{R.ruby2R tsv}));
 
       tsv = Model.groom(tsv, formula)
 
-      FileUtils.mkdir_p File.dirname(model_file) unless File.exists?(File.dirname(model_file))
+      FileUtils.mkdir_p File.dirname(model_file) unless File.exist?(File.dirname(model_file))
       roptions = r_options(tsv)
       tsv.R <<-EOF, roptions
 model = rbbt.model.fit(data, #{formula}, method=#{method}#{args_str})

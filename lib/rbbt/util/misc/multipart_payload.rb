@@ -69,7 +69,7 @@ module RbbtMutiplartPayload
         next if stream_input and input == stream_input.to_s
         content_str = case content
                       when String
-                        if Misc.is_filename?(content) and File.exists?(content)
+                        if Misc.is_filename?(content) and File.exist?(content)
                           File.read(content)
                         else
                           content

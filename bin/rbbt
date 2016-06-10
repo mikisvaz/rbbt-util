@@ -208,7 +208,7 @@ begin
         load dir[$command].find
         exit 0
       end
-    when File.exists?($command)
+    when File.exist?($command)
       load $command
       exit 0
     else

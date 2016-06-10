@@ -45,9 +45,9 @@ module Persist
   end
 
   def self.open_lmdb(path, write, serializer = nil)
-    write = true unless File.exists? path
+    write = true unless File.exist? path
 
-    FileUtils.mkdir_p File.dirname(path) unless File.exists?(File.dirname(path))
+    FileUtils.mkdir_p File.dirname(path) unless File.exist?(File.dirname(path))
 
     database = Persist::LMDBAdapter.open(path, write)
 
