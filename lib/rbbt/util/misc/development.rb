@@ -1,20 +1,20 @@
 module Misc
 
-  def self.add_libdir(dir=nil)
+def self.add_libdir(dir=nil)
     dir ||= File.join(Path.caller_lib_dir(caller.first), 'lib')
     $LOAD_PATH.unshift(dir) unless $LOAD_PATH.include? dir
   end
 
   def self.pre_fork
-    Persist::CONNECTIONS.values.each do |db| 
-      db.close if db.write? 
+    Persist::CONNECTIONS.values.each do |db|
+      db.close if db.write?
     end
     Log::ProgressBar::BARS.clear
-    ObjectSpace.each_object(Mutex) do |m| 
-      begin 
-        m.unlock 
+    ObjectSpace.each_object(Mutex) do |m|
+      begin
+        m.unlock
       rescue ThreadError
-      end if m.locked? 
+      end if m.locked?
     end
   end
 
@@ -158,7 +158,7 @@ module Misc
         Log.warn("Insisting after exception: #{$!.class} #{$!.message} -- #{msg}")
       else
         Log.warn("Insisting after exception:  #{$!.class} #{$!.message}")
-      end 
+      end
 
       if sleep and try > 0
         sleep sleep
@@ -216,14 +216,14 @@ module Misc
         else
           v, n = template[pos], template[-1]
           template.pop
-          template[pos] = n 
+          template[pos] = n
         end
         p << v
       end
     else
-      size.times do 
+      size.times do
         pos = nil
-        while pos.nil? 
+        while pos.nil?
           pos = (rand * total).floor
           if p.include? pos
             pos = nil
@@ -245,9 +245,11 @@ module Misc
     end
   end
 
+  MUTEX_FOR_THREAD_EXCLUSIVE = Mutex.new
+
   def self.object_delta(*args)
     res, delta = nil, nil
-    Thread.exclusive do
+    MUTEX_FOR_THREAD_EXCLUSIVE.synchronize do
       pre = Set.new
       delta = Set.new
 
@@ -264,7 +266,7 @@ module Misc
       end
 
     end
-    Log.info "Delta: #{delta.inspect}" 
+    Log.info "Delta: #{delta.inspect}"
     res
   end
 
@@ -362,7 +364,7 @@ module Misc
 
   PUSHBULLET_KEY=begin
                    if ENV["PUSHBULLET_KEY"]
-                     ENV["PUSHBULLET_KEY"] 
+                     ENV["PUSHBULLET_KEY"]
                    else
                      config_api = File.join(ENV['HOME'], 'config/apps/pushbullet/apikey')
                      if File.exist? config_api
