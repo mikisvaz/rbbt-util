@@ -77,7 +77,7 @@ class Task
     end
 
     def info
-      return {} if not File.exists?(info_file)
+      return {} if not File.exist?(info_file)
       info = YAML.load(File.open(info_file)) || {}
       info.extend IndiferentHash
     end
@@ -146,7 +146,7 @@ class Task
     end
 
     def run_dependencies
-      required_files.each do |file| file.produce unless File.exists? file end unless required_files.nil?
+      required_files.each do |file| file.produce unless File.exist? file end unless required_files.nil?
       previous_jobs.each do |job| 
         if not job.recursive_done? 
           job.clean if job.error?
@@ -222,7 +222,7 @@ class Task
     def run
       return self if recursive_done?
       begin
-        FileUtils.rm info_file if File.exists? info_file
+        FileUtils.rm info_file if File.exist? info_file
         step(:started)
         start
         step(:done)
@@ -293,9 +293,9 @@ class Task
     end
 
     def clean
-      FileUtils.rm path if File.exists? path
-      FileUtils.rm info_file if File.exists? info_file
-      FileUtils.rm_rf path + '.files' if File.exists? path + '.files'
+      FileUtils.rm path if File.exist? path
+      FileUtils.rm info_file if File.exist? info_file
+      FileUtils.rm_rf path + '.files' if File.exist? path + '.files'
       self
     end
 
