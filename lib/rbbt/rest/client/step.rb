@@ -250,12 +250,16 @@ class WorkflowRESTClient
           sin.write c
         end
 
-        post_thread = Thread.new do
+        post_thread = Thread.new(Thread.current) do |parent|
           bl = lambda do |rok|
-            rok.read_body do |c,_a, _b|
-              sin.write c
+            if Net::HTTPOK === rok
+              rok.read_body do |c,_a, _b|
+                sin.write c
+              end
+              sin.close
+            else
+              parent.raise "Error in RestClient: " << rok.message
             end
-            sin.close
           end
 
           Log.debug{ "RestClient execute: #{ url } - #{Misc.fingerprint task_params}" }
