@@ -189,4 +189,90 @@ module TSV
       self.zip_new k, v
     end
   end
+
+  
+  def attach(other, options = {})
+    options      = Misc.add_defaults options, :in_namespace => false, :persist_input => true
+    fields, one2one, complete = Misc.process_options options, :fields, :one2one, :complete
+    in_namespace = options[:in_namespace]
+
+    unless TSV === other
+      other_identifier_file = other.identifier_files.first if other.respond_to? :identifier_files
+      other = TSV.open(other, :persist => options[:persist_input].to_s == "true")
+      other.identifiers ||= other_identifier_file
+    end
+
+    fields = other.fields - [key_field].concat(self.fields) if fields.nil?  or fields == :all 
+    if in_namespace
+      fields = other.fields_in_namespace - [key_field].concat(self.fields) if fields.nil?
+    else
+      fields = other.fields - [key_field].concat(self.fields) if fields.nil?
+    end
+
+    other_filename = other.respond_to?(:filename) ? other.filename : other.inspect
+    Log.low("Attaching fields:#{Misc.fingerprint fields } from #{other_filename}.")
+
+    if complete
+      fill = TrueClass === complete ? nil : complete
+      field_length = self.fields.length 
+      missing = other.keys - self.keys
+      case type
+      when :single
+        missing.each do |k|
+          self[k] = nil
+        end
+      when :list
+        missing.each do |k|
+          self[k] = [nil] * field_length
+        end
+      when :double
+        missing.each do |k|
+          self[k] = [[]] * field_length
+        end
+      when :flat
+        missing.each do |k|
+          self[k] = []
+        end
+      end
+    end
+
+    same_key = true
+    begin
+      case
+      when (key_field == other.key_field and same_key)
+        Log.debug "Attachment with same key: #{other.key_field}"
+        attach_same_key other, fields
+      when (not in_namespace and self.fields.include?(other.key_field))
+        Log.debug "Found other key field: #{other.key_field}"
+        attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
+      when (in_namespace and self.fields_in_namespace.include?(other.key_field))
+        Log.debug "Found other key field in #{in_namespace}: #{other.key_field}"
+        attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
+      else
+        index = TSV.find_traversal(self, other, options)
+        raise FieldNotFoundError, "Cannot traverse identifiers" if index.nil?
+        Log.debug "Attachment with index: #{other.key_field}"
+        attach_index other, index, fields
+      end
+    rescue Exception
+      if same_key
+        Log.warn "Could not translate identifiers with same_key"
+        same_key = false
+        retry
+      else
+        raise $!
+      end
+    end
+    Log.debug("Attachment of fields:#{Misc.fingerprint fields } from #{other.filename.inspect} finished.")
+
+    self
+  end
+
+  def detach(file)
+    file_fields = file.fields.collect{|field| field.fullname}
+    detached_fields = []
+    self.fields.each_with_index{|field,i| detached_fields << i if file_fields.include? field.fullname}
+    reorder :key, detached_fields
+  end
+ 
 end
