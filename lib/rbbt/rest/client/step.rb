@@ -238,11 +238,22 @@ class WorkflowRESTClient
           @done = true
           @streaming = false
         end
+
+        @url = io.filename if io.filename
         return io
       end
 
       WorkflowRESTClient.capture_exception do
         @url = URI.encode(File.join(base_url, task.to_s))
+        inputs.each do |k,v|
+          if v.respond_to? :path
+            class << v
+              def original_filename
+                File.expand_path(path)
+              end
+            end
+          end
+        end
         task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
 
         sout, sin = Misc.pipe
@@ -253,6 +264,8 @@ class WorkflowRESTClient
         post_thread = Thread.new(Thread.current) do |parent|
           bl = lambda do |rok|
             if Net::HTTPOK === rok
+              _url = rok["RBBT-STREAMING-JOB-URL"]
+              @url = File.join(@url, File.basename(_url)) if _url
               rok.read_body do |c,_a, _b|
                 sin.write c
               end

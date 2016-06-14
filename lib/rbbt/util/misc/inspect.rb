@@ -225,7 +225,11 @@ module Misc
           when TSV::Parser
             remove_long_items(obj)
           when File 
-            "<File:" << obj.path << ">"
+            if obj.respond_to? :filename and obj.filename
+              "<IO:" << obj.filename << ">"
+            else
+              "<IO:" << obj.path << ">"
+            end
           when (defined? Step and Step)
             "<IO:" << obj.path << ">"
           else

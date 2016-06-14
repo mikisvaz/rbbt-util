@@ -124,7 +124,7 @@ class WorkflowRESTClient
       Log.debug{ "RestClient stream #{Process.pid}: #{ task_url } #{stream_input} #{cache_type} - #{Misc.fingerprint task_params}" }
       res = RbbtMutiplartPayload.issue task_url, task_params, stream_input, nil, nil, true
       type = res.gets
-      case type.strip
+      out = case type.strip
       when "LOCATION"
         @url = res.gets
         @url.sub!(/\?.*/,'')
@@ -145,6 +145,8 @@ class WorkflowRESTClient
       else
         raise "What? " + type
       end
+      ConcurrentStream.setup(out, :filename => @url)
+      out
     end
   end
 

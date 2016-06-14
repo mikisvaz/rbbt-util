@@ -1,22 +1,6 @@
 require 'net/http'
 require 'rbbt-util'
 
-#class Net::HTTPGenericRequest
-#  alias old_send_request_with_body_stream send_request_with_body_stream
-#
-#  def __send_request_with_body_stream(*args)
-#    begin
-#      pid = Process.fork do
-#        iii [:pre_chunk, Thread.current]
-#        return old_send_request_with_body_stream(*args)
-#      end
-#      Process.wait pid
-#    ensure
-#      iii [:pre_chunk_done, Thread.current]
-#    end
-#  end
-#end
-
 module RbbtMutiplartPayload
   BOUNDARY = "Rbbt_Param_Stream"
   EOL = "\r\n"
@@ -133,7 +117,7 @@ module RbbtMutiplartPayload
               sin.write res["location"]
             elsif stream_input and url_path
               Log.medium "Response recieved STREAM: #{ url_path }"
-              url = URI::HTTP.build(:host => uri.hostname, :post => uri.port, :path => url_path)
+              url = URI::HTTP.build(:host => uri.hostname, :port => uri.port, :path => url_path)
               sin.puts "STREAM: #{url.to_s}" if report_type
               Log.medium "Read body: #{ url_path }"
               res.read_body(sin)
