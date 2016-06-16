@@ -113,6 +113,8 @@ class Step
             :clean_name => clean_name,
           })
 
+          set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
+
           begin
             run_dependencies
           rescue Exception
@@ -120,8 +122,6 @@ class Step
             stop_dependencies
             raise $!
           end
-
-          set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
 
           set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
 
