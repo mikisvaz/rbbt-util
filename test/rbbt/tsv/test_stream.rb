@@ -217,4 +217,20 @@ row2 a|aa|aaa
     assert_equal text2, s2.stream.read
   end
 
+  def test_reorder_stream
+    text=<<-EOF
+#: :sep=" "
+#Row LabelA LabelB LabelC
+row1 A B C
+row1 a b c
+row2 AA BB CC
+row2 aa bb cc
+row4  BBB CC
+    EOF
+
+    s = StringIO.new text
+    dumper = TSV.reorder_stream_tsv(s, "LabelC", %w(Row LabelA))
+    tsv = TSV.open TSV.collapse_stream(dumper.stream).stream.read
+    assert_equal %w(row2 row4), tsv["CC"]["Row"]
+  end
 end

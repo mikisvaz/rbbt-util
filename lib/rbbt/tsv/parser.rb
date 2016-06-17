@@ -471,7 +471,6 @@ module TSV
         raise "Unknown TSV type: #{@type.inspect}"
       end
 
-
       @straight = false if @sep != "\t" or not @cast.nil? or merge or (@type == :flat and fields)
     end
 

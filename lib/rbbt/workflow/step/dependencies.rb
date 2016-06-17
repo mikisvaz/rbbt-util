@@ -153,8 +153,7 @@ class Step
       Log.error "Interrupted while in dep. #{Log.color :red, dependency.task_name.to_s}"
       raise $!
     rescue Exception
-      Log.error "Exception in dep. #{ Log.color :red, dependency.task_name.to_s }"
-      Log.exception $!
+      Log.error "Exception in dep. #{ Log.color :red, dependency.task_name.to_s } -- #{$!.message}"
       raise $!
     end
   end

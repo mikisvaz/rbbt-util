@@ -10,7 +10,7 @@ module TSV
 
     sorted_input_stream = Misc.sort_stream input_stream, header_hash, cmd_args
 
-    parser = TSV::Parser.new sorted_input_stream, options.dup
+    parser = TSV::Parser.new(sorted_input_stream, options.dup)
     dumper = TSV::Dumper.new parser
     header = TSV.header_lines(parser.key_field, parser.fields, parser.options)
     dumper.close_in
@@ -232,4 +232,63 @@ module TSV
     end
     dumper
   end
+
+
+  def self.reorder_stream(stream, positions, sep = "\t")
+    Misc.open_pipe do |sin|
+      line = stream.gets
+      line.strip! unless line.nil?
+
+      while line =~ /^#\:/
+        sin.puts line
+        line = stream.gets
+        line.strip! unless line.nil?
+      end
+
+      while line  =~ /^#/
+        if Hash === positions
+          new = (0..line.split(sep).length-1).to_a
+          positions.each do |k,v|
+            new[k] = v
+            new[v] = k
+          end
+          positions = new
+        end
+        sin.puts "#" + line.sub(/^#/,'').strip.split(sep).values_at(*positions).compact * sep
+        line = stream.gets
+        line.strip! unless line.nil?
+      end
+
+      while line
+        if Hash === positions
+          new = (0..line.split(sep).length-1).to_a
+          positions.each do |k,v|
+            new[k] = v
+            new[v] = k
+          end
+          positions = new
+        end
+        values = line.split(sep)
+        new_values = values.values_at(*positions)
+        sin.puts new_values * sep
+        line = stream.gets
+        line.strip! unless line.nil?
+      end
+    end
+  end
+
+
+  def self.reorder_stream_tsv(stream, key_field, fields)
+    parser = TSV::Parser.new TSV.get_stream(stream), :key_field => key_field, :fields => fields
+    dumper_options = parser.options
+    dumper = TSV::Dumper.new dumper_options
+    dumper.init 
+    TSV.traverse parser, :into => dumper do |key,values|
+      key = key.first if Array === key
+      values = [values] unless Array === values
+      [key, values]
+    end
+    dumper
+  end
+
 end

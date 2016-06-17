@@ -6,48 +6,6 @@ module TSV
     field_matches.sort_by{|field, count| count.to_i}.last
   end
 
-  def self.reorder_stream(stream, positions, sep = "\t")
-    Misc.open_pipe do |sin|
-      line = stream.gets
-      line.strip! unless line.nil?
-
-      while line =~ /^#\:/
-        sin.puts line
-        line = stream.gets
-        line.strip! unless line.nil?
-      end
-
-      while line  =~ /^#/
-        if Hash === positions
-          new = (0..line.split(sep).length-1).to_a
-          positions.each do |k,v|
-            new[k] = v
-            new[v] = k
-          end
-          positions = new
-        end
-        sin.puts "#" + line.sub(/^#/,'').strip.split(sep).values_at(*positions).compact * sep
-        line = stream.gets
-        line.strip! unless line.nil?
-      end
-
-      while line
-        if Hash === positions
-          new = (0..line.split(sep).length-1).to_a
-          positions.each do |k,v|
-            new[k] = v
-            new[v] = k
-          end
-          positions = new
-        end
-        values = line.split(sep)
-        new_values = values.values_at(*positions)
-        sin.puts new_values * sep
-        line = stream.gets
-        line.strip! unless line.nil?
-      end
-    end
-  end
 
   def self.field_match_counts(file, values, options = {})
     options = Misc.add_defaults options, :persist_prefix => "Field_Matches"

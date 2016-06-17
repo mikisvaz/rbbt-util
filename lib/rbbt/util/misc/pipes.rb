@@ -398,11 +398,6 @@ module Misc
   def self.sort_stream(stream, header_hash = "#", cmd_args = "-u")
     Misc.open_pipe do |sin|
       begin
-        #if defined? Step and Step === stream
-        #  step = stream
-        #  stream = stream.get_stream || stream.path.open
-        #end
-
         stream = TSV.get_stream stream
 
         line = stream.gets

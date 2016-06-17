@@ -82,6 +82,7 @@ module Persist
     persist_options[:prefix] ||= "TSV"
 
     if data = persist_options[:data]
+      Log.debug "TSV persistence creating with data: #{ Misc.fingerprint(data) }"
       yield data
       return data 
     end

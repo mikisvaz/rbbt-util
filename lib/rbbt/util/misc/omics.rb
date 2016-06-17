@@ -201,7 +201,7 @@ module Misc
              when cds =~ />/
                cds.split(">").last
              when cds =~ /del/
-               deletion = cds.split("del").last
+               deletion = cds.split("del").last.chomp
                case
                when deletion =~ /^\d+$/
                  "-" * deletion.to_i
