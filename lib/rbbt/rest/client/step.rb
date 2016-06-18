@@ -253,6 +253,10 @@ class WorkflowRESTClient
               end
             end
           end
+
+          if Array === v and v.empty?
+            inputs[k] = "EMPTY_ARRAY"
+          end
         end
         task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
 

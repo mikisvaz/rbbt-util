@@ -215,6 +215,7 @@ module Misc
       stream.clear
     end
     tee1, *rest = Misc.tee_stream stream_dup, num + 1
+    stream.reopen(tee1)
     rest
   end
 

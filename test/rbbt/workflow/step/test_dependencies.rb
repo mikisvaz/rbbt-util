@@ -120,7 +120,9 @@ class TestWorkflowDependency < Test::Unit::TestCase
     last_line = nil
     TmpFile.with_file(content) do |input_file|
       job = DepWorkflow.job(:task4, "TEST", :input_file => input_file)
-      io = TSV.get_stream job.run(:stream) while line = io.gets last_line = line.strip
+      io = TSV.get_stream job.run(:stream) 
+      while line = io.gets 
+        last_line = line.strip
       end
       io.join
     end

@@ -191,7 +191,7 @@ module TSV
 
         case type
         when :double, :list
-          Log.warn "Value frozen: #{ value }" if value.frozen?
+          #Log.warn "Value frozen: #{ value }" if value.frozen?
 
           value.nil? ?
             nil :

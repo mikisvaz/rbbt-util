@@ -148,13 +148,17 @@ class TestStep < Test::Unit::TestCase
       end
     end
   end
+
+  def test_messages
+    TmpFile.with_file do |lock|
+
       task  = Task.setup do 
         message "WRITE"
         Open.write(file("test"),"TEST")
         Open.write(path,"done")
         nil
       end
-      
+
       TmpFile.with_file do |tmp|
         step = Step.new tmp, task
         job = step
