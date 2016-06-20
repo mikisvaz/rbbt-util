@@ -184,7 +184,14 @@ class Step
     case type
     when :produce, :no_dup
       list.each do |step|
-        step.produce
+        Misc.insist do
+          begin
+            step.produce
+          rescue
+            step.abort
+            raise $!
+          end
+        end
         nil
       end
     when :bootstrap
@@ -193,7 +200,14 @@ class Step
       cpus = list.length / 2 if cpus > list.length / 2
 
       Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{path}", :respawn => :always) do |dep|
-        dep.produce
+        Misc.insist do
+          begin
+            dep.produce
+          rescue
+            dep.abort
+            raise $!
+          end
+        end
         nil
       end
     else

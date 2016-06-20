@@ -352,6 +352,8 @@ module TSV
 
   def self.traverse_cpus(num, obj, options, &block)
     begin
+      error = false
+      
       callback, cleanup, join, respawn, bar = Misc.process_options options, :callback, :cleanup, :join, :respawn, :bar
       respawn = true if ENV["RBBT_RESPAWN"] and ENV["RBBT_RESPAWN"] == "true"
 
@@ -369,6 +371,7 @@ module TSV
       q.join
 
     rescue Interrupt, Aborted
+      error = true
       q.abort
       Log.medium{"Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"}
       stream = obj_stream(obj)
@@ -377,6 +380,7 @@ module TSV
       stream.abort if stream.respond_to? :abort
       raise "Traversal aborted"
     rescue Exception
+      error = true
       q.abort
       Log.medium "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.message}"
       stream = obj_stream(obj)
@@ -386,7 +390,7 @@ module TSV
       raise $!
     ensure
       q.clean
-      Log::ProgressBar.remove_bar(bar) if bar
+      Log::ProgressBar.remove_bar(bar, error) if bar
     end
   end
 

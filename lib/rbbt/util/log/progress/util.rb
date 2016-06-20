@@ -57,8 +57,12 @@ module Log
       end
     end
 
-    def self.remove_bar(bar)
-      bar.done if bar.respond_to? :done
+    def self.remove_bar(bar, error = false)
+      if error
+        bar.error if bar.respond_to? :error
+      else
+        bar.done if bar.respond_to? :done
+      end
       BAR_MUTEX.synchronize do
         REMOVE << bar
       end

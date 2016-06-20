@@ -46,7 +46,7 @@ end
 
 def report_msg(status, name, path)
 
-  parts = path.sub(/#{Regexp.quote(name)}$/,'').split "/"
+  parts = path.sub(/\{.*/,'').sub(/#{Regexp.quote(name)}$/,'').split "/"
 
   task = Log.color(:yellow, parts.pop)
   workflow = Log.color(:magenta, parts.pop)

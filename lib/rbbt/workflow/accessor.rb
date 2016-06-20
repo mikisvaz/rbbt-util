@@ -22,7 +22,7 @@ class Step
       threads = jobs.collect do |j| 
         Thread.new do
           begin
-            j.join 
+            j.join unless j.done?
           rescue Exception
             Log.error "Exception waiting for job: #{Log.color :blue, j.path}"
             raise $!

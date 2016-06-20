@@ -34,8 +34,19 @@ class WorkflowRESTClient
       inputs.each do |k,v|
         stream = stream_input.to_s == k.to_s
         if Step === v 
-          v.run(true) and v.grace unless v.done? or v.streaming?
-          new_inputs[k] = stream ? TSV.get_stream(v) : v.load
+          unless (v.done? or v.streaming? or RestClient::Step === v)
+            v.run(true) and v.grace 
+          end
+
+          begin
+            if stream
+              new_inputs[k] = TSV.get_stream(v)
+            else
+              new_inputs[k] = v.load
+            end
+          rescue Exception
+            raise $!
+          end
         else
           new_inputs[k] = v
         end

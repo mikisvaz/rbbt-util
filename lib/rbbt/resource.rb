@@ -160,6 +160,8 @@ module Resource
                 Misc.sensiblewrite(final_path, data * "\n")
               when TSV
                 Misc.sensiblewrite(final_path, data.dumper_stream) 
+              when TSV::Dumper
+                Misc.sensiblewrite(final_path, data.stream) 
               when nil
               else
                 raise "Unkown object produced: #{Misc.fingerprint data}"
