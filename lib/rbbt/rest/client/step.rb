@@ -119,7 +119,7 @@ class WorkflowRESTClient
     end
 
     def started?
-      @result != nil or @started
+      @result != nil or @started or @streaming
     end
 
     def done?
@@ -146,6 +146,12 @@ class WorkflowRESTClient
     end
 
     def grace
+      sleep 0.1 unless started?
+      sleep 0.5 unless started?
+      sleep 1 unless started?
+      while not (done? or started?)
+        sleep 1 
+      end
     end
 
     #{{{ MANAGEMENT
