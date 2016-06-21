@@ -90,6 +90,7 @@ class WorkflowRESTClient
     params = params.merge({ :_format => 'jobname' })
     params = fix_params params
 
+    params = WorkflowRESTClient.__prepare_inputs_for_restclient(params)
     name = capture_exception do
       RestClient.post(URI.encode(url), params)
     end
