@@ -1,8 +1,6 @@
 class WorkflowRESTClient
 
   def self.__prepare_inputs_for_restclient(inputs)
-
-    new = IndiferentHash.setup({})
     inputs.each do |k,v|
       if v.respond_to? :path and not v.respond_to? :original_filename
         class << v
@@ -13,13 +11,9 @@ class WorkflowRESTClient
       end
 
       if Array === v and v.empty?
-        new[k] = "EMPTY_ARRAY"
-      else
-        new[k] = v
+        inputs[k] = "EMPTY_ARRAY"
       end
     end
-
-    new
   end
 
   class RemoteStep < Step
@@ -57,7 +51,7 @@ class WorkflowRESTClient
       inputs.each do |k,v|
         stream = stream_input.to_s == k.to_s
         if Step === v 
-          unless (v.done? or v.streaming? or RestClient::Step === v)
+          unless (v.done? or v.streaming?) # or RestClient::Step === v)
             v.run(true) and v.grace 
           end
 
@@ -113,6 +107,7 @@ class WorkflowRESTClient
 
     def status
       return :done if @done
+      return nil unless url or started?
       return :streaming if @streaming
       begin
         status = info[:status]
@@ -201,6 +196,7 @@ class WorkflowRESTClient
         @result = nil
         Misc.consume_stream(res, true) 
       end
+      self.info unless self.done?
       sleep 0.2 unless self.done?
       sleep 1 unless self.done?
       while not self.done?
@@ -260,7 +256,7 @@ class WorkflowRESTClient
       get_streams
       if cache_type == :stream or cache_type == :exec and stream_input and inputs[stream_input]
         task_url = URI.encode(File.join(base_url, task.to_s))
-        inputs = WorkflowRESTClient.__prepare_inputs_for_restclient(inputs)
+        WorkflowRESTClient.__prepare_inputs_for_restclient(inputs)
         task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
         @streaming = true
         io =  WorkflowRESTClient.stream_job(task_url, task_params, stream_input, cache_type) 
