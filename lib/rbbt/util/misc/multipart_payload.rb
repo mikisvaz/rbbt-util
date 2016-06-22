@@ -106,8 +106,10 @@ module RbbtMutiplartPayload
 
     req.add_field "Transfer-Encoding", 'chunked'
     req.add_field "RBBT_ID", (jobname || "No name")
+    timeout_minutes = 60
+    timeout = 60 * timeout_minutes
     Misc.open_pipe do |sin|
-      Net::HTTP.start(uri.hostname, uri.port) do |http|
+      Net::HTTP.start(uri.hostname, uri.port, :read_timeout => timeout) do |http|
         http.request(req) do |res|
           if Net::HTTPSuccess === res
             url_path = res["RBBT-STREAMING-JOB-URL"]
