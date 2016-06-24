@@ -221,20 +221,28 @@ module TSV
       return self
     when :flat
       through do |k,v|
-        new[k] = [v]
+        new[k] = v.nil? ? [] : [v]
       end
     when :single
       through do |k,v|
-        new[k] = [[v]]
+        new[k] = v.nil? ? [[]] : [[v]]
       end
     when :list
       if block_given?
         through do |k,v|
-          new[k] = v.collect{|e| yield e}
+          if v.nil?
+            new[k] = nil
+          else
+            new[k] = v.collect{|e| yield e}
+          end
         end
       else
         through do |k,v|
-          new[k] = v.collect{|e| [e]}
+          if v.nil?
+            new[k] = nil
+          else
+            new[k] = v.collect{|e| [e]}
+          end
         end
       end
     end
