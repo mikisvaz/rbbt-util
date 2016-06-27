@@ -23,7 +23,7 @@ module Misc
     return yield if file.nil? and not Lockfile === options[:lock]
 
     file = file.find if Path === file
-    FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exists? File.dirname(File.expand_path(file))
+    FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exist? File.dirname(File.expand_path(file))
 
 
     case options[:lock]

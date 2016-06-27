@@ -6,48 +6,6 @@ module TSV
     field_matches.sort_by{|field, count| count.to_i}.last
   end
 
-  def self.reorder_stream(stream, positions, sep = "\t")
-    Misc.open_pipe do |sin|
-      line = stream.gets
-      line.strip! unless line.nil?
-
-      while line =~ /^#\:/
-        sin.puts line
-        line = stream.gets
-        line.strip! unless line.nil?
-      end
-
-      while line  =~ /^#/
-        if Hash === positions
-          new = (0..line.split(sep).length-1).to_a
-          positions.each do |k,v|
-            new[k] = v
-            new[v] = k
-          end
-          positions = new
-        end
-        sin.puts "#" + line.sub(/^#/,'').strip.split(sep).values_at(*positions).compact * sep
-        line = stream.gets
-        line.strip! unless line.nil?
-      end
-
-      while line
-        if Hash === positions
-          new = (0..line.split(sep).length-1).to_a
-          positions.each do |k,v|
-            new[k] = v
-            new[v] = k
-          end
-          positions = new
-        end
-        values = line.split(sep)
-        new_values = values.values_at(*positions)
-        sin.puts new_values * sep
-        line = stream.gets
-        line.strip! unless line.nil?
-      end
-    end
-  end
 
   def self.field_match_counts(file, values, options = {})
     options = Misc.add_defaults options, :persist_prefix => "Field_Matches"
@@ -61,6 +19,7 @@ module TSV
       fields = nil
       tsv.tap{|e| e.unnamed =  true; fields = e.fields}.through do |gene, names|
         names.zip(fields).each do |list, format|
+          list = [list] unless Array === list
           list.delete_if do |name| name.empty? end
           next if list.empty?
           text << list.collect{|name| [name, format] * "\t"} * "\n" << "\n"
@@ -126,19 +85,23 @@ module TSV
       end
       file
     when String
-      if Open.remote?(file) or File.exists? file
+      if Open.remote?(file) or File.exist? file
         Open.open(file, open_options)
       else
         StringIO.new file
       end
     when (defined? Step and Step)
-      file.grace
-      stream = file.get_stream
-      if stream
-        stream
+      if file.respond_to?(:base_url) and file.result
+        file.result
       else
-        file.join
-        get_stream(file.path)
+        file.grace
+        stream = file.get_stream
+        if stream
+          stream
+        else
+          file.join
+          get_stream(file.path)
+        end
       end
     when Array
       Misc.open_pipe do |sin|
@@ -255,23 +218,31 @@ module TSV
     new = {}
     case type
     when :double
-      self
+      return self
     when :flat
       through do |k,v|
-        new[k] = [v]
+        new[k] = v.nil? ? [] : [v]
       end
     when :single
       through do |k,v|
-        new[k] = [[v]]
+        new[k] = v.nil? ? [[]] : [[v]]
       end
     when :list
       if block_given?
         through do |k,v|
-          new[k] = v.collect{|e| yield e}
+          if v.nil?
+            new[k] = nil
+          else
+            new[k] = v.collect{|e| yield e}
+          end
         end
       else
         through do |k,v|
-          new[k] = v.collect{|e| [e]}
+          if v.nil?
+            new[k] = nil
+          else
+            new[k] = v.collect{|e| [e]}
+          end
         end
       end
     end
@@ -291,7 +262,7 @@ module TSV
         through do |k,v| new[k] = v[pos] end
       end
     when :flat
-      self
+      return self
     when :single
       through do |k,v|
         new[k] = [v]

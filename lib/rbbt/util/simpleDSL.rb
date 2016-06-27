@@ -49,7 +49,7 @@ module SimpleDSL
       end
       
       instance_eval &actions
-    elsif File.exists?(actions)
+    elsif File.exist?(actions)
       
       @config[@@method_name] = File.open(actions).read
 
@@ -67,7 +67,7 @@ module SimpleDSL
   def load_config(method = nil, file = nil, &block)
     @config = {}
     if file
-      raise ConfigFileMissingError.new "Config file '#{ file }' is missing" unless File.exists? file
+      raise ConfigFileMissingError.new "Config file '#{ file }' is missing" unless File.exist? file
       parse(method, file)
     end
 

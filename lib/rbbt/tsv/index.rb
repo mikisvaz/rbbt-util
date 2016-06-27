@@ -129,6 +129,7 @@ module TSV
     Log.debug "Static Index: #{ file } - #{Misc.fingerprint options}"
     Persist.persist_tsv nil, file, options, persist_options do |data|
       data_options = Misc.pull_keys options, :data
+      data_options[:grep] ||= data_options[:tsv_grep] if data_options[:tsv_grep]
       identifiers = TSV.open(file, data_options)
       identifiers.with_monitor :desc => "Creating Index for #{ file }" do
         identifiers.index(options.merge :persist_data => data, :persist => persist_options[:persist])

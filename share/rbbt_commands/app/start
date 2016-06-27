@@ -18,7 +18,10 @@ $ rbbt app start [options] <app_name>
 -s--server* Server type:  thin, webrick, unicorn, etc
 -f--finder Start server with finder functionality
 -R--Rserve_session* Rserve session to use, otherwise start new one
+-wd--workdir* Change the working directory of the workflow
 --views* Directory with view templates
+--stream Activate streaming of workflow tasks
+--options* Additional options for server (e.g. option1=value1;option2=value2)
 EOF
 
 if options[:help]
@@ -28,6 +31,11 @@ if options[:help]
     puts SOPT.usage
   end
   exit 0
+end
+
+if options[:workdir]
+  require 'rbbt/workflow'
+  Workflow.workdir = options[:workdir]
 end
 
 options[:Port] ||= options[:port]
@@ -49,18 +57,31 @@ Misc.in_dir(app_dir) do
   ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
   ENV["RBBT_VIEWS_DIR"] = options[:views] if options.include?(:views)
 
-  config_ru_file = File.exists?('./config.ru') ? './config.ru' : Rbbt.share['config.ru'].find
+  if options[:stream]
+    raise "No streaming available for any server other than puma" unless options[:server] =~ /^puma/
+    ENV["RBBT_WORKFLOW_TASK_STREAM"] = 'true'
+  end
 
-  if server == 'unicorn'
-    `unicorn -c #{ Rbbt.share['unicorn.rb'].find } '#{config_ru_file}' -p #{options[:port] || "2887"}`
+  config_ru_file = File.exist?('./config.ru') ? './config.ru' : Rbbt.share['config.ru'].find
+
+  if options[:options]
+    options[:options].split(";").each do |pair|
+      name, _sep, value = pair.partition("=")
+      name = name[1..-1].to_sym if name[0] == ':'
+      options[name] = value
+    end
+  end
+
+  case server
+  when 'unicorn'
+    system ENV, "unicorn -c #{ Rbbt.share['unicorn.rb'].find } '#{config_ru_file}' -p #{options[:port] || "2887"}"
+  when 'puma_alt'
+    system ENV, "puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 3 -t 8:32 --preload"
   else
     options[:config] = config_ru_file
     Rack::Server.start(options)
   end
 end
-
-
-
 
 #!/usr/bin/env ruby
 

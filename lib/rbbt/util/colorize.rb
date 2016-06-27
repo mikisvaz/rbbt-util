@@ -32,8 +32,9 @@ module Colorize
     times = num / 12
 
     all_colors = colors.dup
+    factor = 0.3 / times
     times.times do
-      all_colors.concat  colors.collect{|n| n.darken(0.2) }
+      all_colors.concat  colors.collect{|n| n.darken(factor) }
     end
 
     value_color = Hash[*array.uniq.zip(all_colors).flatten]

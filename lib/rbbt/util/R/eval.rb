@@ -5,7 +5,7 @@ require 'rserve'
 module Rserve
   module TCPSocket 
     def self.new(hostname, port_number)
-      raise "Socket at #{hostname} not found" unless File.exists? hostname
+      raise "Socket at #{hostname} not found" unless File.exist? hostname
       @s = Socket.unix hostname
     end
   end
@@ -50,16 +50,16 @@ module R
         Log.warn "Error killing Rserve (#{@@instance_process}): #{$!.message}"
       end
     end
-    FileUtils.rm_rf pid_file if File.exists? pid_file
-    FileUtils.rm_rf socket_file if File.exists? socket_file
-    FileUtils.rm_rf lockfile if File.exists? lockfile
-    FileUtils.rm_rf workdir if File.exists? workdir
+    FileUtils.rm_rf pid_file if File.exist? pid_file
+    FileUtils.rm_rf socket_file if File.exist? socket_file
+    FileUtils.rm_rf lockfile if File.exist? lockfile
+    FileUtils.rm_rf workdir if File.exist? workdir
   end
 
   def self.instance
     @@instance ||= begin
 
-                     clear if File.exists? pid_file and ! Misc.pid_exists?(Open.read(pid_file).strip.to_i)
+                     clear if File.exist? pid_file and ! Misc.pid_exists?(Open.read(pid_file).strip.to_i)
 
                      FileUtils.mkdir_p File.dirname(socket_file) unless File.directory?(File.dirname(socket_file))
                      FileUtils.mkdir_p workdir unless File.directory? workdir
@@ -70,7 +70,7 @@ module R
 
                      begin
 
-                       if not File.exists? socket_file
+                       if not File.exist? socket_file
 
                          sh_pid = Process.fork do
                            #args = %w(CMD Rserve --vanilla --quiet --RS-socket)
@@ -81,12 +81,16 @@ module R
                            args << "--RS-pidfile"
                            args << "'#{pid_file}'"
 
-                           bin_path = File.join(ENV["R_HOME"], "bin/Rserve")
+                           if ENV["R_HOME"]
+                             bin_path = File.join(ENV["R_HOME"], "bin/Rserve") 
+                           else
+                             bin_path = "Rserve"
+                           end
                            cmd = bin_path + " " + args*" "
                            $stdout.reopen File.new('/dev/null', 'w')
                            exec(ENV, cmd)
                          end
-                         while not File.exists? pid_file
+                         while not File.exist? pid_file
                            sleep 0.5
                          end
                          @@instance_process = Open.read(pid_file).to_i
@@ -96,7 +100,7 @@ module R
                        i = Rserve::Connection.new :hostname => socket_file
 
                        begin
-                        FileUtils.mkdir workdir unless File.exists? workdir
+                        FileUtils.mkdir workdir unless File.exist? workdir
                         i.eval "setwd('#{workdir}');"
                         i.eval "source('#{UTIL}');" 
                         i
@@ -107,7 +111,7 @@ module R
                      rescue Exception
                        Log.exception $!
                        Process.kill :INT, @@instance_process if defined? @@instance_process and @@instance_process
-                       FileUtils.rm socket_file if File.exists? socket_file
+                       FileUtils.rm socket_file if File.exist? socket_file
                        retry if TryAgain === $!
                        raise $!
                      end

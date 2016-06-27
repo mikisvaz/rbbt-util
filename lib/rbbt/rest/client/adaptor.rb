@@ -61,6 +61,6 @@ class WorkflowRESTClient
     @asynchronous_exports = task_exports["asynchronous"].collect{|task| task.to_sym }
     @synchronous_exports = task_exports["synchronous"].collect{|task| task.to_sym }
     @exec_exports = task_exports["exec"].collect{|task| task.to_sym }
-    nil
+    @can_stream = task_exports["can_stream"]
   end
 end

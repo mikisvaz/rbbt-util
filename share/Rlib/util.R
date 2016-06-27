@@ -18,8 +18,8 @@ rbbt.ruby <- function(code, load = TRUE, flat = FALSE, type = 'tsv', ...){
           return(data)
       }
 
-      if(type == 'list'){
-          data = scan(file, ...)
+      if(type == 'list' || type == 'array'){
+          data = scan(file, what='string', sep="\n", ...)
           return(data);
       }
 
@@ -31,6 +31,30 @@ rbbt.ruby <- function(code, load = TRUE, flat = FALSE, type = 'tsv', ...){
   }else{
     return(file);
   }
+}
+
+rbbt.job <- function(workflow, task, load=TRUE, flat = FALSE, type = 'tsv', jobname="R.Default", code='', ...){
+
+    str = "require 'rbbt/workflow'"
+
+    str = paste(str, code, sep="\n")
+
+    str = paste(str, paste("Workflow.require_workflow '", workflow, "'", sep=""), sep="\n")
+
+    args_list = list(...)
+    args_strs = c()
+    for (input in names(args_list)){
+        value = args_list[[input]]
+        if (!is.numeric(value)){
+            value = paste("'", value, "'", sep="")
+        }
+        args_strs = c(args_strs, paste(":",input,' => ',value, sep=""))
+    }
+
+    args_str = paste(args_strs, sep=",")
+    str = paste(str, paste(workflow, '.job(:', task, ", '", jobname, "', ", args_str,').produce.path', sep=""), sep="\n")
+    cat(str)
+    rbbt.ruby(str, load, flat, type)
 }
 
 rbbt.ruby.substitutions <- function(script, substitutions = list(), ...){

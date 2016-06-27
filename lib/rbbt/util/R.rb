@@ -31,7 +31,7 @@ source('#{UTIL}');
     case
     when IO === command
       cmd << command.read
-    when File.exists?(command)
+    when File.exist?(command)
       cmd << File.open(command, 'r') do |f| f.read end
     else
       cmd << command

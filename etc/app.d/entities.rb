@@ -1,11 +1,3 @@
-
-#{{{ Require files
-Rbbt.etc.requires.read.split("\n").each do |file|
-  next if file.empty?
-  Log.debug("requiring #{ file }")
-  require file
-end if Rbbt.etc.requires.exists?
-
 Entity.entity_list_cache     = Rbbt.var.sinatra.find.entity_lists
 Entity.entity_map_cache      = Rbbt.var.sinatra.find.entity_maps
 Entity.entity_property_cache = Rbbt.var.sinatra.find.entity_properties

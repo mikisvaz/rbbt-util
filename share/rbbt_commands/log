@@ -24,7 +24,11 @@ ERROR
 EOF
 rbbt_usage and exit 0 if options[:help] 
 if ARGV.empty?
-  puts Rbbt.etc.log_severity.read
+  if Rbbt.etc.log_severity.exists?                                                                                                                                                         
+    puts Rbbt.etc.log_severity.read                                                                                                                                                      
+  else                                                                                                                                                                                     
+    puts Rbbt.etc.log_severity.find + ' does not exist'                                                                                                                                  
+  end                                                                                                                                                                                      
 else
   Open.write(Rbbt.etc.log_severity, ARGV[0].upcase)
 end

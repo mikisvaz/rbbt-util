@@ -2,8 +2,10 @@ require 'rbbt'
 
 module Rbbt
 
-  LOCK_DIRS = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all +  Rbbt.var.jobs.find_all +
-    Rbbt.tmp.tsv_open_locks.find_all + Rbbt.tmp.persist_locks.find_all + Rbbt.tmp.sensiblewrite_lock_dir.find_all +
+  #LOCK_DIRS = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all +  Rbbt.var.jobs.find_all +
+  #  Rbbt.tmp.tsv_open_locks.find_all + Rbbt.tmp.persist_locks.find_all + Rbbt.tmp.sensiblewrite_lock_dir.find_all +
+  #  Rbbt.tmp.produce_locks.find_all + Rbbt.tmp.step_info_locks.find_all
+  LOCK_DIRS = Rbbt.tmp.tsv_open_locks.find_all + Rbbt.tmp.persist_locks.find_all + Rbbt.tmp.sensiblewrite_lock_dir.find_all +
     Rbbt.tmp.produce_locks.find_all + Rbbt.tmp.step_info_locks.find_all
 
   SENSIBLE_WRITE_DIRS = Misc.sensiblewrite_dir.find_all
@@ -48,7 +50,7 @@ module Rbbt
   def self.locks(dirs = LOCK_DIRS)
     dirs.collect do |dir|
       next unless Open.exists? dir
-      `find "#{ dir }" -name "*.lock"`.split "\n"
+      `find "#{ dir }" -name "*.lock" 2>/dev/null`.split "\n"
     end.compact.flatten
   end
 
@@ -67,7 +69,7 @@ module Rbbt
           lock_info[f][:ppid] = info[:ppid]
         end
       rescue Exception
-        Log.exception $!
+        #Log.exception $!
       end
     end
     lock_info
@@ -78,7 +80,7 @@ module Rbbt
   def self.sensiblewrites(dirs = SENSIBLE_WRITE_DIRS)
     dirs.collect do |dir|
       next unless Open.exists? dir
-      `find "#{ dir }" -not -name "*.lock" -not -type d`.split "\n"
+      `find "#{ dir }" -not -name "*.lock" -not -type d 2>/dev/null`.split "\n"
     end.compact.flatten
   end
 
@@ -100,7 +102,7 @@ module Rbbt
   def self.persists(dirs = PERSIST_DIRS)
     dirs.collect do |dir|
       next unless Open.exists? dir
-      `find "#{ dir }" -name "*.persist"`.split "\n"
+      `find "#{ dir }" -name "*.persist" 2>/dev/null`.split "\n"
     end.compact.flatten
   end
 
@@ -140,7 +142,7 @@ module Rbbt
           task = File.basename(taskdir)
           next if tasks and not tasks.include? task
 
-          files = `find "#{ taskdir }/" -not -type d -not -path "*/*.files/*"`.split("\n").sort
+          files = `find "#{ taskdir }/" -not -type d -not -path "*/*.files/*" 2>/dev/null`.split("\n").sort
           _files = Set.new files
           TSV.traverse files, :type => :array, :into => jobs do |file|
             if m = file.match(/(.*).info$/)

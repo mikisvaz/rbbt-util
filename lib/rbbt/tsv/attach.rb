@@ -9,7 +9,7 @@ module TSV
     sep = options[:sep]
 
     is = case
-         when (String === input and not input.index("\n") and input.length < 250 and File.exists?(input))
+         when (String === input and not input.index("\n") and input.length < 250 and File.exist?(input))
            CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' #{ input } | grep -v '^#{sep}' ", :pipe => true)
          when (String === input or StringIO === input)
            CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => input, :pipe => true)
@@ -68,7 +68,7 @@ module TSV
     sep = options[:sep] || "\t"
 
     case
-    when (String === file1 and not file1 =~ /\n/ and file1.length < 250 and File.exists?(file1))
+    when (String === file1 and not file1 =~ /\n/ and file1.length < 250 and File.exist?(file1))
       size = CMD.cmd("wc -c '#{file1}'").read.to_f if monitor
       file1 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' #{ file1 } | grep -v '^#{sep}' ", :pipe => true)
     when (String === file1 or StringIO === file1)
@@ -80,7 +80,7 @@ module TSV
     end
 
     case
-    when (String === file2 and not file2 =~ /\n/ and file2.length < 250 and File.exists?(file2))
+    when (String === file2 and not file2 =~ /\n/ and file2.length < 250 and File.exist?(file2))
       file2 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' #{ file2 } | grep -v '^#{sep}' ", :pipe => true)
     when (String === file2 or StringIO === file2)
       file2 = CMD.cmd("env LC_ALL=C sort -k1,1 -t'#{sep}' | grep -v '^#{sep}'", :in => file2, :pipe => true)
@@ -174,6 +174,23 @@ module TSV
     CMD.cmd("paste #{ files.collect{|f| "'#{f}'"} * " "} -d'#{delim}' |sed 's/#{delim}[^\\t]*//g'", :pipe => true)
   end
 
+  def merge_different_fields(other, options = {})
+    TmpFile.with_file do |output|
+      TSV.merge_different_fields(self, other, output, options)
+      tsv = TSV.open output, options
+      tsv.key_field = self.key_field unless self.key_field.nil?
+      tsv.fields = self.fields + other.fields unless self.fields.nil? or other.fields.nil?
+      tsv
+    end
+  end
+
+  def merge_zip(other)
+    other.each do |k,v|
+      self.zip_new k, v
+    end
+  end
+
+  
   def attach(other, options = {})
     options      = Misc.add_defaults options, :in_namespace => false, :persist_input => true
     fields, one2one, complete = Misc.process_options options, :fields, :one2one, :complete
@@ -197,6 +214,7 @@ module TSV
 
     if complete
       fill = TrueClass === complete ? nil : complete
+      field_length = self.fields.length 
       missing = other.keys - self.keys
       case type
       when :single
@@ -256,20 +274,5 @@ module TSV
     self.fields.each_with_index{|field,i| detached_fields << i if file_fields.include? field.fullname}
     reorder :key, detached_fields
   end
-
-  def merge_different_fields(other, options = {})
-    TmpFile.with_file do |output|
-      TSV.merge_different_fields(self, other, output, options)
-      tsv = TSV.open output, options
-      tsv.key_field = self.key_field unless self.key_field.nil?
-      tsv.fields = self.fields + other.fields unless self.fields.nil? or other.fields.nil?
-      tsv
-    end
-  end
-
-  def merge_zip(other)
-    other.each do |k,v|
-      self.zip_new k, v
-    end
-  end
+ 
 end

@@ -19,6 +19,7 @@ module TSV
   end
 
   def entity_options
+    @entity_options ||= nil
     if @entity_options.nil?
       @entity_options = namespace ? {:namespace => namespace, :organism => namespace} : {}
       @entity_templates = nil
@@ -74,7 +75,8 @@ module TSV
 
   def setup_array(*args)
     res = NamedArray.setup(*args)
-    res.instance_variable_set(:@entity_templates, entity_templates)
+    return res if res.nil?
+    res.instance_variable_set(:@entity_templates, entity_templates) 
     res
   end
 
@@ -122,7 +124,7 @@ module TSV
   end
 
   def write?
-    @writable
+    @writable ||= false
   end
 
   def self._extended(data)
@@ -592,7 +594,7 @@ module TSV
     io = dumper_stream(keys, no_options)
 
     str = ''
-    while block = io.read(2048)
+    while block = io.read(Misc::BLOCK_SIZE)
       str << block
     end
 
@@ -633,15 +635,17 @@ module TSV
       break
     end
 
+    filename = Path === filename ? filename.find : (filename || "No filename")
+    filename + " [" + persistence_path + "]" if respond_to?(:persistence_path) and persistence_path
     with_unnamed do
       <<-EOF
-Filename = #{Path === filename ? filename.find : (filename || "No filename")}
+Filename = #{filename}
 Key field = #{key_field || "*No key field*"}
 Fields = #{fields ? Misc.fingerprint(fields) : "*No field info*"}
 Type = #{type}
 Serializer = #{serializer.inspect}
 Size = #{size}
-namespace = #{namespace}
+namespace = #{Misc.fingerprint namespace}
 identifiers = #{Misc.fingerprint identifiers}
 Example:
   - #{key} -- #{Misc.fingerprint values }

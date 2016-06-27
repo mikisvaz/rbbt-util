@@ -230,6 +230,7 @@ module Annotation
   end
 
   def clean_and_setup_hash(object, hash)
+    object.instance_variable_set(:@annotation_values, nil) if object.instance_variable_get(:@annotation_values).nil?
     annotation_values = object.instance_variable_get(:@annotation_values)
     annotation_values = annotation_values.nil? ? {} : annotation_values.dup
     annotation_values.instance_variable_set(:@annotation_md5, nil)

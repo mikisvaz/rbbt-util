@@ -11,10 +11,10 @@ raise "No app specified" if app.nil?
 
 app_dir = Rbbt.etc.app_dir.exists? ? Rbbt.etc.app_dir.read.strip : Rbbt.apps.find(:user)
 
-FileUtils.mkdir_p app_dir unless File.exists? app_dir
+FileUtils.mkdir_p app_dir unless File.exist? app_dir
 
 Misc.in_dir(app_dir) do
-  if File.exists? app
+  if File.exist? app
     Misc.in_dir(app) do
       `git pull`
     end

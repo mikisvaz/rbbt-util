@@ -63,7 +63,7 @@ module Misc
       result = RubyProf.stop
       printer = RubyProf::MultiPrinter.new(result)
       TmpFile.with_file do |dir|
-        FileUtils.mkdir_p dir unless File.exists? dir
+        FileUtils.mkdir_p dir unless File.exist? dir
         printer.print(:path => dir, :profile => 'profile')
         CMD.cmd("firefox  -no-remote  '#{ dir }'")
       end
@@ -284,7 +284,9 @@ module Misc
     num = :current if num.nil?
     cpus = case num
            when :current
-            10
+            n = 10
+            n = elems.length / 2 if n > elems.length/2
+            n
            when String
              num.to_i
            when Integer
@@ -318,6 +320,42 @@ module Misc
     end
   end
 
+  def self.bootstrap_in_threads(elems, num = :current, options = {}, &block)
+    IndiferentHash.setup options
+    num = :current if num.nil?
+    threads = case num
+           when :current
+            10
+           when String
+             num.to_i
+           when Integer
+             if num < 100
+               num
+             else
+               32000 / num
+             end
+           else
+             raise "Parameter 'num' not understood: #{Misc.fingerprint num}"
+           end
+
+
+    options = Misc.add_defaults options, :respawn => true, :threads => threads
+    options = Misc.add_defaults options, :bar => "Bootstrap in #{ options[:threads] } threads: #{ Misc.fingerprint Annotated.purge(elems) }"
+
+    index = (0..elems.length-1).to_a.collect{|v| v.to_s }
+    TSV.traverse index, options do |pos|
+      elem = elems[pos.to_i]
+      elems.annotate elem if elems.respond_to? :annotate
+      begin
+        res = yield elem
+      rescue Interrupt
+        Log.warn "Process #{Process.pid} was aborted"
+        raise $!
+      end
+      res = nil unless options[:into]
+      res
+    end
+  end
   def self.memory_use(pid=nil)
     `ps -o rss -p #{pid || $$}`.strip.split.last.to_i
   end
@@ -327,7 +365,7 @@ module Misc
                      ENV["PUSHBULLET_KEY"] 
                    else
                      config_api = File.join(ENV['HOME'], 'config/apps/pushbullet/apikey')
-                     if File.exists? config_api
+                     if File.exist? config_api
                        File.read(config_api).strip
                      else
                        nil
@@ -350,7 +388,7 @@ module Misc
   end
 
   def self.unzip_in_dir(file, dir)
-    raise "Target is not a directory: #{file}" if File.exists?(dir) and not File.directory?(dir)
+    raise "Target is not a directory: #{file}" if File.exist?(dir) and not File.directory?(dir)
     if Open.remote? file
       file = file.find if Path === file
       Open.open(file) do |stream|

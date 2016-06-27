@@ -17,7 +17,7 @@ module Open
 
     def repository_dirs
       @repository_dirs ||= begin
-                             File.exists?(Rbbt.etc.repository_dirs.find) ? 
+                             File.exist?(Rbbt.etc.repository_dirs.find) ? 
                                File.read(Rbbt.etc.repository_dirs.find).split("\n") :
                                []
                            rescue
@@ -100,7 +100,7 @@ module Open
   #
   def self.in_cache(url, options = {})
     filename = File.join(REMOTE_CACHEDIR, digest_url(url, options))
-    if File.exists? filename
+    if File.exist? filename
       return filename 
     else
       nil
@@ -111,7 +111,7 @@ module Open
     digest = Misc.digest([url, options.values_at("--post-data", "--post-data="), (options.include?("--post-file")? Open.read(options["--post-file"]) : "")].inspect)
 
     filename = File.join(REMOTE_CACHEDIR, digest)
-    if File.exists? filename
+    if File.exist? filename
       FileUtils.rm filename 
     else
       nil
@@ -239,7 +239,7 @@ module Open
     dir_sub_path_target = find_repo_dir(target)
 
     if dir_sub_path_source.nil? and dir_sub_path_target.nil?
-      FileUtils.mkdir_p File.dirname(target) unless File.exists? File.dirname(target)
+      FileUtils.mkdir_p File.dirname(target) unless File.exist? File.dirname(target)
       return FileUtils.mv source, target 
     end
 
@@ -271,7 +271,7 @@ module Open
       exists_in_repo(*dir_sub_path)
     else
       file = file.find if Path === file
-      File.exists? file
+      File.exist? file
     end
   end
 
@@ -409,7 +409,7 @@ module Open
   end
 
   def self.can_open?(file)
-    String === file and (File.exists?(file) or remote?(file))
+    String === file and (File.exist?(file) or remote?(file))
   end
 
   def self.read(file, options = {}, &block)
@@ -431,7 +431,7 @@ module Open
   def self.notify_write(file)
     begin
       notification_file = file + '.notify'
-      if File.exists? notification_file
+      if File.exist? notification_file
         key = Open.read(notification_file).strip
         key = nil if key.empty?
         Misc.notify("Wrote " << file, nil, key)
@@ -456,7 +456,7 @@ module Open
           yield f
         end
       rescue Exception
-        FileUtils.rm file if File.exists? file
+        FileUtils.rm file if File.exist? file
         raise $!
       end
     when content.nil?
@@ -467,13 +467,13 @@ module Open
       begin
         File.open(file, mode) do |f| 
           f.flock(File::LOCK_EX)
-          while block = content.read(2014)
+          while block = content.read(Misc::BLOCK_SIZE)
             f.write block
           end
           f.flock(File::LOCK_UN)
         end
       rescue Exception
-        FileUtils.rm_rf file if File.exists? file
+        FileUtils.rm_rf file if File.exist? file
         raise $!
       end
       content.close

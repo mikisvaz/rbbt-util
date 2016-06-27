@@ -84,7 +84,7 @@ module Misc
   end
 
   def self._untar_cmd(io, destination)
-    FileUtils.mkdir_p destination unless File.exists? destination
+    FileUtils.mkdir_p destination unless File.exist? destination
     CMD.cmd("tar xvf - -C '#{destination}'", :in => io)
     nil
   end

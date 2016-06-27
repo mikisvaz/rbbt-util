@@ -12,7 +12,7 @@ class TestStep < Test::Unit::TestCase
     TmpFile.with_file do |tmp|
       step = Step.new tmp, task
       assert_equal "TEST", step.run
-      assert File.exists? tmp
+      assert File.exist? tmp
       step = Step.new tmp, task2
       assert_equal "TEST", step.run
     end
@@ -102,7 +102,7 @@ class TestStep < Test::Unit::TestCase
 
   def __test_fork
     TmpFile.with_file do |lock|
-      task  = Task.setup do while not File.exists?(lock) do sleep 1; end; "TEST" end
+      task  = Task.setup do while not File.exist?(lock) do sleep 1; end; "TEST" end
       TmpFile.with_file do |tmp|
         step = Step.new tmp, task
         job = step.fork
@@ -118,7 +118,7 @@ class TestStep < Test::Unit::TestCase
 
   def __test_abort
     TmpFile.with_file do |lock|
-      task  = Task.setup do while not File.exists?(lock) do sleep 1; end; "TEST" end
+      task  = Task.setup do while not File.exist?(lock) do sleep 1; end; "TEST" end
       TmpFile.with_file do |tmp|
         step = Step.new tmp, task
         job = step.fork
@@ -151,13 +151,14 @@ class TestStep < Test::Unit::TestCase
 
   def test_messages
     TmpFile.with_file do |lock|
+
       task  = Task.setup do 
         message "WRITE"
         Open.write(file("test"),"TEST")
         Open.write(path,"done")
         nil
       end
-      
+
       TmpFile.with_file do |tmp|
         step = Step.new tmp, task
         job = step

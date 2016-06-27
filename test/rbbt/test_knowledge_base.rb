@@ -111,5 +111,17 @@ class TestKnowledgeBase < Test::Unit::TestCase
       end
     end
   end
+
+  def test_knowledge_base_reuse
+    organism = Organism.default_code("Hsa")
+    Log.severity = 0
+    TmpFile.with_file(nil, false) do |tmpdir|
+      Path.setup(tmpdir)
+      Association.index(TFacts.regulators, :persist_file => tmpdir.tfacts, :format => {"Gene" => "Ensembl Gene ID"}, :namespace => Organism.default_code("Hsa"))
+
+      kb = KnowledgeBase.load(tmpdir)
+      assert kb.identify_source('tfacts', "TP53") =~ /ENSG/
+    end
+  end
 end
 

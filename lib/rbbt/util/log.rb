@@ -90,7 +90,7 @@ module Log
 
   def self.logfile(file=nil)
     if file.nil?
-      @logfile
+      @logfile ||= nil
     else
       case file
       when String
@@ -156,9 +156,7 @@ module Log
 
     sev_str = severity.to_s
 
-    #prefix = time << "[" << color(severity) << sev_str << color(0)<<"]"
     prefix = time << color(severity) << "["  << sev_str << "]" << color(0)
-    #prefix = color(severity) << time << color(0) << "[" << sev_str  << "]"
     message = "" << highlight << message << color(0) if severity >= INFO
     str = prefix << " " << message
 
@@ -247,8 +245,8 @@ module Log
 
   def self.tsv(tsv)
     STDERR.puts Log.color :magenta, "TSV log: " << Log.last_caller(caller)
-    puts Log.color(:blue, "=> "<< Misc.fingerprint(tsv), true) 
-    puts Log.color(:cyan, "=> " << tsv.summary)
+    STDERR.puts Log.color(:blue, "=> "<< Misc.fingerprint(tsv), true) 
+    STDERR.puts Log.color(:cyan, "=> " << tsv.summary)
   end
 
   def self.stack(stack)

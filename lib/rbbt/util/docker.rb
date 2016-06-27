@@ -3,7 +3,7 @@ module Docker
     mounts, job_inputs, directory, pipe = Misc.process_options options, :mounts, :job_inputs, :directory, :pipe
 
     if mounts
-      mounts.each{|t,s| FileUtils.mkdir_p s unless File.exists? s}
+      mounts.each{|t,s| FileUtils.mkdir_p s unless File.exist? s}
       mount_cmd = mounts.sort.collect{|t,s| "-v " + ["'" + s + "'", "'" + t + "'"] * ":" } * " "
     else
       mount_cmd = ""
@@ -20,9 +20,13 @@ module Docker
         when File 
           FileUtils.cp obj.filename, directory[name]
         when IO
-          Open.write(tmpfile[name], obj)
+          begin
+            Open.write(directory[name], obj)
+          ensure
+            obj.join if obj.respond_to?(:join) and not obj.joined?
+          end
         when String
-          if obj.length < 256 and File.exists?(obj)
+          if obj.length < 256 and File.exist?(obj)
             FileUtils.cp obj, directory[name]
           else
             Open.write(directory[name], obj)
@@ -39,9 +43,13 @@ module Docker
           when File 
             FileUtils.cp obj.filename, tmpfile[name]
           when IO
-            Open.write(tmpfile[name], obj)
+            begin
+              Open.write(tmpfile[name], obj)
+            ensure
+              obj.join if obj.respond_to?(:join) and not obj.joined?
+            end
           when String
-            if obj.length < 256 and File.exists?(obj)
+            if obj.length < 256 and File.exist?(obj)
               FileUtils.cp obj, tmpfile[name]
             else
               Open.write(tmpfile[name], obj)

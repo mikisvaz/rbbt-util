@@ -25,6 +25,10 @@ class KnowledgeBase
     @databases = {}
   end
 
+  def self.load(dir)
+    KnowledgeBase.new dir
+  end
+
   def setup(name, matches, reverse = false)
     AssociationItem.setup matches, self, name, reverse
   end

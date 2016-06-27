@@ -23,6 +23,8 @@ class KnowledgeBase
     IndiferentHash.setup entity_options if entity_options and not IndiferentHash === entity_options
     options = entity_options[type.to_s] || entity_options[Entity.formats[type.to_s].to_s] || {}
     options[:format] = @format[type] if @format.include? :type
+    namespace = self.namespace
+    namespace = db_namespace(database_name) if namespace.nil? and database_name
     options = {:organism => namespace}.merge(options)
     if database_name  
       database = get_database(database_name)
@@ -67,12 +69,17 @@ class KnowledgeBase
     get_database(name).identifier_files.dup
   end
 
+  def db_namespace(name)
+    get_database(name).namespace
+  end
+
   def source_index(name)
     Persist.memory("Source index #{name}: KB directory #{dir}") do
       identifier_files = identifier_files(name)
       identifier_files.concat Entity.identifier_files(source(name)) if defined? Entity
       identifier_files.uniq!
       identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
+      identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, db_namespace(name)))} if not namespace and db_namespace(name)
       identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
       TSV.translation_index identifier_files, source(name), nil, :persist => true
     end
@@ -83,7 +90,8 @@ class KnowledgeBase
       identifier_files = identifier_files(name)
       identifier_files.concat Entity.identifier_files(target(name)) if defined? Entity
       identifier_files.uniq!
-      identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
+      identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if self.namespace
+      identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, db_namespace(name)))} if namespace.nil? and db_namespace(name)
       identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
       TSV.translation_index identifier_files, target(name), nil, :persist => true
     end

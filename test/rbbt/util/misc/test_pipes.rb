@@ -19,6 +19,51 @@ row2 aa bb cc
     assert_equal ["BB", "bb"], tsv["row2"][1]
   end
 
+  def test_collapse_sum
+    text=<<-EOF
+row1 12
+row1 4
+row2 10
+row2 6
+    EOF
+
+    s = StringIO.new text
+    stream = Misc.collapse_stream(s,nil, " ") do |parts|
+      next nil if parts.empty?
+      parts.first.split("|").collect{|p| p.to_f}.inject(0){|acc,e| acc += e}.to_s
+    end
+    tsv = TSV.open  stream, :sep => " " 
+    ppp tsv.to_s
+  end
+
+  def test_collapse_stream_gap
+    text=<<-EOF
+row2 AA BB 
+row2 aa bb cc
+    EOF
+
+    s = StringIO.new text
+    assert Misc.collapse_stream(s, nil, " ").read =~  /\|cc$/
+    
+    text=<<-EOF
+row2 aa bb cc
+row2 AA BB 
+    EOF
+
+    s = StringIO.new text
+    assert Misc.collapse_stream(s, nil, " ").read =~  /cc\|$/
+
+    text=<<-EOF
+row2 AA BB
+row2 aa bb cc
+    EOF
+
+    s = StringIO.new text
+    assert Misc.collapse_stream(s, nil, " ").read =~  /\|cc$/
+
+  end
+
+
   def test_paste_stream
     text1=<<-EOF
 row1 A B C
@@ -88,6 +133,41 @@ row1 A B C
     end
   end
 
+  def test_dup_stream_multiple
+    text =<<-EOF
+row2 AA BB CC
+row3 AAA BBB CCC
+row1 A B C
+    EOF
+    Log.severity = 0
+
+    text = text * 10000
+    num = 5
+    str_io = StringIO.new
+    strs = []
+    num.times{ strs << StringIO.new }
+    TmpFile.with_file(text) do |tmp|
+      io = Open.open(tmp)
+      copies = Misc.dup_stream_multiple(io, num)
+
+
+      copies.each_with_index do |cio,i|
+        cio.add_callback do 
+          str = strs[i] 
+          str.rewind
+          assert_equal text, str.read
+        end
+        Misc.consume_stream cio, true, strs[i], false
+      end
+
+
+      Misc.consume_stream io, false, str_io, false
+      str_io.rewind
+      assert_equal text, str_io.read
+
+    end
+  end
+
   def test_remove_lines
     text1 =<<-EOF
 line1
@@ -130,5 +210,24 @@ line1
         assert ! Misc.select_lines(file1, file2, true).read.split("\n").include?("line2")
       end
     end
+  end
+
+  def test_consume_into_string_io
+    text =<<-EOF
+line1
+line2
+line3
+line4
+    EOF
+
+    TmpFile.with_file(text) do |file|
+      out = StringIO.new
+      io = Open.open(file)
+      Misc.consume_stream(io, false, out, false)
+      out.rewind
+      assert_equal text, out.read
+    end
+
+
   end
 end

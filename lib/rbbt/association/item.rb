@@ -57,11 +57,11 @@ module AssociationItem
   end
 
   property :target_type => :both do
-    type = reverse ? knowledge_base.source(database) : knowledge_base.target(database)
+    knowledge_base.target(database)
   end
 
   property :source_type => :both do
-    reverse ? knowledge_base.target(database) : knowledge_base.source(database)
+    knowledge_base.source(database)
   end
 
   property :undirected => :both do
@@ -69,12 +69,12 @@ module AssociationItem
   end
 
   property :target_entity => :array2single do
-    type = reverse ? knowledge_base.source(database) : knowledge_base.target(database)
+    type = knowledge_base.target(database)
     knowledge_base.annotate self.target, type, database #if self.target.any?
   end
 
   property :source_entity => :array2single do
-    type = reverse ? knowledge_base.target(database) : knowledge_base.source(database)
+    type = knowledge_base.source(database)
     knowledge_base.annotate self.source, type, database #if self.source.any?
   end
 
@@ -83,7 +83,7 @@ module AssociationItem
   end
   property :value => :array2single do
     index = index(database)
-    value = (reverse ? index.reverse : index).chunked_values_at self
+    value = index.chunked_values_at self
     value.collect{|v| NamedArray.setup(v, index.fields)}
   end
 
@@ -108,8 +108,17 @@ module AssociationItem
     fields = [self.source_type, self.target_type].concat info_fields
     type = [self.source_type, self.target_type] * "~"
     tsv = TSV.setup({}, :key_field => type, :fields => fields, :type => :list, :namespace => self.namespace)
-    self.each do |match|
-      tsv[match] = [match.source, match.target].concat match.info.values_at(*info_fields)
+    index = index(database)
+    index.with_unnamed do
+      index.chunked_values_at(self).each_with_index do |v,i|
+        p = self[i]
+        source, _sep, target = p.partition("~")
+        if info_fields.empty?
+          tsv[p] = [source, target]
+        else
+          tsv[p] = [source, target].concat v 
+        end
+      end
     end
     tsv.entity_options = {:organism => namespace}
     knowledge_base.entity_options.each do |type,options|
@@ -119,8 +128,8 @@ module AssociationItem
   end
 
   property :filter => :array do |*args,&block|
-    keys = tsv.select(*args,&block).keys
-    keys = self.annotate Annotated.purge(keys)
+    keys = tsv.with_unnamed do tsv.select(*args,&block).keys end
+    keys = self.annotate keys
     keys
   end
 

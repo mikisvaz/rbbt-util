@@ -40,15 +40,13 @@ def status_msg(status)
             :yellow
           when :done
             :green
-          else
-            nil
           end
   Log.color(color, status)
 end
 
 def report_msg(status, name, path)
 
-  parts = path.sub(/#{Regexp.quote(name)}$/,'').split "/"
+  parts = path.sub(/\{.*/,'').sub(/#{Regexp.quote(name)}$/,'').split "/"
 
   task = Log.color(:yellow, parts.pop)
   workflow = Log.color(:magenta, parts.pop)
@@ -66,7 +64,7 @@ def report(step, offset = 0)
   status = info[:status] || :missing
   status = :remote if Open.remote?(path)
   name = info[:name] || File.basename(path)
-  status = :unsync if status == :done and not File.exists? path
+  status = :unsync if status == :done and not File.exist? path
   str = " " * offset
   str << report_msg(status, name, path)
   info[:dependencies].each do |task,name,path|
@@ -82,6 +80,6 @@ def report(step, offset = 0)
 end
 
 step = get_step file
-$main_mtime = File.exists?(step.path) ? File.mtime(step.path) : nil
+$main_mtime = File.exist?(step.path) ? File.mtime(step.path) : nil
 
 puts report(step).strip

@@ -56,7 +56,7 @@ else
     end
   end
 
-  if String === file and not Open.remote? file and File.exists? file
+  if String === file and not Open.remote? file and File.exist? file
     rows = `wc -l '#{ file }' 2>/dev/null|cut -f 1 -d' '`
   else
     rows = "Could not get rows of #{Misc.fingerprint file}"

@@ -70,7 +70,7 @@ class RbbtProcessQueue
 
         initial = Misc.memory_use(Process.pid)
         memory_cap = multiplier * initial
-        Log.medium "Worker #{Process.pid} started with #{@current} -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap}"
+        Log.medium "Worker for #{Process.pid} started with pid #{@current} -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap}"
 
         @monitor_thread = Thread.new do
           begin
@@ -120,11 +120,12 @@ class RbbtProcessQueue
       end
     end
 
-    def initialize(queue, callback_queue = nil, cleanup = nil, respawn = false, &block)
-      @queue, @callback_queue, @cleanup, @block = queue, callback_queue, cleanup, block
+    def initialize(queue, callback_queue = nil, cleanup = nil, respawn = false, offset = false, &block)
+      @queue, @callback_queue, @cleanup, @block, @offset = queue, callback_queue, cleanup, block, offset
 
       @pid = Process.fork do
         Misc.pre_fork
+        Log::ProgressBar.add_offset if @offset
 
         @cleanup.call if @cleanup
         @queue.close_write 
@@ -141,6 +142,7 @@ class RbbtProcessQueue
         else
           run
         end
+        Log::ProgressBar.remove_offset if @offset
       end
     end
 

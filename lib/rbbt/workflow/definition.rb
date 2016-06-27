@@ -34,28 +34,25 @@ module Workflow
     @result_description = description
   end
 
-  #def dep(*dependency_list, &block)
-  #  @dependencies ||= []
-  #  if Module === dependency_list.first or Hash === dependency_list.last
-  #    @dependencies << dependency_list
-  #  else
-  #    @dependency_list ||= []
-  #    if block_given?
-  #      dependency_list.unshift self if dependency_list.length == 1
-  #      dependency_list << block 
-  #    end
-  #    dependencies.concat dependency_list
-  #  end
-  #end
-
   def dep(*dependency, &block)
     @dependencies ||= []
     if block_given?
-      dependency.unshift self if dependency.length == 1
-      DependencyBlock.setup block, dependency if dependency.any?
+      if dependency.any?
+
+        wf, task_name, options = dependency
+        options, task_name = task_name, nil if Hash === task_name
+        options, wf = wf, nil if Hash === wf
+        task_name, wf = wf, self if task_name.nil?
+
+        DependencyBlock.setup block, [wf, task_name, options] 
+      end
       @dependencies << block
     else
-      if Module === dependency.first or (defined? WorkflowRESTClient and WorkflowRESTClient === dependency.first)
+      if Module === dependency.first or 
+        (defined? WorkflowRESTClient and WorkflowRESTClient === dependency.first) or
+        Hash === dependency.last
+
+        dependency = ([self] + dependency) unless Module === dependency.first or (defined? WorkflowRESTClient and WorkflowRESTClient === dependency.first)
         @dependencies << dependency
       else
         @dependencies.concat dependency
@@ -72,7 +69,7 @@ module Workflow
     end
 
     name = name.to_sym
-
+   
     block = self.method(name) unless block_given?
 
     task_info = {
@@ -113,4 +110,6 @@ module Workflow
     synchronous_exports.uniq!
     synchronous_exports
   end
+
+  alias export export_asynchronous
 end

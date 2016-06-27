@@ -36,7 +36,8 @@ module TSV
     end
 
     def self.load(string)
-      return [] if string.nil?
+      return nil if string.nil? or string == 'nil'
+      return [] if string.empty?
       string.split("\t", -1)
     end
   end

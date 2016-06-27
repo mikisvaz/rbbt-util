@@ -20,7 +20,13 @@ module TSV
       case obj
       when (defined? Step and Step)
         if obj.done?
-          CMD.cmd("wc -l '#{obj.path.find}'").read.to_i
+          path = obj.path
+          path = path.find if path.respond_to? :find
+          if File.exist? path
+            CMD.cmd("wc -l '#{path}'").read.to_i 
+          else
+            nil
+          end
         else
           nil
         end
@@ -33,7 +39,7 @@ module TSV
         CMD.cmd("wc -l '#{obj.path}'").read.to_i
       when Path, String
         obj = obj.find if Path === obj
-        if File.exists? obj
+        if File.exist? obj
           return nil if Open.gzip?(obj) or Open.bgzip?(obj)
           CMD.cmd("wc -l '#{obj}'").read.to_i
         else
@@ -48,8 +54,8 @@ module TSV
 
   def self.stream_name(obj)
     return "nil" if obj.nil?
-    filename_obj   = obj.respond_to?(:filename) ? obj.filename : nil
-    filename_obj ||= obj.respond_to?(:path) ? obj.path : nil
+    #filename_obj   = obj.respond_to?(:filename) ? obj.filename : nil
+    #filename_obj ||= obj.respond_to?(:path) ? obj.path : nil
     stream_obj = obj_stream(obj) || obj
     obj.class.to_s << "-" << Misc.fingerprint(stream_obj)
   end
@@ -57,7 +63,7 @@ module TSV
   def self.report(msg, obj, into)
     into = into[:into] if Hash === into and into.include? :into
 
-    Log.medium{"#{ msg } #{stream_name(obj)} -> #{stream_name(into)}"}
+    Log.low{"#{ msg } #{stream_name(obj)} -> #{stream_name(into)}"}
   end
 
   #{{{ TRAVERSE OBJECTS
@@ -145,7 +151,7 @@ module TSV
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
     if File === io and io.closed? 
       begin
-        Log.medium{"Rewinding stream #{stream_name(io)}"}
+        Log.low{"Rewinding stream #{stream_name(io)}"}
         io.reopen io.filename, "r"
       rescue
         Log.exception $!
@@ -186,7 +192,7 @@ module TSV
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
     if File === io and io.closed? 
       begin
-        Log.medium{"Rewinding stream #{stream_name(io)}"}
+        Log.low{"Rewinding stream #{stream_name(io)}"}
         io.reopen io.filename, "r"
       rescue
         Log.exception $!
@@ -217,7 +223,8 @@ module TSV
       options[:type] = :single
     end
 
-    Log.medium{"Traversing #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"}
+    name = stream_name(obj)
+    Log.low{"Traversing #{name} #{Log.color :green, "->"} #{stream_name(options[:into])}"}
     begin
       case obj
       when TSV
@@ -267,6 +274,8 @@ module TSV
         end
       when Array
         traverse_array(obj, options, &block)
+      when Set
+        traverse_array(obj.to_a, options, &block)
       when String
         if Open.remote? obj or Misc.is_filename? obj
           Open.open(obj) do |s|
@@ -281,28 +290,28 @@ module TSV
         raise "Unknown object for traversal: #{Misc.fingerprint obj }"
       end
     rescue IOError
-      Log.medium{"IOError traversing #{stream_name(obj)}: #{$!.message}"}
+      Log.low{"IOError traversing #{stream_name(obj)}: #{$!.message}"}
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
       raise $!
     rescue Errno::EPIPE
-      Log.medium{"Pipe closed while traversing #{stream_name(obj)}: #{$!.message}"}
+      Log.low{"Pipe closed while traversing #{stream_name(obj)}: #{$!.message}"}
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
       raise $!
     rescue Aborted
-      Log.medium{"Aborted traversing #{stream_name(obj)}"}
+      Log.low{"Aborted traversing #{stream_name(obj)}"}
       stream = obj_stream(obj)
       stream.abort if stream and stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
-      Log.medium{"Aborted traversing 2 #{stream_name(obj)}"}
+      Log.low{"Aborted traversing 2 #{stream_name(obj)}"}
     rescue Exception
-      Log.medium{"Exception traversing #{stream_name(obj)}"}
+      Log.low{"Exception traversing #{stream_name(obj)}"}
       begin
         stream = obj_stream(obj)
         stream.abort if stream and stream.respond_to? :abort
@@ -343,11 +352,13 @@ module TSV
 
   def self.traverse_cpus(num, obj, options, &block)
     begin
+      error = false
+      
       callback, cleanup, join, respawn, bar = Misc.process_options options, :callback, :cleanup, :join, :respawn, :bar
       respawn = true if ENV["RBBT_RESPAWN"] and ENV["RBBT_RESPAWN"] == "true"
 
       Log.low "Traversing in #{ num } cpus: #{respawn ? "respawn" : "no respawn"}"
-      q = RbbtProcessQueue.new num, cleanup, join, respawn
+      q = RbbtProcessQueue.new num, cleanup, join, respawn, !!bar
       callback = Proc.new{ bar.tick } if callback.nil? and bar
       q.callback &callback
       q.init &block
@@ -360,16 +371,18 @@ module TSV
       q.join
 
     rescue Interrupt, Aborted
+      error = true
       q.abort
-      Log.medium{"Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"}
+      Log.low{"Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"}
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
       raise "Traversal aborted"
     rescue Exception
+      error = true
       q.abort
-      Log.medium "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.message}"
+      Log.low "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.message}"
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
@@ -377,7 +390,7 @@ module TSV
       raise $!
     ensure
       q.clean
-      Log::ProgressBar.remove_bar(bar) if bar
+      Log::ProgressBar.remove_bar(bar, error) if bar
     end
   end
 
@@ -423,11 +436,11 @@ module TSV
       end 
       true
     rescue Aborted, Interrupt
-      Log.medium "Aborted storing into #{Misc.fingerprint store}"
+      Log.low "Aborted storing into #{Misc.fingerprint store}"
       stream = obj_stream(store)
       stream.abort if stream.respond_to? :abort
     rescue Exception
-      Log.medium "Exception storing into #{Misc.fingerprint store}: #{$!.message}"
+      Log.low "Exception storing into #{Misc.fingerprint store}: #{$!.message}"
       stream = obj_stream(store)
       stream.abort if stream.respond_to? :abort
       raise $!
@@ -584,13 +597,13 @@ module TSV
         begin
           store_into into, e
         rescue Aborted
-          Log.medium "Aborted callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
+          Log.low "Aborted callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
           stream = nil
           stream = get_stream obj
           stream.abort if stream.respond_to? :abort
           raise $!
         rescue Exception
-          Log.medium "Exception callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
+          Log.low "Exception callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
           stream = nil
           stream = get_stream obj
           stream.abort if stream.respond_to? :abort

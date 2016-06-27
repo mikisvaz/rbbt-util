@@ -16,7 +16,7 @@ module Log
       @last_count = nil
       @last_percent = nil
       @depth = depth
-      @desc = desc.nil? ? nil : desc.gsub(/\n/,' ')
+      @desc = desc.nil? ? "Progress" : desc.gsub(/\n/,' ')
       @file = file
     end
 

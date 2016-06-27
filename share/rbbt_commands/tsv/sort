@@ -14,6 +14,7 @@ Display summary information. Works with Tokyocabinet HDB and BDB as well.
 
 -hh--header_hash* Change the character used to mark the header line (defaults to #)
 -f--field* Field to sort by (name or number)
+-a--absolute Sort as absolute values
 -h--help Help
 EOF
 
@@ -23,19 +24,33 @@ file = ARGV.shift
 
 file = STDIN if file == '-' or file.nil?
 
-field = options[:field] || '2'
-if field =~ /^\d+$/
-  field_pos = field.to_i
+if options[:absolute]
+  tsv = TSV.open(file, options)
+  dumper = TSV::Dumper.new tsv.options
+  dumper.init
+  field = options[:field] || 1
+  keys = tsv.sort(field) do |a| a = a.first if Array === a; a.to_f.abs end
+  TSV.traverse keys, :type => :array, :into => dumper do |key|
+    values = tsv[key]
+    [key,values]
+  end
+  stream = dumper.stream
 else
-  parser = TSV.parse_header(file, options)
-  field_pos = parser.all_fields.index(field) + 1
-  saved_line = parser.line
+  field = options[:field] || '2'
+
+  if field =~ /^\d+$/
+    field_pos = field.to_i
+  else
+    parser = TSV.parse_header(file, options)
+    field_pos = parser.all_fields.index(field) + 1
+    saved_line = parser.first_line
+  end
+
+  rest = ARGV.inject("-t\"\t\" -g -k#{field_pos}"){|acc,e| acc << " '#{e}'" }
+
+  file_io = TSV.get_stream(file)
+  stream = Misc.sort_stream(file_io, options[:header_hash] || "#", rest)
 end
-
-rest = ARGV.inject("-t\"\t\" -g -k#{field_pos}"){|acc,e| acc << " '#{e}'" }
-
-file_io = TSV.get_stream(file)
-stream = Misc.sort_stream(file_io, options[:header_hash] || "#", rest)
 
 begin
   while line = stream.gets

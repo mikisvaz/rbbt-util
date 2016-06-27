@@ -25,17 +25,28 @@ end
 #{{{ INIT
 load_file Rbbt.etc['app.d/init.rb'].find
 
-$class_name = class_name = File.basename(FileUtils.pwd)
+#{{{ Workflow
+workflow = Rbbt.etc['target_workflow'].read
+wf = Workflow.require_workflow workflow, true
+
+$title = wf.to_s
+$class_name = class_name = wf.to_s + "REST"
 $app = app = eval "class #{class_name} < Sinatra::Base; self end"
 
 #{{{ PRE
 load_file Rbbt.etc['app.d/pre.rb'].find 
 
-#{{{ WORKFLOWS
-app_eval app, Rbbt.etc['app.d/workflows.rb'].find_all
+app.get '/' do
+  redirect to(File.join('/', wf.to_s))
+end
 
 #{{{ BASE
 app_eval app, Rbbt.etc['app.d/base.rb'].find
+
+app.add_workflow wf, :priority
+
+#{{{ WORKFLOWS
+app_eval app, Rbbt.etc['app.d/workflows.rb'].find_all
 
 #{{{ RESOURCES
 load_file Rbbt.etc['app.d/resources.rb'].find
@@ -62,7 +73,6 @@ load_file Rbbt.etc['app.d/post.rb'].find_all
 load_file Rbbt.etc['app.d/preload.rb'].find_all
 
 #{{{ RUN
-$title = class_name
 require 'rack'
 use Rack::Deflater
 run app

@@ -1,24 +1,27 @@
 require 'rbbt/tsv/dumper'
 module TSV
 
-  def self.collapse_stream(input, options = {})
-    options = Misc.add_defaults options, :sep => "\t"
+  def self.collapse_stream(input, options = {}, &block)
+    options = Misc.add_defaults options, :sep => "\t", :header_hash => '#', :uniq => true
     input_stream = TSV.get_stream input
 
-    sorted_input_stream = Misc.sort_stream input_stream
+    header_hash = options[:header_hash]
+    cmd_args = options[:uniq] ? "-u" : nil
 
-    parser = TSV::Parser.new sorted_input_stream, options.dup
+    sorted_input_stream = Misc.sort_stream input_stream, header_hash, cmd_args
+
+    parser = TSV::Parser.new(sorted_input_stream, options.dup)
     dumper = TSV::Dumper.new parser
     header = TSV.header_lines(parser.key_field, parser.fields, parser.options)
     dumper.close_in
     dumper.close_out
-    dumper.stream = Misc.collapse_stream parser.stream, parser.first_line, parser.sep, header
+    dumper.stream = Misc.collapse_stream parser.stream, parser.first_line, parser.sep, header, &block
     dumper
   end
  
   def self.paste_streams(streams, options = {})
     options = Misc.add_defaults options, :sep => "\t", :sort => true
-    sort, sep, preamble, header, same_fields, fix_flat = Misc.process_options options, :sort, :sep, :preamble, :header, :same_fields, :fix_flat
+    sort, sep, preamble, header, same_fields, fix_flat, all_match = Misc.process_options options, :sort, :sep, :preamble, :header, :same_fields, :fix_flat, :all_match
 
     out = Misc.open_pipe do |sin|
 
@@ -65,8 +68,8 @@ module TSV
 
         if fix_flat and parser.type == :flat and parser.first_line
           parts = lines[-1].split("\t")
-          lines[-1] = [parts[0], parts[1..-1]*"|"] * "\t"
-          TSV.stream_flat2double(parser.stream).stream
+          lines[-1] = [parts[0], (parts[1..-1] || [])*"|"] * "\t"
+          TSV.stream_flat2double(parser.stream, :noheader => true).stream
         else
           parser.stream
         end
@@ -78,7 +81,7 @@ module TSV
       else
         fields = fields.compact.flatten
       end
-      options = options.merge(input_options.first)
+      options = options.merge(input_options.first || {})
       options[:type] = :list if options[:type] == :single
       options[:type] = :double if fix_flat
 
@@ -127,6 +130,9 @@ module TSV
           min = keys.compact.sort.first
           break if min.nil?
           str = []
+
+          skip = all_match && keys.uniq != [min]
+
           keys.each_with_index do |key,i|
             case key
             when min
@@ -150,7 +156,7 @@ module TSV
                   parts[i] = p.collect{|e| e.nil? ? "" : e }
                 end
               rescue TryAgain
-                Log.warn "Skipping repeated key in stream #{i}: #{keys[i]}"
+                Log.debug "Skipping repeated key in stream #{i}: #{keys[i]}"
                 retry
               end
             else
@@ -160,6 +166,8 @@ module TSV
               end
             end
           end
+
+          next if skip
 
           if same_fields
 
@@ -212,9 +220,11 @@ module TSV
   end
 
   def self.stream_flat2double(stream, options = {})
+    noheader = Misc.process_options options, :noheader
     parser = TSV::Parser.new TSV.get_stream(stream), :type => :flat
     dumper_options = parser.options.merge(options).merge(:type => :double)
     dumper = TSV::Dumper.new dumper_options
+    dumper.init unless noheader
     TSV.traverse parser, :into => dumper do |key,values|
       key = key.first if Array === key
       values = [values] unless Array === values
@@ -222,4 +232,63 @@ module TSV
     end
     dumper
   end
+
+
+  def self.reorder_stream(stream, positions, sep = "\t")
+    Misc.open_pipe do |sin|
+      line = stream.gets
+      line.strip! unless line.nil?
+
+      while line =~ /^#\:/
+        sin.puts line
+        line = stream.gets
+        line.strip! unless line.nil?
+      end
+
+      while line  =~ /^#/
+        if Hash === positions
+          new = (0..line.split(sep).length-1).to_a
+          positions.each do |k,v|
+            new[k] = v
+            new[v] = k
+          end
+          positions = new
+        end
+        sin.puts "#" + line.sub(/^#/,'').strip.split(sep).values_at(*positions).compact * sep
+        line = stream.gets
+        line.strip! unless line.nil?
+      end
+
+      while line
+        if Hash === positions
+          new = (0..line.split(sep).length-1).to_a
+          positions.each do |k,v|
+            new[k] = v
+            new[v] = k
+          end
+          positions = new
+        end
+        values = line.split(sep)
+        new_values = values.values_at(*positions)
+        sin.puts new_values * sep
+        line = stream.gets
+        line.strip! unless line.nil?
+      end
+    end
+  end
+
+
+  def self.reorder_stream_tsv(stream, key_field, fields)
+    parser = TSV::Parser.new TSV.get_stream(stream), :key_field => key_field, :fields => fields
+    dumper_options = parser.options
+    dumper = TSV::Dumper.new dumper_options
+    dumper.init 
+    TSV.traverse parser, :into => dumper do |key,values|
+      key = key.first if Array === key
+      values = [values] unless Array === values
+      [key, values]
+    end
+    dumper
+  end
+
 end

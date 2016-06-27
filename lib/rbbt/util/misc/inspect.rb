@@ -28,7 +28,7 @@ module Misc
     when nil
       "nil"
     when (defined? Step and Step)
-      obj.path || Misc.fingerprint([obj.task.name, obj.inputs])
+      "<Step:"  << (obj.path || Misc.fingerprint([obj.task.name, obj.inputs])) << ">"
     when TrueClass
       "true"
     when FalseClass
@@ -37,7 +37,7 @@ module Misc
       ":" << obj.to_s
     when String
       if obj.length > 100
-        "'" << obj.slice(0,30) << "<...#{obj.length}...>" << obj.slice(-10,30) << " " << "'"
+        "'" << obj.slice(0,30) << "<...#{obj.length}...>" << obj.slice(-10,30)<< "'"
       else 
         "'" << obj << "'"
       end
@@ -53,7 +53,7 @@ module Misc
       if (length = obj.length) > 10
         "[#{length}--" <<  (obj.values_at(0,1, length / 2, -2, -1).collect{|e| fingerprint(e)} * ",") << "]"
       else
-        "[" << (obj.collect{|e| fingerprint(e) } * ",") << "]"
+        "[" << (obj.collect{|e| fingerprint(e) } * ", ") << "]"
       end
     when (defined? TSV and TSV)
       obj.with_unnamed do
@@ -65,7 +65,7 @@ module Misc
       else
         new = "{"
         obj.each do |k,v|
-          new << k.to_s << '=>' << fingerprint(v) << ' '
+          new << fingerprint(k) << '=>' << fingerprint(v) << ' '
         end
         if new.length > 1
            new[-1] =  "}"
@@ -208,7 +208,7 @@ module Misc
             'false'
           when Hash
             "{"<< obj.collect{|k,v| obj2str(k) + '=>' << obj2str(v)}*"," << "}"
-          when Symbol
+          when Symbol 
             obj.to_s
           when String
             if obj.length > HASH2MD5_MAX_STRING_LENGTH
@@ -225,15 +225,23 @@ module Misc
           when TSV::Parser
             remove_long_items(obj)
           when File 
-            "<File:" << obj.path << ">"
-          when (defined? Step and Step)
-            "<Step #{obj.path}>"
-          else
-            obj_ins = obj.inspect
-            if obj_ins =~ /:0x0/
-              obj_ins.gsub(/:0x[a-f0-9]+/,'')
+            if obj.respond_to? :filename and obj.filename
+              "<IO:" << obj.filename << ">"
             else
-              obj_ins
+              "<IO:" << obj.path << ">"
+            end
+          when (defined? Step and Step)
+            "<IO:" << obj.path << ">"
+          else
+            if obj.respond_to? :filename and obj.filename
+              "<IO:" << obj.filename << ">"
+            else
+              obj_ins = obj.inspect
+              if obj_ins =~ /:0x0/
+                obj_ins.gsub(/:0x[a-f0-9]+/,'')
+              else
+                obj_ins
+              end
             end
           end
 
@@ -245,8 +253,8 @@ module Misc
     str
   end
 
-
-  def self.obj2md5(obj)
+  
+  def self.obj2digest(obj)
     str = obj2str(obj)
 
     if str.empty?
@@ -254,5 +262,9 @@ module Misc
     else
       digest(str)
     end
+  end
+
+  def self.obj2md5(obj)
+    obj2digest(obj)
   end
 end

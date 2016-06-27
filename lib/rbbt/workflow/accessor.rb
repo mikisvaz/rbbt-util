@@ -1,6 +1,14 @@
 require 'rbbt/util/open' 
 require 'yaml'
 
+module ComputeDependency
+  attr_accessor :compute
+  def self.setup(dep, value)
+    dep.extend ComputeDependency
+    dep.compute = value
+  end
+end
+
 class Step
 
 
@@ -14,7 +22,7 @@ class Step
       threads = jobs.collect do |j| 
         Thread.new do
           begin
-            j.join 
+            j.join unless j.done?
           rescue Exception
             Log.error "Exception waiting for job: #{Log.color :blue, j.path}"
             raise $!
@@ -36,6 +44,10 @@ class Step
 
   def self.info_file(path)
     path.nil? ? nil : path + '.info'
+  end
+
+  def self.pid_file(path)
+    path.nil? ? nil : path + '.pid'
   end
 
   def self.step_info(path)
@@ -61,6 +73,10 @@ class Step
     path.sub(/.*\/#{Regexp.quote task.name.to_s}\/(.*)/, '\1')
   end
 
+  def short_path
+    [task_name, name] * "/"
+  end
+
   def task_name
     @task_name ||= task.name
   end
@@ -69,6 +85,10 @@ class Step
 
   def info_file
     @info_file ||= Step.info_file(path)
+  end
+
+  def pid_file
+    @pid_file ||= Step.pid_file(path)
   end
 
   def info_lock
@@ -84,7 +104,7 @@ class Step
     begin
       Misc.insist do
         begin
-          return @info_cache if @info_cache and File.ctime(info_file) < @info_cache_time
+          return @info_cache if @info_cache and @info_cache_time and File.ctime(info_file) < @info_cache_time
         rescue Exception
           raise $!
         end
@@ -94,8 +114,13 @@ class Step
             Misc.insist(2, 1, info_file) do
               Misc.insist(3, 0.2, info_file) do
                 raise TryAgain, "Info locked" if check_lock and info_lock.locked?
-                Open.open(info_file) do |file|
-                  INFO_SERIALIAZER.load(file) #|| {}
+                info_lock.lock if check_lock and false
+                begin
+                  Open.open(info_file) do |file|
+                    INFO_SERIALIAZER.load(file) #|| {}
+                  end
+                ensure
+                  info_lock.unlock if check_lock and false
                 end
               end
             end
@@ -110,6 +135,16 @@ class Step
       Open.rm info_file
       Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
       raise $!
+    end
+  end
+
+  def init_info
+    return nil if @exec or info_file.nil?
+    Open.lock(info_file, :lock => info_lock) do
+      i = {:status => :init}
+      @info_cache = i
+      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
+      @info_cache_time = Time.now
     end
   end
 
@@ -237,7 +272,13 @@ class Step
     Step.log_progress(status, options, file(:progress), &block)
   end
 
-  def progress_bar(msg, options = {})
+  def progress_bar(msg = "Progress", options = nil)
+    if Hash === msg and options.nil?
+      options = msg
+      msg = nil
+    end
+    options = {} if options.nil?
+
     max = options[:max]
     Log::ProgressBar.new_bar(max, {:desc => msg, :file => file(:progress)}.merge(options))
   end
@@ -275,7 +316,7 @@ class Step
   end
 
   def started?
-    Open.exists? info_file or Open.exists? path
+    Open.exists?(path) or Open.exists?(pid_file)
   end
 
   def dirty?
@@ -283,7 +324,7 @@ class Step
   end
 
   def done?
-    path and File.exists? path
+    path and File.exist? path
   end
 
   def streaming?
@@ -291,7 +332,7 @@ class Step
   end
 
   def running?
-    return nil if not Open.exists? info_file
+    return nil if not Open.exists? pid_file
     return nil if info[:pid].nil?
 
     pid = @pid || info[:pid]
@@ -385,8 +426,8 @@ class Step
     provenance = {}
     dependencies.each do |dep|
       next unless dep.path.exists?
-      if File.exists? dep.info_file
-        provenance[dep.path] = dep.provenance if File.exists? dep.path
+      if File.exist? dep.info_file
+        provenance[dep.path] = dep.provenance if File.exist? dep.path
       else
         provenance[dep.path] = nil
       end
@@ -397,7 +438,7 @@ class Step
   def provenance_paths
     provenance = {}
     dependencies.each do |dep|
-      provenance[dep.path] = dep.provenance_paths if File.exists? dep.path
+      provenance[dep.path] = dep.provenance_paths if File.exist? dep.path
     end
     provenance
   end
@@ -452,29 +493,55 @@ module Workflow
     @rec_dependencies ||= {}
     @rec_dependencies[taskname] ||= begin
                             if task_dependencies.include? taskname
+
                               deps = task_dependencies[taskname]
-                              all_deps = deps.select{|dep| String === dep or Symbol === dep or Array === dep}
+
+                              #all_deps = deps.select{|dep| String === dep or Symbol === dep or Array === dep}
+
+                              all_deps = []
                               deps.each do |dep| 
+                                if DependencyBlock === dep
+                                  all_deps << dep.dependency if dep.dependency
+                                else
+                                  all_deps << dep unless Proc === dep
+                                end
                                 case dep
                                 when Array
-                                  wf, t = dep
+                                  wf, t, o = dep
+
                                   wf.rec_dependencies(t).each do |d|
                                     if Array === d
-                                      all_deps << d
+                                      new = d.dup
                                     else
-                                      all_deps << [dep.first, d]
+                                      new = [dep.first, d]
                                     end
+
+                                    if Hash === o and not o.empty? 
+                                      if Hash === new.last
+                                        hash = new.last.dup
+                                        o.each{|k,v| hash[k] ||= v}
+                                        new[new.length-1] = hash
+                                      else
+                                        new.push o.dup
+                                      end
+                                    end
+
+                                    all_deps << new
                                   end
+
                                 when String, Symbol
-                                  all_deps.concat rec_dependencies(dep.to_sym)
+                                  rec_deps = rec_dependencies(dep.to_sym)
+                                  all_deps.concat rec_deps
                                 when DependencyBlock
                                   all_deps << dep.dependency if dep.dependency
                                   case dep.dependency
                                   when Array
-                                    dep_wf, dep_task = dep.dependency
-                                    dep_rec_dependencies = dep_wf.rec_dependencies(dep_task.to_sym)
-                                    dep_rec_dependencies.collect!{|d| Array === d ? d : [dep_wf, d]}
-                                    all_deps.concat dep_rec_dependencies
+                                    dep_wf, dep_task, dep_options = dep.dependency
+                                    if dep_task === Symbol
+                                      dep_rec_dependencies = dep_wf.rec_dependencies(dep_task.to_sym)
+                                      dep_rec_dependencies.collect!{|d| Array === d ? d : [dep_wf, d]}
+                                      all_deps.concat dep_rec_dependencies
+                                    end
                                   when Symbol, String
                                     all_deps.concat rec_dependencies(dep.dependency.to_sym)
                                   end
@@ -506,61 +573,114 @@ module Workflow
 
   def rec_inputs(taskname)
     task = task_from_dep(taskname)
-    dep_inputs = task.dep_inputs rec_dependencies(taskname), self
+    deps = rec_dependencies(taskname)
+    dep_inputs = task.dep_inputs deps, self
     task.inputs + dep_inputs.values.flatten
   end
 
   def rec_input_defaults(taskname)
+    rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject(IndiferentHash.setup({})){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_defaults
+      if Array === tn and tn[0] and tn[1]
+        new = tn.first.tasks[tn[1].to_sym].input_defaults
+      elsif Symbol === tn
+        new = tasks[tn.to_sym].input_defaults
+      else
+        next acc
+      end
       acc = new.merge(acc) 
+      acc.delete_if{|input,defaults| not rec_inputs.include? input}
+      acc
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_types(taskname)
+    rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_types
+      if Array === tn and tn[0] and tn[1]
+        new = tn.first.tasks[tn[1].to_sym].input_types
+      elsif Symbol === tn
+        new = tasks[tn.to_sym].input_types
+      else
+        next acc
+      end
       acc = new.merge(acc) 
+      acc.delete_if{|input,defaults| not rec_inputs.include? input}
+      acc
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_descriptions(taskname)
+    rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_descriptions
+      if Array === tn and tn[0] and tn[1]
+        new = tn.first.tasks[tn[1].to_sym].input_descriptions
+      elsif Symbol === tn
+        new = tasks[tn.to_sym].input_descriptions
+      else
+        next acc
+      end
       acc = new.merge(acc) 
+      acc.delete_if{|input,defaults| not rec_inputs.include? input}
+      acc
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def rec_input_options(taskname)
+    rec_inputs = rec_inputs(taskname)
     [taskname].concat(rec_dependencies(taskname)).inject({}){|acc, tn|
-      new = (Array === tn ? tn.first.tasks[tn[1].to_sym] : tasks[tn.to_sym]).input_options
+      if Array === tn and tn[0] and tn[1]
+        new = tn.first.tasks[tn[1].to_sym].input_options
+      elsif Symbol === tn
+        new = tasks[tn.to_sym].input_options
+      else
+        next acc
+      end
       acc = new.merge(acc) 
+      acc = acc.delete_if{|input,defaults| not rec_inputs.include? input}
+      acc
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
   def real_dependencies(task, jobname, inputs, dependencies)
     real_dependencies = []
+    path_deps = {}
     dependencies.each do |dependency|
-      real_dependencies << case dependency
+      real_dep = case dependency
       when Array
-        workflow, task, options = dependency
+        workflow, dep_task, options = dependency
 
         _inputs = IndiferentHash.setup(inputs.dup)
+        compute = options[:compute] if options
         options.each{|i,v|
+          next if i == :compute or i == "compute"
           case v
+          when :compute
+            compute = v
           when Symbol
             all_d = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
             rec_dependency = all_d.select{|d| d.task_name.to_sym == v }.first
 
             if rec_dependency.nil?
-              _inputs[i] = v
+              if inputs.include? v
+                _inputs[i] = _inputs.delete(v)
+              else
+                _inputs[i] = v unless _inputs.include? i
+              end
             else
-              input_options = workflow.task_info(task)[:input_options][i] || {}
+              input_options = workflow.task_info(dep_task)[:input_options][i] || {}
               if input_options[:stream]
                 #rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
                 _inputs[i] = rec_dependency
               else
-                _inputs[i] = rec_dependency.run
+                rec_dependency.abort if rec_dependency.streaming? and not rec_dependency.running?
+                rec_dependency.clean if rec_dependency.error? or rec_dependency.aborted?
+                if rec_dependency.streaming? and rec_dependency.running?
+                  _inputs[i] = rec_dependency.join.load
+                else
+                  rec_dependency.run(true).join
+                  _inputs[i] = rec_dependency.load
+                end
               end
             end
           else
@@ -568,8 +688,9 @@ module Workflow
           end
         } if options
 
-        res = workflow.job(task, jobname, _inputs)
-        res
+        job = workflow.job(dep_task, jobname, _inputs)
+        ComputeDependency.setup(job, compute) if compute
+        job
       when Step
         dependency
       when Symbol
@@ -577,8 +698,28 @@ module Workflow
         job(dependency, jobname, _inputs)
       when Proc
         _inputs = IndiferentHash.setup(inputs.dup)
-        dependency.call jobname, _inputs, real_dependencies
+        dep = dependency.call jobname, _inputs, real_dependencies
+
+        if DependencyBlock === dependency
+          orig_dep = dependency.dependency 
+          if Hash === orig_dep.last
+            options = orig_dep.last
+            compute = options[:compute]
+
+            if Array === dep
+              dep.each{|d| ComputeDependency.setup(d, compute)}
+            elsif dep
+              ComputeDependency.setup(dep, compute)
+            end if compute
+          end
+        end
+
+        dep
+      else
+        raise "Dependency for #{task.name} not understood: #{Misc.fingerprint dependency}"
       end
+
+      real_dependencies << real_dep
     end
     real_dependencies.flatten.compact
   end
@@ -590,7 +731,7 @@ module Workflow
       if inputs.any? or dependencies.any?
         tagged_jobname = case TAG
                          when :hash
-                           hash_str = Misc.obj2md5({:inputs => inputs, :dependencies => dependencies})
+                           hash_str = Misc.obj2digest({:inputs => inputs, :dependencies => dependencies})
                            jobname + '_' << hash_str
                          else
                            jobname
@@ -628,4 +769,5 @@ module Workflow
     dir = File.dirname(path)
     Misc.path_relative_to(workdir_find, dir).sub(/([^\/]+)\/.*/,'\1')
   end
+
 end

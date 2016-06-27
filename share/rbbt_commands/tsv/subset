@@ -30,7 +30,7 @@ raise ParameterException, "Please specify the tsv file as argument" if file.nil?
 subset = options[:subset]
 raise ParameterException, "Please specify a subset of keys" if subset.nil?
 
-if File.exists?(subset)
+if File.exist?(subset)
   subset = Open.read(subset).split("\n")
 else
   subset = subset.split(',')

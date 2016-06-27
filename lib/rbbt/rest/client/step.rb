@@ -1,29 +1,95 @@
 class WorkflowRESTClient
-  class RemoteStep < Step
 
-    attr_accessor :url, :base_url, :task, :base_name, :inputs, :result_type, :result_description, :is_exec
-
-    def self.get_streams(inputs)
-      inputs.each do |k,v|
-        if Step === v
-          stream = v.get_stream
-          inputs[k] = stream || v.run
+  def self.__prepare_inputs_for_restclient(inputs)
+    inputs.each do |k,v|
+      if v.respond_to? :path and not v.respond_to? :original_filename
+        class << v
+          def original_filename
+            File.expand_path(path)
+          end
         end
       end
+
+      if Array === v and v.empty?
+        inputs[k] = "EMPTY_ARRAY"
+      end
+    end
+  end
+
+  class RemoteStep < Step
+
+    attr_accessor :url, :base_url, :task, :base_name, :inputs, :result_type, :result_description, :is_exec, :stream_input
+
+    def initialize(base_url, task = nil, base_name = nil, inputs = nil, result_type = nil, result_description = nil, is_exec = false, stream_input = nil)
+      @base_url, @task, @base_name, @inputs, @result_type, @result_description, @is_exec, @stream_input = base_url, task, base_name, inputs, result_type, result_description, is_exec, stream_input
+      @mutex = Mutex.new
     end
 
-    def initialize(base_url, task = nil, base_name = nil, inputs = nil, result_type = nil, result_description = nil, is_exec = false)
-      @base_url, @task, @base_name, @inputs, @result_type, @result_description, @is_exec = base_url, task, base_name, inputs, result_type, result_description, is_exec
-      @mutex = Mutex.new
-      RemoteStep.get_streams @inputs
+    def run(noload = false)
+      @mutex.synchronize do
+        @result ||= begin
+                      if @is_exec
+                        exec(noload)
+                      elsif noload == :stream
+                        _run_job(:stream)
+                      else
+                        init_job 
+                        self.load
+                      end
+                    ensure
+                      @started = true
+                    end
+      end
+
+      return @result if noload == :stream
+      noload ? path + '?_format=raw' : @result
+    end
+
+
+    def self.get_streams(inputs, stream_input = nil)
+      new_inputs = {}
+      inputs.each do |k,v|
+        stream = stream_input.to_s == k.to_s
+        if Step === v 
+          unless (v.done? or v.streaming?) # or RestClient::Step === v)
+            v.run(true) and v.grace 
+          end
+
+          begin
+            if stream
+              new_inputs[k] = TSV.get_stream(v)
+            else
+              new_inputs[k] = v.load
+            end
+          rescue Exception
+            raise $!
+          end
+        else
+          new_inputs[k] = v
+        end
+      end
+      new_inputs
+    end
+
+    def get_streams
+      return if @inputs_done
+      @inputs = WorkflowRESTClient::RemoteStep.get_streams @inputs, @stream_input
+      @inputs_done = true
+      @inputs
+    end
+
+    def abort
+      #WorkflowRESTClient.get_json(File.join(@url, '?_update=abort')) if @url
     end
 
     def name
       return nil if @is_exec
+      return @path if @url.nil?
       (Array === @url ? @url.first : @url).split("/").last
     end
 
     def task_name
+      return task if task
       init_job
       (Array === @url ? @url.first : @url).split("/")[-2]
     end
@@ -31,20 +97,29 @@ class WorkflowRESTClient
     def info(check_lock=false)
       @done = @info and @info[:status] and @info[:status].to_sym == :done
       @info = Persist.memory("RemoteSteps Info", :url => @url, :persist => !!@done) do
-        init_job unless url
-        info = WorkflowRESTClient.get_json(File.join(url, 'info'))
+        init_job unless @url
+        info = WorkflowRESTClient.get_json(File.join(@url, 'info'))
         info = WorkflowRESTClient.fix_hash(info)
         info[:status] = info[:status].to_sym if String === info[:status]
         info
       end
     end
-    
+
     def status
+      return :done if @done
+      return nil unless url or started?
+      return :streaming if @streaming
       begin
-        info[:status]
+        status = info[:status]
+        @done = true if status and status.to_sym == :done
+        status
       ensure
         @info = nil
       end
+    end
+
+    def started?
+      @result != nil or @started or @streaming
     end
 
     def done?
@@ -59,11 +134,32 @@ class WorkflowRESTClient
       WorkflowRESTClient.get_raw(File.join(url, 'file', file))
     end
 
+    def get_stream
+      case @result
+      when IO 
+        @result
+      when String
+        StringIO.new @result
+      else
+        nil
+      end
+    end
+
+    def grace
+      sleep 0.1 unless started?
+      sleep 0.5 unless started?
+      sleep 1 unless started?
+      while not (done? or started?)
+        sleep 1 
+      end
+    end
+
     #{{{ MANAGEMENT
-    
+
     def init_job(cache_type = nil, other_params = {})
       cache_type = :asynchronous if cache_type.nil? and not @is_exec
       cache_type = :exec if cache_type.nil?
+      get_streams
       @name ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
         WorkflowRESTClient.post_jobname(File.join(base_url, task.to_s), inputs.merge(other_params).merge(:jobname => @name||@base_name, :_cache_type => cache_type))
       end
@@ -81,32 +177,37 @@ class WorkflowRESTClient
     end
 
     def path
-      init_job
-      @url + '?_format=raw'
-    end
-
-    def run(noload = false)
-      @mutex.synchronize do
-        @result ||= begin
-                      if @is_exec
-                        exec_job 
-                      else
-                        init_job 
-                        self.load
-                      end
-                    end
+      if @url
+        @url + '?_format=raw'
+      else
+        [base_url, task, Misc.fingerprint(inputs)] * "/"
       end
-      noload ? path + '?_format=raw' : @result
     end
 
-    def exec(*args)
-      exec_job
+    def exec(noload = false)
+      @result ||= begin
+                     if noload == :stream
+                       _run_job(:exec)
+                     else
+                       exec_job 
+                     end
+                    ensure
+                      @started = true
+                   end
     end
 
     def join
+      if IO === @result
+        res = @result
+        @result = nil
+        Misc.consume_stream(res, true) 
+      end
+      self.info unless self.done?
       sleep 0.2 unless self.done?
       sleep 1 unless self.done?
-      sleep 3 while not self.done?
+      while not self.done?
+        sleep 3
+      end
       self
     end
 
@@ -124,18 +225,28 @@ class WorkflowRESTClient
     end
 
     def load_res(res, result_type = nil)
-      join
+      stream = true if res.respond_to? :read
+      join unless stream
       result_type ||= self.result_type
       case result_type
       when :string
-        res
+        stream ? res.read : res
       when :boolean
-        res == "true"
+        (stream ? res.read : res) == 'true'
       when :tsv
-        TSV.open(StringIO.new(res))
+        if stream
+          TSV.open(res, :monitor => true)
+        else
+          TSV.open(StringIO.new(res))
+        end
       when :annotations
-        Annotated.load_tsv(TSV.open(StringIO.new(res)))
+        if stream
+          Annotated.load_tsv(TSV.open(res))
+        else
+          Annotated.load_tsv(TSV.open(StringIO.new(res)))
+        end
       when :array
+        (stream ? res.read : res).split("\n")
         res.split("\n")
       else
         JSON.parse res
@@ -146,17 +257,79 @@ class WorkflowRESTClient
       params = {}
       load_res get
     end
-    
-    def exec_job
-      res = WorkflowRESTClient.capture_exception do
-        RestClient.post(URI.encode(File.join(base_url, task.to_s)), inputs.merge(:_cache_type => :exec, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json))
+
+    def _run_job(cache_type = :async)
+      get_streams
+      if cache_type == :stream or cache_type == :exec and stream_input and inputs[stream_input]
+        task_url = URI.encode(File.join(base_url, task.to_s))
+        WorkflowRESTClient.__prepare_inputs_for_restclient(inputs)
+        task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
+        @streaming = true
+        io =  WorkflowRESTClient.stream_job(task_url, task_params, stream_input, cache_type) 
+        if IO === io
+          ConcurrentStream.setup(io)
+          io.add_callback do
+            @done = true
+            @streaming = false
+          end
+        else
+          @done = true
+          @streaming = false
+        end
+
+        @url = io.filename if io.filename
+        return io
       end
+
+      WorkflowRESTClient.capture_exception do
+        @url = URI.encode(File.join(base_url, task.to_s))
+        task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
+
+        sout, sin = Misc.pipe
+        streamer = lambda do |c|
+          sin.write c
+        end
+
+        post_thread = Thread.new(Thread.current) do |parent|
+          bl = lambda do |rok|
+            if Net::HTTPOK === rok
+              _url = rok["RBBT-STREAMING-JOB-URL"]
+              @url = File.join(@url, File.basename(_url)) if _url
+              rok.read_body do |c,_a, _b|
+                sin.write c
+              end
+              sin.close
+            else
+              parent.raise "Error in RestClient: " << rok.message
+            end
+          end
+
+          Log.debug{ "RestClient execute: #{ url } - #{Misc.fingerprint task_params}" }
+          RestClient::Request.execute(:method => :post, :url => url, :payload => task_params, :block_response => bl)
+        end
+
+        reader = Zlib::GzipReader.new(sout)
+        res_io = Misc.open_pipe do |sin|
+          while c = reader.read(Misc::BLOCK_SIZE)
+            sin.write c
+          end
+          sin.close
+          @done = true
+        end
+
+        ConcurrentStream.setup(res_io, :threads => [post_thread])
+      end
+    end
+
+    def exec_job
+      res = _run_job(:exec)
       load_res res, result_type == :array ? :json : result_type
     end
 
     def _restart
       @done = nil
       @name = nil
+      @started = nil
       new_inputs = {}
       inputs.each do |k,i| 
         if File === i 
@@ -169,6 +342,7 @@ class WorkflowRESTClient
     end
 
     def recursive_clean
+      return
       begin
         params = {:_update => :recursive_clean}
         init_job(nil, params)
@@ -181,6 +355,7 @@ class WorkflowRESTClient
     end
 
     def clean
+      return
       begin
         params = {:_update => :clean}
         init_job(nil, params)

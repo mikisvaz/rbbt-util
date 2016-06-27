@@ -39,14 +39,18 @@ module Workflow
     eval "Object::#{wf_name} = WorkflowRESTClient.new '#{ url }', '#{wf_name}'"
   end
 
+  def self.load_workflow_libdir(filename)
+    workflow_lib_dir = File.join(File.dirname(File.expand_path(filename)), 'lib')
+    if File.directory? workflow_lib_dir
+      Log.debug "Adding workflow lib directory to LOAD_PATH: #{workflow_lib_dir}"
+      $LOAD_PATH.unshift(workflow_lib_dir)
+    end
+  end
+
   def self.load_workflow_file(filename)
     begin
-      workflow_lib_dir = File.join(File.dirname(File.expand_path(filename)), 'lib')
-      #$LOAD_PATH.unshift(File.join(File.dirname(File.expand_path(filename)), 'lib'))
-      if File.directory? workflow_lib_dir
-        Log.debug "Adding workflow lib directory to LOAD_PATH: #{workflow_lib_dir}"
-        $LOAD_PATH.unshift(workflow_lib_dir)
-      end
+
+      load_workflow_libdir(filename)
 
       filename = File.expand_path(filename)
 
@@ -70,6 +74,7 @@ module Workflow
                         case
                         when (defined?(Rbbt) and Rbbt.etc.workflow_dir.exists?)
                           dir = Rbbt.etc.workflow_dir.read.strip
+                          dir = File.expand_path(dir)
                           Path.setup(dir)
                         when defined?(Rbbt)
                           Rbbt.workflows
@@ -80,36 +85,47 @@ module Workflow
                       end
   end
 
-  def self.require_local_workflow(wf_name)
+  def self.local_workflow_filename(wf_name)
     filename = nil
 
     if Path === wf_name
       case
         # Points to workflow file
-      when ((File.exists?(wf_name.find) and not File.directory?(wf_name.find)) or File.exists?(wf_name.find + '.rb')) 
+      when ((File.exist?(wf_name.find) and not File.directory?(wf_name.find)) or File.exist?(wf_name.find + '.rb')) 
         filename = wf_name.find
 
         # Points to workflow dir
-      when (File.exists?(wf_name.find) and File.directory?(wf_name.find) and File.exists?(File.join(wf_name.find, 'workflow.rb')))
+      when (File.exist?(wf_name.find) and File.directory?(wf_name.find) and File.exist?(File.join(wf_name.find, 'workflow.rb')))
         filename = wf_name['workflow.rb'].find
       end
 
     else
-      if ((File.exists?(wf_name) and not File.directory?(wf_name)) or File.exists?(wf_name + '.rb'))
+      if ((File.exist?(wf_name) and not File.directory?(wf_name)) or File.exist?(wf_name + '.rb'))
         filename = (wf_name =~ /\.?\//) ? wf_name : "./" << wf_name 
       else
         filename = workflow_dir[wf_name]['workflow.rb'].find
       end
     end
 
-    if filename and File.exists? filename
+    if filename.nil? or not File.exist?(filename)
+      wf_name_snake = Misc.snake_case(wf_name)
+      return local_workflow_filename(wf_name_snake) if wf_name_snake != wf_name
+    end
+
+    filename
+  end
+
+  def self.require_local_workflow(wf_name)
+    filename = local_workflow_filename(wf_name)
+
+    if filename and File.exist? filename
       load_workflow_file filename
     else
       return false
     end
   end
 
-  def self.require_workflow(wf_name)
+  def self.require_workflow(wf_name, force_local=false)
     # Already loaded
     begin
       workflow = Misc.string2const wf_name
@@ -119,7 +135,7 @@ module Workflow
     end
 
     # Load remotely
-    if Rbbt.etc.remote_workflows.exists?
+    if not force_local and Rbbt.etc.remote_workflows.exists?
       remote_workflows = Rbbt.etc.remote_workflows.yaml
       if Hash === remote_workflows and remote_workflows.include?(wf_name)
         url = remote_workflows[wf_name]
@@ -152,7 +168,6 @@ module Workflow
 
     Log.info{"Loading workflow #{wf_name}"}
     require_local_workflow(wf_name) or 
-    require_local_workflow(Misc.snake_case(wf_name)) or 
     (Workflow.autoinstall and `rbbt workflow install #{Misc.snake_case(wf_name)}` and require_local_workflow(Misc.snake_case(wf_name))) or
     raise("Workflow not found or could not be loaded: #{ wf_name }")
     begin
@@ -301,6 +316,7 @@ module Workflow
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
 
     real_inputs = {}
+    recursive_inputs = rec_inputs(taskname)
 
     inputs.each do |k,v|
       default = defaults[k]

@@ -69,8 +69,8 @@ class TestTSV < Test::Unit::TestCase
   end
 
   def test_libdir
-    assert File.exists? TestResource[].share.Rlib["util.R"].find :lib
-    assert File.exists? TestResource[].share.Rlib["util.R"].find 
+    assert File.exist? TestResource[].share.Rlib["util.R"].find :lib
+    assert File.exist? TestResource[].share.Rlib["util.R"].find 
   end
 
   def __test_server

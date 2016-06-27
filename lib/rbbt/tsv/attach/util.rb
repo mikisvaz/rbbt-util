@@ -4,6 +4,7 @@ module TSV
     fields = other.fields - [key_field].concat(self.fields) if fields.nil?
 
     fields = [fields].compact unless Array === fields
+    num_fields = fields.length
 
     field_positions = fields.collect{|field| other.identify_field field}
     other.with_unnamed do
@@ -29,7 +30,7 @@ module TSV
               end
             end
 
-            new_values.collect!{|v| [v]}     if     type == :double and not other.type == :double
+            new_values.collect!{|v| [v]}     if     type == :double and not (other.type == :double or other.type == :flat)
             new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
 
             new_values.flatten if type == :flat
@@ -37,9 +38,9 @@ module TSV
             self[key] = current + new_values
           else
             if type == :double
-              self[key] = current + [[]] * fields.length
+              self[key] = current + [[]] * num_fields
             else
-              self[key] = current + [nil] * fields.length
+              self[key] = current + [nil] * num_fields
             end
           end
         end

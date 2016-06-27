@@ -42,7 +42,7 @@ module TmpFile
 
     result = yield(tmpfile)
 
-    FileUtils.rm_rf tmpfile if File.exists?(tmpfile) and erase
+    FileUtils.rm_rf tmpfile if File.exist?(tmpfile) and erase
 
     result
   end
@@ -54,7 +54,7 @@ module TmpFile
 
     result = yield(tmpdir)
 
-    FileUtils.rm_rf tmpdir if File.exists?(tmpdir) and erase
+    FileUtils.rm_rf tmpdir if File.exist?(tmpdir) and erase
 
     result
   end

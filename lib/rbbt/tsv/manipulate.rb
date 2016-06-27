@@ -179,7 +179,6 @@ module TSV
 
     each do |key, value|
       progress_monitor.tick if progress_monitor
-      next if value.nil?
 
       keys, value = traverser.process(key, value)
 
@@ -192,7 +191,7 @@ module TSV
 
         case type
         when :double, :list
-          Log.warn "Value frozen: #{ value }" if value.frozen?
+          #Log.warn "Value frozen: #{ value }" if value.frozen?
 
           value.nil? ?
             nil :
@@ -242,7 +241,7 @@ module TSV
   end
 
   def reorder(new_key_field = nil, new_fields = nil, options = {}) 
-    zipped, uniq = Misc.process_options options, :zipped, :uniq
+    zipped, uniq, merge = Misc.process_options options, :zipped, :uniq, :merge
 
     persist_options = Misc.pull_keys options, :persist
     persist_options[:prefix] = "Reorder"
@@ -257,7 +256,19 @@ module TSV
       with_unnamed do
         if zipped or (type != :double and type != :flat)
           new_key_field_name, new_field_names = through new_key_field, new_fields, uniq, zipped do |key, value|
-            data[key] = value.clone if Array === value
+            if merge 
+              if data[key]
+                new_values = data[key].dup
+                value.each_with_index do |v,i|
+                  new_values[i] += [v]
+                end
+                data[key] = new_values if Array === value
+              else
+                data[key] = value.collect{|v| [v]} if Array === value
+              end
+            else
+              data[key] = value.clone if Array === value
+            end
           end
         else
           case type 
@@ -305,7 +316,7 @@ module TSV
       data.fields.each do |field|
         data.entity_templates[field] = entity_templates[field] if entity_templates.include? field
       end
-      data.type = zipped ? :list : type
+      data.type = zipped ? (merge ? :double : :list) : type
     end
   end
 
@@ -347,7 +358,7 @@ module TSV
     new.entity_options = entity_options
     new.entity_templates = entity_templates
     
-   case
+    case
     when (method.nil? and block_given?)
       through do |key, values|
         new[key] = values if invert ^ (yield key, values)

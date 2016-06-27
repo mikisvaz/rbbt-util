@@ -92,7 +92,7 @@ module Resource
           when Net::HTTPRedirection, Net::HTTPFound
             location = response['location']
             Log.debug("Feching directory from: #{location}. Into: #{final_path}")
-            FileUtils.mkdir_p final_path unless File.exists? final_path
+            FileUtils.mkdir_p final_path unless File.exist? final_path
             TmpFile.with_file do |tmp_dir|
               Misc.in_dir tmp_dir do
                 CMD.cmd('tar xvfz -', :in => Open.open(location, :nocache => true))
@@ -110,7 +110,7 @@ module Resource
     rescue
       Log.warn "Could not retrieve (#{self.to_s}) #{ path } from #{ remote_server }"
       Log.error $!.message
-      FileUtils.rm_rf final_path if File.exists? final_path
+      FileUtils.rm_rf final_path if File.exist? final_path
       return false
     end
   end
@@ -133,12 +133,12 @@ module Resource
       final_path = path
     end
 
-    if not File.exists? final_path or force
+    if not File.exist? final_path or force
       Log.medium "Producing: #{ final_path }"
       lock_filename = Persist.persistence_path(final_path, {:dir => Resource.lock_dir})
       Misc.lock lock_filename do
-        FileUtils.rm_rf final_path if force and File.exists? final_path
-        if not File.exists? final_path or force
+        FileUtils.rm_rf final_path if force and File.exist? final_path
+        if not File.exist? final_path or force
           (remote_server and get_from_server(path, final_path)) or
           begin
             case type
@@ -160,6 +160,8 @@ module Resource
                 Misc.sensiblewrite(final_path, data * "\n")
               when TSV
                 Misc.sensiblewrite(final_path, data.dumper_stream) 
+              when TSV::Dumper
+                Misc.sensiblewrite(final_path, data.stream) 
               when nil
               else
                 raise "Unkown object produced: #{Misc.fingerprint data}"
@@ -192,7 +194,7 @@ source "$INSTALL_HELPER_FILE"
               raise "Could not produce #{ resource }. (#{ type }, #{ content })"
             end
           rescue
-            FileUtils.rm_rf final_path if File.exists? final_path
+            FileUtils.rm_rf final_path if File.exist? final_path
             raise $!
           end
         end

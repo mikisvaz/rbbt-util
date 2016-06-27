@@ -16,6 +16,8 @@ module Misc
     end
   end
 
+  BLOCK_SIZE=1024 * 8
+
   PIPE_MUTEX = Mutex.new
 
   OPEN_PIPE_IN = []
@@ -52,27 +54,32 @@ module Misc
     sout, sin = Misc.pipe
 
     if do_fork
+
       parent_pid = Process.pid
       pid = Process.fork {
         purge_pipes(sin)
         sout.close
         begin
+
           yield sin
           sin.close if close and not sin.closed? 
-        rescue
+
+        rescue Exception
           Log.exception $!
           Process.kill :INT, parent_pid
           Kernel.exit! -1
         end
         Kernel.exit! 0
       }
-      sin.close 
+
       ConcurrentStream.setup sout, :pids => [pid]
     else
       thread = Thread.new(Thread.current) do |parent|
         begin
+          
           yield sin
           sin.close if close and not sin.closed?
+
         rescue Aborted
           Log.medium "Aborted open_pipe: #{$!.message}"
         rescue Exception
@@ -81,75 +88,149 @@ module Misc
           raise $!
         end
       end
+
       ConcurrentStream.setup sout, :threads => [thread]
     end
+
     sout
   end
 
-  def self.tee_stream_thread(stream)
-    stream_out1, stream_in1 = Misc.pipe
-    stream_out2, stream_in2 = Misc.pipe
+  #def self.tee_stream_thread(stream)
+  #  stream_out1, stream_in1 = Misc.pipe
+  #  stream_out2, stream_in2 = Misc.pipe
 
-    #if ConcurrentStream === stream 
-    #  stream.annotate stream_out1
-    #end
+  #  splitter_thread = Thread.new(Thread.current) do |parent|
+  #    begin
+
+  #      skip1 = skip2 = false
+  #      while block = stream.read(1024)
+
+  #        begin 
+  #          stream_in1.write block; 
+  #        rescue IOError
+  #          Log.medium("Tee stream 1 #{Misc.fingerprint stream} IOError: #{$!.message}");
+  #          skip1 = true
+  #        end unless skip1 
+
+  #        begin 
+  #          stream_in2.write block
+  #        rescue IOError
+  #          Log.medium("Tee stream 2 #{Misc.fingerprint stream} IOError: #{$!.message}");
+  #          skip2 = true
+  #        end unless skip2 
+
+  #      end
+
+  #      stream_in1.close unless stream_in1.closed?
+  #      stream.join if stream.respond_to? :join
+  #      stream_in2.close unless stream_in2.closed?
+  #    rescue Aborted, Interrupt
+  #      stream_out1.abort if stream_out1.respond_to? :abort
+  #      stream.abort if stream.respond_to? :abort
+  #      stream_out2.abort if stream_out2.respond_to? :abort
+  #      Log.medium "Tee aborting #{Misc.fingerprint stream}"
+  #      raise $!
+  #    rescue Exception
+  #      stream_out1.abort if stream_out1.respond_to? :abort
+  #      stream.abort if stream.respond_to? :abort
+  #      stream_out2.abort if stream_out2.respond_to? :abort
+  #      Log.medium "Tee exception #{Misc.fingerprint stream}"
+  #      raise $!
+  #    end
+  #  end
+
+  #  ConcurrentStream.setup stream_out1, :threads => splitter_thread
+  #  ConcurrentStream.setup stream_out2, :threads => splitter_thread
+
+  #  [stream_out1, stream_out2]
+  #end
+
+  def self.tee_stream_thread_multiple(stream, num = 2)
+    in_pipes = []
+    out_pipes = []
+    num.times do 
+      sout, sin = Misc.pipe
+      in_pipes << sin
+      out_pipes << sout
+    end
+
+    filename = stream.filename if stream.respond_to? :filename
 
     splitter_thread = Thread.new(Thread.current) do |parent|
       begin
-        skip1 = skip2 = false
-        while block = stream.read(2048)
-          begin 
-            stream_in1.write block; 
-          rescue IOError
-            Log.medium("Tee stream 1 #{Misc.fingerprint stream} IOError: #{$!.message}");
-            skip1 = true
-          end unless skip1 
 
-          begin 
-            stream_in2.write block
-          rescue IOError
-            Log.medium("Tee stream 2 #{Misc.fingerprint stream} IOError: #{$!.message}");
-            skip2 = true
-          end unless skip2 
+        skip = [false] * num
+        begin
+          while block = stream.readpartial(BLOCK_SIZE)
+
+            in_pipes.each_with_index do |sin,i|
+              begin 
+                sin.write block
+              rescue IOError
+                Log.error("Tee stream #{i} #{Misc.fingerprint stream} IOError: #{$!.message}");
+                skip[i] = true
+              end unless skip[i] 
+            end
         end
-        stream_in1.close unless stream_in1.closed?
+        rescue IOError
+        end
+
+        in_pipes.each do |sin|
+          sin.close unless sin.closed?
+        end
+
         stream.join if stream.respond_to? :join
-        stream_in2.close unless stream_in2.closed?
       rescue Aborted, Interrupt
-        stream_out1.abort if stream_out1.respond_to? :abort
         stream.abort if stream.respond_to? :abort
-        stream_out2.abort if stream_out2.respond_to? :abort
+        out_pipes.each do |sout|
+          sout.abort if sout.respond_to? :abort
+        end
         Log.medium "Tee aborting #{Misc.fingerprint stream}"
         raise $!
       rescue Exception
-        stream_out1.abort if stream_out1.respond_to? :abort
         stream.abort if stream.respond_to? :abort
-        stream_out2.abort if stream_out2.respond_to? :abort
+        out_pipes.each do |sout|
+          sout.abort if sout.respond_to? :abort
+        end
         Log.medium "Tee exception #{Misc.fingerprint stream}"
         raise $!
       end
     end
 
-    ConcurrentStream.setup stream_out1, :threads => splitter_thread
-    ConcurrentStream.setup stream_out2, :threads => splitter_thread
+    out_pipes.each do |sout|
+      ConcurrentStream.setup sout, :threads => splitter_thread, :filename => filename
+    end
 
-    #stream_out1.callback = stream.callback if stream.respond_to? :callback
-    #stream_out1.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
+    out_pipes
+  end
 
-    #stream_out2.callback = stream.callback if stream.respond_to? :callback
-    #stream_out2.abort_callback = stream.abort_callback if stream.respond_to? :abort_callback
+  def self.tee_stream_thread(stream)
+    tee_stream_thread_multiple(stream, 2)
+  end
 
-    [stream_out1, stream_out2]
+  def self.dup_stream_multiple(stream, num = 1)
+    stream_dup = stream.dup
+    if stream.respond_to? :annotate
+      stream.annotate stream_dup
+      stream.clear
+    end
+    tee1, *rest = Misc.tee_stream stream_dup, num + 1
+    stream.reopen(tee1)
+    rest
+  end
+
+  def Misc.dup_stream (stream)
+    dup_stream_multiple(stream, 1).first
   end
 
   class << self
-    alias tee_stream tee_stream_thread 
+    alias tee_stream tee_stream_thread_multiple
   end
 
   def self.read_full_stream(io)
     str = ""
     begin
-      while block = io.read(2048)
+      while block = io.read(BLOCK_SIZE)
         str << block
       end
       io.join if io.respond_to? :join
@@ -159,7 +240,7 @@ module Misc
     str
   end
 
-  def self.consume_stream(io, in_thread = false, into = nil)
+  def self.consume_stream(io, in_thread = false, into = nil, into_close = true, &block)
     return if Path === io
     return unless io.respond_to? :read 
     if io.respond_to? :closed? and io.closed?
@@ -169,19 +250,34 @@ module Misc
 
     if in_thread
       Thread.new do
-        consume_stream(io, false)
+        consume_stream(io, false, into, into_close)
       end
     else
-      Log.medium "Consuming stream #{Misc.fingerprint io}"
+      if into
+        Log.medium "Consuming stream #{Misc.fingerprint io} -> #{Misc.fingerprint into}"
+      else
+        Log.medium "Consuming stream #{Misc.fingerprint io}"
+      end
+
       begin
         into = into.find if Path === into
         into = Open.open(into, :mode => 'w') if String === into 
-        into.sync == true if IO === into
-        while not io.closed? and block = io.read(2048)
-          into << block if into
+        into.sync = true if IO === into
+        into_close = false unless into.respond_to? :close
+        io.sync = true
+
+        begin
+          while c = io.readpartial(BLOCK_SIZE)
+            into << c if into
+          end
+        rescue EOFError
         end
+
         io.join if io.respond_to? :join
         io.close unless io.closed?
+        into.close if into and into_close and not into.closed?
+        into.join if into and into_close and into.respond_to?(:joined?) and not into.joined?
+        block.call if block_given?
       rescue Aborted
         Log.medium "Consume stream aborted #{Misc.fingerprint io}"
         io.abort if io.respond_to? :abort
@@ -236,7 +332,7 @@ module Misc
         Misc.consume_stream content 
       else
         FileUtils.mkdir_p File.dirname(tmp_path) unless File.directory? File.dirname(tmp_path)
-        FileUtils.rm_f tmp_path if File.exists? tmp_path
+        FileUtils.rm_f tmp_path if File.exist? tmp_path
         begin
           case
           when block_given?
@@ -247,7 +343,7 @@ module Misc
 
             Open.write(tmp_path) do |f|
               f.sync = true
-              while block = content.read(2048)
+              while block = content.read(BLOCK_SIZE)
                 f.write block
               end
             end
@@ -256,9 +352,11 @@ module Misc
           end
 
           begin
-            Open.mv tmp_path, path, lock_options
+            Misc.insist do
+              Open.mv tmp_path, path, lock_options
+            end
           rescue Exception
-            raise $! unless File.exists? path
+            raise $! unless File.exist? path
           end
 
           content.join if content.respond_to? :join and not content.joined?  
@@ -266,23 +364,23 @@ module Misc
           if Lockfile === lock_options[:lock] and lock_options[:lock].locked?
             lock_options[:lock].unlock
           end
-          FileUtils.touch path if File.exists? path
+          FileUtils.touch path if File.exist? path
           Open.notify_write(path) 
         rescue Aborted
           Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
           content.abort if content.respond_to? :abort
-          Open.rm path if File.exists? path
+          Open.rm path if File.exist? path
         rescue Exception
-          Log.medium "Exception in sensiblewrite: #{$!.message} -- #{ Log.color :blue, path }"
+          Log.medium "Exception in sensiblewrite: [#{Process.pid}] #{$!.message} -- #{ Log.color :blue, path }"
           Log.exception $!
           content.abort if content.respond_to? :abort
-          Open.rm path if File.exists? path
+          Open.rm path if File.exist? path
           raise $!
         rescue
           Log.exception $!
           raise $!
         ensure
-          FileUtils.rm_f tmp_path if File.exists? tmp_path
+          FileUtils.rm_f tmp_path if File.exist? tmp_path
         end
       end
     end
@@ -301,11 +399,6 @@ module Misc
   def self.sort_stream(stream, header_hash = "#", cmd_args = "-u")
     Misc.open_pipe do |sin|
       begin
-        #if defined? Step and Step === stream
-        #  step = stream
-        #  stream = stream.get_stream || stream.path.open
-        #end
-
         stream = TSV.get_stream stream
 
         line = stream.gets
@@ -329,7 +422,7 @@ module Misc
 
         sorted = CMD.cmd("env LC_ALL=C sort #{cmd_args || ""}", :in => line_stream, :pipe => true)
 
-        while block = sorted.read(2048)
+        while block = sorted.read(BLOCK_SIZE)
           sin.write block
         end
 
@@ -342,7 +435,7 @@ module Misc
     end
   end
 
-  def self.collapse_stream(s, line = nil, sep = "\t", header = nil)
+  def self.collapse_stream(s, line = nil, sep = "\t", header = nil, &block)
     sep ||= "\t"
     Misc.open_pipe do |sin|
       sin.puts header if header
@@ -351,27 +444,46 @@ module Misc
 
         current_parts = []
         while line 
-          key, *parts = line.strip.split(sep, -1)
-          current_key ||= key
+          key, *parts = line.chomp.split(sep, -1)
           case
           when key.nil?
+          when current_parts.nil?
+            current_parts = parts
+            current_key = key
           when current_key == key
             parts.each_with_index do |part,i|
               if current_parts[i].nil?
-                current_parts[i] = part
+                current_parts[i] = "|" << part
               else
                 current_parts[i] = current_parts[i] << "|" << part
               end
             end
+
+            (parts.length..current_parts.length-1).to_a.each do |pos|
+              current_parts[pos] = current_parts[pos] << "|" << ""
+            end
+          when current_key.nil?
+            current_key = key
+            current_parts = parts
           when current_key != key
-            sin.puts [current_key, current_parts].flatten * sep
+            if block_given?
+              res = block.call(current_parts)
+              sin.puts [current_key, res] * sep
+            else
+              sin.puts [current_key, current_parts].flatten * sep
+            end 
             current_key = key
             current_parts = parts
           end
           line = s.gets
         end
 
-        sin.puts [current_key, current_parts].flatten * sep unless current_key.nil?
+        if block_given?
+          res = block.call(current_parts)
+          sin.puts [current_key, res] * sep
+        else
+          sin.puts [current_key, current_parts].flatten * sep
+        end unless current_key.nil?
       end
     end
   end
@@ -446,17 +558,6 @@ module Misc
     end
   end
 
-  def self.dup_stream(stream)
-    stream_dup = stream.dup
-    if stream.respond_to? :annotate
-      stream.annotate stream_dup
-      stream.clear
-    end
-    tee1, tee2 = Misc.tee_stream stream_dup
-    stream.reopen(tee1)
-    tee2
-  end
-
   def self.save_stream(file, stream)
     out, save = Misc.tee_stream stream
     out.filename = file
@@ -502,7 +603,7 @@ module Misc
     else
       erase = []
 
-      if Path === stream1 or (String === stream1 and File.exists? stream1)
+      if Path === stream1 or (String === stream1 and File.exist? stream1)
         file1 = stream1
       else
         file1 = TmpFile.tmp_file
@@ -510,7 +611,7 @@ module Misc
         Open.write(file1, TSV.get_stream(stream1))
       end
 
-      if Path === stream2 or (String === stream2 and File.exists? stream2)
+      if Path === stream2 or (String === stream2 and File.exist? stream2)
         file2 = stream2
       else
         file2 = TmpFile.tmp_file
@@ -530,5 +631,14 @@ module Misc
     self.compare_lines(stream1, stream2, '-1 -2', sort)
   end
 
+
+  def self.add_stream_filename(io, filename)
+    if ! io.respond_to? :filename
+      class << io
+        attr_accessor :filename
+      end
+      io.filename = filename
+    end
+  end
 
 end

@@ -3,4 +3,4 @@ sandbox
 integration_test/data
 tmp
 _site
-.save
+*.save

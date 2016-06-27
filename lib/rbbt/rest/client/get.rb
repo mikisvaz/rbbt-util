@@ -57,11 +57,14 @@ class WorkflowRESTClient
     Log.debug{ "RestClient get_raw: #{ url } - #{Misc.fingerprint params}" }
     params = params.merge({ :_format => 'raw' })
     params = fix_params params
-    capture_exception do
+    res = capture_exception do
       Misc.insist(2, 0.5) do
-        RestClient.get(URI.encode(url), :params => params)
+        res = RestClient.get(URI.encode(url), :params => params)
+        raise TryAgain if res.code == 202
+        res
       end
     end
+    res
   end
  
   def self.get_json(url, params = {})
@@ -87,11 +90,16 @@ class WorkflowRESTClient
     params = params.merge({ :_format => 'jobname' })
     params = fix_params params
 
-    capture_exception do
+    WorkflowRESTClient.__prepare_inputs_for_restclient(params)
+    name = capture_exception do
       RestClient.post(URI.encode(url), params)
     end
+
+    Log.debug{ "RestClient post_jobname: #{ url } - #{Misc.fingerprint params}: #{name}" }
+
+    name
   end
-  
+
   def self.post_json(url, params = {})
     if url =~ /_cache_type=:exec/
       JSON.parse(Open.open(url, :nocache => true))
@@ -108,6 +116,38 @@ class WorkflowRESTClient
       rescue
         res
       end
+    end
+  end
+
+  def self.stream_job(task_url, task_params, stream_input, cache_type = :exec)
+    require 'rbbt/util/misc/multipart_payload'
+    WorkflowRESTClient.capture_exception do
+      Log.debug{ "RestClient stream #{Process.pid}: #{ task_url } #{stream_input} #{cache_type} - #{Misc.fingerprint task_params}" }
+      res = RbbtMutiplartPayload.issue task_url, task_params, stream_input, nil, nil, true
+      type = res.gets
+      out = case type.strip
+      when "LOCATION"
+        @url = res.gets
+        @url.sub!(/\?.*/,'')
+        WorkflowRESTClient.get_raw(@url)
+      when /STREAM: (.*)/
+        @url = $1.strip
+        res.callback = Proc.new do
+          Log.medium "Done streaming result from #{@url}"
+          @done = true
+        end
+        res
+      when "BULK"
+        begin
+          res.read
+        ensure
+          @done = true
+        end
+      else
+        raise "What? " + type
+      end
+      ConcurrentStream.setup(out, :filename => @url)
+      out
     end
   end
 

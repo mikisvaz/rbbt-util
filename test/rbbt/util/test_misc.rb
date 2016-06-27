@@ -493,6 +493,10 @@ eum fugiat quo voluptas nulla pariatur?"
     end
   end
 
+  def test_obj2md5_str_float
+    assert_equal Misc.obj2md5([1,2]), Misc.obj2md5(["1","2"])
+  end
+
   def test_sample_large_string
     str = "string" *  1000000
 

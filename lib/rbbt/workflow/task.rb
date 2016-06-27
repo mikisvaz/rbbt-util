@@ -75,19 +75,35 @@ module Task
     seen = []
     task_inputs = {}
     deps.each do |dep|
-      wf, task = (Array === dep ? [dep.first, dep.first.tasks[dep[1].to_sym]] : [workflow, workflow.tasks[dep.to_sym]])
+      if Symbol === dep
+        wf, task = [workflow, workflow.tasks[dep.to_sym]]
+      elsif Array === dep and dep.first
+        wf, task_name, options = dep
+        options, task_name = task_name, nil if Hash === task_name
+        options, wf = wf, nil if Hash === wf
+        task_name, wf = wf, workflow if task_name.nil? and Symbol === wf or String === wf
+        next if task_name.nil?
+        task = wf.tasks[task_name.to_sym]
+      else 
+        next
+      end
       maps = (Array === dep and Hash === dep.last) ? dep.last.keys : []
       raise "Dependency task not found: #{dep}" if task.nil?
       next if seen.include? [wf, task.name]
       seen << [wf, task.name]
       new_inputs = task.inputs - maps
       next unless new_inputs.any?
-      task_inputs[task] = new_inputs
+      if task_inputs[task].nil?
+        task_inputs[task] = new_inputs
+      else
+        task_inputs[task] = (task_inputs[task] + new_inputs).uniq
+      end
     end
     task_inputs
   end
 
   def dep_inputs(deps, workflow = nil)
+    return {} if deps.empty?
     task_inputs = Task.dep_inputs deps, workflow
     task_inputs.each do |task, inputs|
       inputs.replace (inputs - self.inputs)

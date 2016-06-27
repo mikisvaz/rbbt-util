@@ -155,7 +155,7 @@ class Step
 
         dep_hash ||= begin
                        h = {}
-                       rec_dependencies.each{|dep| h[dep.task.name.to_s] ||= dep }
+                       rec_dependencies.each{|dep| h[dep.task_name.to_s] ||= dep }
                        h
                      end
         dep = dep_hash[a]
@@ -201,27 +201,28 @@ class Step
 
   def self.clean(path)
     info_file = Step.info_file path
+    pid_file = Step.pid_file path
     files_dir = Step.files_dir path
-    if Open.exists?(path) or Open.exists?(info_file)
-      begin
-        self.abort if self.running?
-      rescue Exception
-      end
+
+    if Open.exists?(path) or Open.exists?(pid_file) or Open.exists?(info_file)
 
       @result = nil
       @pid = nil
 
       Misc.insist do
         Open.rm info_file if Open.exists? info_file
-        Open.rm info_file + '.lock' if Open.exists? info_file + '.lock'
+        #Open.rm info_file + '.lock' if Open.exists? info_file + '.lock'
         Open.rm path if Open.exists? path
-        Open.rm path + '.lock' if Open.exists? path + '.lock'
+        #Open.rm path + '.lock' if Open.exists? path + '.lock'
         Open.rm_rf files_dir if Open.exists? files_dir
+        Open.rm pid_file if Open.exists? pid_file
       end
     end
   end
 
   def clean
+    Log.medium "Cleaning step: #{path}"
+    abort if not done? and running?
     Step.clean(path)
     self
   end
@@ -236,20 +237,18 @@ class Step
 
     new_dependencies = []
     dependencies.each{|step| 
-      new_dependencies.concat step.rec_dependencies
+      r = step.rec_dependencies
+      new_dependencies.concat r
       new_dependencies << step
     }
     new_dependencies.uniq
   end
 
   def recursive_clean
-    clean
-    rec_dependencies.each do |step| 
-      if Open.exists?(step.info_file) 
-        step.clean 
-      else
-      end
+    dependencies.each do |step| 
+      step.recursive_clean 
     end
+    clean if Open.exists?(self.info_file)
     self
   end
 

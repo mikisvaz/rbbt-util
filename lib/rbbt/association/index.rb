@@ -29,7 +29,7 @@ module Association
 
       key_field = [source_field, target_field, undirected ? "undirected" : nil].compact * "~"
 
-      TSV.setup(data, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => :list)
+      TSV.setup(data, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => :list, :namespace => database.namespace)
 
       data.key_field = key_field
       data.fields = fields[1..-1]
@@ -59,16 +59,16 @@ module Association
               list.replace [list.first] * size if list.length == 1
             end if recycle and size > 1
 
-
             rest = Misc.zip_fields rest
-
 
             annotations = (Array === rest.first and rest.first.length > 1) ?
               targets.zip(rest) :
               targets.zip(rest * targets.length) 
 
+            source = source.gsub('~','-..-')
             annotations.each do |target, info|
               next if target.nil? or target.empty?
+              target = target.gsub('~','-..-')
               key = [source, target] * "~"
 
               if data[key].nil? or info.nil?
@@ -128,13 +128,13 @@ module Association
                        raise "Can only reverse a TokyoCabinet::BDB dataset at the time"
                      end
 
-                     if File.exists?(reverse_filename)
+                     if File.exist?(reverse_filename)
                        new = Persist.open_tokyocabinet(reverse_filename, false, serializer, TokyoCabinet::BDB)
                        raise "Index has no info: #{reverse_filename}" if new.key_field.nil?
                        Association::Index.setup new
                        new
                      else
-                       FileUtils.mkdir_p File.dirname(reverse_filename) unless File.exists?(File.dirname(reverse_filename))
+                       FileUtils.mkdir_p File.dirname(reverse_filename) unless File.exist?(File.dirname(reverse_filename))
 
                        new = Persist.open_tokyocabinet(reverse_filename, true, serializer, TokyoCabinet::BDB)
                        
@@ -161,7 +161,7 @@ module Association
                      new
                    rescue Exception
                      Log.error "Deleting after error reversing database: #{ reverse_filename }"
-                     FileUtils.rm reverse_filename if File.exists? reverse_filename
+                     FileUtils.rm reverse_filename if File.exist? reverse_filename
                      raise $!
                    end
     end

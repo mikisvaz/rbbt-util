@@ -95,7 +95,7 @@ def fix_options(workflow, task, job_options)
                 case
                 when value == '-'
                   STDIN.read
-                when (String === value and File.exists?(value) and not File.directory?(value))
+                when (String === value and File.exist?(value) and not File.directory?(value))
                   Open.read(value)
                 else
                   value
@@ -113,7 +113,7 @@ def fix_options(workflow, task, job_options)
                         when value == '-'
                           array_separator ||= "\n"
                           STDIN.read
-                        when (String === value and File.exists?(value))
+                        when (String === value and File.exist?(value))
                           array_separator ||= "\n"
                           Open.read(value)
                         else
@@ -302,8 +302,12 @@ begin
   end
 
   if do_exec or (job.respond_to?(:is_exec) and job.is_exec)
-    res = job.exec(true)
+    res = job.exec(:stream)
     case
+    when res.respond_to?(:gets)
+      while block = res.read(2048)
+        out.write block
+      end
     when Array === res
       out.puts res * "\n"
     when TSV === res
@@ -331,7 +335,7 @@ begin
 
     job.fork
   else
-    job.run(true)
+    job.run(:stream)
     res = job
   end
 
@@ -427,14 +431,40 @@ end
 
 case res
 when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
-  out.puts res.load
+  res = job.result
+  if res.respond_to? :gets
+    begin
+      Misc.consume_stream(res, false, out)
+      #while block = res.readpartial(Misc::BLOCK_SIZE) do
+      #  out.write block
+      #end #unless io.closed? 
+    rescue EOFError, IOError
+    end
+    res.join if res.respond_to? :join
+  else
+    puts res.to_s
+  end
 when Step
-  if IO === res.result
+  if res.streaming?
+    io = TSV.get_stream res
+    Misc.consume_stream(io, false, out)
+    #begin
+    #  while block = io.readpartial(Misc::BLOCK_SIZE) do
+    #    out.write block
+    #  end #unless io.closed? 
+    #rescue EOFError, IOError
+    #end
+    io.join if io.respond_to? :join
+  elsif IO === res.result
     begin
       io = res.get_stream
-      while block = io.read(2048) do
-        out.write block
-      end #unless io.closed? 
+      Misc.consume_stream(io, false, out)
+      #begin
+      #  while block = io.readpartial(Misc::BLOCK_SIZE) do
+      #    out.write block
+      #  end #unless io.closed? 
+      #rescue EOFError, IOError
+      #end
       io.join if io.respond_to? :join
     rescue Aborted, Interrupt
       Log.error "Process interrupted. Aborting step"
@@ -457,7 +487,7 @@ when Step
     end
   else
     res.join
-    out.puts Open.read(res.path) if File.exists? res.path
+    out.puts Open.read(res.path) if File.exist? res.path
   end
 else
   out.puts res.to_s

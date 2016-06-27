@@ -175,7 +175,7 @@ module Bgzf
     str = nil
     current = @data_offset
     while true
-      block = read(1024)
+      block = read(Misc::BLOCK_SIZE)
       break if block.empty?
       str = "" if str.nil?
       if i = block.index("\n")
