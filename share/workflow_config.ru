@@ -23,11 +23,19 @@ def app_eval(app, file)
 end
 
 #{{{ INIT
-load_file Rbbt.etc['app.d/init.rb'].find
+ENV["RBBT_LOG"] = Log.severity.to_s
+require Rbbt.etc['app.d/init.rb'].find
 
 #{{{ Workflow
 workflow = Rbbt.etc['target_workflow'].read
 wf = Workflow.require_workflow workflow, true
+
+if Rbbt.etc['target_workflow_exports'].exists?
+  exports = Rbbt.etc['target_workflow_exports'].read.split("\n")
+  exports.each do |task|
+    wf.export task.to_sym
+  end
+end
 
 $title = wf.to_s
 $class_name = class_name = wf.to_s + "REST"

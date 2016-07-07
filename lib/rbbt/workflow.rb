@@ -183,9 +183,9 @@ module Workflow
   attr_accessor :task_dependencies, :task_description, :last_task 
   attr_accessor :asynchronous_exports, :synchronous_exports, :exec_exports
   attr_accessor :step_cache
+  attr_accessor :remote_tasks
 
   #{{{ ATTR DEFAULTS
-  
   
   def self.workdir=(path)
     path = Path.setup path.dup unless Path === path
@@ -301,6 +301,8 @@ module Workflow
 
   def job(taskname, jobname = nil, inputs = {})
     taskname = taskname.to_sym
+    return remote_tasks[taskname].job(taskname, jobname, inputs) if remote_tasks and remote_tasks.include? taskname
+
     jobname = DEFAULT_NAME if jobname.nil? or jobname.empty?
 
     task = tasks[taskname]
@@ -347,10 +349,12 @@ module Workflow
   def load_id(id)
     path = File.join(workdir, id)
     task = task_for path
+    return remote_tasks[task].load_id(id) if remote_tasks and remote_tasks.include? task
     step = Step.new path, tasks[task.to_sym]
     step.info
     if step.info.include? :dependencies
       step.dependencies = step.info[:dependencies].collect do |task, job|
+        next if job.nil?
         load_id(File.join(task.to_s, job))
       end
     end
@@ -358,6 +362,7 @@ module Workflow
   end
 
   def load_name(task, name)
+    return remote_tasks[task].load_step(path) if remote_tasks and remote_tasks.include? task
     task = tasks[task.to_sym] if String === task or Symbol === task
     path = step_path task.name, name, [], [], task.extension
     get_job_step path, task

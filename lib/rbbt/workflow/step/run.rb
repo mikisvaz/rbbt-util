@@ -195,6 +195,8 @@ class Step
             FileUtils.rm pid_file if File.exist?(pid_file)
           end
 
+          set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
+
           result
         end
 

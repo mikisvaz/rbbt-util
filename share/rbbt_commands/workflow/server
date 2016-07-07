@@ -19,9 +19,10 @@ $ rbbt workflow server [options] <Workflow>
 -f--finder Start server with finder functionality
 -R--Rserve_session* Rserve session to use, otherwise start new one
 -wd--workdir* Change the working directory of the workflow
--w--workflows* List of additional workflows to load
+-W--workflows* List of additional workflows to load
 --views* Directory with view templates
 --stream Activate streaming of workflow tasks
+--export* Export workflow tasks 
 --options* Additional options for server (e.g. option1=value1;option2=value2)
 EOF
 
@@ -52,10 +53,13 @@ ENV["RServe-session"] = options[:RServe_session] || workflow
 
 server = options[:server] || 'puma'
 
+exports = options[:export].split(/\s*,/) if options[:export]
+
 TmpFile.with_file do |app_dir|
   Misc.in_dir(app_dir) do
     app_dir = Path.setup(app_dir.dup)
     Open.write(app_dir.etc.target_workflow.find, workflow)
+    Open.write(app_dir.etc.target_workflow_exports.find, exports * "\n") if exports
     Open.write(app_dir.etc.workflows.find, workflows.split(/,\s/)*"\n") if workflows 
 
     require 'rack'

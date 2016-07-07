@@ -88,6 +88,10 @@ class WorkflowRESTClient
       (Array === @url ? @url.first : @url).split("/").last
     end
 
+    def name=(name)
+      @url = [base_url,task, name] * "/"
+    end
+
     def task_name
       return task if task
       init_job
