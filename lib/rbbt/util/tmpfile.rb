@@ -2,12 +2,12 @@ require 'fileutils'
 
 module TmpFile
 
-  TMPDIR = "/tmp/tmpfiles" 
-  FileUtils.mkdir TMPDIR unless File.exist? TMPDIR
+  TMPDIR = "/tmp/#{ENV['USER']}/tmpfiles" 
+  FileUtils.mkdir_p TMPDIR unless File.exist? TMPDIR
 
   def self.tmpdir=(tmpdir)
     TMPDIR.replace tmpdir
-    FileUtils.mkdir TMPDIR unless File.exist? TMPDIR
+    FileUtils.mkdir_p TMPDIR unless File.exist? TMPDIR
   end
 
   def self.tmpdir

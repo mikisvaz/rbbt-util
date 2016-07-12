@@ -148,6 +148,6 @@ class TestOpen < Test::Unit::TestCase
       assert_equal obj, obj_cp
     end
   end
-  
+
 end
 

@@ -770,4 +770,8 @@ module Workflow
     Misc.path_relative_to(workdir_find, dir).sub(/([^\/]+)\/.*/,'\1')
   end
 
+  def task_exports
+    [exec_exports, synchronous_exports, asynchronous_exports].compact.flatten.uniq
+  end
+
 end

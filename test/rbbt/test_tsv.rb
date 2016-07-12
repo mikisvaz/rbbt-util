@@ -315,10 +315,11 @@ b 2
 a 1
 b 2
 b 3
+d 22
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :key_field => "Value", :tsv_grep => "2")
+      tsv = TSV.open(filename, :key_field => "Value", :grep => "2")
       assert(tsv.include?("2"))
       assert(! tsv.include?("3"))
     end
@@ -350,7 +351,6 @@ b 2
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :key_field => "Value", :grep => "#\\|2")
-      assert(! tsv.include?("1"))
       assert(tsv.include?("2"))
       assert(! tsv.include?("7"))
     end
@@ -525,6 +525,7 @@ row2    A    B    Id3
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/, :type => :flat, :key_field => "ValueA", :fields => ["OtherID"], :merge => true)
+      ppp tsv
       assert tsv["aaa"].include? "Id1"
       assert tsv["aaa"].include? "Id2"
  
@@ -570,6 +571,33 @@ row3    AA    BB|BBB    Id3|Id2
       assert_equal %w(A aAa AA).sort, tsv["Id3"].sort 
       assert_equal %w(a aa aaa AA).sort, tsv["Id2"].sort 
  
+    end
+  end
+
+  def test_flat_key_field_double
+    content =<<-EOF
+#Id    ValueA 
+row1   a|aa|aaa
+row2   b|bbb|bbbb|bb
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :key_field => "ValueA", :fields => ["Id"], :type => :flat)
+      assert tsv.include? 'aa'
+    end
+  end
+
+  def test_flat_key_field
+    content =<<-EOF
+#: :type=:flat
+#Id    ValueA 
+row1   a   aa   aaa
+row2   b  bbb bbbb bb
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :key_field => "ValueA", :fields => ["Id"], :type => :flat)
+      assert tsv.include? 'aa'
     end
   end
 end

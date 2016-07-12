@@ -1,7 +1,7 @@
 require 'rbbt/util/cmd'
 module TSV
   class Parser
-    attr_accessor :stream, :filename, :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace, :first_line, :stream, :preamble, :identifiers
+    attr_accessor :stream, :filename, :header_hash, :sep, :sep2, :type, :key_position, :field_positions, :cast, :key_field, :fields, :fix, :select, :serializer, :straight, :take_all, :zipped, :namespace, :first_line, :stream, :preamble, :identifiers, :header_options
 
     class SKIP_LINE < Exception; end
     class END_PARSING < Exception; end
@@ -146,8 +146,12 @@ module TSV
         raise $!
       end
 
-      str = parts[key_position]
-      keys = str.split(@sep2, -1)
+      if key_position and key_position != 0 and @header_options[:type] == :flat
+        keys = parts[1..-1]
+      else
+        str = parts[key_position]
+        keys = str.split(@sep2, -1)
+      end
 
       if @take_all
         values = parts.collect{|e| e.split(@sep2, -1) }.flatten
@@ -391,9 +395,9 @@ module TSV
       @stream = stream
 
 
-      header_options = parse_header(stream)
+      @header_options = parse_header(stream)
 
-      options = header_options.merge options
+      options = @header_options.merge options
 
       @type ||= Misc.process_options(options, :type) || :double
       @type ||= :double
@@ -435,7 +439,7 @@ module TSV
           self.instance_eval do alias add_to_data add_to_data_no_merge_double end
         end
       when :single
-        if header_options[:type] == :flat
+        if @header_options[:type] == :flat
           self.instance_eval do alias get_values get_values_single_from_flat end
           self.instance_eval do alias cast_values cast_values_single end
           self.instance_eval do alias add_to_data add_to_data_no_merge_double end
@@ -448,6 +452,7 @@ module TSV
         self.instance_eval do alias get_values get_values_list end
         self.instance_eval do alias cast_values cast_values_list end
         self.instance_eval do alias add_to_data add_to_data_no_merge_list end
+
       when :flat
         @take_all = true if field_positions.nil?
         self.instance_eval do alias cast_values cast_values_flat end
@@ -460,11 +465,11 @@ module TSV
             self.instance_eval do alias add_to_data add_to_data_flat_merge_double end
           end
         else
-          self.instance_eval do alias get_values get_values_flat end
+          self.instance_eval do alias get_values get_values_flat_merge end
           if key_position and key_position != 0 and field_positions.nil?
-            self.instance_eval do alias add_to_data add_to_data_flat_keys end
+            self.instance_eval do alias add_to_data add_to_data_flat_merge_keys end
           else
-            self.instance_eval do alias add_to_data add_to_data_flat end
+            self.instance_eval do alias add_to_data add_to_data_flat_merge_double end
           end
         end
       else

@@ -1,3 +1,6 @@
+gem "test-unit", "~> 3.0"
+gem "minitest", "~> 5.5"
+
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 
