@@ -74,22 +74,30 @@ module Misc
 
       ConcurrentStream.setup sout, :pids => [pid]
     else
+
+
+      ConcurrentStream.setup sin, :pair => sout
+
       thread = Thread.new(Thread.current) do |parent|
         begin
           
           yield sin
-          sin.close if close and not sin.closed?
+
+          sin.close if close and not sin.closed? and not sin.aborted?
 
         rescue Aborted
           Log.medium "Aborted open_pipe: #{$!.message}"
         rescue Exception
           Log.medium "Exception in open_pipe: #{$!.message}"
+          Log.exception $!
           parent.raise $!
           raise $!
         end
       end
 
-      ConcurrentStream.setup sout, :threads => [thread]
+
+      sin.threads = [thread]
+      ConcurrentStream.setup sout, :threads => [thread], :pair => sin
     end
 
     sout
@@ -171,7 +179,7 @@ module Misc
                 skip[i] = true
               end unless skip[i] 
             end
-        end
+          end
         rescue IOError
         end
 
@@ -199,6 +207,12 @@ module Misc
 
     out_pipes.each do |sout|
       ConcurrentStream.setup sout, :threads => splitter_thread, :filename => filename
+    end
+
+    abort_callback = Proc.new do
+      out_pipes.each do |s|
+        s.abort if s.respond_to? :abort
+      end
     end
 
     out_pipes
@@ -261,7 +275,7 @@ module Misc
 
       begin
         into = into.find if Path === into
-        into = Open.open(into, :mode => 'w') if String === into 
+        into_path, into = into, Open.open(into, :mode => 'w') if String === into 
         into.sync = true if IO === into
         into_close = false unless into.respond_to? :close
         io.sync = true
@@ -281,11 +295,13 @@ module Misc
       rescue Aborted
         Log.medium "Consume stream aborted #{Misc.fingerprint io}"
         io.abort if io.respond_to? :abort
-        io.close unless io.closed?
+        #io.close unless io.closed?
+        FileUtils.rm into_path if into_path and File.exists? into_path
       rescue Exception
         Log.medium "Exception consuming stream: #{Misc.fingerprint io}: #{$!.message}"
-        io.abort if io.respond_to? :abort
-        io.close unless io.closed?
+        io.abort $! if io.respond_to? :abort
+        #io.close unless io.closed?
+        FileUtils.rm into_path if into_path and File.exists? into_path
         raise $!
       end
     end
@@ -372,7 +388,6 @@ module Misc
           Open.rm path if File.exist? path
         rescue Exception
           Log.medium "Exception in sensiblewrite: [#{Process.pid}] #{$!.message} -- #{ Log.color :blue, path }"
-          Log.exception $!
           content.abort if content.respond_to? :abort
           Open.rm path if File.exist? path
           raise $!

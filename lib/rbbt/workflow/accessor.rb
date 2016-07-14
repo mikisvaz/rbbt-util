@@ -304,7 +304,6 @@ class Step
   end
 
   def exception(ex, msg = nil)
-    self._abort
     ex_class = ex.class.to_s
     set_info :backtrace, ex.backtrace
     set_info :exception, {:class => ex_class, :message => ex.message, :backtrace => ex.backtrace}
@@ -313,6 +312,7 @@ class Step
     else
       log :error, "#{msg} -- #{ex.message}"
     end
+    self._abort
   end
 
   def started?
@@ -678,7 +678,8 @@ module Workflow
                 if rec_dependency.streaming? and rec_dependency.running?
                   _inputs[i] = rec_dependency.join.load
                 else
-                  rec_dependency.run(true).join
+                  rec_dependency.run(true)
+                  rec_dependency.join
                   _inputs[i] = rec_dependency.load
                 end
               end

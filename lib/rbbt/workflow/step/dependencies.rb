@@ -202,9 +202,12 @@ class Step
       Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{path}", :respawn => :always) do |dep|
         Misc.insist do
           begin
-            dep.produce
-          rescue
+            dep.produce 
+          rescue Aborted
             dep.abort
+            raise $!
+          rescue Exception
+            dep.exception $!
             raise $!
           end
         end
@@ -315,7 +318,7 @@ class Step
 
   def stop_dependencies
     dependencies.each do |dep|
-      dep.abort
+      dep.abort unless dep.done? or dep.aborted?
     end
     kill_children
   end

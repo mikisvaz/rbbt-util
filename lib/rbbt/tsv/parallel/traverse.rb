@@ -76,6 +76,9 @@ module TSV
       tsv.through options[:key_field], options[:fields] do |k,v|
         begin
           callback.call yield(k,v)
+        rescue Exception
+          Log.exception $!
+          raise $!
         ensure
           bar.tick if bar
         end
@@ -202,12 +205,19 @@ module TSV
 
     if callback
       bar.init if bar
+      exception = nil
+      begin
       TSV::Parser.traverse(io, options) do |k,v|
         begin
           callback.call yield k, v
-        ensure
-          bar.tick if bar
+        rescue Exception
+          exception = $!
+          raise $!
         end
+        bar.tick if bar
+      end
+      ensure
+        raise exception if exception
       end
     else
       options[:monitor] = bar
@@ -291,36 +301,24 @@ module TSV
       end
     rescue IOError
       Log.low{"IOError traversing #{stream_name(obj)}: #{$!.message}"}
-      stream = obj_stream(obj)
-      stream.abort if stream and stream.respond_to? :abort
-      stream = obj_stream(options[:into])
-      stream.abort if stream.respond_to? :abort
+      abort_stream obj
+      abort_stream options[:into], $!
       raise $!
     rescue Errno::EPIPE
       Log.low{"Pipe closed while traversing #{stream_name(obj)}: #{$!.message}"}
-      stream = obj_stream(obj)
-      stream.abort if stream and stream.respond_to? :abort
-      stream = obj_stream(options[:into])
-      stream.abort if stream.respond_to? :abort
+      abort_stream obj
+      abort_stream options[:into], $!
       raise $!
     rescue Aborted
       Log.low{"Aborted traversing #{stream_name(obj)}"}
-      stream = obj_stream(obj)
-      stream.abort if stream and stream.respond_to? :abort
-      stream = obj_stream(options[:into])
-      stream.abort if stream.respond_to? :abort
-      Log.low{"Aborted traversing 2 #{stream_name(obj)}"}
+      abort_stream obj
+      abort_stream options[:into], $!
+      raise $!
     rescue Exception
       Log.low{"Exception traversing #{stream_name(obj)}"}
-      begin
-        stream = obj_stream(obj)
-        stream.abort if stream and stream.respond_to? :abort
-        stream = obj_stream(options[:into])
-        stream.abort if stream.respond_to? :abort
-      rescue Exception
-      ensure
-        raise $!
-      end
+      abort_stream obj
+      abort_stream options[:into], $!
+      raise $!
     end
   end
 
@@ -437,12 +435,11 @@ module TSV
       true
     rescue Aborted, Interrupt
       Log.low "Aborted storing into #{Misc.fingerprint store}"
-      stream = obj_stream(store)
-      stream.abort if stream.respond_to? :abort
+      abort_stream(store, $!)
+      raise $!
     rescue Exception
       Log.low "Exception storing into #{Misc.fingerprint store}: #{$!.message}"
-      stream = obj_stream(store)
-      stream.abort if stream.respond_to? :abort
+      abort_stream(store, $!)
       raise $!
     end
   end
@@ -503,20 +500,19 @@ module TSV
   end
 
   def self.traverse_stream(obj, threads = nil, cpus = nil, options = {}, &block)
-    into = options[:into]
+    into = options[:into]        
+
     thread = Thread.new(Thread.current) do |parent|
       begin
         traverse_run(obj, threads, cpus, options, &block)
-        into.close if into.respond_to?(:close) and not (into.respond_to? :closed? and into.closed?)
+        into.close if into.respond_to?(:close) and not (into.respond_to? :closed? and into.closed?) 
       rescue Exception
-        stream = obj_stream(obj)
-        stream.abort if stream and stream.respond_to? :abort
-        stream = obj_stream(into)
-        stream.abort if stream and stream.respond_to? :abort
+        abort_stream obj
         parent.raise $!
         raise $!
       end
     end
+
     ConcurrentStream.setup(obj_stream(into), :threads => thread)
   end
 
@@ -529,8 +525,13 @@ module TSV
         begin
           traverse(obj, options.merge(:into => sin), &block)                                                                                                                                  
         rescue Exception
-          sout.abort if sout.respond_to? :abort
-          sout.join if sout.respond_to? :join
+          Log.exception $!
+          begin
+            sout.abort if sout.respond_to? :abort
+            sout.join if sout.respond_to? :join
+          ensure
+            raise $!
+          end
         end
       end                                                                                                                                                                                   
       return sout
@@ -598,15 +599,11 @@ module TSV
           store_into into, e
         rescue Aborted
           Log.low "Aborted callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
-          stream = nil
-          stream = get_stream obj
-          stream.abort if stream.respond_to? :abort
+          abort_stream(into, $!)
           raise $!
         rescue Exception
           Log.low "Exception callback #{stream_name(obj)} #{Log.color :green, "->"} #{stream_name(options[:into])}"
-          stream = nil
-          stream = get_stream obj
-          stream.abort if stream.respond_to? :abort
+          abort_stream(into, $!)
           raise $!
         ensure
           bar.tick if bar
@@ -614,12 +611,17 @@ module TSV
       end
 
       bar.init if bar
-      case into
-      when TSV::Dumper, IO
-        traverse_stream(obj, threads, cpus, options, &block)
-      else
-        traverse_run(obj, threads, cpus, options, &block)
-        into.close if into.respond_to?(:close) and not (into.respond_to? :closed and into.closed?)
+      begin
+        case into
+        when TSV::Dumper, IO
+          traverse_stream(obj, threads, cpus, options, &block)
+        else
+          traverse_run(obj, threads, cpus, options, &block)
+        end
+      rescue Exception
+        Log.exception $!
+        abort_stream(into, $!)
+        raise $!
       end
 
       into

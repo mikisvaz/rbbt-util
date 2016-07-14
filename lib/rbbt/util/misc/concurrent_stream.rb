@@ -1,8 +1,16 @@
+module AbortedStream
+  attr_accessor :exception
+  def self.setup(obj, exception = nil)
+    obj.extend AbortedStream
+    obj.exception = exception
+  end
+end
+
 module ConcurrentStream
-  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :aborted, :autojoin, :lockfile, :no_fail
+  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :aborted, :autojoin, :lockfile, :no_fail, :pair, :thread
 
   def self.setup(stream, options = {}, &block)
-    threads, pids, callback, filename, autojoin, lockfile, no_fail = Misc.process_options options, :threads, :pids, :callback, :filename, :autojoin, :lockfile, :no_fail
+    threads, pids, callback, abort_callback, filename, autojoin, lockfile, no_fail, pair = Misc.process_options options, :threads, :pids, :callback, :abort_callback, :filename, :autojoin, :lockfile, :no_fail, :pair
     stream.extend ConcurrentStream unless ConcurrentStream === stream
 
     stream.threads ||= []
@@ -12,20 +20,38 @@ module ConcurrentStream
     stream.autojoin = autojoin
     stream.no_fail = no_fail
 
+    stream.pair = pair if pair
+
     callback = block if block_given?
-    if stream.callback and callback
-      old_callback = stream.callback
-      stream.callback = Proc.new do
-        old_callback.call
-        callback.call
+    if callback
+      if stream.callback
+        old_callback = stream.callback
+        stream.callback = Proc.new do
+          old_callback.call
+          callback.call
+        end
+      else
+        stream.callback = callback 
       end
-    else
-      stream.callback = callback
+    end
+
+    if abort_callback
+      if stream.abort_callback
+        old_abort_callback = stream.abort_callback
+        stream.abort_callback = Proc.new do
+          old_abort_callback.call
+          abort_callback.call
+        end
+      else
+        stream.abort_callback = abort_callback 
+      end
     end
 
     stream.filename = filename unless filename.nil?
 
     stream.lockfile = lockfile if lockfile
+
+    stream.aborted = false
 
     stream
   end
@@ -52,7 +78,6 @@ module ConcurrentStream
       @threads.each do |t| 
         next if t == Thread.current
         begin
-          #t.join if t.status == 'run'
           t.join unless FalseClass === t.status 
         rescue Exception
           Log.warn "Exception joining thread in ConcurrenStream: #{filename}"
@@ -97,12 +122,11 @@ module ConcurrentStream
   end
 
   def abort_threads(exception)
-    Log.medium "Aborting threads (#{Thread.current.inspect}) #{@threads.collect{|t| t.inspect } * ", "}"
+    Log.low "Aborting threads (#{Thread.current.inspect}) #{@threads.collect{|t| t.inspect } * ", "}"
 
     @threads.each do |t| 
-      @aborted = false if t == Thread.current
       next if t == Thread.current
-      Log.medium "Aborting thread #{t.inspect}"
+      Log.low "Aborting thread #{t.inspect}"
       t.raise exception ? exception : Aborted.new 
     end if @threads
 
@@ -112,18 +136,17 @@ module ConcurrentStream
       if t.alive? 
         sleep 1 unless sleeped
         sleeped = true
-        Log.medium "Kill thread #{t.inspect}"
+        Log.low "Kill thread #{t.inspect}"
         t.kill
       end
       begin
-        Log.medium "Join thread #{t.inspect}"
+        Log.low "Join thread #{t.inspect}"
         t.join unless t == Thread.current
       rescue Aborted
       rescue Exception
-        Log.exception $!
+        Log.warn "Thread exception: #{$!.message}"
       end
     end
-    Log.medium "Aborted threads (#{Thread.current.inspect}) #{@threads.collect{|t| t.inspect } * ", "}"
   end
 
   def abort_pids
@@ -137,21 +160,31 @@ module ConcurrentStream
   end
 
   def abort(exception = nil)
-    return if @aborted
-    Log.medium "Aborting stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"
+    if @aborted
+      Log.medium "YET aborted stream #{Misc.fingerprint self} [#{@aborted}]"
+      return
+    else
+      Log.medium "Aborting stream #{Misc.fingerprint self} [#{@aborted}]"
+    end
+    AbortedStream.setup(self, exception)
     @aborted = true 
     begin
-      @callback = nil
-      @abort_callback.call if @abort_callback
-      @abort_callback = nil
-      close unless closed?
+      @abort_callback.call exception if @abort_callback
 
       abort_threads(exception)
       abort_pids
+
+      @callback = nil
+      @abort_callback = nil
+
+      @pair.abort exception if @pair
+
+      close unless closed?
     ensure
-      lockfile.unlock if lockfile and lockfile.locked?
+      if lockfile and lockfile.locked?
+        lockfile.unlock 
+      end
     end
-    Log.medium "Aborted stream #{Misc.fingerprint self} -- #{@abort_callback} [#{@aborted}]"
   end
 
   def super(*args)

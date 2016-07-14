@@ -58,6 +58,23 @@ module TSV
     end
   end
 
+  def self.abort_stream(file, exception = nil)
+    return if file.nil?
+    if Step === file
+      if exception
+        file.exception exception 
+      else
+        if not (file.aborted? or file.done?)
+          file.abort 
+        end
+      end
+    else
+      stream = get_stream(file)
+      stream.abort(exception) if stream.respond_to? :abort
+      stream.extend AbortedStream
+    end
+  end
+
   def self.get_stream(file, open_options = {})
     case file
     when Zlib::GzipReader

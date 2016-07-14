@@ -159,7 +159,15 @@ class Step
 
           if stream
             log :streaming, "Streaming step #{Log.color :yellow, task.name.to_s || ""}"
-            ConcurrentStream.setup stream do
+
+            callback = Proc.new do
+              if AbortedStream === stream
+                if stream.exception
+                  raise stream.exception 
+                else
+                  raise Aborted
+                end
+              end
               begin
                 if status != :done
                   Misc.insist do
@@ -177,14 +185,29 @@ class Step
                 FileUtils.rm pid_file if File.exist?(pid_file)
               end
             end
-            stream.abort_callback = Proc.new do
+
+            abort_callback = Proc.new do |exception|
               begin
-                log :aborted, "#{Log.color :red, "Aborted"} step #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
+                if exception
+                  self.exception exception
+                else
+                  log :aborted, "#{Log.color :red, "Aborted"} step #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
+                end
+                _clean_finished
               rescue
                 Log.exception $!
                 stop_dependencies
                 FileUtils.rm pid_file if File.exist?(pid_file)
               end
+            end
+
+            ConcurrentStream.setup stream, :callback => callback, :abort_callback => abort_callback
+
+            if AbortedStream === stream 
+              exception = stream.exception || Aborted
+              self.exception exception
+              _clean_finished
+              raise exception
             end
           else
             set_info :done, (done_time = Time.now)
@@ -314,8 +337,7 @@ class Step
   end
 
   def abort_stream
-    stream = get_stream if @result
-    stream ||= @saved_stream 
+    stream = @result if IO === @result
     @saved_stream = nil
     if stream and stream.respond_to? :abort and not stream.aborted?
       begin
@@ -326,6 +348,17 @@ class Step
         Log.medium "Aborting job stream #{stream.inspect} ABORTED RETRY -- #{Log.color :blue, path}"
         Log.exception $!
         retry
+      end
+    end
+  end
+
+  def _clean_finished
+    if Open.exists? path
+      Log.warn "Aborted job had finished. Removing result -- #{ path }"
+      begin
+        Open.rm path
+      rescue Exception
+        Log.warn "Exception removing result of aborted job: #{$!.message}"
       end
     end
   end
@@ -346,14 +379,7 @@ class Step
       Log.exception $!
       retry
     ensure
-      if Open.exists? path
-        Log.warn "Aborted job had finished. Removing result -- #{ path }"
-        begin
-          Open.rm path
-        rescue Exception
-          Log.warn "Exception removing result of aborted job: #{$!.message}"
-        end
-      end
+      _clean_finished
     end
   end
 
@@ -371,9 +397,8 @@ class Step
         Misc.consume_stream stream 
         stream.join if stream.respond_to? :join
       rescue Exception
-        stream.abort
+        stream.abort $!
         self._abort
-        raise $!
       end
     end
   end
@@ -403,6 +428,7 @@ class Step
     return self if not Open.exists? info_file
 
     return self if info[:joined]
+
     pid = @pid 
 
     Misc.insist [0.1, 0.2, 0.5, 1] do
@@ -410,6 +436,7 @@ class Step
     end
 
     begin
+
       if pid.nil? or Process.pid == pid
         dependencies.each{|dep| dep.join }
       else
@@ -422,7 +449,9 @@ class Step
         pid = nil
         dependencies.each{|dep| dep.join }
       end
+
       sleep 1 until path.exists? or error? or aborted?
+
       self
     ensure
       set_info :joined, true

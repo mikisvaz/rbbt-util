@@ -217,9 +217,14 @@ module Persist
       end
     end
     ConcurrentStream.setup(out, :threads => saver_thread, :filename => path)
+
     out.callback = callback
     out.abort_callback = abort_callback
     out.lockfile = stream.lockfile if stream.respond_to? :lockfile and stream.lockfile
+
+    stream.callback = callback
+    stream.abort_callback = abort_callback
+
     out
   end
 
@@ -239,8 +244,8 @@ module Persist
 
         # This is to avoid calling the callbacks twice, since they have been
         # moved to the new 'res' stream
-        stream.callback = nil
-        stream.abort_callback = nil
+        #stream.callback = nil
+        #stream.abort_callback = nil
 
         res = tee_stream(stream, path, type, callback, abort_callback, lockfile)
 

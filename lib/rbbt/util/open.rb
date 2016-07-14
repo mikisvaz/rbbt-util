@@ -126,13 +126,14 @@ module Open
   # Grep
   
   def self.grep(stream, grep, invert = false)
+    grep_cmd = 'egrep'
     case 
     when Array === grep
       TmpFile.with_file(grep * "\n", false) do |f|
-        CMD.cmd("grep #{invert ? '-v' : ''}", "-w" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
+        CMD.cmd("#{grep_cmd} #{invert ? '-v' : ''}", "-w" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
       end
     else
-      CMD.cmd("grep #{invert ? '-v ' : ''} '#{grep}' -", :in => stream, :pipe => true, :post => proc{begin stream.force_close; rescue Exception; end if stream.respond_to?(:force_close)})
+      CMD.cmd("#{grep_cmd} #{invert ? '-v ' : ''} '#{grep}' -", :in => stream, :pipe => true, :post => proc{begin stream.force_close; rescue Exception; end if stream.respond_to?(:force_close)})
     end
   end
 
