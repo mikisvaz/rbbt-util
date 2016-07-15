@@ -18,6 +18,7 @@ module Log
       @depth = depth
       @desc = desc.nil? ? "Progress" : desc.gsub(/\n/,' ')
       @file = file
+      @bytes = bytes
     end
 
     def percent
