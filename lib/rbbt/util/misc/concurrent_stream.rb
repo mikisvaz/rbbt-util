@@ -10,6 +10,7 @@ module ConcurrentStream
   attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :aborted, :autojoin, :lockfile, :no_fail, :pair, :thread
 
   def self.setup(stream, options = {}, &block)
+    
     threads, pids, callback, abort_callback, filename, autojoin, lockfile, no_fail, pair = Misc.process_options options, :threads, :pids, :callback, :abort_callback, :filename, :autojoin, :lockfile, :no_fail, :pair
     stream.extend ConcurrentStream unless ConcurrentStream === stream
 
