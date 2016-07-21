@@ -25,7 +25,8 @@ end
 #{{{ INIT
 load_file Rbbt.etc['app.d/init.rb'].find
 
-$class_name = class_name = File.basename(FileUtils.pwd)
+$app_dir = FileUtils.pwd
+$app_name = class_name = File.basename($app_dir)
 $app = app = eval "class #{class_name} < Sinatra::Base; self end"
 
 #{{{ PRE
