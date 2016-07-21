@@ -58,7 +58,7 @@ Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
 doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore
 veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim
 ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia
-consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. 
+consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
 
 Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur,
 adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et
@@ -192,7 +192,7 @@ eum fugiat quo voluptas nulla pariatur?"
 
     stream1 = Misc.open_pipe(true) do |sin|
       t.times do |i|
-        sleep sleep_time 
+        sleep sleep_time
         sin.puts "LINE #{ i }"
       end
     end
@@ -228,7 +228,7 @@ eum fugiat quo voluptas nulla pariatur?"
 
     stream1 = Misc.open_pipe(true) do |sin|
       t.times do |i|
-        sleep sleep_time 
+        sleep sleep_time
         sin.puts "LINE #{ i }"
       end
     end
@@ -253,8 +253,8 @@ eum fugiat quo voluptas nulla pariatur?"
         lines1 << line.strip
       end
     end
-    
-    lines2 = [] 
+
+    lines2 = []
     th2 = Thread.new do
       while line = stream5.gets
         lines2 << line.strip
@@ -281,7 +281,7 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal('j', Misc.string2hash("a=b#c=d#:h='j'")[:h])
     assert_equal(:j, Misc.string2hash("a=b#c=d#:h=:j")[:h])
   end
-  
+
   def test_named_array
     a = NamedArray.setup([1,2,3,4], %w(a b c d))
     assert_equal(1, a['a'])
@@ -297,16 +297,16 @@ eum fugiat quo voluptas nulla pariatur?"
 
     hash = {:a => 1}
     assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
- 
+
     hash = {:a => true}
     assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
 
     hash = {:a => :b}
     assert_equal hash, Misc.string2hash(Misc.hash2string(hash))
- 
+
     hash = {:a => /test/}
     assert_equal({}, Misc.string2hash(Misc.hash2string(hash)))
- 
+
   end
 
   def test_merge
@@ -331,8 +331,8 @@ eum fugiat quo voluptas nulla pariatur?"
     TmpFile.with_file do |tmpfile|
       pids = []
       4.times do |i|
-        pids << Process.fork do 
-          status = Misc.lock(tmpfile) do 
+        pids << Process.fork do
+          status = Misc.lock(tmpfile) do
             pid = Process.pid.to_s
             Open.write(tmpfile, pid)
             sleep rand * 1
@@ -419,7 +419,7 @@ eum fugiat quo voluptas nulla pariatur?"
   end
 
   def test_fingerprint
-    assert_equal '{a=>1}', Misc.fingerprint({:a => 1})
+    assert_equal '{:a=>1}', Misc.fingerprint({:a => 1})
   end
 
   def test_tarize
