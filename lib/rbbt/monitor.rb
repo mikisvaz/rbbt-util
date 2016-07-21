@@ -10,16 +10,18 @@ module Rbbt
 
   SENSIBLE_WRITE_DIRS = Misc.sensiblewrite_dir.find_all
 
-  PERSIST_DIRS    = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all  
+  PERSIST_DIRS    = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all
 
   JOB_DIRS = Rbbt.var.jobs.find_all
+
+  MUTEX_FOR_THREAD_EXCLUSIVE = Mutex.new
 
   def self.dump_memory(file, obj = nil)
     Log.info "Dumping #{obj} objects into #{ file }"
     Thread.new do
       while true
         Open.write(file) do |f|
-          Thread.exclusive do
+          MUTEX_FOR_THREAD_EXCLUSIVE.synchronize do
             GC.start
             ObjectSpace.each_object(obj) do |o|
               f.puts "---"
@@ -60,9 +62,9 @@ module Rbbt
       lock_info[f] = {}
       begin
         lock_info[f].merge!(file_time(f))
-        if File.size(f) > 0 
+        if File.size(f) > 0
           info = Open.open(f) do |s|
-            YAML.load(s) 
+            YAML.load(s)
           end
           IndiferentHash.setup(info)
           lock_info[f][:pid] = info[:pid]
@@ -98,7 +100,7 @@ module Rbbt
   end
 
   # PERSISTS
-  
+
   def self.persists(dirs = PERSIST_DIRS)
     dirs.collect do |dir|
       next unless Open.exists? dir
@@ -200,7 +202,7 @@ module Rbbt
             job = f.sub(/\.(info|files)/,'')
 
           jobs[workflow][task][job] ||= {}
-          if jobs[workflow][task][job][:status].nil? 
+          if jobs[workflow][task][job][:status].nil?
             status = nil
             status = :done if Open.exists? job
             if status.nil? and f=~/\.info/
@@ -208,7 +210,7 @@ module Rbbt
                        Step::INFO_SERIALIAZER.load(Open.read(f, :mode => 'rb'))
                      rescue
                        {}
-                     end 
+                     end
             status = info[:status]
             pid = info[:pid]
             end
@@ -224,7 +226,7 @@ module Rbbt
 
   def self.load_lock(lock)
     begin
-      info = Misc.insist 3 do 
+      info = Misc.insist 3 do
         YAML.load(Open.read(lock))
       end
       info.values_at "pid", "ppid", "time"
