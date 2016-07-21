@@ -119,6 +119,8 @@ module Resource
     case
     when @resources.include?(path)
       type, content = @resources[path]
+    when @resources.include?(path.original)
+      type, content = @resources[path.original]
     when has_rake(path)
       type = :rake
       rake_dir, content = rake_for(path)

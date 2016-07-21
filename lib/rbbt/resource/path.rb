@@ -2,7 +2,7 @@ require 'rbbt/resource/util'
 require 'yaml'
 
 module Path
-  attr_accessor :resource, :pkgdir, :search_paths
+  attr_accessor :resource, :pkgdir, :search_paths, :original
 
   def self.setup(string, pkgdir = nil, resource = nil, search_paths = nil)
     return string if string.nil?
@@ -107,7 +107,7 @@ module Path
                      end
 
                      path = nil
-                     if where.nil?
+                     res = if where.nil?
                        STANDARD_SEARCH.each do |w| 
                          w = w.to_sym
                          next unless paths.include? w
@@ -152,6 +152,10 @@ module Path
 
                        self.annotate path
                      end
+
+                     res.original = self
+
+                     res
                    end
   end
 
