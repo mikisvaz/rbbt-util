@@ -37,7 +37,7 @@ class TestBgzf < Test::Unit::TestCase
   end
 
   def test_bgzip
-    assert File.exists?(Bgzf.bgzip_cmd)
+    assert File.exist?(Bgzf.bgzip_cmd)
     assert 'bgzip', File.basename(Bgzf.bgzip_cmd)
   end
 end
