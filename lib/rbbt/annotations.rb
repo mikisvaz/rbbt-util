@@ -69,7 +69,9 @@ module Annotated
   def info(masked = false)
 
     if @info.nil?
-      info = annotation_values.dup
+      annotation_values = self.annotation_values
+      annotation_values = annotation_values.dup unless annotation_values.nil?
+      info = annotation_values
       info[:annotation_types] = annotation_types
       info[:annotated_array] = true if AnnotatedArray === self
       @info = info

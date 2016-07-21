@@ -105,6 +105,7 @@ module Log
 
     def save
       info = {:start => @start, :last_time => @last_time, :last_count => @last_count, :last_percent => @last_percent, :desc => @desc, :ticks => @ticks, :max => @max, :mean => @mean}
+      info.delete_if{|k,v| v.nil?}
       Open.write(@file, info.to_yaml)
     end
 

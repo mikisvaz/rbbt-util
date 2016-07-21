@@ -182,8 +182,9 @@ module Misc
         end
       end
 
-      if defined? Annotated and Annotated === _v and not (defined? AssociationItem and AssociationItem === _v)
-        info = Annotated.purge(_v.info)
+      if _v and defined? Annotated and Annotated === _v and not (defined? AssociationItem and AssociationItem === _v)
+        info = _v.info
+        info = Annotated.purge(info)
         str << "_" << hash2md5(info) 
       end
     end
