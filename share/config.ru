@@ -26,8 +26,8 @@ end
 load_file Rbbt.etc['app.d/init.rb'].find
 
 $app_dir = FileUtils.pwd
-$app_name = class_name = File.basename($app_dir)
-$app = app = eval "class #{class_name} < Sinatra::Base; self end"
+$app_name = app_name = File.basename($app_dir)
+$app = app = eval "class #{app_name} < Sinatra::Base; self end"
 
 #{{{ PRE
 load_file Rbbt.etc['app.d/pre.rb'].find 
@@ -63,7 +63,7 @@ load_file Rbbt.etc['app.d/post.rb'].find_all
 load_file Rbbt.etc['app.d/preload.rb'].find_all
 
 #{{{ RUN
-$title = class_name
+$title = app_name
 require 'rack'
 use Rack::Deflater
 run app

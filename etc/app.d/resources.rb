@@ -16,4 +16,4 @@ end
 
 RbbtRESTHelpers.add_sass_load_path './www/views/compass'
 
-WorkflowRESTHelpers.workflow_resources.unshift(Path.setup(FileUtils.pwd.dup).www.views)
+WorkflowRESTHelpers.workflow_resources.unshift(Path.setup($app_dir).www.views) if $app_dir

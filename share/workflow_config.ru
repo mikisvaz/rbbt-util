@@ -38,8 +38,8 @@ if Rbbt.etc['target_workflow_exports'].exists?
 end
 
 $title = wf.to_s
-$class_name = class_name = wf.to_s + "REST"
-$app = app = eval "class #{class_name} < Sinatra::Base; self end"
+$app_name = app_name = wf.to_s + "REST"
+$app = app = eval "class #{app_name} < Sinatra::Base; self end"
 
 #{{{ PRE
 load_file Rbbt.etc['app.d/pre.rb'].find 
