@@ -197,6 +197,22 @@ row2 AAA
     assert_equal ["AA", "AAA"], tsv["row2"][0]
   end
 
+  def test_paste_stream_nohead
+    text1=<<-EOF
+row1\tA
+row2\tAA
+    EOF
+
+    text2=<<-EOF
+row2\tAAA
+    EOF
+
+    s1 = StringIO.new text1
+    s2 = StringIO.new text2
+    tsv = TSV.open TSV.paste_streams([s1,s2], :type => :double, :sort => false, :same_fields => true)
+    assert_equal ["AA", "AAA"], tsv["row2"][0]
+  end
+
   def test_flat2double
     text1=<<-EOF
 #: :sep= #:type=:flat

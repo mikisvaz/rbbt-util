@@ -315,6 +315,17 @@ class Step
     self._abort
   end
 
+  def recoverable_error?
+    return true if aborted?
+    return false unless error?
+    begin
+      klass = Kernel.const_get(info[:exception][:class])
+      not RbbtException === klass
+    rescue Exception
+      false
+    end
+  end
+
   def started?
     Open.exists?(path) or Open.exists?(pid_file)
   end
@@ -469,6 +480,8 @@ module Workflow
                :asynchronous
              when (exec_exports.include?(name.to_sym) or exec_exports.include?(name.to_s))
                :exec
+             when (stream_exports.include?(name.to_sym) or stream_exports.include?(name.to_s))
+               :stream
              else
                :none
              end
@@ -772,7 +785,7 @@ module Workflow
   end
 
   def task_exports
-    [exec_exports, synchronous_exports, asynchronous_exports].compact.flatten.uniq
+    [exec_exports, synchronous_exports, asynchronous_exports, stream_exports].compact.flatten.uniq
   end
 
 end

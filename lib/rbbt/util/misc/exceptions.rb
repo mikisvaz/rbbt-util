@@ -1,12 +1,13 @@
-class ParameterException < Exception; end
-class FieldNotFoundError < Exception;end
-class TryAgain < Exception; end
-class ClosedStream < Exception; end
+class RbbtException < StandardError; end
+class ParameterException < RbbtException; end
+class FieldNotFoundError < RbbtException;end
+class TryAgain < RbbtException; end
+class ClosedStream < RbbtException; end
 
-class ProcessFailed < Exception; end
-class Aborted < Exception; end
+class ProcessFailed < RbbtException; end
+class Aborted < RbbtException; end
 
-class RemoteServerError < Exception; end
+class RemoteServerError < RbbtException; end
 
 class DependencyError < Aborted
   def initialize(msg)
@@ -35,3 +36,11 @@ class KeepBar < Exception
     @payload = payload
   end
 end
+
+class StopInsist < Exception
+  attr_accessor :exception
+  def initialize(exception)
+    @exception = exception
+  end
+end
+

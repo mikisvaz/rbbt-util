@@ -94,7 +94,7 @@ class Step
 
     begin
       @mutex.synchronize do
-        no_load = no_load ? :stream : false
+        no_load = :stream if no_load
         result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load do 
           if Step === Step.log_relay_step and not self == Step.log_relay_step
             relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
@@ -180,7 +180,6 @@ class Step
               rescue
                 Log.exception $!
               ensure
-                join
                 Step.purge_stream_cache
                 FileUtils.rm pid_file if File.exist?(pid_file)
               end
@@ -255,24 +254,41 @@ class Step
 
     clean if dirty? or (not running? and not done?)
 
-    run(:stream) unless started?
+    no_load = :stream
+    run(false) unless started?
 
     join unless done?
 
     self
   end
 
-  def fork(semaphore = nil)
+  def fork(no_load = false, semaphore = nil)
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil? and not Process.pid == @pid and Misc.pid_exists?(@pid) and not done? and info[:forked]
+    sout, sin = Misc.pipe if no_load == :stream
     @pid = Process.fork do
+      sout.close if sout
       Misc.pre_fork
       begin
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         FileUtils.mkdir_p File.dirname(path) unless File.exist? File.dirname(path)
         begin
           @forked = true
-          res = run true
+          res = run no_load
           set_info :forked, true
+          if sin
+            io = TSV.get_stream res
+            if io.respond_to? :setup
+              io.setup(sin) 
+              sin.pair = io
+              io.pair = sin
+            end
+            begin
+              Misc.consume_stream(io, false, sin)
+            rescue 
+              Log.warn "Could not consume stream (#{io.closed? ? 'closed' : 'open'}) into pipe for forked job: #{self.path}"
+              Misc.consume_stream(io) unless io.closed?
+            end
+          end
         rescue Aborted, Interrupt
           Log.debug{"Forked process aborted: #{path}"}
           log :aborted, "Job aborted (#{Process.pid})"
@@ -309,6 +325,8 @@ class Step
         Kernel.exit! 0
       end
     end
+    sin.close if sin
+    @result = sout if sout 
     Process.detach(@pid)
     self
   end

@@ -19,6 +19,7 @@ class WorkflowSOAP < SimpleWS
     @workflow = workflow
     @workflow.synchronous_exports.each do |name| synchronous name end
     @workflow.asynchronous_exports.each do |name| asynchronous name end
+    @workflow.stream_exports.each do |name| asynchronous name end
 
     desc "Job management: Check the status of a job"
     param_desc :jobid => "Job identifier", :return => "Status code. Special status codes are: 'done' and 'error'"

@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
@@ -17,12 +16,16 @@ $ rbbt workflow server [options] <Workflow>
 -p--port* TCP port
 -s--server* Server type:  thin, webrick, unicorn, etc
 -f--finder Start server with finder functionality
--R--Rserve_session* Rserve session to use, otherwise start new one
+-RS--Rserve_session* Rserve session to use, otherwise start new one
 -wd--workdir* Change the working directory of the workflow
 -W--workflows* List of additional workflows to load
 --views* Directory with view templates
 --stream Activate streaming of workflow tasks
---export* Export workflow tasks 
+--export* Export workflow tasks (asynchronous)
+--export_asynchronous* Export workflow tasks as asynchronous
+--export_synchronous* Export workflow tasks as synchronous
+--export_exec* Export workflow tasks as exec
+--export_stream* Export workflow tasks as stream
 --options* Additional options for server (e.g. option1=value1;option2=value2)
 EOF
 
@@ -54,12 +57,22 @@ ENV["RServe-session"] = options[:RServe_session] || workflow
 server = options[:server] || 'puma'
 
 exports = options[:export].split(/\s*,/) if options[:export]
+stream_exports = options[:export_stream].split(/\s*,/) if options[:export_stream]
+async_exports = options[:export_asynchronous].split(/\s*,/) if options[:export_asynchronous]
+sync_exports = options[:export_synchronous].split(/\s*,/) if options[:export_synchronous]
+exec_exports = options[:export_exec].split(/\s*,/) if options[:export_exec]
 
 TmpFile.with_file do |app_dir|
   Misc.in_dir(app_dir) do
     app_dir = Path.setup(app_dir.dup)
     Open.write(app_dir.etc.target_workflow.find, workflow)
+
     Open.write(app_dir.etc.target_workflow_exports.find, exports * "\n") if exports
+    Open.write(app_dir.etc.target_workflow_stream_exports.find, stream_exports * "\n") if stream_exports
+    Open.write(app_dir.etc.target_workflow_async_exports.find, async_exports * "\n") if async_exports
+    Open.write(app_dir.etc.target_workflow_sync_exports.find, sync_exports * "\n") if sync_exports
+    Open.write(app_dir.etc.target_workflow_exec_exports.find, exec_exports * "\n") if exec_exports
+
     Open.write(app_dir.etc.workflows.find, workflows.split(/,\s/)*"\n") if workflows 
 
     require 'rack'

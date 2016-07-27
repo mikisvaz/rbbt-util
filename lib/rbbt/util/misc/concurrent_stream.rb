@@ -104,7 +104,11 @@ module ConcurrentStream
 
   def join_callback
     if @callback and not joined?
-      @callback.call
+      begin
+        @callback.call
+      rescue Exception
+        Log.exception $!
+      end
       @callback = nil
     end
   end
@@ -162,7 +166,7 @@ module ConcurrentStream
 
   def abort(exception = nil)
     if @aborted
-      Log.medium "YET aborted stream #{Misc.fingerprint self} [#{@aborted}]"
+      Log.medium "Already aborted stream #{Misc.fingerprint self} [#{@aborted}]"
       return
     else
       Log.medium "Aborting stream #{Misc.fingerprint self} [#{@aborted}]"

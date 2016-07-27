@@ -530,4 +530,21 @@ eum fugiat quo voluptas nulla pariatur?"
     assert Misc.match_value("15", [14, 15, 25])
     assert ! Misc.match_value("15", [14, 25])
   end
+
+  def __test_bench_log
+    Log.severity = 1
+    Misc.benchmark(1000) do
+      Log.info { "Hola" }
+    end
+    Misc.benchmark(1000) do
+      Log.debug { "Hola" }
+    end
+    Misc.benchmark(1000) do
+      Log.debug  "Hola" 
+    end
+    p = Misc.pipe
+    Misc.benchmark(1000) do
+      Log.debug  "Hola #{[p.first.inspect, p.last.inspect] * "=>"}" 
+    end
+  end
 end

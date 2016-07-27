@@ -108,8 +108,13 @@ module TSV
         StringIO.new file
       end
     when (defined? Step and Step)
-      if file.respond_to?(:base_url) and file.result
-        file.result
+      if file.respond_to?(:base_url) 
+        if file.result and IO === file.result
+          file.result
+        else
+          file.join
+          get_stream(file.path, open_options.merge(:nocache => true))
+        end
       else
         file.grace
         stream = file.get_stream

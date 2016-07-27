@@ -249,7 +249,7 @@ module Persist
 
         res = tee_stream(stream, path, type, callback, abort_callback, lockfile)
 
-        res.lockfile = lockfile
+        #res.lockfile = lockfile
 
         raise KeepLocked.new res 
       else

@@ -74,6 +74,15 @@ Returns numer * 2 lines containing TEST
     dependencies.collect{|d| d.load } * ":"
   end
 
+  task :stream => :array do
+    Misc.open_pipe do |sin|
+      5.times do |i|
+        sin.puts "line #{ i }"
+        sleep 1
+      end
+    end
+  end
+
 
 
 end
@@ -151,5 +160,20 @@ class TestWorkflow < Test::Unit::TestCase
     job = TestWF.job(:two_letters, nil, :letter => "V")
     assert_equal "V:AA", job.run
   end
+
+  def __test_stream
+    io = TestWF.job(:stream).run(:stream)
+    Misc.consume_stream(TSV.get_stream(io), false, STDOUT)
+    nil
+  end
+
+  def __test_fork_stream
+    job = TestWF.job(:stream)
+    job.clean
+    io = job.fork(:stream)
+    Misc.consume_stream(TSV.get_stream(io), false, STDOUT)
+    nil
+  end
+
 
 end

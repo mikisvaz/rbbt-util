@@ -30,13 +30,6 @@ require Rbbt.etc['app.d/init.rb'].find
 workflow = Rbbt.etc['target_workflow'].read
 wf = Workflow.require_workflow workflow, true
 
-if Rbbt.etc['target_workflow_exports'].exists?
-  exports = Rbbt.etc['target_workflow_exports'].read.split("\n")
-  exports.each do |task|
-    wf.export task.to_sym
-  end
-end
-
 $title = wf.to_s
 $app_name = app_name = wf.to_s + "REST"
 $app = app = eval "class #{app_name} < Sinatra::Base; self end"
@@ -79,6 +72,41 @@ load_file Rbbt.etc['app.d/post.rb'].find_all
 
 #{{{ PRELOAD
 load_file Rbbt.etc['app.d/preload.rb'].find_all
+
+if Rbbt.etc['target_workflow_exports'].exists?
+  exports = Rbbt.etc['target_workflow_exports'].read.split("\n")
+  exports.each do |task|
+    wf.export task.to_sym
+  end
+end
+
+if Rbbt.etc['target_workflow_stream_exports'].exists?
+  exports = Rbbt.etc['target_workflow_stream_exports'].read.split("\n")
+  exports.each do |task|
+    wf.export_stream task.to_sym
+  end
+end
+
+if Rbbt.etc['target_workflow_async_exports'].exists?
+  exports = Rbbt.etc['target_workflow_async_exports'].read.split("\n")
+  exports.each do |task|
+    wf.export_asynchronous task.to_sym
+  end
+end
+
+if Rbbt.etc['target_workflow_sync_exports'].exists?
+  exports = Rbbt.etc['target_workflow_sync_exports'].read.split("\n")
+  exports.each do |task|
+    wf.export_synchronous task.to_sym
+  end
+end
+
+if Rbbt.etc['target_workflow_exec_exports'].exists?
+  exports = Rbbt.etc['target_workflow_exec_exports'].read.split("\n")
+  exports.each do |task|
+    wf.export_exec task.to_sym
+  end
+end
 
 #{{{ RUN
 require 'rack'

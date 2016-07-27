@@ -192,6 +192,7 @@ the job dependencies recursively.
 --provenance Report the jobs provenance
 -W--workflows* Load a list of workflows
 -R--requires* Require a list of files
+-rwt--remote_workflow_tasks* Load a yaml file describing remote workflow tasks
 EOF
 
 workflow = ARGV.shift
@@ -237,6 +238,13 @@ if options[:requires]
     require req
   end
 end
+
+if options[:remote_workflow_tasks]
+  yaml_text = Open.read(options[:remote_workflow_tasks])
+  remote_workflow_tasks = YAML.load(yaml_text)
+  Workflow.process_remote_tasks(remote_workflow_tasks)
+end
+
 # Set task
 namespace = nil, nil
 
@@ -354,6 +362,7 @@ begin
 
   if options.delete(:printpath)
     job.join
+    raise job.messages.last if job.error?
     if Open.remote? job.path
       puts job.url + Log.color(:blue, "?_format=raw")
     else

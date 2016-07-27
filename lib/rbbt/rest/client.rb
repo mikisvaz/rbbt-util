@@ -11,7 +11,7 @@ require 'rbbt/rest/client/step'
 class WorkflowRESTClient 
   include Workflow
 
-  attr_accessor :url, :name, :exec_exports, :asynchronous_exports, :synchronous_exports
+  attr_accessor :url, :name, :exec_exports, :synchronous_exports, :asynchronous_exports, :stream_exports
 
   def initialize(url, name)
     Log.debug{ "Loading remote workflow #{ name }: #{ url }" }
@@ -45,7 +45,7 @@ class WorkflowRESTClient
 
     
     stream_input = @can_stream ? task_info(task)[:input_options].select{|k,o| o[:stream] }.collect{|k,o| k }.first : nil
-    RemoteStep.new(url, task, name, fixed_inputs, task_info[:result_type], task_info[:result_description], @exec_exports.include?(task), stream_input)
+    RemoteStep.new(url, task, name, fixed_inputs, task_info[:result_type], task_info[:result_description], @exec_exports.include?(task), @stream_exports.include?(task), stream_input)
   end
 
   def load_id(id)

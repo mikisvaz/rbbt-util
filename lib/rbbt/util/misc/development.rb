@@ -146,6 +146,8 @@ def self.add_libdir(dir=nil)
     rescue TryAgain
       sleep sleep
       retry
+    rescue StopInsist
+      raise $!.exception
     rescue Aborted, Interrupt
       if msg
         Log.warn("Not Insisting after Aborted: #{$!.message} -- #{msg}")

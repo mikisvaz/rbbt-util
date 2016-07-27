@@ -23,12 +23,14 @@ module Misc
   OPEN_PIPE_IN = []
   def self.pipe
     OPEN_PIPE_IN.delete_if{|pipe| pipe.closed? }
-    PIPE_MUTEX.synchronize do
+    res = PIPE_MUTEX.synchronize do
       sout, sin = IO.pipe
       OPEN_PIPE_IN << sin
 
       [sout, sin]
     end
+    Log.debug{"Creating pipe #{[res.last.inspect,res.first.inspect] * " => "}"}
+    res
   end
   
   def self.release_pipes(*pipes)
@@ -188,6 +190,7 @@ module Misc
         end
 
         stream.join if stream.respond_to? :join
+
       rescue Aborted, Interrupt
         stream.abort if stream.respond_to? :abort
         out_pipes.each do |sout|
@@ -206,14 +209,14 @@ module Misc
     end
 
     out_pipes.each do |sout|
-      ConcurrentStream.setup sout, :threads => splitter_thread, :filename => filename
+      ConcurrentStream.setup sout, :threads => splitter_thread, :filename => filename, :_pair => stream
     end
 
-    abort_callback = Proc.new do
-      out_pipes.each do |s|
-        s.abort if s.respond_to? :abort
-      end
-    end
+    #abort_callback = Proc.new do
+    #  out_pipes.each do |s|
+    #    s.abort if s.respond_to? :abort
+    #  end
+    #end
 
     out_pipes
   end

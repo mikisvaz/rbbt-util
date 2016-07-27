@@ -114,7 +114,7 @@ class Step
 
       if not dependency.started?
         log_dependency_exec(dependency, :starting)
-        dependency.run(:stream)
+        dependency.run(true)
         raise TryAgain
       end
 
@@ -154,6 +154,7 @@ class Step
       raise $!
     rescue Exception
       Log.error "Exception in dep. #{ Log.color :red, dependency.task_name.to_s } -- #{$!.message}"
+      Log.exception $!
       raise $!
     end
   end
@@ -187,7 +188,7 @@ class Step
         Misc.insist do
           begin
             step.produce
-          rescue
+          rescue Exception
             step.abort
             raise $!
           end
@@ -203,12 +204,13 @@ class Step
         Misc.insist do
           begin
             dep.produce 
+            Log.warn "Error producing #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
           rescue Aborted
             dep.abort
             raise $!
           rescue Exception
             dep.exception $!
-            raise $!
+            raise StopInsist.new($!)
           end
         end
         nil

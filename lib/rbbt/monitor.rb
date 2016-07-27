@@ -147,7 +147,7 @@ module Rbbt
           files = `find "#{ taskdir }/" -not -type d -not -path "*/*.files/*" 2>/dev/null`.split("\n").sort
           _files = Set.new files
           TSV.traverse files, :type => :array, :into => jobs do |file|
-            if m = file.match(/(.*).info$/)
+            if m = file.match(/(.*).(info|pid)$/)
               file = m[1]
             end
 

@@ -54,11 +54,11 @@ class WorkflowRESTClient
   end
 
   def self.get_raw(url, params = {})
-    Log.debug{ "RestClient get_raw: #{ url } - #{Misc.fingerprint params}" }
     params = params.merge({ :_format => 'raw' })
     params = fix_params params
     res = capture_exception do
       Misc.insist(2, 0.5) do
+        Log.debug{ "RestClient get_raw: #{ url } - #{Misc.fingerprint params}" }
         res = RestClient.get(URI.encode(url), :params => params)
         raise TryAgain if res.code == 202
         res
@@ -116,38 +116,6 @@ class WorkflowRESTClient
       rescue
         res
       end
-    end
-  end
-
-  def self.stream_job(task_url, task_params, stream_input, cache_type = :exec)
-    require 'rbbt/util/misc/multipart_payload'
-    WorkflowRESTClient.capture_exception do
-      Log.debug{ "RestClient stream #{Process.pid}: #{ task_url } #{stream_input} #{cache_type} - #{Misc.fingerprint task_params}" }
-      res = RbbtMutiplartPayload.issue task_url, task_params, stream_input, nil, nil, true
-      type = res.gets
-      out = case type.strip
-      when "LOCATION"
-        @url = res.gets
-        @url.sub!(/\?.*/,'')
-        WorkflowRESTClient.get_raw(@url)
-      when /STREAM: (.*)/
-        @url = $1.strip
-        res.callback = Proc.new do
-          Log.medium "Done streaming result from #{@url}"
-          @done = true
-        end
-        res
-      when "BULK"
-        begin
-          res.read
-        ensure
-          @done = true
-        end
-      else
-        raise "What? " + type
-      end
-      ConcurrentStream.setup(out, :filename => @url)
-      out
     end
   end
 

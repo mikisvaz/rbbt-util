@@ -181,7 +181,7 @@ module Workflow
   attr_accessor :libdir, :workdir 
   attr_accessor :helpers, :tasks
   attr_accessor :task_dependencies, :task_description, :last_task 
-  attr_accessor :asynchronous_exports, :synchronous_exports, :exec_exports
+  attr_accessor :stream_exports, :asynchronous_exports, :synchronous_exports, :exec_exports
   attr_accessor :step_cache
   attr_accessor :remote_tasks
 
@@ -237,6 +237,10 @@ module Workflow
     @task_description ||= {}
   end
 
+  def stream_exports
+    @stream_exports ||= []
+  end
+
   def asynchronous_exports
     @asynchronous_exports ||= []
   end
@@ -250,7 +254,7 @@ module Workflow
   end
   
   def all_exports
-    @all_exports ||= asynchronous_exports + synchronous_exports + exec_exports
+    @all_exports ||= asynchronous_exports + synchronous_exports + exec_exports + stream_exports
   end
 
   # {{{ JOB MANAGEMENT
@@ -404,4 +408,27 @@ module Workflow
       self.workdir = saved
     end
   end
+
+  def add_remote_tasks(remote_tasks)
+    remote_tasks.each do |remote, tasks|
+      tasks.each do |task|
+        self.remote_tasks[task.to_f] = remote
+      end
+    end
+  end
+
+  def self.process_remote_tasks(remote_tasks)
+    require 'rbbt/rest/client'
+    remote_tasks.each do |workflow, info|
+      wf = Workflow.require_workflow workflow
+      wf.remote_tasks ||= {}
+      info.each do |remote, tasks|
+        remote_wf = WorkflowRESTClient.new remote, workflow
+        tasks.each do |task|
+          wf.remote_tasks[task.to_sym] = remote_wf
+        end
+      end
+    end
+  end
+
 end
