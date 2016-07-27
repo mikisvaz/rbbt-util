@@ -245,7 +245,7 @@ class Step
     return self if done? and not dirty?
 
     if error? or aborted?
-      if force or aborted?
+      if force or aborted? or recoverable_error?
         clean
       else
         raise "Error in job: #{status} - #{self.path}"

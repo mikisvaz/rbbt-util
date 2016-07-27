@@ -220,12 +220,17 @@ class WorkflowRESTClient
         @result = nil
         Misc.consume_stream(res, true) 
       end
-      self.info unless self.done?
-      sleep 0.2 unless self.done?
-      sleep 1 unless self.done?
-      while not self.done?
-        sleep 3
+
+      if not self.done?
+        self.info 
+        return self if self.done?
+        sleep 0.2 unless self.done?
+        sleep 1 unless self.done?
+        while not self.done?
+          sleep 3
+        end
       end
+
       self
     end
 
