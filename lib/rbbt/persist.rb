@@ -339,7 +339,9 @@ module Persist
     type ||= :marshal
 
     persist_options ||= {}
-    return (persist_options[:repo] || Persist::MEMORY)[persist_options[:file]] ||= yield if type ==:memory and persist_options[:file] and persist_options[:persist] and persist_options[:persist] != :update
+    if type ==:memory and persist_options[:file] and persist_options[:persist] and persist_options[:persist] != :update and not persist_options[:update]
+      return (persist_options[:repo] || Persist::MEMORY)[persist_options[:file]] ||= yield 
+    end
 
     if FalseClass === persist_options[:persist]
       yield
@@ -358,7 +360,8 @@ module Persist
       case 
       when type.to_sym == :memory
         repo = persist_options[:repo] || Persist::MEMORY
-        repo[path.find] ||= yield
+        path = path.find if Path === path
+        repo[path] = yield
 
       when (type.to_sym == :annotations and persist_options.include? :annotation_repo)
 

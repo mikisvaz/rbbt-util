@@ -95,7 +95,7 @@ class WorkflowRESTClient
       RestClient.post(URI.encode(url), params)
     end
 
-    Log.debug{ "RestClient post_jobname: #{ url } - #{Misc.fingerprint params}: #{name}" }
+    Log.debug{ "RestClient jobname returned for #{ url } - #{Misc.fingerprint params}: #{name}" }
 
     name
   end

@@ -112,7 +112,7 @@ class WorkflowRESTClient
 
     def info(check_lock=false)
       @done = @info && @info[:status] && @info[:status].to_sym == :done
-      @info = Persist.memory("RemoteSteps Info", :url => @url, :persist => !!@done) do
+      @info = Persist.memory("RemoteSteps Info", :url => @url, :persist => true, :update => !@done) do
         init_job unless @url
         info = WorkflowRESTClient.get_json(File.join(@url, 'info'))
         info = WorkflowRESTClient.fix_hash(info)
@@ -214,6 +214,7 @@ class WorkflowRESTClient
     end
 
     def join
+      Log.debug{ "Joining RestClient: #{path}" }
       if IO === @result
         res = @result
         @result = nil
