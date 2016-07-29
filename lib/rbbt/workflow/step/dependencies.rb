@@ -108,6 +108,10 @@ class Step
       dependency.resolve_input_steps
 
       if dependency.done?
+        dependency.inputs.each do |v|
+          Misc.consume_stream(v) if IO === v
+          Misc.consume_stream(TSV.get_stream v) if Step === v and not v.done?  and  v.streaming?
+        end
         log_dependency_exec(dependency, :done) if log
         return
       end

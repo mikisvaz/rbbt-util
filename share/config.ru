@@ -35,6 +35,9 @@ load_file Rbbt.etc['app.d/pre.rb'].find
 #{{{ WORKFLOWS
 app_eval app, Rbbt.etc['app.d/workflows.rb'].find_all
 
+#{{{ REMOTE WORKFLOW TASKS
+app_eval app, Rbbt.etc['app.d/remote_workflow_tasks.rb'].find_all
+
 #{{{ BASE
 app_eval app, Rbbt.etc['app.d/base.rb'].find
 
