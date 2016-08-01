@@ -122,6 +122,8 @@ module TSV
           stream
         else
           file.join
+          raise "Aborted stream from Step #{file.path}" if file.aborted?
+          raise "Exception in stream from Step #{file.path}: #{file.messages.last}" if file.error?
           get_stream(file.path)
         end
       end
