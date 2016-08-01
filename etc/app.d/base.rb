@@ -19,7 +19,7 @@ use Rack::Session::Cookie, :key => 'rack.session',
 
 #{{{ DIRECTORIES
 global_var = Rbbt.var.sinatra
-local_var = Rbbt.var.sinatra.app[$class_name]
+local_var = Rbbt.var.sinatra.app[$app_name]
 
 set :cache_dir           , local_var.cache
 set :persist_dir         , local_var.cache.persistence

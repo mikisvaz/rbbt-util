@@ -25,6 +25,10 @@ class WorkflowRESTClient
       @mutex = Mutex.new
     end
 
+    def clean_name
+      @base_name
+    end
+
     def run(no_load = false)
       no_load = @is_stream ? :stream : true if no_load
 

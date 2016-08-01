@@ -118,6 +118,12 @@ module CMD
       sin.close
     end
 
+    if no_wait
+      pids = []
+    else
+      pids = [pid]
+    end
+
     if pipe
       Thread.new do
         while line = serr.gets
@@ -126,8 +132,7 @@ module CMD
         serr.close
       end
 
-      #SmartIO.tie sout, pid, cmd, post, in_content, sin, serr
-      ConcurrentStream.setup sout, :pids => (no_wait ? [] : [pid]), :autojoin => no_wait, :no_fail => no_fail 
+      ConcurrentStream.setup sout, :pids => pids, :autojoin => no_wait, :no_fail => no_fail 
 
       sout
     else
@@ -139,7 +144,8 @@ module CMD
         serr.close
       end
 
-      ConcurrentStream.setup sout, :pids => (no_wait ? [] : [pid]), :autojoin => no_wait, :no_fail => no_fail
+      ConcurrentStream.setup sout, :pids => pids, :autojoin => no_wait, :no_fail => no_fail
+
       out = StringIO.new sout.read
       sout.close unless sout.closed?
 

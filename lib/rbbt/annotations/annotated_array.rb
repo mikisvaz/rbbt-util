@@ -108,11 +108,22 @@ module AnnotatedArray
     res
   end
 
-  def select
+  def select(func_name = nil)
     res = []
 
-    each do |value|
-      res << value if yield(value)
+    if func_name
+      each do |elem|
+        value = elem.send(func_name)
+        if block_given?
+          res << elem if yield(value)
+        else
+          res << elem if value
+        end
+      end
+    else
+      each do |elem|
+        res << elem if yield(elem)
+      end
     end
 
     annotate(res)

@@ -296,6 +296,8 @@ module TSV
               data[key] ||= []
               data[key] += value
             end
+          else
+            raise "Unkown type #{type}"
           end
         end
       end
@@ -317,6 +319,8 @@ module TSV
         data.entity_templates[field] = entity_templates[field] if entity_templates.include? field
       end
       data.type = zipped ? (merge ? :double : :list) : type
+
+      data
     end
   end
 
