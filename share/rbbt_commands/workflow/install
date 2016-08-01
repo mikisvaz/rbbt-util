@@ -39,7 +39,7 @@ workflow_dir = Rbbt.etc.workflow_dir.exists? ? Path.setup(Rbbt.etc.workflow_dir.
 
 FileUtils.mkdir_p workflow_dir unless File.exist? workflow_dir
 
-all_workflows = workflow_dir.glob("*/.git").collect{|d| File.basename(File.dirname(d))}
+all_workflows = workflow_dir.find.glob("*/.git").collect{|d| File.basename(File.dirname(d))}
 workflows = workflow == 'all' ? all_workflows : workflow.split(",")
 
 Misc.in_dir(workflow_dir) do

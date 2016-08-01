@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+RSync a directory, commonly ~/.rbbt/ 
+
+$ rbbt rsync [options] <source_location> <target_location> -- [rsync_options]
+
+You can specify extra rsync options after --
+
+-h--help Print this help
+-e--exclude* Additional excludes separated by ','
+-es--excludes* Replace exlude list with these; separated by ','
+-t--test Do a verbose dry run
+-p--print Print command
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+excludes = %w(.save .crap .source tmp filecache  open-remote workflows apps software jobs sinatra PCAWG)
+excludes += options[:exclude].split(/,\s*/)
+excludes_str = excludes.collect{|s| "--exclude '#{s}'" } * " "
+
+test_str = options[:test] ? '-nv' : ''
+
+source, target, _sep, *other = ARGV
+
+cmd = "rsync -a #{test_str} #{excludes_str} #{source} #{target} #{other * " "}"
+
+if options[:print]
+  puts cmd 
+  exit 0
+else
+  io = CMD.cmd(cmd, :log => true, :pipe => true)
+  Misc.consume_stream(io, false, STDOUT)
+end
