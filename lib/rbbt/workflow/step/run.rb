@@ -360,7 +360,6 @@ class Step
       begin
         Log.medium "Aborting job stream #{stream.inspect} -- #{Log.color :blue, path}"
         stream.abort 
-        #stream.close unless stream.closed?
       rescue Aborted, Interrupt
         Log.medium "Aborting job stream #{stream.inspect} ABORTED RETRY -- #{Log.color :blue, path}"
         Log.exception $!
@@ -370,7 +369,7 @@ class Step
   end
 
   def _clean_finished
-    if Open.exists? path
+    if Open.exists? path and not status == :done
       Log.warn "Aborted job had finished. Removing result -- #{ path }"
       begin
         Open.rm path
@@ -383,9 +382,9 @@ class Step
   def _abort
     return if @aborted
     @aborted = true
-    return if done?
     Log.medium{"#{Log.color :red, "Aborting"} #{Log.color :blue, path}"}
     begin
+      return if done?
       stop_dependencies
       abort_stream
       abort_pid if running?
@@ -401,6 +400,7 @@ class Step
   end
 
   def abort
+    return if done? and status == :done
     _abort
     log(:aborted, "Job aborted") unless aborted? or error?
     self
