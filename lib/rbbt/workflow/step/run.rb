@@ -388,7 +388,7 @@ class Step
     begin
       stop_dependencies
       abort_stream
-      abort_pid if defined? @forked and @forked and running?
+      abort_pid if running?
     rescue Aborted, Interrupt
       Log.medium{"#{Log.color :red, "Aborting ABORTED RETRY"} #{Log.color :blue, path}"}
       retry
