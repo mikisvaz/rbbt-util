@@ -107,7 +107,6 @@ class Step
           log :setup, "#{Log.color :green, "Setup"} step #{Log.color :yellow, task.name.to_s || ""}"
 
           merge_info({
-            :pid => Process.pid,
             :issued => (issue_time = Time.now),
             :name => name,
             :clean_name => clean_name,

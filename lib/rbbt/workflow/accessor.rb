@@ -141,7 +141,7 @@ class Step
   def init_info
     return nil if @exec or info_file.nil?
     Open.lock(info_file, :lock => info_lock) do
-      i = {:status => :init}
+      i = {:status => :init, :pid => Process.pid}
       @info_cache = i
       Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
       @info_cache_time = Time.now
