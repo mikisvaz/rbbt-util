@@ -98,6 +98,17 @@ class WorkflowRESTClient
       WorkflowRESTClient.get_json(@url + '?_update=abort') if @url and @name
     end
 
+    def dup_inputs
+      return if @dupped or ENV["RBBT_NO_STREAM"] == 'true'
+      Log.low "Dupping inputs for #{path}"
+      dupped_inputs = {}
+      @inputs.collect do |k,input|
+        dupped_inputs[k] = Step.dup_stream input
+      end
+      @inputs = dupped_inputs
+      @dupped = true
+    end
+
     def name
       return nil if @is_exec
       return @path if @url.nil?
@@ -225,12 +236,12 @@ class WorkflowRESTClient
         Misc.consume_stream(res, true) 
       end
 
-      if not self.done?
+      if not (self.done? || self.aborted? || self.error?)
         self.info 
-        return self if self.done?
-        sleep 0.2 unless self.done?
-        sleep 1 unless self.done?
-        while not self.done?
+        return self if self.done? || self.aborted? || self.error?
+        sleep 0.2 unless self.done? || self.aborted? || self.error?
+        sleep 1 unless self.done? || self.aborted? || self.error?
+        while not (self.done? || self.aborted? || self.error?)
           sleep 3
         end
       end
@@ -283,6 +294,7 @@ class WorkflowRESTClient
     def load
       params = {}
       join unless done? or streaming?
+      raise get_exception if error? or aborted?
       load_res get
     end
 

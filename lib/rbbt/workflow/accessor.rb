@@ -315,6 +315,25 @@ class Step
     self._abort
   end
 
+  def get_exception
+    if info[:exception].nil?
+      raise Aborted if aborted?
+      raise messages.last if error?
+      return false 
+    else
+      ex_class, ex_message, ex_backtrace = info[:exception].values_at :class, :message, :backtrace
+      begin
+        klass = Kernel.get_const(ex_class)
+        ex = klass.new ex_message
+        ex.backtrace = ex_backtrace
+        ex
+      rescue
+        Log.exception $!
+        raise ex_message
+      end
+    end
+  end
+
   def recoverable_error?
     return true if aborted?
     return false unless error?
