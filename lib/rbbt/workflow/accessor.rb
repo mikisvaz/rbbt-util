@@ -346,7 +346,7 @@ class Step
   end
 
   def started?
-    Open.exists?(path) or Open.exists?(pid_file)
+    Open.exists?(path) or Open.exists?(pid_file) or Open.exists?(info_file)
   end
 
   def dirty?
