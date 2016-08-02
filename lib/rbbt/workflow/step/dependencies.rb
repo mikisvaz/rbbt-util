@@ -324,6 +324,7 @@ class Step
   end
 
   def stop_dependencies
+    return if dependencies.nil?
     dependencies.each do |dep|
       begin
         next if dep.done? or dep.aborted?

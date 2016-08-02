@@ -53,6 +53,20 @@ class WorkflowRESTClient
     new_params
   end
 
+  def self.clean_url(url, params = {})
+    params = params.merge({ :_format => 'json', :update => 'clean' })
+    params = fix_params params
+    res = capture_exception do
+      Misc.insist(2, 0.5) do
+        Log.debug{ "RestClient clean: #{ url } - #{Misc.fingerprint params}" }
+        res = RestClient.get(URI.encode(url), :params => params)
+        raise TryAgain if res.code == 202
+        res
+      end
+    end
+    res
+  end
+ 
   def self.get_raw(url, params = {})
     params = params.merge({ :_format => 'raw' })
     params = fix_params params

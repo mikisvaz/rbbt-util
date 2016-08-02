@@ -323,9 +323,9 @@ class Step
     else
       ex_class, ex_message, ex_backtrace = info[:exception].values_at :class, :message, :backtrace
       begin
-        klass = Kernel.get_const(ex_class)
+        klass = Kernel.const_get(ex_class)
         ex = klass.new ex_message
-        ex.backtrace = ex_backtrace
+        #ex.set_backtrace ex_backtrace
         ex
       rescue
         Log.exception $!

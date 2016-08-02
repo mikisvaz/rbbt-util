@@ -212,7 +212,7 @@ class WorkflowRESTClient
       if @url
         @url + '?_format=raw'
       else
-        [base_url, task, Misc.fingerprint(inputs)] * "/"
+        [base_url, task, @base_name + '-' +  Misc.fingerprint(inputs)] * "/"
       end
     end
 
@@ -307,6 +307,7 @@ class WorkflowRESTClient
       @done = nil
       @name = nil
       @started = nil
+      @aborted = nil
       new_inputs = {}
       inputs.each do |k,i| 
         if File === i 
@@ -332,11 +333,10 @@ class WorkflowRESTClient
     end
 
     def clean
-      return
       begin
         params = {:_update => :clean}
         init_job(nil, params)
-        WorkflowRESTClient.get_raw(url, params)
+        WorkflowRESTClient.clean_url(url, params) 
         _restart
       rescue Exception
         Log.exception $!
