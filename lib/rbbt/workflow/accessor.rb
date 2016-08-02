@@ -342,11 +342,14 @@ class Step
     IO === @result or @saved_stream or status == :streaming
   end
 
+  def pid
+    @pid ||= info[:pid]
+  end
+
   def running?
     return nil if not Open.exists? pid_file
     return nil if info[:pid].nil?
 
-    pid = @pid || info[:pid]
     if Misc.pid_exists?(pid) 
       pid
     else
@@ -358,8 +361,12 @@ class Step
     status == :error
   end
 
+  def nopid?
+    @pid.nil? && ! (status == :aborted || status == :done || status == :error)
+  end
+
   def aborted?
-    @aborted || status == :aborted
+    status == :aborted || nopid?
   end
 
   # {{{ INFO

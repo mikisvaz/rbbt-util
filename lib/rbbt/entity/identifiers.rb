@@ -11,8 +11,6 @@ module Entity
       base.annotation :format
       base.annotation :organism
 
-
-
       class << base
         attr_accessor :identifier_files, :formats, :default_format, :name_format, :description_format
       end

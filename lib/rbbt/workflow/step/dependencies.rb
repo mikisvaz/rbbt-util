@@ -208,9 +208,10 @@ class Step
         Misc.insist do
           begin
             dep.produce 
-            Log.warn "Error producing #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
+            Log.warn "Error in bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
           rescue Aborted
             dep.abort
+            Log.warn "Aborted bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
             raise $!
           rescue Exception
             dep.exception $!
@@ -324,7 +325,11 @@ class Step
 
   def stop_dependencies
     dependencies.each do |dep|
-      dep.abort unless dep.done? or dep.aborted?
+      begin
+        next if dep.done? or dep.aborted?
+      rescue
+      end
+      dep.abort
     end
     kill_children
   end
