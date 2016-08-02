@@ -88,11 +88,12 @@ jobs.each do |file,i|
 
   status = info[:status].to_s
   status = :missing if status == "done" and not File.exist? file
+  status = :nopid if status != "done" and pid.nil?
   status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
   status = :sync if status != "done" and File.exist? file
 
   status = status.to_s
-  next unless status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" or (force and status == 'noinfo')
+  next unless status =~ /\bnopid/ status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" or (force and status == 'noinfo')
   puts "  Removing #{ file } - #{status}" 
   Step.clean(file) 
 end
