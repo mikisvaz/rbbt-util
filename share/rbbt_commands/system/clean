@@ -93,7 +93,7 @@ jobs.each do |file,i|
   status = :sync if status != "done" and File.exist? file
 
   status = status.to_s
-  next unless status =~ /\bnopid/ status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" or (force and status == 'noinfo')
+  next unless status =~ /\bnopid/ or status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" or (force and status == 'noinfo')
   puts "  Removing #{ file } - #{status}" 
   Step.clean(file) 
 end
