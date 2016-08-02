@@ -129,7 +129,11 @@ class WorkflowRESTClient
       @done = @info && @info[:status] && @info[:status].to_sym == :done
       @info = Persist.memory("RemoteSteps Info", :url => @url, :persist => true, :update => !@done) do
         init_job unless @url
-        info = WorkflowRESTClient.get_json(File.join(@url, 'info'))
+        info = begin
+                 WorkflowRESTClient.get_json(File.join(@url, 'info'))
+               rescue
+                 {}
+               end
         info = WorkflowRESTClient.fix_hash(info)
         info[:status] = info[:status].to_sym if String === info[:status]
         info

@@ -77,7 +77,7 @@ class Step
     (job.streaming? and job.running?) or 
     (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === job and not (job.error? or job.aborted?))
 
-    if job.error? or job.aborted? or (job.started? and not job.running? and not job.error?)
+    if (job.error? || job.aborted?) && job.recoverable_error?
       job.clean 
     end
 
