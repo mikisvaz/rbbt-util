@@ -38,12 +38,6 @@ class WorkflowRESTClient
                         exec(no_load)
                       elsif no_load == :stream
                         _run_job(:stream)
-                        #init_job 
-                        #join
-                        #Misc.open_pipe do |sin|
-                        #  body = get.body
-                        #  sin.write body
-                        #end
                       elsif no_load
                         init_job 
                         nil
@@ -95,7 +89,9 @@ class WorkflowRESTClient
     end
 
     def abort
+      return self if status == :done
       WorkflowRESTClient.get_json(@url + '?_update=abort') if @url and @name
+      self
     end
 
     def dup_inputs
@@ -123,6 +119,10 @@ class WorkflowRESTClient
       return task if task
       init_job
       (Array === @url ? @url.first : @url).split("/")[-2]
+    end
+    
+    def nopid?
+      false
     end
 
     def info(check_lock=false)
@@ -200,7 +200,7 @@ class WorkflowRESTClient
         WorkflowRESTClient.post_jobname(File.join(base_url, task.to_s), inputs.merge(other_params).merge(:jobname => @name||@base_name, :_cache_type => cache_type))
       end
       @url = File.join(base_url, task.to_s, @name)
-      nil
+      self
     end
 
 
@@ -339,8 +339,7 @@ class WorkflowRESTClient
     def clean
       begin
         params = {:_update => :clean}
-        init_job(nil, params)
-        WorkflowRESTClient.clean_url(url, params) 
+        WorkflowRESTClient.clean_url(url, params) if @url
         _restart
       rescue Exception
         Log.exception $!

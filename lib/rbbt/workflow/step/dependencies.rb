@@ -73,15 +73,20 @@ class Step
   end
 
   def self.prepare_for_execution(job)
-    return if (job.done? and not job.dirty?) or 
-    (job.streaming? and job.running?) or 
-    (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === job and not (job.error? or job.aborted?))
+    return if job.done? && ! job.dirty?
 
-    if (job.error? || job.aborted?) && job.recoverable_error?
+    status = job.status.to_s
+    if defined? WorkflowRESTClient && WorkflowRESTClient::RemoteStep === job 
+      return if ! (status == 'done' and status == 'error' and status == 'aborted')
+    else
+      return if status == 'streaming' && job.running?
+    end
+
+    if (status == 'error' || job.aborted?) && job.recoverable_error?
       job.clean 
     end
 
-    job.dup_inputs unless job.done? or job.started?
+    job.dup_inputs unless status == 'done' or job.started?
 
     raise DependencyError, job if job.error?
   end
