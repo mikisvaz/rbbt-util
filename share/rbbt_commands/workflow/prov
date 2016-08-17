@@ -62,7 +62,7 @@ def report(step, offset = 0)
   info = step.info || {}
   path  = step.path
   status = info[:status] || :missing
-  status = :remote if Open.remote?(path)
+  status = "remote" if Open.remote?(path)
   name = info[:name] || File.basename(path)
   status = :unsync if status == :done and not File.exist? path
   str = " " * offset
