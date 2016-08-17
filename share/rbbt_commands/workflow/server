@@ -73,7 +73,7 @@ TmpFile.with_file do |app_dir|
     Open.write(app_dir.etc.target_workflow_sync_exports.find, sync_exports * "\n") if sync_exports
     Open.write(app_dir.etc.target_workflow_exec_exports.find, exec_exports * "\n") if exec_exports
 
-    Open.write(app_dir.etc.workflows.find, workflows.split(/,\s/)*"\n") if workflows 
+    Open.write(app_dir.etc.workflows.find, workflows.split(/,\s*/)*"\n") if workflows 
 
     require 'rack'
     ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
