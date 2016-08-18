@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/workflow'
+
+options = SOPT.setup <<EOF
+
+Init a new workflow scaffold
+
+$ rbbt workflow init <workflow>
+EOF
+
+workflow = ARGV.shift
+if workflow.nil?
+  usage
+  puts
+  puts Log.color :magenta, "## Error"
+  puts
+  puts "No workflow name specified."
+  puts
+  exit -1
+end
+
+workflow_path = Path.setup(workflow) unless Path === workflow
+lib_path = workflow_path + '/lib'
+
+if Dir.exists?(workflow_path)
+  usage
+  puts
+  puts Log.color :magenta, "## Error"
+  puts
+  puts "The workflow '#{workflow}' already exists!"
+  puts
+  exit -1
+end
+
+template = <<-EOF
+require 'rbbt/workflow'
+
+module #{workflow}
+  extend Workflow
+
+  desc "Scaffold task"
+  task :scaffold_task => :string do
+    "Scaffold task"
+  end
+
+end
+EOF
+
+Dir.mkdir(workflow_path)
+workflow_file = workflow_path + '/workflow.rb'
+File.write(workflow_file, template)
+
+Dir.mkdir(lib_path)
+lib_file = lib_path + '/.keep'
+File.write(lib_file, '')
