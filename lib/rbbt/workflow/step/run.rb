@@ -243,7 +243,8 @@ class Step
   def produce(force=false, dofork=false)
     return self if done? and not dirty?
 
-    if error? or aborted?
+    if error? or aborted? or stalled?
+      abort if stalled?
       if force or aborted? or recoverable_error?
         clean
       else

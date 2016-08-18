@@ -373,6 +373,10 @@ class Step
     end
   end
 
+  def stalled?
+    ! (done? || error? || aborted?) && ! running?
+  end
+
   def error?
     status == :error
   end
