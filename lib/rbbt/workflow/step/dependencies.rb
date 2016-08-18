@@ -76,10 +76,11 @@ class Step
     return if job.done? && ! job.dirty?
 
     status = job.status.to_s
-    if defined? WorkflowRESTClient && WorkflowRESTClient::RemoteStep === job 
+
+    if defined?(WorkflowRESTClient) && WorkflowRESTClient::RemoteStep === job 
       return if ! (status == 'done' and status == 'error' and status == 'aborted')
     else
-      return if status == 'streaming' && job.running?
+      return if status == 'streaming' and job.running?
     end
 
     if (status == 'error' || job.aborted?) && job.recoverable_error?
