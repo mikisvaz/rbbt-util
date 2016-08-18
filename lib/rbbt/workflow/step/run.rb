@@ -240,7 +240,7 @@ class Step
     end
   end
 
-  def produce(force=true)
+  def produce(force=false, dofork=false)
     return self if done? and not dirty?
 
     if error? or aborted?
@@ -254,9 +254,15 @@ class Step
     clean if dirty? or (not running? and not done?)
 
     no_load = :stream
-    run(false) unless started?
+    if dofork
+      fork(true) unless started?
 
-    join unless done?
+      join unless done?
+    else
+      run(false) unless started?
+
+      join unless done?
+    end
 
     self
   end
