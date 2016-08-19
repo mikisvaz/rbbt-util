@@ -96,7 +96,7 @@ module Path
     rsearch_paths = (resource and resource.respond_to?(:search_paths)) ? resource.search_paths : nil 
     key_elems = [where, caller_lib, rsearch_paths, paths]
     key = Misc.digest(key_elems.inspect)
-    self.sub!('~/', Etc.getpwuid.dir + '/')
+    self.sub!('~/', Etc.getpwuid.dir + '/') if self.include? "~"
     @path[key] ||= begin
                      paths = [paths, rsearch_paths, self.search_paths, SEARCH_PATHS].reverse.compact.inject({}){|acc,h| acc.merge! h; acc }
                      where = paths[:default] if where == :default
