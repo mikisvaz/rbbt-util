@@ -399,6 +399,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     slice
     head
     assemble_pdf_table
+    query
    }
    stat=stat{
     abs

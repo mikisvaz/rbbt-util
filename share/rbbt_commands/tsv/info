@@ -1,4 +1,4 @@
-#"!/usr/bin/env ruby
+#!/usr/bin/env ruby
 
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'

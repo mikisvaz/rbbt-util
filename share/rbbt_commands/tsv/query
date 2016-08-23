@@ -1,0 +1,59 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Query a TSV file 
+
+$ rbbt tsv query [options] <file.tsv> <key>
+
+Display summary information for a TSV entry. Works with Tokyocabinet HDB and BDB.
+
+-tch--tokyocabinet File is a TC HDB
+-tcb--tokyocabinet_bd File is a TC BDB
+-t--type* Type of tsv (single, list, double, flat)
+-hh--header_hash* Change the character used to mark the header line (defaults to #)
+-k--key_field* Change the key field
+-f--field* Change the fields to display
+-s--sep* Change the fields separator (default TAB)
+-h--help Help
+EOF
+
+SOPT.usage if options[:help]
+
+file, key = ARGV
+
+file = STDIN if file == '-'
+
+raise ParameterException, "Please specify the tsv file as argument" if file.nil?
+
+options[:fields] = options[:fields].split(/[,\|]/) if options[:fields]
+options[:header_hash] = options["header_hash"]
+options[:sep] = options["sep"]
+
+case
+when options[:tokyocabinet]
+  tsv = Persist.open_tokyocabinet(file, false)
+when options[:tokyocabinet_bd]
+  tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
+else
+  tsv = TSV.open(file, options)
+end
+
+values = tsv[key]
+
+head = "#{Log.color :magenta, tsv.key_field}: " << Log.color(:yellow, key)
+puts head
+puts (["-"] * Log.uncolor(head).length) * ""
+values.zip(tsv.fields) do |value,field|
+  if Array === value
+    values = value.collect{|v| Log.color(:yellow, v)} * ", "
+    puts "#{Log.color :magenta, field}: " << values
+  else
+    puts "#{Log.color :magenta, field}: " << Log.color(:yellow, value)
+  end
+end
+
