@@ -260,7 +260,7 @@ class Step
 
       join unless done?
     else
-      run(false) unless started?
+      run(true) unless started?
 
       join unless done?
     end
