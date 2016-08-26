@@ -5,7 +5,7 @@ require 'rbbt/resource'
 require 'rbbt/workflow'
 
 options = SOPT.get <<EOF
--w--workflows* Workflows to use; 'all' for all in Rbbt.etc.workflows:
+-W--workflows* Workflows to use; 'all' for all in Rbbt.etc.workflows:
 -r--requires* Files to require; 'all' for all in Rbbt.etc.requires:
 -f--force Force the production if the file is already present
 -h--help Help
