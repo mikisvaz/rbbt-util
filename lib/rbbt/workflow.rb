@@ -326,10 +326,11 @@ module Workflow
 
     inputs.each do |k,v|
       default = defaults[k]
-      if (task_inputs.include?(k.to_sym) or task_inputs.include?(k.to_s)) and 
-        (defaults[k].to_s != v.to_s and not (FalseClass === v and defaults[k].nil?))
-        real_inputs[k] = v 
-      end
+      next unless (task_inputs.include?(k.to_sym) or task_inputs.include?(k.to_s))
+      next if default == v 
+      next if (String === default and Symbol === v and v.to_s == default)
+      next if (Symbol === default and String === v and v == default.to_s)
+      real_inputs[k] = v 
     end
 
     if real_inputs.empty?

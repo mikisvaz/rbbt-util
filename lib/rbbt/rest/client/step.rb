@@ -204,7 +204,7 @@ class WorkflowRESTClient
     end
 
 
-    def fork
+    def fork(noload=false, semaphore=nil)
       init_job(:asynchronous)
     end
 
@@ -233,6 +233,7 @@ class WorkflowRESTClient
     end
 
     def join
+      init_job unless @url
       Log.debug{ "Joining RestClient: #{path}" }
       if IO === @result
         res = @result
@@ -258,6 +259,7 @@ class WorkflowRESTClient
       params = params.merge(:_format => [:string, :boolean, :tsv, :annotations,:array].include?(result_type.to_sym) ? :raw : :json )
       Misc.insist 3, rand(2) + 1 do
         begin
+          init_job if url.nil?
           WorkflowRESTClient.get_raw(url, params)
         rescue
           Log.exception $!
@@ -291,7 +293,11 @@ class WorkflowRESTClient
         (stream ? res.read : res).split("\n")
         res.split("\n")
       else
-        JSON.parse res
+        if IO === res
+          JSON.parse res.read
+        else
+          JSON.parse res
+        end
       end
     end
 

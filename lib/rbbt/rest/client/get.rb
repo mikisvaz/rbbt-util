@@ -1,4 +1,13 @@
 class WorkflowRESTClient
+  def self.encode(url)
+    begin
+      URI.encode(url)
+    rescue
+      Log.warn $!.message
+      url
+    end
+  end
+
   def self.fix_hash(hash, fix_values = false)
     fixed = {}
     hash.each do |key, value|
@@ -59,7 +68,7 @@ class WorkflowRESTClient
     res = capture_exception do
       Misc.insist(2, 0.5) do
         Log.debug{ "RestClient clean: #{ url } - #{Misc.fingerprint params}" }
-        res = RestClient.get(URI.encode(url), :params => params)
+        res = RestClient.get(self.encode(url), :params => params)
         raise TryAgain if res.code == 202
         res
       end
@@ -73,7 +82,8 @@ class WorkflowRESTClient
     res = capture_exception do
       Misc.insist(2, 0.5) do
         Log.debug{ "RestClient get_raw: #{ url } - #{Misc.fingerprint params}" }
-        res = RestClient.get(URI.encode(url), :params => params)
+        raise "No url" if url.nil?
+        res = RestClient.get(self.encode(url), :params => params)
         raise TryAgain if res.code == 202
         res
       end
@@ -88,7 +98,7 @@ class WorkflowRESTClient
 
     res = capture_exception do
       Misc.insist(2, 0.5) do
-        RestClient.get(URI.encode(url), :params => params)
+        RestClient.get(self.encode(url), :params => params)
       end
     end
 
@@ -106,7 +116,7 @@ class WorkflowRESTClient
 
     WorkflowRESTClient.__prepare_inputs_for_restclient(params)
     name = capture_exception do
-      RestClient.post(URI.encode(url), params)
+      RestClient.post(self.encode(url), params)
     end
 
     Log.debug{ "RestClient jobname returned for #{ url } - #{Misc.fingerprint params}: #{name}" }
@@ -122,7 +132,7 @@ class WorkflowRESTClient
       params = fix_params params
 
       res = capture_exception do
-        RestClient.post(URI.encode(url), params)
+        RestClient.post(self.encode(url), params)
       end
 
       begin

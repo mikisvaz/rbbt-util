@@ -254,13 +254,12 @@ class Step
 
     clean if dirty? or (not running? and not done?)
 
-    no_load = :stream
     if dofork
       fork(true) unless started?
 
       join unless done?
     else
-      run(false) unless started?
+      run(true) unless started?
 
       join unless done?
     end
@@ -479,6 +478,7 @@ class Step
       self
     ensure
       set_info :joined, true
+      @result = nil
     end
   end
 end

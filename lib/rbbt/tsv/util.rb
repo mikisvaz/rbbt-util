@@ -133,6 +133,8 @@ module TSV
           sin.puts l
         end
       end
+    when Set
+      get_stream(file.to_a, open_options)
     else
       raise "Cannot get stream from: #{file.inspect}"
     end

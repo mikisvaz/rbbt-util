@@ -383,7 +383,7 @@ class Step
 
   def nopid?
     pid = info[:pid]
-    pid.nil? && ! (status == :aborted || status == :done || status == :error)
+    pid.nil? && ! (status.nil? || status.nil? || status == :aborted || status == :done || status == :error)
   end
 
   def aborted?
@@ -546,46 +546,41 @@ module Workflow
                                 else
                                   all_deps << dep unless Proc === dep
                                 end
-                                case dep
-                                when Array
-                                  wf, t, o = dep
 
-                                  wf.rec_dependencies(t).each do |d|
-                                    if Array === d
-                                      new = d.dup
-                                    else
-                                      new = [dep.first, d]
-                                    end
-
-                                    if Hash === o and not o.empty? 
-                                      if Hash === new.last
-                                        hash = new.last.dup
-                                        o.each{|k,v| hash[k] ||= v}
-                                        new[new.length-1] = hash
-                                      else
-                                        new.push o.dup
-                                      end
-                                    end
-
-                                    all_deps << new
-                                  end
-
-                                when String, Symbol
-                                  rec_deps = rec_dependencies(dep.to_sym)
-                                  all_deps.concat rec_deps
-                                when DependencyBlock
-                                  all_deps << dep.dependency if dep.dependency
-                                  case dep.dependency
+                                begin
+                                  case dep
                                   when Array
-                                    dep_wf, dep_task, dep_options = dep.dependency
-                                    if dep_task === Symbol
-                                      dep_rec_dependencies = dep_wf.rec_dependencies(dep_task.to_sym)
-                                      dep_rec_dependencies.collect!{|d| Array === d ? d : [dep_wf, d]}
-                                      all_deps.concat dep_rec_dependencies
+                                    wf, t, o = dep
+
+                                    wf.rec_dependencies(t).each do |d|
+                                      if Array === d
+                                        new = d.dup
+                                      else
+                                        new = [dep.first, d]
+                                      end
+
+                                      if Hash === o and not o.empty? 
+                                        if Hash === new.last
+                                          hash = new.last.dup
+                                          o.each{|k,v| hash[k] ||= v}
+                                          new[new.length-1] = hash
+                                        else
+                                          new.push o.dup
+                                        end
+                                      end
+
+                                      all_deps << new
                                     end
-                                  when Symbol, String
-                                    all_deps.concat rec_dependencies(dep.dependency.to_sym)
+
+                                  when String, Symbol
+                                    rec_deps = rec_dependencies(dep.to_sym)
+                                    all_deps.concat rec_deps
+                                  when DependencyBlock
+                                    dep = dep.dependency
+                                    raise TryAgain
                                   end
+                                rescue TryAgain
+                                  retry
                                 end
                               end
                               all_deps.uniq
@@ -710,7 +705,7 @@ module Workflow
               end
             else
               input_options = workflow.task_info(dep_task)[:input_options][i] || {}
-              if input_options[:stream]
+              if input_options[:stream] or true
                 #rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
                 _inputs[i] = rec_dependency
               else

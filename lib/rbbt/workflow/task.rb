@@ -84,12 +84,14 @@ module Task
         task_name, wf = wf, workflow if task_name.nil? and Symbol === wf or String === wf
         next if task_name.nil?
         task = wf.tasks[task_name.to_sym]
-      else 
+      else
         next
       end
+
       maps = (Array === dep and Hash === dep.last) ? dep.last.keys : []
       raise "Dependency task not found: #{dep}" if task.nil?
       next if seen.include? [wf, task.name]
+
       seen << [wf, task.name]
       new_inputs = task.inputs - maps
       next unless new_inputs.any?

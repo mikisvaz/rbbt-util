@@ -94,7 +94,7 @@ module ConcurrentStream
       @pids.each do |pid| 
         begin
           Process.waitpid(pid, Process::WUNTRACED)
-          raise ProcessFailed.new "Error joining process #{pid} in #{self.inspect}" unless $?.success? or no_fail
+          raise ProcessFailed.new "Error joining process #{pid} in #{self.filename || self.inspect}" unless $?.success? or no_fail
         rescue Errno::ECHILD
         end
       end 
