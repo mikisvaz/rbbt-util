@@ -16,6 +16,7 @@ $ rbbt workflow info <job-result>
 -h--help Help
 -a--all Print all info entries
 -r--recursive Print recursive input values
+-o--original Print original object
 EOF
 
 SOPT.usage if options[:help]
@@ -59,6 +60,12 @@ end
 step = get_step file
 
 info = step.info
+
+if options[:original]
+  puts info.inspect
+  exit 0
+end
+
 dependencies = info[:dependencies]
 inputs = info[:inputs]
 status = info[:status]

@@ -374,7 +374,7 @@ class Step
   end
 
   def stalled?
-    ! (done? || error? || aborted?) && ! running?
+    started? && ! (done? || error? || aborted?) && ! running?
   end
 
   def error?
