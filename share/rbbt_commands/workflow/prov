@@ -19,6 +19,7 @@ Examine the provenance of a job result
 $ rbbt workflow prov <job-result>
 
 -h--help Help
+-p--plot* draw the dependency plot into <file.png>
 EOF
 
 SOPT.usage if options[:help]
@@ -82,4 +83,78 @@ end
 step = get_step file
 $main_mtime = File.exist?(step.path) ? File.mtime(step.path) : nil
 
-puts report(step).strip
+def adjacency(step)
+
+  info = step.info || {}
+  path  = step.path
+  status = info[:status] || :missing
+  status = "remote" if Open.remote?(path)
+  if status == 'remote'
+    workflow, task, name = path.sub(/\{.*/,'').split("/")[-3..-1]
+  else
+    workflow, task, name = path.split("/")[-3..-1]
+  end
+  name = name.split(":").last
+  status = :unsync if status == :done and not File.exist? path
+  edge_info = {:status =>  status, :workflow => workflow, :task => task, :name => name, :label => task, :shape => shapes[workflow], :color => status == 'remote' ? 'blue' : 'green'}
+  id = Misc.digest(path)
+  edges = []
+  node_info = {}
+  node_info[id] = edge_info
+  if info[:dependencies]
+    info[:dependencies].each do |task,name,path|
+      dep = get_step path
+      _id, _edges, _node_info = adjacency(dep)
+      edges << [id, _id] 
+      edges.concat _edges
+      node_info.merge!(_node_info)
+    end 
+  end
+
+  [id, edges, node_info]
+end
+
+if options[:plot]
+  id, edges, node_info = adjacency(step)
+  node_info[id][:color] = 'red'
+  TmpFile.with_file do |edge_file|
+    Open.write(edge_file) do |f|
+      f.puts "from,to"
+      edges.each do |from,to|
+        f.puts [from,to]*","
+      end
+    end
+    TmpFile.with_file do |node_info_file|
+      Open.write(node_info_file) do |f|
+        fields = node_info.first.last.keys
+        f.puts "id," + fields * ","
+        node_info.each do |id,info|
+          f.puts ([id] + info.values_at(*fields)) * ","
+        end
+      end
+
+      require 'rbbt/util/R'
+
+      ppp Open.read edge_file
+      ppp Open.read node_info_file
+
+      R.run <<-EOF
+      nodes <- read.csv("#{node_info_file}", header=T, as.is=T)
+      links <- read.csv("#{edge_file}", header=T, as.is=T)
+
+      library(igraph)
+
+      net <- graph.data.frame(links, nodes, directed=T)
+      net <- simplify(net, remove.multiple = F, remove.loops = T)
+
+      png("#{options[:plot]}")
+      plot(net, edge.arrow.size=0.4, vertex.label=net$label, vertex.color=net$color)
+      dev.off()
+      EOF
+    end
+  end
+
+else
+  puts report(step).strip
+end
+
