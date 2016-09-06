@@ -29,7 +29,7 @@ if options[:help]
 end
 
 excludes = %w(.save .crap .source tmp filecache  open-remote workflows apps software jobs sinatra PCAWG)
-excludes += options[:exclude].split(/,\s*/)
+excludes += (options[:exclude] || "").split(/,\s*/)
 excludes_str = excludes.collect{|s| "--exclude '#{s}'" } * " "
 
 test_str = options[:test] ? '-nv' : ''
