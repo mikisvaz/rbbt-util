@@ -378,7 +378,7 @@ module Misc
             raise $! unless File.exist? path
           end
 
-          content.join if content.respond_to? :join and not content.joined?  
+          content.join if content.respond_to? :join and not (content.respond_to?(:joined?) and content.joined?)
 
           if Lockfile === lock_options[:lock] and lock_options[:lock].locked?
             lock_options[:lock].unlock

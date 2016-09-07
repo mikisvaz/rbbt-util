@@ -432,4 +432,12 @@ module Workflow
     end
   end
 
+  def self.load_remote_tasks(filename)
+    yaml_text = Open.read(filename)
+    remote_workflow_tasks = YAML.load(yaml_text)
+    Workflow.process_remote_tasks(remote_workflow_tasks)
+  end
+
+  load_remote_tasks(Rbbt.root.etc.remote_tasks.find) if Rbbt.root.etc.remote_tasks.exists?
+
 end
