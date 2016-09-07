@@ -78,11 +78,14 @@ module Path
     :user    => File.join(ENV['HOME'], ".{PKGDIR}", "{TOPLEVEL}", "{SUBPATH}"),
     :global  => File.join('/', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
     :local   => File.join('/usr/local', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
+    :fast   => File.join('/fast', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
+    :cache   => File.join('/cache', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
+    :bulk   => File.join('/bulk', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
     :lib     => File.join('{LIBDIR}', "{TOPLEVEL}", "{SUBPATH}"),
     :default => :user
   })
 
-  STANDARD_SEARCH = %w(current user local global lib cache bulk)
+  STANDARD_SEARCH = %w(current user local global lib fast cache bulk)
 
   search_path_file = File.join(ENV['HOME'], '.rbbt/etc/search_paths')
   if File.exist?(search_path_file)
