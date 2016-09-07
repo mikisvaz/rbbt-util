@@ -182,6 +182,7 @@ module TSV
               end
             end
 
+            values = [[]] * str.length if values.nil?
             values = values.collect{|list| list * "|" } * sep
 
           else
