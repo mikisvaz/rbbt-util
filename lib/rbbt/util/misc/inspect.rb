@@ -172,7 +172,11 @@ module Misc
       when File === v
         str << k.to_s << "=>[File:" << v.path << "]"
       else
-        v_ins = v.inspect
+        begin
+          v_ins = v.inspect
+        rescue
+          v_ins = "#Object:" << v.object_id
+        end
 
         case
         when v_ins =~ /:0x0/
