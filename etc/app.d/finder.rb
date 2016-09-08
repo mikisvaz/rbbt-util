@@ -13,6 +13,8 @@ if ENV['RBBT_FINDER']
   prot_hash = {"Ensembl Protein ID" => /ENSP\w+$/}
   finder.add_instance(prot_hash, :namespace => organism) 
 
+  gene_hash = {"Ensembl Gene ID" => /ENSG\w+$/}
+  finder.add_instance(gene_hash, :namespace => organism) 
 
   organism_hash = {"organism" => /[A-Z][a-z]{2}(?:\/[a-z]{3}20\d\d)?/}
   finder.add_instance(organism_hash, :namespace => organism) 
