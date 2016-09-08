@@ -175,7 +175,7 @@ module Misc
         begin
           v_ins = v.inspect
         rescue
-          v_ins = "#Object:" << v.object_id
+          v_ins = "#Object:" << v.object_id.to_s
         end
 
         case
