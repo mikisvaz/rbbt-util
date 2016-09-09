@@ -363,13 +363,17 @@ class Step
     stream = @result if IO === @result
     @saved_stream = nil
     if stream and stream.respond_to? :abort and not stream.aborted?
+      doretry = true
       begin
         Log.medium "Aborting job stream #{stream.inspect} -- #{Log.color :blue, path}"
         stream.abort 
       rescue Aborted, Interrupt
         Log.medium "Aborting job stream #{stream.inspect} ABORTED RETRY -- #{Log.color :blue, path}"
         Log.exception $!
-        retry
+        if doretry
+          doretry = false
+          retry
+        end
       end
     end
   end
@@ -389,6 +393,7 @@ class Step
     return if @aborted
     @aborted = true
     Log.medium{"#{Log.color :red, "Aborting"} #{Log.color :blue, path}"}
+    doretry = true
     begin
       return if done?
       stop_dependencies
@@ -396,10 +401,16 @@ class Step
       abort_pid if running?
     rescue Aborted, Interrupt
       Log.medium{"#{Log.color :red, "Aborting ABORTED RETRY"} #{Log.color :blue, path}"}
-      retry
+      if doretry
+        doretry = false
+        retry
+      end
     rescue Exception
       Log.exception $!
-      retry
+      if doretry
+        doretry = false
+        retry
+      end
     ensure
       _clean_finished
     end
