@@ -695,10 +695,44 @@ Example:
     end
 
     if self.key_field and self.fields
-      new.key_field = [self.key_field, self.fields[field_pos]] * ":" 
+      new.key_field = [self.key_field, self.fields[field_pos]] * sep
       new_fields = self.fields.dup 
       new_fields.delete_at field_pos
       new.fields = new_fields
+    end
+
+    new
+  end
+  
+  def zip(field = 0, merge = false, sep = ":")
+    new = {}
+    self.annotate new
+
+    new.type = :double if merge
+
+    new.with_unnamed do
+      if merge
+        self.through do |key,values|
+          new_key, new_value = key.split(sep)
+          new_values = values + [[new_value]]
+          if new.include? new_key
+            new[new_key] = Misc.zip_fields(Misc.zip_fields(new[new_key]) << new_values)
+          else
+            new[new_key] = new_values
+          end
+        end
+      else
+        self.through do |key,values|
+          new_key, new_value = key.split(sep)
+          new_values = values + [new_value]
+          new[new_key] = new_values
+        end
+      end
+    end
+
+    if self.key_field and self.fields
+      new.key_field = self.key_field.partition(sep).first
+      new.fields = new.fields + [field]
     end
 
     new
