@@ -68,6 +68,8 @@ module TSV
           file.abort 
         end
       end
+    elsif Hash === file or Array === file
+      return
     else
       stream = get_stream(file)
       stream.abort(exception) if stream.respond_to? :abort

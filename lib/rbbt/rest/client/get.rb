@@ -85,7 +85,7 @@ class WorkflowRESTClient
         raise "No url" if url.nil?
         res = RestClient.get(self.encode(url), :params => params)
         raise TryAgain if res.code == 202
-        res
+        res.to_s
       end
     end
     res

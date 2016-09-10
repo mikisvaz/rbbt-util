@@ -293,10 +293,22 @@ class WorkflowRESTClient
         (stream ? res.read : res).split("\n")
         res.split("\n")
       else
-        if IO === res
-          JSON.parse res.read
-        else
-          JSON.parse res
+        json_text = if IO === res
+                      res.read
+                    else
+                      res
+                    end
+        begin
+          JSON.parse json_text
+        rescue
+          case
+          when json_text =~ /^\d+$/
+            json_text.to_i
+          when json_text =~ /^\d+\.\d/
+            json_text.to_f
+          else
+            raise $!
+          end
         end
       end
     end
