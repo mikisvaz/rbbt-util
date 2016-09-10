@@ -210,7 +210,7 @@ module TSV
           v = value.collect{|v|
             r = v[i]
             r = v[0] if r.nil?
-            [r]
+            r
           }
 
           if not @unnamed 
