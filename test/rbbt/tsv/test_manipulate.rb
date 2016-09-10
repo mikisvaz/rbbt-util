@@ -39,6 +39,27 @@ row3    a    C    Id4
     end
   end
 
+  def test_reorder_zipped
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b|bb|bbb    Id1|Id2|Id3
+row2    A    B    Id3
+row3    a    b_    Id1_
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(File.open(filename), :sep => /\s+/)
+
+      tsv1 = tsv.reorder("ValueA", nil, :zipped => true, :merge => true, :persist => true, :persist_file => '/tmp/foo.rbbt.tch')
+
+      assert_equal "ValueA", tsv1.key_field
+      assert_equal ["B"], tsv1["A"]["ValueB"]
+      assert_equal ["bb"], tsv1["aa"]["ValueB"]
+      assert_equal ["b","b_"], tsv1["a"]["ValueB"]
+      assert_equal %w(Id ValueB OtherID), tsv1.fields
+
+    end
+  end
   def test_reorder_simple
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID

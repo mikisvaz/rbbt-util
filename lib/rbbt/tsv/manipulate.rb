@@ -210,13 +210,15 @@ module TSV
           v = value.collect{|v|
             r = v[i]
             r = v[0] if r.nil?
-            r
+            [r]
           }
 
           if not @unnamed 
             k = Misc.prepare_entity(k, traverser.new_key_field_name, entity_options)
           end
+
           v.key = k if NamedArray === v
+
           yield k, v
  
         end
