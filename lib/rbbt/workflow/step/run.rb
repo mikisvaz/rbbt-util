@@ -31,7 +31,7 @@ class Step
             else
               i.load
             end
-          elsif i.streaming?
+          elsif i.streaming? and (task.input_options[task.inputs[pos]] || {})[:stream]
             TSV.get_stream i
           else
             i.join
