@@ -445,6 +445,9 @@ when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
     rescue EOFError, IOError
     end
     res.join if res.respond_to? :join
+  elsif res.nil?
+    job.join
+    puts Open.read(job.path)
   else
     puts res.to_s
   end
