@@ -134,6 +134,7 @@ module Rbbt
 
     jobs = {}
     seen = Set.new
+    _files = Set.new
     dirs.collect do |dir|
       next unless Open.exists? dir
 
@@ -148,6 +149,7 @@ module Rbbt
           cmd = "find '#{ taskdir }/' -not -type d -not -path '*/*.files/*' -not -path '*/*.pid' 2>/dev/null"
           files = CMD.cmd(cmd, :pipe => true)
           TSV.traverse files, :type => :array, :into => jobs, :_bar => "Finding jobs in #{ taskdir }" do |file|
+            _files << file
             if m = file.match(/(.*).(info|pid)$/)
               file = m[1]
             end
@@ -163,7 +165,7 @@ module Rbbt
             info[:task] = task
             info[:name] = name
 
-            if _files.include? file
+            if File.exists? file
               info = info.merge(file_time(file))
               info[:done] = true
               info[:info_file] = File.exist?(info_file) ? info_file : nil
