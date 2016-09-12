@@ -15,6 +15,7 @@ $ rbbt system status <workflow> <task>
 
 -a--all Print all jobs, not only uncompleted
 -h--help Print this help
+-q--quick Quick check
 EOF
 rbbt_usage and exit 0 if options[:help]
 
@@ -115,7 +116,7 @@ puts Log.color(:magenta, "# Workflows")
 jobs = Rbbt.job_info workflow, task
 workflows = {}
 
-jobs.each do |file,info|
+TSV.traverse jobs, :_bar => "Checking job status" do |file,info|
   next unless all or not info[:done] or not File.exist? file
   workflow = info[:workflow]
   task = info[:task]
@@ -129,23 +130,27 @@ workflows.sort.each do |workflow,tasks|
     puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:yellow, task) << ": " <<  Log.color(:blue, jobs.length.to_s)
 
     files_txt = jobs.collect do |file, i|
-      info = begin
-               Open.open(i[:info_file]) do |f|
-                 Marshal.load(f)
+      if options[:quick] and File.exists? file
+        status = 'done'
+      else
+        info = begin
+                 Open.open(i[:info_file]) do |f|
+                   Step::INFO_SERIALIAZER.load(f)
+                 end
+               rescue
+                 {:status => :noinfo}
                end
-             rescue
-               {:status => :noinfo}
-             end
 
-      pid = info[:pid]
-      status = info[:status]
-      status = :missing if status == :done and not File.exist? file
-      status = status.to_s
-      if status != "done" and pid and not Misc.pid_exists?(pid)
-        if File.exist? file
-          status << Log.color(:red, " (out of sync)") 
-        else
-          status << Log.color(:red, " (dead)") 
+        pid = info[:pid]
+        status = info[:status]
+        status = :missing if status == :done and not File.exist? file
+        status = status.to_s
+        if status != "done" and pid and not Misc.pid_exists?(pid)
+          if File.exist? file
+            status << Log.color(:red, " (out of sync)") 
+          else
+            status << Log.color(:red, " (dead)") 
+          end
         end
       end
       str = file.dup
@@ -153,7 +158,9 @@ workflows.sort.each do |workflow,tasks|
       str << "; #{pid_msg pid}" unless status == "done"
       str
     end
+
     files_txt.each do |f|
+      next if f.nil?
       puts "  " << f
     end
   end

@@ -14,7 +14,8 @@ Clean orphaned files
 $ rbbt system clean <workflow> <task>
 
 -a--all Apply to all jobs, not only uncompleted
--f--force Remove regardless of been active
+-f--force Remove locks and files regardless of been active
+-q--quick Quick check
 -h--help Print this help
 EOF
 rbbt_usage and exit 0 if options[:help]
@@ -75,24 +76,29 @@ puts
 jobs = Rbbt.job_info workflow, task
 workflows = {}
 
-jobs.each do |file,i|
-  info = begin
-           Open.open(i[:info_file]) do |f|
-             Marshal.load(f)
+TSV.traverse jobs, :bar => "Checking job status" do |file,i|
+  if options[:quick] and File.exists? file
+    status = 'done'
+  else
+    info = begin
+             Open.open(i[:info_file]) do |f|
+               Step::INFO_SERIALIAZER.load(f)
+             end
+           rescue
+             {:status => :noinfo}
            end
-         rescue
-           {:status => :noinfo}
-         end
 
-  pid = info[:pid]
+    pid = info[:pid]
 
-  status = info[:status].to_s
-  status = :missing if status == "done" and not File.exist? file
-  status = :nopid if status != "done" and pid.nil?
-  status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
-  status = :sync if status != "done" and File.exist? file
+    status = info[:status].to_s
+    status = :missing if status == "done" and not File.exist? file
+    status = :nopid if status != "done" and pid.nil?
+    status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
+    status = :sync if status != "done" and File.exist? file
 
-  status = status.to_s
+    status = status.to_s
+  end
+
   next unless status =~ /\bnopid/ or status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" or (force and status == 'noinfo')
   puts "  Removing #{ file } - #{status}" 
   Step.clean(file) 
