@@ -29,9 +29,16 @@ module Workflow
   def self.autoinstall
     @autoload ||= ENV["RBBT_WORKFLOW_AUTOINSTALL"] == "true"
   end
+
   def self.extended(base)
     self.workflows << base
     base.libdir = Path.setup(Path.caller_lib_dir).tap{|p| p.resource = base}
+  end
+
+  def self.init_remote_tasks
+    return if @@init_remote_tasks
+    load_remote_tasks(Rbbt.root.etc.remote_tasks.find) if Rbbt.root.etc.remote_tasks.exists?
+    @@init_remote_tasks = true
   end
 
   def self.require_remote_workflow(wf_name, url)
@@ -126,6 +133,7 @@ module Workflow
   end
 
   def self.require_workflow(wf_name, force_local=false)
+    Workflow.init_remote_tasks
     # Already loaded
     begin
       workflow = Misc.string2const wf_name
@@ -437,7 +445,5 @@ module Workflow
     remote_workflow_tasks = YAML.load(yaml_text)
     Workflow.process_remote_tasks(remote_workflow_tasks)
   end
-
-  load_remote_tasks(Rbbt.root.etc.remote_tasks.find) if Rbbt.root.etc.remote_tasks.exists?
 
 end
