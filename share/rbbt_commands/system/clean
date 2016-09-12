@@ -99,7 +99,7 @@ TSV.traverse jobs, :_bar => "Checking job status" do |file,i|
     status = status.to_s
   end
 
-  next unless (force and status =~ /done/) and status =~ /\bnopid/ or status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" or (force and status == 'noinfo')
+  next unless (force and status =~ /done/) or status =~ /\bnopid/ or status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" or (force and status == 'noinfo')
   puts "  Removing #{ file } - #{status}" 
   Step.clean(file) 
 end
