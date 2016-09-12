@@ -130,7 +130,7 @@ workflows.sort.each do |workflow,tasks|
     puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:yellow, task) << ": " <<  Log.color(:blue, jobs.length.to_s)
 
     files_txt = jobs.collect do |file, i|
-      if options[:quick] and File.exists? file
+      if options[:quick] and i[:done]
         status = 'done'
       else
         info = begin

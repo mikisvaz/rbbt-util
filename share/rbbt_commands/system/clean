@@ -76,8 +76,8 @@ puts
 jobs = Rbbt.job_info workflow, task
 workflows = {}
 
-TSV.traverse jobs, :bar => "Checking job status" do |file,i|
-  if options[:quick] and File.exists? file
+TSV.traverse jobs, :_bar => "Checking job status" do |file,i|
+  if options[:quick] and i[:done]
     status = 'done'
   else
     info = begin
