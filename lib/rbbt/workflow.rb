@@ -36,7 +36,7 @@ module Workflow
   end
 
   def self.init_remote_tasks
-    return if @@init_remote_tasks
+    return if defined? @@init_remote_tasks and @@init_remote_tasks
     load_remote_tasks(Rbbt.root.etc.remote_tasks.find) if Rbbt.root.etc.remote_tasks.exists?
     @@init_remote_tasks = true
   end
