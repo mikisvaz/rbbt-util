@@ -447,7 +447,6 @@ when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
     res.join if res.respond_to? :join
   elsif res.nil?
     job.join
-    iii job.path
     puts Open.read(job.path, :nocache => true)
   else
     puts res.to_s
