@@ -660,7 +660,7 @@ module Misc
   end
 
   def self.sort_mutation_stream(stream)
-    CMD.cmd('grep ":" | sort -u | sed "s/^M:/MT:/" | env LC_ALL=C sort -k1,1 -k2,2n -t:', :in => stream, :pipe => true, :no_fail => true)
+    CMD.cmd('grep ":" | sort -u | sed "s/^M:/MT:/" | env LC_ALL=C sort -k1,1 -k2,2n -k3,3n -t:', :in => stream, :pipe => true, :no_fail => true)
   end
 
 
