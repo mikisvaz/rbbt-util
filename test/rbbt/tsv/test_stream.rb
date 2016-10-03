@@ -246,7 +246,7 @@ row4  BBB CC
 
     s = StringIO.new text
     dumper = TSV.reorder_stream_tsv(s, "LabelC", %w(Row LabelA))
-    tsv = TSV.open TSV.collapse_stream(dumper.stream).stream.read
+    tsv = TSV.open TSV.collapse_stream(dumper.stream)
     assert_equal %w(row2 row4), tsv["CC"]["Row"]
   end
 end

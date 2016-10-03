@@ -279,15 +279,40 @@ module TSV
   end
 
 
-  def self.reorder_stream_tsv(stream, key_field, fields)
+  def self.reorder_stream_tsv(stream, key_field, fields=nil, zipped = true)
     parser = TSV::Parser.new TSV.get_stream(stream), :key_field => key_field, :fields => fields
     dumper_options = parser.options
     dumper = TSV::Dumper.new dumper_options
     dumper.init 
-    TSV.traverse parser, :into => dumper do |key,values|
-      key = key.first if Array === key
-      values = [values] unless Array === values
-      [key, values]
+    case parser.type
+    when :single
+      TSV.traverse parser, :into => dumper do |keys,values|
+        key = keys.first
+        [key, [values]]
+      end
+    when :double
+      TSV.traverse parser, :into => dumper do |keys,values|
+        raise [keys, values].inspect if keys.include? 'gain'
+        res = []
+        keys.each_with_index do |key,i|
+          vs = zipped ?  values.collect{|l| l.length == 1 ? l : [l[i]] } : values
+          res << [key, vs]
+        end
+        res.extend MultipleResult
+        res
+      end
+    when :list
+      TSV.traverse parser, :into => dumper do |keys,values|
+        key = keys.first
+        [key, values]
+      end
+    when :flat
+      TSV.traverse parser, :into => dumper do |keys,values|
+        key = keys.first
+        [key, values]
+      end
+    else
+      raise "Unknown type: " << parser.type.to_s
     end
     dumper
   end

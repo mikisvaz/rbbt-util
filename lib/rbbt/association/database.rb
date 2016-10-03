@@ -109,7 +109,7 @@ module Association
           [parts[@key_field], parts.values_at(*@fields)]
         end
       end
-    when :double, :list, :single
+    when :double
       class << parser
         def get_values(parts)
           [parts[@key_field].split(@sep2,-1), parts.values_at(*@fields).collect{|v| v.nil? ? [] : v.split(@sep2,-1) }]
