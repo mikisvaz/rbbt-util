@@ -93,13 +93,15 @@ module TSV
       file.open(open_options)
     when (defined? Tempfile and Tempfile)
       begin
-        file.rewind if file.respond_to?(:rewind) and file.eof?
-      rescue
+        pos = file.pos
+        file.rewind if file.respond_to?(:rewind) and pos != 0
+      rescue Exception
       end
       file
     when IO, StringIO, File
       begin
-        file.rewind if file.respond_to?(:rewind) and file.eof?
+        pos = file.pos
+        file.rewind if file.respond_to?(:rewind) and pos != 0
       rescue
       end
       file
