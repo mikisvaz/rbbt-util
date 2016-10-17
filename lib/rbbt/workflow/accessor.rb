@@ -350,7 +350,7 @@ class Step
   end
 
   def dirty?
-    rec_dependencies.collect{|dependency| dependency.path unless dependency.error? and not dependency.recoverable_error? }.compact.uniq.reject{|path| not Path === path or path.exists?}.any?
+    rec_dependencies.collect{|dependency| dependency.path unless dependency.error? and not dependency.recoverable_error? }.compact.uniq.reject{|path| not (Path === path) or path.exists?}.any?
   end
 
   def done?
