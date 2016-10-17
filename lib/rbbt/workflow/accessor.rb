@@ -339,7 +339,7 @@ class Step
     return false unless error?
     begin
       klass = Kernel.const_get(info[:exception][:class])
-      not RbbtException === klass
+      not (RbbtException == klass or RbbtException === klass)
     rescue Exception
       false
     end
@@ -350,7 +350,7 @@ class Step
   end
 
   def dirty?
-    rec_dependencies.collect{|dependency| dependency.path }.uniq.reject{|path| not Path === path or path.exists?}.any?
+    rec_dependencies.collect{|dependency| dependency.path unless dependency.error? and not dependency.recoverable_error? }.compact.uniq.reject{|path| not Path === path or path.exists?}.any?
   end
 
   def done?
@@ -365,6 +365,8 @@ class Step
   def running?
     pid = info[:pid]
     return nil if pid.nil?
+
+    return false if done? or error? or aborted? or not started?
 
     if Misc.pid_exists?(pid) 
       pid

@@ -54,7 +54,12 @@ class Step
   def _exec
     resolve_input_steps
     @exec = true if @exec.nil?
-    @task.exec_in((bindings ? bindings : self), *@inputs)
+    begin
+      old = Signal.trap("INT"){ Thread.current.raise Aborted }
+      @task.exec_in((bindings ? bindings : self), *@inputs)
+    ensure
+      Signal.trap("INT", old)
+    end
   end
 
   def exec(no_load=false)
@@ -119,6 +124,7 @@ class Step
           rescue Exception
             FileUtils.rm pid_file if File.exist?(pid_file)
             stop_dependencies
+            Log.exception $!
             raise $!
           end
 
@@ -237,6 +243,8 @@ class Step
       exception $!
       stop_dependencies
       raise $!
+    ensure 
+      set_info :pid, nil
     end
   end
 
@@ -248,11 +256,16 @@ class Step
       if force or aborted? or recoverable_error?
         clean
       else
-        raise "Error in job: #{status} - #{self.path}"
+        e = get_exception
+        if e
+          raise e
+        else
+          raise "Error in job: #{self.path}"
+        end
       end
     end
 
-    clean if dirty? or (not running? and not done?)
+    clean if dirty?
 
     if dofork
       fork(true) unless started?

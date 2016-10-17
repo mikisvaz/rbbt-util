@@ -199,8 +199,12 @@ class Step
           begin
             step.produce
           rescue Exception
-            step.abort
-            raise $!
+            step.exception $!
+            if step.recoverable_error?
+              raise $!
+            else
+              raise StopInsist.new($!)
+            end
           end
         end
         nil
@@ -221,7 +225,12 @@ class Step
             raise $!
           rescue Exception
             dep.exception $!
-            raise StopInsist.new($!)
+            dep.exception $!
+            if dep.recoverable_error?
+              raise $!
+            else
+              raise StopInsist.new($!)
+            end
           end
         end
         nil

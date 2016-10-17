@@ -21,6 +21,12 @@ class RbbtProcessQueue
           @stop = true
         }
 
+        @abort = false
+        Signal.trap(:USR2){ 
+          @abort = true
+        }
+
+
         loop do
           p = @queue.pop
           next if p.nil?
@@ -34,6 +40,7 @@ class RbbtProcessQueue
             raise $!
           end
           raise Respawn if @stop
+          raise Aborted if @abort
         end
         Kernel.exit! 0
       rescue Respawn
@@ -103,7 +110,6 @@ class RbbtProcessQueue
       rescue Aborted, Interrupt
         Log.warn "Worker #{Process.pid} aborted"
         Kernel.exit! 0
-        Process.kill "INT", @current 
       rescue Exception
         Log.exception $!
         raise $!
@@ -148,13 +154,16 @@ class RbbtProcessQueue
 
     def join
       Process.waitpid @pid
-      raise ProcessFailed unless $?.success?
+      raise ProcessFailed if not $?.success?
     end
 
     def abort
       begin
+        Process.kill :USR2, @pid
         Process.kill :INT, @pid
-      rescue
+      rescue Errno::ESRCH 
+      rescue Exception
+        Log.exception $!
       end
     end
 
