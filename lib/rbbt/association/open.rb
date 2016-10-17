@@ -11,7 +11,8 @@ module Association
     options = options.nil? ? {} : options.dup
     persist_options = persist_options.nil? ?  Misc.pull_keys(options, :persist)  : persist_options.dup 
 
-    options = Misc.add_defaults options, :zipped => true, :monitor => {:desc => "Opening database #{Misc.fingerprint file}"}
+    options = Misc.add_defaults options, :zipped => true, :merge => true, :monitor => {:desc => "Opening database #{Misc.fingerprint file}"}
+    options[:zipped] = false unless options[:merge]
     persist_options = Misc.add_defaults persist_options, :persist => true, :dir => Rbbt.var.associations
     persist = persist_options[:persist]
 
@@ -28,7 +29,7 @@ module Association
 
       data.serializer = :double if data.respond_to? :serializer
       tsv.with_unnamed do
-        tsv.with_monitor(options[:monitor]) do
+        tsv.with_monitor("Saving database #{Misc.fingerprint file}") do
           tsv.through do |k,v|
             data[k] = v
           end

@@ -260,6 +260,7 @@ module Misc
   def self.consume_stream(io, in_thread = false, into = nil, into_close = true, &block)
     return if Path === io
     return unless io.respond_to? :read 
+
     if io.respond_to? :closed? and io.closed?
       io.join if io.respond_to? :join
       return
@@ -426,25 +427,13 @@ module Misc
         end
 
         line_stream = Misc.open_pipe do |line_stream_in|
-          begin
-            while line
-              line_stream_in.puts line
-              line = stream.gets
-            end
-            stream.join if stream.respond_to? :join
-          rescue
-            stream.abort if stream.respond_to? :abort
-            raise $!
-          end
+          line_stream_in.puts line
+          Misc.consume_stream(stream, false, line_stream_in)
         end
 
         sorted = CMD.cmd("env LC_ALL=C sort #{cmd_args || ""}", :in => line_stream, :pipe => true)
 
-        while block = sorted.read(BLOCK_SIZE)
-          sin.write block
-        end
-
-        sorted.join if sorted.respond_to? :join
+        Misc.consume_stream(sorted, false, sin)
       rescue
         if defined? step and step
           step.abort
@@ -626,7 +615,7 @@ module Misc
       else
         file1 = TmpFile.tmp_file
         erase << file1
-        Open.write(file1, TSV.get_stream(stream1))
+        Misc.consume_stream(TSV.get_stream(stream1), false, file1)
       end
 
       if Path === stream2 or (String === stream2 and File.exist? stream2)
@@ -634,7 +623,7 @@ module Misc
       else
         file2 = TmpFile.tmp_file
         erase << file2
-        Open.write(file2, TSV.get_stream(stream2))
+        Misc.consume_stream(TSV.get_stream(stream2), false, file2)
       end
 
       CMD.cmd("env LC_ALL=C comm #{args} '#{file1}' '#{file2}'", :pipe => true, :post => Proc.new{ erase.each{|f| FileUtils.rm f } }) 
@@ -660,7 +649,7 @@ module Misc
   end
 
   def self.sort_mutation_stream(stream)
-    CMD.cmd('grep ":" | sort -u | sed "s/^M:/MT:/" | env LC_ALL=C sort -k1,1 -k2,2n -t:', :in => stream, :pipe => true, :no_fail => true)
+    CMD.cmd('grep ":" | sort -u | sed "s/^M:/MT:/" | env LC_ALL=C sort -k1,1 -k2,2n -k3,3n -t:', :in => stream, :pipe => true, :no_fail => true)
   end
 
 

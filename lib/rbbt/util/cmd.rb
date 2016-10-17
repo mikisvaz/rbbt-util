@@ -53,28 +53,31 @@ module CMD
 
     pid = fork {
       begin
+        Misc.purge_pipes(sin.last,sout.last,serr.last)
+
         sin.last.close
         sout.first.close
         serr.first.close
 
-        io = in_content
-        while IO === io
-          io.join if io.respond_to?(:join) and not io.joined?
-          io.close if io.respond_to?(:close) and not io.closed?
-          io = nil
+        if IO === in_content
+          in_content.close if in_content.respond_to?(:close) and not in_content.closed?
+          in_content.join if in_content.respond_to?(:join) and not in_content.joined?
         end
 
-        STDIN.reopen sin.first
-        sin.first.close
 
         STDERR.reopen serr.last
         serr.last.close
 
+        STDIN.reopen sin.first
+        sin.first.close
+
         STDOUT.reopen sout.last
         sout.last.close
 
+
         STDOUT.sync = STDERR.sync = true
-        
+
+
         exec(ENV, cmd)
 
         exit(-1)
@@ -89,32 +92,38 @@ module CMD
     sout.last.close
     serr.last.close
 
+
     sin = sin.last
     sout = sout.first
     serr = serr.first
-    
+
 
     Log.debug{"CMD: [#{pid}] #{cmd}" if log}
 
     if in_content.respond_to?(:read)
-      Thread.new do
+      in_thread = Thread.new do |parent|
         begin
-          loop do
-            break if in_content.closed?
-            block = in_content.read Misc::BLOCK_SIZE
-            break if block.nil? or block.empty?
-            sin.write block
+          begin
+            while c = in_content.readpartial(Misc::BLOCK_SIZE)
+              sin << c 
+            end
+          rescue EOFError
           end
+          sin.close  unless sin.closed?
 
-          sin.close unless sin.closed?
-          in_content.join if in_content.respond_to? :join and not dont_close_in
-          in_content.close unless in_content.closed? or dont_close_in
+          unless dont_close_in
+            in_content.close unless in_content.closed? 
+            in_content.join if in_content.respond_to? :join 
+          end
         rescue
+          parent.raise $!
           Process.kill "INT", pid
-          raise $!
+        ensure
+          sin.close  unless sin.closed?
         end
       end
     else
+      in_thread = nil
       sin.close
     end
 
@@ -124,15 +133,16 @@ module CMD
       pids = [pid]
     end
 
+
     if pipe
-      Thread.new do
+      err_thread = Thread.new do
         while line = serr.gets
           Log.log line, stderr if Integer === stderr and log
         end
         serr.close
       end
 
-      ConcurrentStream.setup sout, :pids => pids, :autojoin => no_wait, :no_fail => no_fail 
+      ConcurrentStream.setup sout, :pids => pids, :threads => [in_thread, err_thread].compact, :autojoin => no_wait, :no_fail => no_fail 
 
       sout
     else
@@ -141,23 +151,23 @@ module CMD
         while not serr.eof?
           err << serr.gets if Integer === stderr
         end
-        serr.close
-      end
+          serr.close
+        end
 
-      ConcurrentStream.setup sout, :pids => pids, :autojoin => no_wait, :no_fail => no_fail
+        ConcurrentStream.setup sout, :pids => pids, :threads => [in_thread, err_thread].compact, :autojoin => no_wait, :no_fail => no_fail 
 
-      out = StringIO.new sout.read
-      sout.close unless sout.closed?
+        out = StringIO.new sout.read
+        sout.close unless sout.closed?
 
-      Process.waitpid pid
+        Process.waitpid pid
 
-      if not $?.success? and not no_fail
-        raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"
-      else
-        Log.log err, stderr if Integer === stderr and log
-      end
+        if not $?.success? and not no_fail
+          raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"
+        else
+          Log.log err, stderr if Integer === stderr and log
+        end
 
-      out
+        out
     end
   end
 end

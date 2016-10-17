@@ -154,7 +154,7 @@ class WorkflowRESTClient
     end
 
     def started?
-      @result != nil or @started or @streaming
+      @result != nil or @started or @streaming or @url
     end
 
     def done?
@@ -199,7 +199,12 @@ class WorkflowRESTClient
       @name ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
         WorkflowRESTClient.post_jobname(File.join(base_url, task.to_s), inputs.merge(other_params).merge(:jobname => @name||@base_name, :_cache_type => cache_type))
       end
-      @url = File.join(base_url, task.to_s, @name)
+      if Open.remote? @name
+        @url = @name
+        @name = File.basename(@name)
+      else
+        @url = File.join(base_url, task.to_s, @name)
+      end
       self
     end
 

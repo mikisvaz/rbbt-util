@@ -431,6 +431,7 @@ module Workflow
     remote_tasks.each do |workflow, info|
       wf = Workflow.require_workflow workflow
       wf.remote_tasks ||= {}
+      IndiferentHash.setup wf.remote_tasks
       info.each do |remote, tasks|
         remote_wf = WorkflowRESTClient.new remote, workflow
         tasks.each do |task|

@@ -53,11 +53,13 @@ line33
     EOF
 
     TmpFile.with_file(text * 100) do |file|
-      CMD.cmd("gzip #{ file }")
 
-      gz = CMD.cmd("gunzip", :in => File.open(file + '.gz'), :pipe => true)
-      io = CMD.cmd('tail -n 10', :in => gz, :pipe => true)
-      assert_equal 10, io.read.split(/\n/).length
+      Open.open(file) do |f|
+        io = CMD.cmd('tail -n 10', :in => f, :pipe => true)
+        io2 = CMD.cmd('head -n 10', :in => io, :pipe => true)
+        io3 = CMD.cmd('head -n 10', :in => io2, :pipe => true)
+        assert_equal 10, io3.read.split(/\n/).length
+      end
     end
   end
 

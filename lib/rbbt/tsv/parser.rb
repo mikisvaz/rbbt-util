@@ -430,11 +430,11 @@ module TSV
         self.instance_eval do alias cast_values cast_values_double end
         case
         when (merge and not zipped)
-            self.instance_eval do alias add_to_data add_to_data_merge end
+          self.instance_eval do alias add_to_data add_to_data_merge end
         when (merge and zipped)
-            self.instance_eval do alias add_to_data add_to_data_merge_zipped end
+          self.instance_eval do alias add_to_data add_to_data_merge_zipped end
         when zipped
-            self.instance_eval do alias add_to_data add_to_data_zipped end
+          self.instance_eval do alias add_to_data add_to_data_zipped end
         else
           self.instance_eval do alias add_to_data add_to_data_no_merge_double end
         end
