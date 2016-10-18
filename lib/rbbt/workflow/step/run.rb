@@ -186,6 +186,7 @@ class Step
                 Log.exception $!
               ensure
                 Step.purge_stream_cache
+                set_info :pid, nil
                 FileUtils.rm pid_file if File.exist?(pid_file)
               end
             end
@@ -201,6 +202,7 @@ class Step
               rescue
                 Log.exception $!
                 stop_dependencies
+                set_info :pid, nil
                 FileUtils.rm pid_file if File.exist?(pid_file)
               end
             end
@@ -244,7 +246,7 @@ class Step
       stop_dependencies
       raise $!
     ensure 
-      set_info :pid, nil
+      set_info :pid, nil unless no_load
     end
   end
 
