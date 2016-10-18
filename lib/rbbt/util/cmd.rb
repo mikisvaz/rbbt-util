@@ -101,7 +101,7 @@ module CMD
     Log.debug{"CMD: [#{pid}] #{cmd}" if log}
 
     if in_content.respond_to?(:read)
-      in_thread = Thread.new do |parent|
+      in_thread = Thread.new(Thread.current) do |parent|
         begin
           begin
             while c = in_content.readpartial(Misc::BLOCK_SIZE)
