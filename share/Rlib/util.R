@@ -513,3 +513,27 @@ rbbt.ranks <- function(x){
 rbbt.default_code <- function(organism){
     return(organism + "/feb2014")
 }
+
+# Adapted from
+# http://stackoverflow.com/questions/27418461/calculate-the-modes-in-a-multimodal-distribution-in-r
+# by http://stackoverflow.com/users/6388753/ferroao
+rbbt.get.modes <- function(x,bw = NULL,spar = NULL) {  
+    if (is.null(bw)) bw = bw.nrd0(x);
+    if (is.null(spar)) spar = 0.1;
+
+    den <- density(x, kernel=c("gaussian"),bw=bw)
+    den.s <- smooth.spline(den$x, den$y, all.knots=TRUE, spar=spar)
+    s.1 <- predict(den.s, den.s$x, deriv=1)
+    s.0 <- predict(den.s, den.s$x, deriv=0)
+    den.sign <- sign(s.1$y)
+    a<-c(1,1+which(diff(den.sign)!=0))
+    b<-rle(den.sign)$values
+    df<-data.frame(a,b)
+    df = df[which(df$b %in% -1),]
+    modes<-s.1$x[df$a]
+    density<-s.0$y[df$a]
+    df2<-data.frame(modes,density)
+    df2<-df2[with(df2, order(-density)), ] # ordered by density
+    df2
+}
+

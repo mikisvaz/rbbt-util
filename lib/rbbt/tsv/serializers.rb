@@ -1,5 +1,6 @@
 module TSV
 
+
   class CleanSerializer
     def self.dump(o); o end
     def self.load(o); o end
@@ -15,14 +16,26 @@ module TSV
     def self.load(str); str.unpack("d").first; end
   end
 
-  class IntegerArraySerializer
+  class StrictIntegerArraySerializer
     def self.dump(a); a.pack("l*"); end
-    def self.load(str); str.unpack("l*"); end
+    def self.load(str); a = str.unpack("l*"); end
+  end
+
+  class StrictFloatArraySerializer
+    def self.dump(a); a.pack("d*"); end
+    def self.load(str); a = str.unpack("d*"); end
+  end
+
+  class IntegerArraySerializer
+    NIL_INT = -999
+    def self.dump(a); a.collect{|v| v || NIL_INT}.pack("l*"); end
+    def self.load(str); a = str.unpack("l*"); a.collect{|v| v == NIL_INT ? nil : v}; end
   end
 
   class FloatArraySerializer
-    def self.dump(a); a.pack("d*"); end
-    def self.load(str); str.unpack("d*"); end
+    NIL_FLOAT = -999.999
+    def self.dump(a); a.collect{|v| v || NIL_FLOAT}.pack("d*"); end
+    def self.load(str); a = str.unpack("d*"); a.collect{|v| v == NIL_FLOAT ? nil : v}; end
   end
 
   class StringSerializer
@@ -78,6 +91,8 @@ module TSV
     :float => FloatSerializer, 
     :integer_array => IntegerArraySerializer,
     :float_array => FloatArraySerializer,
+    :strict_integer_array => StrictIntegerArraySerializer,
+    :strict_float_array => StrictFloatArraySerializer,
     :marshal => Marshal,
     :single => StringSerializer,
     :string => StringSerializer,
