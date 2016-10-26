@@ -267,7 +267,7 @@ class Step
       end
     end
 
-    clean if dirty?
+    update 
 
     if dofork
       fork(true) unless started?
@@ -499,7 +499,11 @@ class Step
         dependencies.each{|dep| dep.join }
       end
 
-      sleep 1 until path.exists? or error? or aborted?
+      until path.exists? or error? or aborted?
+        iii [:sleep, status, streaming?]
+        sleep 1 
+        join_stream if streaming?
+      end
 
       self
     ensure

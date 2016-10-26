@@ -31,7 +31,7 @@ module Resource
   attr_accessor :pkgdir, :subdir, :resources, :rake_dirs, :remote_server, :search_paths
 
   def root()
-    Path.setup @subdir || "", @pkgdir, self
+    Path.setup @subdir || "", @pkgdir, self, @search_paths
   end
 
   def method_missing(name, prev = nil, *args)

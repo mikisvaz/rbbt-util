@@ -220,6 +220,13 @@ class Step
     end
   end
 
+  def update
+    if dirty?
+      dependencies.collect{|d| d.update}
+      clean
+    end
+  end
+
   def clean
     status = []
     status << "dirty" if dirty?

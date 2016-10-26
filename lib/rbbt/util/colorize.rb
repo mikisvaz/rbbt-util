@@ -11,11 +11,15 @@ module Colorize
     end
   end
 
-  def self.continuous(array, start = :white, eend = :black) 
+  def self.continuous(array, start = :white, eend = :black, percent = false) 
     start_color = Color.new from_name(start)
     end_color = Color.new from_name(eend)
 
-    array = array.collect{|v| n = v.to_f; n = n > 100 ? 100 : n; n < 0.001 ? 0.001 : n}
+    if percent
+      array = array.collect{|v| n = v.to_f; n = n > 100 ? 100 : n; n < 0.001 ? 0.001 : n}
+    else
+      array = array.collect{|v| n = v.to_f; } 
+    end
     max = array.max
     min = array.min
     range = max - min
@@ -24,6 +28,21 @@ module Colorize
       start_color.blend end_color, ratio
     end
   end
+  
+  def self.gradient(array, value, start = :green, eend = :red, percent = false)
+    index = array.index value
+    colors = continuous(array, start, eend, percent)
+    colors[index]
+  end
+
+  def self.rank_gradient(array, value, start = :green, eend = :red, percent = false)
+    index = array.index value
+    sorted = array.sort
+    array = array.collect{|e| sorted.index e}
+    colors = continuous(array, start, eend, percent)
+    colors[index]
+  end
+
 
   def self.distinct(array)
     colors = Rbbt.share.color["diverging_colors.hex"].list.collect{|c| Color.new c}

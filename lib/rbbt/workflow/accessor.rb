@@ -350,7 +350,12 @@ class Step
   end
 
   def dirty?
-    rec_dependencies.collect{|dependency| dependency.path unless dependency.error? and not dependency.recoverable_error? }.compact.uniq.reject{|path| not (Path === path) or path.exists?}.any?
+    dirty_files = rec_dependencies.collect{|dependency| dependency.path unless dependency.error? and not dependency.recoverable_error? }.compact.uniq.reject{|path| not (Path === path) or path.exists?}
+    if dirty_files.any?
+      true
+    else
+      false
+    end
   end
 
   def done?
@@ -358,7 +363,7 @@ class Step
   end
 
   def streaming?
-    IO === @result or @saved_stream or status == :streaming
+    (IO === @result) or (not @saved_stream.nil?) or status == :streaming
   end
 
 
@@ -806,7 +811,11 @@ module Workflow
     workdir_find = File.expand_path(workdir_find)
     path = File.expand_path(path)
     dir = File.dirname(path)
-    Misc.path_relative_to(workdir_find, dir).sub(/([^\/]+)\/.*/,'\1')
+    begin
+      Misc.path_relative_to(workdir_find, dir).sub(/([^\/]+)\/.*/,'\1')
+    rescue
+      nil
+    end
   end
 
   def task_exports

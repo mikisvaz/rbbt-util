@@ -294,23 +294,6 @@ module Workflow
     @_m
   end
 
-  def get_job_step(step_path, task = nil, input_values = nil, dependencies = nil)
-    step_path = step_path.call if Proc === step_path
-    persist = input_values.nil? ? false : true
-    persist = false
-    key = Path === step_path ? step_path.find : step_path
-    step = Step.new step_path, task, input_values, dependencies
-
-
-    step.extend step_module
-
-    step.task ||= task
-    step.inputs ||= input_values
-    step.dependencies = dependencies if dependencies and (step.dependencies.nil? or step.dependencies.length < dependencies.length)
-
-    step
-  end
-
   def job(taskname, jobname = nil, inputs = {})
     taskname = taskname.to_sym
     return remote_tasks[taskname].job(taskname, jobname, inputs) if remote_tasks and remote_tasks.include? taskname
@@ -354,9 +337,21 @@ module Workflow
     job
   end
 
-  def load_step(path)
-    task = task_for path
-    get_job_step path, tasks[task.to_sym]
+  def get_job_step(step_path, task = nil, input_values = nil, dependencies = nil)
+    step_path = step_path.call if Proc === step_path
+    persist = input_values.nil? ? false : true
+    persist = false
+    key = Path === step_path ? step_path.find : step_path
+    step = Step.new step_path, task, input_values, dependencies
+
+
+    step.extend step_module
+
+    step.task ||= task
+    step.inputs ||= input_values
+    step.dependencies = dependencies if dependencies and (step.dependencies.nil? or step.dependencies.length < dependencies.length)
+
+    step
   end
 
   def load_id(id)
@@ -366,12 +361,21 @@ module Workflow
     step = Step.new path, tasks[task.to_sym]
     step.info
     if step.info.include? :dependencies
-      step.dependencies = step.info[:dependencies].collect do |task, job|
+      step.dependencies = step.info[:dependencies].collect do |task, job, path|
         next if job.nil?
-        load_id(File.join(task.to_s, job))
+        load_step(path) 
       end
     end
     step
+  end
+
+  def load_step(path)
+    task = task_for path
+    if task
+      get_job_step path, tasks[task.to_sym]
+    else
+      get_job_step path
+    end
   end
 
   def load_name(task, name)
