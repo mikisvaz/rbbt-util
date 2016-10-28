@@ -85,7 +85,7 @@ module Path
     :default => :user
   })
 
-  STANDARD_SEARCH = %w(current user local workflow global lib fast cache bulk)
+  STANDARD_SEARCH = %w(current workflow user local global lib fast cache bulk)
 
   search_path_file = File.join(ENV['HOME'], '.rbbt/etc/search_paths')
   if File.exist?(search_path_file)

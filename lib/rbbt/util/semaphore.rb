@@ -69,11 +69,11 @@ if continue
       end
 
       begin
-        Log.low "Creating semaphore (#{ size }): #{file}"
+        Log.debug "Creating semaphore (#{ size }): #{file}"
         RbbtSemaphore.create_semaphore(file, size)
         yield file
       ensure
-        Log.low "Removing semaphore #{ file }"
+        Log.debug "Removing semaphore #{ file }"
         RbbtSemaphore.delete_semaphore(file)
       end
     end

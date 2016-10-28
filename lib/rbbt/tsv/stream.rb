@@ -303,12 +303,12 @@ module TSV
       end
     when :list
       TSV.traverse parser, :into => dumper do |keys,values|
-        key = keys.first
+        key = keys === Array ? keys.first : keys
         [key, values]
       end
     when :flat
       TSV.traverse parser, :into => dumper do |keys,values|
-        key = keys.first
+        key = keys === Array ? keys.first : keys
         [key, values]
       end
     else
