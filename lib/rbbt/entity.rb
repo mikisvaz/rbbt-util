@@ -26,7 +26,10 @@ module Entity
                                                else
                                                  found = nil
                                                  each do |k,v|
-                                                   if value =~ /\b#{Regexp.quote k}$/ or value =~ /^#{Regexp.quote k}\b/
+                                                   if value.to_s == k.to_s
+                                                     found = k
+                                                     break
+                                                   elsif value =~ /\(#{Regexp.quote k}\)/
                                                      found = k
                                                      break
                                                    end
