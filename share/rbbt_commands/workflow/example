@@ -1,8 +1,34 @@
 #!/usr/bin/env ruby
 
+require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
 require 'rbbt/workflow/usage'
+
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Description
+
+$ rbbt workflow exmaple <workflow> [<task>] [<name>] -- [<task_options>]
+
+Run workflow examples. You can define tasks and example names. You can also override task options
+
+-h--help Print this help
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+
 
 def run_task(workflow, task, name)
   Log.info "Running example #{Log.color :magenta, workflow.to_s}##{Log.color :yellow, task} -- #{Log.color :cyan, name}"
