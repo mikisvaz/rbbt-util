@@ -500,7 +500,6 @@ class Step
       end
 
       until path.exists? or error? or aborted?
-        iii [:sleep, status, streaming?]
         sleep 1 
         join_stream if streaming?
       end

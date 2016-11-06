@@ -309,6 +309,8 @@ begin
 
   if do_exec or (job.respond_to?(:is_exec) and job.is_exec)
     res = job.exec(:stream)
+    res = JSON.parse(res.read) if (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep === job)
+
     case
     when res.respond_to?(:gets)
       while block = res.read(2048)
@@ -449,7 +451,11 @@ when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
     job.join
     puts Open.read(job.path, :nocache => true, :nofail => true)
   else
-    puts res.to_s
+    if Array === res
+      out.puts res * "\n"
+    else
+      out.puts res.to_s
+    end
   end
 when Step
   if res.streaming?
@@ -485,7 +491,11 @@ when Step
     out.puts Open.read(res.path) if File.exist? res.path
   end
 else
-  out.puts res.to_s
+  if Array === res
+    out.puts res * "\n"
+  else
+    out.puts res.to_s
+  end
 end
 
 exit 0
