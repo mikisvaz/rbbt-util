@@ -693,17 +693,19 @@ module TSV
 
   def transpose(key_field="Unkown ID")
     raise "Transposing only works for TSVs of type :list" unless type == :list
-    new_fields = keys
+    new_fields = keys.dup
     new = self.annotate({})
     TSV.setup(new, :key_field => key_field, :fields => new_fields, :type => type, :filename => filename, :identifiers => identifiers)
 
-    through do |key, values|
-      fields.zip(values) do |new_key, value|
-        new[new_key] ||= []
-        new[new_key][new_fields.index key] = value
-      end
+    require 'matrix'
+    m = Matrix.rows values 
+    new_rows = m.transpose.to_a
+
+    fields.zip(new_rows) do |key,row|
+      new[key] = row
     end
 
     new
   end
+
 end

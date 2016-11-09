@@ -39,6 +39,7 @@ end
 fields = fields ? fields.split(/[,|]/).collect{|f| f.strip} : nil
 
 tsv = TSV.open(file1, :unnamed => true)
+tsv = tsv.to_double if tsv.type == :flat
 
 rest.each do |file2|
   file_fields = TSV.parse_header(file2).all_fields - tsv.all_fields

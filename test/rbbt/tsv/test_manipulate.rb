@@ -291,9 +291,9 @@ row3    a    C    Id4
       tsv = TSV.open(filename, :sep => /\s+/)
 
       assert_equal %w(vA vB vID),  tsv.transpose("Values").keys
-
+      assert_equal %w(Id1 Id3 Id4),  tsv.transpose("Values")["vID"]
     end
- 
+
   end
 
   def test_through_flat
