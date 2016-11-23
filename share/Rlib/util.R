@@ -97,8 +97,7 @@ rbbt.flat.tsv <- function(filename, sep = "\t", comment.char ="#", ...){
   return(result);
 }
 
-rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1, check.names=FALSE, fill=TRUE, as.is=TRUE, quote='',  ...){
-  data=read.table(file=filename, sep=sep, fill=fill, as.is=as.is, quote=quote, row.names= row.names, comment.char = comment.char, ...);
+rbbt.tsv.columns <- function(filename, sep="\t"){
   f = file(filename, 'r');
   headers = readLines(f, 1);
   if (length(grep("^#:", headers)) > 0){ 
@@ -106,11 +105,31 @@ rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1, check
   } 
   if (length(grep("^#", headers)) > 0){
       fields = strsplit(headers, sep)[[1]];
-      fields = fields[2:length(fields)];
-      names(data) <- fields;
+      close(f);
+      return(fields);
   }
   close(f);
+  return(NULL);
+}
+
+rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1, check.names=FALSE, fill=TRUE, as.is=TRUE, quote='',  ...){
+  data=read.table(file=filename, sep=sep, fill=fill, as.is=as.is, quote=quote, row.names= row.names, comment.char = comment.char, ...);
+
+  columns = rbbt.tsv.columns(filename, sep)
+  if (! is.null(columns)){
+      names(data) <- columns[2:length(columns)];
+  }
+
   return(data);
+}
+
+rbbt.tsv.numeric <- function(filename, sep="\t", ...){
+
+    columns = rbbt.tsv.columns(filename, sep)
+
+    colClasses = c('character', rep('numeric', length(columns) - 1))
+
+    return(rbbt.tsv(filename, sep, colClasses= colClasses, ...))
 }
 
 rbbt.tsv2matrix <- function(data){
