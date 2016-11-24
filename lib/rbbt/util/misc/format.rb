@@ -174,4 +174,8 @@ module Misc
     end
   end
 
+  def self.humanize_list(list)
+    list[0..-2].collect{|e| e.to_s} * ", " << " and " << list[-1].to_s
+  end
+
 end

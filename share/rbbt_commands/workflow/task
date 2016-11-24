@@ -31,9 +31,13 @@ def usage(workflow = nil, task = nil, exception=nil)
   else
     puts Log.color :magenta, workflow.to_s
     puts Log.color :magenta, "=" * workflow.to_s.length
+    if workflow.documentation[:title] and not workflow.documentation[:title].empty?
+      puts
+      puts Misc.format_paragraph workflow.documentation[:title] 
+    end
     if workflow.documentation[:description] and not workflow.documentation[:description].empty?
       puts
-      puts workflow.documentation[:description]
+      puts Misc.format_paragraph workflow.documentation[:description] 
     end
     puts
     workflow.doc(task)

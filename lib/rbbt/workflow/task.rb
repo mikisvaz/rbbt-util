@@ -2,7 +2,7 @@ require 'rbbt/util/misc'
 require 'rbbt/persist'
 
 module Task
-  attr_accessor :inputs, :input_types, :result_type, :input_defaults, :input_descriptions, :input_options, :description, :name, :result_description, :extension
+  attr_accessor :inputs, :input_types, :result_type, :input_defaults, :input_descriptions, :input_options, :required_inputs, :description, :name, :result_description, :extension
 
   def self.setup(options = {}, &block)
     block.extend Task

@@ -81,6 +81,7 @@ module Workflow
       :result_description => consume_result_description,
       :input_defaults     => consume_input_defaults,
       :input_descriptions => consume_input_descriptions,
+      :required_inputs    => consume_required_inputs,
       :extension          => consume_extension,
       :input_options      => consume_input_options
     }

@@ -60,6 +60,12 @@ module Workflow
     if task.nil?
       puts Log.color :magenta, self.to_s 
       puts Log.color :magenta, "=" * self.to_s.length
+
+      if self.documentation[:title] and not self.documentation[:title].empty?
+        puts
+        puts Misc.format_paragraph self.documentation[:title] 
+      end
+
       if self.documentation[:description] and not self.documentation[:description].empty?
         puts
         puts Misc.format_paragraph self.documentation[:description] 

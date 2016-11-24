@@ -33,10 +33,9 @@ module Log
     line ||= caller.first
   end
 
-  def self.ignore_stderr
-    LOG_MUTEX.synchronize do
-      backup_stderr = STDERR.dup
-      File.open('/dev/null', 'w') do |f|
+  def self._ignore_stderr
+    backup_stderr = STDERR.dup
+    File.open('/dev/null', 'w') do |f|
         STDERR.reopen(f)
         begin
           yield
@@ -44,7 +43,12 @@ module Log
           STDERR.reopen backup_stderr
           backup_stderr.close
         end
-      end
+    end
+  end
+
+  def self.ignore_stderr(&block)
+    LOG_MUTEX.synchronize do
+      _ignore_stderr &block
     end
   end
 

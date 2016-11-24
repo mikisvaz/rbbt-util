@@ -310,6 +310,19 @@ module Workflow
     task_inputs = task_info(taskname)[:inputs]
     defaults = IndiferentHash.setup(task.input_defaults)
 
+    missing_inputs = []
+    task.required_inputs.each do |input|
+      missing_inputs << input if inputs[input].nil?
+    end
+
+    if missing_inputs.length == 1
+      raise ParameterException, "Input #{missing_inputs.first} is required but was not provided or is nil"
+    end
+
+    if missing_inputs.length > 1
+      raise ParameterException, "Inputs #{Misc.humanize_list(missing_inputs)} are required but where not provided or are nil"
+    end
+
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
 
     real_inputs = {}
