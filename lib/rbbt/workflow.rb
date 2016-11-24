@@ -320,7 +320,7 @@ module Workflow
     end
 
     if missing_inputs.length > 1
-      raise ParameterException, "Inputs #{Misc.humanize_list(missing_inputs)} are required but where not provided or are nil"
+      raise ParameterException, "Inputs #{Misc.humanize_list(missing_inputs)} are required but were not provided or are nil"
     end
 
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
