@@ -156,7 +156,7 @@ module TSV
         rows = []
 
         sheet.each do |row|
-          rows << row.cells.collect{|c| c.value}
+          rows << row.cells.collect{|c| c.nil? ? nil : c.value}
         end
 
         File.open(filename, 'w') do |f|
