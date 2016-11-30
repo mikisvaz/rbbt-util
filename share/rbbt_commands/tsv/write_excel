@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Description
+
+$ rbbt tsv write_excel [options] <filename.tsv|-> <filename.xls|filename.xlsx>
+
+Use - to read from STDIN
+
+-k--key_field* Key field
+-f--fields* Fields
+-t--type* Type
+-m--merge Merge from multiple rows
+-um--unmerge Write the results unmerged
+-W--workflows* Load a list of workflows
+-R--requires* Require a list of files
+-n--name Transform entities to human readible names
+-h--help Print this help
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+if options[:workflows]
+  require 'rbbt/workflow'
+  workflows = options[:workflows].split(',')
+  workflows.each do |workflow|
+    workflow.strip!
+    Workflow.require_workflow workflow
+  end
+end
+
+if options[:requires]
+  requires = options[:requires].split(',')
+  requires.each do |req|
+    req.strip!
+    require req
+  end
+end
+
+tsvfile, excelfile = ARGV
+
+excelfile, tsvfile = tsvfile, nil if excelfile.nil? and tsvfile =~ /\.(xls|xlsx)$/
+
+raise ParameterException, "No files given" if tsvfile.nil? and excelfile.nil?
+raise ParameterException, "No excel file given" if excelfile.nil?
+
+require 'rbbt/tsv/excel'
+TSV.open(tsvfile, options).excel(excelfile, options)
+

@@ -402,6 +402,8 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     head
     assemble_pdf_table
     query
+    write_excel
+    read_excel
    }
    stat=stat{
     abs

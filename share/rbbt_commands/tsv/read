@@ -13,7 +13,7 @@ Use - to read from STDIN
 -k--key_field* Key field
 -f--fields* Fields
 -t--type* Type
--m--merge* Merge from multiple rows
+-m--merge Merge from multiple rows
 -h--help Print this help
 
 EOF

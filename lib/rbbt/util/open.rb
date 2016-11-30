@@ -208,6 +208,7 @@ module Open
     if (dir_sub_path = find_repo_dir(file))
       stream = get_stream_from_repo(*dir_sub_path)
     else
+      file = file.find if Path === file
       stream =  File.open(file, mode)
     end
 

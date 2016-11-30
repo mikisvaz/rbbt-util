@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Description
+
+$ rbbt tsv read_excel [options] <filename.xls|filename.xlsx>
+
+Use - to read from STDIN
+
+-k--key_field* Key field
+-f--fields* Fields
+-t--type* Type
+-m--merge Merge from multiple rows
+-s2--sep2* Second level separator. Default /[,|]\\s?/
+-h--help Print this help
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+excelfile = ARGV.first
+
+raise ParameterException, "No excel file given" if excelfile.nil?
+
+require 'rbbt/tsv/excel'
+puts TSV.excel(excelfile, options).to_s
+
