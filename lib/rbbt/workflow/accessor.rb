@@ -772,7 +772,7 @@ module Workflow
   def step_path(taskname, jobname, inputs, dependencies, extension = nil)
     #Proc.new{
       raise "Jobname makes an invalid path: #{ jobname }" if jobname =~ /\.\./
-      if inputs.any? or dependencies.any?
+      if inputs.length > 0 or dependencies.any?
         tagged_jobname = case TAG
                          when :hash
                            hash_str = Misc.obj2digest({:inputs => inputs, :dependencies => dependencies})
