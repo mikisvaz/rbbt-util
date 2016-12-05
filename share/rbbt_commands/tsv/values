@@ -40,7 +40,9 @@ end
 
 field = options[:field]
 
-TSV.traverse(tsv, :fields => [field]) do |k,v|
+fields = field.nil? ? nil : [field]
+
+TSV.traverse(tsv, :fields => fields) do |k,v|
   if options[:lines]
     puts (Array === v ? v.flatten*"\n" : v.to_s ) 
   else

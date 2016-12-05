@@ -71,7 +71,7 @@ module TSV
             cells.push v * sep2
           end
         else
-          v = remove_link(v) if remove_links
+          v = _remove_link(v) if remove_links
           cells.push v
         end
       end

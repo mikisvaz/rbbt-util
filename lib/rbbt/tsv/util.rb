@@ -60,7 +60,7 @@ module TSV
 
   def self.abort_stream(file, exception = nil)
     return if file.nil?
-    if Step === file
+    if defined? Step and Step === file
       if exception
         file.exception exception 
       else
