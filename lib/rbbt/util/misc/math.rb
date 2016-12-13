@@ -23,6 +23,13 @@ module Misc
     sum(list) / list.compact.length
   end
 
+  def self.median(array)
+    sorted = array.sort
+    len = sorted.length
+    (sorted[(len - 1) / 2] + sorted[len / 2]) / 2.0
+  end
+
+
   def self.sd(list)
     return nil if list.length < 3
     mean = mean(list)
@@ -79,12 +86,12 @@ module Misc
 
     label = "#{name1}: #{sizes[0]} (#{name2}: #{sizes[3]}, #{name3}: #{sizes[4]})"
     label << "|#{name2}: #{sizes[1]} (#{name1}: #{sizes[3]}, #{name3}: #{sizes[5]})"
-      label << "|#{name3}: #{sizes[2]} (#{name1}: #{sizes[4]}, #{name2}: #{sizes[5]})"
-      if total
-        label << "| INTERSECTION: #{sizes[6]} TOTAL: #{total}"
-      else
-        label << "| INTERSECTION: #{sizes[6]}"
-      end
+    label << "|#{name3}: #{sizes[2]} (#{name1}: #{sizes[4]}, #{name2}: #{sizes[5]})"
+    if total
+      label << "| INTERSECTION: #{sizes[6]} TOTAL: #{total}"
+    else
+      label << "| INTERSECTION: #{sizes[6]}"
+    end
 
     max = total || sizes.max
     sizes = sizes.collect{|v| (v.to_f/max * 100).to_i.to_f / 100}

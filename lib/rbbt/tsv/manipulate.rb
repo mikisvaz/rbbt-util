@@ -379,11 +379,11 @@ module TSV
           end
         when :list, :flat
           through do |key, values|
-            new[key] = values if invert ^ (method.include? key or (method & values).any?)
+            new[key] = values if invert ^ (method.include? key or (method & values).length > 0)
           end
         else
           through do |key, values|
-            new[key] = values if invert ^ (method.include? key or (method & values.flatten).any?)
+            new[key] = values if invert ^ (method.include? key or (method & values.flatten).length > 0)
           end
         end
       end
@@ -517,7 +517,7 @@ module TSV
         with_unnamed do
           through :key, key do |key, values|
             values = [values] if type == :single
-            new[key] = self[key] if invert ^ (values.flatten.select{|v| v == method}.any?)
+            new[key] = self[key] if invert ^ (values.flatten.select{|v| v == method}.length > 0)
           end
         end
 
@@ -531,7 +531,7 @@ module TSV
         with_unnamed do
           through :key, key do |key, values|
             values = [values] if type == :single
-            new[key] = self[key] if invert ^ (values.flatten.select{|v| method.call(v)}.any?)
+            new[key] = self[key] if invert ^ (values.flatten.select{|v| method.call(v)}.length > 0)
           end
         end
       end
