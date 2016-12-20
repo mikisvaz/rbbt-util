@@ -419,12 +419,16 @@ module Open
         res = []
         while not f.eof?
           l = f.gets
-          l = Misc.fixutf8(l) 
+          l = Misc.fixutf8(l) unless options[:nofix]
           res << yield(l)
         end
         res
       else
-        Misc.fixutf8(f.read)
+        if options[:nofix]
+          f.read
+        else
+          Misc.fixutf8(f.read)
+        end
       end
     end
   end

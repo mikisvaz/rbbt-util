@@ -17,7 +17,7 @@ module Log
       end
     end
 
-    attr_accessor :history, :mean_max
+    attr_accessor :history, :mean_max, :max_history
     def thr
       count = @ticks - @last_count
       if @last_time.nil?
@@ -34,7 +34,18 @@ module Log
         @history ||= [thr]
       else
         @history << thr
-        @history.shift if @history.length > 20
+        max_history ||= case 
+                      when @ticks > 20
+                        count = @ticks - @last_count
+                        times = @max / count
+                        num = times / 20
+                        num = 2 if num < 2
+                        count * num
+                      else
+                        20
+                      end
+        max_history = 100 if max_history > 100
+        @history.shift if @history.length > max_history
       end
 
       @mean_max ||= 0

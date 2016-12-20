@@ -556,18 +556,36 @@ module TSV
     end
   end
 
-  def dumper_stream(keys = nil, no_options = false)
-    TSV::Dumper.stream self do |dumper|
+  def dumper_stream(keys = nil, no_options = false, unmerge = false)
+    unmerge = false unless type == :double
+
+    options = self.options
+    options[:type] = :list if unmerge
+
+    TSV::Dumper.stream options do |dumper|
       dumper.init unless no_options
       begin
         if keys
           keys.each do |key|
-            dumper.add key, self[key]
+            if unmerge
+              Misc.zip_fields(self[key]).each do |values|
+                dumper.add key, values
+              end
+            else
+              dumper.add key, self[key]
+            end
           end
         else
           with_unnamed do
             each do |k,v|
-              dumper.add k, v
+
+              if unmerge
+                Misc.zip_fields(v).each do |values|
+                  dumper.add k, values
+                end
+              else
+                dumper.add k, v
+              end
             end
           end
         end
@@ -579,7 +597,7 @@ module TSV
     end
   end
 
-  def to_s(keys = nil, no_options = false)
+  def to_s(keys = nil, no_options = false, unmerge = false)
     if FalseClass === keys or TrueClass === keys
       no_options = keys
       keys = nil
@@ -591,7 +609,7 @@ module TSV
       end
     end
 
-    io = dumper_stream(keys, no_options)
+    io = dumper_stream(keys, no_options, unmerge)
 
     str = ''
     while block = io.read(Misc::BLOCK_SIZE)

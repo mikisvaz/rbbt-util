@@ -209,4 +209,16 @@ row2    aa|aa|AA|AA    b1|b2|B1|B2    Id1|Id1|Id2|Id2
     end
   end
 
+  def test_to_s_unmerge
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|A    b|B    Id1|Id2
+row2    aa|aa|AA|AA    b1|b2|B1|B2    Id1|Id1|Id2|Id2
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+      assert_equal 6, CMD.cmd('grep -v "#" | cut -f 1', :in => tsv.to_s(nil, false, true)).read.split("\n").length
+    end
+  end
 end

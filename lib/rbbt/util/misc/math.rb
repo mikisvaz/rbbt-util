@@ -97,4 +97,8 @@ module Misc
     sizes = sizes.collect{|v| (v.to_f/max * 100).to_i.to_f / 100}
     url = "https://chart.googleapis.com/chart?cht=v&chs=500x300&chd=t:#{sizes * ","}&chco=FF6342,ADDE63,63C6DE,FFFFFF&chdl=#{label}"
   end
+
+  def self.in_delta?(a, b, delta = 0.0001)
+    (a.to_f - b.to_f).abs < delta
+  end
 end

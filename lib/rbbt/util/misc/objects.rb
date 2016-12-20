@@ -60,6 +60,10 @@ module Misc
     first.zip(*rest)
   end
 
+  def self.choose(array, select)
+    array.zip(select).select{|e,s| s }.collect{|e,s| e }
+  end
+
   def self.field_position(fields, field, quiet = false)
     return field if Integer === field or Range === field
     raise FieldNotFoundError, "Field information missing" if fields.nil? && ! quiet
