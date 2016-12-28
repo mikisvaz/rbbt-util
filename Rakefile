@@ -19,6 +19,7 @@ begin
     gem.add_dependency('progress-monitor')
     gem.add_dependency('lockfile')
     gem.add_dependency('spreadsheet')
+    gem.add_dependency('rubyXL')
     gem.add_dependency('highline')
     gem.add_dependency('bio-bgzf')
     gem.add_dependency('term-ansicolor')

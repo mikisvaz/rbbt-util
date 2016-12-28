@@ -101,6 +101,7 @@ module TSV
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
 
     if callback
+      bar.init if bar
       hash.each do |k,v|
         begin
           callback.call yield(k,v)
@@ -109,6 +110,7 @@ module TSV
         end
       end
     else
+      bar.init if bar
       hash.each do |k,v|
         begin
           yield k,v 
