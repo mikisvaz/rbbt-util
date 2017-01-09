@@ -110,8 +110,7 @@ module Misc
       options[:format] = :sentence
     end
 
-    values = []
-    values = value.split('_')
+    values = value.to_s.split('_')
     values.each_index do |index|
       # lower case each item in array
       # Miguel Vazquez edit: Except for acronyms

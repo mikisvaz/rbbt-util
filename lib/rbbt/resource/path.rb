@@ -2,16 +2,39 @@ require 'rbbt/resource/util'
 require 'yaml'
 
 module Path
-  attr_accessor :resource, :pkgdir, :search_paths, :original
+  attr_accessor :resource, :pkgdir, :original, :search_paths, :search_order
 
-  def self.setup(string, pkgdir = nil, resource = nil, search_paths = nil)
+  def self.setup(string, pkgdir = nil, resource = nil, search_paths = nil, search_order = nil)
     return string if string.nil?
     string = string.dup if string.frozen?
     string.extend Path
     string.pkgdir = pkgdir || 'rbbt'
     string.resource = resource
     string.search_paths = search_paths
+    string.search_order = search_order
     string
+  end
+
+  def search_order
+    @search_order ||= STANDARD_SEARCH.dup.uniq
+  end
+
+  def search_paths
+    @search_paths ||= SEARCH_PATHS.dup
+  end
+
+  def add_search_path(name, dir)
+    search_paths[name.to_sym] = dir
+  end
+
+  def prepend_search_path(name, dir)
+    add_search_path(name, dir)
+    search_order.unshift(name.to_sym)
+  end
+
+  def append_search_path(name, dir)
+    add_search_path(name, dir)
+    search_order.push(name.to_sym)
   end
 
   def sub(*args)
@@ -19,7 +42,9 @@ module Path
   end
 
   def annotate(name)
-    Path.setup name.to_s, @pkgdir, @resource, @search_paths
+    name = name.to_s
+    name = Path.setup name, @pkgdir, @resource, @search_paths, @search_order
+    name
   end
 
   def join(name)
@@ -100,10 +125,17 @@ module Path
     key_elems = [where, caller_lib, rsearch_paths, paths]
     key = Misc.digest(key_elems.inspect)
     self.sub!('~/', Etc.getpwuid.dir + '/') if self.include? "~"
+
+    return @path[key] if @path[key]
+
+    if located?
+      @path[key] = self
+      return self
+    end
+
     @path[key] ||= begin
                      paths = [paths, rsearch_paths, self.search_paths, SEARCH_PATHS].reverse.compact.inject({}){|acc,h| acc.merge! h; acc }
                      where = paths[:default] if where == :default
-                     return self if located?
                      if self.match(/(.*?)\/(.*)/)
                        toplevel, subpath = self.match(/(.*?)\/(.*)/).values_at 1, 2
                      else
@@ -111,25 +143,40 @@ module Path
                      end
 
                      path = nil
-                     res = if where.nil?
-                       STANDARD_SEARCH.each do |w| 
+                     search_order = self.search_order || []
+                     res = nil
+                     if where.nil?
+
+                       (STANDARD_SEARCH - search_order).each do |w| 
                          w = w.to_sym
+                         break if res
                          next unless paths.include? w
                          path = find(w, caller_lib, paths)
-                         return path if File.exist? path
-                       end
-                       (SEARCH_PATHS.keys - STANDARD_SEARCH).each do |w|
-                         w = w.to_sym
-                         next unless paths.include? w
-                         path = find(w, caller_lib, paths)
-                         return path if File.exist? path
+                         res = path if File.exist? path
                        end
 
+                       search_order.each do |w| 
+                         w = w.to_sym
+                         next if res
+                         next unless paths.include? w
+                         path = find(w, caller_lib, paths)
+                         res = path if File.exist? path
+                       end if res.nil?
+
+                       (paths.keys - STANDARD_SEARCH - search_order).each do |w|
+                         w = w.to_sym
+                         next if res
+                         next unless paths.include? w
+                         path = find(w, caller_lib, paths)
+                         res = path if File.exist? path
+                       end if res.nil?
+
                        if paths.include? :default
-                         find((paths[:default] || :user), caller_lib, paths)
+                         res = find((paths[:default] || :user), caller_lib, paths)
                        else
                          raise "Path '#{ path }' not found, and no default specified in search paths: #{paths.inspect}"
-                       end
+                       end if res.nil?
+
                      else
                        where = where.to_sym
                        raise "Did not recognize the 'where' tag: #{where}. Options: #{paths.keys}" unless paths.include? where
@@ -155,16 +202,19 @@ module Path
                        path = path + '.bgz' if File.exist? path + '.bgz'
 
                        self.annotate path
+
+                       res = path
                      end
 
                      res.original = self
 
                      res
                    end
+    @path[key]
   end
 
   def find_all(caller_lib = nil, search_paths = nil)
-    search_paths ||= self.search_paths || SEARCH_PATHS
+    search_paths ||= @search_paths || SEARCH_PATHS
     search_paths = search_paths.dup
 
     search_paths.keys.
@@ -173,12 +223,12 @@ module Path
   end
 
   def glob_all(caller_lib = nil, search_paths = nil)
-    search_paths ||= self.search_paths || SEARCH_PATHS
+    search_paths ||= @search_paths || SEARCH_PATHS
     search_paths = search_paths.dup
 
     search_paths.keys.
       collect{|where| Dir.glob(find(where, Path.caller_lib_dir, search_paths))}.
-      compact.flatten.uniq.collect{|path| Path.setup(path, self.resource, self.pkgdir)}
+      compact.flatten.collect{|file| File.expand_path(file)}.uniq.collect{|path| Path.setup(path, self.resource, self.pkgdir)}
   end
   #{{{ Methods
 
@@ -313,8 +363,14 @@ module Path
   end
 
   def set_extension(new_extension = nil)
-    new_path = self.sub(/\.[^\.\/]+$/, "." << new_extension.to_s)
-    Path.setup new_path, @pkgdir, @resource
+    new_path = self + "." + new_extension.to_s
+    self.annotate(new_path)
+  end
+
+  def replace_extension(new_extension = nil)
+    new_path = self.sub(/\.[^\.\/]{2,4}$/,'')
+    new_path = new_path + "." + new_extension.to_s
+    self.annotate(new_path)
   end
 
   def doc_file(relative_to = 'lib')

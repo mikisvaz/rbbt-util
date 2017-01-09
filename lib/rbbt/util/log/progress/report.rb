@@ -37,9 +37,13 @@ module Log
         max_history ||= case 
                       when @ticks > 20
                         count = @ticks - @last_count
-                        times = @max / count
-                        num = times / 20
-                        num = 2 if num < 2
+                        if @max
+                          times = @max / count
+                          num = times / 20
+                          num = 2 if num < 2
+                        else
+                          num = 10
+                        end
                         count * num
                       else
                         20

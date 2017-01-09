@@ -13,9 +13,10 @@ Report the status of the system
 
 $ rbbt system status <workflow> <task>
 
--a--all Print all jobs, not only uncompleted
 -h--help Print this help
 -q--quick Quick check
+-a--all Print all jobs, not only uncompleted
+-i--inputs* List of inputs to print
 EOF
 rbbt_usage and exit 0 if options[:help]
 
@@ -26,6 +27,8 @@ workflow = workflow.split "," if workflow
 task = task.split "," if task
 
 all = options.delete :all
+
+inputs = (options[:inputs] || "").split(",")
 
 def pid_msg(pid)
   color = if pid and Misc.pid_exists? pid
@@ -130,8 +133,10 @@ workflows.sort.each do |workflow,tasks|
     puts "* " << Log.color(:magenta, workflow) << "#" << Log.color(:yellow, task) << ": " <<  Log.color(:blue, jobs.length.to_s)
 
     files_txt = jobs.collect do |file, i|
+      str = file.dup
       if options[:quick] and i[:done]
         status = 'done'
+        str << " #{ status_msg status }"
       else
         info = begin
                  Open.open(i[:info_file]) do |f|
@@ -152,9 +157,22 @@ workflows.sort.each do |workflow,tasks|
             status << Log.color(:red, " (dead)") 
           end
         end
+        str << " #{ status_msg status }"
+
+        if inputs and inputs.any? and info[:inputs]
+          job_inputs = info[:inputs]
+          IndiferentHash.setup(job_inputs)
+
+          iii inputs
+          inputs.each do |input|
+            value = job_inputs[input]
+            iii [input, value]
+            next if  value.nil?
+            value_str = Misc.fingerprint(value)
+            str << " #{input}=#{value_str}"
+          end
+        end
       end
-      str = file.dup
-      str << " #{ status_msg status }"
       str << "; #{pid_msg pid}" unless status == "done"
       str
     end

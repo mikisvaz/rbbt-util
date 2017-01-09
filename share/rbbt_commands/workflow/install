@@ -63,7 +63,18 @@ Misc.in_dir(workflow_dir) do
       Log.info "Installing: " + workflow
       if repo.nil?
         repo_base_url = Rbbt.etc.workflow_repo.exists? ? Rbbt.etc.workflow_repo.read.strip : 'https://github.com/Rbbt-Workflows/'
-        repo = File.join(repo_base_url, Misc.snake_case(workflow) + '.git')
+        begin
+          repo = File.join(repo_base_url, workflow + '.git')
+          CMD.cmd("wget '#{repo}' -O /dev/null").read
+        rescue
+          Log.debug "Workflow repo does not exist, trying snake_case: #{ repo }"
+          begin
+            repo = File.join(repo_base_url, Misc.snake_case(workflow) + '.git')
+            CMD.cmd("wget '#{repo}' -O /dev/null").read
+          rescue
+            raise "Workflow repo does not exist: #{ repo }"
+          end
+        end
       end
       Log.warn "Cloning #{ repo }"
       Misc.insist do

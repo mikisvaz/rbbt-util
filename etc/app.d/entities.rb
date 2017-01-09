@@ -12,7 +12,7 @@ Rbbt.etc.entities.read.split("\n").each do |name|
       include Entity::REST
     end
   rescue
-    Log.warn "Could extend REST entity: #{ name }"
+    Log.warn "Could not extend REST entity: #{ name }"
   end
 end if Rbbt.etc.entities.exists?
 

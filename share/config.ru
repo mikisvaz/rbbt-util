@@ -29,6 +29,8 @@ $app_dir = FileUtils.pwd
 $app_name = app_name = File.basename($app_dir)
 $app = app = eval "class #{app_name} < Sinatra::Base; self end"
 
+Sinatra::RbbtRESTMain.add_resource_path(Rbbt.www.views.find(:lib), true)
+
 #{{{ PRE
 load_file Rbbt.etc['app.d/pre.rb'].find 
 
@@ -69,6 +71,9 @@ load_file Rbbt.etc['app.d/preload.rb'].find_all
 load_file Rbbt.lib['sinatra.rb'].find_all
 
 #{{{ RUN
+
+Sinatra::RbbtRESTMain.add_resource_path($app_dir.www.views.find, true)
+
 $title = app_name
 require 'rack'
 use Rack::Deflater
