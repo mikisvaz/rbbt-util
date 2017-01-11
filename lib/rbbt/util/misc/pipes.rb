@@ -391,10 +391,11 @@ module Misc
           content.abort if content.respond_to? :abort
           Open.rm path if File.exist? path
         rescue Exception
-          Log.medium "Exception in sensiblewrite: [#{Process.pid}] #{$!.message} -- #{ Log.color :blue, path }"
+          exception = (AbortedStream === content and content.exception) ? content.exception : $!
+          Log.medium "Exception in sensiblewrite: [#{Process.pid}] #{exception.message} -- #{ Log.color :blue, path }"
           content.abort if content.respond_to? :abort
           Open.rm path if File.exist? path
-          raise $!
+          raise exception
         rescue
           Log.exception $!
           raise $!

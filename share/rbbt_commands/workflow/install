@@ -78,9 +78,10 @@ Misc.in_dir(workflow_dir) do
       end
       Log.warn "Cloning #{ repo }"
       Misc.insist do
-        `git clone "#{repo}"`
+        `git clone "#{repo}" #{ Misc.snake_case(workflow) }`
         raise unless $?.success?
       end
+      Log.warn "Initializing and updating submodules for #{repo}. You might be prompted for passwords."
       Misc.in_dir(Misc.snake_case(workflow)) do
         `git submodule init`
         `git submodule update`

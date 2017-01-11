@@ -318,7 +318,7 @@ module TSV
       raise $!
     rescue Exception
       Log.low{"Exception traversing #{stream_name(obj)}"}
-      abort_stream obj
+      abort_stream obj unless String === obj
       abort_stream options[:into], $!
       raise $!
     end

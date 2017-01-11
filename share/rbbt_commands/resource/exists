@@ -5,7 +5,7 @@ require 'rbbt/resource'
 require 'rbbt/workflow'
 
 options = SOPT.get <<EOF
--w--workflows* Workflows to use; 'all' for all in Rbbt.etc.workflows:
+-W--workflows* Workflows to use; 'all' for all in Rbbt.etc.workflows:
 -r--requires* Files to require; 'all' for all in Rbbt.etc.requires:
 -c--create Try to create file if claimed:
 -h--help Help
@@ -42,7 +42,16 @@ end
 
 resource, path = ARGV
 
-resource = Kernel.const_get(resource)
+begin
+  resource = Kernel.const_get(resource)
+rescue
+  begin
+    resource = Workflow.require_workflow resource
+  rescue
+    raise "Resource not found: #{ resource }"
+  end
+end
+
 
 if options[:create]
   exists = resource[path].exists?

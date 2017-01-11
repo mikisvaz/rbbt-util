@@ -42,9 +42,17 @@ end
 
 resource, path = ARGV
 
-force = options[:force]
+begin
+  resource = Kernel.const_get(resource)
+rescue
+  begin
+    resource = Workflow.require_workflow resource
+  rescue
+    raise "Resource not found: #{ resource }"
+  end
+end
 
-resource = Kernel.const_get(resource)
+force = options[:force]
 
 puts resource[path].produce(force).find
 
