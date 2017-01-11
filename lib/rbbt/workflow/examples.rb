@@ -30,11 +30,12 @@ module Workflow
     dir = Path.setup(dir.dup)
     input_names.each do |input|
       file = dir[input].find
+      file = dir.glob(input.to_s + ".*").first if file.nil? or not file.exists?
       Log.debug "Trying #{ input }: #{file}"
       next unless file.exists?
 
       case input_types[input]
-      when :tsv, :array, :text
+      when :tsv, :array, :text, :file
         Log.debug "Pointing #{ input } to #{file}"
         inputs[input.to_sym]  = file
       when :boolean
