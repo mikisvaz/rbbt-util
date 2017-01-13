@@ -1,8 +1,7 @@
 require 'rbbt-util'
-require 'rbbt/workflow/annotate'
+require 'rbbt/util/misc/annotated_module'
 
 module Workflow
-  include AnnotatedModule
 
   module DependencyBlock
     attr_accessor :dependency
@@ -13,11 +12,15 @@ module Workflow
     end
   end
 
+  include InputModule
   AnnotatedModule.add_consummable_annotation(self,
-                                             :result_description => "",
-                                             :result_type        => nil,
-                                             :extension          => '',
-                                             :dependencies       => [])
+    :dependencies       => [],
+    :description        => "",
+    :result_type        => nil,
+    :result_description => "",
+    :extension          => '')
+
+
   def helper(name, &block)
     helpers[name] = block
   end

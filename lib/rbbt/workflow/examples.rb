@@ -32,7 +32,7 @@ module Workflow
       file = dir[input].find
       file = dir.glob(input.to_s + ".*").first if file.nil? or not file.exists?
       Log.debug "Trying #{ input }: #{file}"
-      next unless file.exists?
+      next unless file and file.exists?
 
       case input_types[input]
       when :tsv, :array, :text, :file

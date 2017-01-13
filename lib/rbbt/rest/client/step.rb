@@ -22,6 +22,7 @@ class WorkflowRESTClient
 
     def initialize(base_url, task = nil, base_name = nil, inputs = nil, result_type = nil, result_description = nil, is_exec = false, is_stream = false, stream_input = nil)
       @base_url, @task, @base_name, @inputs, @result_type, @result_description, @is_exec, @is_stream, @stream_input = base_url, task, base_name, inputs, result_type, result_description, is_exec, is_stream, stream_input
+      @base_url = "http://" << @base_url unless @base_url =~ /^https?:\/\//
       @mutex = Mutex.new
     end
 

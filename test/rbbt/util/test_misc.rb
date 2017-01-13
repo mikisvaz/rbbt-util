@@ -444,6 +444,10 @@ eum fugiat quo voluptas nulla pariatur?"
     ppp Misc.html_tag('textarea', "hola\nadios\nagain")
   end
 
+  def test_link_title
+    ppp Misc.html_tag('a', "hola\nadios\nagain", :title => "Hola adios")
+  end
+
   def __test_lock_fd
     require 'rbbt/workflow'
     Rbbt.var.jobs.Structure.neighbour_map.glob("*")[0..1000].each do |file|

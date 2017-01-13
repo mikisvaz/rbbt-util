@@ -192,7 +192,7 @@ module TSV
 
   
   def attach(other, options = {})
-    options      = Misc.add_defaults options, :in_namespace => false, :persist_input => true
+    options      = Misc.add_defaults options, :in_namespace => false, :persist_input => false
     fields, one2one, complete = Misc.process_options options, :fields, :one2one, :complete
     in_namespace = options[:in_namespace]
 
@@ -202,7 +202,7 @@ module TSV
       other.identifiers ||= other_identifier_file
     end
 
-    fields = other.fields - [key_field].concat(self.fields) if fields.nil?  or fields == :all 
+    fields = other.fields - [key_field].concat(self.fields) if other.fields and (fields.nil? or fields == :all)
     if in_namespace
       fields = other.fields_in_namespace - [key_field].concat(self.fields) if fields.nil?
     else
