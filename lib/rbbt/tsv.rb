@@ -161,6 +161,8 @@ module TSV
                           data.serializer = :float
                         when (parser.cast == :to_f and (parser.type == :list or parser.type == :flat))
                           data.serializer = :float_array
+                        else
+                          data.serializer = :marshal
                         end
     end
 

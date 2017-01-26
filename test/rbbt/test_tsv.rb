@@ -350,7 +350,7 @@ b 2
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :key_field => "Value", :grep => "#\\|2")
+      tsv = TSV.open(filename, :key_field => "Value", :grep => '2')
       assert(tsv.include?("2"))
       assert(! tsv.include?("7"))
     end

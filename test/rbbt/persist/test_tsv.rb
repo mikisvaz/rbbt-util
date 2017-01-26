@@ -72,4 +72,17 @@ class TestPersistTSV < Test::Unit::TestCase
     engine = "LMDB"
     run_bechmark(tsv_path, engine)
   end
+
+  def test_tsv_persist
+    content =<<-EOF
+#: :cast=:to_f
+#Key Value1 Value2
+k1 1.1 2.1
+k2 1.2 2.2
+    EOF
+    TmpFile.with_file(content) do |tsv_file|
+      tsv = TSV.open(tsv_file, :sep => " ", :persist => true, :type => :double, :merge => true)
+      iii tsv["k1"]
+    end
+  end
 end

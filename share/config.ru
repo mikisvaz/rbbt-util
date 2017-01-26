@@ -70,6 +70,10 @@ load_file Rbbt.etc['app.d/preload.rb'].find_all
 #{{{ SINATRA
 load_file Rbbt.lib['sinatra.rb'].find_all
 
+Entity.entity_list_cache     = Rbbt.var.sinatra.app[app_name].find.entity_lists
+Entity.entity_map_cache      = Rbbt.var.sinatra.app[app_name].find.entity_maps
+Entity.entity_property_cache = Rbbt.var.sinatra.app[app_name].find.entity_properties
+
 #{{{ RUN
 
 Sinatra::RbbtRESTMain.add_resource_path($app_dir.www.views.find, true)

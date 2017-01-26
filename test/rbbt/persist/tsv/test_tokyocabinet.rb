@@ -240,7 +240,7 @@ class TestPersistTSVTC < Test::Unit::TestCase
     end
   end
 
-  def test_fdb
+  def __test_fdb
     TmpFile.with_file do |tmp|
       repo = Persist.open_tokyocabinet(tmp, true, :list, TokyoCabinet::FDB)
       repo.write
