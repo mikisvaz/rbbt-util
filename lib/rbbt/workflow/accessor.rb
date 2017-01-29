@@ -325,7 +325,7 @@ class Step
       begin
         klass = Kernel.const_get(ex_class)
         ex = klass.new ex_message
-        #ex.set_backtrace ex_backtrace
+        ex.set_backtrace ex_backtrace unless ex_backtrace.nil? or ex_backtrace.empty?
         ex
       rescue
         Log.exception $!
@@ -338,10 +338,11 @@ class Step
     return true if aborted?
     return false unless error?
     begin
+      return true unless info[:exception]
       klass = Kernel.const_get(info[:exception][:class])
       not (RbbtException == klass or RbbtException === klass)
     rescue Exception
-      false
+      true
     end
   end
 
@@ -350,6 +351,7 @@ class Step
   end
 
   def dirty?
+    return true if done? and not status == :done
     dirty_files = rec_dependencies.collect{|dependency| dependency.path unless dependency.error? and not dependency.recoverable_error? }.compact.uniq.reject{|path| not (Path === path) or path.exists?}
     if dirty_files.any?
       true
