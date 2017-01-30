@@ -72,14 +72,26 @@ module Association
     info_fields = field_pos.collect{|f| f == :key ? :key : all_fields[f]}
     options = options.merge({:key_field => source_field, :fields =>  info_fields})
 
-    tsv.with_monitor(options[:monitor]) do
-      tsv = tsv.reorder source_field, fields if true or source_field != tsv.key_field or (fields and tsv.fields != fields)
+    data = options[:data] || {}
+    TmpFile.with_file do |tmpfile|
+      tmp_data = Persist.open_database(tmpfile, true, :double, "HDB")
+
+      tsv.with_monitor(options[:monitor]) do
+        tsv = tsv.reorder source_field, fields, :persist => persist, :persist_data => tmp_data if true or source_field != tsv.key_field or (fields and tsv.fields != fields)
+      end
+
+      tsv.key_field = source_header
+      tsv.fields = field_headers
+
+      if source_format or target_format
+        tsv = translate tsv, source_format, target_format, :persist => true, :persist_data => data, :data => data
+      else
+        tsv.through do |k,v|
+          data[k] = v
+        end
+        tsv.annotate data
+      end
     end
-
-    tsv.key_field = source_header
-    tsv.fields = field_headers
-
-    tsv = translate tsv, source_format, target_format, :persist => persist if source_format or target_format
 
     tsv
   end
@@ -87,7 +99,7 @@ module Association
   def self.open_stream(stream, options = {})
     fields, persist = Misc.process_options options, :fields, :persist
 
-    parser = TSV::Parser.new stream, options.merge(:fields => nil, :key_field => nil)
+    parser = TSV::Parser.new stream, options.merge(:fields => nil, :key_field => nil, :type => :double)
 
     key_field, *_fields = all_fields = parser.all_fields
 
@@ -128,13 +140,25 @@ module Association
     open_options = options.merge(parser.options).merge(:parser => parser)
     open_options = Misc.add_defaults open_options, :monitor => {:desc => "Parsing #{ Misc.fingerprint stream }"}
 
-    tsv = TSV.parse parser.stream, {}, open_options
-    tsv.key_field = source_header
-    tsv.fields = field_headers
+    data = open_options[:data] || {}
+    tsv = nil
+    TmpFile.with_file do |tmpfile|
+      tmp_data = Persist.open_database(tmpfile, true, :double, "HDB")
 
-    tsv = tsv.to_double unless tsv.type == :double
+      tsv = TSV.parse parser.stream, tmp_data, open_options
+      tsv.key_field = source_header
+      tsv.fields = field_headers
 
-    tsv = translate tsv, source_format, target_format, :persist => persist if source_format or target_format
+      if source_format or target_format
+        tsv = translate tsv, source_format, target_format, :persist => true, :persist_data => data, :data => data
+      else
+        tsv.through do |k,v|
+          data[k] = v
+        end
+        tsv.annotate data
+      end
+
+    end
 
     tsv
   end
@@ -148,7 +172,18 @@ module Association
                  open_stream(TSV.get_stream(file), options.dup)
                when TSV
                  file = file.to_double unless file.type == :double
-                 reorder_tsv(file, options.dup)
+                 tsv = reorder_tsv(file, options.dup)
+                 if options[:data]
+                   data = options[:data]
+                   tsv.with_unnamed do
+                     tsv.with_monitor("Saving database #{Misc.fingerprint file}") do
+                       tsv.through do |k,v|
+                         data[k] = v
+                       end
+                     end
+                   end
+                 end
+                 tsv
                when IO
                  open_stream(file, options.dup)
                else

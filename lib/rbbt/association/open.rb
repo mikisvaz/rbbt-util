@@ -22,19 +22,17 @@ module Association
       file = file.call if Proc === file
 
       options = options.dup
-      tsv = Association.database(file, options.merge(:persist => persist, :unnamed => true))
-      tsv = tsv.to_double unless tsv.type == :double
-
-      tsv.annotate data
-
       data.serializer = :double if data.respond_to? :serializer
-      tsv.with_unnamed do
-        tsv.with_monitor("Saving database #{Misc.fingerprint file}") do
-          tsv.through do |k,v|
-            data[k] = v
-          end
-        end
-      end
+
+      tsv = Association.database(file, options.merge(:persist => true, :unnamed => true, :data => data, :type => :double))
+
+      #tsv.with_unnamed do
+      #  tsv.with_monitor("Saving database #{Misc.fingerprint file}") do
+      #    tsv.through do |k,v|
+      #      data[k] = v
+      #    end
+      #  end
+      #end
 
       data
     end
