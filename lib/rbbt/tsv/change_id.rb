@@ -167,8 +167,9 @@ module TSV
     return nil
   end
 
-  def self.translate(tsv, *args)
-    new = TSV.open translate_stream(tsv, *args)
+  def self.translate(tsv, field, format, options = {})
+    persist_options = Misc.pull_keys options, :persist
+    new = TSV.open translate_stream(tsv, field, format, options), :persist => persist_options[:persist], :persist_data => persist_options[:data], :persist_file => persist_options[:file]
     new.identifiers = tsv.identifiers
     new
   end

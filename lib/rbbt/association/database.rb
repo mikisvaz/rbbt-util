@@ -84,7 +84,7 @@ module Association
       tsv.fields = field_headers
 
       if source_format or target_format
-        tsv = translate tsv, source_format, target_format, :persist => true, :persist_data => data, :data => data
+        tsv = translate tsv, source_format, target_format, :persist => true, :persist_data => data
       else
         tsv.through do |k,v|
           data[k] = v
@@ -97,9 +97,11 @@ module Association
   end
 
   def self.open_stream(stream, options = {})
-    fields, persist = Misc.process_options options, :fields, :persist
+    options = Misc.add_defaults options, :type => :double, :merge => true
+    fields, persist, data = Misc.process_options options, :fields, :persist, :data
 
-    parser = TSV::Parser.new stream, options.merge(:fields => nil, :key_field => nil, :type => :double)
+
+    parser = TSV::Parser.new stream, options.merge(:fields => nil, :key_field => nil)
 
     key_field, *_fields = all_fields = parser.all_fields
 
@@ -140,7 +142,7 @@ module Association
     open_options = options.merge(parser.options).merge(:parser => parser)
     open_options = Misc.add_defaults open_options, :monitor => {:desc => "Parsing #{ Misc.fingerprint stream }"}
 
-    data = open_options[:data] || {}
+    data ||= {}
     tsv = nil
     TmpFile.with_file do |tmpfile|
       tmp_data = Persist.open_database(tmpfile, true, :double, "HDB")
