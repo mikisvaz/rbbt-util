@@ -57,7 +57,7 @@ module Association
 
     if source_specs.first and not all_fields.include? source_specs.first and defined? Entity and (_format = Entity.formats[source_specs.first.to_s])
       _source = all_fields.select{|f| Entity.formats[f.to_s] == _format }.first
-      raise "Source not found #{source_specs}. Options: #{Misc.fingerprint all_fields}" if _target.nil?
+      raise "Source not found #{source_specs}. Options: #{Misc.fingerprint all_fields}" if _source.nil?
       source_specs[0] = _source
     end
 

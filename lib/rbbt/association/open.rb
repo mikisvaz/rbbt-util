@@ -13,12 +13,12 @@ module Association
 
     options = Misc.add_defaults options, :zipped => true, :merge => true, :monitor => {:desc => "Opening database #{Misc.fingerprint file}"}
     options[:zipped] = false unless options[:merge]
-    persist_options = Misc.add_defaults persist_options, :persist => true, :dir => Rbbt.var.associations
+    persist_options = Misc.add_defaults persist_options.dup, :persist => true, :dir => Rbbt.var.associations
     persist = persist_options[:persist]
 
     file = version_file(file, options[:namespace]) if options[:namespace] and String === file
 
-    data = Persist.persist_tsv(file, "Association Database", options, persist_options) do |data|
+    data = Persist.persist_tsv(file, nil, options, persist_options.merge(:prefix => "Association Database")) do |data|
       file = file.call if Proc === file
 
       options = options.dup

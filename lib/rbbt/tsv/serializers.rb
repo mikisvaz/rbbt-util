@@ -57,7 +57,11 @@ module TSV
 
   class StringDoubleArraySerializer
     def self.dump(array)
-      array.collect{|a| a.collect{|a| a.to_s} * "|"} * "\t"
+      begin
+      array.collect{|a| a.collect{|a| a.to_s } * "|"} * "\t"
+      rescue Encoding::CompatibilityError
+        array.collect{|a| a.collect{|a| a.to_s.force_encoding('UTF-8')} * "|"} * "\t"
+      end
     end
 
     def self.load(string)

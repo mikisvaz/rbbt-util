@@ -30,36 +30,50 @@ module Association
     target_field = tsv.fields.first
     namespace = tsv.namespace
 
-    if source_final_format and source_field != source_final_format 
-      Log.debug("Changing source format from #{tsv.key_field} to #{source_final_format}")
+    data = Misc.process_options options, :data
 
-      identifier_files = tsv.identifier_files.dup
-      identifier_files = [Organism.identifiers("NAMESPACE")] if identifier_files.empty?
-      identifier_files.concat Entity.identifier_files(source_final_format) if defined? Entity
-      identifier_files.uniq!
-      identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
-      identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
+    data ||= {}
+    TmpFile.with_file do |tmpfile1|
+      TmpFile.with_file do |tmpfile2|
+        tmp_data1 = Persist.open_database(tmpfile1, true, :double, "HDB")
+        tmp_data2 = Persist.open_database(tmpfile2, true, :double, "HDB")
 
-      tsv = TSV.translate(tsv, source_field, source_final_format, options.merge(:identifier_files => identifier_files))
+        if source_final_format and source_field != source_final_format 
+          Log.debug("Changing source format from #{tsv.key_field} to #{source_final_format}")
+
+          identifier_files = tsv.identifier_files.dup
+          identifier_files = [Organism.identifiers("NAMESPACE")] if identifier_files.empty?
+          identifier_files.concat Entity.identifier_files(source_final_format) if defined? Entity
+          identifier_files.uniq!
+          identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
+          identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
+
+          tsv = TSV.translate(tsv, source_field, source_final_format, options.merge(:identifier_files => identifier_files, :persist_data => tmp_data1))
+        end
+
+        # Translate target 
+        if target_final_format and target_field != target_final_format
+          Log.debug("Changing target format from #{target_field} to #{target_final_format}")
+          old_key_field = tsv.key_field 
+          tsv.key_field = "MASK"
+
+          identifier_files = tsv.identifier_files.dup 
+          identifier_files.concat Entity.identifier_files(target_final_format) if defined? Entity
+          identifier_files.uniq!
+          identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
+          identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
+
+          tsv = TSV.translate(tsv, target_field, target_final_format, options.merge(:identifier_files => identifier_files, :persist_data => tmp_data2))
+          tsv.key_field = old_key_field
+        end
+
+        tsv.through do |k,v|
+          data[k] = v
+        end
+
+        tsv.annotate data
+      end
     end
-
-    # Translate target 
-    if target_final_format and target_field != target_final_format
-      Log.debug("Changing target format from #{target_field} to #{target_final_format}")
-      old_key_field = tsv.key_field 
-      tsv.key_field = "MASK"
-
-      identifier_files = tsv.identifier_files.dup 
-      identifier_files.concat Entity.identifier_files(target_final_format) if defined? Entity
-      identifier_files.uniq!
-      identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
-      identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
-
-      tsv = TSV.translate(tsv, target_field, target_final_format, options.merge(:identifier_files => identifier_files))
-      tsv.key_field = old_key_field
-    end
-
-    tsv
   end
 
   def self.reorder_tsv(tsv, options = {})
@@ -84,7 +98,7 @@ module Association
       tsv.fields = field_headers
 
       if source_format or target_format
-        tsv = translate tsv, source_format, target_format, :persist => true, :persist_data => data
+        tsv = translate tsv, source_format, target_format, :persist => true, :data => data
       else
         tsv.through do |k,v|
           data[k] = v
@@ -152,7 +166,7 @@ module Association
       tsv.fields = field_headers
 
       if source_format or target_format
-        tsv = translate tsv, source_format, target_format, :persist => true, :persist_data => data, :data => data
+        tsv = translate tsv, source_format, target_format, :persist => true, :data => data
       else
         tsv.through do |k,v|
           data[k] = v

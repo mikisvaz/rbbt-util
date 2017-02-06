@@ -7,11 +7,11 @@ module Association
     options = options.nil? ? {} : options.dup
     persist_options = persist_options.nil? ?  Misc.pull_keys(options, :persist)  : persist_options.dup 
 
-    persist_options = Misc.add_defaults persist_options.dup, :persist => true
+    persist_options = Misc.add_defaults persist_options.dup, :persist => true, :dir => Rbbt.var.associations
     persist = persist_options[:persist]
 
     file = version_file(file, options[:namespace]) if options[:namespace] and String === file
-    Persist.persist_tsv(file, "Association Index", options, persist_options.merge(:engine => "BDB")) do |data|
+    Persist.persist_tsv(file, nil, options, persist_options.merge(:engine => "BDB", :prefix => "Association Index")) do |data|
       options = Misc.add_defaults options.dup, :monitor => "Building index for #{Misc.fingerprint file}"
       recycle = options[:recycle]
       undirected = options[:undirected]
