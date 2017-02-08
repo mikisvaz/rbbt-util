@@ -249,10 +249,7 @@ module TSV
     persist_options[:prefix] = "Reorder"
 
     Persist.persist_tsv self, self.filename, self.options.merge({:key_field => new_key_field, :fields => new_fields}), persist_options do |data|
-      #if data.respond_to? :persistence_path
-      #  real_data = data 
-      #  data = {}
-      #end
+      data.serializer = type if data.respond_to? :serializer and data.serializer == :type
 
       new_key_field_name, new_field_names = nil, nil
       with_unnamed do
