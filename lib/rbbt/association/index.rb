@@ -51,6 +51,10 @@ module Association
             next if source.nil? or source.empty?
             next if values.empty?
 
+            #targets, *rest = Misc.zip_fields(Misc.zip_fields(values).uniq)
+            
+            next if values.first.empty?
+            values =  Misc.zip_fields(Misc.zip_fields(values).uniq)
             targets, *rest = values
 
             size = targets ? targets.length : 0

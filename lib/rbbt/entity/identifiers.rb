@@ -31,7 +31,7 @@ module Entity
         end
 
         def identifier_index(format = nil, source = nil)
-          Persist.memory("Entity index #{identity_type}: #{format} (from #{source || "All"})", :format => format, :source => source, :update => true) do
+          Persist.memory("Entity index #{identity_type}: #{format} (from #{source || "All"})", :persist => true, :format => format, :source => source) do
             source ||= self.respond_to?(:format)? self.format : nil
 
             begin

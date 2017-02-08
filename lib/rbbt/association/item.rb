@@ -57,11 +57,19 @@ module AssociationItem
   end
 
   property :target_type => :both do
-    knowledge_base.target(database)
+    if reverse
+      knowledge_base.source(database)
+    else
+      knowledge_base.target(database)
+    end
   end
 
   property :source_type => :both do
-    knowledge_base.source(database)
+    if reverse
+      knowledge_base.target(database)
+    else
+      knowledge_base.source(database)
+    end
   end
 
   property :undirected => :both do
@@ -69,12 +77,12 @@ module AssociationItem
   end
 
   property :target_entity => :array2single do
-    type = knowledge_base.target(database)
+    type = target_type
     knowledge_base.annotate self.target, type, database #if self.target.any?
   end
 
   property :source_entity => :array2single do
-    type = knowledge_base.source(database)
+    type = source_type
     knowledge_base.annotate self.source, type, database #if self.source.any?
   end
 
@@ -83,7 +91,7 @@ module AssociationItem
   end
   property :value => :array2single do
     index = index(database)
-    value = index.chunked_values_at self
+    value = self.reverse ? index.chunked_values_at(self.invert) : index.chunked_values_at(self)
     value.collect{|v| NamedArray.setup(v, index.fields)}
   end
 
