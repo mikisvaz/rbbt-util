@@ -2,8 +2,13 @@
 module Misc
 
   Log2Multiplier = 1.0 / Math.log(2.0)
+  Log10Multiplier = 1.0 / Math.log(10.0)
   def self.log2(x)
     Math.log(x) * Log2Multiplier
+  end
+
+  def self.log10(x)
+    Math.log(x) * Log10Multiplier
   end
 
   def self.max(list)
