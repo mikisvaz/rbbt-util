@@ -46,7 +46,7 @@ source('#{UTIL}');
       end
       nil
     else
-      CMD.cmd('R --vanilla --slave --quiet', options.merge(:in => cmd))
+      CMD.cmd('R --slave --quiet', options.merge(:in => cmd))
     end
   end
 
