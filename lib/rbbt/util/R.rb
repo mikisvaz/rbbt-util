@@ -40,7 +40,7 @@ source('#{UTIL}');
     Log.debug{"R Script:\n#{ cmd }"}
 
     if monitor
-      io = CMD.cmd('R --vanilla --quiet', options.merge(:in => cmd, :pipe => true, :log => true))
+      io = CMD.cmd('R --quiet', options.merge(:in => cmd, :pipe => true, :log => true))
       while line = io.gets
         puts line
       end

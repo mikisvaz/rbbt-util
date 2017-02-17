@@ -74,7 +74,7 @@ module R
 
                          sh_pid = Process.fork do
                            #args = %w(CMD Rserve --vanilla --quiet --RS-socket)
-                           args = %w(--vanilla --quiet --RS-socket)
+                           args = %w(--quiet --RS-socket)
                            args << "'#{socket_file}'"
                            args << "--RS-workdir"
                            args << "'#{workdir}'"
