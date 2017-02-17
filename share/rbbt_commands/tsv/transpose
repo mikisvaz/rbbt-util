@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Transpose TSV
+
+$ rbbt tsv transpose [options] file.tsv 
+
+Display summary informations. Works with Tokyocabinet HDB and BDB as well.
+
+-tch--tokyocabinet File is a TC HDB
+-tcb--tokyocabinet_bd File is a TC BDB
+-f--field* Field name for key
+-hh--header_hash* Change the character used to mark the header line (defaults to #)
+-h--help Help
+EOF
+
+SOPT.usage if options[:help]
+
+file = ARGV.shift
+
+file = case file
+       when "-"
+         STDIN
+       when String
+         Open.open(file)
+       else
+         raise ParameterException, "Please specify the tsv file as argument" if file.nil?
+       end
+
+field = options[:field]
+
+options[:header_hash] = options["header_hash"]
+
+case
+when options[:tokyocabinet]
+  tsv = Persist.open_tokyocabinet(file, false)
+when options[:tokyocabinet_bd]
+  tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
+else
+  tsv = TSV.open(file, options.merge(:type => :list))
+end
+
+puts tsv.transpose(field).to_s
