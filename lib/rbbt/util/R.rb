@@ -40,13 +40,13 @@ source('#{UTIL}');
     Log.debug{"R Script:\n#{ cmd }"}
 
     if monitor
-      io = CMD.cmd('R --quiet', options.merge(:in => cmd, :pipe => true, :log => true))
+      io = CMD.cmd('R --no-save --quiet', options.merge(:in => cmd, :pipe => true, :log => true))
       while line = io.gets
         puts line
       end
       nil
     else
-      CMD.cmd('R --slave --quiet', options.merge(:in => cmd))
+      CMD.cmd('R --slave --no-save --quiet', options.merge(:in => cmd))
     end
   end
 
