@@ -3,15 +3,22 @@ require 'rbbt/util/color'
 module Colorize
   def self.from_name(color)
     return color if color =~ /^#?[0-9A-F]+$/i
+    colors = Rbbt.share.color.color_names.tsv :type => :single
     case color.to_s
     when "white"
       '#000'
     when "black"
       '#fff'
+    when 'green'
+      colors["green3"] 
+    when 'red'
+      colors["red3"] 
+    else
+      colors[color.to_s] || color
     end
   end
 
-  def self.continuous(array, start = :white, eend = :black, percent = false) 
+  def self.continuous(array, start = :green, eend = :red, percent = false) 
     start_color = Color.new from_name(start)
     end_color = Color.new from_name(eend)
 
@@ -24,7 +31,7 @@ module Colorize
     min = array.min
     range = max - min
     array.collect do |v|
-      ratio = (v-min) / range
+      ratio = (v.to_f-min) / range
       start_color.blend end_color, ratio
     end
   end
@@ -61,7 +68,7 @@ module Colorize
     value_color.values_at *array
   end
 
-  def self.tsv(tsv)
+  def self.tsv(tsv, options = {})
     values = tsv.values.flatten
     if Fixnum === values.first or (values.first.to_f != 0 and values[0] != "0")
       value_colors = Misc.process_to_hash(values){continuous(values)}

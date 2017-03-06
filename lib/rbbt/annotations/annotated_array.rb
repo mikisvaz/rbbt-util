@@ -22,7 +22,7 @@ module AnnotatedArray
     value = super(pos)
     return value if value.nil? or clean
 
-    value = value.dup if value.frozen?
+    value = value.dup if value.frozen? and (String === value or Array === value)
 
     value = annotate(value)
 

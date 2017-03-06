@@ -3,6 +3,7 @@ Entity.entity_map_cache      = Rbbt.var.sinatra.find.entity_maps
 Entity.entity_property_cache = Rbbt.var.sinatra.find.entity_properties
 
 #{{{ Prepare REST entities
+Log.debug("Processing: " + Rbbt.etc.entities.find)
 Rbbt.etc.entities.read.split("\n").each do |name|
   next if name.empty?
   begin

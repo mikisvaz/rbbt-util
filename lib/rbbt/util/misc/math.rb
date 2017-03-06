@@ -20,6 +20,24 @@ module Misc
     max
   end
 
+  def self.min(list)
+    min = nil
+    list.each do |v|
+      next if v.nil?
+      min = v if min.nil? or v < min
+    end
+    min
+  end
+
+  def self.std_num_vector(v, min, max)
+    v_min = Misc.min(v)
+    v_max = Misc.max(v)
+    v_range = v_max - v_min
+    range = max.to_f - min.to_f
+
+    v.collect{|e| min + range * (e.to_f - v_min) / v_range } 
+  end
+
   def self.sum(list)
     list.compact.inject(0.0){|acc,e| acc += e}
   end

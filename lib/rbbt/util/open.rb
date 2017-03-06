@@ -357,6 +357,8 @@ module Open
 
     mode = Misc.process_options options, :mode
 
+    options[:noz] = true if mode.include? "w"
+
     wget_options = options[:wget_options] || {}
     wget_options[:nice] = options.delete(:nice)
     wget_options[:nice_key] = options.delete(:nice_key)
@@ -407,6 +409,14 @@ module Open
     io.filename = url.to_s
 
     io
+  end
+
+  def self.download(url, file)
+    Open.open(url, :mode => 'rb', :noz => true) do |sin|
+      Open.open(file, :mode => 'wb') do |sout|
+        Misc.consume_stream(sin, false, sout)
+      end
+    end
   end
 
   def self.can_open?(file)

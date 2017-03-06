@@ -107,7 +107,7 @@ module TSV
         rows = []
 
         sheet.each do |row|
-          rows << row.values_at(0..(row.size - 1))
+          rows << row.values_at(0..(row.size - 1)).collect{|c| String === c ? c.gsub("\n", ' ') : c }
         end
 
         File.open(filename, 'w') do |f|
@@ -156,7 +156,8 @@ module TSV
         rows = []
 
         sheet.each do |row|
-          rows << row.cells.collect{|c| c.nil? ? nil : c.value}
+          next if row.nil?
+          rows << row.cells.collect{|c| c.nil? ? nil : c.value}.collect{|c| String === c ? c.gsub("\n", ' ') : c }
         end
 
         File.open(filename, 'w') do |f|
@@ -213,11 +214,26 @@ module TSV
 
 
   def self.xls(filename, options ={})
-    TSV::XLS.read(filename, options)
+    if Open.remote? filename
+      TmpFile.with_file do |tmp|
+        Open.download(filename, tmp)
+        TSV::XLS.read(tmp, options)
+      end
+    else
+      TSV::XLS.read(filename, options)
+    end
   end
 
   def self.xlsx(filename, options ={})
-    TSV::XLSX.read(filename, options)
+    if Open.remote? filename
+
+      TmpFile.with_file do |tmp|
+        Open.download(filename, tmp)
+        TSV::XLSX.read(tmp, options)
+      end
+    else
+      TSV::XLSX.read(filename, options)
+    end
   end
 
   def self.excel(filename, options = {})
