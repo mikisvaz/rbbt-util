@@ -677,7 +677,7 @@ Example:
     new
   end
 
-  def unzip(field = 0, merge = false, sep = ":")
+  def unzip(field = 0, merge = false, sep = ":", delete = true)
     new = {}
     self.annotate new
 
@@ -685,7 +685,8 @@ Example:
     new.with_unnamed do
       if merge
         self.through do |key,values|
-          field_values = values.delete_at field_pos
+          field_values = values[field_pos]
+          values.delete_at(field_pos) if delete
           next if field_values.nil?
           zipped = Misc.zip_fields(values)
           field_values.zip(zipped).each do |field_value,rest|
@@ -700,7 +701,8 @@ Example:
         new.type = :double
       else
         self.through do |key,values|
-          field_values = values.delete_at field_pos
+          field_values = values[field_pos]
+          values.delete_at(field_pos) if delete
           next if field_values.nil?
           zipped = Misc.zip_fields(values)
           field_values.zip(zipped).each do |field_value,rest|
@@ -715,7 +717,7 @@ Example:
     if self.key_field and self.fields
       new.key_field = [self.key_field, self.fields[field_pos]] * sep
       new_fields = self.fields.dup 
-      new_fields.delete_at field_pos
+      new_fields.delete_at(field_pos) if delete
       new.fields = new_fields
     end
 
