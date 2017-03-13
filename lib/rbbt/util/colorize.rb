@@ -13,12 +13,16 @@ module Colorize
       colors["green3"] 
     when 'red'
       colors["red3"] 
+    when 'yellow'
+      colors["gold1"] 
+    when 'blue'
+      colors["RoyalBlue"] 
     else
       colors[color.to_s] || color
     end
   end
 
-  def self.continuous(array, start = :green, eend = :red, percent = false) 
+  def self.continuous(array, start = "#EABD5D", eend = "#40324F", percent = false) 
     start_color = Color.new from_name(start)
     end_color = Color.new from_name(eend)
 
