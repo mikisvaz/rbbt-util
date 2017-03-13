@@ -694,7 +694,7 @@ Example:
             if new.include? k
               new[k] = Misc.zip_fields(Misc.zip_fields(new[k]) << rest)
             else
-              new[k] = rest.collect{|v| [v]}
+              new[k] = rest.nil? ? nil : rest.collect{|v| [v]}
             end
           end
         end
