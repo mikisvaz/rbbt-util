@@ -61,6 +61,24 @@ class Step
     @inputs
   end
 
+  def recursive_inputs
+    if NamedArray === inputs
+      i = Hash[*inputs.fields.zip(inputs).flatten]
+    else
+      i = {}
+    end
+    dependencies.each do |dep|
+      di = dep.recursive_inputs
+      next unless NamedArray === di
+      di.fields.zip(di).each do |k,v|
+        i[k] = v unless i.include? k
+      end
+    end
+    v = i.values
+    NamedArray.setup v, i.keys 
+    v
+  end
+
   def task_name
     @task.name
   end
