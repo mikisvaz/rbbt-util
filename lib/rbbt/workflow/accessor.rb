@@ -100,7 +100,7 @@ class Step
   end
 
   def info(check_lock = true)
-    return {} if info_file.nil? or not Open.exists? info_file
+    return {:status => :noinfo} if info_file.nil? or not Open.exists? info_file
     begin
       Misc.insist do
         begin
@@ -351,8 +351,10 @@ class Step
   end
 
   def dirty?
-    return true if done? and not status == :done
-    dirty_files = rec_dependencies.collect{|dependency| dependency.path unless dependency.error? and not dependency.recoverable_error? }.compact.uniq.reject{|path| not (Path === path) or path.exists?}
+    status = self.status
+    return true if done? and not status == :done and not status == :noinfo
+    return true if status == :done and not done?
+    dirty_files = rec_dependencies.collect{|dependency| dependency.path unless dependency.error? and not dependency.recoverable_error? }.compact.uniq.reject{|path| ! (Path === path) || path.exists?}
     if dirty_files.any?
       true
     else

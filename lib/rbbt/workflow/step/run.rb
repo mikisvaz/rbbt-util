@@ -432,7 +432,7 @@ class Step
   end
 
   def abort
-    return if done? and status == :done
+    return if done? and (status == :done or status == :noinfo)
     _abort
     log(:aborted, "Job aborted") unless aborted? or error?
     self

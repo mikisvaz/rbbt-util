@@ -83,7 +83,7 @@ class Step
       return if status == 'streaming' and job.running?
     end
 
-    if (status == 'error' || job.aborted?) && job.recoverable_error?
+    if ((status == 'error' || job.aborted?) && job.recoverable_error?) || job.dirty?
       job.clean 
     end
 
