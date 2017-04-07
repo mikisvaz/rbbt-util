@@ -198,13 +198,14 @@ NULL
     end
   end
 
-  def R_interactive(pre_script = nil)
+  def R_interactive(pre_script = nil, source = true)
     TmpFile.with_file do |f|
       Log.debug{"R Interactive:\n" << pre_script } if pre_script
       TmpFile.with_file(pre_script) do |script_file|
         Open.write(f, self.to_s)
         script = "data_file = '#{f}';\n"
         script << "script_file = '#{script_file}';\n" if pre_script
+        script << "source(script_file);\n" if source
         R.interactive(script)
       end
     end

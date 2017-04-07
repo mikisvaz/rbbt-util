@@ -207,41 +207,6 @@ rbbt.acc <- function(data, new){
     }
 }
 
-rbbt.png_plot <- function(filename, width, height, p, ...){
-    png(filename=filename, width=width, height=height, ...);
-    eval(parse(text=p));
-}
-
-rbbt.heatmap <- function(filename, width, height, data, take_log=FALSE, ...){
-    opar = par()
-    png(filename=filename, width=width, height=height);
-
-    #par(cex.lab=0.5, cex=0.5, ...)
-
-    data = as.matrix(data)
-    data[is.nan(data)] = NA
-
-    #data = data[rowSums(!is.na(data))!=0, colSums(!is.na(data))!=0]
-    data = data[rowSums(is.na(data))==0, ]
-
-    if (take_log){
-        for (study in colnames(data)){
-            skip = sum(data[, study] <= 0) != 0
-            if (!skip){
-                data[, study] = log(data[, study])
-            }
-        }
-        data = data[, colSums(is.na(data))==0]
-    }
-
-    data = stdize(data)
-
-    heatmap.2(data, margins = c(20,5), scale='column')
-
-    dev.off();
-    par(opar)
-}
-
 rbbt.init <- function(data, new){
     if (is.null(data)){
         return(new);
@@ -302,73 +267,6 @@ rbbt.run <- function(filename){
 
 
 # UTILITIES
-
-# Addapted from http://www.phaget4.org/R/image_matrix.html
-rbbt.plot.matrix <- function(x, ...){
-    min <- min(x, na.rm=T);
-    max <- max(x, na.rm=T);
-    yLabels <- rownames(x);
-    xLabels <- colnames(x);
-    title <-c();
-# check for additional function arguments
-    if( length(list(...)) ){
-        Lst <- list(...);
-        if( !is.null(Lst$zlim) ){
-            min <- Lst$zlim[1];
-            max <- Lst$zlim[2];
-        }
-        if( !is.null(Lst$yLabels) ){
-            yLabels <- c(Lst$yLabels);
-        }
-        if( !is.null(Lst$xLabels) ){
-            xLabels <- c(Lst$xLabels);
-        }
-        if( !is.null(Lst$title) ){
-            title <- Lst$title;
-        }
-    }
-# check for null values
-    if( is.null(xLabels) ){
-        xLabels <- c(1:ncol(x));
-    }
-    if( is.null(yLabels) ){
-        yLabels <- c(1:nrow(x));
-    }
-
-    layout(matrix(data=c(1,2), nrow=1, ncol=2), widths=c(4,1), heights=c(1,1));
-
-# Red and green range from 0 to 1 while Blue ranges from 1 to 0
-    ColorRamp <- rgb( seq(0,1,length=256),  # Red
-                      seq(0,1,length=256),  # Green
-                      seq(1,0,length=256))  # Blue
-    ColorLevels <- seq(min, max, length=length(ColorRamp));
-
-# Reverse Y axis
-    reverse <- nrow(x) : 1;
-    yLabels <- yLabels[reverse];
-    x <- x[reverse,];
-
-# Data Map
-    par(mar = c(3,5,2.5,2));
-    image(1:length(xLabels), 1:length(yLabels), t(x), col=ColorRamp, xlab="",
-          ylab="", axes=FALSE, zlim=c(min,max));
-    if( !is.null(title) ){
-        title(main=title);
-    }
-    axis(BELOW<-1, at=1:length(xLabels), labels=xLabels, cex.axis=0.7);
-    axis(LEFT <-2, at=1:length(yLabels), labels=yLabels, las= HORIZONTAL<-1,
-         cex.axis=0.7);
-
-# Color Scale
-    par(mar = c(3,2.5,2.5,2));
-    image(1, ColorLevels,
-          matrix(data=ColorLevels, ncol=length(ColorLevels),nrow=1),
-          col=ColorRamp,
-          xlab="",ylab="",
-          xaxt="n");
-
-    layout(1);
-}
 
 rbbt.log <- function(m){
     head = "R-Rbbt"
@@ -554,5 +452,159 @@ rbbt.get.modes <- function(x,bw = NULL,spar = NULL) {
     df2<-data.frame(modes,density)
     df2<-df2[with(df2, order(-density)), ] # ordered by density
     df2
+}
+
+#{{{ PLOTS
+
+rbbt.png_plot <- function(filename, width, height, p, ...){
+    png(filename=filename, width=width, height=height, ...);
+    eval(parse(text=p));
+}
+
+rbbt.heatmap <- function(filename, width, height, data, take_log=FALSE, ...){
+    opar = par()
+    png(filename=filename, width=width, height=height);
+
+    #par(cex.lab=0.5, cex=0.5, ...)
+
+    data = as.matrix(data)
+    data[is.nan(data)] = NA
+
+    #data = data[rowSums(!is.na(data))!=0, colSums(!is.na(data))!=0]
+    data = data[rowSums(is.na(data))==0, ]
+
+    if (take_log){
+        for (study in colnames(data)){
+            skip = sum(data[, study] <= 0) != 0
+            if (!skip){
+                data[, study] = log(data[, study])
+            }
+        }
+        data = data[, colSums(is.na(data))==0]
+    }
+
+    data = stdize(data)
+
+    heatmap.2(data, margins = c(20,5), scale='column')
+
+    dev.off();
+    par(opar)
+}
+
+# Addapted from http://www.phaget4.org/R/image_matrix.html
+rbbt.plot.matrix <- function(x, ...){
+    min <- min(x, na.rm=T);
+    max <- max(x, na.rm=T);
+    yLabels <- rownames(x);
+    xLabels <- colnames(x);
+    title <-c();
+# check for additional function arguments
+    if( length(list(...)) ){
+        Lst <- list(...);
+        if( !is.null(Lst$zlim) ){
+            min <- Lst$zlim[1];
+            max <- Lst$zlim[2];
+        }
+        if( !is.null(Lst$yLabels) ){
+            yLabels <- c(Lst$yLabels);
+        }
+        if( !is.null(Lst$xLabels) ){
+            xLabels <- c(Lst$xLabels);
+        }
+        if( !is.null(Lst$title) ){
+            title <- Lst$title;
+        }
+    }
+# check for null values
+    if( is.null(xLabels) ){
+        xLabels <- c(1:ncol(x));
+    }
+    if( is.null(yLabels) ){
+        yLabels <- c(1:nrow(x));
+    }
+
+    layout(matrix(data=c(1,2), nrow=1, ncol=2), widths=c(4,1), heights=c(1,1));
+
+# Red and green range from 0 to 1 while Blue ranges from 1 to 0
+    ColorRamp <- rgb( seq(0,1,length=256),  # Red
+                      seq(0,1,length=256),  # Green
+                      seq(1,0,length=256))  # Blue
+    ColorLevels <- seq(min, max, length=length(ColorRamp));
+
+# Reverse Y axis
+    reverse <- nrow(x) : 1;
+    yLabels <- yLabels[reverse];
+    x <- x[reverse,];
+
+# Data Map
+    par(mar = c(3,5,2.5,2));
+    image(1:length(xLabels), 1:length(yLabels), t(x), col=ColorRamp, xlab="",
+          ylab="", axes=FALSE, zlim=c(min,max));
+    if( !is.null(title) ){
+        title(main=title);
+    }
+    axis(BELOW<-1, at=1:length(xLabels), labels=xLabels, cex.axis=0.7);
+    axis(LEFT <-2, at=1:length(yLabels), labels=yLabels, las= HORIZONTAL<-1,
+         cex.axis=0.7);
+
+# Color Scale
+    par(mar = c(3,2.5,2.5,2));
+    image(1, ColorLevels,
+          matrix(data=ColorLevels, ncol=length(ColorLevels),nrow=1),
+          col=ColorRamp,
+          xlab="",ylab="",
+          xaxt="n");
+
+    layout(1);
+}
+
+# Adapted from: https://rstudio-pubs-static.s3.amazonaws.com/13301_6641d73cfac741a59c0a851feb99e98b.html
+rbbt.plot.venn <- function(data, a, ...) {
+    library(VennDiagram)
+    group.matches <- function(data, fields) {
+        sub = data
+        for (i in 1:length(fields)) {
+            sub <- subset(sub, sub[,fields[i]] == T)
+        }
+        nrow(sub)
+    }
+
+    if (length(a) == 1) {
+        out <- draw.single.venn(group.matches(data, a), ...)
+    }
+    if (length(a) == 2) {
+        out <- draw.pairwise.venn(group.matches(data, a[1]), group.matches(data, a[2]), group.matches(data, a[1:2]), ...)
+    }
+    if (length(a) == 3) {
+        out <- draw.triple.venn(group.matches(data, a[1]), group.matches(data, a[2]), group.matches(data, a[3]), group.matches(data, a[1:2]), 
+            group.matches(data, a[2:3]), group.matches(data, a[c(1, 3)]), group.matches(data, a), ...)
+    }
+    if (length(a) == 4) {
+        out <- draw.quad.venn(group.matches(data, a[1]), group.matches(data, a[2]), group.matches(data, a[3]), group.matches(data, a[4]), 
+            group.matches(data, a[1:2]), group.matches(data, a[c(1, 3)]), group.matches(data, a[c(1, 4)]), group.matches(data, a[2:3]), 
+            group.matches(data, a[c(2, 4)]), group.matches(data, a[3:4]), group.matches(data, a[1:3]), group.matches(data, a[c(1, 2, 
+                4)]), group.matches(data, a[c(1, 3, 4)]), group.matches(data, a[2:4]), group.matches(data, a), ...)
+    }
+    if (length(a) == 5) {
+        out <- draw.quintuple.venn(
+            group.matches(data, a[1]), group.matches(data, a[2]), group.matches(data, a[3]), group.matches(data, a[4]), group.matches(data, a[5]), 
+            group.matches(data, a[c(1, 2)]), group.matches(data, a[c(1, 3)]), group.matches(data, a[c(1, 4)]), group.matches(data, a[c(1, 5)]), 
+            group.matches(data, a[c(2, 3)]), group.matches(data, a[c(2, 4)]), group.matches(data, a[c(2, 5)]),
+            group.matches(data, a[c(3, 4)]), group.matches(data, a[c(3, 5)]),
+            group.matches(data, a[c(4, 5)]),
+            group.matches(data, a[c(1, 2, 3)]),group.matches(data, a[c(1, 2, 4)]),group.matches(data, a[c(1, 2, 5)]),
+            group.matches(data, a[c(1, 3, 4)]),group.matches(data, a[c(1, 3, 5)]),
+            group.matches(data, a[c(1, 4, 5)]),
+            group.matches(data, a[c(2, 3, 4)]),group.matches(data, a[c(2, 3, 5)]),
+            group.matches(data, a[c(2, 4, 5)]),
+            group.matches(data, a[c(3, 4, 5)]),
+            group.matches(data, a[c(1, 2, 3, 4)]),group.matches(data, a[c(1, 2, 3, 5)]),group.matches(data, a[c(1, 2, 4, 5)]),group.matches(data, a[c(1, 3, 4, 5)]),group.matches(data, a[c(2, 3, 4, 5)]),
+            group.matches(data, a),
+            ...)
+
+    }
+    if (!exists("out")) 
+        out <- "Oops"
+    return(out)
 }
 
