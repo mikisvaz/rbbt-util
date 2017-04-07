@@ -286,6 +286,9 @@ module Persist
         else
           Open.rm path if Open.exists? path
         end
+      rescue Aborted, Interrupt
+        Log.warn "Aborted loading persistence (#{ type }) #{ path }: #{$!.message}. Not erasing."
+        raise $!
       rescue Exception
         Log.warn "Exception loading persistence (#{ type }) #{ path }: #{$!.message}. Erase and retry."
         Open.rm path if Open.exists? path
