@@ -608,3 +608,8 @@ rbbt.plot.venn <- function(data, a, ...) {
     return(out)
 }
 
+
+rbbt.plot.text_scatter <- function(formula, data) {
+    plot(formula, data=data, cex = 0)
+    text(formula, data=data, cex = 0.6, labels=rownames(data))
+}
