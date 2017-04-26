@@ -45,8 +45,17 @@ rbbt.job <- function(workflow, task, load=TRUE, flat = FALSE, type = 'tsv', jobn
     args_strs = c()
     for (input in names(args_list)){
         value = args_list[[input]]
+        input = sub('input\\.', '', input)
         if (!is.numeric(value)){
-            value = paste("'", value, "'", sep="")
+            if (value == TRUE){
+                value = 'true'
+            }else{
+                if (value == FALSE){
+                    value = 'false'
+                }else{
+                    value = paste("'", value, "'", sep="")
+                }
+            }
         }
         args_strs = c(args_strs, paste(":",input,' => ',value, sep=""))
     }
