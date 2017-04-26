@@ -39,7 +39,7 @@ rbbt.job <- function(workflow, task, load=TRUE, flat = FALSE, type = 'tsv', jobn
 
     str = paste(str, code, sep="\n")
 
-    str = paste(str, paste("Workflow.require_workflow '", workflow, "'", sep=""), sep="\n")
+    str = paste(str, paste("wf = Workflow.require_workflow '", workflow, "'", sep=""), sep="\n")
 
     args_list = list(...)
     args_strs = c()
@@ -52,9 +52,8 @@ rbbt.job <- function(workflow, task, load=TRUE, flat = FALSE, type = 'tsv', jobn
     }
 
     args_str = paste(args_strs, sep=",")
-    str = paste(str, paste(workflow, '.job(:', task, ", '", jobname, "', ", args_str,').produce.path', sep=""), sep="\n")
-    cat(str)
-    rbbt.ruby(str, load, flat, type)
+    str = paste(str, paste('wf.job(:', task, ", '", jobname, "', ", args_str,').produce.path', sep=""), sep="\n")
+    return(rbbt.ruby(str, load, flat, type));
 }
 
 rbbt.ruby.substitutions <- function(script, substitutions = list(), ...){
