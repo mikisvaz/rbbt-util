@@ -317,9 +317,11 @@ begin
 
     case
     when res.respond_to?(:gets)
-      while block = res.read(2048)
-        out.write block
+      begin
+        Misc.consume_stream(res, false, out)
+      rescue EOFError, IOError
       end
+      res.join if res.respond_to? :join
     when Array === res
       out.puts res * "\n"
     when TSV === res
