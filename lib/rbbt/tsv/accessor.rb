@@ -563,7 +563,13 @@ module TSV
     options[:type] = :list if unmerge
 
     TSV::Dumper.stream options do |dumper|
-      dumper.init unless no_options
+      case no_options
+      when FalseClass, nil
+        dumper.init
+      when Hash
+        dumper.init(no_options)
+      end
+
       begin
         if keys
           keys.each do |key|
@@ -598,7 +604,7 @@ module TSV
   end
 
   def to_s(keys = nil, no_options = false, unmerge = false)
-    if FalseClass === keys or TrueClass === keys
+    if FalseClass === keys or TrueClass === keys or Hash === keys
       no_options = keys
       keys = nil
     end

@@ -90,9 +90,11 @@ module R
                            $stdout.reopen File.new('/dev/null', 'w')
                            exec(ENV, cmd)
                          end
-                         while not File.exist? pid_file
-                           sleep 0.5
+
+                         Misc.insist(10, 0.5, false) do
+                           raise "Rserve did not start" unless File.exist? pid_file
                          end
+
                          @@instance_process = Open.read(pid_file).to_i
                          Log.info "New Rserver session stated with PID (#{sh_pid}) #{@@instance_process}: #{SESSION}"
                        end

@@ -267,8 +267,12 @@ module Misc
     end
 
     if in_thread
-      Thread.new do
-        consume_stream(io, false, into, into_close)
+      Thread.new(Thread.current) do |parent|
+        begin
+          consume_stream(io, false, into, into_close)
+        rescue Exception
+          parent.raise $!
+        end
       end
     else
       if into
@@ -279,7 +283,11 @@ module Misc
 
       begin
         into = into.find if Path === into
-        into_path, into = into, Open.open(into, :mode => 'w') if String === into 
+        if String === into 
+          dir = File.dirname(into)
+          FileUtils.mkdir_p dir unless Open.exists?(dir)
+          into_path, into = into, Open.open(into, :mode => 'w') 
+        end
         into.sync = true if IO === into
         into_close = false unless into.respond_to? :close
         io.sync = true
@@ -304,7 +312,6 @@ module Misc
       rescue Exception
         Log.medium "Exception consuming stream: #{Misc.fingerprint io}: #{$!.message}"
         io.abort $! if io.respond_to? :abort
-        #io.close unless io.closed?
         FileUtils.rm into_path if into_path and File.exists? into_path
         raise $!
       end

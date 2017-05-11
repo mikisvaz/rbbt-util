@@ -158,6 +158,8 @@ def self.add_libdir(dir=nil)
     rescue Exception
       if msg
         Log.warn("Insisting after exception: #{$!.class} #{$!.message} -- #{msg}")
+      elsif FalseClass === msg
+        nil
       else
         Log.warn("Insisting after exception:  #{$!.class} #{$!.message}")
       end
