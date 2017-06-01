@@ -621,3 +621,8 @@ rbbt.plot.text_scatter <- function(formula, data) {
     plot(formula, data=data, cex = 0)
     text(formula, data=data, cex = 0.6, labels=rownames(data))
 }
+
+install.bioc <-function(pkg){
+    source("http://bioconductor.org/biocLite.R")
+    biocLite(pkg)
+}

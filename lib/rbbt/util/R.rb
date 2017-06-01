@@ -121,7 +121,7 @@ source('#{UTIL}');
     when Array
       "c(#{object.collect{|e| ruby2R(e) } * ", "})"
     when Hash
-      object.collect{|k,v| [k, ruby2R(v)] * "="} * ", "
+      "list(" << object.collect{|k,v| [k, ruby2R(v)] * "="} * ", " << ")"
     else
       raise "Type of object not known: #{ object.inspect }"
     end

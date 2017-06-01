@@ -208,5 +208,14 @@ module NamedArray
     end * "\n"
   end
 
+  def to_hash
+    hash = {}
+    self.fields.zip(self) do |field,value|
+      hash[field] = value
+    end
+    IndiferentHash.setup hash
+    hash
+  end
+
 end
 
