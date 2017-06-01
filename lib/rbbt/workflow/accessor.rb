@@ -689,83 +689,100 @@ module Workflow
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
+  def assign_dep_inputs(_inputs, options, all_d, task_info)
+    options.each{|i,v|
+      next if i == :compute or i == "compute"
+      case v
+      when :compute
+        compute = v
+      when Symbol
+        rec_dependency = all_d.select{|d| d.task_name.to_sym == v }.first
+
+        if rec_dependency.nil?
+          if inputs.include? v
+            _inputs[i] = _inputs.delete(v)
+          else
+            _inputs[i] = v unless _inputs.include? i
+          end
+        else
+          input_options = task_info[:input_options][i] || {}
+          if input_options[:stream] or true
+            #rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
+            _inputs[i] = rec_dependency
+          else
+            rec_dependency.abort if rec_dependency.streaming? and not rec_dependency.running?
+            rec_dependency.clean if rec_dependency.error? or rec_dependency.aborted?
+            if rec_dependency.streaming? and rec_dependency.running?
+              _inputs[i] = rec_dependency.join.load
+            else
+              rec_dependency.run(true)
+              rec_dependency.join
+              _inputs[i] = rec_dependency.load
+            end
+          end
+        end
+      else
+        _inputs[i] = v
+      end
+    } if options
+
+    _inputs
+  end
+
   def real_dependencies(task, jobname, inputs, dependencies)
     real_dependencies = []
     path_deps = {}
     dependencies.each do |dependency|
+      _inputs = IndiferentHash.setup(inputs.dup)
       real_dep = case dependency
-      when Array
-        workflow, dep_task, options = dependency
+                 when Array
+                   workflow, dep_task, options = dependency
 
-        _inputs = IndiferentHash.setup(inputs.dup)
-        compute = options[:compute] if options
-        options.each{|i,v|
-          next if i == :compute or i == "compute"
-          case v
-          when :compute
-            compute = v
-          when Symbol
-            all_d = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
-            rec_dependency = all_d.select{|d| d.task_name.to_sym == v }.first
+                   compute = options[:compute] if options
 
-            if rec_dependency.nil?
-              if inputs.include? v
-                _inputs[i] = _inputs.delete(v)
-              else
-                _inputs[i] = v unless _inputs.include? i
-              end
-            else
-              input_options = workflow.task_info(dep_task)[:input_options][i] || {}
-              if input_options[:stream] or true
-                #rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
-                _inputs[i] = rec_dependency
-              else
-                rec_dependency.abort if rec_dependency.streaming? and not rec_dependency.running?
-                rec_dependency.clean if rec_dependency.error? or rec_dependency.aborted?
-                if rec_dependency.streaming? and rec_dependency.running?
-                  _inputs[i] = rec_dependency.join.load
-                else
-                  rec_dependency.run(true)
-                  rec_dependency.join
-                  _inputs[i] = rec_dependency.load
-                end
-              end
-            end
-          else
-            _inputs[i] = v
-          end
-        } if options
+                   all_d = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
+                   
+                   _inputs = assign_dep_inputs(_inputs, options, all_d, workflow.task_info(dep_task))
 
-        job = workflow.job(dep_task, jobname, _inputs)
-        ComputeDependency.setup(job, compute) if compute
-        job
-      when Step
-        dependency
-      when Symbol
-        _inputs = IndiferentHash.setup(inputs.dup)
-        job(dependency, jobname, _inputs)
-      when Proc
-        _inputs = IndiferentHash.setup(inputs.dup)
-        dep = dependency.call jobname, _inputs, real_dependencies
+                   job = workflow.job(dep_task, jobname, _inputs)
+                   ComputeDependency.setup(job, compute) if compute
+                   job
+                 when Step
+                   dependency
+                 when Symbol
+                   job(dependency, jobname, _inputs)
+                 when Proc
+                   dep = dependency.call jobname, _inputs, real_dependencies
 
-        if DependencyBlock === dependency
-          orig_dep = dependency.dependency 
-          if Hash === orig_dep.last
-            options = orig_dep.last
-            compute = options[:compute]
+                   if DependencyBlock === dependency
+                     orig_dep = dependency.dependency 
+                     if Hash === orig_dep.last
+                       options = orig_dep.last
+                       compute = options[:compute]
 
-            if Array === dep
-              dep.each{|d| ComputeDependency.setup(d, compute)}
-            elsif dep
-              ComputeDependency.setup(dep, compute)
-            end if compute
-          end
-        end
+                       if Array === dep
+                         new_=[]
+                         dep.each{|d| 
+                           d = d[:workflow].job(d[:task], d[:jobname], assign_dep_inputs(d[:inputs], options, real_dependencies)) if Hash === d
+                           ComputeDependency.setup(d, compute)
+                           new_ << d
+                         }
+                         dep = new_
+                       elsif dep
+                         dep = dep[:workflow].job(dep[:task], dep[:jobname], assign_dep_inputs(dep[:inputs], options, real_dependencies)) if Hash === dep
+                         ComputeDependency.setup(d, compute)
+                       end if compute
+                     end
+                   end
 
-        dep
-      else
-        raise "Dependency for #{task.name} not understood: #{Misc.fingerprint dependency}"
-      end
+                   if Hash === dep
+                     inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, dep[:workflow].task_info(dep[:task]))
+                     dep = dep[:workflow].job(dep[:task], dep[:jobname], inputs)
+                   end
+                   dep
+                 else
+                   raise "Dependency for #{task.name} not understood: #{Misc.fingerprint dependency}"
+                 end
 
       real_dependencies << real_dep
     end
