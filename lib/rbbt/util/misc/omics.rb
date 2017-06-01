@@ -352,8 +352,8 @@ module Misc
           pos2 = f2.pos
 
           sline2, schr2, sstart2, seend2, srest2 = line2, chr2, start2, eend2, rest2
-          while chr1 == chr2 and ((start1 <= eend2 and eend1 >= start2))
-            out.puts line1 + "\t" + line2
+          while chr1 == chr2 and eend1 >= start2
+            out.puts line1 + "\t" + line2 if start1 <= eend2
             if f2.eof?
               chr2 = 'next2'
             else
