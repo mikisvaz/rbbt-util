@@ -116,7 +116,10 @@ module TSV
             f.puts "#" + header * "\t"
           end
 
-          rows.each do |row| f.puts row * "\t" end
+          rows.each do |row| 
+            values =  row.collect{|c| c.respond_to?(:value) ? c.value : c }
+            f.puts values * "\t"
+          end
         end
 
         TSV.open(filename, options)
