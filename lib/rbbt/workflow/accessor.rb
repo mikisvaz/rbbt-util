@@ -759,19 +759,23 @@ module Workflow
                      if Hash === orig_dep.last
                        options = orig_dep.last
                        compute = options[:compute]
+                     else
+                       options = {}
+                       compute = nil
+                     end
 
-                       if Array === dep
-                         new_=[]
-                         dep.each{|d| 
-                           d = d[:workflow].job(d[:task], d[:jobname], assign_dep_inputs(d[:inputs], options, real_dependencies)) if Hash === d
-                           ComputeDependency.setup(d, compute)
-                           new_ << d
-                         }
-                         dep = new_
-                       elsif dep
-                         dep = dep[:workflow].job(dep[:task], dep[:jobname], assign_dep_inputs(dep[:inputs], options, real_dependencies)) if Hash === dep
-                         ComputeDependency.setup(d, compute)
-                       end if compute
+                     if Array === dep
+                       new_=[]
+                       dep.each{|d| 
+                         inputs = assign_dep_inputs({}, d[:inputs], real_dependencies, d[:workflow].task_info(d[:task]))
+                         d = d[:workflow].job(d[:task], d[:jobname], inputs) if Hash === d
+                         ComputeDependency.setup(d, compute) if compute
+                         new_ << d
+                       }
+                       dep = new_
+                     elsif dep
+                       dep = dep[:workflow].job(dep[:task], dep[:jobname], assign_dep_inputs(dep[:inputs], options, real_dependencies)) if Hash === dep
+                       ComputeDependency.setup(d, compute) if compute
                      end
                    end
 
@@ -779,6 +783,7 @@ module Workflow
                      inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, dep[:workflow].task_info(dep[:task]))
                      dep = dep[:workflow].job(dep[:task], dep[:jobname], inputs)
                    end
+
                    dep
                  else
                    raise "Dependency for #{task.name} not understood: #{Misc.fingerprint dependency}"
