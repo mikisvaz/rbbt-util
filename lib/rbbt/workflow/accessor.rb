@@ -752,8 +752,6 @@ module Workflow
                  when Symbol
                    job(dependency, jobname, _inputs)
                  when Proc
-                   dep = dependency.call jobname, _inputs, real_dependencies
-
                    if DependencyBlock === dependency
                      orig_dep = dependency.dependency 
                      if Hash === orig_dep.last
@@ -764,24 +762,24 @@ module Workflow
                        compute = nil
                      end
 
-                     if Array === dep
-                       new_=[]
-                       dep.each{|d| 
-                         inputs = assign_dep_inputs({}, d[:inputs], real_dependencies, d[:workflow].task_info(d[:task]))
-                         d = d[:workflow].job(d[:task], d[:jobname], inputs) if Hash === d
-                         ComputeDependency.setup(d, compute) if compute
-                         new_ << d
-                       }
-                       dep = new_
-                     elsif dep
-                       dep = dep[:workflow].job(dep[:task], dep[:jobname], assign_dep_inputs(dep[:inputs], options, real_dependencies)) if Hash === dep
-                       ComputeDependency.setup(d, compute) if compute
-                     end
-                   end
+                     dep = dependency.call jobname, options.merge(_inputs), real_dependencies
 
-                   if Hash === dep
-                     inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, dep[:workflow].task_info(dep[:task]))
-                     dep = dep[:workflow].job(dep[:task], dep[:jobname], inputs)
+                     dep = [dep] unless Array === dep
+
+                     new_=[]
+                     dep.each{|d| 
+                       inputs = assign_dep_inputs({}, options.merge(d[:inputs]), real_dependencies, d[:workflow].task_info(d[:task]))
+                       d = d[:workflow].job(d[:task], d[:jobname], inputs) if Hash === d
+                       ComputeDependency.setup(d, compute) if compute
+                       new_ << d
+                     }
+                     dep = new_
+                   else
+                     dep = dependency.call jobname, _inputs, real_dependencies
+                     if Hash === dep
+                       inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, dep[:workflow].task_info(dep[:task]))
+                       dep = dep[:workflow].job(dep[:task], dep[:jobname], inputs)
+                     end
                    end
 
                    dep
