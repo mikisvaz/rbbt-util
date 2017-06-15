@@ -53,7 +53,7 @@ class WorkflowRESTClient
       end
 
       return @result if no_load == :stream
-      no_load ? path + '?_format=raw' : @result
+      no_load ? Misc.add_GET_param(path, "_format", "raw") : @result
     end
 
 
@@ -220,7 +220,7 @@ class WorkflowRESTClient
 
     def path
       if @url
-        @url + '?_format=raw'
+        Misc.add_GET_param(@url, "_format", "raw")
       else
         [base_url, task, @base_name + '-' +  Misc.fingerprint(inputs)] * "/"
       end

@@ -75,6 +75,14 @@ module Misc
     }.compact * "&"
   end
 
+  def self.add_GET_param(url, param, value)
+    clean_url, param_str = url.split("?")
+    hash = param_str.nil? ? {} : self.GET_params2hash(param_str)
+    IndiferentHash.setup hash
+    hash[param] = value
+    clean_url << "?" << hash2GET_params(hash)
+  end
+
   def self.hash_to_html_tag_attributes(hash)
     return "" if hash.nil? or hash.empty?
     hash.collect{|k,v| 
