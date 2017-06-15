@@ -359,12 +359,17 @@ module Workflow
     end
   end
 
+  #{{{ LOAD FROM FILE
+
   def get_job_step(step_path, task = nil, input_values = nil, dependencies = nil)
     step_path = step_path.call if Proc === step_path
     persist = input_values.nil? ? false : true
     persist = false
     key = Path === step_path ? step_path.find : step_path
+
     step = Step.new step_path, task, input_values, dependencies
+
+    set_step_dependencies(step) unless dependencies
 
     step.extend step_module
 
@@ -372,7 +377,6 @@ module Workflow
     step.inputs ||= input_values
     step.dependencies = dependencies if dependencies and (step.dependencies.nil? or step.dependencies.length < dependencies.length)
 
-    set_step_dependencies(step)
 
     step
   end
@@ -402,6 +406,8 @@ module Workflow
     get_job_step path, task
   end
 
+  #}}} LOAD FROM FILE
+  
   def jobs(taskname, query = nil)
     task_dir = File.join(File.expand_path(workdir.find), taskname.to_s)
     pattern = File.join(File.expand_path(task_dir), '**/*')

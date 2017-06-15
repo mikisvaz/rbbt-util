@@ -80,6 +80,7 @@ class Step
   end
 
   def task_name
+    return @path.split("/")[-2] if @task.nil?
     @task.name
   end
 

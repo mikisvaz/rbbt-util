@@ -70,7 +70,7 @@ class Step
   end
 
   def name
-    path.sub(/.*\/#{Regexp.quote task.name.to_s}\/(.*)/, '\1')
+    path.sub(/.*\/#{Regexp.quote task_name.to_s}\/(.*)/, '\1')
   end
 
   def short_path
@@ -768,8 +768,10 @@ module Workflow
 
                      new_=[]
                      dep.each{|d| 
-                       inputs = assign_dep_inputs({}, options.merge(d[:inputs]), real_dependencies, d[:workflow].task_info(d[:task]))
-                       d = d[:workflow].job(d[:task], d[:jobname], inputs) if Hash === d
+                       if Hash === d
+                         inputs = assign_dep_inputs({}, options.merge(d[:inputs]), real_dependencies, d[:workflow].task_info(d[:task])) 
+                         d = d[:workflow].job(d[:task], d[:jobname], inputs) 
+                       end
                        ComputeDependency.setup(d, compute) if compute
                        new_ << d
                      }
