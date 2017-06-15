@@ -350,6 +350,15 @@ module Workflow
     job
   end
 
+  def set_step_dependencies(step)
+    if step.info.include? :dependencies
+      step.dependencies = step.info[:dependencies].collect do |task, job, path|
+        next if job.nil?
+        load_step(path) 
+      end
+    end
+  end
+
   def get_job_step(step_path, task = nil, input_values = nil, dependencies = nil)
     step_path = step_path.call if Proc === step_path
     persist = input_values.nil? ? false : true
@@ -357,12 +366,13 @@ module Workflow
     key = Path === step_path ? step_path.find : step_path
     step = Step.new step_path, task, input_values, dependencies
 
-
     step.extend step_module
 
     step.task ||= task
     step.inputs ||= input_values
     step.dependencies = dependencies if dependencies and (step.dependencies.nil? or step.dependencies.length < dependencies.length)
+
+    set_step_dependencies(step)
 
     step
   end
@@ -372,13 +382,7 @@ module Workflow
     task = task_for path
     return remote_tasks[task].load_id(id) if remote_tasks and remote_tasks.include? task
     step = Step.new path, tasks[task.to_sym]
-    step.info
-    if step.info.include? :dependencies
-      step.dependencies = step.info[:dependencies].collect do |task, job, path|
-        next if job.nil?
-        load_step(path) 
-      end
-    end
+    set_step_dependencies(step)
     step
   end
 
