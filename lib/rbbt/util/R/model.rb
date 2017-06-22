@@ -105,7 +105,7 @@ model = rbbt.model.load('#{model_file}');
 predict(model, data.frame(#{R.ruby2R tsv}));
         EOF
         Array === tsv.values.first ? res : res.first
-      when Fixnum, Array, Float, String
+      when Numeric, Array, String
         field = formula.split("~").last.strip
         field.gsub!(/log\((.*)\)/,'\1')
 

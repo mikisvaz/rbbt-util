@@ -31,7 +31,7 @@ module R
           case v
           when FalseClass, TrueClass
             "'logical'"
-          when Fixnum, Float
+          when Numeric
             "'numeric'"
           when String
             if v.strip =~ /^[-+]?[\d\.]+$/
@@ -97,7 +97,7 @@ module R
         case v
         when FalseClass, TrueClass
           "'logical'"
-        when Fixnum, Float
+        when Numeric
           "'numeric'"
         when String
           if v.strip =~ /^[-+]?[\d\.]+$/
@@ -178,7 +178,7 @@ data = NULL
           case v
           when FalseClass, TrueClass
             "'logical'"
-          when Fixnum, Float
+          when Numeric
             "'numeric'"
           when String
             if v.strip =~ /^[-+]?[\d\.]+$/

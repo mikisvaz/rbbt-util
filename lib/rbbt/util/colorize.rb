@@ -74,7 +74,7 @@ module Colorize
 
   def self.tsv(tsv, options = {})
     values = tsv.values.flatten
-    if Fixnum === values.first or Float === values.first or (values.first.to_f != 0 and values[0] != "0" and values[0] != "0.0")
+    if Numeric === values.first or (values.first.to_f != 0 and values[0] != "0" and values[0] != "0.0")
       value_colors = Misc.process_to_hash(values){continuous(values)}
     else
       value_colors = Misc.process_to_hash(values){distinct(values)}

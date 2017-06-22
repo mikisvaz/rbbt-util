@@ -45,7 +45,7 @@ module Misc
 
   def self.hash2string(hash)
     hash.sort_by{|k,v| k.to_s}.collect{|k,v| 
-      next unless %w(Symbol String Float Fixnum Integer TrueClass FalseClass Module Class Object).include? v.class.to_s
+      next unless %w(Symbol String Float Fixnum Integer Numeric TrueClass FalseClass Module Class Object).include? v.class.to_s
       [ Symbol === k ? ":" << k.to_s : k,
         Symbol === v ? ":" << v.to_s : v] * "="
     }.compact * "#"
@@ -62,7 +62,7 @@ module Misc
 
   def self.hash2GET_params(hash)
     hash.sort_by{|k,v| k.to_s}.collect{|k,v| 
-      next unless %w(Symbol String Float Fixnum Integer TrueClass FalseClass Module Class Object Array).include? v.class.to_s
+      next unless %w(Symbol String Float Fixnum Integer Numeric TrueClass FalseClass Module Class Object Array).include? v.class.to_s
       v = case 
           when Symbol === v
             v.to_s
@@ -97,7 +97,7 @@ module Misc
         [k,"'" << v.to_s << "'"] * "="
       when TrueClass === v
         [k,"'" << v.to_s << "'"] * "="
-      when (Fixnum === v or Float === v)
+      when Numeric === v
         [k,"'" << v.to_s << "'"] * "="
       else
         nil

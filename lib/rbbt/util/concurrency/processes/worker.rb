@@ -62,7 +62,7 @@ class RbbtProcessQueue
       multiplier = case multiplier
                    when String
                      multiplier.to_s
-                   when Fixnum
+                   when Numeric
                      multiplier.to_i
                    else
                      3

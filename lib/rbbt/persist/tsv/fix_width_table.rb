@@ -75,7 +75,7 @@ module Persist
     end
 
     def include?(i)
-      return true if Fixnum === i and i < pos(@size)
+      return true if Numeric === i and i < pos(@size)
       return true if metadata.include? i
       false
     end

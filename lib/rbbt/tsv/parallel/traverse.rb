@@ -571,7 +571,7 @@ module TSV
                     when TrueClass
                       max = guess_max(obj)
                       Log::ProgressBar.new_bar(max, nil) 
-                    when Fixnum
+                    when Numeric
                       max = guess_max(obj)
                       Log::ProgressBar.new_bar(bar) 
                     when Hash

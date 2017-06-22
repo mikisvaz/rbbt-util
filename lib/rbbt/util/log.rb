@@ -54,8 +54,8 @@ module Log
 
   def self.get_level(level)
     case level
-    when Fixnum
-      level
+    when Numeric
+      level.to_i
     when String
       begin
         Log.const_get(level.upcase)
@@ -123,7 +123,7 @@ module Log
   def self.color(severity, str = nil, reset = false)
     return str || "" if nocolor 
     color = reset ? Term::ANSIColor.reset : ""
-    color << SEVERITY_COLOR[severity] if Fixnum === severity
+    color << SEVERITY_COLOR[severity] if Integer === severity
     color << Term::ANSIColor.send(severity) if Symbol === severity and Term::ANSIColor.respond_to? severity 
     if str.nil?
       color

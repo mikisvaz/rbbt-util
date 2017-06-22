@@ -47,8 +47,8 @@ module Misc
     when FalseClass
       value === FalseClass or (String === value and value.downcase == 'false')
     when String
-      Fixnum === value ? value.to_f == condition.to_f : value == condition
-    when Fixnum
+      Numeric === value ? value.to_f == condition.to_f : value == condition
+    when Numeric
       value.to_f == condition.to_f
     when Array
       case condition.first

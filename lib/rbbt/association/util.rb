@@ -10,7 +10,7 @@ module Association
   end
 
   def self.parse_field_specification(spec)
-    return [2,nil,nil] if Fixnum === spec
+    return [2,nil,nil] if Numeric === spec
     spec = spec.split "=>" unless Array === spec
     field_part, final_format = spec
 
@@ -131,7 +131,7 @@ module Association
       header = case field
                when String 
                  field
-               when Fixnum
+               when Numeric
                  all_fields[field] 
                when :key
                  all_fields.first

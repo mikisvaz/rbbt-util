@@ -114,7 +114,7 @@ module TSV
                              end
                            when @new_fields == :all
                              fields
-                           when (Fixnum === @new_fields and @new_fields <= 0)
+                           when (Numeric === @new_fields and @new_fields <= 0)
                              new = fields.dup
                              new.delete_at(- @new_fields)
                              new.unshift key_field
@@ -127,13 +127,13 @@ module TSV
         self.instance_eval do alias process process_null end
       when @new_key_field == :key 
         if type == :double
-          if Fixnum === @new_fields and @new_fields <= 0
+          if Numeric === @new_fields and @new_fields <= 0
             self.instance_eval do alias process process_subset_all_but_double end
           else
             self.instance_eval do alias process process_subset_double end
           end
         else
-          if Fixnum === @new_fields and @new_fields <= 0
+          if Numeric === @new_fields and @new_fields <= 0
             self.instance_eval do alias process process_subset_all_but_list end
           else
             self.instance_eval do alias process process_subset_list end
@@ -523,7 +523,7 @@ module TSV
           end
         end
 
-      when Fixnum === method
+      when Numeric === method
         with_unnamed do
           through :key, key do |key, values|
             new[key] = self[key] if invert ^ (values.flatten.length >= method)

@@ -106,7 +106,7 @@ class Color
       return val if val.is_a?(Color)
 
       # Single value, assume grayscale
-      return Color.new(val, val, val) if val.is_a?(Fixnum)
+      return Color.new(val, val, val) if val.is_a?(Numeric)
 
       # Assume string
       str = val.to_s.upcase

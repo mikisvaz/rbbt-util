@@ -62,7 +62,7 @@ module Persist
      
     def add(key, value)
       key = pos_function.call(key) if pos_function 
-      if Fixnum === key
+      if Numeric === key
         @_last ||= -1
         skipped = key - @_last - 1
         skipped.times do
@@ -79,7 +79,7 @@ module Persist
     end
 
     def include?(i)
-      return true if Fixnum === i and i < size
+      return true if Numeric === i and i < size
       return true if metadata.include? i
       false
     end

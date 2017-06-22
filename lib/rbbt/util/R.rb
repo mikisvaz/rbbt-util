@@ -112,7 +112,7 @@ source('#{UTIL}');
       "#{ object }"
     when String
       object[0] == ":" ? object[1..-1] : "'#{ object }'"
-    when Fixnum, Float
+    when Numeric
       object
     when TrueClass
       "TRUE"
