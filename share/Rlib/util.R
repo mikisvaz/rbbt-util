@@ -89,29 +89,32 @@ rbbt.load.data <- function(filename, sep = "\t",  ...){
 
 rbbt.flat.tsv <- function(filename, sep = "\t", comment.char ="#", ...){
   f = file(filename, 'r');
-  headers = readLines(f, 1);
-  if (length(grep("^#: ", headers)) > 0){ 
-      headers = readLines(f, 1); 
+  line = readLines(f, 1);
+  if (length(grep("^#: ", line)) > 0){ 
+      line = readLines(f, 1); 
+  } 
+  if (comment.char=="" || length(grep("^# ", line)) > 0){ 
+      line = readLines(f, 1); 
   } 
   result = list();
   while( TRUE ){
-    line = readLines(f, 1);
-    if (length(line) == 0){ break;}
     parts = unlist(strsplit(line, sep, fixed = TRUE));
     id = parts[1];
     result[[id]] = parts[2:length(parts)];
+    line = readLines(f, 1);
+    if (length(line) == 0){ break;}
   }
   close(f);
   return(result);
 }
 
-rbbt.tsv.columns <- function(filename, sep="\t"){
+rbbt.tsv.columns <- function(filename, sep="\t", comment.char="#"){
   f = file(filename, 'r');
   headers = readLines(f, 1);
   if (length(grep("^#:", headers)) > 0){ 
       headers = readLines(f, 1); 
   } 
-  if (length(grep("^#", headers)) > 0){
+  if (comment.char == "" || length(grep("^#", headers)) > 0){
       fields = strsplit(headers, sep)[[1]];
       close(f);
       return(fields);
@@ -121,9 +124,14 @@ rbbt.tsv.columns <- function(filename, sep="\t"){
 }
 
 rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1, check.names=FALSE, fill=TRUE, as.is=TRUE, quote='',  ...){
-  data=read.table(file=filename, sep=sep, fill=fill, as.is=as.is, quote=quote, row.names= row.names, comment.char = comment.char, ...);
+ 
+  if (comment.char == ""){
+      data=read.table(file=filename, sep=sep, fill=fill, as.is=as.is, quote=quote, row.names= row.names, comment.char = comment.char, skip=1, ...);
+  }else{
+      data=read.table(file=filename, sep=sep, fill=fill, as.is=as.is, quote=quote, row.names= row.names, comment.char = comment.char, ...);
+  }
 
-  columns = rbbt.tsv.columns(filename, sep)
+  columns = rbbt.tsv.columns(filename, sep, comment.char=comment.char)
   if (! is.null(columns)){
       names(data) <- columns[2:length(columns)];
   }
