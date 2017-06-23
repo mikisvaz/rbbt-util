@@ -237,7 +237,7 @@ module TSV
         new[k] = [v]
       end
     when :list
-      self
+      return self
     end
     self.annotate(new)
     new.type = :list
