@@ -42,7 +42,12 @@ source('#{UTIL}');
     if monitor
       io = CMD.cmd('R --no-save --quiet', options.merge(:in => cmd, :pipe => true, :log => true))
       while line = io.gets
-        puts line
+        case monitor
+        when Proc
+          monitor.call line
+        else
+          Log.debug "R: " <<  line
+        end
       end
       nil
     else
