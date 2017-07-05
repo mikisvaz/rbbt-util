@@ -2,6 +2,23 @@ module Misc
   ARRAY_MAX_LENGTH = 1000
   STRING_MAX_LENGTH = ARRAY_MAX_LENGTH * 10
 
+  def self.break_lines(text, char_size=80)
+    text = text.gsub("\n", " ")
+    lines = []
+    line = []
+    text.split(/([\s\-]+)/).each do |part|
+      if line.join("").length + part.length > char_size
+        lines << line * ""
+        line = []
+      end
+      line << part
+    end
+
+    lines << line * ""
+
+    lines.flatten.collect{|l| l.strip} * "\n"
+  end
+
   def self.name2basename(file)
     sanitize_filename(file.gsub("/",'>').gsub("~", '-'))
   end

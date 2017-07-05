@@ -551,4 +551,10 @@ eum fugiat quo voluptas nulla pariatur?"
       Log.debug  "Hola #{[p.first.inspect, p.last.inspect] * "=>"}" 
     end
   end
+
+  def test_sanitize_filename
+    text = "This is a very long line that needs to be split in several lines"
+    assert Misc.break_lines(text, 10).split("\n").length == 1 + text.length / 10
+    assert Misc.break_lines(text, 10).split("\n").select{|l| l.length > 10 }.empty?
+  end
 end

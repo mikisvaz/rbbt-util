@@ -28,9 +28,9 @@ $annotation_repo = Rbbt.var.sinatra.annotation_repo.find
 
      Log.debug("Persist #{name} #{prop}: #{[type, repo].compact * ", "}")
      if repo == 'repo'
-      options = {:annotation_repo => $annotation_repo}
+       options = {:annotation_repo => $annotation_repo}
      else
-      options = {}
+       options = {}
      end
      persist prop, type, options
    end

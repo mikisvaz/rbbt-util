@@ -8,7 +8,6 @@ module IndiferentHash
     new = self.dup
     IndiferentHash.setup(new)
     other.each do |k,value|
-      new.delete k
       new[k] = value
     end
     new
