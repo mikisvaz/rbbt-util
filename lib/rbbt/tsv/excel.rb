@@ -151,8 +151,6 @@ module TSV
       sheet = Misc.process_options options, :sheet
       header = Misc.process_options options, :header
 
-      iii options
-      iii sheet
       header = true unless header == false
       TmpFile.with_file do |filename|
         workbook = RubyXL::Parser.parse file
