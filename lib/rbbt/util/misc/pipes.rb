@@ -523,7 +523,7 @@ module Misc
           keys[i] = nil
           parts[i] = []
         else
-          key, *p = line.strip.split(sep, -1) 
+          key, *p = line.chomp.split(sep, -1) 
           keys[i] = key
           parts[i] = p
         end
@@ -542,7 +542,7 @@ module Misc
               keys[i] = nil
               parts[i] = nil
             else
-              k, *p = line.strip.split(sep, -1)
+              k, *p = line.chomp.split(sep, -1)
               keys[i] = k
               parts[i] = p
             end

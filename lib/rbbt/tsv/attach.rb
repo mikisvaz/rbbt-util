@@ -100,7 +100,7 @@ module TSV
       key1 = key2 = nil
       while key1.nil?
         while (line1 = file1.gets) =~ /^#/
-          key_field1, *fields1 = line1.strip.sub('#','').split(sep)
+          key_field1, *fields1 = line1.chomp.sub('#','').split(sep)
         end
         key1, *parts1 = line1.sub("\n",'').split(sep, -1)
         cols1 = parts1.length
@@ -108,7 +108,7 @@ module TSV
 
       while key2.nil?
         while (line2 = file2.gets) =~ /^#/
-          key_field2, *fields2 = line2.strip.sub('#','').split(sep)
+          key_field2, *fields2 = line2.chomp.sub('#','').split(sep)
         end
         key2, *parts2 = line2.sub("\n",'').split(sep, -1)
         cols2 = parts2.length

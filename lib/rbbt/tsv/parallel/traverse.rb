@@ -174,7 +174,7 @@ module TSV
           end
         end
         begin
-          callback.call yield line.strip
+          callback.call yield line.chomp
         ensure
           bar.tick if bar
         end
@@ -183,7 +183,7 @@ module TSV
       bar.init if bar
       while line = io.gets
         begin
-          yield line.strip
+          yield line.chomp
         ensure
           bar.tick if bar
         end
