@@ -238,12 +238,12 @@ module TSV
   def self.reorder_stream(stream, positions, sep = "\t")
     Misc.open_pipe do |sin|
       line = stream.gets
-      line.strip! unless line.nil?
+      line.chomp! unless line.nil?
 
       while line =~ /^#\:/
         sin.puts line
         line = stream.gets
-        line.strip! unless line.nil?
+        line.chomp! unless line.nil?
       end
 
       while line  =~ /^#/
@@ -255,9 +255,9 @@ module TSV
           end
           positions = new
         end
-        sin.puts "#" + line.sub(/^#/,'').strip.split(sep).values_at(*positions).compact * sep
+        sin.puts "#" + line.sub(/^#/,'').chomp.split(sep).values_at(*positions).compact * sep
         line = stream.gets
-        line.strip! unless line.nil?
+        line.chomp! unless line.nil?
       end
 
       while line
@@ -273,7 +273,7 @@ module TSV
         new_values = values.values_at(*positions)
         sin.puts new_values * sep
         line = stream.gets
-        line.strip! unless line.nil?
+        line.chomp! unless line.nil?
       end
     end
   end

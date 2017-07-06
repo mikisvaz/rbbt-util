@@ -307,7 +307,7 @@ module Misc
   end
 
   def self.intersect_streams_read(io, sep=":")
-    line = io.gets.strip
+    line = io.gets.chomp
     parts = line.split(sep)
     chr, start, eend, *rest = parts
     start = start.to_i

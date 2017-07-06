@@ -121,7 +121,7 @@ class Step
               when :array
                 array = []
                 while line = value.gets
-                  array << line.strip
+                  array << line.chomp
                 end
                 array
               when :tsv
