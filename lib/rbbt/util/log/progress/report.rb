@@ -48,13 +48,22 @@ module Log
                       else
                         20
                       end
-        max_history = 100 if max_history > 100
+        max_history = 30 if max_history > 30
         @history.shift if @history.length > max_history
       end
 
       @mean_max ||= 0
       if @history.length > 3
-        mean = @mean = Misc.mean(@history)
+
+        w_mean = 0
+        total_w = 0
+        @history.each_with_index do |v,i|
+          c = i ** 10
+          w_mean += v * c
+          total_w += c
+        end
+        mean = @mean = w_mean.to_f / total_w
+
         @mean_max = mean if mean > @mean_max
       end
 
