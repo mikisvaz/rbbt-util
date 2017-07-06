@@ -76,7 +76,7 @@ module TSV
             if type == :double
               self[key] = values.concat field_positions.collect{|v| []}
             else
-              self[key] = values.concat [nil] * field_positions
+              self[key] = values.concat [nil] * field_positions.length
             end
           when Array === source_keys
             all_new_values = source_keys.collect do |source_key|
