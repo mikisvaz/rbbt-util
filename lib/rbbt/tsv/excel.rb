@@ -110,6 +110,7 @@ module TSV
           rows << row.values_at(0..(row.size - 1)).collect{|c| String === c ? c.gsub("\n", ' ') : c }
         end
 
+        num_values = rows.first.length
         File.open(filename, 'w') do |f|
           if header
             header = rows.shift
@@ -118,6 +119,7 @@ module TSV
 
           rows.each do |row| 
             values =  row.collect{|c| c.respond_to?(:value) ? c.value : c }
+            values[num_values-1] ||= nil
             f.puts values * "\t"
           end
         end
@@ -163,13 +165,17 @@ module TSV
           rows << row.cells.collect{|c| c.nil? ? nil : c.value}.collect{|c| String === c ? c.gsub("\n", ' ') : c }
         end
 
+        num_values = rows.first.length
         File.open(filename, 'w') do |f|
           if header
             header = rows.shift
             f.puts "#" + header * "\t"
           end
 
-          rows.each do |row| f.puts row * "\t" end
+          rows.each do |row| 
+            row[num_values-1] ||= nil
+            f.puts row * "\t" 
+          end
         end
 
         TSV.open(filename, options)
