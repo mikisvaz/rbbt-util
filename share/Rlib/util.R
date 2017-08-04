@@ -630,7 +630,35 @@ rbbt.plot.text_scatter <- function(formula, data) {
     text(formula, data=data, cex = 0.6, labels=rownames(data))
 }
 
-install.bioc <-function(pkg){
-    source("http://bioconductor.org/biocLite.R")
-    biocLite(pkg)
+rbbt.install.CRAN <- function(pkg){
+    res = FALSE
+    tryCatch({ install.packages(pkg); res = TRUE }, error = function(e){ warning(paste("Could not install CRAN ", pkg)); res = FALSE })
+    return(res)
 }
+rbbt.install.bioc <-function(pkg){
+    res = FALSE
+    tryCatch({ source("http://bioconductor.org/biocLite.R"); biocLite(pkg); res = TRUE }, error = function(e){ warning(paste("Could not install Bioconductor ", pkg)); res = FALSE })
+    return(res)
+}
+
+rbbt.install.github <- function(pkg, ...){
+    res = FALSE
+    tryCatch({ library(devtools); install_github(pkg, ...); res = TRUE }, error = function(e){ warning(paste("Could not install GITHUB ", pkg)); res = FALSE })
+    return(res)
+}
+
+rbbt.require <- function(pkg, ...){
+    list.of.packages <- c(pkg)
+    new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+    for (pkg in new.packages){ 
+        if (!rbbt.install.github(pkg, ...)){
+            if (!rbbt.install.CRAN(pkg, ...)){
+                if (!rbbt.install.bioc(pkg, ...)){
+                    stop("Error!", pkg)
+                }
+            }
+        }
+    }
+    library(list.of.packages, character.only=T)
+}
+
