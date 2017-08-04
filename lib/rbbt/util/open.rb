@@ -9,7 +9,7 @@ module Open
   class OpenURLError < StandardError; end
   class OpenGzipError < StandardError; end
 
-  REMOTE_CACHEDIR = "/tmp/open_cache" 
+  REMOTE_CACHEDIR = File.join(ENV["HOME"], "/tmp/open_cache")
   FileUtils.mkdir REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
 
   class << self
@@ -126,11 +126,11 @@ module Open
   # Grep
   
   def self.grep(stream, grep, invert = false)
-    grep_cmd = 'egrep'
+    grep_cmd = ENV["GREP_CMD"] || "/bin/grep"
     case 
     when Array === grep
       TmpFile.with_file(grep * "\n", false) do |f|
-        CMD.cmd("#{grep_cmd} #{invert ? '-v' : ''}", "-w" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
+        CMD.cmd("#{grep_cmd} #{invert ? '-v' : ''} -", "-w" => true, "-F" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
       end
     else
       CMD.cmd("#{grep_cmd} #{invert ? '-v ' : ''} '#{grep}' -", :in => stream, :pipe => true, :post => proc{begin stream.force_close; rescue Exception; end if stream.respond_to?(:force_close)})
@@ -319,7 +319,7 @@ module Open
   end
 
   def self.zip?(file)
-    !! (file =~ /\.zip/)
+    !! (file =~ /\.zip$/)
   end
 
 
