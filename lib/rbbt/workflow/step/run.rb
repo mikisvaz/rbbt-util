@@ -128,7 +128,16 @@ class Step
             raise $!
           end
 
-          set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, @inputs)) unless task.inputs.nil?
+          if not task.inputs.nil?
+            info_inputs = @inputs.collect do |i| 
+              if Path === i 
+                i.to_s
+              else 
+                i 
+              end
+            end
+            set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, info_inputs)) 
+          end
 
           set_info :started, (start_time = Time.now)
           log :started, "Starting step #{Log.color :yellow, task.name.to_s || ""}"

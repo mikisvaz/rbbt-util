@@ -696,7 +696,7 @@ module Workflow
       when :compute
         compute = v
       when Symbol
-        rec_dependency = all_d.select{|d| d.task_name.to_sym == v }.first
+        rec_dependency = all_d.flatten.select{|d| d.task_name.to_sym == v }.first
 
         if rec_dependency.nil?
           if inputs.include? v
@@ -734,6 +734,8 @@ module Workflow
     path_deps = {}
     dependencies.each do |dependency|
       _inputs = IndiferentHash.setup(inputs.dup)
+      jobname = _inputs[:jobname] if _inputs.include? :jobname
+
       real_dep = case dependency
                  when Array
                    workflow, dep_task, options = dependency
@@ -743,6 +745,7 @@ module Workflow
                    all_d = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
                    
                    _inputs = assign_dep_inputs(_inputs, options, all_d, workflow.task_info(dep_task))
+                   jobname = _inputs[:jobname] if _inputs.include? :jobname
 
                    job = workflow.job(dep_task, jobname, _inputs)
                    ComputeDependency.setup(job, compute) if compute

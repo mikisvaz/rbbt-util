@@ -63,7 +63,10 @@ class Step
 
   def recursive_inputs
     if NamedArray === inputs
-      i = Hash[*inputs.fields.zip(inputs).flatten]
+      i = {}
+      inputs.zip(inputs.fields).each do |v,f|
+        i[f] = v
+      end
     else
       i = {}
     end
