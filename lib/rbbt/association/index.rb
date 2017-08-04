@@ -100,6 +100,8 @@ module Association
 
         end
       end
+
+      data
     end.tap do |data|
       data.read if not Hash === data and data.respond_to? :read
       Association::Index.setup data
