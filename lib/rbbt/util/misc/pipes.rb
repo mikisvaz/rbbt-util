@@ -661,4 +661,30 @@ module Misc
   end
 
 
+  def self.swap_quoted_character(stream, charout="\n", charin=" ", quote='"')
+    io = Misc.open_pipe do |sin|
+      begin
+        quoted = false
+        prev = nil
+        while c = stream.getc
+          if c == quote and not prev == "\\"
+            quoted = ! quoted
+          end
+          c = charin if c == charout and quoted
+          sin << c
+          prev = c
+        end
+      rescue
+        stream.abort if stream.respond_to? :abort
+        raise $!
+      ensure
+        stream.join if stream.respond_to? :join
+      end
+    end
+  end
+
+  def self.remove_quoted_new_line(stream, quote = '"')
+    swap_quoted_character(stream, "\n", " ", quote)
+  end
+
 end

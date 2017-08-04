@@ -181,4 +181,44 @@ module Misc
     end
   end
 
+  def self.parse_sql_values(txt)
+    io = StringIO.new txt.strip
+
+    values = []
+    fields = []
+    current = nil
+    quoted = false
+    while c = io.getc
+      if quoted
+        if c == "'"
+          quoted = false
+        else
+          current << c
+        end
+      else
+        case c
+        when "("
+          current = ""
+        when ")"
+          fields << current
+          values << fields
+          fields = []
+          current = nil
+        when ','
+          if not current.nil?
+            fields << current
+            current = ""
+          end
+        when "'"
+          quoted = true
+        when ";"
+          break
+        else
+          current << c
+        end
+      end
+    end
+    values
+  end
+
 end

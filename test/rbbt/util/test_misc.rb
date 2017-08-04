@@ -557,4 +557,11 @@ eum fugiat quo voluptas nulla pariatur?"
     assert Misc.break_lines(text, 10).split("\n").length == 1 + text.length / 10
     assert Misc.break_lines(text, 10).split("\n").select{|l| l.length > 10 }.empty?
   end
+
+  def test_parse_sql_values
+    str=<<'EOF'
+(xxx,yyy,zzz),(aaa,'bb(,)b',ccc)
+EOF
+    assert Misc.parse_sql_values(str)[1][1] == "bb(,)b"
+  end
 end
