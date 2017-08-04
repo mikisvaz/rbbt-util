@@ -248,7 +248,7 @@ module TSV
 
       while line  =~ /^#/
         if Hash === positions
-          new = (0..line.split(sep).length-1).to_a
+          new = (0..line.split(sep,-1).length-1).to_a
           positions.each do |k,v|
             new[k] = v
             new[v] = k
@@ -262,14 +262,14 @@ module TSV
 
       while line
         if Hash === positions
-          new = (0..line.split(sep).length-1).to_a
+          new = (0..line.split(sep, -1).length-1).to_a
           positions.each do |k,v|
             new[k] = v
             new[v] = k
           end
           positions = new
         end
-        values = line.split(sep)
+        values = line.split(sep, -1)
         new_values = values.values_at(*positions)
         sin.puts new_values * sep
         line = stream.gets

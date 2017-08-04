@@ -63,7 +63,7 @@ else
   end
     puts "Rows: #{Log.color :blue, rows}" 
     parts = []
-    header.first_line.split(header.sep).each_with_index{|p,i| parts << (Log.color(:cyan, "(#{i}) ") << p.strip) }
+    header.first_line.split(header.sep, -1).each_with_index{|p,i| parts << (Log.color(:cyan, "(#{i}) ") << p.strip) }
     puts parts * "\t"
   puts
 end

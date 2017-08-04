@@ -39,7 +39,7 @@ module TSV
 
       preamble << line if line
       while line and (TrueClass === @header_hash or (String === @header_hash and Misc.fixutf8(line) =~ /^#{@header_hash}/ ))
-        @fields = line.split(@sep)
+        @fields = line.split(@sep, -1)
         @key_field = @fields.shift
         @key_field = @key_field[(0 + header_hash.length)..-1] if String === @header_hash
 
@@ -234,7 +234,12 @@ module TSV
         if data.include? key
           new = data[key]
           new.each_with_index do |old, i|
-            old.concat values[i]
+            next if values[i].nil?
+            if old.nil?
+              new[i] = values[i] 
+            else
+              old.concat values[i]
+            end
           end
           data[key] = new
         else
@@ -246,6 +251,10 @@ module TSV
 
     def add_to_data_merge_zipped(data, keys, values)
       num = keys.length
+
+      values = values.collect do |v|
+        (v.nil? || v.empty?) ? [""] : v
+      end
 
       if values.first.length > 1 and num == 1
         keys = keys * values.first.length

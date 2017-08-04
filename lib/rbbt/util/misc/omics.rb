@@ -308,7 +308,7 @@ module Misc
 
   def self.intersect_streams_read(io, sep=":")
     line = io.gets.chomp
-    parts = line.split(sep)
+    parts = line.split(sep, -1)
     chr, start, eend, *rest = parts
     start = start.to_i
     if eend =~ /^\d+$/
