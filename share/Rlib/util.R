@@ -472,12 +472,12 @@ rbbt.get.modes <- function(x,bw = NULL,spar = NULL) {
 
 #{{{ PLOTS
 
-rbbt.png_plot <- function(filename, width, height, p, ...){
+rbbt.png_plot <- function(filename, p, width=500, height=500, ...){
     png(filename=filename, width=width, height=height, ...);
     eval(parse(text=p));
 }
 
-rbbt.heatmap <- function(filename, width, height, data, take_log=FALSE, ...){
+rbbt.heatmap <- function(filename, data, width=500, height=500, take_log=FALSE, ...){
     opar = par()
     png(filename=filename, width=width, height=height);
 
