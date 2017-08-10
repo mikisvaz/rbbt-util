@@ -386,6 +386,7 @@ module Workflow
     task = task_for path
     return remote_tasks[task].load_id(id) if remote_tasks and remote_tasks.include? task
     step = Step.new path, tasks[task.to_sym]
+    step.load_inputs_from_info
     set_step_dependencies(step)
     step
   end

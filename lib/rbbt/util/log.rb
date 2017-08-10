@@ -17,7 +17,7 @@ module Log
   LOG_MUTEX = Mutex.new
 
   SEVERITY_NAMES ||= begin
-                     names = %w(DEBUG LOW MEDIUM HIGH INFO WARN ERROR ) 
+                     names = %w(DEBUG LOW MEDIUM HIGH INFO WARN ERROR NONE ) 
                      names.each_with_index do |name,i|
                        eval "#{ name } = #{ i }" 
                      end
@@ -31,6 +31,7 @@ module Log
       line = stack.shift 
     end
     line ||= caller.first
+    line.gsub('`', "'")
   end
 
   def self._ignore_stderr
@@ -229,12 +230,12 @@ module Log
   def self.exception(e)
     stack = caller
     error([e.class.to_s, e.message].compact * ": " )
-    error("BACKTRACE: " << Log.last_caller(caller) << "\n" + color_stack(e.backtrace)*"\n")
+    error("BACKTRACE: " << Log.last_caller(stack) << "\n" + color_stack(e.backtrace)*"\n")
   end
 
   def self.deprecated(m)
     stack = caller
-    warn("DEPRECATED: " << Log.last_caller(caller))
+    warn("DEPRECATED: " << Log.last_caller(stack))
     warn("* " << (m || "").to_s)
   end
 
@@ -248,7 +249,7 @@ module Log
   end
 
   def self.tsv(tsv)
-    STDERR.puts Log.color :magenta, "TSV log: " << Log.last_caller(caller)
+    STDERR.puts Log.color :magenta, "TSV log: " << Log.last_caller(caller).gsub('`',"'")
     STDERR.puts Log.color(:blue, "=> "<< Misc.fingerprint(tsv), true) 
     STDERR.puts Log.color(:cyan, "=> " << tsv.summary)
   end

@@ -132,6 +132,7 @@ if recursive
 
   while deps.any? do
     dep = deps.shift
+    inputs = {} if inputs.nil?
     inputs = inputs.merge(dep.info[:inputs] || {})
     deps.concat (dep.info[:dependencies] || []).collect{|v| get_step v.last }
   end
@@ -139,14 +140,16 @@ if recursive
   inputs.each do |input,value|
     case value
     when nil
-      puts "  " << Misc.format_definition_list_item(input, 'nil', 80, 20, :blue)
+      puts Misc.format_definition_list_item("  " << input.to_s, 'nil', 80, 20, :blue)
     when Array
-      puts "  " << Misc.format_definition_list_item(input, (value.length > 6 ? value[0..5]*"\n" << "\n" << "..." : value * "\n" ), 80, 20, :blue)
+      puts Misc.format_definition_list_item("  " << input.to_s, (value.length > 6 ? (value[0..5])*"\n\n" << "\n\n" << "..." : value * "\n\n" ), 80, 20, :blue).gsub("\n\n","\n")
     when TrueClass, FalseClass
-      puts "  " << Misc.format_definition_list_item(input, value.to_s, 80, 20, :blue)
+      puts Misc.format_definition_list_item("  " << input.to_s, value.to_s, 80, 20, :blue)
     else
-      text = value.to_s.split("\n")[0..5].compact * "\n\n"
-      puts "  " << Misc.format_definition_list_item(input, text, 80, 20, :blue)
+      lines = value.to_s.split("\n").collect{|l| l.length >= 60 ? l[0..45] + " ..." : l }
+      text = lines[0..5].compact * "\n\n"
+      text << "\n\n...\n\n" if lines.length > 6
+      puts Misc.format_definition_list_item("  " << input.to_s, text, 80, 20, :blue).gsub("\n\n","\n")
     end
   end
 end

@@ -14,6 +14,7 @@ Use - to read from STDIN
 -tch--tokyocabinet File is a tokyocabinet hash database
 -tcb--tokyocabinet_bd File is a tokyocabinet B database
 -f--field* Limit to a particular field
+-k--keys Print also keys
 -h--help Print this help
 -l--lines Separate in lines
 
@@ -45,6 +46,8 @@ fields = field.nil? ? nil : [field]
 TSV.traverse(tsv, :fields => fields) do |k,v|
   if options[:lines]
     puts (Array === v ? v.flatten*"\n" : v.to_s ) 
+  elsif options[:keys]
+    puts(k << "\t" << (Array === v ? v.flatten*"\t" : v.to_s ))
   else
     puts (Array === v ? v.flatten*"\t" : v.to_s ) 
   end

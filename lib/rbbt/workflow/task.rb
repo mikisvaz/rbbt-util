@@ -2,7 +2,7 @@ require 'rbbt/util/misc'
 require 'rbbt/persist'
 
 module Task
-  attr_accessor :inputs, :input_types, :result_type, :input_defaults, :input_descriptions, :input_options, :required_inputs, :description, :name, :result_description, :extension
+  attr_accessor :inputs, :input_types, :result_type, :input_defaults, :input_descriptions, :input_options, :required_inputs, :description, :name, :result_description, :extension, :workflow
 
   def self.setup(options = {}, &block)
     block.extend Task
@@ -91,6 +91,8 @@ module Task
       maps = (Array === dep and Hash === dep.last) ? dep.last.keys : []
       raise "Dependency task not found: #{dep}" if task.nil?
       next if seen.include? [wf, task.name]
+
+      task.workflow = wf if wf
 
       seen << [wf, task.name]
       new_inputs = task.inputs - maps

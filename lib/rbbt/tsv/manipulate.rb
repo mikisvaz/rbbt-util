@@ -717,12 +717,12 @@ module TSV
 
   def transpose(key_field = "Unkown ID")
     case type
+    when :single, :flat
+      transpose_list self.to_list, key_field
     when :list
       transpose_list key_field
     when :double
       transpose_double key_field
-    else
-      raise "Transposing only works for TSVs of type :list or :double"
     end
   end
 

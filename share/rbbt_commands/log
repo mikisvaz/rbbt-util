@@ -18,6 +18,7 @@ HIGH
 INFO
 WARN
 ERROR
+NONE
 
 -h--help Print this help
 

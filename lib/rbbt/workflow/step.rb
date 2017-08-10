@@ -45,20 +45,36 @@ class Step
                     end
     @mutex = Mutex.new
     @info_mutex = Mutex.new
-    @inputs = inputs || []
+    @inputs = inputs 
     NamedArray.setup @inputs, task.inputs.collect{|s| s.to_s} if task and task.respond_to? :inputs and task.inputs
   end
 
+  def workflow
+    info[:workflow]
+  end
+
+  def load_inputs_from_info
+    if info[:inputs]
+      info_inputs = info[:inputs]
+      if task && task.respond_to?(:inputs) && task.inputs
+        IndiferentHash.setup info_inputs
+        @inputs = NamedArray.setup info_inputs.values_at(*task.inputs.collect{|name| name.to_s}), task.inputs
+      else
+        @inputs = NamedArray.setup info_inputs.values, info_inputs.keys
+      end
+    else
+      nil
+    end
+  end
+
   def inputs
-    if @inputs.nil? and task and task.respond_to? :inputs
-      @inputs = info[:inputs].values_at *task.inputs.collect{|name| name.to_s}
-    end
+    return @inputs if NamedArray === @inputs
 
-    if task.inputs and not NamedArray === @inputs
-      NamedArray.setup @inputs, task.inputs 
-    end
+    load_inputs_from_info if @inputs.nil? 
 
-    @inputs
+    NamedArray.setup(@inputs, task.inputs) if task && task.inputs && ! NamedArray === @inputs
+
+    @inputs || []
   end
 
   def recursive_inputs
@@ -116,11 +132,27 @@ class Step
     self
   end
 
+  def result_type
+    @result_type ||= if @task.nil?
+                       info[:result_type]
+                     else
+                       @task.result_type
+                     end
+  end
+
+  def result_description
+    @result_description ||= if @task.nil?
+                       info[:result_description]
+                     else
+                       @task.result_description
+                     end
+  end
+
   def prepare_result(value, description = nil, entity_info = nil)
     res = case 
     when IO === value
       begin
-        res = case @task.result_type
+        res = case result_type
               when :array
                 array = []
                 while line = value.gets
@@ -209,13 +241,13 @@ class Step
             res = @result
           else
             join if not done?
-            @path.exists? ? Persist.load_file(@path, @task.result_type) : exec
+            @path.exists? ? Persist.load_file(@path, result_type) : exec
           end
 
-    if @task.result_description
+    if result_description
       entity_info = info.dup
       entity_info.merge! info[:inputs] if info[:inputs]
-      res = prepare_result res, @task.result_description, entity_info 
+      res = prepare_result res, result_description, entity_info 
     end
 
     res

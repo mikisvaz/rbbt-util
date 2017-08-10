@@ -66,6 +66,8 @@ module Misc
       (obj.respond_to?(:filename) and obj.filename ) ? "<IO:" + (obj.filename || obj.inspect + rand(100000)) + ">" : obj.inspect
     when File
       "<File:" + obj.path + ">"
+    when NamedArray
+      "[<NamedArray: fields=#{fingerprint obj.fields} -- values=#{fingerprint obj[0..-1]}]"
     when Array
       if (length = obj.length) > 10
         "[#{length}--" <<  (obj.values_at(0,1, length / 2, -2, -1).collect{|e| fingerprint(e)} * ",") << "]"
@@ -288,5 +290,17 @@ module Misc
 
   def self.obj2md5(obj)
     obj2digest(obj)
+  end
+
+  def self.get_filename(obj)
+    if obj.respond_to? :filename
+      obj.filename
+    elsif obj.respond_to? :path
+      obj.path
+    elsif (Path === obj || (String === obj && Misc.is_filename?(obj)))
+      obj
+    else
+      nil
+    end
   end
 end

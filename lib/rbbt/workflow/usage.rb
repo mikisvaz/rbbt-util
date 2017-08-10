@@ -33,7 +33,11 @@ module Task
       task_inputs = dep_inputs deps, workflow
       task_inputs.each do |task,new_inputs|
         task.inputs.zip(task.input_types.values_at(*task.inputs)).select{|i,t| t.to_sym == :select and task.input_options[i][:select_options] }.each{|i,t| selects << [i, task.input_options[i][:select_options]]  }
-        puts "  #{Log.color :yellow, task.name.to_s}:"
+        if task.workflow and task.workflow != workflow
+          puts "  #{Log.color :yellow, ["[#{task.workflow.to_s}]", task.name.to_s] *" "}:"
+        else
+          puts "  #{Log.color :yellow, task.name.to_s}:"
+        end
         puts
         puts SOPT.input_doc(new_inputs, task.input_types, task.input_descriptions, task.input_defaults, true)
         puts

@@ -156,6 +156,11 @@ module TSV
     script = require_sources + "\n\n" + script if require_sources
 
     r_options = Misc.pull_keys open_options, :R
+
+    r_options[:monitor] = open_options[:monitor] if open_options.include?(:monitor)
+    r_options[:method] = open_options[:method] if open_options.include?(:method)
+    r_options[:debug] = open_options[:debug] if open_options.include?(:debug)
+
     r_options[:debug] = true if r_options[:method] == :debug
     if r_options.delete :debug
       r_options[:monitor] = true

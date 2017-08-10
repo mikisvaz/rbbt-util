@@ -13,7 +13,7 @@ require 'rbbt/rest/knowledge_base'
 require 'rbbt/rest/helpers'
 require 'rbbt/rest/web_tool'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*:-w--workflows*"
+options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*:-W--workflows*"
 
 template = ARGV.first
 

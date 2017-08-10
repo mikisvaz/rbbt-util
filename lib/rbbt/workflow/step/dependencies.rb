@@ -164,7 +164,7 @@ class Step
       raise $!
     rescue Exception
       Log.error "Exception in dep. #{ Log.color :red, dependency.task_name.to_s } -- #{$!.message}"
-      Log.exception $!
+      #Log.exception $!
       raise $!
     end
   end

@@ -2,7 +2,7 @@ require 'rbbt/workflow/step/dependencies'
 
 class Step
 
-  attr_reader :stream, :dupped, :saved_stream, :inputs
+  attr_reader :stream, :dupped, :saved_stream
 
   def get_stream
     @mutex.synchronize do
@@ -21,7 +21,7 @@ class Step
   def resolve_input_steps
     step = false
     pos = 0
-    new_inputs = @inputs.collect do |i| 
+    new_inputs = inputs.collect do |i| 
       begin
         if Step === i
           step = true
@@ -115,6 +115,10 @@ class Step
             :issued => (issue_time = Time.now),
             :name => name,
             :clean_name => clean_name,
+            :workflow => @task.workflow.to_s,
+            :task_name => @task.name,
+            :result_type => @task.result_type,
+            :result_description => @task.result_description
           })
 
           set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
@@ -124,7 +128,6 @@ class Step
           rescue Exception
             FileUtils.rm pid_file if File.exist?(pid_file)
             stop_dependencies
-            Log.exception $!
             raise $!
           end
 

@@ -184,6 +184,7 @@ the job dependencies recursively.
 -pn--printname Print the name of the job and exit without starting it
 -pf--printpath Print the path of the job result
 -cl--clean Clean the last step of the job so that it gets recomputed
+-ct--clean_task* Clean a particular dependency task
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely
 --fork Run job asyncronously and monitor progress. It monitors detached processes as well
 --detach Run job asyncronously and detach process
@@ -210,6 +211,7 @@ do_fork = !!options.delete(:fork)
 detach = !!options.delete(:detach)
 do_exec = !!options.delete(:exec)
 clean = !!options.delete(:clean)
+clean_task = options.delete(:clean_task)
 recursive_clean = !!options.delete(:recursive_clean)
 out = options.include?(:output) ? File.open(options[:output], 'wb') : STDOUT
 
@@ -296,6 +298,12 @@ job = workflow.job(task.name, name, job_options)
 if clean 
   job.clean 
   sleep 1
+end
+
+if clean_task
+  job.rec_dependencies.each do |dep|
+    dep.clean if dep.task_name.to_s == clean_task.to_s
+  end
 end
 
 if recursive_clean 
