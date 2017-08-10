@@ -109,28 +109,7 @@ module Misc
   end
 
   def self.binary_include?(array, elem)
-    upper = array.size - 1
-    lower = 0
-
-    return -1 if upper < lower
-
-    while(upper >= lower) do
-      idx = lower + (upper - lower) / 2
-      value = array[idx]
-
-      case elem <=> value
-      when 0
-        return true
-      when -1
-        upper = idx - 1
-      when 1
-        lower = idx + 1
-      else
-        raise "Cannot compare #{[elem.inspect, value.inspect] * " with "}"
-      end
-    end
-
-    return false
+    array.bsearch {|e| e >= elem} == elem
   end
 
 end
