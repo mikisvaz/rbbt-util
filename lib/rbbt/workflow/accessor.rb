@@ -139,9 +139,10 @@ class Step
   end
 
   def init_info
-    return nil if @exec or info_file.nil?
+    return nil if @exec or info_file.nil? or Open.exists?(info_file)
     Open.lock(info_file, :lock => info_lock) do
-      i = {:status => :init, :pid => Process.pid}
+      i = {:status => :waiting, :pid => Process.pid}
+      i[:dependencies] = dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
       @info_cache = i
       Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
       @info_cache_time = Time.now
@@ -347,7 +348,7 @@ class Step
   end
 
   def started?
-    Open.exists?(path) or Open.exists?(pid_file) or Open.exists?(info_file)
+    Open.exists?(path) or Open.exists?(pid_file) #or Open.exists?(info_file)
   end
 
   def dirty?

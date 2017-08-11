@@ -163,7 +163,7 @@ module Log
 
     prefix = time << color(severity) << "["  << sev_str << "]" << color(0)
     message = "" << highlight << message << color(0) if severity >= INFO
-    str = prefix << " " << message
+    str = prefix << " " << message.to_s
 
     LOG_MUTEX.synchronize do
       STDERR.puts str

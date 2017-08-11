@@ -87,7 +87,7 @@ class Step
       job.clean 
     end
 
-    job.dup_inputs unless status == 'done' or job.started?
+    (job.init_info and job.dup_inputs) unless status == 'done' or job.started?
 
     raise DependencyError, job if job.error?
   end
@@ -251,13 +251,6 @@ class Step
 
     all_deps = rec_dependencies + [self]
 
-    dependencies.each do |dep|
-      next unless ComputeDependency === dep
-      if dep.compute == :produce
-        dep.produce 
-      end
-    end
-
     compute_deps = rec_dependencies.collect do |dep|
       next unless ComputeDependency === dep
       dep.rec_dependencies
@@ -273,6 +266,13 @@ class Step
         next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and step_dep.compute == :nodup)
         dep_step[step_dep.path] ||= []
         dep_step[step_dep.path] << step_dep
+      end
+    end
+
+    dependencies.each do |dep|
+      next unless ComputeDependency === dep
+      if dep.compute == :produce
+        dep.produce 
       end
     end
     
