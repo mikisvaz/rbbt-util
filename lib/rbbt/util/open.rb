@@ -10,7 +10,7 @@ module Open
   class OpenGzipError < StandardError; end
 
   REMOTE_CACHEDIR = File.join(ENV["HOME"], "/tmp/open_cache")
-  FileUtils.mkdir REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
+  FileUtils.mkdir_p REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
 
   class << self
     attr_accessor :repository_dirs
