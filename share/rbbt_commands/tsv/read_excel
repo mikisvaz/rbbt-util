@@ -17,6 +17,7 @@ Use - to read from STDIN
 -f--fields* Fields
 -t--type* Type
 -m--merge Merge from multiple rows
+-z--zipped Assume data is zipped when merging (default is true)
 -s2--sep2* Second level separator. Default /[,|]\\s?/
 -h--help Print this help
 
@@ -34,6 +35,7 @@ excelfile = ARGV.first
 
 raise ParameterException, "No excel file given" if excelfile.nil?
 
+options[:zipped] ||= true if options[:merge]
 require 'rbbt/tsv/excel'
 puts TSV.excel(excelfile, options).to_s
 
