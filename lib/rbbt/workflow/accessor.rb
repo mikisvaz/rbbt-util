@@ -399,7 +399,7 @@ class Step
   end
 
   def aborted?
-    status == :aborted || nopid?
+    status == :aborted || (status != :noinfo && nopid?)
   end
 
   # {{{ INFO
