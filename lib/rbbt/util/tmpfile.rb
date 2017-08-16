@@ -19,8 +19,7 @@ module TmpFile
   # up to +max+
   def self.random_name(s = "", max = 10000000)
     n = rand(max)
-    s << n.to_s
-    s
+    s + n.to_s
   end
 
   # Creates a random filename in the temporary directory
@@ -29,7 +28,8 @@ module TmpFile
   end
 
   def self.with_file(content = nil, erase = true, options = {})
-    tmpfile = tmp_file
+    prefix = options[:prefix] || ""
+    tmpfile = tmp_file prefix
     if options[:extension]
       tmpfile += ".#{options[:extension]}"
     end
@@ -48,7 +48,8 @@ module TmpFile
   end
 
   def self.with_dir(erase = true, options = {})
-    tmpdir = tmp_file
+    prefix = options[:prefix] || ""
+    tmpdir = tmp_file prefix
 
     FileUtils.mkdir_p tmpdir
 
