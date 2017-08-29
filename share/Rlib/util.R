@@ -499,9 +499,10 @@ rbbt.heatmap <- function(filename, data, width=500, height=500, take_log=FALSE, 
         data = data[, colSums(is.na(data))==0]
     }
 
+    rbbt.require('pls')
     data = stdize(data)
 
-    heatmap.2(data, margins = c(20,5), scale='column')
+    heatmap.2(data, scale='column', ...)
 
     dev.off();
     par(opar)
