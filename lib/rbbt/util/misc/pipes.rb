@@ -361,6 +361,7 @@ module Misc
         FileUtils.mkdir_p File.dirname(tmp_path) unless File.directory? File.dirname(tmp_path)
         FileUtils.rm_f tmp_path if File.exist? tmp_path
         begin
+
           case
           when block_given?
             File.open(tmp_path, 'wb', &block)
@@ -372,7 +373,7 @@ module Misc
               f.sync = true
               while block = content.read(BLOCK_SIZE)
                 f.write block
-              end
+              end 
             end
           else
             File.open(tmp_path, 'wb') do |f|  end

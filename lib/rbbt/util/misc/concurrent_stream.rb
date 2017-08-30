@@ -79,7 +79,7 @@ module ConcurrentStream
       @threads.each do |t| 
         next if t == Thread.current
         begin
-          t.join unless FalseClass === t.status 
+          t.join #unless FalseClass === t.status 
         rescue Exception
           Log.warn "Exception joining thread in ConcurrenStream: #{filename}"
           raise $!
@@ -114,7 +114,6 @@ module ConcurrentStream
   end
 
   def join
-
     join_threads
     join_pids
 
@@ -126,26 +125,24 @@ module ConcurrentStream
     close unless closed?
   end
 
-  def abort_threads(exception)
+  def abort_threads(exception = nil)
+    return unless @threads and @threads.any?
     Log.low "Aborting threads (#{Thread.current.inspect}) #{@threads.collect{|t| t.inspect } * ", "}"
 
     @threads.each do |t| 
       next if t == Thread.current
-      Log.low "Aborting thread #{t.inspect}"
-      t.raise exception ? exception : Aborted.new 
-    end if @threads
+      Log.low "Aborting thread #{t.inspect} with exception: #{exception}"
+      t.raise((exception.nil? ? Aborted.new : exception))
+    end 
 
-    sleeped = false
     @threads.each do |t|
       next if t == Thread.current
       if t.alive? 
-        sleep 1 unless sleeped
-        sleeped = true
+        sleep 1
         Log.low "Kill thread #{t.inspect}"
         t.kill
       end
       begin
-        Log.low "Join thread #{t.inspect}"
         t.join unless t == Thread.current
       rescue Aborted
       rescue Exception
@@ -157,6 +154,7 @@ module ConcurrentStream
   def abort_pids
     @pids.each do |pid|
       begin 
+        Log.low "Killing PID #{pid} in ConcurrentStream #{filename}"
         Process.kill :INT, pid 
       rescue Errno::ESRCH
       end

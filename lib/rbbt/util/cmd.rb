@@ -32,6 +32,7 @@ module CMD
     log        = options.delete(:log)
     no_fail    = options.delete(:no_fail)
     no_wait    = options.delete(:no_wait)
+
     dont_close_in  = options.delete(:dont_close_in)
 
     log = true if log.nil?
@@ -127,12 +128,7 @@ module CMD
       sin.close
     end
 
-    if no_wait
-      pids = []
-    else
-      pids = [pid]
-    end
-
+    pids = [pid]
 
     if pipe
       err_thread = Thread.new do
