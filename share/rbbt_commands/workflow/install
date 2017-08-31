@@ -23,7 +23,7 @@ instead of a particular workflow, all installed workflows will be updated.
 EOF
 if options[:help]
   if defined? rbbt_usage
-    rbbt_usage 
+    rbbt_usage
   else
     puts SOPT.usage
   end
@@ -35,6 +35,8 @@ repo = ARGV[1]
 
 raise "No workflow specified" if workflow.nil?
 
+repo_base_url = repo || (Rbbt.etc.workflow_repo.exists? ? Rbbt.etc.workflow_repo.read.strip : 'https://github.com/Rbbt-Workflows/')
+
 workflow_dir = Rbbt.etc.workflow_dir.exists? ? Path.setup(Rbbt.etc.workflow_dir.read.strip) : Rbbt.workflows.find(:user)
 
 FileUtils.mkdir_p workflow_dir unless File.exist? workflow_dir
@@ -42,47 +44,35 @@ FileUtils.mkdir_p workflow_dir unless File.exist? workflow_dir
 all_workflows = workflow_dir.find.glob("*/.git").collect{|d| File.basename(File.dirname(d))}
 workflows = workflow == 'all' ? all_workflows : workflow.split(",")
 
+
 Misc.in_dir(workflow_dir) do
-  workflows.each do |workflow|
-    case
-    when File.exist?(Misc.snake_case(workflow))
+  workflows.each_with_index do |workflow, index|
+    if (File.exist?(workflow))
       Log.info "Updating: " + workflow
-      Misc.in_dir(Misc.snake_case(workflow)) do
-        `git pull`
-        `git submodule init`
-        `git submodule update`
-      end
-    when File.exist?(workflow)
       Misc.in_dir(workflow) do
-        Log.info "Updating: " + workflow
         `git pull`
         `git submodule init`
         `git submodule update`
       end
     else
       Log.info "Installing: " + workflow
-      if repo.nil?
-        repo_base_url = Rbbt.etc.workflow_repo.exists? ? Rbbt.etc.workflow_repo.read.strip : 'https://github.com/Rbbt-Workflows/'
-        begin
-          repo = File.join(repo_base_url, workflow + '.git')
-          CMD.cmd("wget '#{repo}' -O /dev/null").read
-        rescue
-          Log.debug "Workflow repo does not exist, trying snake_case: #{ repo }"
-          begin
-            repo = File.join(repo_base_url, Misc.snake_case(workflow) + '.git')
-            CMD.cmd("wget '#{repo}' -O /dev/null").read
-          rescue
-            raise "Workflow repo does not exist: #{ repo }"
-          end
-        end
+      begin
+        repo = File.join(repo_base_url, workflow + '.git')
+        CMD.cmd("wget '#{repo}' -O /dev/null").read
+      rescue
+        raise "Workflow repo does not exist: #{ repo }" if (workflow == Misc.snake_case(workflow))
+
+        Log.debug "Workflow repo does not exist, trying snake_case: #{ repo }"
+        workflows.insert(index + 1, Misc.snake_case(workflow))
+        next
       end
       Log.warn "Cloning #{ repo }"
       Misc.insist do
-        `git clone "#{repo}" #{ Misc.snake_case(workflow) }`
+        `git clone "#{repo}" #{ workflow }`
         raise unless $?.success?
       end
       Log.warn "Initializing and updating submodules for #{repo}. You might be prompted for passwords."
-      Misc.in_dir(Misc.snake_case(workflow)) do
+       Misc.in_dir(workflow) do
         `git submodule init`
         `git submodule update`
       end
