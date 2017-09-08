@@ -766,6 +766,7 @@ module Workflow
                        compute = nil
                      end
 
+                     options = IndiferentHash.setup(options.dup)
                      dep = dependency.call jobname, options.merge(_inputs), real_dependencies
 
                      dep = [dep] unless Array === dep
@@ -781,6 +782,7 @@ module Workflow
                      }
                      dep = new_
                    else
+                     _inputs = IndiferentHash.setup(_inputs.dup)
                      dep = dependency.call jobname, _inputs, real_dependencies
                      if Hash === dep
                        inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, dep[:workflow].task_info(dep[:task]))

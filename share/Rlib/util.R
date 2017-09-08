@@ -477,7 +477,7 @@ rbbt.png_plot <- function(filename, p, width=500, height=500, ...){
     eval(parse(text=p));
 }
 
-rbbt.heatmap <- function(filename, data, width=500, height=500, take_log=FALSE, ...){
+rbbt.heatmap <- function(filename, data, width=500, height=500, take_log=FALSE, stdize=TRUE, ...){
     opar = par()
     png(filename=filename, width=width, height=height);
 
@@ -500,7 +500,10 @@ rbbt.heatmap <- function(filename, data, width=500, height=500, take_log=FALSE, 
     }
 
     rbbt.require('pls')
-    data = stdize(data)
+
+    if (stdize){
+        data = stdize(data)
+    }
 
     heatmap.2(data, scale='column', ...)
 

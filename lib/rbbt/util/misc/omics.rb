@@ -311,7 +311,7 @@ module Misc
     parts = line.split(sep, -1)
     chr, start, eend, *rest = parts
     start = start.to_i
-    if eend =~ /^\d+$/
+    if eend =~ /^\d+(\t.*)?$/
       eend = eend.to_i
     else
       eend = start.to_i

@@ -205,6 +205,7 @@ module TSV
       end
     end
 
+    options[:monitor] = bar
     if callback
       bar.init if bar
       exception = nil
@@ -222,7 +223,6 @@ module TSV
         raise exception if exception
       end
     else
-      options[:monitor] = bar
       TSV::Parser.traverse(io, options.merge(:monitor => bar), &block)
     end
     Log::ProgressBar.remove_bar(bar) if bar

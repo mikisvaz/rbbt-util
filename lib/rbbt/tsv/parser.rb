@@ -517,7 +517,8 @@ module TSV
     end
 
     def traverse(options = {})
-      monitor, grep, invert_grep, head = Misc.process_options options, :monitor, :grep, :invert_grep, :head
+      monitor, bar, grep, invert_grep, head = Misc.process_options options, :monitor, :bar, :grep, :invert_grep, :head
+      monitor = bar if bar and monitor.nil?
       raise "No block given in TSV::Parser#traverse" unless block_given?
 
       stream = @stream
@@ -540,6 +541,7 @@ module TSV
       end
 
       progress_monitor, monitor = monitor, nil if Log::ProgressBar === monitor
+
       # setup monitor
       if monitor and (stream.respond_to?(:size) or (stream.respond_to?(:stat) and stream.stat.respond_to? :size and stream.respond_to?(:pos)))
         size = case
