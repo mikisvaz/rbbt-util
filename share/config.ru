@@ -80,6 +80,6 @@ Sinatra::RbbtRESTMain.add_resource_path($app_dir.www.views.find, true)
 
 $title = app_name
 require 'rack'
-use Rack::Deflater
+use Rack::Deflater unless ENV["RACK_NO_DEFLATE"]
 run app
 

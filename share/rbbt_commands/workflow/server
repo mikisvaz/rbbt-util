@@ -14,6 +14,7 @@ $ rbbt workflow server [options] <Workflow>
 -Ho--Host* Host name
 -B--Bind* Bind IP
 -p--port* TCP port
+-nd--no-deflate Not deflate web content
 -s--server* Server type:  thin, webrick, unicorn, etc
 -f--finder Start server with finder functionality
 -RS--Rserve_session* Rserve session to use, otherwise start new one
@@ -82,6 +83,7 @@ TmpFile.with_file do |app_dir|
     ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
     ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
     ENV["RBBT_VIEWS_DIR"] = options[:views] if options.include?(:views)
+    ENV["RACK_NO_DEFLATE"] = "true" if options.include?(:no_deflate)
 
     if options[:stream]
       raise "No streaming available for any server other than puma" unless true or options[:server].include? 'puma'
