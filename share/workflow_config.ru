@@ -117,6 +117,6 @@ end
 
 #{{{ RUN
 require 'rack'
-use Rack::Deflater
+use Rack::Deflater unless ENV["RACK_NO_DEFLATE"]
 run app
 
