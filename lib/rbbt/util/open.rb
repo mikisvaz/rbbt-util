@@ -311,14 +311,17 @@ module Open
   end
 
   def self.gzip?(file)
+    file = file.find if Path === file
     !! (file =~ /\.gz$/)
   end
 
   def self.bgzip?(file)
+    file = file.find if Path === file
     !! (file =~ /\.bgz$/)
   end
 
   def self.zip?(file)
+    file = file.find if Path === file
     !! (file =~ /\.zip$/)
   end
 
