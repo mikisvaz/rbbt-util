@@ -23,6 +23,7 @@ source('#{UTIL}');
 
     require_sources  = source.collect{|source|
       source = R::LIB_DIR["plot.R"] if source == :plot
+      source = R::LIB_DIR["svg.R"] if source == :svg
       "source('#{source}')"
     } * ";\n" if Array === source and source.any?
 
@@ -64,7 +65,7 @@ source('#{UTIL}');
           f.puts 
           f.puts script
         end
-        CMD.cmd("env R_PROFILE='#{init_file}' xterm \"$RHOME/bin/R\"")
+        CMD.cmd("env R_PROFILE='#{init_file}' xterm \"$R_HOME/bin/R\"")
     end
   end
 

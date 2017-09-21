@@ -7,7 +7,7 @@ module R
 
       options = options.dup
 
-      sources = [:plot, Rbbt.share.Rlib["svg.R"].find(:lib), options[:source]].flatten.compact
+      sources = [:plot, :svg, options[:source]].flatten.compact
       options.delete :source
 
       fast = options[:fast]
