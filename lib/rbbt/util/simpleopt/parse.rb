@@ -4,6 +4,9 @@ module SOPT
   def self.fix_shortcut(short, long)
     return short unless short and shortcuts.include?(short)
 
+    current = shortcuts.select{|s,l| l == long}.collect{|s,l| s }.first
+    return current if current
+
     chars = long.chars.to_a
     current = [chars.shift]
     short = current * ""
