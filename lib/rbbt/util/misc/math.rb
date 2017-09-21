@@ -43,7 +43,7 @@ module Misc
   end
 
   def self.mean(list)
-    sum(list) / list.compact.length
+    sum(list).to_f / list.compact.length
   end
 
   def self.median(array)
@@ -52,22 +52,27 @@ module Misc
     (sorted[(len - 1) / 2] + sorted[len / 2]) / 2.0
   end
 
-
-  def self.sd(list)
+  def self.variance(list)
     return nil if list.length < 3
     mean = mean(list)
     list = list.compact
     list_length = list.length
 
-    total_square_distance = 0
+    total_square_distance = 0.0
     list.each do |value|
-      distance = value - mean
+      distance = value.to_f - mean
       total_square_distance += distance * distance
     end
 
     variance = total_square_distance / (list_length - 1)
+
+  end
+
+
+  def self.sd(list)
+    return nil if list.length < 3
+    variance = self.variance(list)
     Math.sqrt(variance)
-    #Math.sqrt(list.compact.inject(0.0){|acc,e| d = e - mean; acc += d * d; acc}) / (list.compact.length - 1)
   end
 
   def self.counts(array)
@@ -123,5 +128,11 @@ module Misc
 
   def self.in_delta?(a, b, delta = 0.0001)
     (a.to_f - b.to_f).abs < delta
+  end
+
+  def self.zscore(e, list)
+    m = Misc.mean(list)
+    sd = Misc.sd(list)
+    (e.to_f - m) / sd
   end
 end
