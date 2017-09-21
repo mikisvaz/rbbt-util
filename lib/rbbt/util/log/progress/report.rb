@@ -165,7 +165,7 @@ module Log
         ellapsed = 0
       end
       ellapsed = [ellapsed/3600, ellapsed/60 % 60, ellapsed % 60].map{|t| "%02i" % t }.join(':')
-      done_msg << " " << Log.color(:blue, (@ticks).to_s) << " in " << Log.color(:green, ellapsed)
+      done_msg << " " << Log.color(:blue, (@ticks).to_s) << " #{bytes ? 'bytes' : 'items'} in " << Log.color(:green, ellapsed)
       @last_count = 0
       @last_time = @start
       done_msg << " (" << thr_msg << ")"
