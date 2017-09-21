@@ -774,7 +774,8 @@ module Workflow
                      new_=[]
                      dep.each{|d| 
                        if Hash === d
-                         inputs = assign_dep_inputs({}, options.merge(d[:inputs]), real_dependencies, d[:workflow].task_info(d[:task])) 
+                         d[:workflow] ||= self 
+                         inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, d[:workflow].task_info(d[:task])) 
                          d = d[:workflow].job(d[:task], d[:jobname], inputs) 
                        end
                        ComputeDependency.setup(d, compute) if compute

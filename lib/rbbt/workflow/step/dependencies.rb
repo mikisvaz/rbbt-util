@@ -6,11 +6,6 @@ class Step
   def self.purge_stream_cache
     Log.debug "Purging dup. stream cache"
     STREAM_CACHE_MUTEX.synchronize do
-      #STREAM_CACHE.collect{|k,s| 
-      #  Thread.new do
-      #    Misc.consume_stream s
-      #  end
-      #}
       STREAM_CACHE.clear
     end
   end
@@ -43,17 +38,18 @@ class Step
           new
         end
       end
-    when TSV::Dumper#, TSV::Parser
+    when TSV::Dumper, TSV::Parser
+      orig_stream = stream
       stream = stream.stream
       return stream if stream.closed?
 
       STREAM_CACHE_MUTEX.synchronize do
         if STREAM_CACHE[stream].nil?
-          Log.high "Not duplicating dumper #{ stream.inspect }"
+          Log.high "Not duplicating #{Misc.fingerprint orig_stream} #{ stream.inspect }"
           STREAM_CACHE[stream] = stream
         else
           new = Misc.dup_stream(STREAM_CACHE[stream])
-          Log.high "Duplicating dumper #{ stream.inspect } into #{new.inspect}"
+          Log.high "Duplicating #{Misc.fingerprint orig_stream} #{ stream.inspect } into #{new.inspect}"
           new
         end
       end
@@ -64,6 +60,7 @@ class Step
 
   def dup_inputs
     return if @dupped or ENV["RBBT_NO_STREAM"] == 'true'
+    return if ComputeDependency === self and self.compute == :produce
     Log.low "Dupping inputs for #{path}"
     dupped_inputs = @inputs.collect do |input|
       Step.dup_stream input

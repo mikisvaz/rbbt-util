@@ -51,8 +51,22 @@ class Step
     @inputs.replace new_inputs if step
   end
 
+  def rewind_inputs
+    return if @inputs.nil?
+    Log.debug "Rewinding inputs for #{path}"
+    @inputs.each do |input|
+      next unless input.respond_to? :rewind
+      begin
+        input.rewind
+        Log.debug "Rewinded #{Misc.fingerprint input}"
+      rescue
+      end
+    end
+  end
+
   def _exec
     resolve_input_steps
+    rewind_inputs
     @exec = true if @exec.nil?
     begin
       old = Signal.trap("INT"){ Thread.current.raise Aborted }

@@ -276,6 +276,9 @@ module TSV
         traverse_obj(obj.stream, options, &block)
       when (defined? Step and Step)
 
+        obj.clean if obj.aborted? or obj.recoverable_error?
+        obj.run(true) unless obj.done? or obj.started?
+
         stream = obj.get_stream
 
         if stream

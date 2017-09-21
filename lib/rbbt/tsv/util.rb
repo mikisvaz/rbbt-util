@@ -84,7 +84,7 @@ module TSV
     when (defined? Bgzf and Bgzf)
       file
     when TSV
-      file
+      file.dumper_stream
     when TSV::Dumper
       file.stream
     when TSV::Parser

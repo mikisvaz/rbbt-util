@@ -3,7 +3,7 @@ require 'rbbt/util/simpleopt'
 module Task
   def doc(workflow = nil, deps = nil)
     puts Log.color(:yellow, "## #{ name }") << ":"
-    puts "\n" << description  << "\n" if description and not description.empty?
+    puts "\n" << Misc.format_paragraph(description.strip)  << "\n" if description and not description.empty?
     puts
 
     case

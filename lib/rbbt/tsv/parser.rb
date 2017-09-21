@@ -639,6 +639,11 @@ module TSV
       TSV.identify_field(key_field, fields, field)
     end
 
+    def rewind
+      stream.reopen(filename, "r") if stream.closed? and filename
+      stream.rewind
+    end
+
     def self.traverse(stream, options = {}, &block)
       parser = Parser.new(stream, options)
       parser.traverse(options, &block)
