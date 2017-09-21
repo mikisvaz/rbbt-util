@@ -1,11 +1,11 @@
-library(plyr)
-library(proto)
-library(ggplot2)
-library(gridSVG)
-library(grid)
-library(XML)
-library(ggthemes)
-library(Cairo)
+rbbt.require('plyr')
+rbbt.require('proto')
+rbbt.require('ggplot2')
+rbbt.require('gridSVG')
+rbbt.require('grid')
+rbbt.require('XML')
+rbbt.require('ggthemes')
+rbbt.require('Cairo')
 
 # Modified from http://aaronecay.com/blog/2014/02/tooltips-in-ggplot/
 
