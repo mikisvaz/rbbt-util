@@ -636,12 +636,13 @@ rbbt.plot.text_scatter <- function(formula, data) {
 
 rbbt.install.CRAN <- function(pkg){
     res = FALSE
-    tryCatch({ install.packages(pkg); res = TRUE }, error = function(e){ warning(paste("Could not install CRAN ", pkg)); res = FALSE })
+    tryCatch({ install.packages(pkg); library(pkg); res = TRUE }, error = function(e){ warning(paste("Could not install CRAN ", pkg)); res = FALSE })
     return(res)
 }
+
 rbbt.install.bioc <-function(pkg){
     res = FALSE
-    tryCatch({ source("http://bioconductor.org/biocLite.R"); biocLite(pkg); res = TRUE }, error = function(e){ warning(paste("Could not install Bioconductor ", pkg)); res = FALSE })
+    tryCatch({ source("http://bioconductor.org/biocLite.R"); biocLite(pkg, ask=FALSE, suppressUpdates = TRUE); res = TRUE }, error = function(e){ warning(paste("Could not install Bioconductor ", pkg)); res = FALSE })
     return(res)
 }
 
