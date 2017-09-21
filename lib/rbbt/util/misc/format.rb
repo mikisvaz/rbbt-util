@@ -165,7 +165,8 @@ module Misc
     (string.respond_to? :valid_encoding and string.valid_encoding)
 
     if string.respond_to?(:encode)
-      string.encode("UTF-16BE", :invalid => :replace, :undef => :replace, :replace => "?").encode('UTF-8')
+      #string.encode("UTF-16BE", :invalid => :replace, :undef => :replace, :replace => "?").encode('UTF-8')
+      string.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
     else
       require 'iconv'
       @@ic ||= Iconv.new('UTF-8//IGNORE', 'UTF-8')
