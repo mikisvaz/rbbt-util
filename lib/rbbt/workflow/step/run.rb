@@ -145,6 +145,53 @@ class Step
             raise $!
           end
 
+          new_inputs = []
+          @inputs.each_with_index do |input,i|
+            name = @task.inputs[i]
+            type = @task.input_types[name]
+
+            if type == :directory
+              directory_inputs = file('directory_inputs')
+              input_source = directory_inputs['.source'][name].find
+              input_dir = directory_inputs[name].find
+
+              case input
+              when Path
+                if input.directory?
+                  new_inputs << input
+                else
+                  input.open do |io|
+                    begin
+                      Misc.untar(io, input_source)
+                    rescue
+                      raise ParameterException, "Error unpackaging tar directory input '#{name}':\n\n#{$!.message}"
+                    end
+                  end
+                  tar_1 = input_source.glob("*")
+                  raise ParameterException, "When using tar.gz files for directories, the directory must be the single first level entry" if tar_1.length != 1
+                FileUtils.ln_s Misc.path_relative_to(directory_inputs, tar_1.first), input_dir
+                  new_inputs << input_dir
+                end
+              when File, IO, Tempfile
+                begin
+                  Misc.untar(Open.gunzip(input), input_source)
+                rescue
+                  raise ParameterException, "Error unpackaging tar directory input '#{name}':\n\n#{$!.message}"
+                end
+                tar_1 = input_source.glob("*")
+                raise ParameterException, "When using tar.gz files for directories, the directory must be the single first level entry" if tar_1.length != 1
+                FileUtils.ln_s Misc.path_relative_to(directory_inputs, tar_1.first), input_dir
+                new_inputs << input_dir
+              else
+                raise ParameterException, "Format of directory input '#{name}' not understood: #{Misc.fingerprint input}"
+              end
+            else
+              new_inputs << input
+            end
+          end if @inputs
+          
+          @inputs = new_inputs if @inputs
+
           if not task.inputs.nil?
             info_inputs = @inputs.collect do |i| 
               if Path === i 

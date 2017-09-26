@@ -234,6 +234,16 @@ module Misc
             "{"<< obj.collect{|k,v| obj2str(k) + '=>' << obj2str(v)}*"," << "}"
           when Symbol 
             obj.to_s
+          when (defined? Path and Path)
+            if obj.exists?
+              if obj.directory?
+                "directory: #{obj.glob("**/*")}"
+              else
+                "file md5: #{digest(obj.read)}"
+              end
+            else
+              obj + " (file missing)"
+            end
           when String
             if obj.length > HASH2MD5_MAX_STRING_LENGTH
               sample_large_obj(obj, HASH2MD5_MAX_STRING_LENGTH)

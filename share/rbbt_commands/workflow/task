@@ -146,6 +146,8 @@ def fix_options(workflow, task, job_options)
                   TSV.open(StringIO.new(value), :unnamed => true, :sep => $field_separator, :sep2 => ($array_separator || "|"))
                 end
               end
+            when :directory
+              Path.setup(File.expand_path(value))
             else
               value
             end

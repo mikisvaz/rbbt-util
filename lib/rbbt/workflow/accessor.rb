@@ -803,26 +803,24 @@ module Workflow
 
   TAG = :hash
   def step_path(taskname, jobname, inputs, dependencies, extension = nil)
-    #Proc.new{
-      raise "Jobname makes an invalid path: #{ jobname }" if jobname =~ /\.\./
-      if inputs.length > 0 or dependencies.any?
-        tagged_jobname = case TAG
-                         when :hash
-                           hash_str = Misc.obj2digest({:inputs => inputs, :dependencies => dependencies})
-                           jobname + '_' << hash_str
-                         else
-                           jobname
-                         end
-      else
-        tagged_jobname = jobname
-      end
+    raise "Jobname makes an invalid path: #{ jobname }" if jobname =~ /\.\./
+    if inputs.length > 0 or dependencies.any?
+      tagged_jobname = case TAG
+                       when :hash
+                         hash_str = Misc.obj2digest({:inputs => inputs, :dependencies => dependencies})
+                         jobname + '_' << hash_str
+                       else
+                         jobname
+                       end
+    else
+      tagged_jobname = jobname
+    end
 
-      if extension and not extension.empty?
-        tagged_jobname = tagged_jobname + ('.' << extension.to_s)
-      end
+    if extension and not extension.empty?
+      tagged_jobname = tagged_jobname + ('.' << extension.to_s)
+    end
 
-      workdir[taskname][tagged_jobname].find
-    #}
+    workdir[taskname][tagged_jobname].find
   end
 
   def id_for(path)
