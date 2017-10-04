@@ -72,7 +72,7 @@ class Step
 
     load_inputs_from_info if @inputs.nil? 
 
-    NamedArray.setup(@inputs, task.inputs) if task && task.inputs && ! NamedArray === @inputs
+    NamedArray.setup(@inputs, task.inputs) if task && task.inputs && !(NamedArray === @inputs)
 
     @inputs || []
   end
