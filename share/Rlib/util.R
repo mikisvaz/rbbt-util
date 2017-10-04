@@ -654,7 +654,15 @@ rbbt.install.github <- function(pkg, ...){
 
 rbbt.require <- function(pkg, ...){
     list.of.packages <- c(pkg)
-    new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+
+    clean.packages <- c()
+    for (pkg in list.of.packages){ 
+        parts = strsplit(pkg,'/')[[1]]
+        clean.packages <- c(clean.packages, parts[length(parts)])
+    }
+
+    new.packages <- list.of.packages[!(clean.packages %in% installed.packages()[,"Package"])]
+
     for (pkg in new.packages){ 
         if (!rbbt.install.github(pkg, ...)){
             if (!rbbt.install.CRAN(pkg, ...)){
@@ -664,6 +672,7 @@ rbbt.require <- function(pkg, ...){
             }
         }
     }
-    library(list.of.packages, character.only=T)
+
+    library(clean.packages, character.only=T)
 }
 
