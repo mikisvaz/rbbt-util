@@ -126,8 +126,8 @@ if all
 end
 
 if recursive
-  puts Log.color(:magenta, "Recursive inputs") << ": "
   inputs = step.info[:inputs]
+  inputs = {}
   deps = step.info[:dependencies].collect{|v| get_step v.last }
 
   while deps.any? do
@@ -137,19 +137,22 @@ if recursive
     deps.concat (dep.info[:dependencies] || []).collect{|v| get_step v.last }
   end
 
-  inputs.each do |input,value|
-    case value
-    when nil
-      puts Misc.format_definition_list_item("  " << input.to_s, 'nil', 80, 20, :blue)
-    when Array
-      puts Misc.format_definition_list_item("  " << input.to_s, (value.length > 6 ? (value[0..5])*"\n\n" << "\n\n" << "..." : value * "\n\n" ), 80, 20, :blue).gsub("\n\n","\n")
-    when TrueClass, FalseClass
-      puts Misc.format_definition_list_item("  " << input.to_s, value.to_s, 80, 20, :blue)
-    else
-      lines = value.to_s.split("\n").collect{|l| l.length >= 60 ? l[0..45] + " ..." : l }
-      text = lines[0..5].compact * "\n\n"
-      text << "\n\n...\n\n" if lines.length > 6
-      puts Misc.format_definition_list_item("  " << input.to_s, text, 80, 20, :blue).gsub("\n\n","\n")
+  if inputs.any?
+    puts Log.color(:magenta, "Recursive inputs") << ": "
+    inputs.each do |input,value|
+      case value
+      when nil
+        puts Misc.format_definition_list_item("  " << input.to_s, 'nil', 80, 20, :blue)
+      when Array
+        puts Misc.format_definition_list_item("  " << input.to_s, (value.length > 6 ? (value[0..5])*"\n\n" << "\n\n" << "..." : value * "\n\n" ), 80, 20, :blue).gsub("\n\n","\n")
+      when TrueClass, FalseClass
+        puts Misc.format_definition_list_item("  " << input.to_s, value.to_s, 80, 20, :blue)
+      else
+        lines = value.to_s.split("\n").collect{|l| l.length >= 60 ? l[0..45] + " ..." : l }
+        text = lines[0..5].compact * "\n\n"
+        text << "\n\n...\n\n" if lines.length > 6
+        puts Misc.format_definition_list_item("  " << input.to_s, text, 80, 20, :blue).gsub("\n\n","\n")
+      end
     end
   end
 end
