@@ -730,11 +730,12 @@ module Workflow
     _inputs
   end
 
-  def real_dependencies(task, jobname, inputs, dependencies)
+  def real_dependencies(task, orig_jobname, inputs, dependencies)
     real_dependencies = []
     path_deps = {}
     dependencies.each do |dependency|
       _inputs = IndiferentHash.setup(inputs.dup)
+      jobname = orig_jobname
       jobname = _inputs[:jobname] if _inputs.include? :jobname
 
       real_dep = case dependency
