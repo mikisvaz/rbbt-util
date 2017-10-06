@@ -24,13 +24,19 @@ module Resource
     base.subdir = ''
     base.resources = {}
     base.rake_dirs = {}
+    base.search_paths = Path::SEARCH_PATHS.dup
     base.remote_server = Resource.remote_servers[base.to_s]
     base
   end
 
   attr_accessor :pkgdir, :subdir, :resources, :rake_dirs, :remote_server, :search_paths
 
-  def root()
+  def set_libdir(value = nil)
+    _libdir = value || Path.caller_lib_dir
+    search_paths.merge!(:lib => File.join(_libdir, '{TOPLEVEL}', '{SUBPATH}'))
+  end
+
+  def root
     Path.setup @subdir || "", @pkgdir, self, @search_paths
   end
 
