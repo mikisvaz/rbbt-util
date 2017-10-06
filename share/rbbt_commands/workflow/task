@@ -108,6 +108,8 @@ def fix_options(workflow, task, job_options)
             when :array
               if input_options[name] and input_options[name][:stream] and String === value and Misc.is_filename? value
                 get_value_stream(value)
+              elsif input_options[name] and input_options[name][:stream] and value == "-"
+                STDIN
               else
                 if Array === value
                   value
