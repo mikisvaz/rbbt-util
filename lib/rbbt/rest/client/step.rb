@@ -361,6 +361,7 @@ class WorkflowRESTClient
     end
 
     def clean
+      init_job
       begin
         params = {:_update => :clean}
         WorkflowRESTClient.clean_url(url, params) if @url
