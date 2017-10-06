@@ -247,7 +247,8 @@ class Step
                 end
               end
               begin
-                if status != :done
+                status = self.status
+                if status != :done and status != :error and status != :aborted
                   Misc.insist do
                     set_info :done, (done_time = Time.now)
                     set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
