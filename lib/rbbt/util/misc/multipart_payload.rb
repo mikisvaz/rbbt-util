@@ -1,6 +1,15 @@
 require 'net/http'
 require 'rbbt-util'
 
+class Net::HTTPGenericRequest
+  alias send_request_with_body_stream_orig send_request_with_body_stream
+  def send_request_with_body_stream(*args)
+    Thread.new do
+      send_request_with_body_stream_orig(*args)
+    end
+  end
+end
+
 module RbbtMutiplartPayload
   BOUNDARY = "Rbbt_Param_Stream"
   EOL = "\r\n"
@@ -97,6 +106,7 @@ module RbbtMutiplartPayload
 
     req = Net::HTTP::Post.new(uri.path)
     if stream_input
+      Log.low "Streaming input #{stream_input.to_s}"
       req.content_type = "multipart/form-data; boundary=" + RbbtMutiplartPayload::BOUNDARY + '; stream=' + stream_input.to_s
       req.body_stream = post_data_stream
     else
@@ -110,6 +120,7 @@ module RbbtMutiplartPayload
     timeout = 60 * timeout_minutes
     Misc.open_pipe do |sin|
       Net::HTTP.start(uri.hostname, uri.port, :read_timeout => timeout) do |http|
+        Log.low "Starting connection for streaming job"
         http.request(req) do |res|
           if Net::HTTPSuccess === res
             url_path = res["RBBT-STREAMING-JOB-URL"]
