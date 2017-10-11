@@ -90,7 +90,7 @@ class Step
     rec_dependencies.
       select{|dependency| ! (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) }.
       select{|dependency| ! dependency.error? }.
-      collect{|dependency| ! dependency.path }.uniq
+      collect{|dependency| dependency.path }.uniq
   end
 
   def kill_children
