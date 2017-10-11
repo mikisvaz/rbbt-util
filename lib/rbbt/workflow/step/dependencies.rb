@@ -119,6 +119,12 @@ class Step
         return
       end
 
+      if dependency.aborted?
+        log_dependency_exec(dependency, "aborted (clean)")
+        dependency.clean
+        raise TryAgain
+      end
+
       if not dependency.started?
         log_dependency_exec(dependency, :starting)
         dependency.run(true)
@@ -126,12 +132,6 @@ class Step
       end
 
       dependency.grace
-
-      if dependency.aborted?
-        log_dependency_exec(dependency, "aborted (clean)")
-        dependency.clean
-        raise TryAgain
-      end
 
       if dependency.error?
         log_dependency_exec(dependency, :error)
