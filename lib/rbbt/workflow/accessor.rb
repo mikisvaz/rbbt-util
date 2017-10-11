@@ -759,13 +759,10 @@ module Workflow
                  when Proc
                    if DependencyBlock === dependency
                      orig_dep = dependency.dependency 
-                     if Hash === orig_dep.last
-                       options = orig_dep.last
-                       compute = options[:compute]
-                     else
-                       options = {}
-                       compute = nil
-                     end
+                     wf, task_name, options = orig_dep
+
+                     options = {} if options.nil?
+                     compute = options[:compute]
 
                      options = IndiferentHash.setup(options.dup)
                      dep = dependency.call jobname, options.merge(_inputs), real_dependencies
@@ -775,7 +772,8 @@ module Workflow
                      new_=[]
                      dep.each{|d| 
                        if Hash === d
-                         d[:workflow] ||= self 
+                         d[:workflow] ||= wf 
+                         d[:task] = task_name
                          inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, d[:workflow].task_info(d[:task])) 
                          d = d[:workflow].job(d[:task], d[:jobname], inputs) 
                        end
