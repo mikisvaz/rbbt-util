@@ -86,7 +86,7 @@ class Step
 
     (job.init_info and job.dup_inputs) unless status == 'done' or job.started?
 
-    raise DependencyError, job if job.error?
+    raise DependencyError, job if job.error? and not (ComputeDependency === job and Array === job.compute and job.compute.include? :canfail)
   end
 
   def log_dependency_exec(dependency, action)
@@ -161,7 +161,6 @@ class Step
       raise $!
     rescue Exception
       Log.error "Exception in dep. #{ Log.color :red, dependency.task_name.to_s } -- #{$!.message}"
-      #Log.exception $!
       raise $!
     end
   end
@@ -189,12 +188,16 @@ class Step
       type, *rest = type
     end
 
+    canfail = rest && rest.include?(:canfail)
+
     case type
     when :produce, :no_dup
       list.each do |step|
         Misc.insist do
           begin
             step.produce
+          rescue RbbtException
+            raise $! unless canfail
           rescue Exception
             step.exception $!
             if step.recoverable_error?
@@ -211,11 +214,18 @@ class Step
       cpus = 5 if cpus.nil?
       cpus = list.length / 2 if cpus > list.length / 2
 
-      Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{path}", :respawn => :always) do |dep|
+      respawn = rest && rest.include?(:respawn)
+      respawn = false if rest && rest.include?(:norespawn)
+      respawn = rest && rest.include?(:always_respawn)
+      respawn = :always if respawn.nil?
+
+      Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{path}", :respawn => respawn) do |dep|
         Misc.insist do
           begin
             dep.produce 
             Log.warn "Error in bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
+          rescue RbbtException
+            raise $! unless canfail
           rescue Aborted
             dep.abort
             Log.warn "Aborted bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?

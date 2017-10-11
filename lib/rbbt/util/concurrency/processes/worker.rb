@@ -70,19 +70,18 @@ class RbbtProcessQueue
 
       status = nil
       begin
-        @current = Process.fork do
-          run
-        end
-        @asked = false
 
         initial = Misc.memory_use(Process.pid)
         memory_cap = multiplier * initial
         Log.debug "Worker for #{Process.pid} started with pid #{@current} -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap}"
 
+        @asked = false
+        @monitored = false
         @monitor_thread = Thread.new do
           begin
             while true
-              current = Misc.memory_use(@current) 
+              @monitored = true
+              current = @current ? 0 : Misc.memory_use(@current) 
               if current > memory_cap and not @asked
                 Log.medium "Worker #{@current} for #{Process.pid} asked to respawn -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap} - current: #{current}"
                 RbbtSemaphore.synchronize(@callback_queue.write_sem) do
@@ -95,6 +94,13 @@ class RbbtProcessQueue
           rescue
             Log.exception $!
           end
+        end
+
+        while ! @monitored
+          sleep 0.1
+        end
+        @current = Process.fork do
+          run
         end
 
         while true
@@ -114,7 +120,7 @@ class RbbtProcessQueue
         Log.exception $!
         raise $!
       ensure
-        @monitor_thread.kill
+        @monitor_thread.kill if @monitor_thread
         Process.kill "INT", @current if Misc.pid_exists? @current
         @callback_queue.close_write if @callback_queue 
       end

@@ -1,4 +1,5 @@
 require 'rbbt/resource/util'
+require 'rbbt/util/misc/indiferent_hash'
 require 'yaml'
 
 module Path

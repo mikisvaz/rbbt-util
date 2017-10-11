@@ -86,7 +86,11 @@ class Step
   end
 
   def checks
-    rec_dependencies.collect{|dependency| (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) ? nil : dependency.path }.compact.uniq
+    #rec_dependencies.collect{|dependency| (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) ? nil : dependency.path }.compact.uniq
+    rec_dependencies.
+      select{|dependency| ! (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) }.
+      select{|dependency| ! dependency.error? }.
+      collect{|dependency| ! dependency.path }.uniq
   end
 
   def kill_children
