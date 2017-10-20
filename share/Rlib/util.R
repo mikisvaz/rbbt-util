@@ -33,7 +33,7 @@ rbbt.ruby <- function(code, load = TRUE, flat = FALSE, type = 'tsv', ...){
   }
 }
 
-rbbt.job <- function(workflow, task, load=TRUE, flat = FALSE, type = 'tsv', jobname="R.Default", code='', ...){
+rbbt.job <- function(workflow, task, load=TRUE, flat = FALSE, type = 'tsv', jobname="Default", code='', ...){
 
     str = "require 'rbbt/workflow'"
 
@@ -43,26 +43,47 @@ rbbt.job <- function(workflow, task, load=TRUE, flat = FALSE, type = 'tsv', jobn
 
     args_list = list(...)
     args_strs = c()
+    tmp_files = c()
+
     for (input in names(args_list)){
         value = args_list[[input]]
         input = sub('input\\.', '', input)
-        if (!is.numeric(value)){
-            if (value == TRUE){
-                value = 'true'
-            }else{
-                if (value == FALSE){
-                    value = 'false'
+        if (is.vector(value) && length(value) > 1){
+            file = tempfile()
+            writeLines(value, file)
+            tmp_files = c(tmp_files, file)
+            value = paste("Open.read('", file, "').split(\"\\n\")", sep="")
+        }else{
+            if (!is.numeric(value)){
+                if (all(value %in% TRUE)){
+                    value = 'true'
                 }else{
-                    value = paste("'", value, "'", sep="")
+                    if (all(value %in% FALSE)){
+                        value = 'false'
+                    }else{
+                        if (is.data.frame(value)){
+                            file = tempfile()
+                            rbbt.tsv.write(file, value)
+                            tmp_files = c(tmp_files, file)
+                            value = paste("TSV.open('", file, "')", sep="")
+                        }else{
+                            value = paste("'", value, "'", sep="")
+                        }
+                    }
                 }
             }
         }
         args_strs = c(args_strs, paste(":",input,' => ',value, sep=""))
     }
 
-    args_str = paste(args_strs, sep=",")
+    args_str = paste(args_strs, collapse=",")
     str = paste(str, paste('wf.job(:', task, ", '", jobname, "', ", args_str,').produce.path', sep=""), sep="\n")
-    return(rbbt.ruby(str, load, flat, type));
+
+    res = rbbt.ruby(str, load, flat, type)
+
+    unlink(tmp_files)
+
+    return(res);
 }
 
 rbbt.ruby.substitutions <- function(script, substitutions = list(), ...){
@@ -134,9 +155,21 @@ rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1, check
   columns = rbbt.tsv.columns(filename, sep, comment.char=comment.char)
   if (! is.null(columns)){
       names(data) <- columns[2:length(columns)];
+      attributes(data)$key.field = substring(columns[1],2);
   }
 
   return(data);
+}
+
+rbbt.tsv.comma <- function(tsv){
+    for (c in names(tsv)){
+        v = tsv[,c]
+        if (is.character(v)){
+            v = gsub('\\|', ', ', v)
+            tsv[,c] = v
+        }
+    }
+    return(tsv)
 }
 
 rbbt.tsv.numeric <- function(filename, sep="\t", ...){
@@ -156,6 +189,8 @@ rbbt.tsv2matrix <- function(data){
 }
 
 rbbt.tsv.write <- function(filename, data, key.field = NULL, extra_headers = NULL){
+
+  if (is.null(key.field)){ key.field = attributes(data)$key.field;}
   if (is.null(key.field)){ key.field = "ID";}
 
   f = file(filename, 'w');
