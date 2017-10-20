@@ -800,7 +800,7 @@ module Workflow
     real_dependencies.flatten.compact
   end
 
-  TAG = :hash
+  TAG = ENV["RBBT_INPUT_JOBNAME"] == "true" ? :inputs : :hash
   def step_path(taskname, jobname, inputs, dependencies, extension = nil)
     raise "Jobname makes an invalid path: #{ jobname }" if jobname =~ /\.\./
     if inputs.length > 0 or dependencies.any?
@@ -808,6 +808,19 @@ module Workflow
                        when :hash
                          hash_str = Misc.obj2digest({:inputs => inputs, :dependencies => dependencies})
                          jobname + '_' << hash_str
+                       when :inputs
+                         all_inputs = {}
+                         inputs.zip(self.task_info(taskname)[:inputs]) do |i,f|
+                           all_inputs[f] = i
+                         end
+                         dependencies.each do |dep|
+                           ri = dep.recursive_inputs
+                           ri.zip(ri.fields).each do |i,f|
+                             all_inputs[f] = i
+                           end
+                         end
+
+                         all_inputs.any? ? jobname + '_' << Misc.obj2str(all_inputs) : jobname
                        else
                          jobname
                        end

@@ -337,7 +337,7 @@ module Workflow
       real_inputs[k] = v 
     end
 
-    if real_inputs.empty?
+    if real_inputs.empty? and not Workflow::TAG == :inputs
       step_path = step_path taskname, jobname, [], [], task.extension
       input_values = task.take_input_values(inputs)
     else
