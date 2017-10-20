@@ -22,8 +22,7 @@ source('#{UTIL}');
     EOF
 
     require_sources  = source.collect{|source|
-      source = R::LIB_DIR["plot.R"] if source == :plot
-      source = R::LIB_DIR["svg.R"] if source == :svg
+      source = R::LIB_DIR["#{source.to_s}.R"] if R::LIB_DIR["#{source.to_s}.R"].exists?
       "source('#{source}')"
     } * ";\n" if Array === source and source.any?
 
@@ -150,7 +149,7 @@ module TSV
     source = [source] unless Array === source 
 
     require_sources  = source.collect{|source|
-      source = R::LIB_DIR["plot.R"] if source == :plot
+      source = R::LIB_DIR["#{source.to_s}.R"] if R::LIB_DIR["#{source.to_s}.R"].exists?
       "source('#{source}')"
     } * ";\n" if Array === source and source.any?
 
