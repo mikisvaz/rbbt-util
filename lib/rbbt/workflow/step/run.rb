@@ -93,6 +93,10 @@ class Step
       collect{|dependency| dependency.path }.uniq
   end
 
+  def updated?
+    done? and checks.select{|path| File.mtime(path) > File.mtime(self.path)  }.empty?
+  end
+
   def kill_children
     begin
       children_pids = info[:children_pids]
@@ -118,13 +122,16 @@ class Step
     begin
       @mutex.synchronize do
         no_load = :stream if no_load
+
+        Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
         result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load do 
           if Step === Step.log_relay_step and not self == Step.log_relay_step
             relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
           end
 
+          Open.write(pid_file, Process.pid.to_s) unless Open.exists? pid_file
+
           @exec = false
-          Open.write(pid_file, Process.pid.to_s)
           init_info
 
           log :setup, "#{Log.color :green, "Setup"} step #{Log.color :yellow, task.name.to_s || ""}"

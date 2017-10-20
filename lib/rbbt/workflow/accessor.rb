@@ -351,6 +351,10 @@ class Step
     Open.exists?(path) or Open.exists?(pid_file) #or Open.exists?(info_file)
   end
 
+  def waiting?
+    Open.exists?(info_file) and not started?
+  end
+
   def dirty?
     status = self.status
     return true if done? and not status == :done and not status == :noinfo
@@ -359,7 +363,7 @@ class Step
     if dirty_files.any?
       true
     else
-      false
+      ! self.updated?
     end
   end
 

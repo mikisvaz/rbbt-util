@@ -80,13 +80,14 @@ class Step
       return if status == 'streaming' and job.running?
     end
 
-    if ((status == 'error' || job.aborted?) && job.recoverable_error?) || job.dirty?
+    if ((status == 'error' || job.aborted?) && job.recoverable_error?) || job.dirty? 
       job.clean 
     end
 
     (job.init_info and job.dup_inputs) unless status == 'done' or job.started?
 
-    raise DependencyError, job if job.error? and not (ComputeDependency === job and Array === job.compute and job.compute.include? :canfail)
+    canfail = ComputeDependency === job and Array === job.compute and job.compute.include? :canfail
+    raise DependencyError, job if job.error? and not canfail
   end
 
   def log_dependency_exec(dependency, action)
@@ -224,8 +225,12 @@ class Step
           begin
             dep.produce 
             Log.warn "Error in bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
-          rescue RbbtException
-            raise $! unless canfail
+          rescue Exception
+            if canfail
+              Log.warn "Allowing failing of #{dep.path}: #{dep.messages.last}"
+            else
+              raise $!
+            end
           rescue Aborted
             dep.abort
             Log.warn "Aborted bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
