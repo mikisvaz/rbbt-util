@@ -3,9 +3,9 @@ require 'rbbt/util/misc/indiferent_hash'
 require 'yaml'
 
 module Path
-  attr_accessor :resource, :pkgdir, :original, :search_paths, :search_order
+  attr_accessor :resource, :pkgdir, :original, :search_paths, :search_order, :libdir
 
-  def self.setup(string, pkgdir = nil, resource = nil, search_paths = nil, search_order = nil)
+  def self.setup(string, pkgdir = nil, resource = nil, search_paths = nil, search_order = nil, libdir = nil)
     return string if string.nil?
     string = string.dup if string.frozen?
     string.extend Path
@@ -13,6 +13,7 @@ module Path
     string.resource = resource
     string.search_paths = search_paths
     string.search_order = search_order
+    string.libdir = libdir
     string
   end
 
@@ -44,7 +45,7 @@ module Path
 
   def annotate(name)
     name = name.to_s
-    name = Path.setup name, @pkgdir, @resource, @search_paths, @search_order
+    name = Path.setup name, @pkgdir, @resource, @search_paths, @search_order, @libdir
     name
   end
 
@@ -182,11 +183,12 @@ module Path
                        where = where.to_sym
                        raise "Did not recognize the 'where' tag: #{where}. Options: #{paths.keys}" unless paths.include? where
 
-                       if where == :lib
-                         libdir = Path.caller_lib_dir(caller_lib) || "NOLIBDIR"
+                       if where == :lib 
+                         libdir = @libdir || Path.caller_lib_dir(caller_lib) || "NOLIBDIR" 
                        else
                          libdir = "NOLIBDIR"
                        end
+
                        pwd = FileUtils.pwd
                        path = paths[where]
                        path = File.join(path, "{PATH}") unless path.include? "PATH}" or path.include? "{BASENAME}"
