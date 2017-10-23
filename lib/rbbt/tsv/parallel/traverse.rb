@@ -254,7 +254,7 @@ module TSV
         end
       when IO, File, Zlib::GzipReader, Bgzf, StringIO
         begin
-          if options[:type] == :array
+          if options[:type] == :array or options[:type] == :line
             traverse_io_array(obj, options, &block)
           else
             traverse_io(obj, options, &block)
