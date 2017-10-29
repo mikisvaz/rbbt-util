@@ -116,7 +116,7 @@ module Persist
         res
       when :array
         res = Open.read(path).split("\n", -1)
-        res.pop
+        res.pop if res.last.empty?
         res
       when :marshal
         Open.open(path) do |stream|
