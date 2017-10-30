@@ -84,25 +84,25 @@ class FixWidthTable
     pos(size - 1)
   end
 
-  def pos(index)
+  def idx_pos(index)
     return nil if index < 0 or index >= size
     @file.seek(5 + (record_size) * index, IO::SEEK_SET)
     @file.read(4).unpack("l").first
   end
 
-  def pos_end(index)
+  def idx_pos_end(index)
     return nil if index < 0 or index >= size
     @file.seek(9 + (record_size) * index, IO::SEEK_SET)
     @file.read(4).unpack("l").first
   end
 
-  def overlap(index)
+  def idx_overlap(index)
     return nil if index < 0 or index >= size
     @file.seek(13 + (record_size) * index, IO::SEEK_SET)
     @file.read(4).unpack("l").first
   end
 
-  def value(index)
+  def idx_value(index)
     return nil if index < 0 or index >= size
     @file.seek((range ? 17 : 9 ) + (record_size) * index, IO::SEEK_SET)
     padding = @file.read(4).unpack("l").first+1
@@ -164,7 +164,7 @@ class FixWidthTable
 
     while(upper >= lower) do
       idx = lower + (upper - lower) / 2
-      pos_idx = pos(idx)
+      pos_idx = idx_pos(idx)
 
       case pos <=> pos_idx
       when 0
@@ -183,7 +183,7 @@ class FixWidthTable
     idx.to_i
   end
 
-  def get_range(pos)
+  def get_range(pos, return_idx = false)
     case pos
     when Range
       r_start = pos.begin
@@ -197,29 +197,40 @@ class FixWidthTable
     idx = closest(r_start)
 
     return [] if idx >= size
-    return [] if idx <0 and r_start == r_end
+    return [] if idx < 0 and r_start == r_end
 
     idx = 0 if idx < 0
 
-    overlap = overlap(idx)
+    overlap = idx_overlap(idx)
 
     idx -= overlap unless overlap.nil?
 
     values = []
-    l_start = pos(idx)
-    l_end   = pos_end(idx)
-    while l_start <= r_end
-      values << value(idx) if l_end >= r_start 
-      idx += 1
-      break if idx >= size
-      l_start = pos(idx)
-      l_end   = pos_end(idx)
+    l_start = idx_pos(idx)
+    l_end   = idx_pos_end(idx)
+    
+    if return_idx
+      while l_start <= r_end
+        values << idx if l_end >= r_start 
+        idx += 1
+        break if idx >= size
+        l_start = idx_pos(idx)
+        l_end   = idx_pos_end(idx)
+      end
+    else
+      while l_start <= r_end
+        values << idx_value(idx) if l_end >= r_start 
+        idx += 1
+        break if idx >= size
+        l_start = idx_pos(idx)
+        l_end   = idx_pos_end(idx)
+      end
     end
 
     values
   end
 
-  def get_point(pos)
+  def get_point(pos, return_idx = false)
     if Range === pos
       r_start = pos.begin
       r_end   = pos.end
@@ -231,23 +242,33 @@ class FixWidthTable
     idx = closest(r_start)
 
     return [] if idx >= size
-    return [] if idx <0 and r_start == r_end
+    return [] if idx < 0 and r_start == r_end
 
     idx = 0 if idx < 0
 
-    idx += 1 unless pos(idx) >= r_start
+    idx += 1 unless idx_pos(idx) >= r_start
 
     return [] if idx >= size
 
     values = []
-    l_start = pos(idx)
-    l_end   = pos_end(idx)
-    while l_start <= r_end
-      values << value(idx)
-      idx += 1
-      break if idx >= size
-      l_start = pos(idx)
-      l_end   = pos_end(idx)
+    l_start = idx_pos(idx)
+    l_end   = idx_pos_end(idx)
+    if return_idx 
+      while l_start <= r_end
+        values << idx
+        idx += 1
+        break if idx >= size
+        l_start = idx_pos(idx)
+        l_end   = idx_pos_end(idx)
+      end
+    else
+      while l_start <= r_end
+        values << idx_value(idx)
+        idx += 1
+        break if idx >= size
+        l_start = idx_pos(idx)
+        l_end   = idx_pos_end(idx)
+      end
     end
 
     values
@@ -259,6 +280,20 @@ class FixWidthTable
       get_range(pos)
     else
       get_point(pos)
+    end
+  end
+  
+  def overlaps(pos, value = false)
+    return [] if size == 0
+    idxs = if range
+      get_range(pos, true)
+    else
+      get_point(pos, true)
+    end
+    if value
+      idxs.collect{|idx| [idx_pos(idx), idx_pos_end(idx), idx_value(idx)] * ":"}
+    else
+      idxs.collect{|idx| [idx_pos(idx), idx_pos_end(idx)] * ":"}
     end
   end
 
