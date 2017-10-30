@@ -80,7 +80,7 @@ class Step
       return if status == 'streaming' and job.running?
     end
 
-    if (status == 'error' && job.recoverable_error?) ||
+    if (status == 'error' && (job.recoverable_error? || job.dirty?)) ||
       job.aborted? ||
       (job.done? && job.dirty?) ||
       (status == 'waiting' && ! job.running?) 
@@ -90,7 +90,7 @@ class Step
 
     (job.init_info and job.dup_inputs) unless status == 'done' or job.started?
 
-    canfail = ComputeDependency === job and Array === job.compute and job.compute.include? :canfail
+    canfail = ComputeDependency === job && job.canfail?
     raise DependencyError, job if job.error? and not canfail
   end
 
@@ -196,13 +196,18 @@ class Step
     canfail = rest && rest.include?(:canfail)
 
     case type
+    when :canfail
+      list.each do |step|
+        step.produce
+        nil
+      end
     when :produce, :no_dup
       list.each do |step|
         Misc.insist do
           begin
             step.produce
           rescue RbbtException
-            raise $! unless canfail
+            raise $! unless canfail || step.canfail?
           rescue Exception
             step.exception $!
             if step.recoverable_error?
@@ -229,23 +234,23 @@ class Step
           begin
             dep.produce 
             Log.warn "Error in bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
-          rescue Exception
-            if canfail
-              Log.warn "Allowing failing of #{dep.path}: #{dep.messages.last}"
-            else
-              raise $!
-            end
+
           rescue Aborted
             dep.abort
             Log.warn "Aborted bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
             raise $!
+
           rescue Exception
-            dep.exception $!
-            dep.exception $!
-            if dep.recoverable_error?
-              raise $!
+            if canfail || dep.canfail?
+              Log.warn "Allowing failing of #{dep.path}: #{dep.messages.last}"
             else
-              raise StopInsist.new($!)
+              Log.warn "NOT Allowing failing of #{dep.path}: #{dep.messages.last}"
+              dep.exception $!
+              if dep.recoverable_error?
+                raise $!
+              else
+                raise StopInsist.new($!)
+              end
             end
           end
         end
@@ -293,7 +298,7 @@ class Step
         produced << dep.path
       end
     end
-    
+
     self.dup_inputs
 
     required_dep_paths = []

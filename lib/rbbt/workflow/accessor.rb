@@ -7,6 +7,10 @@ module ComputeDependency
     dep.extend ComputeDependency
     dep.compute = value
   end
+  
+  def canfail?
+    compute == :canfail || (Array === compute && compute.include?(:canfail))
+  end
 end
 
 class Step
@@ -363,13 +367,18 @@ class Step
 
   def dirty?
     status = self.status
+
     if done? and not status == :done and not status == :noinfo
       return true 
     end
     if status == :done and not done?
       return true 
     end
-    dirty_files = rec_dependencies.collect{|dependency| dependency.path unless dependency.error? and not dependency.recoverable_error? }.compact.uniq.reject{|path| ! (Path === path) || path.exists?}
+
+    dirty_files = rec_dependencies.reject{|dep|
+      (dep.path && Open.exists?(dep.path)) || (dep.error? && ! dep.recoverable_error?)
+    }
+
     if dirty_files.any?
       true
     else
@@ -378,7 +387,7 @@ class Step
   end
 
   def done?
-    path and File.exist? path
+    path and Open.exists? path
   end
 
   def streaming?
