@@ -285,10 +285,12 @@ class Step
       end
     end
 
+    produced = []
     dependencies.each do |dep|
       next unless ComputeDependency === dep
       if dep.compute == :produce
         dep.produce 
+        produced << dep.path
       end
     end
     
@@ -315,6 +317,7 @@ class Step
       next unless required_dep_paths.include? step.path
       if dependencies.include?(step) and step.inputs.flatten.select{|i| Step === i}.any?
         if ComputeDependency === step
+          next if produced.include? step.path 
           compute_last_deps[step.compute] ||= []
           compute_last_deps[step.compute] << step
         else
@@ -322,6 +325,7 @@ class Step
         end
       else
         if ComputeDependency === step
+          next if produced.include? step.path 
           compute_pre_deps[step.compute] ||= []
           compute_pre_deps[step.compute] << step
         else
