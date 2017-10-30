@@ -53,9 +53,9 @@ def report_msg(status, name, path)
   workflow = Log.color(:magenta, parts.pop)
 
   if not Open.remote?(path) and (File.exists?(path) and $main_mtime and ($main_mtime - File.mtime(path)) < 0)
-    status_msg(status) << " " << [workflow, task, path] * " " << " (#{Log.color(:red, "Mtime out of sync") })\n"
+    status_msg(status.to_s) << " " << [workflow, task, path] * " " << " (#{Log.color(:red, "Mtime out of sync") })\n"
   else
-    status_msg(status) << " " << [workflow, task, path] * " " << "\n"
+    status_msg(status.to_s) << " " << [workflow, task, path] * " " << "\n"
   end
 end
 
