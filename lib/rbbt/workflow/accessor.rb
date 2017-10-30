@@ -157,6 +157,12 @@ class Step
       i[key] = value 
       @info_cache = i
       Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
+      #Misc.insist(([0.01,0.1,1] * 3).sort) do
+      Misc.insist do
+        Open.open(info_file) do |file|
+          INFO_SERIALIAZER.load(file) 
+        end
+      end
       @info_cache_time = Time.now
       value
     end
@@ -357,8 +363,12 @@ class Step
 
   def dirty?
     status = self.status
-    return true if done? and not status == :done and not status == :noinfo
-    return true if status == :done and not done?
+    if done? and not status == :done and not status == :noinfo
+      return true 
+    end
+    if status == :done and not done?
+      return true 
+    end
     dirty_files = rec_dependencies.collect{|dependency| dependency.path unless dependency.error? and not dependency.recoverable_error? }.compact.uniq.reject{|path| ! (Path === path) || path.exists?}
     if dirty_files.any?
       true
