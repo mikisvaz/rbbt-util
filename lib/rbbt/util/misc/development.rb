@@ -134,13 +134,19 @@ def self.add_libdir(dir=nil)
     $__did_once = false
   end
 
-  def self.insist(times = 3, sleep = nil, msg = nil)
+  def self.insist(times = 4, sleep = nil, msg = nil)
     if Array === times
       sleep_array = times
       times = sleep_array.length
       sleep = sleep_array.shift
     end
     try = 0
+
+    if sleep.nil?
+      sleep_array = ([0] + [0.001, 0.01, 0.1] * (times / 3)).sort[0..times-1]
+      sleep = sleep_array.shift
+    end
+
     begin
       yield
     rescue TryAgain
@@ -166,7 +172,7 @@ def self.add_libdir(dir=nil)
 
       if sleep and try > 0
         sleep sleep
-        sleep = sleep_array.shift if sleep_array
+        sleep = sleep_array.shift || sleep if sleep_array
       else
         Thread.pass
       end
