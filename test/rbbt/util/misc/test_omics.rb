@@ -65,4 +65,32 @@ class TestMiscOmics < Test::Unit::TestCase
     assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.(A775)ins?"), nil
     assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.?del"), nil
   end
+
+  def test_index_BED
+    text= ""
+
+    %w(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT).each do |chr|
+      %w(1 2 3 4 5 6 7 8).each do |i|
+        start = i.to_i * 100
+        eend = start + 50
+        id = [chr, i] * ":"
+        text << [chr, start.to_s, eend.to_s, id] * "\t" + "\n"
+      end
+    end
+
+
+    io = Misc.open_pipe do |sin|
+      sin.write text
+    end
+
+    TmpFile.with_file do |dir|
+      index = Misc.index_BED(io, dir)
+      assert_equal ["1:1"], index["1:120:130"]
+      index = Misc.index_BED(io, dir)
+      assert_equal ["2:2"], index["2:220:230"]
+    end
+
+
+
+  end
 end

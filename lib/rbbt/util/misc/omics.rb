@@ -388,4 +388,48 @@ module Misc
       intersect_streams(stream1, stream2,sin, sep)
     end
   end
+
+  def self.index_BED(source, destination, sorted = false)
+
+    pos_function = Proc.new do |k|
+      k.split(":").values_at(1, 2).collect{|i| i.to_i}
+    end
+    if Open.exists? destination
+      Persist::Sharder.new destination, false, "fwt", :pos_function => pos_function  do |key|
+        key.split(":")[0]
+      end
+    else
+      io = IO === io ? io : Open.open(source) 
+
+      max_size = 0
+      nio = Misc.open_pipe do |sin|
+        while line = io.gets
+          chr, start, eend, id, *rest = line.split("\t")
+          l = id.length
+          max_size = l if max_size < l
+          chr = chr.sub('chr','')
+          sin << [chr, start, eend, id] * "\t" << "\n"
+        end
+      end
+      
+      TmpFile.with_file do |tmpfile|
+        Misc.consume_stream(nio, false, tmpfile)
+
+        value_size = max_size
+        destination = destination.find if Path === destination
+        sharder = Persist::Sharder.new destination, true, "fwt", :value_size => value_size, :range => true, :pos_function => pos_function  do |key|
+          key.split(":")[0]
+        end
+
+        TSV.traverse tmpfile, :type => :array, :bar => "Creating BED index for #{Misc.fingerprint source}" do |line|
+          chr, start, eend, id, *rest = line.split("\t")
+          key = [chr, start, eend] * ":"
+          sharder[key] = id
+        end
+        sharder.read
+
+        sharder
+      end
+    end
+  end
 end
