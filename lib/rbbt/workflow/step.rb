@@ -283,7 +283,7 @@ class Step
 
   def clean
     status = []
-    status << "dirty" if dirty?
+    status << "dirty" if done? and dirty?
     status << "not running" if not done? and not running? 
     status.unshift " " if status.any?
     Log.medium "Cleaning step: #{path}#{status * " "}"

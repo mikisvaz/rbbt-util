@@ -352,7 +352,7 @@ class Step
       end
     end
 
-    update 
+    update if done?
 
     if dofork
       fork(true) unless started?
