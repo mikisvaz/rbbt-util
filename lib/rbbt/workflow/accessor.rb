@@ -808,7 +808,8 @@ module Workflow
                      _inputs = IndiferentHash.setup(_inputs.dup)
                      dep = dependency.call jobname, _inputs, real_dependencies
                      if Hash === dep
-                       inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, dep[:workflow].task_info(dep[:task]))
+                       task_info = (dep[:task] && dep[:workflow]) ? dep[:workflow].task_info(dep[:task]) : nil
+                       inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, task_info)
                        dep = dep[:workflow].job(dep[:task], dep[:jobname], inputs)
                      end
                    end
