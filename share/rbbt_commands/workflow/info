@@ -113,6 +113,17 @@ if messages and messages.any?
   end 
 end
 
+if status != :done && step.file('progress').exists?
+  progress = step.file('progress').yaml
+  str = Log.color(:magenta, "Progress") << ": " 
+  if progress[:last_percent]
+    str << progress[:last_percent].to_s << "%"
+  else
+    str << progress[:ticks].to_s << " items"
+  end
+  puts str
+end
+
 if status == :error
   puts Log.color(:magenta, "Backtrace") << ": "
   puts Log.color_stack backtrace
@@ -155,4 +166,5 @@ if recursive
       end
     end
   end
+
 end
