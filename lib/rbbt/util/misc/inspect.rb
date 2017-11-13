@@ -220,6 +220,19 @@ module Misc
     end
   end
 
+  def self.txt_digest_str(txt)
+    "digest: " << digest(txt)
+  end
+
+  def self.mtime_str(path)
+    path = path.find if Path === path
+    if File.exists? path
+      "mtime: " << File.mtime(path).to_s
+    else
+      "mtime: not present"
+    end
+  end
+
 
   def self.obj2str(obj)
     _obj = obj
@@ -239,14 +252,14 @@ module Misc
               if obj.directory?
                 "directory: #{obj.glob("**/*")}"
               else
-                "file md5: #{digest(obj.read)}"
+                "file: " << obj << "--" << mtime_str(obj)
               end
             else
               obj + " (file missing)"
             end
           when String
             if obj.length > HASH2MD5_MAX_STRING_LENGTH
-              sample_large_obj(obj, HASH2MD5_MAX_STRING_LENGTH)
+              sample_large_obj(obj, HASH2MD5_MAX_STRING_LENGTH) << "--" << txt_digest_str(obj)
             else
               obj
             end
@@ -260,15 +273,15 @@ module Misc
             remove_long_items(obj)
           when File 
             if obj.respond_to? :filename and obj.filename
-              "<IO:" << obj.filename << ">"
+              "<IO:" << obj.filename << "--" << mtime_str(obj.filename) << ">"
             else
-              "<IO:" << obj.path << ">"
+              "<IO:" << obj.path << "--" << mtime_str(obj.path) << ">"
             end
           when (defined? Step and Step)
             "<IO:" << obj.path << ">"
           else
             if obj.respond_to? :filename and obj.filename
-              "<IO:" << obj.filename << ">"
+              "<IO:" << obj.filename << "--" << mtime_str(obj.filename) << ">"
             else
               obj_ins = obj.inspect
               if obj_ins =~ /:0x0/
