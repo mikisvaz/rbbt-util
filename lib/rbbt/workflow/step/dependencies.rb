@@ -124,7 +124,7 @@ class Step
         return
       end
 
-      if dependency.aborted?
+      if dependency.aborted? or (dependency.error? and dependency.recoverable_error?) or dependency.missing?
         log_dependency_exec(dependency, "aborted (clean)")
         dependency.clean
         raise TryAgain

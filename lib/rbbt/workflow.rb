@@ -347,6 +347,7 @@ module Workflow
     end
 
     job = get_job_step step_path, task, input_values, dependencies
+    job.workflow = self
     job.clean_name = jobname
     job
   end

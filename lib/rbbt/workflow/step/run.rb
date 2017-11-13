@@ -140,7 +140,7 @@ class Step
             :issued => (issue_time = Time.now),
             :name => name,
             :clean_name => clean_name,
-            :workflow => @task.workflow.to_s,
+            :workflow => (@workflow || @task.workflow).to_s,
             :task_name => @task.name,
             :result_type => @task.result_type,
             :result_description => @task.result_description
