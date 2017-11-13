@@ -29,16 +29,16 @@ module Rake
     Rake::Task.clear
     Rake::FileTask.clear_files
 
-    if block_given?
-      yield
-    else
-      load rakefile
-    end
-
-    raise TaskNotFound if Rake::Task[task].nil?
-
     t = nil
     pid = Process.fork{
+      if block_given?
+        yield
+      else
+        load rakefile
+      end
+
+      raise TaskNotFound if Rake::Task[task].nil?
+
       Misc.pre_fork
       begin
         Misc.in_dir(dir) do
