@@ -83,13 +83,45 @@ Returns numer * 2 lines containing TEST
     end
   end
 
+  input :name, :string, "Name"
+  task :input_dep => :text do |name|
+    <<-EOF
+Hi #{name}:
+This is the input text
+for this dependency
+    EOF
+  end
 
+  input :text, :text, "Input text"
+  task :reverse_input_text => :text do |text|
+    text.reverse
+  end
 
+  dep :input_dep
+  dep :reverse_input_text, :text => :input_dep
+  task :send_input_dep_to_reverse => :text do
+    TSV.get_stream step(:reverse_input_text)
+  end
 end
 
 TestWF.workdir = Rbbt.tmp.test.workflow
 
 class TestWorkflow < Test::Unit::TestCase
+
+  def test_update_on_input_dependency_update
+    send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
+    send_input_dep_to_reverse_job.clean
+    send_input_dep_to_reverse_job.run
+    input_dep_job = send_input_dep_to_reverse_job.step(:input_dep)
+    input_dep_job.clean
+    input_dep_job.run
+    send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
+    mtime_orig = File.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
+    send_input_dep_to_reverse_job.run
+    mtime_new = File.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
+    assert mtime_orig < mtime_new
+
+  end
 
   def test_helper
     assert_equal "User", TestWF.job(:user, "Default", :number => 3).run

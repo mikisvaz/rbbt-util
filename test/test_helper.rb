@@ -24,6 +24,7 @@ class Test::Unit::TestCase
   end
 
   def teardown
+    FileUtils.rm_rf Rbbt.tmp.test.workflow.find
     #if defined? Persist
     #  FileUtils.rm_rf Path.setup("", 'rbbt').tmp.test.find :user
     #  Persist::CONNECTIONS.values.each do |c| c.close end

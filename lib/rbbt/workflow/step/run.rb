@@ -85,12 +85,21 @@ class Step
     (no_load or ENV["RBBT_NO_STREAM"]) ? @result : prepare_result(@result, @task.result_description)
   end
 
-  def checks
-    #rec_dependencies.collect{|dependency| (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) ? nil : dependency.path }.compact.uniq
+  def dependency_checks
     rec_dependencies.
       select{|dependency| ! (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) }.
       select{|dependency| ! dependency.error? }.
       collect{|dependency| dependency.path }.uniq
+  end
+
+  def input_checks
+    inputs.select{|i| Step === i}.
+      select{|dependency| ! dependency.error? }.
+      collect{|dependency| dependency.path }.uniq
+  end
+
+  def checks
+    dependency_checks + input_checks
   end
 
   def updated?
