@@ -258,6 +258,8 @@ module Misc
               obj + " (file missing)"
             end
           when String
+
+            obj = obj.chomp if String === obj
             if obj.length > HASH2MD5_MAX_STRING_LENGTH
               sample_large_obj(obj, HASH2MD5_MAX_STRING_LENGTH) << "--" << txt_digest_str(obj)
             else

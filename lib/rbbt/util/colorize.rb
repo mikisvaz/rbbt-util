@@ -22,7 +22,7 @@ module Colorize
     end
   end
 
-  def self.continuous(array, start = "#EABD5D", eend = "#40324F", percent = false) 
+  def self.continuous(array, start = "#40324F", eend = "#EABD5D", percent = false) 
     start_color = Color.new from_name(start)
     end_color = Color.new from_name(eend)
 

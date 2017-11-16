@@ -93,8 +93,7 @@ class Step
   end
 
   def input_checks
-    inputs.select{|i| Step === i}.
-      select{|dependency| ! dependency.error? }.
+    inputs.select{|i| Step === i && i.done?}.
       collect{|dependency| dependency.path }.uniq
   end
 
