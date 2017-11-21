@@ -5,7 +5,7 @@ require 'rbbt/util/semaphore'
 require 'rbbt/workflow/accessor'
 
 class Step
-  attr_accessor :clean_name, :path, :task, :inputs, :dependencies, :bindings
+  attr_accessor :clean_name, :path, :task, :workflow, :inputs, :dependencies, :bindings
   attr_accessor :pid
   attr_accessor :exec
   attr_accessor :result, :mutex, :seen
@@ -50,7 +50,7 @@ class Step
   end
 
   def workflow
-    info[:workflow]
+    @workflow || info[:workflow]
   end
 
   def load_inputs_from_info
@@ -283,11 +283,11 @@ class Step
 
   def clean
     status = []
-    status << "dirty" if done? and dirty?
-    status << "not running" if not done? and not running? 
+    status << "dirty" if done? && dirty?
+    status << "not running" if ! done? && ! running? 
     status.unshift " " if status.any?
     Log.medium "Cleaning step: #{path}#{status * " "}"
-    abort if not done? and running?
+    abort if ! done? && running?
     Step.clean(path)
     self
   end

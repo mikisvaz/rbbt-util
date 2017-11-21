@@ -124,7 +124,7 @@ class Step
         return
       end
 
-      if dependency.aborted?
+      if dependency.aborted? or (dependency.error? and dependency.recoverable_error?) or dependency.missing?
         log_dependency_exec(dependency, "aborted (clean)")
         dependency.clean
         raise TryAgain
@@ -197,8 +197,12 @@ class Step
 
     case type
     when :canfail
-      list.each do |step|
-        step.produce
+      list.each do |dep|
+        begin
+          dep.produce
+        rescue
+          Log.warn "Allowing failing of #{dep.path}: #{dep.messages.last}"
+        end
         nil
       end
     when :produce, :no_dup

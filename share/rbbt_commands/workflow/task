@@ -325,7 +325,10 @@ begin
 
   if do_exec or (job.respond_to?(:is_exec) and job.is_exec)
     res = job.exec(:stream)
-    #res = JSON.parse(res.read) if (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep === job)
+
+    result_type = job.result_type
+
+    res = JSON.parse(res.read) if (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep === job) && %w(array float integer boolean).include?(result_type.to_s)
 
     case
     when res.respond_to?(:gets)

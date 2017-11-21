@@ -320,7 +320,7 @@ module TSV
         new[k] = v.first
       end
     when :single
-      self
+      return self
     when :list
       through do |k,v|
         new[k] = v.first

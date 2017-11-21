@@ -1,4 +1,4 @@
-library(ggplot2)
+rbbt.require('ggplot2')
 
 geom_entity <- function (real.geom = NULL, mapping = NULL, data = NULL, stat = "identity",
                           position = "identity", ...) {

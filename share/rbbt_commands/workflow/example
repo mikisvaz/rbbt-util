@@ -12,7 +12,7 @@ options = SOPT.setup <<EOF
 
 Description
 
-$ rbbt workflow exmaple <workflow> [<task>] [<name>] -- [<task_options>]
+$ rbbt workflow example <workflow> [<task>] [<name>] -- [<task_options>]
 
 Run workflow examples. You can define tasks and example names. You can also override task options
 
