@@ -133,7 +133,8 @@ class WorkflowRESTClient
         info = begin
                  WorkflowRESTClient.get_json(File.join(@url, 'info'))
                rescue
-                 {}
+                 clean
+                 raise $!
                end
         info = WorkflowRESTClient.fix_hash(info)
         info[:status] = info[:status].to_sym if String === info[:status]
