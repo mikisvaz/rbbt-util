@@ -52,7 +52,7 @@ module Rbbt
   def self.locks(dirs = LOCK_DIRS)
     dirs.collect do |dir|
       next unless Open.exists? dir
-      `find "#{ dir }" -name "*.lock" 2>/dev/null`.split "\n"
+      `find -L "#{ dir }" -name "*.lock" 2>/dev/null`.split "\n"
     end.compact.flatten
   end
 
@@ -82,7 +82,7 @@ module Rbbt
   def self.sensiblewrites(dirs = SENSIBLE_WRITE_DIRS)
     dirs.collect do |dir|
       next unless Open.exists? dir
-      `find "#{ dir }" -not -name "*.lock" -not -type d 2>/dev/null`.split "\n"
+      `find -L "#{ dir }" -not -name "*.lock" -not -type d 2>/dev/null`.split "\n"
     end.compact.flatten
   end
 
@@ -104,7 +104,7 @@ module Rbbt
   def self.persists(dirs = PERSIST_DIRS)
     dirs.collect do |dir|
       next unless Open.exists? dir
-      `find "#{ dir }" -name "*.persist" 2>/dev/null`.split "\n"
+      `find -L "#{ dir }" -name "*.persist" 2>/dev/null`.split "\n"
     end.compact.flatten
   end
 
@@ -146,7 +146,7 @@ module Rbbt
           task = File.basename(taskdir)
           next if tasks and not tasks.include? task
 
-          cmd = "find '#{ taskdir }/' -not -type d -not -path '*/*.files/*' -not -path '*/*.pid' 2>/dev/null"
+          cmd = "find -L '#{ taskdir }/' -not -type d -not -path '*/*.files/*' -not -path '*/*.pid' 2>/dev/null"
           files = CMD.cmd(cmd, :pipe => true)
           TSV.traverse files, :type => :array, :into => jobs, :_bar => "Finding jobs in #{ taskdir }" do |file|
             _files << file
