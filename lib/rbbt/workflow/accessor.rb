@@ -376,7 +376,7 @@ class Step
     end
 
     dirty_files = rec_dependencies.reject{|dep|
-      (dep.path && Open.exists?(dep.path)) || (dep.error? && ! dep.recoverable_error?)
+      (defined?(WorkflowRESTClient) && WorkflowRESTClient::RemoteStep === dep) || (dep.path && (Open.exists?(dep.path) || Open.remote?(dep.path))) || (dep.error? && ! dep.recoverable_error?)
     }
 
     if dirty_files.any?

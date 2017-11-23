@@ -370,11 +370,15 @@ class Step
   def stop_dependencies
     return if dependencies.nil?
     dependencies.each do |dep|
+      if dep.nil?
+        Log.warn "Dependency is nil #{Misc.fingerprint step} -- #{Misc.fingerprint dependencies}"
+        next
+      end
       begin
         next if dep.done? or dep.aborted?
       rescue
       end
-      dep.abort
+      dep.abort if dep.running?
     end
     kill_children
   end
