@@ -128,7 +128,8 @@ class Step
     result = nil
 
     begin
-      @mutex.synchronize do
+      time_elapsed = total_time_elapsed = nil
+      res = @mutex.synchronize do
         no_load = :stream if no_load
 
         Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
@@ -312,7 +313,7 @@ class Step
             set_info :done, (done_time = Time.now)
             set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
             set_info :time_elapsed, (time_elapsed = done_time - start_time)
-            log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
+            log :ending
             Step.purge_stream_cache
             FileUtils.rm pid_file if File.exist?(pid_file)
           end
@@ -330,6 +331,8 @@ class Step
           @result = prepare_result result, @task.result_description
         end
       end
+      log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec." unless stream or time_elapsed.nil?
+      res
     rescue Aborted, Interrupt
       abort
       stop_dependencies
