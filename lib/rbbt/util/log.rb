@@ -122,7 +122,7 @@ module Log
   end
 
   def self.color(severity, str = nil, reset = false)
-    return str || "" if nocolor 
+    return str.dup || "" if nocolor 
     color = reset ? Term::ANSIColor.reset : ""
     color << SEVERITY_COLOR[severity] if Integer === severity
     color << Term::ANSIColor.send(severity) if Symbol === severity and Term::ANSIColor.respond_to? severity 
