@@ -276,7 +276,7 @@ class Step
 
   def update
     if dirty?
-      dependencies.collect{|d| d.update}
+      dependencies.collect{|d| d.update} if dependencies
       clean
     end
   end
