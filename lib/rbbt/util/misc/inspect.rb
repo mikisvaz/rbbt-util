@@ -110,11 +110,11 @@ module Misc
     when TSV === obj
       remove_long_items((obj.all_fields || []) + obj.keys.sort)
     when (Array === obj and obj.length > ARRAY_MAX_LENGTH)
-      remove_long_items(obj[0..ARRAY_MAX_LENGTH-2] << "TRUNCATED at #{ ARRAY_MAX_LENGTH } (#{obj.length})")
+      remove_long_items(obj[0..ARRAY_MAX_LENGTH-2] << "TRUNCATED at #{ ARRAY_MAX_LENGTH }/#{obj.length}")
     when (Hash === obj and obj.length > ARRAY_MAX_LENGTH)
-      remove_long_items(obj.collect.compact[0..ARRAY_MAX_LENGTH-2] << ["TRUNCATED", "at #{ ARRAY_MAX_LENGTH } (#{obj.length})"])
+      remove_long_items(obj.collect.compact[0..ARRAY_MAX_LENGTH-2] << ["TRUNCATED", "at #{ ARRAY_MAX_LENGTH }/#{obj.length}"])
     when (String === obj and obj.length > STRING_MAX_LENGTH)
-      obj[0..STRING_MAX_LENGTH-1] << " TRUNCATED at #{STRING_MAX_LENGTH} (#{obj.length})"
+      obj[0..STRING_MAX_LENGTH-1] << " TRUNCATED at #{STRING_MAX_LENGTH}/#{obj.length}"
     when Hash === obj
       new = {}
       obj.each do |k,v|
