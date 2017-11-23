@@ -133,7 +133,7 @@ class WorkflowRESTClient
         info = begin
                  WorkflowRESTClient.get_json(File.join(@url, 'info'))
                rescue
-                 clean
+                 _clean
                  raise $!
                end
         info = WorkflowRESTClient.fix_hash(info)
@@ -361,8 +361,7 @@ class WorkflowRESTClient
       self
     end
 
-    def clean
-      init_job
+    def _clean
       begin
         params = {:_update => :clean}
         WorkflowRESTClient.clean_url(url, params) if @url
@@ -370,6 +369,11 @@ class WorkflowRESTClient
       rescue Exception
         Log.exception $!
       end
+    end
+
+    def clean
+      init_job
+      _clean
       self
     end
   end
