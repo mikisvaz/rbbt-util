@@ -82,7 +82,8 @@ class Step
 
     if (status == 'error' && (job.recoverable_error? || job.dirty?)) ||
       job.aborted? ||
-      (job.done? && job.dirty?) 
+      (job.done? && job.dirty?)  ||
+      (! (job.done? || job.error? || job.aborted?) && ! job.running?)
 
       iii [:CLEAN, status, job.status, job.done?, job.dirty?, job.running?]
       job.clean 
