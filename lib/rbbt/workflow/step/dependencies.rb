@@ -82,9 +82,9 @@ class Step
 
     if (status == 'error' && (job.recoverable_error? || job.dirty?)) ||
       job.aborted? ||
-      (job.done? && job.dirty?) ||
-      (status == 'waiting' && ! job.running?) 
+      (job.done? && job.dirty?) 
 
+      iii [:CLEAN, status, job.status, job.done?, job.dirty?, job.running?]
       job.clean 
     end
 
@@ -206,20 +206,26 @@ class Step
         nil
       end
     when :produce, :no_dup
-      list.each do |step|
-        Misc.insist do
-          begin
-            step.produce
-          rescue RbbtException
-            raise $! unless canfail || step.canfail?
-          rescue Exception
-            step.exception $!
-            if step.recoverable_error?
-              raise $!
-            else
-              raise StopInsist.new($!)
+      produce = true
+      while produce do
+        iii 1
+        list.each do |step|
+          Misc.insist do
+            begin
+              step.produce
+            rescue RbbtException
+              raise $! unless canfail || step.canfail?
+            rescue Exception
+              step.exception $!
+              if step.recoverable_error?
+                raise $!
+              else
+                raise StopInsist.new($!)
+              end
             end
           end
+          produce = false unless list.select{|step| step.dirty?}.any?
+          iii [:DIRTY_PRODUCT, list.select{|step| step.dirty?}]
         end
         nil
       end

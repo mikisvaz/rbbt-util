@@ -366,20 +366,27 @@ class Step
   end
 
   def dirty?
+    return false unless done? || status == :done
+
     status = self.status
 
-    if done? and not status == :done and not status == :noinfo
+    if done? and not (status == :done or status == :ending) and not status == :noinfo
+      iii [:file_not_status, path]
       return true 
     end
     if status == :done and not done?
+      iii [:status_not_file, path]
       return true 
     end
 
     dirty_files = rec_dependencies.reject{|dep|
-      (defined?(WorkflowRESTClient) && WorkflowRESTClient::RemoteStep === dep) || (dep.path && (Open.exists?(dep.path) || Open.remote?(dep.path))) || (dep.error? && ! dep.recoverable_error?)
+      (defined?(WorkflowRESTClient) && WorkflowRESTClient::RemoteStep === dep) || 
+        (dep.path && (Open.exists?(dep.path) || Open.remote?(dep.path))) || 
+        (dep.error? && ! dep.recoverable_error?)
     }
 
     if dirty_files.any?
+      iif [:files, dirty_files, path]
       true
     else
       ! self.updated?

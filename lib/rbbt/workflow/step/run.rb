@@ -89,13 +89,11 @@ class Step
     rec_dependencies.
       select{|dependency| ! (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) }.
       select{|dependency| ! Open.remote?(dependency.path) }.
-      select{|dependency| ! dependency.error? }.
-      collect{|dependency| dependency.path }.uniq
+      select{|dependency| ! dependency.error? }
   end
 
   def input_checks
-    inputs.select{|i| Step === i && i.done?}.
-      collect{|dependency| dependency.path }.uniq
+    inputs.select{|i| Step === i && i.done?}
   end
 
   def checks
@@ -103,7 +101,9 @@ class Step
   end
 
   def updated?
-    done? and checks.select{|path| File.mtime(path) > File.mtime(self.path)  }.empty?
+    return true unless done?
+    outdated  = checks.select{|dep| File.mtime(dep.path) > File.mtime(self.path) || ! dep.updated?  }
+    outdated.empty?
   end
 
   def kill_children
@@ -134,7 +134,7 @@ class Step
         no_load = :stream if no_load
 
         Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
-        result = Persist.persist "Job", @task.result_type, :file => path, :check => checks, :no_load => no_load do 
+        result = Persist.persist "Job", @task.result_type, :file => path, :check => checks.collect{|dep| dep.path}, :no_load => no_load do 
           if Step === Step.log_relay_step and not self == Step.log_relay_step
             relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
           end
@@ -376,6 +376,7 @@ class Step
       join unless done?
     end
 
+    iii [:produced, path, File.mtime(path)]
     self
   end
 
@@ -596,7 +597,7 @@ class Step
         dependencies.each{|dep| dep.join }
       end
 
-      until path.exists? or error? or aborted?
+      until (path.exists? && status == :done) or error? or aborted?
         sleep 1 
         join_stream if streaming?
       end
