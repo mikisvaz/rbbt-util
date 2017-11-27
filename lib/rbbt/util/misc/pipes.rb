@@ -185,12 +185,7 @@ module Misc
         rescue IOError
         end
 
-        in_pipes.each do |sin|
-          sin.close unless sin.closed?
-        end
-
-        stream.join if stream.respond_to? :join
-
+        in_pipes.first.close
       rescue Aborted, Interrupt
         stream.abort if stream.respond_to? :abort
         out_pipes.each do |sout|
@@ -212,11 +207,12 @@ module Misc
       ConcurrentStream.setup sout, :threads => splitter_thread, :filename => filename, :_pair => stream
     end
 
-    #abort_callback = Proc.new do
-    #  out_pipes.each do |s|
-    #    s.abort if s.respond_to? :abort
-    #  end
-    #end
+    out_pipes.first.callback = Proc.new do 
+      stream.join
+      in_pipes[1..-1].each do |sin|
+        sin.close unless sin.closed?
+      end
+    end
 
     out_pipes
   end

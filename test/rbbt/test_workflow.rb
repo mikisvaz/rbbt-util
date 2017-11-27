@@ -83,6 +83,11 @@ Returns numer * 2 lines containing TEST
     end
   end
 
+  dep :stream
+  task :stream2 => :array do
+    TSV.get_stream step(:stream)
+  end
+
   input :name, :string, "Name"
   task :input_dep => :text do |name|
     <<-EOF
@@ -205,6 +210,16 @@ class TestWorkflow < Test::Unit::TestCase
     io = job.fork(:stream)
     Misc.consume_stream(TSV.get_stream(io), false, STDOUT)
     nil
+  end
+
+  def test_stream_order
+
+    Log.with_severity 0 do
+      job = TestWF.job(:stream2)
+      job.recursive_clean
+      job.produce
+
+    end
   end
 
 
