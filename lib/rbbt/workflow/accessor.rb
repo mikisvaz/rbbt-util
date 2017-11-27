@@ -358,7 +358,7 @@ class Step
   end
 
   def started?
-    Open.exists?(path) or Open.exists?(pid_file) #or Open.exists?(info_file)
+    Open.exists?(path) or (Open.exists?(pid_file) && Open.exists?(info_file))
   end
 
   def waiting?
@@ -366,16 +366,15 @@ class Step
   end
 
   def dirty?
+    return true if Open.exists?(pid_file) && ! ( Open.exists?(info_file) || done? )
     return false unless done? || status == :done
 
     status = self.status
 
     if done? and not (status == :done or status == :ending) and not status == :noinfo
-      iii [:file_not_status, path]
       return true 
     end
     if status == :done and not done?
-      iii [:status_not_file, path]
       return true 
     end
 

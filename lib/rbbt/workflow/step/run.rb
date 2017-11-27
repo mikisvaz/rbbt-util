@@ -102,7 +102,18 @@ class Step
 
   def updated?
     return true unless done?
-    outdated  = checks.select{|dep| File.mtime(dep.path) > File.mtime(self.path) || ! dep.updated?  }
+    outdated_time  = []
+    outdated_dep  = []
+    checks.each do |dep| 
+      if File.mtime(dep.path) > File.mtime(self.path) 
+        outdated_time << dep
+      end
+      if ! dep.updated?  
+        outdated_dep << dep
+      end
+    end
+
+    outdated = outdated_time + outdated_dep
     outdated.empty?
   end
 
