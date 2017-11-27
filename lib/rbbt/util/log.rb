@@ -13,8 +13,8 @@ module Log
 
 
   #ToDo: I'm not sure if using a Mutex here really gives troubles in CPU concurrency
-  #LOG_MUTEX = MockMutex.new
-  LOG_MUTEX = Mutex.new
+  LOG_MUTEX = MockMutex.new
+  #LOG_MUTEX = Mutex.new
 
   SEVERITY_NAMES ||= begin
                      names = %w(DEBUG LOW MEDIUM HIGH INFO WARN ERROR NONE ) 
