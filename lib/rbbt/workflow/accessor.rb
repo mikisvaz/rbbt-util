@@ -385,7 +385,6 @@ class Step
     }
 
     if dirty_files.any?
-      iif [:files, dirty_files, path]
       true
     else
       ! self.updated?

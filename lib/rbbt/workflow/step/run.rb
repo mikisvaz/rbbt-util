@@ -164,10 +164,10 @@ class Step
             :workflow => (@workflow || @task.workflow).to_s,
             :task_name => @task.name,
             :result_type => @task.result_type,
-            :result_description => @task.result_description
+            :result_description => @task.result_description,
+            :dependencies => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
           })
 
-          set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
 
           begin
             run_dependencies
@@ -282,9 +282,11 @@ class Step
                 status = self.status
                 if status != :done and status != :error and status != :aborted
                   Misc.insist do
-                    set_info :done, (done_time = Time.now)
-                    set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
-                    set_info :time_elapsed, (time_elapsed = done_time - start_time)
+                    merge_info({
+                     :done => (done_time = Time.now),
+                     :total_time_elapsed => (total_time_elapsed = done_time - issue_time),
+                     :time_elapsed => (time_elapsed = done_time - start_time)
+                    })
                     log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
                   end
                 end
@@ -322,9 +324,11 @@ class Step
               raise exception
             end
           else
-            set_info :done, (done_time = Time.now)
-            set_info :total_time_elapsed, (total_time_elapsed = done_time - issue_time)
-            set_info :time_elapsed, (time_elapsed = done_time - start_time)
+            merge_info({
+              :done => (done_time = Time.now),
+              :total_time_elapsed => (total_time_elapsed = done_time - issue_time),
+              :time_elapsed => (time_elapsed = done_time - start_time)
+            })
             log :ending
             Step.purge_stream_cache
             FileUtils.rm pid_file if File.exist?(pid_file)
@@ -387,7 +391,6 @@ class Step
       join unless done?
     end
 
-    iii [:produced, path, File.mtime(path)]
     self
   end
 
