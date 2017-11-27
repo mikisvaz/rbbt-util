@@ -85,7 +85,6 @@ class Step
       (job.done? && job.dirty?)  ||
       (! (job.done? || job.error? || job.aborted?) && ! job.running?)
 
-      iii [:CLEAN, status, job.status, job.done?, job.dirty?, job.running?]
       job.clean 
     end
 
@@ -207,29 +206,23 @@ class Step
         nil
       end
     when :produce, :no_dup
-      produce = true
-      while produce do
-        iii 1
-        list.each do |step|
-          Misc.insist do
-            begin
-              step.produce
-            rescue RbbtException
-              raise $! unless canfail || step.canfail?
-            rescue Exception
-              step.exception $!
-              if step.recoverable_error?
-                raise $!
-              else
-                raise StopInsist.new($!)
-              end
+      list.each do |step|
+        Misc.insist do
+          begin
+            step.produce
+          rescue RbbtException
+            raise $! unless canfail || step.canfail?
+          rescue Exception
+            step.exception $!
+            if step.recoverable_error?
+              raise $!
+            else
+              raise StopInsist.new($!)
             end
           end
-          produce = false unless list.select{|step| step.dirty?}.any?
-          iii [:DIRTY_PRODUCT, list.select{|step| step.dirty?}]
         end
-        nil
       end
+      nil
     when :bootstrap
       cpus = rest.nil? ? nil : rest.first 
       cpus = 5 if cpus.nil?
