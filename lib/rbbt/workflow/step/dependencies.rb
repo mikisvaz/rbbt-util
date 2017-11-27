@@ -83,7 +83,7 @@ class Step
     if (status == 'error' && (job.recoverable_error? || job.dirty?)) ||
       job.aborted? ||
       (job.done? && job.dirty?)  ||
-      (! (job.done? || job.error? || job.aborted?) && ! job.running?)
+      (! (job.status == :waiting || job.status == :noinfo || job.done? || job.error? || job.aborted?) && ! job.running?)
 
       job.clean 
     end
@@ -124,8 +124,7 @@ class Step
         return
       end
 
-      if dependency.aborted? or (dependency.error? and dependency.recoverable_error?) or dependency.missing?
-        log_dependency_exec(dependency, "aborted (clean)")
+      if dependency.aborted? or (dependency.error? and dependency.recoverable_error?) or (!Open.remote?(dependency.path) && dependency.missing?)
         dependency.clean
         raise TryAgain
       end
@@ -374,11 +373,16 @@ class Step
         Log.warn "Dependency is nil #{Misc.fingerprint step} -- #{Misc.fingerprint dependencies}"
         next
       end
+
       begin
         next if dep.done? or dep.aborted?
       rescue
       end
-      dep.abort if dep.running?
+
+      begin
+        dep.abort if dep.running?
+      rescue
+      end
     end
     kill_children
   end

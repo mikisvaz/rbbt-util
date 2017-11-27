@@ -130,12 +130,7 @@ class WorkflowRESTClient
       @done = @info && @info[:status] && @info[:status].to_sym == :done
       @info = Persist.memory("RemoteSteps Info", :url => @url, :persist => true, :update => !@done) do
         init_job unless @url
-        info = begin
-                 WorkflowRESTClient.get_json(File.join(@url, 'info'))
-               rescue
-                 _clean
-                 raise $!
-               end
+        info = WorkflowRESTClient.get_json(File.join(@url, 'info'))
         info = WorkflowRESTClient.fix_hash(info)
         info[:status] = info[:status].to_sym if String === info[:status]
         info
@@ -150,13 +145,15 @@ class WorkflowRESTClient
         status = info[:status]
         @done = true if status and status.to_sym == :done
         status
+      rescue
+        nil
       ensure
         @info = nil
       end
     end
 
     def started?
-      @result != nil or @started or @streaming or @url
+      @result != nil || @started || @streaming
     end
 
     def done?
@@ -216,7 +213,7 @@ class WorkflowRESTClient
     end
 
     def running?
-      ! %w(done error aborted).include? status.to_s
+      ! %w(done error aborted noinfo).include? status.to_s
     end
 
     def path
@@ -375,6 +372,10 @@ class WorkflowRESTClient
       init_job
       _clean
       self
+    end
+
+    def input_checks
+      []
     end
   end
 end

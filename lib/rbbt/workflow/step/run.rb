@@ -93,7 +93,7 @@ class Step
   end
 
   def input_checks
-    inputs.select{|i| Step === i && i.done?}
+    inputs.select{|i| Step === i && i.done? }
   end
 
   def checks

@@ -81,8 +81,8 @@ class WorkflowRESTClient
     params = fix_params params
     res = capture_exception do
       Misc.insist(2, 0.5) do
-        Log.debug{ "RestClient get_raw: #{ url } - #{Misc.fingerprint params}" }
         raise "No url" if url.nil?
+        Log.debug{ "RestClient get_raw: #{ url } - #{Misc.fingerprint params}" }
         res = RestClient.get(self.encode(url), :params => params)
         raise TryAgain if res.code == 202
         res.to_s
