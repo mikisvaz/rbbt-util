@@ -17,6 +17,7 @@ $ rbbt system status <workflow> <task>
 -q--quick Quick check
 -a--all Print all jobs, not only uncompleted
 -i--inputs* List of inputs to print
+-if--info_fields* List of info fields to print
 EOF
 rbbt_usage and exit 0 if options[:help]
 
@@ -29,6 +30,7 @@ task = task.split "," if task
 all = options.delete :all
 
 inputs = (options[:inputs] || "").split(",")
+info_fields = (options[:info_fields] || "").split(",")
 
 def pid_msg(pid)
   color = if pid and Misc.pid_exists? pid
@@ -145,6 +147,7 @@ workflows.sort.each do |workflow,tasks|
                rescue
                  {:status => :noinfo}
                end
+        IndiferentHash.setup(info)
 
         pid = info[:pid]
         status = info[:status]
@@ -163,13 +166,20 @@ workflows.sort.each do |workflow,tasks|
           job_inputs = info[:inputs]
           IndiferentHash.setup(job_inputs)
 
-          iii inputs
           inputs.each do |input|
             value = job_inputs[input]
-            iii [input, value]
             next if  value.nil?
             value_str = Misc.fingerprint(value)
             str << " #{input}=#{value_str}"
+          end
+        end
+
+        if info_fields and info_fields.any?
+          info_fields.each do |field|
+            value = info[field]
+            next if  value.nil?
+            value_str = Misc.fingerprint(value)
+            str << " #{field}=#{value_str}"
           end
         end
       end
