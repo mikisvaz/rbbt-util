@@ -479,5 +479,57 @@ A    Id3
     assert res["row2"].include? "Id3"
     assert ! res["row2"].include?("b")
   end
+
+  def test_attached_parenthesis
+
+    content1 =<<-EOF
+#Id,ValueA,bar (ValueB)
+row1,a|aa|aaa,b
+row2,A,B
+    EOF
+
+    content2 =<<-EOF
+#foo (ValueA),OtherID
+a,Id1|Id2
+A,Id3
+    EOF
+
+    content3 =<<-EOF
+#ValueB,ValueC
+b,c
+B,C
+    EOF
+
+    content4 =<<-EOF
+#foobar (Id),ValueD
+row1,d
+row5,D
+    EOF
+
+    tsv1 = tsv2 = tsv3 = tsv4 = index = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.open(File.open(filename), :double, :sep => ',')
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.open(File.open(filename), :double, :sep => ',')
+    end
+
+    TmpFile.with_file(content3) do |filename|
+      tsv3 = TSV.open(File.open(filename), :double, :sep => ',')
+    end
+
+    TmpFile.with_file(content4) do |filename|
+      tsv4 = TSV.open(File.open(filename), :double, :sep => ',')
+    end
+
+
+    assert_equal tsv1.attach(tsv2)["row1"]["OtherID"], %w(Id1 Id2)
+    assert_equal tsv1.attach(tsv2)["row2"]["OtherID"], %w(Id3)
+
+    assert_equal tsv1.attach(tsv4)["row1"]["ValueD"], %w(d)
+    assert_equal tsv4.attach(tsv1)["row1"]["bar (ValueB)"], %w(b)
+    assert_equal tsv3.attach(tsv1)["b"]["ValueD"], %w(d)
+  end
 end
 

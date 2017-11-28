@@ -479,10 +479,10 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal Misc.obj2md5(obj2), Misc.obj2md5(obj3)
     hash = Hash[*(0..obj1.length).zip(obj1).flatten]
 
-    Misc.benchmark(10000) do
+    Misc.benchmark(1000) do
       Misc.hash2md5(hash)
     end
-    Misc.benchmark(10000) do
+    Misc.benchmark(1000) do
       Misc.obj2md5(obj1)
     end
     Misc.profile do
@@ -563,5 +563,15 @@ eum fugiat quo voluptas nulla pariatur?"
 (xxx,yyy,zzz),(aaa,'bb(,)b',ccc)
 EOF
     assert Misc.parse_sql_values(str)[1][1] == "bb(,)b"
+  end
+
+  def test_match_fields
+    f1 = "Target (Associated Gene Name)"
+    f2 = "Source (Associated Gene Name)"
+    f3 = "Associated Gene Name"
+
+    assert Misc.match_fields(f1, f2)
+    assert Misc.match_fields(f1, f3)
+    assert Misc.match_fields(f3, f1)
   end
 end

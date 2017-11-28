@@ -64,7 +64,8 @@ module TSV
     field_positions = fields.collect{|field| other.identify_field field}
     field_names     = field_positions.collect{|pos| pos == :key ? other.key_field : other.fields[pos] }
 
-    source_pos = identify_field source
+    corrected_source = all_fields.select{|f| Misc.match_fields(f, source) }.first
+    source_pos = identify_field corrected_source
 
     other.with_unnamed do
       with_unnamed do
@@ -99,6 +100,7 @@ module TSV
 
             new = Misc.zip_fields(all_new_values).each{|field_entry|
               field_entry.flatten!
+              field_entry.compact!
             }
 
             self[key] = values.concat new
@@ -229,13 +231,13 @@ module TSV
     ids.each_with_index do |list, i|
       break if i == ids.length - 1
       match = list.select{|field| 
-        ids[i + 1].select{|f| field == f}.any?
+        ids[i + 1].select{|f| Misc.match_fields(field, f) }.any?
       }
       return nil if match.empty?
       id_list << match.first
     end
 
-    if id_list.last != files.last.all_fields.first
+    if ! Misc.match_fields(id_list.last, files.last.all_fields.first)
       id_list << files.last.all_fields.first
       id_list.zip(files)
     else
@@ -258,8 +260,12 @@ module TSV
     while not path.empty?
       next_key, next_file = path.shift
 
+      next_fields = next_file.all_fields
+      corrected_next_key = next_fields.select{|f| Misc.match_fields(f, next_key)}.first
+      corrected_current_key = next_fields.select{|f| Misc.match_fields(f, current_key)}.first 
+
       if current_index.nil?
-        current_index = next_file.index(:target => next_key, :fields => [current_key], :persist => persist_input)
+        current_index = next_file.index(:target => corrected_next_key, :fields => [corrected_current_key], :persist => persist_input)
         current_index = current_index.select :key => data_file.keys
       else
         next_index = next_file.index :target => next_key, :fields => [current_key], :persist => persist_input

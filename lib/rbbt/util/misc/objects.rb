@@ -1,5 +1,18 @@
 module Misc
 
+  def self.match_fields(field1, field2)
+    return true if field1 == field2 
+    if m = field1.match(/\((.*)\)/)
+      field1 = m[1]
+    end
+
+    if m = field2.match(/\((.*)\)/)
+      field2 = m[1]
+    end
+
+    field1 == field2
+  end
+
   def self.prepare_entity(entity, field, options = {})
     return entity unless defined? Entity
     return entity unless String === entity or Array === entity
