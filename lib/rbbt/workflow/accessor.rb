@@ -371,7 +371,7 @@ class Step
 
     status = self.status
 
-    if done? and not (status == :done or status == :ending) and not status == :noinfo
+    if done? and not (status == :done or status == :ending or status == :producing) and not status == :noinfo
       return true 
     end
     if status == :done and not done?
