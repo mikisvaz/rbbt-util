@@ -102,6 +102,7 @@ class Step
 
   def updated?
     return true unless done?
+
     outdated_time  = []
     outdated_dep  = []
     checks.each do |dep| 
@@ -113,8 +114,10 @@ class Step
       end
     end
 
-    outdated = outdated_time + outdated_dep
-    outdated.empty?
+    Log.low "Some newer files found: #{Misc.fingerprint outdated_time}" if outdated_time.any?
+    Log.low "Some outdated files found: #{Misc.fingerprint outdated_dep}" if outdated_dep.any?
+
+    (outdated_time + outdated_dep).empty?
   end
 
   def kill_children
