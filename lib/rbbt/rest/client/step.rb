@@ -157,6 +157,7 @@ class WorkflowRESTClient
     end
 
     def done?
+      init_job unless @url
       @done || status.to_s == 'done'
     end
 

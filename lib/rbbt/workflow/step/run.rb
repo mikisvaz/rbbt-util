@@ -97,7 +97,7 @@ class Step
   end
 
   def checks
-    dependency_checks + input_checks
+    (dependency_checks + input_checks).uniq
   end
 
   def updated?
