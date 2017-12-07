@@ -574,4 +574,17 @@ EOF
     assert Misc.match_fields(f1, f3)
     assert Misc.match_fields(f3, f1)
   end
+
+  def test_case_insensitive
+    hash = {"A" => 1, :b => 2,  "c" => 3}
+    CaseInsensitiveHash.setup hash
+
+    assert_equal 1, hash["A"]
+    assert_equal 1, hash[:A]
+    assert_equal 1, hash[:a]
+    assert_equal 2, hash["B"]
+    assert_equal 2, hash["b"]
+    assert_equal 1, hash[:A]
+    assert_equal 3, hash[:C]
+  end
 end
