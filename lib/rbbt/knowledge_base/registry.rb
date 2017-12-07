@@ -40,6 +40,7 @@ class KnowledgeBase
 
   def get_index(name, options = {})
     name = name.to_s
+    options[:organism] ||= options[:namespace] ||= self.namespace unless self.namespace.nil?
     @indices[[name, options]] ||= 
       begin 
         if options.empty?
@@ -51,8 +52,6 @@ class KnowledgeBase
 
         Persist.memory("Index:" << [key, dir] * "@") do
           options = options.dup
-
-          options[:organism] ||= options[:namespace] ||= self.namespace unless self.namespace.nil?
 
           persist_dir = dir
           persist_file = persist_dir[key].find
@@ -91,6 +90,7 @@ class KnowledgeBase
   def get_database(name, options = {})
     name = name.to_s
 
+    options[:organism] ||= options[:namespace] ||= self.namespace unless self.namespace.nil?
     @databases[[name, options]] ||= 
       begin 
         fp = Misc.fingerprint([name,options])
@@ -105,8 +105,6 @@ class KnowledgeBase
         key += '.database'
         Persist.memory("Database:" << [key, dir] * "@") do
           options = options.dup
-
-          options[:organism] ||= options[:namespace] ||= self.namespace unless self.namespace.nil?
 
           persist_dir = dir
           persist_file = persist_dir[key].find
