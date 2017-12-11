@@ -286,11 +286,13 @@ module Misc
               "<IO:" << obj.filename << "--" << mtime_str(obj.filename) << ">"
             else
               obj_ins = obj.inspect
-              if obj_ins =~ /:0x0/
+              obj_str = if obj_ins =~ /:0x0/
                 obj_ins.gsub(/:0x[a-f0-9]+/,'')
               else
                 obj_ins
               end
+
+              obj_str + rand(1000000).to_s
             end
           end
 
