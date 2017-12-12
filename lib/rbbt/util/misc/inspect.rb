@@ -281,6 +281,12 @@ module Misc
             end
           when (defined? Step and Step)
             "<IO:" << obj.path << ">"
+          when IO
+            if obj.respond_to? :filename and obj.filename
+              "<IO:" << obj.filename << "--" << mtime_str(obj.filename) << ">"
+            else
+              obj.inspect + rand(1000000).to_s
+            end
           else
             if obj.respond_to? :filename and obj.filename
               "<IO:" << obj.filename << "--" << mtime_str(obj.filename) << ">"
@@ -291,8 +297,6 @@ module Misc
               else
                 obj_ins
               end
-
-              obj_str + rand(1000000).to_s
             end
           end
 

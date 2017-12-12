@@ -15,6 +15,8 @@ Use - to read from STDIN
 -t--type* Type
 -m--merge Merge from multiple rows
 -h--help Print this help
+-tch--tokyocabinet File is a tokyocabinet hash database
+-tcb--tokyocabinet_bd File is a tokyocabinet B database
 
 EOF
 rbbt_usage and exit 0 if options[:help]
@@ -22,6 +24,17 @@ rbbt_usage and exit 0 if options[:help]
 file = ARGV.shift
 
 file = STDIN if file == '-'
+
+case
+when options[:tokyocabinet]
+  tsv = Persist.open_tokyocabinet(file, false)
+  puts tsv.to_s
+  exit
+when options[:tokyocabinet_bd]
+  tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
+  puts tsv.to_s
+  exit
+end
 
 parser = TSV::Parser.new TSV.get_stream(file), options
 
