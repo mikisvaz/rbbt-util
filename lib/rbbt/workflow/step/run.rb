@@ -100,8 +100,8 @@ class Step
     (dependency_checks + input_checks).uniq
   end
 
-  def updated?
-    return true unless done?
+
+  def out_of_date
 
     outdated_time  = []
     outdated_dep  = []
@@ -117,7 +117,13 @@ class Step
     Log.low "Some newer files found: #{Misc.fingerprint outdated_time}" if outdated_time.any?
     Log.low "Some outdated files found: #{Misc.fingerprint outdated_dep}" if outdated_dep.any?
 
-    (outdated_time + outdated_dep).empty?
+    outdated_time + outdated_dep
+  end
+
+  def updated?
+    return true unless done?
+
+    out_of_date.empty?
   end
 
   def kill_children

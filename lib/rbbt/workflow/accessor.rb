@@ -146,7 +146,7 @@ class Step
     return nil if @exec or info_file.nil? or Open.exists?(info_file)
     Open.lock(info_file, :lock => info_lock) do
       i = {:status => :waiting, :pid => Process.pid}
-      i[:dependencies] = dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
+      i[:dependencies] = dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies
       @info_cache = i
       Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
       @info_cache_time = Time.now
@@ -365,6 +365,15 @@ class Step
     Open.exists?(info_file) and not started?
   end
 
+  def dirty_files
+    dirty_files = rec_dependencies.reject{|dep|
+      (defined?(WorkflowRESTClient) && WorkflowRESTClient::RemoteStep === dep) || 
+        (dep.path && (Open.exists?(dep.path) || Open.remote?(dep.path))) || 
+        (dep.error? && ! dep.recoverable_error?)
+    }
+
+  end
+
   def dirty?
     return true if Open.exists?(pid_file) && ! ( Open.exists?(info_file) || done? )
     return false unless done? || status == :done
@@ -377,12 +386,6 @@ class Step
     if status == :done and not done?
       return true 
     end
-
-    dirty_files = rec_dependencies.reject{|dep|
-      (defined?(WorkflowRESTClient) && WorkflowRESTClient::RemoteStep === dep) || 
-        (dep.path && (Open.exists?(dep.path) || Open.remote?(dep.path))) || 
-        (dep.error? && ! dep.recoverable_error?)
-    }
 
     if dirty_files.any?
       true
