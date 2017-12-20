@@ -50,7 +50,7 @@ module Open
 
   def self.wget(url, options = {})
     Log.low "WGET:\n -URL: #{ url }\n -OPTIONS: #{options.inspect}"
-    options = Misc.add_defaults options, "--user-agent=" => 'firefox', :pipe => true
+    options = Misc.add_defaults options, "--user-agent=" => 'rbbt', :pipe => true
 
     wait(options[:nice], options[:nice_key]) if options[:nice]
     options.delete(:nice)

@@ -6,6 +6,9 @@ module CMD
   def self.process_cmd_options(options = {})
     string = ""
     options.each do |option, value|
+      raise "Invalid option key: #{option.inspect}" if option.to_s !~ /^[a-z_0-9\-=]+$/i
+      raise "Invalid option value: #{value.inspect}" if value.to_s.include? "'"
+
       case 
       when value.nil? || FalseClass === value 
         next
@@ -13,9 +16,9 @@ module CMD
         string << "#{option} "
       else
         if option.to_s.chars.to_a.last == "="
-          string << "#{option}#{value} "
+          string << "#{option}'#{value}' "
         else
-          string << "#{option} #{value} "
+          string << "#{option} '#{value}' "
         end
       end
     end
@@ -75,9 +78,7 @@ module CMD
         STDOUT.reopen sout.last
         sout.last.close
 
-
         STDOUT.sync = STDERR.sync = true
-
 
         exec(ENV, cmd)
 

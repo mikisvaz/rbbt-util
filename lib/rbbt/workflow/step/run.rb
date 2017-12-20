@@ -123,7 +123,7 @@ class Step
   def updated?
     return true unless done?
 
-    out_of_date.empty?
+    @updated ||= out_of_date.empty?
   end
 
   def kill_children

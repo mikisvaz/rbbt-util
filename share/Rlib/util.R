@@ -615,7 +615,7 @@ rbbt.plot.matrix <- function(x, ...){
 
 # Adapted from: https://rstudio-pubs-static.s3.amazonaws.com/13301_6641d73cfac741a59c0a851feb99e98b.html
 rbbt.plot.venn <- function(data, a, ...) {
-    rbbt.require(VennDiagram)
+    rbbt.require('VennDiagram')
     group.matches <- function(data, fields) {
         sub = data
         for (i in 1:length(fields)) {

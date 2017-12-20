@@ -20,11 +20,11 @@ rbbt.SVG.extract <- function(plot, size=NULL, prefix=NULL, ...){
         resolution = 72 * (size/7)
 
         if (length(plot$theme) == 0) plot <- plot + theme_gdocs();
+        if (length(plot$theme$text) == 0) plot <- plot + theme(text = element_text(size=base.size));
 
         plot$theme$text$size = base.size
 
         print(plot, type='cairo')
-
         mysvg <- grid.export(res=resolution, prefix=prefix, ...)
     }
 

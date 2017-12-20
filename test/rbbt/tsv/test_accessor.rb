@@ -221,4 +221,34 @@ row2    aa|aa|AA|AA    b1|b2|B1|B2    Id1|Id1|Id2|Id2
       assert_equal 6, CMD.cmd('grep -v "#" | cut -f 1', :in => tsv.to_s(nil, false, true)).read.split("\n").length
     end
   end
+
+  def test_remove_duplicates
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|A|a|a    b|B|b|    Id1|Id2|Id1|Id1
+row2    aa|aa|AA|AA    b1|b2|B1|B2    Id1|Id1|Id2|Id2
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+      assert_equal %w(a A a), tsv.remove_duplicates["row1"]["ValueA"]
+      assert tsv.remove_duplicates["row1"]["ValueB"].include?("")
+    end
+
+  end
+
+  def test_unzip_zip
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|A|a|a    b|B|b|    Id1|Id2|Id1|Id1
+row2    aa|aa|AA|AA    b1|b2|B1|B2    Id1|Id1|Id2|Id2
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+      assert_equal ["b", "b", ""], tsv.unzip("ValueA", true)["row1:a"]["ValueB"]
+      assert_equal ["b", "b", "", "B"].sort, tsv.unzip("ValueA", true).zip(true)["row1"]["ValueB"].sort
+    end
+
+  end
 end

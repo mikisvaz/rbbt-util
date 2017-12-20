@@ -175,6 +175,7 @@ module Misc
   end
 
   def self.humanize_list(list)
+    return "" if list.empty?
     if list.length == 1
       list.first
     else

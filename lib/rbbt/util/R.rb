@@ -60,8 +60,13 @@ source('#{UTIL}');
        Open.write(init_file) do |f|
           f.puts "# Loading basic rbbt environment"
           f.puts "library(utils, quietly=TRUE);\n"
+          f.puts "interactive.script.file = '#{init_file}'"
+
           f.puts "source('#{R::UTIL}');\n"
-          f.puts 
+          f.puts "rbbt.require('readr')"
+          f.puts "interactive.script = read_file(interactive.script.file)"
+          f.puts "cat(interactive.script)"
+          f.puts ""
           f.puts script
         end
         CMD.cmd("env R_PROFILE='#{init_file}' xterm \"$R_HOME/bin/R\"")

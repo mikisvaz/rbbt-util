@@ -692,10 +692,14 @@ Example:
       if merge
         self.through do |key,values|
           field_values = values[field_pos]
-          values.delete_at(field_pos) if delete
+          if delete
+            values = values.dup
+            values.delete_at(field_pos) 
+          end
           next if field_values.nil?
           zipped = Misc.zip_fields(values)
           field_values.zip(zipped).each do |field_value,rest|
+            rest = [nil] * values.length if rest.nil?
             k = [key,field_value]*sep
             if new.include? k
               new[k] = Misc.zip_fields(Misc.zip_fields(new[k]) << rest)
@@ -712,6 +716,7 @@ Example:
           next if field_values.nil?
           zipped = Misc.zip_fields(values)
           field_values.zip(zipped).each do |field_value,rest|
+            rest = [nil] * values.length if rest.nil?
             k = [key,field_value]*sep
             new[k] = rest
           end
@@ -730,7 +735,7 @@ Example:
     new
   end
   
-  def zip(field = 0, merge = false, sep = ":")
+  def zip(merge = false, field = "New Field", sep = ":")
     new = {}
     self.annotate new
 
@@ -740,9 +745,12 @@ Example:
       if merge
         self.through do |key,values|
           new_key, new_value = key.split(sep)
-          new_values = values + [[new_value]]
+          new_values = values + [[new_value] * values.first.length]
           if new.include? new_key
-            new[new_key] = Misc.zip_fields(Misc.zip_fields(new[new_key]) << new_values)
+            current = new[new_key]
+            current.each_with_index do |v,i|
+              v.concat(new_values[i])
+            end
           else
             new[new_key] = new_values
           end
@@ -761,6 +769,14 @@ Example:
       new.fields = new.fields + [field]
     end
 
+    new
+  end
+
+  def remove_duplicates(pivot = 0)
+    new = self.annotate({})
+    self.through do |k,values|
+      new[k] = Misc.zip_fields(Misc.zip_fields(values).uniq)
+    end
     new
   end
 end
