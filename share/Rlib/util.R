@@ -440,9 +440,20 @@ rbbt.model.inpute <- function(data, formula, ...){
     data
 }
 
-rbbt.tsv.melt <- function(tsv, key_field = 'ID'){
-    tsv[key_field] = rownames(tsv)
-    return(melt(tsv))
+rbbt.tsv.melt <- function(tsv, variable = NULL, value = NULL, key.field = NULL){
+    if (is.null(key.field)){ key.field = attributes(data)$key.field;}
+    if (is.null(key.field)){ key.field = "ID" }
+
+    if (is.null(variable)){ variable = "variable" }
+    if (is.null(value)){ value = "value" }
+
+    tsv[key.field] = rownames(tsv)
+
+    m <- melt(tsv)
+
+    names(m) <- c(key.field, variable, value)
+
+    return(m)
 }
 
 rbbt.ranks <- function(x){

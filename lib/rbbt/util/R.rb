@@ -55,21 +55,38 @@ source('#{UTIL}');
     end
   end
 
-  def self.interactive(script, options = {})
-    TmpFile.with_file do |init_file|
-       Open.write(init_file) do |f|
-          f.puts "# Loading basic rbbt environment"
-          f.puts "library(utils, quietly=TRUE);\n"
-          f.puts "interactive.script.file = '#{init_file}'"
+  def self.interactive(script, source = [], options = {})
+    TmpFile.with_file(script) do |script_file|
+      TmpFile.with_file do |init_file|
 
-          f.puts "source('#{R::UTIL}');\n"
-          f.puts "rbbt.require('readr')"
-          f.puts "interactive.script = read_file(interactive.script.file)"
-          f.puts "cat(interactive.script)"
-          f.puts ""
-          f.puts script
-        end
+        cmd = <<-EOF
+  # Loading basic rbbt environment"
+library(utils, quietly=TRUE);
+library(grDevices,quietly=TRUE)   
+source('#{R::UTIL}');
+EOF
+
+    require_sources  = source.collect{|source|
+      source = R::LIB_DIR["#{source.to_s}.R"] if R::LIB_DIR["#{source.to_s}.R"].exists?
+      "source('#{source}')"
+    } * ";\n" if Array === source and source.any?
+
+    cmd << require_sources + "\n\n" if require_sources
+
+        cmd += <<-EOF
+
+rbbt.require('readr')
+interactive.script.file = '#{script_file}'
+interactive.script = read_file(interactive.script.file)
+
+cat(interactive.script)
+
+source(interactive.script.file)
+        EOF
+
+        Open.write init_file, cmd
         CMD.cmd("env R_PROFILE='#{init_file}' xterm \"$R_HOME/bin/R\"")
+      end
     end
   end
 
@@ -193,7 +210,6 @@ if (! is.null(data)){ rbbt.tsv.write('#{f}', data); }
 NULL
       EOF
 
-
       case r_options.delete :method
       when :eval
         R.eval_run script
@@ -213,16 +229,22 @@ NULL
     end
   end
 
-  def R_interactive(pre_script = nil, source = true)
-    TmpFile.with_file do |f|
-      Log.debug{"R Interactive:\n" << pre_script } if pre_script
-      TmpFile.with_file(pre_script) do |script_file|
-        Open.write(f, self.to_s)
-        script = "data_file = '#{f}';\n"
-        script << "script_file = '#{script_file}';\n" if pre_script
-        script << "source(script_file);\n" if source
-        R.interactive(script)
-      end
+  def R_interactive(script = nil, source = [])
+    TmpFile.with_file do |data_file|
+      Open.write(data_file, self.to_s)
+
+      Log.debug{"R Interactive:\n" << script } if script
+
+      script =<<-EOF
+# Loading data
+data_file = '#{data_file}'
+data = rbbt.tsv(data_file)
+
+# Script
+#{script}
+      EOF
+
+      R.interactive(script)
     end
   end
 
