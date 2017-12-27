@@ -351,7 +351,7 @@ class Step
     begin
       return true unless info[:exception]
       klass = Kernel.const_get(info[:exception][:class])
-      not (RbbtException == klass or RbbtException === klass)
+      ! (klass <= RbbtException)
     rescue Exception
       true
     end

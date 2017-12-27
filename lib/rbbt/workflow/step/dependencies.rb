@@ -199,7 +199,7 @@ class Step
       list.each do |dep|
         begin
           dep.produce
-        rescue
+        rescue RbbtException
           Log.warn "Allowing failing of #{dep.path}: #{dep.messages.last}"
         end
         nil
@@ -243,7 +243,7 @@ class Step
             Log.warn "Aborted bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
             raise $!
 
-          rescue Exception
+          rescue RbbtException
             if canfail || dep.canfail?
               Log.warn "Allowing failing of #{dep.path}: #{dep.messages.last}"
             else
