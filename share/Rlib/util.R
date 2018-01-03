@@ -722,3 +722,31 @@ rbbt.require <- function(pkg, ...){
     library(clean.packages, character.only=T)
 }
 
+rbbt.psd <- function(m){
+    e = eigen(m) 
+    library(MASS)
+
+    values = e$values  
+    values[values < 0] = 0 
+
+    p = e$vectors %*% diag(values) %*% t(e$vectors)
+
+    rownames(p) <- rownames(m)
+    colnames(p) <- colnames(m)
+
+    return(p)
+}
+
+rbbt.fix_distance <- function(data){
+    rbbt.require('Hmisc')
+
+    m = impute(as.matrix(data))
+
+    p <- rbbt.psd(m)
+    p <- m
+
+    d <- as.dist(p)   
+
+    return(d)
+}
+
