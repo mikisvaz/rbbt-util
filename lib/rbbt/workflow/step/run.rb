@@ -93,7 +93,7 @@ class Step
   end
 
   def input_checks
-    inputs.select{|i| Step === i && i.done? }
+    inputs.select{|i| Step === i }
   end
 
   def checks
@@ -106,10 +106,10 @@ class Step
     outdated_time  = []
     outdated_dep  = []
     checks.each do |dep| 
-      if File.mtime(dep.path) > File.mtime(self.path) 
+      if dep.done? && self.done? && (File.mtime(dep.path) > File.mtime(self.path))
         outdated_time << dep
       end
-      if ! dep.updated?  
+      if ! dep.done? || ! dep.updated?
         outdated_dep << dep
       end
     end
@@ -121,7 +121,7 @@ class Step
   end
 
   def updated?
-    return true unless done?
+    return true unless (done? || error?)
 
     @updated ||= out_of_date.empty?
   end
@@ -583,7 +583,7 @@ class Step
   end
 
   def grace
-    until done? or result or error? or aborted? or streaming? 
+    until done? or result or error? or aborted? or streaming? or waiting?
       sleep 1 
     end
     self
@@ -622,7 +622,7 @@ class Step
         dependencies.each{|dep| dep.join }
       end
 
-      until (path.exists? && status == :done) or error? or aborted?
+      until (path.exists? && status == :done) or error? or aborted? or waiting?
         sleep 1 
         join_stream if streaming?
       end
