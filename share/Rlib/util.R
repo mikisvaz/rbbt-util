@@ -737,10 +737,20 @@ rbbt.psd <- function(m){
     return(p)
 }
 
-rbbt.fix_distance <- function(data){
-    rbbt.require('Hmisc')
+rbbt.impute <- function(data){
+    m = as.matrix(data)
+    if (sum(is.na(m)) == 0){
+        return (m)
+    }else{
+        rbbt.require('Hmisc')
+        m.i = impute(m)
+        return(m.i)
+    }
+}
 
-    m = impute(as.matrix(data))
+rbbt.fix_distance <- function(data){
+
+    m = rbbt.impute(data)
 
     p <- rbbt.psd(m)
     p <- m
