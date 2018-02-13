@@ -124,7 +124,6 @@ source(interactive.script.file)
     end
   end
 
-
   def self.ruby2R(object)
     case object
     when Float::INFINITY
@@ -152,6 +151,12 @@ source(interactive.script.file)
     else
       raise "Type of object not known: #{ object.inspect }"
     end
+  end
+
+  def self.hash2Rargs(hash)
+    hash.collect do |k,v|
+      [k.to_s, ruby2R(v)] * "="
+    end * ", "
   end
 
   def self.tsv(file, options = {})
