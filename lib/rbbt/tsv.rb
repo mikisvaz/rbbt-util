@@ -28,7 +28,22 @@ module TSV
     end
   end
 
-  def self.setup(hash, options = {})
+  def self.str2options(str)
+    field_options, rest =  str.split("#")
+    key, fields_str = field_options.split("~")
+
+    fields = fields_str.nil? ? [] : fields_str.split(/,\s*/)
+    rest_options = rest.nil? ? {} : Misc.string2hash(rest)
+
+    {:key_field => key, :fields => fields}.merge(rest_options)
+  end
+
+  def self.setup(hash, type = nil, options = nil)
+    type, options = nil, type if options.nil? and (Hash === type or (String === type and type.include? "~"))
+    options = TSV.str2options(options) if String === options and options.include? "~"
+    options ||= {}
+    options[:type] ||= type unless type.nil?
+
     options = Misc.add_defaults options, :default_value => [], :unnamed => TSV.unnamed
     default_value = Misc.process_options options, :default_value
     hash = Misc.array2hash(hash, default_value) if Array === hash
@@ -47,7 +62,8 @@ module TSV
 
   # options shift if type.nil?
   def self.open(source, type = nil, options = nil)
-    type, options = nil, type if options.nil? and Hash === type
+    type, options = nil, type if options.nil? and (Hash === type or (String === type and type.include? "~"))
+    options = TSV.str2options(options) if String === options and options.include? "~"
     options ||= {}
     options[:type] ||= type unless type.nil?
 

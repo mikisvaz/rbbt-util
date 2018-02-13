@@ -387,7 +387,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_flat_merge
+  def test_flat_merge2
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -409,7 +409,34 @@ row2   b  bbb bbbb bb
     EOF
 
     TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :merge => false, :type => :flat)
+      assert_equal ["a", "aa", "aaa"], tsv["row1"]
+    end
+  end
+
+  def test_flat_with_field
+    content =<<-EOF
+#Id    ValueA
+row1   a   aa   aaa
+row2   b  bbb bbbb bb
+    EOF
+
+    TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/, :merge => false, :type => :flat, :fields => ["ValueA"])
+      assert_equal ["a", "aa", "aaa"], tsv["row1"]
+    end
+  end
+
+  def test_flat_with_field_header
+    content =<<-EOF
+#: :type=:flat
+#Id    ValueA
+row1   a   aa   aaa
+row2   b  bbb bbbb bb
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :merge => false, :fields => ["ValueA"])
       assert_equal ["a", "aa", "aaa"], tsv["row1"]
     end
   end
@@ -525,10 +552,8 @@ row2    A    B    Id3
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/, :type => :flat, :key_field => "ValueA", :fields => ["OtherID"], :merge => true)
-      ppp tsv
       assert tsv["aaa"].include? "Id1"
       assert tsv["aaa"].include? "Id2"
- 
     end
   end
 
@@ -552,10 +577,6 @@ row2    A AA AAA
     end
     tsv = datafile_test('identifiers').tsv :persist => true, :shard_function => shard_function
     assert_equal 10000, tsv.keys.length + 2
-  end
-
-  def test_merge_key_field
-    assert TSV.open('/home/mvazquezg/git/workflows/genomics/share/gene_ages', :key_field => "FamilyAge", :merge => true,  :persist => false, :zipped => true, :type => :double).values.first.length > 1
   end
 
   def test_flat_merge
@@ -600,4 +621,21 @@ row2   b  bbb bbbb bb
       assert tsv.include? 'aa'
     end
   end
+
+
+  def test_string_options
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A|aAa    B    Id3
+row3    AA    BB|BBB    Id3|Id2
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :flat, 'Id~OtherID#:sep=/\s+/')
+      assert_equal %w(Id1 Id2), tsv["row1"]
+ 
+    end
+  end
 end
+
