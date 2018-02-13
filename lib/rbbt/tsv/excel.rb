@@ -97,6 +97,7 @@ module TSV
       options = Misc.add_defaults options, :sep2 => /[,|]\s?/
       sheet = Misc.process_options options, :sheet
       header = Misc.process_options options, :header
+      text = Misc.process_options options, :text
 
       header = true unless header == false
       sheet ||= 0
@@ -124,7 +125,7 @@ module TSV
           end
         end
 
-        TSV.open(filename, options)
+        text ? Open.read(filename) : TSV.open(filename, options)
       end
     end
 
@@ -152,6 +153,7 @@ module TSV
       options = Misc.add_defaults options, :sep2 => /[,|]\s?/
       sheet = Misc.process_options options, :sheet
       header = Misc.process_options options, :header
+      text = Misc.process_options options, :text
 
       header = true unless header == false
       TmpFile.with_file do |filename|
@@ -178,7 +180,7 @@ module TSV
           end
         end
 
-        TSV.open(filename, options)
+        text ? Open.read(filename) : TSV.open(filename, options)
       end
     end
 
