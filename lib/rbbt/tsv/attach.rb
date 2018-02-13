@@ -215,6 +215,9 @@ module TSV
     if complete
       fill = TrueClass === complete ? nil : complete
       field_length = self.fields.length 
+      common_fields = (other.fields & self.fields)
+      other_common_pos = common_fields.collect{|f| other.fields.index f}
+      this_common_pos = common_fields.collect{|f| self.fields.index f}
       missing = other.keys - self.keys
       case type
       when :single
@@ -223,11 +226,21 @@ module TSV
         end
       when :list
         missing.each do |k|
-          self[k] = [nil] * field_length
+          values = [nil] * field_length
+          other_values = other[k]
+          other_common_pos.zip(this_common_pos).each do |o,t|
+            values[t] = other_values[o]
+          end
+          self[k] = values
         end
       when :double
         missing.each do |k|
-          self[k] = [[]] * field_length
+          values = [[]] * field_length
+          other_values = other[k]
+          other_common_pos.zip(this_common_pos).each do |o,t|
+            values[t] = other_values[o]
+          end
+          self[k] = values
         end
       when :flat
         missing.each do |k|
