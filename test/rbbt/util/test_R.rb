@@ -26,5 +26,11 @@ data = data + 1
       EOF
     end
   end
+
+  def test_hash2Rargs
+    hash = {:verbose => false, :iter => 1000, :method => 'kmeans'}
+    str = R.hash2Rargs(hash)
+    assert_equal "verbose=FALSE, iter=1000, method='kmeans'", str
+  end
 end
 
