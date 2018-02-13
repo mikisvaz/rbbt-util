@@ -28,6 +28,9 @@ module TmpFile
   end
 
   def self.with_file(content = nil, erase = true, options = {})
+    options, content, erase = content, nil, true if Hash === content
+    options, erase = erase, true if Hash === erase 
+
     prefix = options[:prefix] || ""
     tmpfile = tmp_file prefix
     if options[:extension]
