@@ -334,6 +334,18 @@ module TSV
   def marshal_dump
     [info, to_hash]
   end
+
+  def to_onehot(boolean = false)
+    all_values = values.flatten.uniq.collect{|v| v.to_s}.sort
+    index = TSV.setup({}, :key_field => key_field, :fields => all_values, :type => :list)
+    index.cast = :to_i unless boolean
+    through do |key,values|
+      v = all_values.collect{|_v| values.include?(_v)}
+      v = v.collect{|_v| _v ? 1 : 0 } unless boolean
+      index[key] = v
+    end
+    index
+  end
 end
 
 class Hash
