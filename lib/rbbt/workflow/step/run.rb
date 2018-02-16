@@ -25,6 +25,7 @@ class Step
       begin
         if Step === i
           step = true
+          i.produce unless i.done? || i.error? || i.started?
           if i.done?
             if (task.input_options[task.inputs[pos]] || {})[:stream]
               TSV.get_stream i
@@ -114,8 +115,8 @@ class Step
       end
     end
 
-    Log.low "Some newer files found: #{Misc.fingerprint outdated_time}" if outdated_time.any?
-    Log.low "Some outdated files found: #{Misc.fingerprint outdated_dep}" if outdated_dep.any?
+    Log.high "Some newer files found: #{Misc.fingerprint outdated_time}" if outdated_time.any?
+    Log.high "Some outdated files found: #{Misc.fingerprint outdated_dep}" if outdated_dep.any?
 
     outdated_time + outdated_dep
   end

@@ -61,7 +61,9 @@ module Misc
     when (defined? AnnotatedArray and AnnotatedArray)
       "<A: #{fingerprint Annotated.purge(obj)} #{fingerprint obj.info}>"
     when (defined? TSV and TSV::Parser)
-      "<TSVStream:" + (obj.filename || "NOFILENAME") + "--" << Misc.fingerprint(obj.options) << ">"
+      filename = obj.filename
+      filename = "STDIN(#{rand})" if filename == '-'
+      "<TSVStream:" + (filename || "NOFILENAME") + "--" << Misc.fingerprint(obj.options) << ">"
     when IO
       (obj.respond_to?(:filename) and obj.filename ) ? "<IO:" + (obj.filename || obj.inspect + rand(100000)) + ">" : obj.inspect
     when File
@@ -106,7 +108,9 @@ module Misc
     when obj.respond_to?(:path)
       remove_long_items("File: " + obj.path)
     when TSV::Parser === obj
-      remove_long_items("TSV Stream: " + obj.filename + " -- " << Misc.fingerprint(obj.options))
+      filename = obj.filename
+      filename = "STDIN(rand-#{rand(10000000)})" if filename == '-'
+      remove_long_items("TSV Stream: " + filename + " -- " << Misc.fingerprint(obj.options))
     when TSV === obj
       remove_long_items((obj.all_fields || []) + obj.keys.sort)
     when (Array === obj and obj.length > ARRAY_MAX_LENGTH)

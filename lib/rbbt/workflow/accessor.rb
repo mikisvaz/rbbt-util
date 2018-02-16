@@ -402,6 +402,9 @@ class Step
     (IO === @result) or (not @saved_stream.nil?) or status == :streaming
   end
 
+  def noinfo?
+    status == :noinfo
+  end
 
   def running?
     pid = info[:pid]

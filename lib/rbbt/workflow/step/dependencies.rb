@@ -82,9 +82,9 @@ class Step
 
     if (status == 'error' && (job.recoverable_error? || job.dirty?)) ||
       job.aborted? ||
-      (job.done? && ! job.updated?)  || (job.error? && ! job.updated?)
-      (job.done? && job.dirty?)  || (job.error? && job.dirty?)
-      (! (job.status == :waiting || job.status == :noinfo || job.done? || job.error? || job.aborted?) && ! job.running?)
+      (job.done? && ! job.updated?)  || (job.error? && ! job.updated?) ||
+      (job.done? && job.dirty?)  || (job.error? && job.dirty?) ||
+      (!(job.noinfo? || job.done? || job.error? || job.aborted? || job.running?))
 
       job.clean 
     end
