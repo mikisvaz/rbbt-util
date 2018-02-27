@@ -176,7 +176,7 @@ def print_error(error, backtrace = nil)
   if backtrace
     puts Log.color :red, "Backtrace: "
     puts
-    puts backtrace.reverse * "\n"
+    puts Log.color_stack(backtrace.reverse) * "\n"
     puts
   end
   puts Log.color :red, error

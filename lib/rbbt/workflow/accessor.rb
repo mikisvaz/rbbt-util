@@ -809,6 +809,7 @@ module Workflow
 
                      new_=[]
                      dep.each{|d| 
+                       next if d.nil?
                        if Hash === d
                          d[:workflow] ||= wf 
                          d[:task] = task_name

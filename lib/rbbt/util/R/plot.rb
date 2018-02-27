@@ -1,7 +1,7 @@
 module R
   module SVG
 
-    def self.ggplotPNG(*args)
+    def self.ggplotSVG(*args)
       ggplot(*args)
     end
 
