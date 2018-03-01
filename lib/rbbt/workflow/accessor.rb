@@ -275,6 +275,7 @@ class Step
         res
       rescue
         Log.exception $!
+        raise $!
       end
     end
   end

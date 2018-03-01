@@ -49,9 +49,11 @@ module Workflow
     IndiferentHash.setup(inputs)
   end
 
-  def example_step(task_name, example)
+  def example_inputs(task_name, example)
     inputs = {}
+    IndiferentHash.setup(input)
     example(task_name, example).each do |input,type,file|
+      next if new_inputs.include? input
 
       case type
       when :tsv, :array, :text
@@ -64,6 +66,18 @@ module Workflow
         inputs[input.to_sym]  = file.read.strip
       end
     end
+    inputs
+  end
+
+
+  def example_step(task_name, example, new_inputs = {})
+    inputs = example_inputs(task_name, example)
+
+    if new_inputs and new_inputs.any?
+      IndiferentHash.setup(new_inputs)
+      inputs = inputs.merge(new_inputs)
+    end
+
     self.job(task_name, example, inputs)
   end
 end
