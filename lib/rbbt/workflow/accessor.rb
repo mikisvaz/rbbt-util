@@ -813,8 +813,10 @@ module Workflow
                        next if d.nil?
                        if Hash === d
                          d[:workflow] ||= wf 
-                         d[:task] = task_name
-                         inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, d[:workflow].task_info(d[:task])) 
+                         d[:task] ||= task_name
+                         task_info = d[:workflow].task_info(d[:task])
+
+                         inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
                          d = d[:workflow].job(d[:task], d[:jobname], inputs) 
                        end
                        ComputeDependency.setup(d, compute) if compute

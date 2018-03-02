@@ -51,9 +51,8 @@ module Workflow
 
   def example_inputs(task_name, example)
     inputs = {}
-    IndiferentHash.setup(input)
+    IndiferentHash.setup(inputs)
     example(task_name, example).each do |input,type,file|
-      next if new_inputs.include? input
 
       case type
       when :tsv, :array, :text
