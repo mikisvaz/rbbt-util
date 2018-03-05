@@ -28,4 +28,4 @@ SOPT.usage if options[:help]
 
 file, target = ARGV
 
-Step.new(file).archive(target)
+Step.new(File.expand_path(file)).archive(target)

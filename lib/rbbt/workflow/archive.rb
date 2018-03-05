@@ -43,6 +43,7 @@ class Step
         end
         io.join if io.respond_to? :join
       end
+      Log.debug "Archive finished at: #{target}"
     end
   end
 end
