@@ -4,6 +4,7 @@ require 'rbbt/workflow/step'
 require 'rbbt/workflow/accessor'
 require 'rbbt/workflow/doc'
 require 'rbbt/workflow/examples'
+require 'rbbt/workflow/archive'
 
 module Workflow
 
