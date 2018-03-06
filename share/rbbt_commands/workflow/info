@@ -31,17 +31,23 @@ def get_step(file)
 end
 
 def status_msg(status)
-  color = case status
-          when :error, :aborted, :missing
+  color = case status.to_sym
+          when :error, :aborted, :missing, :dead
             :red
-          when :streaming
-            :yellow
+          when :streaming, :started
+            :cyan
           when :done
             :green
+          when :dependencies, :waiting, :setyp
+            :yellow
           else
-            nil
+            if status.to_s.index ">"
+              :cyan
+            else
+              :cyan
+            end
           end
-  Log.color(color, status)
+  Log.color(color, status.to_s)
 end
 
 def pid_msg(pid, done = false)

@@ -50,14 +50,16 @@ def status_msg(status)
           when :error, :aborted, :missing, :dead
             :red
           when :streaming, :started
-            :yellow
+            :cyan
           when :done
             :green
+          when :dependencies, :waiting, :setyp
+            :yellow
           else
             if status.to_s.index ">"
-              :yellow
+              :cyan
             else
-              nil
+              :cyan
             end
           end
   Log.color(color, status.to_s)
