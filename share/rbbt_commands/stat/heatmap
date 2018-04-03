@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Produce a heatmap
+
+$ rbbt stat heatmap [options] <filename.tsv> [file.png]
+
+-h--help Print this help
+-w--width* Image Width
+-h--height* Image Height
+-s--size* Image Size (Height and Width)
+-l--logs Take logs
+-p--positive single color heatmap (positive values
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.usage
+  end
+  exit 0
+end
+
+file, png = ARGV
+
+raise "No file" if file.nil?
+
+width, height, size, logs, positive = options.values_at :width, :height, :size, :logs, :positive
+
+size = 800 if size.nil?
+width = size if width.nil?
+height = size if height.nil?
+logs = false if logs.nil?
+
+
+require 'rbbt/util/R'
+if png
+    R.run <<-EOF
+data = rbbt.tsv('#{file}')
+rbbt.pheatmap('#{png}', data, positive=#{R.ruby2R positive})
+    EOF
+else
+    TmpFile.with_file(nil, :extension => 'png') do |png|
+        R.run <<-EOF
+data = rbbt.tsv('#{file}')
+rbbt.pheatmap('#{png}', data, width=#{ width }, height=#{ height }, take_log=#{R.ruby2R logs}, positive=#{R.ruby2R positive})
+        EOF
+        `op #{png}`
+    end
+end

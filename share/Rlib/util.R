@@ -523,7 +523,44 @@ rbbt.png_plot <- function(filename, p, width=500, height=500, ...){
     eval(parse(text=p));
 }
 
-rbbt.heatmap <- function(filename, data, width=500, height=500, take_log=FALSE, stdize=TRUE, ...){
+rbbt.pheatmap <- function(filename, data, width=800, height=800, take_log=FALSE, stdize=FALSE, positive=FALSE, ...){
+    rbbt.require('pheatmap')
+
+    opar = par()
+    png(filename=filename, width=width, height=height);
+
+    data = as.matrix(data)
+    data[is.nan(data)] = NA
+
+    data = data[rowSums(is.na(data))==0, ]
+
+    if (take_log){
+        for (study in colnames(data)){
+            skip = sum(data[, study] <= 0) != 0
+            if (!skip){
+                data[, study] = log(data[, study])
+            }
+        }
+        data = data[, colSums(is.na(data))==0]
+    }
+
+
+    if (stdize){
+        rbbt.require('pls')
+        data = stdize(data)
+    }
+
+    if (positive){
+        pheatmap(data,color= colorRampPalette(c("white", "red"))(100), ...)
+    }else{
+        pheatmap(data, ...)
+    }
+
+    dev.off();
+    par(opar)
+}
+
+rbbt.heatmap <- function(filename, data, width=800, height=800, take_log=FALSE, stdize=FALSE, ...){
     opar = par()
     png(filename=filename, width=width, height=height);
 

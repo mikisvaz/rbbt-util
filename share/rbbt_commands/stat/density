@@ -24,15 +24,13 @@ end
 
 values = file.read.split("\n").collect{|v| v.to_f}
 
-res = TmpFile.with_file do |tmp|
+res = TmpFile.with_file nil, :extension => 'png' do |tmp|
   R.run <<-EOF
 values = #{R.ruby2R values}
 d = density(values)
-df = data.frame(x=d$x, y=d$y)
-rbbt.tsv.write(file='#{ tmp }', df)
+rbbt.png_plot(filename = '#{tmp}', 'plot(d)')
   EOF
 
-  Open.read(tmp)
+  `op '#{tmp}'` 
 end
 
-puts res.split("\n")[1..-1].collect{|l| l.split("\t")[1,2] * "\t"} * "\n"
