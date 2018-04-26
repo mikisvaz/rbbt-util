@@ -9,8 +9,18 @@ workflow = ARGV.shift
 wf = Workflow.require_workflow workflow
 dir = $command_dir = wf.libdir.share.rbbt_commands
 
+def prev_dir(prev)
+    rbbt_command_dir = $rbbt_command_dir
+
+    prev.each do |previous_command|
+        rbbt_command_dir = rbbt_command_dir[previous_command]
+    end
+
+    rbbt_command_dir
+end
+
 def commands(prev)
-    rbbt_command_dir = $command_dir
+    rbbt_command_dir = prev_dir(prev)
 
     command_file_dirs = rbbt_command_dir.find_all
     command_files = command_file_dirs.collect{|d| d.glob('*') }.flatten
@@ -24,6 +34,9 @@ begin
   while ARGV.any?
     command = ARGV.shift
     case
+    when File.directory?(dir[command].find)
+      prev << command
+      dir = dir[command]
     when File.directory?(dir[command].find)
       prev << command
       dir = dir[command]
@@ -54,7 +67,13 @@ puts "  #{File.basename($0)} #{$previous_commands * " "} cmd"
 puts 
 puts Log.color :magenta, "Subcommands:"
 puts 
+
 commands(prev).each do |command|
+  directory = File.directory? dir[command].find
+  if directory
+    puts "  " << Log.color(:blue, command)
+  else
     puts "  " << command
+  end
 end
     

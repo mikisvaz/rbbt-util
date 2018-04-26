@@ -285,7 +285,11 @@ class Step
     all_deps.uniq.each do |step|
       next if seen_paths.include? step.path
       seen_paths << step.path
-      Step.prepare_for_execution(step) unless step == self
+      begin
+        Step.prepare_for_execution(step) unless step == self
+      rescue DependencyError
+        raise $! if dependencies.include? step
+      end
       next unless step.dependencies and step.dependencies.any?
       step.dependencies.each do |step_dep|
         next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and step_dep.compute == :nodup)
