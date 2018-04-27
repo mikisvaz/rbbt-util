@@ -550,6 +550,7 @@ module Workflow
     inputs = rec_inputs(name).uniq
     input_types = rec_input_types(name)
     input_descriptions = rec_input_descriptions(name)
+    input_use = rec_input_use(name)
     input_defaults = rec_input_defaults(name)
     input_options = rec_input_options(name)
     export = case
@@ -575,6 +576,7 @@ module Workflow
       :input_descriptions => input_descriptions,
       :input_defaults => input_defaults,
       :input_options => input_options,
+      :input_use => input_use,
       :result_type => result_type,
       :result_description => result_description,
       :dependencies => dependencies
@@ -695,6 +697,35 @@ module Workflow
       acc.delete_if{|input,defaults| not rec_inputs.include? input}
       acc
     }.tap{|h| IndiferentHash.setup(h)}
+  end
+  
+  def rec_input_use(taskname)
+    task = task_from_dep(taskname)
+    deps = rec_dependencies(taskname)
+    inputs = {}
+    task.inputs.each do |input|
+      name = task.name
+      workflow = (task.workflow || self).to_s
+
+      inputs[input] ||= {}
+      inputs[input][workflow] ||= []
+      inputs[input][workflow]  << name
+    end
+
+    dep_inputs = Task.dep_inputs deps, self
+
+    dep_inputs.each do |dep,is|
+      name = dep.name
+      workflow = dep.workflow
+
+      is.each do |input|
+        inputs[input] ||= {}
+        inputs[input][workflow] ||= []
+        inputs[input][workflow]  << name
+      end
+    end
+
+    inputs
   end
 
   def rec_input_descriptions(taskname)

@@ -222,5 +222,10 @@ class TestWorkflow < Test::Unit::TestCase
     end
   end
 
+  def test_rec_input_use
+    assert TestWF.rec_input_use(:double_dep).include?(:times)
+    assert TestWF.rec_input_use(:double_dep)[:times].include?(TestWF)
+    assert TestWF.rec_input_use(:double_dep)[:times][TestWF].include?(:repeat)
+  end
 
 end
