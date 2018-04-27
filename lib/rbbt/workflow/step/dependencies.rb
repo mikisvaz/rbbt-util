@@ -158,7 +158,7 @@ class Step
       end
 
     rescue TryAgain
-      Log.low "Retrying dep. #{Log.color :red, dependency.task_name.to_s} -- [#{dependency.status}] #{dependency.messages.last}"
+      Log.low "Retrying dep. #{Log.color :yellow, dependency.task_name.to_s} -- [#{dependency.status}] #{dependency.messages.last}"
       retry
     rescue Aborted, Interrupt
       Log.error "Aborted dep. #{Log.color :red, dependency.task_name.to_s}"

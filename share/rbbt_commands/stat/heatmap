@@ -38,6 +38,7 @@ size = 800 if size.nil?
 width = size if width.nil?
 height = size if height.nil?
 logs = false if logs.nil?
+positive = false if positive.nil?
 
 
 require 'rbbt/util/R'
