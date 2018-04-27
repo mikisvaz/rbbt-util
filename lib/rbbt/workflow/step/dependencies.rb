@@ -126,11 +126,12 @@ class Step
       end
 
       if dependency.aborted? or (dependency.error? and dependency.recoverable_error?) or (!Open.remote?(dependency.path) && dependency.missing?)
+        Log.warn "Cleaning dep. #{Log.color :red, dependency.task_name.to_s}"
         dependency.clean
         raise TryAgain
       end
 
-      if not dependency.started?
+      if ! dependency.started? && ! dependency.error?
         log_dependency_exec(dependency, :starting)
         dependency.run(true)
         raise TryAgain
@@ -157,6 +158,7 @@ class Step
       end
 
     rescue TryAgain
+      Log.warn "Retrying dep. #{Log.color :red, dependency.task_name.to_s} -- [#{dependency.status}] #{dependency.messages.last}"
       retry
     rescue Aborted, Interrupt
       Log.error "Aborted dep. #{Log.color :red, dependency.task_name.to_s}"
