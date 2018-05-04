@@ -24,6 +24,14 @@ class Step
     new_inputs = inputs.collect do |i| 
       begin
         if Step === i
+          if i.error?
+            e = i.get_exception
+            if e
+              raise e
+            else
+              raise DependencyError, "Error in dep. #{Log.blue e.path}"
+            end
+          end
           step = true
           i.produce unless i.done? || i.error? || i.started?
           if i.done?
@@ -106,11 +114,12 @@ class Step
 
     outdated_time  = []
     outdated_dep  = []
+    canfail_paths = self.canfail_paths
     checks.each do |dep| 
       if dep.done? && self.done? && (File.mtime(dep.path) > File.mtime(self.path))
         outdated_time << dep
       end
-      if ! dep.done? || ! dep.updated?
+      if (! dep.done? && ! canfail_paths.include?(dep.path)) || ! dep.updated?
         outdated_dep << dep
       end
     end

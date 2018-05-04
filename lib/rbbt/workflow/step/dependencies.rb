@@ -269,6 +269,24 @@ class Step
     end
   end
 
+  def canfail_paths
+    if info[:canfail_paths]
+      Set.new(info[:canfail_paths])
+    else
+      canfail_paths = Set.new
+      all_deps = rec_dependencies + [self]
+      all_deps.each do |dep|
+        next if canfail_paths.include? dep.path
+        next unless ComputeDependency === dep && dep.canfail?
+        canfail_paths << dep.path
+        canfail_paths += dep.rec_dependencies.collect{|d| d.path }
+      end
+      canfail_paths
+      set_info :canfail_paths, canfail_paths.to_a
+      canfail_paths
+    end
+  end
+
   def run_dependencies
     dep_step = {}
 
@@ -283,6 +301,8 @@ class Step
       dep.rec_dependencies
     end.compact.flatten.uniq
 
+    canfail_paths = self.canfail_paths
+
     seen_paths = Set.new
     all_deps.uniq.each do |step|
       next if seen_paths.include? step.path
@@ -290,7 +310,7 @@ class Step
       begin
         Step.prepare_for_execution(step) unless step == self
       rescue DependencyError
-        raise $! if dependencies.include? step
+        raise $! unless canfail_paths.include? step.path
       end
       next unless step.dependencies and step.dependencies.any?
       step.dependencies.each do |step_dep|
@@ -352,7 +372,11 @@ class Step
     Log.medium "Processing pre dependencies: #{Misc.fingerprint(pre_deps)} - #{Log.color :blue, self.path}" if pre_deps.any?
     pre_deps.each do |step|
       next if compute_deps.include? step
-      execute_and_dup(step, dep_step, false)
+      begin
+        execute_and_dup(step, dep_step, false)
+      rescue Exception
+        raise $! unless canfail_paths.include?(step.path)
+      end
     end
 
     Log.medium "Computing pre dependencies: #{Misc.fingerprint(compute_pre_deps)} - #{Log.color :blue, self.path}" if compute_pre_deps.any?
@@ -363,12 +387,23 @@ class Step
     Log.medium "Processing last dependencies: #{Misc.fingerprint(last_deps)} - #{Log.color :blue, self.path}" if last_deps.any?
     last_deps.each do |step|
       next if compute_deps.include? step
-      execute_and_dup(step, dep_step)
+      begin Exception
+        execute_and_dup(step, dep_step) 
+      rescue 
+        raise $! unless canfail_paths.include? step.path
+      end
     end
 
     Log.medium "Computing last dependencies: #{Misc.fingerprint(compute_last_deps)} - #{Log.color :blue, self.path}" if compute_last_deps.any?
     compute_last_deps.each do |type,list|
       run_compute_dependencies(type, list, dep_step)
+    end
+
+    Log.medium "Aborting waiting dangling dependencies"
+    all_deps.each do |dep|
+      next if dep.done?
+      next unless canfail_paths.include? dep.path
+      dep.abort if dep.waiting?
     end
 
   end
