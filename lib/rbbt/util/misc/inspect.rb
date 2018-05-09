@@ -1,6 +1,6 @@
 module Misc
   ARRAY_MAX_LENGTH = 1000
-  STRING_MAX_LENGTH = ARRAY_MAX_LENGTH * 10
+  STRING_MAX_LENGTH = ARRAY_MAX_LENGTH * 100
 
   def self.break_lines(text, char_size=80)
     text = text.gsub("\n", " ")
