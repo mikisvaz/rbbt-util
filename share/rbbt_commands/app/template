@@ -1,4 +1,36 @@
 #!/usr/bin/env ruby
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Run a web server over a simgle template
+
+$ rbbt app template [options] <filename.haml>
+
+-e--environment*
+-p--port*
+-s--server*
+-b--bind*
+-e--environment*
+-R--RServe_session*
+--finder
+--views*
+-W--workflows*"
+-h--help Print this help
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
 
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
@@ -13,9 +45,10 @@ require 'rbbt/rest/knowledge_base'
 require 'rbbt/rest/helpers'
 require 'rbbt/rest/web_tool'
 
-options = SOPT.get "-e--environment*:-p--port*:-s--server*:-b--bind*:-e--environment*:-R--RServe_session*:--finder:--views*:-W--workflows*"
 
 template = ARGV.first
+
+raise ParameterException, "No template specified" if template.nil?
 
 template = File.expand_path(template)
 template = template.sub('.haml','')
