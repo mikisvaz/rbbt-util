@@ -44,13 +44,13 @@ positive = false if positive.nil?
 require 'rbbt/util/R'
 if png
     R.run <<-EOF
-data = rbbt.tsv('#{file}')
-rbbt.pheatmap('#{png}', data, positive=#{R.ruby2R positive})
+data = rbbt.tsv2matrix(rbbt.tsv('#{file}'))
+rbbt.pheatmap('#{png}', data, width=#{ width }, height=#{ height }, take_log=#{R.ruby2R logs}, positive=#{R.ruby2R positive})
     EOF
 else
     TmpFile.with_file(nil, :extension => 'png') do |png|
         R.run <<-EOF
-data = rbbt.tsv('#{file}')
+data = rbbt.tsv2matrix(rbbt.tsv('#{file}'))
 rbbt.pheatmap('#{png}', data, width=#{ width }, height=#{ height }, take_log=#{R.ruby2R logs}, positive=#{R.ruby2R positive})
         EOF
         `op #{png}`
