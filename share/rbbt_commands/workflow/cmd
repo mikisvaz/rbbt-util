@@ -1,16 +1,37 @@
 #!/usr/bin/env ruby
 
-require 'rbbt'
+require 'rbbt-util'
 require 'rbbt/util/simpleopt'
-require 'rbbt/workflow'
 
+$0 = "rbbt #{$previous_commands*" "} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Run a workflow command
+
+$ rbbt workflow cmd <workflow> <command> [<subcommands>] [<options>] [<arg> ...]
+
+EOF
 workflow = ARGV.shift
 
+if workflow == '-h'
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+raise ParameterException, "No workflow specified" if workflow.nil?
+
+require 'rbbt/workflow'
+
 wf = Workflow.require_workflow workflow
-dir = $command_dir = wf.libdir.share.rbbt_commands
+dir = $command_dir = wf.libdir.share.rbbt_commands.find
 
 def prev_dir(prev)
-    rbbt_command_dir = $rbbt_command_dir
+    rbbt_command_dir = $command_dir
 
     prev.each do |previous_command|
         rbbt_command_dir = rbbt_command_dir[previous_command]
@@ -30,12 +51,16 @@ end
 
 prev = []
 
+$previous_commands << 'cmd'
+$previous_commands << workflow
+
 begin
   while ARGV.any?
     command = ARGV.shift
     case
     when File.directory?(dir[command].find)
       prev << command
+      $previous_commands << command
       dir = dir[command]
     when File.directory?(dir[command].find)
       prev << command
@@ -63,7 +88,7 @@ puts Log.color :magenta, "## COMMANDS"
 puts
 puts Log.color :magenta, "Command:"
 puts 
-puts "  #{File.basename($0)} #{$previous_commands * " "} cmd"
+puts " rbbt #{$previous_commands * " "} "
 puts 
 puts Log.color :magenta, "Subcommands:"
 puts 
