@@ -23,6 +23,8 @@ class DependencyError < Aborted
   end
 end
 
+class DontClose < Exception; end
+
 class KeepLocked < Exception
   attr_accessor :payload
   def initialize(payload)

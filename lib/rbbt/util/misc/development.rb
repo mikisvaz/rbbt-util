@@ -320,12 +320,12 @@ def self.add_libdir(dir=nil)
     TSV.traverse index, options do |pos|
       elem = elems[pos.to_i]
       elems.annotate elem if elems.respond_to? :annotate
-      begin
-        res = yield elem
-      rescue Interrupt
-        Log.warn "Process #{Process.pid} was aborted"
-        raise $!
-      end
+      res = begin
+              yield elem
+            rescue Interrupt
+              Log.warn "Process #{Process.pid} was aborted"
+              raise $!
+            end
       res = nil unless options[:into]
       raise RbbtProcessQueue::RbbtProcessQueueWorker::Respawn, res if respawn == :always and cpus > 1
       res

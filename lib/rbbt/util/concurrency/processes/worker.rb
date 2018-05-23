@@ -114,7 +114,9 @@ class RbbtProcessQueue
           Log.high "Worker #{Process.pid} respawning to #{@current}"
         end
       rescue Aborted, Interrupt
-        Log.warn "Worker #{Process.pid} aborted"
+        Log.warn "Worker #{Process.pid} aborted. Current #{@current} #{Misc.pid_exists?(@current) ? "exists" : "does not exist"}"
+        Process.kill "INT", @current if Misc.pid_exists? @current
+        @callback_queue.close_write if @callback_queue 
         Kernel.exit! 0
       rescue Exception
         Log.exception $!

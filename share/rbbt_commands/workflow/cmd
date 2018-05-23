@@ -75,9 +75,7 @@ begin
         exit 0
       end
 
-      puts "Error: Command not understood"
-      puts
-      break
+      raise ParameterException, "Error: Command not understood: #{command}"
     end
   end
 end

@@ -82,6 +82,12 @@ class RbbtProcessQueue
       rescue Exception
         Log.warn "Process monitor exception: #{$!.message}"
         @processes.each{|p| p.abort }
+        @processes.each{|p| 
+          begin
+            p.join 
+          rescue ProcessFailed
+          end
+        }
         @callback_thread.raise $! if @callback_thread and @callback_thread.alive?
         raise $!
       end

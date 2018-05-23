@@ -393,26 +393,25 @@ module Open
     io = gunzip(io) if ((String === url and gzip?(url)) and not options[:noz]) or options[:gzip]
     io = bgunzip(io) if ((String === url and bgzip?(url)) and not options[:noz]) or options[:bgzip]
 
-    if block_given?
-      begin
-        return yield(io)
-      rescue Exception
-        io.abort if io.respond_to? :abort
-        io.join if io.respond_to? :join
-        raise $!
-      ensure
-        io.join if io.respond_to? :join
-        io.close if io.respond_to? :close and not io.closed?
-      end
-    else
-      io
-    end
-
     class << io;
       attr_accessor :filename
     end
 
     io.filename = url.to_s
+
+    if block_given?
+      begin
+        return yield(io)
+      rescue DontClose
+      rescue Exception
+        io.abort if io.respond_to? :abort
+        io.join if io.respond_to? :join
+        raise $!
+      ensure
+        io.close if io.respond_to? :close and not io.closed?
+        io.join if io.respond_to? :join
+      end
+    end
 
     io
   end
