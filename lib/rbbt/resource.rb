@@ -192,7 +192,7 @@ source "$INSTALL_HELPER_FILE"
               EOF
 
               script = preamble + "\n" + Open.read(content)
-              install_io = CMD.cmd('bash', :in => script, :log => true, :pipe => true)
+              install_io = CMD.cmd('bash', :in => script, :log => true, :pipe => true, :stderr => true)
               while line = install_io.gets
                 Log.debug line
               end

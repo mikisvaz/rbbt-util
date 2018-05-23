@@ -1,6 +1,5 @@
 module TSV
 
-
   class CleanSerializer
     def self.dump(o); o end
     def self.load(o); o end
