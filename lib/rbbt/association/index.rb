@@ -6,6 +6,7 @@ module Association
   def self.index(file, options = nil, persist_options = nil)
     options = options.nil? ? {} : options.dup
     persist_options = persist_options.nil? ?  Misc.pull_keys(options, :persist)  : persist_options.dup 
+    persist_options[:serializer] ||= options[:serializer] if options.include?(:serializer)
 
     persist_options = Misc.add_defaults persist_options.dup, :persist => true, :dir => Rbbt.var.associations
     persist = persist_options[:persist]
@@ -15,6 +16,8 @@ module Association
       options = Misc.add_defaults options.dup, :monitor => "Building index for #{Misc.fingerprint file}"
       recycle = options[:recycle]
       undirected = options[:undirected]
+
+      serializer = persist_options[:serializer] || :list
 
       persist_options[:file] = persist_options[:file] + '.database' if persist_options[:file]
 
@@ -29,12 +32,12 @@ module Association
 
       key_field = [source_field, target_field, undirected ? "undirected" : nil].compact * "~"
 
-      TSV.setup(data, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => :list, :namespace => database.namespace)
+      TSV.setup(data, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => serializer, :namespace => database.namespace)
 
       data.key_field = key_field
       data.fields = fields[1..-1]
       data.type = :list
-      data.serializer = :list 
+      data.serializer ||= serializer
 
       database.with_unnamed do
         database.with_monitor(options[:monitor]) do

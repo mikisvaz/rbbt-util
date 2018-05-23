@@ -193,14 +193,14 @@ module TSV
   def serializer=(serializer)
     @serializer = serializer
     self.send(:[]=, KEY_PREFIX + 'serializer', dump_entry_value(serializer), :entry_key)
-    @serializar_module = serializer.nil? ? TSV::CleanSerializer : SERIALIZER_ALIAS[serializer.to_sym]
+    @serializar_module = serializer.nil? ? TSV::CleanSerializer : (Module === serializer ? serializer : SERIALIZER_ALIAS[serializer.to_sym])
   end
 
 
   def serializer_module
     @serializer_module ||= begin
                              serializer = self.serializer
-                             mod = serializer.nil? ? TSV::CleanSerializer : SERIALIZER_ALIAS[serializer.to_sym]
+                             mod = serializer.nil? ? TSV::CleanSerializer : (Module === serializer ? serializer : SERIALIZER_ALIAS[serializer.to_sym])
                              raise "No serializer_module for: #{ serializer.inspect }" if mod.nil?
                              mod
                            end
