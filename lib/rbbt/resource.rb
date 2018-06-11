@@ -153,7 +153,9 @@ module Resource
             when :string
               Misc.sensiblewrite(final_path, content)
             when :url
-              Misc.sensiblewrite(final_path, Open.open(content))
+              options = {}
+              options[:noz] = true if Open.gzip?(final_path) || Open.bgzip?(final_path) || Open.zip?(final_path)
+              Misc.sensiblewrite(final_path, Open.open(content, options))
             when :proc
               data = case content.arity
                      when 0

@@ -222,6 +222,7 @@ module TSV
     end
 
     def add_to_data_no_merge_double(data, keys, values)
+      keys = [keys] unless Array === keys
       keys.each do |key|
         next if data.include? key
         data[key] = values 

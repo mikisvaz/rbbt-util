@@ -140,6 +140,10 @@ build(){
     echo `pwd`
     ls
 
+    if [ -f Makefile.am -a -n -f configure ]; then
+      autoreconf
+    fi
+
     if [ -f aclocal.m4 ]; then
         autoconf
     fi

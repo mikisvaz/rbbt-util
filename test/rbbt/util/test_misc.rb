@@ -171,6 +171,7 @@ eum fugiat quo voluptas nulla pariatur?"
         sleep 0.5
         sin.puts "LINE #{ i }"
       end
+      sin.close
     end
 
     time = Time.now
@@ -240,12 +241,14 @@ eum fugiat quo voluptas nulla pariatur?"
         sin.puts line.strip.reverse
       end
     end
+    stream2.close
 
     stream5 = Misc.open_pipe(true) do |sin|
       while line = stream3.gets
         sin.puts line.strip.downcase
       end
     end
+    stream3.close
 
     lines1 = []
     th1 = Thread.new do
@@ -369,6 +372,13 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal current, Misc.zip_fields(Misc.zip_fields(current))
   end
 
+  def test_zip_fields_large
+    current = (1..1500).to_a.collect{|i| ["A#{i}", "B#{i}"]}
+    assert_equal current, Misc.zip_fields(Misc.zip_fields(current))
+    current = (1..150000).to_a.collect{|i| ["A#{i}", "B#{i}"]}
+    assert_equal current, Misc.zip_fields(Misc.zip_fields(current))
+  end
+
   def test_zip_fields_comp
     current = [[:a,1], [:b,2], [:c]]
     assert_equal [[:a, :b, :c],[1,2,nil]], Misc.zip_fields(current)
@@ -423,7 +433,8 @@ eum fugiat quo voluptas nulla pariatur?"
   end
 
   def test_tarize
-    path = File.expand_path('/home/mvazquezg/git/rbbt-util/lib')
+    dir = Path.caller_lib_dir(__FILE__)
+    path = File.expand_path(dir)
     stream = Misc.tarize(path)
     TmpFile.with_file do |res|
       Misc.in_dir(res) do

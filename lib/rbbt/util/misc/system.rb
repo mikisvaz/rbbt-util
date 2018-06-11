@@ -78,7 +78,7 @@ end
     old_pwd = FileUtils.pwd
     res = nil
     begin
-      FileUtils.mkdir_p dir unless File.exist? dir
+      FileUtils.mkdir_p dir unless File.exist?(dir)
       FileUtils.cd dir
       res = yield
     ensure

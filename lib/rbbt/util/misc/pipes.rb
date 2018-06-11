@@ -32,6 +32,17 @@ module Misc
     Log.debug{"Creating pipe #{[res.last.inspect,res.first.inspect] * " => "}"}
     res
   end
+
+  def self.with_fifo(path = nil, &block)
+    begin
+      erase = path.nil?
+      path = TmpFile.tmp_file if path.nil?
+      File.mkfifo path
+      yield path
+    ensure
+      FileUtils.rm path if erase
+    end
+  end
   
   def self.release_pipes(*pipes)
     PIPE_MUTEX.synchronize do
@@ -73,6 +84,7 @@ module Misc
         end
         Kernel.exit! 0
       }
+      sin.close
 
       ConcurrentStream.setup sout, :pids => [pid]
     else
@@ -206,6 +218,8 @@ module Misc
     out_pipes.each do |sout|
       ConcurrentStream.setup sout, :threads => splitter_thread, :filename => filename, :_pair => stream
     end
+
+    out_pipes.first.autojoin = true
 
     out_pipes.first.callback = Proc.new do 
       stream.join

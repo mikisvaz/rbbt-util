@@ -63,14 +63,34 @@ module Misc
     current
   end
 
-  def self.zip_fields(array)
+  def self._zip_fields(array, max = nil)
     return [] if array.nil? or array.empty? or (first = array.first).nil?
-    max = array.collect{|l| l.length}.max
+    max = array.collect{|l| l.length}.max if max.nil?
     rest = array[1..-1].collect{|v|
       v.length == 1 & max > 1 ? v * max : v
     }
     first = first * max if first.length == 1 and max > 1
+
     first.zip(*rest)
+  end
+
+  def self.zip_fields(array)
+    if array.length < 10000
+      _zip_fields(array)
+    else
+      zipped_slices = []
+      max = array.collect{|l| l.length}.max
+      array.each_slice(10000) do |slice|
+        zipped_slices << _zip_fields(slice, max)
+      end
+      new = zipped_slices.first
+      zipped_slices[1..-1].each do |rest|
+        rest.each_with_index do |list,i|
+          new[i].concat list
+        end
+      end
+      new
+    end
   end
 
   def self.choose(array, select)

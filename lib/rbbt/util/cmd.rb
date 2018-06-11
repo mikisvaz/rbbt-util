@@ -134,7 +134,7 @@ module CMD
     if pipe
       err_thread = Thread.new do
         while line = serr.gets
-          Log.log line, stderr if Integer === stderr and log
+          Log.log "STDERR [#{pid}]: " +  line, stderr if Integer === stderr and log
         end
         serr.close
       end
@@ -144,27 +144,47 @@ module CMD
       sout
     else
       err = ""
-      Thread.new do
+      err_thread = Thread.new do
         while not serr.eof?
           err << serr.gets if Integer === stderr
         end
-          serr.close
-        end
+        serr.close
+      end
 
-        ConcurrentStream.setup sout, :pids => pids, :threads => [in_thread, err_thread].compact, :autojoin => no_wait, :no_fail => no_fail 
+      ConcurrentStream.setup sout, :pids => pids, :threads => [in_thread, err_thread].compact, :autojoin => no_wait, :no_fail => no_fail 
 
-        out = StringIO.new sout.read
-        sout.close unless sout.closed?
+      out = StringIO.new sout.read
+      sout.close unless sout.closed?
 
-        Process.waitpid pid
+      Process.waitpid pid
 
-        if not $?.success? and not no_fail
-          raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"
-        else
-          Log.log err, stderr if Integer === stderr and log
-        end
+      if not $?.success? and not no_fail
+        raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"
+      else
+        Log.log err, stderr if Integer === stderr and log
+      end
 
-        out
+      out
     end
+  end
+
+  def self.cmd_log(*args)
+    all_args = *args
+
+    all_args << {} unless Hash === all_args.last
+    all_args.last[:log] = true
+    all_args.last[:pipe] = true
+
+    io = cmd(*all_args)
+    pid = io.pids.first
+    while line = io.gets
+      if pid
+        Log.debug "STDOUT [#{pid}]: " + line
+      else
+        Log.debug "STDOUT: " + line
+      end
+    end
+    io.join
+    nil
   end
 end

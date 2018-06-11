@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
@@ -22,6 +23,7 @@ $ rbbt workflow server [options] <Workflow>
 -R--requires* Require a list of files
 --views* Directory with view templates
 --stream Activate streaming of workflow tasks
+--export_all Export all workflow tasks (use with caution!)
 --export* Export workflow tasks (asynchronous)
 --export_asynchronous* Export workflow tasks as asynchronous
 --export_synchronous* Export workflow tasks as synchronous
@@ -82,6 +84,10 @@ TmpFile.with_file do |app_dir|
     ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
     ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
     ENV["RBBT_VIEWS_DIR"] = options[:views] if options.include?(:views)
+
+    if options[:export_all]
+      ENV["RBBT_WORKFLOW_EXPORT_ALL"] = 'true'
+    end
 
     if options[:stream]
       raise "No streaming available for any server other than puma" unless true or options[:server].include? 'puma'

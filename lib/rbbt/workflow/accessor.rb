@@ -770,7 +770,7 @@ module Workflow
         rec_dependency = all_d.flatten.select{|d| d.task_name.to_sym == v }.first
 
         if rec_dependency.nil?
-          if inputs.include? v
+          if _inputs.include? v
             _inputs[i] = _inputs.delete(v)
           else
             _inputs[i] = v unless _inputs.include? i

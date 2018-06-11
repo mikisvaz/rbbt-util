@@ -194,7 +194,7 @@ module ConcurrentStream
     end
   end
 
-  def super(*args)
+  def close(*args)
     if autojoin
       begin
         super(*args)
