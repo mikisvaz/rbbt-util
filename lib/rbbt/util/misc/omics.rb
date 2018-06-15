@@ -167,7 +167,7 @@ module Misc
     while ref.length >= 1 and muts.reject{|m| m[0] == ref[0]}.empty?
       ref = ref[1..-1]
       raise "REF nil" if ref.nil?
-      pos = pos + 1
+      pos = pos + 1 unless ref.empty?
       muts = muts.collect{|m| m[1..-1]}
     end
 

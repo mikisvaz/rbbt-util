@@ -100,9 +100,18 @@ module TSV
       text = Misc.process_options options, :text
 
       header = true unless header == false
-      sheet ||= 0
-      TmpFile.with_file do |filename|
-        workbook = Spreadsheet.open Open.open(file)
+      sheet ||= "0"
+
+      workbook = Spreadsheet.open Open.open(file)
+
+      if sheet && sheet.to_s =~ /^\d+$/
+        sheet = workbook.worksheets.collect{|s| s.sheet_name }[sheet.to_i]
+      end
+      sheet_name = sheet
+      Log.debug "Opening LSX #{file} sheet #{ sheet_name }"
+
+      TmpFile.with_file :extension => Misc.sanitize_filename(sheet_name) do |filename|
+
         sheet    = workbook.worksheet sheet
 
         rows = []
@@ -156,8 +165,17 @@ module TSV
       text = Misc.process_options options, :text
 
       header = true unless header == false
-      TmpFile.with_file do |filename|
-        workbook = RubyXL::Parser.parse file
+
+      sheet ||= "0"
+      workbook = RubyXL::Parser.parse file
+      if sheet &&  sheet =~ /^\d+$/
+        sheet = workbook.worksheets.collect{|s| s.sheet_name }[sheet.to_i]
+      end
+      sheet_name = sheet
+      Log.debug "Opening XLSX #{file} sheet #{ sheet_name }"
+
+      TmpFile.with_file :extension => Misc.sanitize_filename(sheet_name) do |filename|
+
         sheet    = sheet ? workbook[sheet] : workbook.worksheets.first
 
         rows = []

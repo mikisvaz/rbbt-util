@@ -19,7 +19,7 @@ rbbt.SVG.extract <- function(plot, size=NULL, prefix=NULL, ...){
         base.size = 10 * (7/size)
         resolution = 72 * (size/7)
 
-        if (length(plot$theme) == 0) plot <- plot + theme_gdocs();
+        if (length(plot$theme) == 0) plot <- plot + theme_light();
         if (length(plot$theme$text) == 0) plot <- plot + theme(text = element_text(size=base.size));
 
         plot$theme$text$size = base.size

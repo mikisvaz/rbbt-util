@@ -42,6 +42,5 @@ if options[:print]
   puts cmd 
   exit 0
 else
-  io = CMD.cmd(cmd, :log => true, :pipe => true)
-  Misc.consume_stream(io, false, STDOUT)
+  CMD.cmd_log(cmd)
 end

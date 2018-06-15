@@ -574,7 +574,20 @@ module TSV
         if keys
           keys.each do |key|
             if unmerge
-              Misc.zip_fields(self[key]).each do |values|
+              value_list = self[key]
+              max = value_list.collect{|v| v.length}.max
+
+              if unmerge == :expand and max > 1
+                value_list = value_list.collect do |values|
+                  if values.length == 1
+                    [values.first] * max
+                  else
+                    values
+                  end
+                end
+              end
+              
+              Misc.zip_fields(value_list).each do |values|
                 dumper.add key, values
               end
             else
@@ -583,14 +596,26 @@ module TSV
           end
         else
           with_unnamed do
-            each do |k,v|
+            each do |k,value_list|
 
               if unmerge
-                Misc.zip_fields(v).each do |values|
+                max = value_list.collect{|v| v.length}.max
+
+                if unmerge == :expand and max > 1
+                  value_list = value_list.collect do |values|
+                    if values.length == 1
+                      [values.first] * max
+                    else
+                      values
+                    end
+                  end
+                end
+
+                Misc.zip_fields(value_list).each do |values|
                   dumper.add k, values
                 end
               else
-                dumper.add k, v
+                dumper.add k, value_list
               end
             end
           end
@@ -623,6 +648,14 @@ module TSV
     end
 
     str
+  end
+
+  def to_unmerged_s(keys = nil, no_options = false)
+    to_s keys, no_options, true
+  end
+
+  def to_unmerged_expanded_s(keys = nil, no_options = false)
+    to_s keys, no_options, :expand
   end
 
   def value_peek

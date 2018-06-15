@@ -328,6 +328,7 @@ module TSV
     end
     self.annotate(new)
     new.type = :single
+    new.fields = [new.fields.first] if new.fields.length > 1
     new
   end
 

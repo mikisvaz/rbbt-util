@@ -428,6 +428,10 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal [737407, ["-----", "-----G", "-----GTTAAT"]], Misc.correct_vcf_mutation(737406, "GTTAAT", "G,GG,GGTTAAT")
   end
 
+  def test_mutation_to_ensembl_format
+    assert_equal Misc.mutation_to_ensembl_format("1:100:T", "A"), %w(1 100 100 A/T)
+  end
+
   def test_fingerprint
     assert_equal '{:a=>1}', Misc.fingerprint({:a => 1})
   end

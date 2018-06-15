@@ -106,7 +106,7 @@ def fix_options(workflow, task, job_options)
                 end
               end
             when :array
-              if input_options[name] and input_options[name][:stream] and String === value and Misc.is_filename? value
+              if input_options[name] and input_options[name][:stream] and String === value and Misc.is_filename?(value) and not input_options[name][:nofile]
                 get_value_stream(value)
               elsif input_options[name] and input_options[name][:stream] and value == "-"
                 STDIN
@@ -119,7 +119,7 @@ def fix_options(workflow, task, job_options)
                         when value == '-'
                           array_separator ||= "\n"
                           STDIN.read
-                        when (String === value and File.exist?(value))
+                        when (String === value and File.exist?(value) and not input_options[name][:nofile])
                           array_separator ||= "\n"
                           Open.read(value)
                         else
