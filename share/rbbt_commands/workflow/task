@@ -119,7 +119,7 @@ def fix_options(workflow, task, job_options)
                         when value == '-'
                           array_separator ||= "\n"
                           STDIN.read
-                        when (String === value and File.exist?(value) and not input_options[name][:nofile])
+                        when (String === value and File.exist?(value) and not (input_options[name] && input_options[name][:nofile]))
                           array_separator ||= "\n"
                           Open.read(value)
                         else

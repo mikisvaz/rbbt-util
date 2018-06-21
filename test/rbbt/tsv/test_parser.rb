@@ -25,10 +25,11 @@ row1    a|aa|aaa    b    Id1|Id2
       end
 
       TSV::Parser.traverse(Open.open(filename), :sep => /\s+/, :fields => [1], :type => :flat) do |k,v|
-        assert_equal "row1", k
+        assert_equal ["row1"], k
         assert_equal %w(a aa aaa), v
       end
     end
   end
+
 end
 

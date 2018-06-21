@@ -140,7 +140,7 @@ build(){
     echo `pwd`
     ls
 
-    if [ -f Makefile.am -a -n -f configure ]; then
+    if [ -f Makefile.am -a ! -f configure ]; then
       autoreconf
     fi
 

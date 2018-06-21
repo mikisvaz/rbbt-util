@@ -408,6 +408,7 @@ module TSV
       @header_options = parse_header(stream)
 
       options = @header_options.merge options
+      options = Misc.add_defaults options, :fields => [1] if options[:type] == :single and options[:fields].nil?
 
       @type ||= Misc.process_options(options, :type) || :double
       @type ||= :double

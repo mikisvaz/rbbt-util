@@ -93,6 +93,19 @@ row2    A    B    Id3
     EOF
 
     TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/, :type => :single)
+      assert_equal tsv.fields, ["ValueA"]
+    end
+  end
+
+  def test_tsv_field_selection
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/, :key_field => 0)
       assert_equal ["a", "aa", "aaa"], tsv["row1"][0]
 
