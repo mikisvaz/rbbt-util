@@ -344,15 +344,16 @@ class WorkflowRESTClient
         end
       end
       @inputs = new_inputs
+      @info = nil
     end
 
     def recursive_clean
+      Log.warn "Not doing recursive cleans"
       return
       begin
-        params = {:_update => :recursive_clean}
-        init_job(nil, params)
-        WorkflowRESTClient.get_raw(url, params)
         _restart
+        params = {:_update => :recursive_clean}
+        WorkflowRESTClient.get_raw(url, params)
       rescue Exception
         Log.exception $!
       end
@@ -361,9 +362,9 @@ class WorkflowRESTClient
 
     def _clean
       begin
+        _restart
         params = {:_update => :clean}
         WorkflowRESTClient.clean_url(url, params) if @url
-        _restart
       rescue Exception
         Log.exception $!
       end
