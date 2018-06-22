@@ -20,9 +20,14 @@ $ rbbt workflow prov <job-result>
 
 -h--help Help
 -p--plot* draw the dependency plot into <file.png>
+-i--inputs* List of inputs to print
+-if--info_fields* List of info fields to print
 EOF
 
 SOPT.usage if options[:help]
+
+$inputs = (options[:inputs] || "").split(",")
+$info_fields = (options[:info_fields] || "").split(",")
 
 file = ARGV.shift
 
@@ -30,7 +35,7 @@ $seen = []
 def get_step(file)
   file = file.sub(/\.(info|files)/,'')
   $seen << file
-  Step.new file
+  Workflow.load_step file
 end
 
 def status_msg(status)
@@ -53,18 +58,42 @@ def status_msg(status)
   Log.color(color, status.to_s)
 end
 
-def report_msg(status, name, path)
+def report_msg(status, name, path, info = nil)
 
   parts = path.sub(/\{.*/,'').sub(/#{Regexp.quote(name)}$/,'').split "/"
 
   task = Log.color(:yellow, parts.pop)
   workflow = Log.color(:magenta, parts.pop)
 
-  if not Open.remote?(path) and (File.exists?(path) and $main_mtime and ($main_mtime - File.mtime(path)) < 0)
-    status_msg(status.to_s) << " " << [workflow, task, path] * " " << " (#{Log.color(:red, "Mtime out of sync") })\n"
+  str = if not Open.remote?(path) and (File.exists?(path) and $main_mtime and ($main_mtime - File.mtime(path)) < 0)
+    status_msg(status.to_s) << " " << [workflow, task, path] * " " << " (#{Log.color(:red, "Mtime out of sync") })"
   else
-    status_msg(status.to_s) << " " << [workflow, task, path] * " " << "\n"
+    status_msg(status.to_s) << " " << [workflow, task, path] * " " 
   end
+
+  if $inputs and $inputs.any? 
+    job_inputs = info[:inputs]
+    IndiferentHash.setup(job_inputs)
+
+    $inputs.each do |input|
+      value = job_inputs[input]
+      next if  value.nil?
+      value_str = Misc.fingerprint(value)
+      str << " #{input}=#{value_str}"
+    end
+  end
+
+  if $info_fields and $info_fields.any?
+    $info_fields.each do |field|
+      IndiferentHash.setup(info)
+      value = info[field]
+      next if  value.nil?
+      value_str = Misc.fingerprint(value)
+      str << " #{field}=#{value_str}"
+    end
+  end
+
+  str << "\n"
 end
 
 def report(step, offset = 0)
@@ -75,7 +104,7 @@ def report(step, offset = 0)
   name = info[:name] || File.basename(path)
   status = :unsync if status == :done and not File.exist? path
   str = " " * offset
-  str << report_msg(status, name, path)
+  str << report_msg(status, name, path, info)
   info[:dependencies].each do |task,name,path|
     new = ! $seen.include?(path)
     dep = get_step path

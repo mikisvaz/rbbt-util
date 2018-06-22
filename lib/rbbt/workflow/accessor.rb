@@ -919,6 +919,14 @@ module Workflow
     Misc.path_relative_to workdir_find, path
   end
 
+  def self.workflow_for(path)
+    begin
+      Kernel.const_get File.dirname(File.dirname(path))
+    rescue
+      nil
+    end
+  end
+
   def task_for(path)
     if workdir.respond_to? :find
       workdir_find = workdir.find 

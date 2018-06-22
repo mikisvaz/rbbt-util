@@ -405,6 +405,14 @@ module Workflow
     end
   end
 
+  def self.load_step(path)
+    step = Step.new path
+    step.dependencies = step.info[:dependencies].collect do |task,name,dep_path|
+      Workflow.load_step dep_path
+    end
+    step
+  end
+
   def load_name(task, name)
     return remote_tasks[task].load_step(path) if remote_tasks and remote_tasks.include? task
     task = tasks[task.to_sym] if String === task or Symbol === task

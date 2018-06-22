@@ -27,7 +27,8 @@ recursive = options.delete :recursive
 
 def get_step(file)
   file = file.sub(/\.(info|files)/,'')
-  Step.new file
+  step = Workflow.load_step file
+  step
 end
 
 def status_msg(status)
@@ -84,7 +85,7 @@ exception = info[:exception]
 rest = info.keys - [:inputs, :dependencies, :status, :time_elapsed, :messages, :backtrace, :exception, :pid]
 
 puts Log.color(:magenta, "File") << ": " << step.path
-puts Log.color(:magenta, "Status") << ": " << status_msg(status) << ((step.aborted? || step.error?) && step.recoverable_error? ? " (recoverable)" : "" )
+puts Log.color(:magenta, "Status") << ": " << status_msg(status) << ((step.aborted? || step.error?) && step.recoverable_error? ? " (recoverable)" : "" ) << (step.dirty? ? " (dirty)" : "")
 puts Log.color(:magenta, "Pid") << ": " << pid_msg(pid, status.to_s == "done")
 puts Log.color(:magenta, "Time") << ": " << time.to_i.to_s << " sec." if time
 puts Log.color(:magenta, "Total time") << ": " << total_time.to_i.to_s << " sec." if time

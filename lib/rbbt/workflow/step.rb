@@ -67,6 +67,7 @@ class Step
     end
   end
 
+
   def inputs
     return @inputs if NamedArray === @inputs
 
