@@ -163,6 +163,7 @@ workflows.sort.each do |workflow,tasks|
           end
         end
         str << " #{ status_msg status }"
+        str << " (dirty)" if status == 'done' && Workflow.load_step(file).dirty?
 
         if inputs and inputs.any? and info[:inputs]
           job_inputs = info[:inputs]

@@ -16,6 +16,7 @@ $ rbbt system clean <workflow> <task>
 -a--all Apply to all jobs, not only uncompleted
 -f--force Remove locks and files regardless of been active
 -q--quick Quick check
+-d--dirty Clean dirty jobs
 -h--help Print this help
 EOF
 rbbt_usage and exit 0 if options[:help]
@@ -27,6 +28,7 @@ task = task.split "," if task
 
 all = options.delete :all
 force = options.delete :force
+dirty = options.delete :dirty
 
 puts Log.color(:magenta, "# System clean")
 
@@ -96,10 +98,12 @@ TSV.traverse jobs, :_bar => "Checking job status" do |file,i|
     status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
     status = :sync if status != "done" and File.exist? file
 
+    status = :dirty if info[:status] == "done" and dirty and Workflow.load_step(file).dirty?
+
     status = status.to_s
   end
 
-  next unless (force and status !~ /done/) or status =~ /\bnopid/ or status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" 
+  next unless (force and status !~ /done/) or status == 'dirty' or status =~ /\bnopid/ or status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" 
   puts "  Removing #{ file } - #{status}" 
   Step.clean(file) 
 end
