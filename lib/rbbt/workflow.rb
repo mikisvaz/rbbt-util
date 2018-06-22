@@ -354,7 +354,7 @@ module Workflow
   end
 
   def set_step_dependencies(step)
-    if step.info.include? :dependencies
+    if step.info[:dependencies]
       Misc.insist do
         step.dependencies = step.info[:dependencies].collect do |task, job, path|
           next if job.nil?
@@ -407,7 +407,7 @@ module Workflow
 
   def self.load_step(path)
     step = Step.new path
-    step.dependencies = step.info[:dependencies].collect do |task,name,dep_path|
+    step.dependencies = (step.info[:dependencies] || []).collect do |task,name,dep_path|
       Workflow.load_step dep_path
     end
     step
