@@ -5,7 +5,8 @@ class TryAgain < RbbtException; end
 class ClosedStream < RbbtException; end
 
 class ProcessFailed < RbbtException; end
-class Aborted < RbbtException; end
+
+class Aborted < StandardError; end
 
 class RemoteServerError < RbbtException; end
 
