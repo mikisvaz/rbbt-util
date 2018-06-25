@@ -329,9 +329,9 @@ class Step
 
   def get_exception
     if info[:exception].nil?
-      raise Aborted if aborted?
-      raise messages.last if error?
-      return false 
+      return Aborted if aborted?
+      return Exception.new(messages.last) if error?
+      Exception.new "" 
     else
       ex_class, ex_message, ex_backtrace = info[:exception].values_at :class, :message, :backtrace
       begin
@@ -341,7 +341,7 @@ class Step
         ex
       rescue
         Log.exception $!
-        raise ex_message
+        Exception.new ex_message
       end
     end
   end
@@ -814,7 +814,7 @@ module Workflow
 
                    compute = options[:compute] if options
 
-                   all_d = (real_dependencies + real_dependencies.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
+                   all_d = (real_dependencies + real_dependencies.flatten.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
                    
                    _inputs = assign_dep_inputs(_inputs, options, all_d, workflow.task_info(dep_task))
                    jobname = _inputs[:jobname] if _inputs.include? :jobname

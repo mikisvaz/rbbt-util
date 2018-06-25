@@ -33,6 +33,7 @@ file = ARGV.shift
 
 $seen = []
 def get_step(file)
+  file = File.expand_path(file)
   file = file.sub(/\.(info|files)/,'')
   $seen << file
   Workflow.load_step file
@@ -79,7 +80,7 @@ def report_msg(status, name, path, info = nil)
       value = job_inputs[input]
       next if  value.nil?
       value_str = Misc.fingerprint(value)
-      str << " #{input}=#{value_str}"
+      str << " #{Log.color :magenta, input}=#{value_str}"
     end
   end
 
@@ -89,7 +90,7 @@ def report_msg(status, name, path, info = nil)
       value = info[field]
       next if  value.nil?
       value_str = Misc.fingerprint(value)
-      str << " #{field}=#{value_str}"
+      str << " #{Log.color :magenta, field}=#{value_str}"
     end
   end
 
