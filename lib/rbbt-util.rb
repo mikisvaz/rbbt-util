@@ -15,3 +15,5 @@ TmpFile.tmpdir       = Rbbt.tmp.find :user
 require 'rbbt/util/cmd'
 require 'rbbt/tsv'
 
+require 'rbbt/util/config'
+

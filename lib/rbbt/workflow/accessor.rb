@@ -532,6 +532,23 @@ class Step
     end
     provenance
   end
+
+  def config(key, *tokens)
+    options = tokens.pop if Hash === tokens.last
+    default = options[:default] if options
+
+    new_tokens = []
+    if workflow
+      workflow_name = workflow.to_s
+      new_tokens << ("workflow:" << workflow_name)
+      new_tokens << ("task:" << workflow_name << "#" << task_name.to_s)
+    end
+    new_tokens << ("task:" << task_name.to_s)
+
+    value = Rbbt::Config.get(key, tokens + new_tokens)
+
+    value || default
+  end
 end
 
 module Workflow

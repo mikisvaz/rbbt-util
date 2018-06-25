@@ -45,6 +45,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     named_array.rb
     cmd.rb
     docker.rb
+    config.rb
     log.rb
     log=log{
      progress.rb

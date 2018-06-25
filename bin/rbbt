@@ -27,6 +27,7 @@ end
 
 require 'rbbt'
 require 'rbbt/util/simpleopt'
+require 'rbbt/util/config'
 
 Log.nocolor = true if ARGV.include? "--nocolor"
 
@@ -49,6 +50,7 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 --dump_mem*             #{Log.color :yellow, "Dump strings in memory each second into file"}
 -nolock--no_lock_id            #{Log.color :yellow, "Do not track lockfiles with ids (prevent stale file handlers for high-througput and high-concurrency)"}
 -ji--jobname_as_inputs  #{Log.color :yellow, "Use inputs as part of the jobname in workflows instead of digesting them"}
+-ck--config_keys*       #{Log.color :yellow, "Override some config keys"}
 EOF
 
 if options[:jobname_as_inputs]
@@ -89,6 +91,18 @@ if mem_dump = options.delete(:dump_mem)
   Rbbt.dump_memory(mem_dump, String)
 end
 
+if options[:config_keys]
+  options[:config_keys].split(",").each do |config|
+    key, value, *tokens = config.split(/\s/)
+    tokens = ['key:' << key << '::0'] if tokens.empty?
+    tokens = tokens.collect do |tok|
+      tok, _sep, prio = tok.partition("::")
+      prio = "0" if prio.nil? or prio.empty?
+      [tok, prio] * "::"
+    end
+    Rbbt::Config.set({key => value}, *tokens)
+  end
+end
 
 if options.delete(:update_persist)
   ENV["RBBT_UPDATE_TSV_PERSIST"] = "true"
