@@ -316,6 +316,8 @@ module Persist
 
         save_file(path, type, res, lockfile)
 
+        Open.notify_write(path)
+
         return path if persist_options[:no_load]
 
         res

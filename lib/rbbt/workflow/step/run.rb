@@ -21,6 +21,7 @@ class Step
   def resolve_input_steps
     step = false
     pos = 0
+    input_options = workflow.task_info(task_name)[:input_options]
     new_inputs = inputs.collect do |i| 
       begin
         if Step === i
@@ -38,7 +39,11 @@ class Step
             if (task.input_options[task.inputs[pos]] || {})[:stream]
               TSV.get_stream i
             else
-              i.load
+              if (task.input_options[task.inputs[pos]] || {})[:nofile]
+                i.path
+              else
+                i.load
+              end
             end
           elsif i.streaming? and (task.input_options[task.inputs[pos]] || {})[:stream]
             TSV.get_stream i
@@ -47,7 +52,11 @@ class Step
             if (task.input_options[task.inputs[pos]] || {})[:stream]
               TSV.get_stream i
             else
-              i.load
+              if (task.input_options[task.inputs[pos]] || {})[:nofile]
+                i.path
+              else
+                i.load
+              end
             end
           end
         else

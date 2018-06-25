@@ -97,5 +97,4 @@ end
     return true if String === string and string.length < 265 and File.exist? string
     return false
   end
-
 end
