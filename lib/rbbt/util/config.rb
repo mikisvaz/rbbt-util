@@ -26,8 +26,11 @@ module Rbbt::Config
     end
   end
 
-
   def self.set(values, *tokens)
+    if not Hash === values
+      values = {values => tokens.shift}
+    end
+
     values.each do |key,value|
       add_entry key, value, tokens
     end

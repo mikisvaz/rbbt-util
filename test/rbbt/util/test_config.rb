@@ -4,7 +4,7 @@ require 'rbbt/util/config'
 class TestConfig < Test::Unit::TestCase
   def setup
     Rbbt::Config.set({:cpus => 30}, :test_config, :test)
-    Rbbt::Config.set({:cpus => 5}, "slow::2", :test)
+    Rbbt::Config.set(:cpus , 5, "slow::2", :test)
   end
 
   def test_simple
