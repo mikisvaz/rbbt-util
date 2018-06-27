@@ -392,8 +392,10 @@ module TSV
       stream.abort if stream.respond_to? :abort
       raise $!
     ensure
+      if bar
+        Log::ProgressBar.remove_bar(bar, error)
+      end
       q.clean
-      Log::ProgressBar.remove_bar(bar, error) if bar
     end
   end
 
@@ -595,8 +597,9 @@ module TSV
     if into
       bar = Misc.process_options options, :bar
 
-      options[:join] = Proc.new do
-        Log::ProgressBar.remove_bar(bar)
+      options[:join] = Proc.new do |error|
+        error = false if error.nil?
+        Log::ProgressBar.remove_bar(bar, error)
       end if bar
 
       options[:callback] = Proc.new do |e|

@@ -29,11 +29,13 @@ class RbbtProcessQueue
 
           loop do
             p = @queue.pop
+            ##iii [:process, p]
             next if p.nil?
             raise p if Exception === p
             raise p.first if Array === p and Exception === p.first
             begin
               res = @block.call *p
+              #iii [:got, p, res]
               @callback_queue.push res if @callback_queue
             rescue Respawn
               @callback_queue.push $!.payload 
@@ -186,6 +188,7 @@ class RbbtProcessQueue
       begin
         Process.kill :USR2, @pid
       rescue Errno::ESRCH, Errno::ECHILD
+        Log.exception $!
       rescue Exception
         Log.exception $!
       end

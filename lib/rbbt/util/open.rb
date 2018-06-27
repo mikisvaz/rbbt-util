@@ -472,8 +472,11 @@ module Open
     case
     when block_given?
       begin
-        File.open(file, mode) do |f| 
+        f = File.open(file, mode)
+        begin
           yield f
+        ensure
+          f.close unless f.closed?
         end
       rescue Exception
         FileUtils.rm file if File.exist? file

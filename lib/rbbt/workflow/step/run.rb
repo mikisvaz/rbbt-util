@@ -529,7 +529,6 @@ class Step
         stream.abort 
       rescue Aborted, Interrupt
         Log.medium "Aborting job stream #{stream.inspect} ABORTED RETRY -- #{Log.color :blue, path}"
-        Log.exception $!
         if doretry
           doretry = false
           retry
@@ -566,7 +565,6 @@ class Step
         retry
       end
     rescue Exception
-      Log.exception $!
       if doretry
         doretry = false
         retry

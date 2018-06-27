@@ -58,6 +58,9 @@ module Log
     end
 
     def self.remove_bar(bar, error = false)
+      BAR_MUTEX.synchronize do
+        return if REMOVE.include? bar
+      end
       if error
         bar.error if bar.respond_to? :error
       else

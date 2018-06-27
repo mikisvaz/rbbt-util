@@ -34,6 +34,7 @@ class RbbtProcessQueue
               raise e 
             end
 
+            #iii [:recieve, e]
             if @callback.arity == 0
               @callback.call
             else
@@ -63,6 +64,8 @@ class RbbtProcessQueue
     @init_block = block
 
     @master_pid = Process.fork do
+      Misc.pre_fork
+      Misc.purge_pipes(@queue.swrite,@queue.sread,@callback_queue.swrite, @callback_queue.sread) 
 
       @total = num_processes
       @count = 0
@@ -155,11 +158,10 @@ class RbbtProcessQueue
             @callback_thread.raise $! 
           end
 
-          raise $!
+          Kernel.exit! -1
         end
       end
 
-      @monitor_thread.abort_on_exception = true
 
       Signal.trap(20) do
         begin
@@ -197,9 +199,11 @@ class RbbtProcessQueue
   end
 
   def _join
+    error = true
     begin
       pid, status = Process.waitpid2 @master_pid
-      raise ProcessFailed unless status.success?
+      error = false if status.success?
+      raise ProcessFailed if error
     rescue Errno::ECHILD
     rescue Aborted
       Log.error "Aborted joining queue"
@@ -207,9 +211,16 @@ class RbbtProcessQueue
     rescue Exception
       Log.error "Exception joining queue: #{$!.message}"
       raise $!
+    ensure
+      if @join
+        if @join.arity == 1
+          @join.call(error) 
+        else
+          @join.call
+        end
+      end
     end
 
-    @join.call if @join
   end
 
   def join
@@ -257,6 +268,7 @@ class RbbtProcessQueue
 
   def process(*e)
     begin
+      #iii [:sending, e]
       @queue.push e
     rescue Errno::EPIPE
       raise Aborted
