@@ -33,11 +33,13 @@ if continue
       EOF
 
       builder.c_singleton <<-EOF
-  void wait_semaphore(char* name){
+  int wait_semaphore(char* name){
+    int ret;
     sem_t* sem;
     sem = sem_open(name, 0);
-    sem_wait(sem);
+    ret = sem_wait(sem);
     sem_close(sem);
+    return(ret);
   }
       EOF
 
@@ -53,7 +55,8 @@ if continue
 
     SEM_MUTEX = Mutex.new
     def self.synchronize(sem)
-      RbbtSemaphore.wait_semaphore(sem)
+      ret = RbbtSemaphore.wait_semaphore(sem)
+      raise Aborted if ret == -1
       begin
         yield
       ensure

@@ -8,7 +8,6 @@ class RbbtProcessQueue
       @sread, @swrite = Misc.pipe
 
       @serializer = serializer || Marshal
-                   
 
       @key = "/" << rand(1000000000).to_s << '.' << Process.pid.to_s;
       @write_sem = @key + '.in'

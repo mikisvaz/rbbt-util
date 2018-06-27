@@ -50,6 +50,14 @@ class Step
     path.nil? ? nil : path + '.info'
   end
 
+  def self.tmp_path(path)
+    path = path.find if Path === path
+    path = File.expand_path(path)
+    dir = File.dirname(path)
+    filename = File.basename(path)
+    File.join(dir, '.' << filename)
+  end
+
   def self.pid_file(path)
     path.nil? ? nil : path + '.pid'
   end
@@ -445,6 +453,10 @@ class Step
 
   def files_dir
     @files_dir ||= Step.files_dir path
+  end
+
+  def tmp_path
+    @tmp_path ||= Step.tmp_path path
   end
 
   def files

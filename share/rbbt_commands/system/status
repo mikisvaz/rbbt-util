@@ -124,7 +124,7 @@ jobs = Rbbt.job_info workflow, task
 workflows = {}
 
 TSV.traverse jobs, :_bar => "Checking job status" do |file,info|
-  next unless all or not info[:done] or not File.exist? file
+  next unless all || ! info[:done] || ! File.exist?(file)
   workflow = info[:workflow]
   task = info[:task]
   workflows[workflow] ||= {}

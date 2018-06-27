@@ -81,15 +81,16 @@ class RbbtProcessQueue
           begin
             while true
               @monitored = true
-              current = @current ? 0 : Misc.memory_use(@current) 
-              if current > memory_cap and not @asked
-                Log.medium "Worker #{@current} for #{Process.pid} asked to respawn -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap} - current: #{current}"
+              
+              current_mem = @current ? Misc.memory_use(@current) : 0
+              if current_mem > memory_cap and not @asked
+                Log.medium "Worker #{@current} for #{Process.pid} asked to respawn -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap} - current: #{current_mem}"
                 RbbtSemaphore.synchronize(@callback_queue.write_sem) do
                   Process.kill "USR1", @current if @current
                 end
                 @asked = true
               end
-              sleep 3 + rand(5)
+              sleep 2 + rand(5)
             end
           rescue
             Log.exception $!
@@ -99,6 +100,7 @@ class RbbtProcessQueue
         while ! @monitored
           sleep 0.1
         end
+
         @current = Process.fork do
           run
         end
@@ -169,6 +171,15 @@ class RbbtProcessQueue
       begin
         Process.kill :USR2, @pid
         Process.kill :INT, @pid
+      rescue Errno::ESRCH 
+      rescue Exception
+        Log.exception $!
+      end
+    end
+
+    def stop
+      begin
+        Process.kill :USR2, @pid
       rescue Errno::ESRCH 
       rescue Exception
         Log.exception $!

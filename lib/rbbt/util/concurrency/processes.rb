@@ -12,6 +12,7 @@ class RbbtProcessQueue
     @respawn = reswpan
     @offset = offset
     @queue = RbbtProcessSocket.new
+    @process_mutex = Mutex.new
   end
 
   attr_accessor :callback, :callback_queue, :callback_thread
@@ -59,10 +60,12 @@ class RbbtProcessQueue
   end
 
   def init(&block)
+    @init_block = block
+
     num_processes.times do |i|
-      @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &block)
+      add_process
     end
-    @queue.close_read
+    #@queue.close_read
 
     @process_monitor = Thread.new(Thread.current) do |parent|
       begin
@@ -88,9 +91,26 @@ class RbbtProcessQueue
           rescue ProcessFailed
           end
         }
-        @callback_thread.raise $! if @callback_thread and @callback_thread.alive?
+
+        if @callback_thread and @callback_thread.alive?
+          @callback_thread.raise $! 
+        end
+
         raise $!
       end
+    end
+  end
+
+  def add_process
+    @process_mutex.synchronize do
+      @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
+    end
+  end
+
+  def remove_process
+    @process_mutex.synchronize do
+      @processes.last.stop
+      @processes.pop
     end
   end
 
@@ -105,8 +125,10 @@ class RbbtProcessQueue
 
   def join
     begin
-      @processes.length.times do 
-        @queue.push ClosedStream.new
+      @process_mutex.synchronize do
+        @processes.length.times do 
+          @queue.push ClosedStream.new
+        end
       end if @process_monitor.alive?
     rescue Exception
     end

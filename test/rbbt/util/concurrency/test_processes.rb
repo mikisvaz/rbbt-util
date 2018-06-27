@@ -6,6 +6,55 @@ require 'rbbt/util/concurrency/processes'
 
 class TestConcurrencyProcess < Test::Unit::TestCase
 
+  def test_process_throttle
+    q = RbbtProcessQueue.new 10
+
+    times = 500
+
+    res = []
+    q.callback do |v|
+      res << v
+    end
+    q.init do |i|
+      sleep 0.001
+      Process.pid
+    end
+
+    times.times do |i|
+      q.process i
+    end
+
+    sleep 1 while res.length < times
+    assert_equal 10, res.uniq.length
+
+    q.add_process
+    q.add_process
+    q.add_process
+
+    times.times do |i|
+      q.process i
+    end
+
+    sleep 1 while res.length < times * 2
+    assert_equal 13, res[times..-1].uniq.length
+
+    q.remove_process
+    q.remove_process
+    q.remove_process
+    q.remove_process
+    q.remove_process
+
+    times.times do |i|
+      q.process i
+    end
+
+    sleep 1 while res.length < times * 3
+    assert_equal 8, res[(2*times + 20)..-1].uniq.length
+
+    q.join
+    assert_equal times * 3, res.length
+  end
+
   def test_process
     q = RbbtProcessQueue.new 10
 
@@ -20,7 +69,6 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     end
 
     times = 500
-    t = TSV.setup({"a" => 1}, :type => :single)
 
     times.times do |i|
       q.process i
