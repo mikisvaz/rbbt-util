@@ -85,11 +85,14 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     
     concurrency.rb
     concurrency=concurrency{
-     threads.rb
      processes.rb
+     processes2.rb
+     threads.rb
      processes=processes{
-      worker.rb
       socket.rb
+      socket2.rb
+      worker.rb
+      worker2.rb
      }
     }
    }

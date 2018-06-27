@@ -87,17 +87,22 @@ class RbbtProcessQueue
   
     
     def push(obj)
+      iii [:wait_push, Process.pid]
       RbbtSemaphore.synchronize(@write_sem) do
         multiple = MultipleResult === obj
         obj = Annotated.purge(obj)
         obj.extend MultipleResult if multiple
         self.dump(obj, @swrite)
+        iii [:post_push, Process.pid, obj]
       end
     end
 
     def pop
+      iii [:wait_pop, Process.pid]
       RbbtSemaphore.synchronize(@read_sem) do
-        self.load(@sread)
+        res = self.load(@sread)
+        iii [:post_pop, Process.pid, res]
+        res
       end
     end
   end

@@ -40,14 +40,14 @@ class RbbtProcessQueue
               @callback.call p
             end
           end
+        rescue ClosedStream
         rescue Aborted
           Log.warn "Callback thread aborted"
-          @process_monitor.raise $!
+          self._abort
           raise $!
-        rescue ClosedStream
         rescue Exception
           Log.warn "Exception captured in callback: #{$!.message}"
-          @process_monitor.raise $!
+          self._abort
           raise $!
         ensure
 
@@ -62,56 +62,129 @@ class RbbtProcessQueue
   def init(&block)
     @init_block = block
 
-    num_processes.times do |i|
-      add_process
-    end
-    #@queue.close_read
+    @master_pid = Process.fork do
 
-    @process_monitor = Thread.new(Thread.current) do |parent|
-      begin
-        while @processes.any?
-          @processes[0].join 
-          @processes.shift
+      @total = num_processes
+      @count = 0
+      @processes = []
+
+      Signal.trap(:INT) do
+        @total.times do
+          @queue.push ClosedStream.new
         end
-      rescue Aborted
-        Log.warn "Aborting process monitor"
-        @processes.each{|p| p.abort }
-        @processes.each{|p| 
-          begin
-            p.join 
-          rescue ProcessFailed
-          end
-        }
-      rescue Exception
-        Log.warn "Process monitor exception: #{$!.message}"
-        @processes.each{|p| p.abort }
-        @processes.each{|p| 
-          begin
-            p.join 
-          rescue ProcessFailed
-          end
-        }
-
-        if @callback_thread and @callback_thread.alive?
-          @callback_thread.raise $! 
-        end
-
-        raise $!
       end
+
+      @manager_thread = Thread.new do
+        while true 
+          begin
+            begin
+              sleep 10
+            rescue TryAgain
+            end
+
+            @process_mutex.synchronize do
+              while @count > 0
+                @count -= 1
+                @total += 1
+                @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
+                Log.low "Added process #{@processes.last.pid} to #{Process.pid} (#{@processes.length})"
+              end
+
+              while @count < 0
+                @count += 1
+                next unless @processes.length > 1
+                first = @processes.shift
+                first.stop
+                Log.low "Removed process #{first.pid} from #{Process.pid} (#{@processes.length})"
+              end
+            end
+          rescue TryAgain
+            retry
+          rescue Exception
+            Log.exception $!
+            raise Exception
+          end
+        end
+      end
+
+      Signal.trap(:USR1) do
+        @count += 1
+        @manager_thread.raise TryAgain
+      end
+
+      Signal.trap(:USR2) do
+        @count -= 1
+        @manager_thread.raise TryAgain
+      end
+
+
+      @callback_queue.close_read if @callback_queue
+
+      num_processes.times do |i|
+        @process_mutex.synchronize do
+          @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
+        end
+      end
+
+      @monitor_thread = Thread.new do
+        begin
+          while @processes.any?
+            @processes[0].join 
+            @processes.shift
+          end
+        rescue Aborted
+          Log.warn "Aborting process monitor"
+          @processes.each{|p| p.abort }
+          @processes.each{|p| 
+            begin
+              p.join 
+            rescue ProcessFailed
+            end
+          }
+        rescue Exception
+          Log.warn "Process monitor exception: #{$!.message}"
+          @processes.each{|p| p.abort }
+          @processes.each{|p| 
+            begin
+              p.join 
+            rescue Exception
+            end
+          }
+
+          if @callback_thread and @callback_thread.alive?
+            @callback_thread.raise $! 
+          end
+
+          raise $!
+        end
+      end
+
+      @monitor_thread.abort_on_exception = true
+
+      Signal.trap(20) do
+        begin
+          @monitor_thread.raise Aborted.new
+        rescue Exception
+          Log.exception $!
+        end
+      end
+
+      @monitor_thread.join
+
+      Kernel.exit! 0
     end
+
+    Log.info "Cpu process (#{num_processes}) started with master: #{@master_pid}"
+    
+    @queue.close_read
   end
 
   def add_process
-    @process_mutex.synchronize do
-      @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
-    end
+    Process.kill :USR1, @master_pid
   end
 
   def remove_process
-    @process_mutex.synchronize do
-      @processes.last.stop
-      @processes.pop
-    end
+    Process.kill :USR2, @master_pid
   end
 
   def close_callback
@@ -123,53 +196,64 @@ class RbbtProcessQueue
     @callback_thread.join  #if @callback_thread.alive?
   end
 
-  def join
+  def _join
     begin
-      @process_mutex.synchronize do
-        @processes.length.times do 
-          @queue.push ClosedStream.new
-        end
-      end if @process_monitor.alive?
-    rescue Exception
-    end
-
-    begin
-      @process_monitor.join
-      close_callback if @callback
+      pid, status = Process.waitpid2 @master_pid
+      raise ProcessFailed unless status.success?
+    rescue Errno::ECHILD
     rescue Aborted
       Log.error "Aborted joining queue"
       raise $!
     rescue Exception
       Log.error "Exception joining queue: #{$!.message}"
       raise $!
-    ensure
-      @queue.swrite.close unless @queue.swrite.closed?
     end
 
     @join.call if @join
   end
 
-  def clean
-    if (@process_monitor and @process_monitor.alive?) or (@callback_thread and @callback_thread.alive?)
-      self.abort 
-      self.join
+  def join
+    begin
+      Process.kill :INT, @master_pid
+    rescue Errno::ECHILD, Errno::ESRCH
+      Log.info "Cannot kill #{@master_pid}: #{$!.message}"
     end
+
+    begin
+      _join
+    ensure
+      close_callback if @callback
+      @queue.swrite.close unless @queue.swrite.closed?
+    end
+    @callback_thread.join if @callback_thread
+  end
+
+  def _abort
+    begin
+      Process.kill 20, @master_pid
+    rescue Errno::ECHILD, Errno::ESRCH
+      Log.info "Cannot kill #{@master_pid}: #{$!.message}"
+    end
+
+    begin
+      _join
+    rescue ProcessFailed
+    end
+  end
+
+  def abort
+    _abort
+    (@callback_thread.raise(Aborted.new); @callback_thread.join) if @callback_thread and @callback_thread.alive?
+    raise Aborted.new
+  end
+
+  def clean
+    self.abort if Misc.pid_exists?(@master_pid)
 
     @queue.clean if @queue
     @callback_queue.clean if @callback_queue
   end
 
-  def abort
-    begin
-      (@process_monitor.raise(Aborted.new); @process_monitor.join) if @process_monitor and @process_monitor.alive?
-      (@callback_thread.raise(Aborted.new); @callback_thread.join) if @callback_thread and @callback_thread.alive?
-    ensure
-      begin
-        join
-      rescue ProcessFailed
-      end
-    end
-  end
 
   def process(*e)
     begin

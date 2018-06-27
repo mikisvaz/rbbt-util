@@ -12,48 +12,50 @@ class RbbtProcessQueue
 
     def run
       begin
-        Signal.trap(:INT){ 
-          Kernel.exit! -1
-        }
+        begin
+          Signal.trap(:INT){ 
+            Kernel.exit! -1
+          }
 
-        @stop = false
-        Signal.trap(:USR1){ 
-          @stop = true
-        }
+          @stop = false
+          Signal.trap(:USR1){ 
+            @stop = true
+          }
 
-        @abort = false
-        Signal.trap(:USR2){ 
-          @abort = true
-        }
+          Signal.trap(:USR2){ 
+            raise Aborted
+          }
 
 
-        loop do
-          p = @queue.pop
-          next if p.nil?
-          raise p if Exception === p
-          raise p.first if Array === p and Exception === p.first
-          begin
-            res = @block.call *p
-            @callback_queue.push res if @callback_queue
-          rescue Respawn
-            @callback_queue.push $!.payload 
-            raise $!
+          loop do
+            p = @queue.pop
+            next if p.nil?
+            raise p if Exception === p
+            raise p.first if Array === p and Exception === p.first
+            begin
+              res = @block.call *p
+              @callback_queue.push res if @callback_queue
+            rescue Respawn
+              @callback_queue.push $!.payload 
+              raise $!
+            end
+            raise Respawn if @stop
           end
-          raise Respawn if @stop
-          raise Aborted if @abort
+          Kernel.exit! 0
+        rescue Respawn
+          Kernel.exit! 28
+        rescue ClosedStream
+        rescue Interrupt,Aborted
+          Log.info "Worker #{Process.pid} aborted"
+        rescue Exception
+          Log.exception $!
+          @callback_queue.push($!) if @callback_queue
+          Kernel.exit! -1
+        ensure
+          @callback_queue.close_write if @callback_queue 
         end
-        Kernel.exit! 0
-      rescue Respawn
-        Kernel.exit! 28
-      rescue ClosedStream
-      rescue Aborted, Interrupt
+      rescue Aborted
         Log.info "Worker #{Process.pid} aborted"
-      rescue Exception
-        Log.exception $!
-        @callback_queue.push($!) if @callback_queue
-        Kernel.exit! -1
-      ensure
-        @callback_queue.close_write if @callback_queue 
       end
       Kernel.exit! 0
     end
@@ -81,7 +83,7 @@ class RbbtProcessQueue
           begin
             while true
               @monitored = true
-              
+
               current_mem = @current ? Misc.memory_use(@current) : 0
               if current_mem > memory_cap and not @asked
                 Log.medium "Worker #{@current} for #{Process.pid} asked to respawn -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap} - current: #{current_mem}"
@@ -90,7 +92,7 @@ class RbbtProcessQueue
                 end
                 @asked = true
               end
-              sleep 2 + rand(5)
+              sleep 2
             end
           rescue
             Log.exception $!
@@ -163,15 +165,27 @@ class RbbtProcessQueue
     end
 
     def join
-      Process.waitpid @pid
-      raise ProcessFailed if not $?.success?
+      return unless Misc.pid_exists? @pid
+      begin
+        pid, status = Process.waitpid2 @pid
+        raise ProcessFailed if not status.success?
+      rescue Aborted
+        self.abort
+        raise $!
+      rescue Errno::ESRCH, Errno::ECHILD
+        Log.exception $!
+      rescue ProcessFailed
+        raise $!
+      rescue Exception
+        Log.exception $!
+        raise $!
+      end
     end
 
     def abort
       begin
         Process.kill :USR2, @pid
-        Process.kill :INT, @pid
-      rescue Errno::ESRCH 
+      rescue Errno::ESRCH, Errno::ECHILD
       rescue Exception
         Log.exception $!
       end

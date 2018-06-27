@@ -364,6 +364,9 @@ class Step
 
           set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
 
+          if result.nil? && File.exists?(self.tmp_path) && ! File.exists?(self.path)
+            FileUtils.mv self.tmp_path, self.path
+          end
           result
         end
 
@@ -376,9 +379,6 @@ class Step
         end
       end
       log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec." unless stream or time_elapsed.nil?
-      if res.nil? && File.exists?(self.tmp_path) && ! File.exists?(self.path)
-        FileUtils.mv self.tmp_path, self.path
-      end
       res
     rescue DependencyError
       exception $!
