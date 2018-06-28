@@ -10,7 +10,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     Log.severity = 0
   end
 
-  def _test_process_throttle
+  def test_process_throttle
     q = RbbtProcessQueue.new 10
 
     times = 500
@@ -68,7 +68,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     assert_equal times * 3, res.length
   end
 
-  def _test_process
+  def test_process
     q = RbbtProcessQueue.new 10
 
     res = []
@@ -93,7 +93,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     assert_equal [0, 2, 4], res.sort[0..2]
   end
 
-  def _test_each
+  def test_each
     times = 5000
     elems = (0..times-1).to_a
 
@@ -134,7 +134,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     end
   end
 
-  def _test_process_abort
+  def test_process_abort
     assert_raise Aborted do
       q = RbbtProcessQueue.new 10
 
@@ -163,7 +163,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
   end
 
 
-  def _test_process_respawn
+  def test_process_respawn
     q = RbbtProcessQueue.new 2, nil, nil, true
 
     res = []
@@ -175,7 +175,6 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     q.init do |i|
       $str ||="-"
       $str = $str *  (2 + rand(5).to_i)
-      iif $str
       sleep 0.1
       "."
     end

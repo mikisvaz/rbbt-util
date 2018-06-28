@@ -34,7 +34,6 @@ class RbbtProcessQueue
               raise e 
             end
 
-            #iii [:recieve, e]
             if @callback.arity == 0
               @callback.call
             else
@@ -64,8 +63,11 @@ class RbbtProcessQueue
     @init_block = block
 
     @master_pid = Process.fork do
-      Misc.pre_fork
-      Misc.purge_pipes(@queue.swrite,@queue.sread,@callback_queue.swrite, @callback_queue.sread) 
+      if @callback_queue
+        Misc.purge_pipes(@queue.swrite,@queue.sread,@callback_queue.swrite, @callback_queue.sread) 
+      else
+        Misc.purge_pipes(@queue.swrite,@queue.sread) 
+      end
 
       @total = num_processes
       @count = 0
@@ -190,8 +192,11 @@ class RbbtProcessQueue
   end
 
   def close_callback
+    return unless @callback_thread.alive?
     begin
-      @callback_queue.push ClosedStream.new if @callback_thread.alive?
+      t = Thread.new do
+        @callback_queue.push ClosedStream.new
+      end
     rescue Exception
       Log.warn "Error closing callback: #{$!.message}"
     end
@@ -227,7 +232,7 @@ class RbbtProcessQueue
     begin
       Process.kill :INT, @master_pid
     rescue Errno::ECHILD, Errno::ESRCH
-      Log.info "Cannot kill #{@master_pid}: #{$!.message}"
+      Log.debug "Cannot kill #{@master_pid}: #{$!.message}"
     end
 
     begin
@@ -243,7 +248,7 @@ class RbbtProcessQueue
     begin
       Process.kill 20, @master_pid
     rescue Errno::ECHILD, Errno::ESRCH
-      Log.info "Cannot kill #{@master_pid}: #{$!.message}"
+      Log.debug "Cannot kill #{@master_pid}: #{$!.message}"
     end
 
     begin
@@ -268,7 +273,6 @@ class RbbtProcessQueue
 
   def process(*e)
     begin
-      #iii [:sending, e]
       @queue.push e
     rescue Errno::EPIPE
       raise Aborted

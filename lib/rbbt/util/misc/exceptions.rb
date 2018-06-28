@@ -1,12 +1,14 @@
 class RbbtException < StandardError; end
 class ParameterException < RbbtException; end
 class FieldNotFoundError < RbbtException;end
-class TryAgain < RbbtException; end
 class ClosedStream < RbbtException; end
 
 class ProcessFailed < RbbtException; end
 
 class Aborted < StandardError; end
+
+class TryAgain < StandardError; end
+class SemaphoreInterrupted < TryAgain; end
 
 class RemoteServerError < RbbtException; end
 

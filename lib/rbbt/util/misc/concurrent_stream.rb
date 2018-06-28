@@ -84,7 +84,7 @@ module ConcurrentStream
           if no_fail
             Log.low "Not failing on exception joining thread in ConcurrenStream: #{filename}"
           else
-            Log.warn "Exception joining thread in ConcurrenStream: #{filename}"
+            Log.low "Exception joining thread in ConcurrenStream: #{filename}"
             raise $! 
           end
         end

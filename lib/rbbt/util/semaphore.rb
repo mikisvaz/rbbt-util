@@ -56,7 +56,7 @@ if continue
     SEM_MUTEX = Mutex.new
     def self.synchronize(sem)
       ret = RbbtSemaphore.wait_semaphore(sem)
-      raise Aborted if ret == -1
+      raise SemaphoreInterrupted if ret == -1
       begin
         yield
       ensure

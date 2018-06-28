@@ -17,38 +17,49 @@ class RbbtProcessQueue
             Kernel.exit! -1
           }
 
-          @stop = false
+          @respawn = false
           Signal.trap(:USR1){ 
+            @respawn = true
+          }
+
+          @stop = false
+          Signal.trap(:USR2){ 
             @stop = true
           }
 
-          Signal.trap(:USR2){ 
+          @abort = false
+          Signal.trap(20){ 
+            @abort = true
             raise Aborted
           }
 
-
           loop do
             p = @queue.pop
-            ##iii [:process, p]
             next if p.nil?
             raise p if Exception === p
             raise p.first if Array === p and Exception === p.first
             begin
               res = @block.call *p
-              #iii [:got, p, res]
               @callback_queue.push res if @callback_queue
             rescue Respawn
               @callback_queue.push $!.payload 
               raise $!
             end
-            raise Respawn if @stop
+            raise Respawn if @respawn
+            if @stop
+              Log.high "Worker #{Process.pid} leaving"
+              break
+            end
           end
           Kernel.exit! 0
         rescue Respawn
           Kernel.exit! 28
         rescue ClosedStream
         rescue Interrupt,Aborted
-          Log.info "Worker #{Process.pid} aborted"
+          Log.high "Worker #{Process.pid} aborted"
+        rescue SemaphoreInterrupted
+          retry unless @stop 
+          Log.high "Worker #{Process.pid} leaving"
         rescue Exception
           Log.exception $!
           @callback_queue.push($!) if @callback_queue
@@ -57,7 +68,7 @@ class RbbtProcessQueue
           @callback_queue.close_write if @callback_queue 
         end
       rescue Aborted
-        Log.info "Worker #{Process.pid} aborted"
+        Log.high "Worker #{Process.pid} aborted"
       end
       Kernel.exit! 0
     end
@@ -186,9 +197,8 @@ class RbbtProcessQueue
 
     def abort
       begin
-        Process.kill :USR2, @pid
+        Process.kill 20, @pid
       rescue Errno::ESRCH, Errno::ECHILD
-        Log.exception $!
       rescue Exception
         Log.exception $!
       end
