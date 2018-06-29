@@ -95,6 +95,14 @@ module Misc
         end
         new
       end
+    when Float
+      if obj.abs > 10
+        "%.1f" % obj
+      elsif obj.abs > 1
+        "%.3f" % obj
+      else
+        "%.6f" % obj
+      end
     else
       obj.to_s
     end
