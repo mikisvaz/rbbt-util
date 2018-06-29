@@ -392,10 +392,10 @@ module TSV
       stream.abort if stream.respond_to? :abort
       raise $!
     ensure
+      q.clean
       if bar
         Log::ProgressBar.remove_bar(bar, error)
       end
-      q.clean
     end
   end
 

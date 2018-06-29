@@ -3,7 +3,7 @@ require 'rbbt/util/semaphore'
 class RbbtProcessQueue
   class RbbtProcessSocket
 
-    attr_accessor :sread, :swrite, :write_sem, :read_sem
+    attr_accessor :sread, :swrite, :write_sem, :read_sem, :cleaned
     def initialize(serializer = nil)
       @sread, @swrite = Misc.pipe
 
@@ -18,6 +18,7 @@ class RbbtProcessQueue
     end
 
     def clean
+      @cleaned = true
       @sread.close unless @sread.closed?
       @swrite.close unless @swrite.closed?
       Log.debug "Destroying socket semaphores: #{[@key] * ", "}"

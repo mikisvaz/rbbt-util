@@ -195,12 +195,42 @@ class RbbtProcessQueue
       end
     end
 
+
     def abort
       begin
         Process.kill 20, @pid
       rescue Errno::ESRCH, Errno::ECHILD
       rescue Exception
         Log.exception $!
+      end
+    end
+
+    def abort_and_join
+      begin
+        Process.kill 20, @pid
+      rescue Errno::ESRCH, Errno::ECHILD
+        Log.low "Already joined worker #{@pid}"
+        return
+      end
+
+      Misc.insist([0,0.05,0.5,1,2]) do
+        begin
+          pid, status = Process.waitpid2 @pid, Process::WNOHANG
+          raise if status.nil?
+          Log.low "Abort and join of #{@pid}"
+          return
+        rescue Errno::ESRCH, Errno::ECHILD
+          Log.low "Already joined worker #{@pid}"
+          return
+        end
+      end
+
+
+      begin
+        Log.low "Forcing abort of #{@pid}"
+        Process.kill 9, @pid
+        pid, status = Process.waitpid2 @pid
+      rescue Errno::ESRCH, Errno::ECHILD
       end
     end
 

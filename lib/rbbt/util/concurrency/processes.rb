@@ -26,7 +26,7 @@ class RbbtProcessQueue
       @callback_thread = Thread.new(Thread.current) do |parent|
         begin
           loop do
-            p = @callback_queue.pop
+            p = @callback_queue.pop unless @callback_queue.cleaned
 
             if Exception === p or (Array === p and Exception === p.first)
               e = Array === p ? p.first : p
@@ -72,11 +72,12 @@ class RbbtProcessQueue
       @total = num_processes
       @count = 0
       @processes = []
+      @close_up = false
+
 
       Signal.trap(:INT) do
-        @total.times do
-          @queue.push ClosedStream.new
-        end
+        @close_up = true
+        @manager_thread.raise TryAgain
       end
 
       @manager_thread = Thread.new do
@@ -88,6 +89,12 @@ class RbbtProcessQueue
             end
 
             @process_mutex.synchronize do
+              if @close_up
+                @total.times do
+                  @queue.push ClosedStream.new unless @queue.cleaned 
+                end unless @processes.empty?
+                @count = 0
+              end
               while @count > 0
                 @count -= 1
                 @total += 1
@@ -105,6 +112,9 @@ class RbbtProcessQueue
             end
           rescue TryAgain
             retry
+          rescue Aborted
+            Log.low "Closing manager thread"
+            raise Aborted
           rescue Exception
             Log.exception $!
             raise Exception
@@ -139,31 +149,20 @@ class RbbtProcessQueue
           end
         rescue Aborted
           Log.warn "Aborting process monitor"
-          @processes.each{|p| p.abort }
-          @processes.each{|p| 
-            begin
-              p.join 
-            rescue ProcessFailed
-            end
-          }
+          @processes.each{|p| p.abort_and_join}
+          @processes.clear
+
+          @callback_thread.kill if @callback_thread && @callback_thread.alive?
+          @manager_thread.kill if @manager_thread.alive?
         rescue Exception
           Log.warn "Process monitor exception: #{$!.message}"
-          @processes.each{|p| p.abort }
-          @processes.each{|p| 
-            begin
-              p.join 
-            rescue Exception
-            end
-          }
+          @processes.each{|p| p.abort_and_join}
+          @processes.clear
 
-          if @callback_thread and @callback_thread.alive?
-            @callback_thread.raise $! 
-          end
-
-          Kernel.exit! -1
+          @callback_thread.kill if @callback_thread && @callback_thread.alive?
+          @manager_thread.kill if @manager_thread.alive?
         end
       end
-
 
       Signal.trap(20) do
         begin
@@ -173,7 +172,11 @@ class RbbtProcessQueue
         end
       end
 
-      @monitor_thread.join
+      begin
+        @monitor_thread.join
+      rescue Exception
+        Log.exception $!
+      end
 
       Kernel.exit! 0
     end
@@ -201,6 +204,7 @@ class RbbtProcessQueue
       Log.warn "Error closing callback: #{$!.message}"
     end
     @callback_thread.join  #if @callback_thread.alive?
+    t.join
   end
 
   def _join
@@ -233,7 +237,7 @@ class RbbtProcessQueue
       Process.kill :INT, @master_pid
     rescue Errno::ECHILD, Errno::ESRCH
       Log.debug "Cannot kill #{@master_pid}: #{$!.message}"
-    end
+    end 
 
     begin
       _join
@@ -242,6 +246,7 @@ class RbbtProcessQueue
       @queue.swrite.close unless @queue.swrite.closed?
     end
     @callback_thread.join if @callback_thread
+    self.clean
   end
 
   def _abort
@@ -264,10 +269,13 @@ class RbbtProcessQueue
   end
 
   def clean
-    self.abort if Misc.pid_exists?(@master_pid)
+    begin
+      self.abort if Misc.pid_exists?(@master_pid)
 
-    @queue.clean if @queue
-    @callback_queue.clean if @callback_queue
+    ensure
+      @queue.clean if @queue
+      @callback_queue.clean if @callback_queue
+    end
   end
 
 
