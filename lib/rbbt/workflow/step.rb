@@ -266,9 +266,7 @@ class Step
 
       Misc.insist do
         Open.rm info_file if Open.exists? info_file
-        #Open.rm info_file + '.lock' if Open.exists? info_file + '.lock'
         Open.rm path if Open.exists? path
-        #Open.rm path + '.lock' if Open.exists? path + '.lock'
         Open.rm_rf files_dir if Open.exists? files_dir
         Open.rm pid_file if Open.exists? pid_file
       end
