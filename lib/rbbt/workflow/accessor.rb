@@ -910,7 +910,7 @@ module Workflow
     if inputs.length > 0 or dependencies.any?
       tagged_jobname = case TAG
                        when :hash
-                         hash_str = Misc.obj2digest({:inputs => inputs, :dependencies => dependencies})
+                         hash_str = Misc.obj2digest({:inputs => Annotated.purge(inputs), :dependencies => dependencies})
                          jobname + '_' << hash_str
                        when :inputs
                          all_inputs = {}
