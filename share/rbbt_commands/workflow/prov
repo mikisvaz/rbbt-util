@@ -80,7 +80,7 @@ def report_msg(status, name, path, info = nil)
       value = job_inputs[input]
       next if  value.nil?
       value_str = Misc.fingerprint(value)
-      str << " #{Log.color :magenta, input}=#{value_str}"
+      str << "\t#{Log.color :magenta, input}=#{value_str}"
     end
   end
 
@@ -88,9 +88,9 @@ def report_msg(status, name, path, info = nil)
     $info_fields.each do |field|
       IndiferentHash.setup(info)
       value = info[field]
-      next if  value.nil?
+      next if value.nil?
       value_str = Misc.fingerprint(value)
-      str << " #{Log.color :magenta, field}=#{value_str}"
+      str << "\t#{Log.color :magenta, field}=#{value_str}"
     end
   end
 

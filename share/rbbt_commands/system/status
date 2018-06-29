@@ -182,7 +182,7 @@ workflows.sort.each do |workflow,tasks|
             value = info[field]
             next if  value.nil?
             value_str = Misc.fingerprint(value)
-            str << " #{field}=#{value_str}"
+            str << "\t#{Log.color :magenta, field}=#{value_str}"
           end
         end
       end
