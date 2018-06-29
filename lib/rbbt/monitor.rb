@@ -146,7 +146,7 @@ module Rbbt
           task = File.basename(taskdir)
           next if tasks and not tasks.include? task
 
-          cmd = "find -L '#{ taskdir }/' -not \\( -path \"#{taskdir}/*.files\" -prune \\) -not -path '*/*.pid' -not -name '\\.*' -not -type d 2>/dev/null"
+          cmd = "find -L '#{ taskdir }/' -not \\( -path \"#{taskdir}/*.files\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' -not -type d 2>/dev/null"
 
           files = CMD.cmd(cmd, :pipe => true)
           TSV.traverse files, :type => :array, :into => jobs, :_bar => "Finding jobs in #{ taskdir }" do |file|
