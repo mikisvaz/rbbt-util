@@ -35,16 +35,19 @@ class RbbtProcessQueue
 
           loop do
             p = @queue.pop
+
             next if p.nil?
             raise p if Exception === p
             raise p.first if Array === p and Exception === p.first
+
             begin
               res = @block.call *p
               @callback_queue.push res if @callback_queue
             rescue Respawn
-              @callback_queue.push $!.payload 
+              @callback_queue.push $!.payload if @callback_queue
               raise $!
             end
+
             raise Respawn if @respawn
             if @stop
               Log.high "Worker #{Process.pid} leaving"
@@ -121,6 +124,7 @@ class RbbtProcessQueue
         end
 
         while true
+          @prev = @current
           pid, status = Process.waitpid2 @current
           code = status.to_i >> 8 
           break unless code == 28
@@ -128,7 +132,7 @@ class RbbtProcessQueue
             run
           end
           @asked = false
-          Log.high "Worker #{Process.pid} respawning to #{@current}"
+          Log.high "Worker #{Process.pid} respawning from #{@prev} to #{@current}"
         end
       rescue Aborted, Interrupt
         Log.warn "Worker #{Process.pid} aborted. Current #{@current} #{Misc.pid_exists?(@current) ? "exists" : "does not exist"}"

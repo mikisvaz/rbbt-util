@@ -63,6 +63,18 @@ class RbbtProcessQueue
     @init_block = block
 
     @master_pid = Process.fork do
+      @close_up = false
+      Signal.trap(:INT) do
+        @close_up = true
+        Misc.insist([0,0.01,0.1,0.2,0.5]) do
+          raise TryAgain unless @manager_thread
+          if @manager_thread.alive?
+            raise "Manager thread for #{Process.pid} Not working yet" unless @manager_thread["working"]
+            @manager_thread.raise TryAgain
+          end
+        end
+      end
+
       if @callback_queue
         Misc.purge_pipes(@queue.swrite,@queue.sread,@callback_queue.swrite, @callback_queue.sread) 
       else
@@ -72,34 +84,36 @@ class RbbtProcessQueue
       @total = num_processes
       @count = 0
       @processes = []
-      @close_up = false
-
-
-      Signal.trap(:INT) do
-        @close_up = true
-        @manager_thread.raise TryAgain
-      end
 
       @manager_thread = Thread.new do
+        begin
         while true 
           begin
+            Thread.current["working"] = true
+            if @close_up
+              Log.debug "Closing up process queue #{Process.pid}"
+              @count = 0
+              Thread.new do
+                while true
+                  @queue.push ClosedStream.new unless @queue.cleaned 
+                end unless @processes.empty?
+              end
+              @close_up = false
+            end
+
             begin
-              sleep 10
+              sleep 3
             rescue TryAgain
             end
 
+            raise TryAgain if @close_up
+
             @process_mutex.synchronize do
-              if @close_up
-                @total.times do
-                  @queue.push ClosedStream.new unless @queue.cleaned 
-                end unless @processes.empty?
-                @count = 0
-              end
               while @count > 0
                 @count -= 1
                 @total += 1
                 @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
-                Log.low "Added process #{@processes.last.pid} to #{Process.pid} (#{@processes.length})"
+                Log.warn "Added process #{@processes.last.pid} to #{Process.pid} (#{@processes.length})"
               end
 
               while @count < 0
@@ -107,7 +121,7 @@ class RbbtProcessQueue
                 next unless @processes.length > 1
                 first = @processes.shift
                 first.stop
-                Log.low "Removed process #{first.pid} from #{Process.pid} (#{@processes.length})"
+                Log.warn "Removed process #{first.pid} from #{Process.pid} (#{@processes.length})"
               end
             end
           rescue TryAgain
@@ -119,6 +133,10 @@ class RbbtProcessQueue
             Log.exception $!
             raise Exception
           end
+        end
+        rescue Exception
+          Log.exception $!
+          raise $!
         end
       end
 
