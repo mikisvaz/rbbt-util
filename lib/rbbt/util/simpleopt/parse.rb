@@ -11,10 +11,16 @@ module SOPT
     current = [chars.shift]
     short = current * ""
 
-    if (shortcuts.include?(short) and not shortcuts[short] == long) and long.index "-" or long.index "_"
-      parts = long.split(/[_-]/)
-      acc = parts.collect{|s| s[0] } * ""
-      return acc unless shortcuts.include? acc
+    if (shortcuts.include?(short) and not shortcuts[short] == long) 
+      if long.index "-" or long.index "_"
+        parts = long.split(/[_-]/)
+        acc = parts.collect{|s| s[0] } * ""
+        return acc unless shortcuts.include? acc
+      elsif m = long.match(/(\d+)/)
+        n = m[0]
+        acc = long[0] + n
+        return acc unless shortcuts.include? acc
+      end
     end
 
     while shortcuts.include?(short) and not shortcuts[short] == long
