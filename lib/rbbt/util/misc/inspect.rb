@@ -270,12 +270,15 @@ module Misc
               obj + " (file missing)"
             end
           when String
-
-            obj = obj.chomp if String === obj
-            if obj.length > HASH2MD5_MAX_STRING_LENGTH
-              sample_large_obj(obj, HASH2MD5_MAX_STRING_LENGTH) << "--" << txt_digest_str(obj)
+            if Misc.is_filename?(obj)
+              obj2str Path.setup(obj.dup)
             else
-              obj
+              obj = obj.chomp if String === obj
+              if obj.length > HASH2MD5_MAX_STRING_LENGTH
+                sample_large_obj(obj, HASH2MD5_MAX_STRING_LENGTH) << "--" << txt_digest_str(obj)
+              else
+                obj
+              end
             end
           when Array
             if obj.length > HASH2MD5_MAX_ARRAY_LENGTH
