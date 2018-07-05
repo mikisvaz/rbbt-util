@@ -3,7 +3,7 @@ class ParameterException < RbbtException; end
 class FieldNotFoundError < RbbtException;end
 class ClosedStream < RbbtException; end
 
-class ProcessFailed < RbbtException; end
+class ProcessFailed < StandardError; end
 
 class Aborted < StandardError; end
 

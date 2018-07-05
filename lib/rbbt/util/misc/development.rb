@@ -143,7 +143,7 @@ def self.add_libdir(dir=nil)
     try = 0
 
     if sleep.nil?
-      sleep_array = ([0] + [0.001, 0.01, 0.1] * (times / 3)).sort[0..times-1]
+      sleep_array = ([0] + [0.001, 0.01, 0.1, 0.5] * (times / 3)).sort[0..times-1]
       sleep = sleep_array.shift
     end
 
