@@ -21,7 +21,8 @@ class Step
   def resolve_input_steps
     step = false
     pos = 0
-    input_options = workflow.task_info(task_name)[:input_options]
+
+    input_options = Workflow === workflow ? workflow.task_info(task_name)[:input_options] : {}
     new_inputs = inputs.collect do |i| 
       begin
         if Step === i
