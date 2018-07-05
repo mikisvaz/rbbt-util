@@ -45,13 +45,14 @@ def pid_msg(pid)
   end
 end
 
+
 def status_msg(status)
   color = case status.to_sym
           when :error, :aborted, :missing, :dead
             :red
           when :streaming, :started
             :cyan
-          when :done
+          when :done, :noinfo
             :green
           when :dependencies, :waiting, :setyp
             :yellow
@@ -64,7 +65,6 @@ def status_msg(status)
           end
   Log.color(color, status.to_s)
 end
-
 puts Log.color(:magenta, "# System report")
 puts
 sort_files = Proc.new do |a,b|
@@ -166,14 +166,14 @@ workflows.sort.each do |workflow,tasks|
         str << " (dirty)" if status == 'done' && Workflow.load_step(file).dirty?
 
         if inputs and inputs.any? and info[:inputs]
-          job_inputs = info[:inputs]
+          job_inputs = Workflow.load_step(file).recursive_inputs.to_hash
           IndiferentHash.setup(job_inputs)
 
           inputs.each do |input|
             value = job_inputs[input]
             next if  value.nil?
             value_str = Misc.fingerprint(value)
-            str << " #{input}=#{value_str}"
+            str << "\t#{Log.color :magenta, input}=#{value_str}"
           end
         end
 

@@ -45,7 +45,7 @@ def status_msg(status)
             :red
           when :streaming, :started
             :cyan
-          when :done
+          when :done, :noinfo
             :green
           when :dependencies, :waiting, :setyp
             :yellow
@@ -73,7 +73,7 @@ def report_msg(status, name, path, info = nil)
   end
 
   if $inputs and $inputs.any? 
-    job_inputs = info[:inputs]
+    job_inputs = Workflow.load_step(path).recursive_inputs.to_hash
     IndiferentHash.setup(job_inputs)
 
     $inputs.each do |input|
@@ -134,6 +134,7 @@ def adjacency(step)
   end
   name = name.split(":").last
   status = :unsync if status == :done and not File.exist? path
+  shapes = Hash.new "circle"
   edge_info = {:status =>  status, :workflow => workflow, :task => task, :name => name, :label => task, :shape => shapes[workflow], :color => status == 'remote' ? 'blue' : 'green'}
   id = Misc.digest(path)
   edges = []
@@ -143,7 +144,7 @@ def adjacency(step)
     info[:dependencies].each do |task,name,path|
       dep = get_step path
       _id, _edges, _node_info = adjacency(dep)
-      edges << [id, _id] 
+      edges << [_id, id] 
       edges.concat _edges
       node_info.merge!(_node_info)
     end 
@@ -173,9 +174,6 @@ if options[:plot]
 
       require 'rbbt/util/R'
 
-      ppp Open.read edge_file
-      ppp Open.read node_info_file
-
       R.run <<-EOF
       nodes <- read.csv("#{node_info_file}", header=T, as.is=T)
       links <- read.csv("#{edge_file}", header=T, as.is=T)
@@ -185,7 +183,7 @@ if options[:plot]
       net <- graph.data.frame(links, nodes, directed=T)
       net <- simplify(net, remove.multiple = F, remove.loops = T)
 
-      png("#{options[:plot]}")
+      png("#{options[:plot]}", width=1000, height=1000)
       plot(net, edge.arrow.size=0.4, vertex.label=net$label, vertex.color=net$color)
       dev.off()
       EOF
