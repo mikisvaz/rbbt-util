@@ -198,6 +198,12 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal "V:AA", job.run
   end
 
+  def test_override_dep
+    TmpFile.with_file("OTHER") do |file|
+      assert TestWF.job(:repeat2, nil, :number => 3, "TestWF#str" => file).run.include? "OTHER"
+    end
+  end
+
   def __test_stream
     io = TestWF.job(:stream).run(:stream)
     Misc.consume_stream(TSV.get_stream(io), false, STDOUT)

@@ -45,8 +45,10 @@ def status_msg(status)
             :red
           when :streaming, :started
             :cyan
-          when :done, :noinfo
+          when :done
             :green
+          when :noinfo
+            :blue
           when :dependencies, :waiting, :setyp
             :yellow
           else
@@ -60,16 +62,18 @@ def status_msg(status)
 end
 
 def report_msg(status, name, path, info = nil)
-
   parts = path.sub(/\{.*/,'').sub(/#{Regexp.quote(name)}$/,'').split "/"
 
   task = Log.color(:yellow, parts.pop)
   workflow = Log.color(:magenta, parts.pop)
+  if status.to_s == 'noinfo' and parts.last != 'jobs'
+    task, status, workflow = Log.color(:yellow, info[:task_name]), Log.color(:blue, "file"), Log.color(:magenta, "-")
+  end
 
   str = if not Open.remote?(path) and (File.exists?(path) and $main_mtime and ($main_mtime - File.mtime(path)) < 0)
-    status_msg(status.to_s) << " " << [workflow, task, path] * " " << " (#{Log.color(:red, "Mtime out of sync") })"
+    status_msg(status.to_s) << " " << [workflow, task, path].compact * " " << " (#{Log.color(:red, "Mtime out of sync") })"
   else
-    status_msg(status.to_s) << " " << [workflow, task, path] * " " 
+    status_msg(status.to_s) << " " << [workflow, task, path].compact * " " 
   end
 
   if $inputs and $inputs.any? 
@@ -97,8 +101,9 @@ def report_msg(status, name, path, info = nil)
   str << "\n"
 end
 
-def report(step, offset = 0)
-  info = step.info || {}
+def report(step, offset = 0, task = nil)
+  info = step.info  || {}
+  info[:task_name] = task
   path  = step.path
   status = info[:status] || :missing
   status = "remote" if Open.remote?(path)
@@ -110,9 +115,9 @@ def report(step, offset = 0)
     new = ! $seen.include?(path)
     dep = get_step path
     if new
-      str << report(dep, offset + 1)
+      str << report(dep, offset + 1, task)
     else
-      str << Log.color(:blue, Log.uncolor(report(dep, offset+1)))
+      str << Log.color(:blue, Log.uncolor(report(dep, offset+1, task)))
     end
   end if info[:dependencies]
   str

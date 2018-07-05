@@ -339,7 +339,9 @@ module Workflow
       real_inputs[k] = v 
     end
 
-    if real_inputs.empty? and not Workflow::TAG == :inputs
+    overriden = dependencies.select{|dep| dep.overriden }.any?
+
+    if real_inputs.empty? and not Workflow::TAG == :inputs and not overriden 
       step_path = step_path taskname, jobname, [], [], task.extension
       input_values = task.take_input_values(inputs)
     else
@@ -350,6 +352,7 @@ module Workflow
     job = get_job_step step_path, task, input_values, dependencies
     job.workflow = self
     job.clean_name = jobname
+    job.overriden = overriden
     job
   end
 

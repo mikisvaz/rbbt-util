@@ -6,6 +6,7 @@ require 'rbbt/workflow/accessor'
 
 class Step
   attr_accessor :clean_name, :path, :task, :workflow, :inputs, :dependencies, :bindings
+  attr_accessor :task_name, :overriden
   attr_accessor :pid
   attr_accessor :exec
   attr_accessor :result, :mutex, :seen
@@ -26,6 +27,14 @@ class Step
     @clean_name ||= begin
                       info[:clean_name] || path.sub(/_[a-z0-9]{32}/, '')
                     end
+  end
+
+  def overriden
+    if @overriden.nil? 
+      dependencies.select{|dep| dep.overriden }.any?
+    else
+      @overriden
+    end
   end
 
   def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil, clean_name = nil)
@@ -100,8 +109,13 @@ class Step
   end
 
   def task_name
-    return @path.split("/")[-2] if @task.nil?
-    @task.name
+    @task_name ||= begin
+                     if @task.nil?
+                        @path.split("/")[-2]
+                     else
+                       @task.name
+                     end
+                   end
   end
 
   def path

@@ -202,6 +202,7 @@ the job dependencies recursively.
 -W--workflows* Load a list of workflows
 -R--requires* Require a list of files
 -rwt--remote_workflow_tasks* Load a yaml file describing remote workflow tasks
+-od--override_deps* Override deps using 'Workflow#task=<path>' array_separated
 EOF
 
 workflow = ARGV.shift
@@ -216,6 +217,7 @@ detach = !!options.delete(:detach)
 do_exec = !!options.delete(:exec)
 clean = !!options.delete(:clean)
 clean_task = options.delete(:clean_task)
+override_deps = options.delete(:override_deps)
 recursive_clean = !!options.delete(:recursive_clean)
 out = options.include?(:output) ? File.open(options[:output], 'wb') : STDOUT
 
@@ -293,6 +295,13 @@ job_options = fix_options(workflow, task, job_options)
 saved_job_options = job_options
 
 workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if options[:workdir]
+
+if override_deps
+  override_deps.split($array_separator).each do |part|
+    t_, value = part.split("=")
+    job_options.merge!( t_ => value)
+  end
+end
 
 #- get job
 

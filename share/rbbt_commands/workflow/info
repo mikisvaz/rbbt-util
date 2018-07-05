@@ -37,8 +37,10 @@ def status_msg(status)
             :red
           when :streaming, :started
             :cyan
-          when :done, :noinfo
+          when :done
             :green
+          when :noinfo
+            :blue
           when :dependencies, :waiting, :setyp
             :yellow
           else

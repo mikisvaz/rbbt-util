@@ -832,6 +832,18 @@ module Workflow
   def real_dependencies(task, orig_jobname, inputs, dependencies)
     real_dependencies = []
     path_deps = {}
+
+    override_dependencies = IndiferentHash.setup({})
+
+    inputs.each do |key,value|
+      if String === key && m = key.match(/(.*)#(.*)/)
+        workflow, task = m.values_at 1, 2
+        workflow = self.to_s if workflow.empty?
+        override_dependencies[workflow] ||= IndiferentHash.setup({})
+        override_dependencies[workflow][task] = value
+      end
+    end
+
     dependencies.each do |dependency|
       _inputs = IndiferentHash.setup(inputs.dup)
       jobname = orig_jobname
@@ -841,20 +853,37 @@ module Workflow
                  when Array
                    workflow, dep_task, options = dependency
 
-                   compute = options[:compute] if options
+                   if override_dependencies[workflow.to_s] && value = override_dependencies[workflow.to_s][dep_task]
+                     d_ = Step === value ? value : Workflow.load_step(value)
+                     d_.task = workflow.tasks[dep_task]
+                     d_.workflow = workflow
+                     d_.overriden = true
+                     d_
+                   else
 
-                   all_d = (real_dependencies + real_dependencies.flatten.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
-                   
-                   _inputs = assign_dep_inputs(_inputs, options, all_d, workflow.task_info(dep_task))
-                   jobname = _inputs[:jobname] if _inputs.include? :jobname
+                     compute = options[:compute] if options
 
-                   job = workflow.job(dep_task, jobname, _inputs)
-                   ComputeDependency.setup(job, compute) if compute
-                   job
+                     all_d = (real_dependencies + real_dependencies.flatten.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
+
+                     _inputs = assign_dep_inputs(_inputs, options, all_d, workflow.task_info(dep_task))
+                     jobname = _inputs[:jobname] if _inputs.include? :jobname
+
+                     job = workflow.job(dep_task, jobname, _inputs)
+                     ComputeDependency.setup(job, compute) if compute
+                     job
+                   end
                  when Step
                    dependency
                  when Symbol
-                   job(dependency, jobname, _inputs)
+                   if override_dependencies[self.to_s] && value = override_dependencies[self.to_s][dependency]
+                     d_ = Step === value ? value : Workflow.load_step(value)
+                     d_.task = self.tasks[dependency]
+                     d_.workflow = self
+                     d_.overriden = true
+                     d_
+                   else
+                     job(dependency, jobname, _inputs)
+                   end
                  when Proc
                    if DependencyBlock === dependency
                      orig_dep = dependency.dependency 
@@ -874,10 +903,18 @@ module Workflow
                        if Hash === d
                          d[:workflow] ||= wf 
                          d[:task] ||= task_name
-                         task_info = d[:workflow].task_info(d[:task])
+                         if override_dependencies[d[:workflow].to_s] && value = override_dependencies[d[:workflow].to_s][d[:task]]
+                           d = (Step === value ? value : Workflow.load_step(value))
+                           d.task = d[:workflow].tasks[d[:task]]
+                           d.workflow = self
+                           d.overriden = true
+                           d
+                         else
+                           task_info = d[:workflow].task_info(d[:task])
 
-                         inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
-                         d = d[:workflow].job(d[:task], d[:jobname], inputs) 
+                           inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
+                           d = d[:workflow].job(d[:task], d[:jobname], inputs) 
+                         end
                        end
                        ComputeDependency.setup(d, compute) if compute
                        new_ << d
@@ -888,9 +925,16 @@ module Workflow
                      dep = dependency.call jobname, _inputs, real_dependencies
                      if Hash === dep
                        dep[:workflow] ||= wf  || self
-                       task_info = (dep[:task] && dep[:workflow]) ? dep[:workflow].task_info(dep[:task]) : nil
-                       inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, task_info)
-                       dep = dep[:workflow].job(dep[:task], dep[:jobname], inputs)
+                       if override_dependencies[d[:workflow].to_s] && value = override_dependencies[d[:workflow].to_s][d[:task]]
+                         dep = (Step === value ? value : Workflow.load_step(value))
+                         dep.task = d[:workflow].tasks[d[:task]]
+                         dep.workflow = self
+                         dep.overriden = true
+                       else
+                         task_info = (dep[:task] && dep[:workflow]) ? dep[:workflow].task_info(dep[:task]) : nil
+                         inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, task_info)
+                         dep = dep[:workflow].job(dep[:task], dep[:jobname], inputs)
+                       end
                      end
                    end
 
