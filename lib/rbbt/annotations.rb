@@ -160,7 +160,7 @@ module Annotated
         object
     when Array
       object.respond_to?(:clean_annotations) ?
-        object.clean_annotations : 
+        object.clean_annotations(true) : 
         object.inject([]){|acc,e| acc << Annotated.purge(e); acc}
     when Hash
       new = {}
