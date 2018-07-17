@@ -236,7 +236,52 @@ module Open
     end
   end
 
-  def self.mv(source, target, options)
+  def self.ln_s(source, target, options = {})
+    source = source.find if Path === source
+    target = target.find if Path === target
+
+    FileUtils.mkdir_p File.dirname(target) unless File.exists?(File.dirname(target))
+    FileUtils.rm target if File.exists?(target)
+    FileUtils.ln_s source, target
+  end
+
+  def self.ln(source, target, options = {})
+    source = source.find if Path === source
+    target = target.find if Path === target
+
+    FileUtils.mkdir_p File.dirname(target) unless File.exists?(File.dirname(target))
+    FileUtils.rm target if File.exists?(target)
+    FileUtils.ln source, target
+  end
+
+  def self.ln_h(source, target, options = {})
+    source = source.find if Path === source
+    target = target.find if Path === target
+
+    FileUtils.mkdir_p File.dirname(target) unless File.exists?(File.dirname(target))
+    FileUtils.rm target if File.exists?(target)
+    begin
+      CMD.cmd("ln -L '#{ source }' '#{ target }'")
+    rescue ProcessFailed
+      if $!.message.include? "Invalid cross-device link"
+        Log.debug "Could not hard link #{source} and #{target}: cross-device link"
+        CMD.cmd("cp -L '#{ source }' '#{ target }'")
+      else
+        raise $!
+      end
+    end
+  end
+
+  def self.cp(source, target, options = {})
+    source = source.find if Path === source
+    target = target.find if Path === target
+
+    FileUtils.mkdir_p File.dirname(target) unless File.exists?(File.dirname(target))
+    FileUtils.rm target if File.exists?(target)
+    FileUtils.cp source, target
+  end
+
+  def self.mv(source, target, options = {})
     dir_sub_path_source = find_repo_dir(source)
     dir_sub_path_target = find_repo_dir(target)
 
@@ -276,7 +321,7 @@ module Open
       exists_in_repo(*dir_sub_path)
     else
       file = file.find if Path === file
-      File.exist? file
+      File.exist?(file) || File.symlink?(file)
     end
   end
 
