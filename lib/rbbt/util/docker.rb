@@ -32,7 +32,7 @@ module Docker
             Open.write(directory[name], obj)
           end
         end
-      end
+      end if job_inputs
     else
       TmpFile.with_file do |tmpfile|
         Path.setup(tmpfile)
@@ -55,12 +55,16 @@ module Docker
               Open.write(tmpfile[name], obj)
             end
           end
-        end
+        end if job_inputs
         pipe = false
       end
 
     end
     cmd = "docker run #{mount_cmd} #{image_cmd} #{cmd}"
-    CMD.cmd(cmd, :log => true, :pipe => pipe)
+    if pipe
+      CMD.cmd(cmd, :log => true, :pipe => true)
+    else
+      CMD.cmd_log(cmd, :log => true)
+    end
   end
 end
