@@ -33,7 +33,8 @@ class TestTSV < Test::Unit::TestCase
     assert TSV === TestResource.tmp.test.test_tsv.tsv
   end
 
-  def test_rake
+  def __test_rake
+    iii TestResource.tmp.test.work.footest.foo.find
     TestResource.tmp.test.work.footest.foo.read == "TEST"
     assert TestResource.tmp.test.work.footest.foo.read == "TEST"
   end

@@ -17,6 +17,16 @@ class TestTSV < Test::Unit::TestCase
     end
   end
 
+  def test_find_current
+    TmpFile.with_file do |dir|
+      Misc.in_dir dir do
+        CMD.cmd('touch foo')
+        p = Path.setup('foo')
+        assert_equal File.join(dir, 'foo'), p.find(:current)
+      end
+    end
+  end
+
   def test_prev
     path = Path.setup "/tmp"
     assert_equal "/tmp/bar/foo", path.foo("bar")
@@ -31,9 +41,9 @@ class TestTSV < Test::Unit::TestCase
     assert_equal path.find, path.doc_file.find(:lib).source_for_doc_file
     assert_equal path.find, path.doc_file.source_for_doc_file.find
 
-    assert_equal "doc/lib/rbbt/resource.doc", path.doc_file.set_extension('doc')
-    assert_equal "lib/rbbt/resource.rb", path.doc_file.set_extension('doc').source_for_doc_file
+    assert_equal "doc/lib/rbbt/resource.rb.doc", path.doc_file.set_extension('doc')
+    #assert_equal "lib/rbbt/resource.rb", path.doc_file.set_extension('doc').source_for_doc_file
 
-    assert_equal "doc/lib/rbbt/resource.doc", path.doc_file.set_extension('doc')
+    assert_equal "doc/lib/rbbt/resource.rb.doc", path.doc_file.set_extension('doc')
   end
 end

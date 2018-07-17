@@ -141,7 +141,7 @@ module Path
                      if self.match(/(.*?)\/(.*)/)
                        toplevel, subpath = self.match(/(.*?)\/(.*)/).values_at 1, 2
                      else
-                       toplevel, subpath = self, ""
+                       toplevel, subpath = "{REMOVE}", self
                      end
 
                      path = nil
@@ -199,7 +199,9 @@ module Path
                          sub('{SUBPATH}', subpath).
                          sub('{BASENAME}', File.basename(self)).
                          sub('{PATH}', self).
-                         sub('{LIBDIR}', libdir) #, @pkgdir, @resource, @search_paths
+                         sub('{LIBDIR}', libdir).
+                         sub('{REMOVE}/', '').
+                         sub('{REMOVE}', '')
 
                        path = path + '.gz' if File.exist? path + '.gz'
                        path = path + '.bgz' if File.exist? path + '.bgz'
