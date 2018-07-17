@@ -17,6 +17,7 @@ Use - to read from STDIN
 -k--key_field* Use this field as key
 -h--help Print this help
 -l--lines Separate in lines
+-t--type* Type of tsv
 EOF
 
 rbbt_usage and exit 0 if options[:help]
@@ -44,11 +45,13 @@ fields = options[:fields]
 key_field = options[:key_field]
 fields = fields.split(/[,|]/, -1) unless fields.nil?
 
-parser = TSV::Parser.new tsv, :key_field => key_field,  :fields => fields
+parser = TSV::Parser.new tsv, :key_field => key_field,  :fields => fields, :type => options[:type]
 fields ||= parser.fields
 
 TSV.traverse(parser) do |k,v|
   next unless k.include? key
+  k = k.first if Array === k
+  puts Log.color(:blue, "Key: #{ k }")
   if fields.length == 1
     if options[:lines]
       puts (Array === v ? v.flatten*"\n" : v.to_s ) 
