@@ -98,7 +98,7 @@ row2    A    B    Id3
     end
   end
 
-  def test_tsv_field_selection
+  def test_tsv_field_selection2
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2

@@ -107,6 +107,23 @@ for this dependency
   task :send_input_dep_to_reverse => :text do
     TSV.get_stream step(:reverse_input_text)
   end
+
+  input :i, :string, "Input", "A"
+  task :t1 => :string do |i|
+    i
+  end
+
+  input :i, :string, "Input", "B"
+  task :t2 => :string do |i|
+    i
+  end
+
+  dep :t1, :i => "C"
+  dep :t2
+  task :t3 => :string do |i|
+    step(:t1).load + step(:t2).load
+  end
+
 end
 
 TestWF.workdir = Rbbt.tmp.test.workflow
@@ -232,6 +249,11 @@ class TestWorkflow < Test::Unit::TestCase
     assert TestWF.rec_input_use(:double_dep).include?(:times)
     assert TestWF.rec_input_use(:double_dep)[:times].include?(TestWF)
     assert TestWF.rec_input_use(:double_dep)[:times][TestWF].include?(:repeat)
+  end
+
+  def test_shared_inputs
+    assert_equal "CB", TestWF.job(:t3).run
+    assert_equal "CB", TestWF.job(:t3).run
   end
 
 end
