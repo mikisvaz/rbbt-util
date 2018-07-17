@@ -94,6 +94,7 @@ class RbbtProcessQueue
               Log.debug "Closing up process queue #{Process.pid}"
               @count = 0
               Thread.new do
+                Log.debug "Pushing closed stream #{Process.pid}"
                 while true
                   @queue.push ClosedStream.new unless @queue.cleaned 
                 end unless @processes.empty?
@@ -127,7 +128,7 @@ class RbbtProcessQueue
           rescue TryAgain
             retry
           rescue Aborted
-            Log.low "Closing manager thread"
+            Log.low "Aborting manager thread #{Process.pid}"
             raise Aborted
           rescue Exception
             Log.exception $!
