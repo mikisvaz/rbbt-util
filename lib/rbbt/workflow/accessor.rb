@@ -393,6 +393,7 @@ class Step
     if done? and not (status == :done or status == :ending or status == :producing) and not status == :noinfo
       return true 
     end
+
     if status == :done and not done?
       return true 
     end
@@ -562,6 +563,18 @@ class Step
 
     value || default
   end
+
+  def access
+    CMD.cmd("touch -c -h -a #{self.path} #{self.info_file}")
+  end
+  
+  def rec_access
+    access
+    rec_dependencies.each do |dep|
+      dep.access
+    end
+  end
+
 end
 
 module Workflow
@@ -960,7 +973,7 @@ module Workflow
                          key_obj = {:inputs => clean_inputs, :dependencies => dependencies}
                          key_str = Misc.obj2str(key_obj)
                          hash_str = Misc.digest(key_str)
-                         Log.debug "Hash for '#{[taskname, jobname] * "/"}' #{hash_str} for #{key_str}"
+                         #Log.debug "Hash for '#{[taskname, jobname] * "/"}' #{hash_str} for #{key_str}"
                          jobname + '_' << hash_str
                        when :inputs
                          all_inputs = {}

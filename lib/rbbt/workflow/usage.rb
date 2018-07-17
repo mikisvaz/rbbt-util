@@ -32,7 +32,12 @@ module Task
       seen = []
       task_inputs = dep_inputs deps, workflow
       task_inputs.each do |task,new_inputs|
-        task.inputs.zip(task.input_types.values_at(*task.inputs)).select{|i,t| t.to_sym == :select and task.input_options[i][:select_options] }.each{|i,t| selects << [i, task.input_options[i][:select_options]]  }
+        new_inputs.zip(task.input_types.values_at(*new_inputs)).select do |i,t| 
+          t.to_sym == :select and task.input_options[i][:select_options] 
+        end.each do |i,t| 
+          selects << [i, task.input_options[i][:select_options]] 
+        end
+
         if task.workflow and task.workflow != workflow
           puts "  #{Log.color :yellow, ["[#{task.workflow.to_s}]", task.name.to_s] *" "}:"
         else

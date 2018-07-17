@@ -310,7 +310,8 @@ module Workflow
 
     task_info = task_info(taskname)
     task_inputs = task_info[:inputs]
-    defaults = IndiferentHash.setup(task_info[:input_defaults]).merge(task.input_defaults)
+    #defaults = IndiferentHash.setup(task_info[:input_defaults]).merge(task.input_defaults)
+    defaults = IndiferentHash.setup(task.input_defaults)
 
     missing_inputs = []
     task.required_inputs.each do |input|
@@ -328,7 +329,6 @@ module Workflow
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
 
     real_inputs = {}
-    recursive_inputs = rec_inputs(taskname)
 
     inputs.each do |k,v|
       default = defaults[k]
