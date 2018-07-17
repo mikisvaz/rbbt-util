@@ -93,10 +93,13 @@ get_git(){
     cd $OPT_SCM_DIR
     if [ -d "$name" ]; then
         cd "$name" 
-        git stash
-        git pull origin master
-        git rebase master
-        git stash apply
+
+        if [ ! "$NOWEB" == "true" ]; then
+          git stash
+          git pull origin master
+          git rebase master
+          git stash apply
+        fi
     else
         git clone "$url" "$name"
     fi
@@ -211,9 +214,21 @@ setup(){
         local old_pwd="`expand_path $(pwd)`"
         cd "$OPT_DIR/bin" 
 
-        for exe in `ls "$pkg_dir/bin/"`;do 
+        for exe in ` find "$pkg_dir/bin/" -maxdepth 1 -type f -executable`; do
+            exe=$(basename $exe)
             rm -f ./$exe
             ln -s "$pkg_dir/bin/$exe" . 2>/dev/null
+        done
+
+        cd "$old_pwd"
+    else
+        local old_pwd="`expand_path $(pwd)`"
+        cd "$OPT_DIR/bin" 
+
+        for exe in ` find "$pkg_dir/" -maxdepth 1 -type f -executable`; do
+            exe=$(basename $exe)
+            rm -f ./$exe
+            ln -s "$pkg_dir/$exe" . 2>/dev/null
         done
 
         cd "$old_pwd"
@@ -234,6 +249,27 @@ install_src(){
     get_pkg "$name" "$url"
     uncompress_pkg "$name"
     build "$name"  "$extra"
+}
+
+custom_build(){
+    local name="$1"
+    shift;
+    local cmd="$@"
+
+    echo "Building $name"
+
+    local old_pwd="`expand_path $(pwd)`"
+    cd "`build_dir`"
+    echo `pwd`
+    ls
+
+    eval $cmd
+
+    move_opt "$name"
+    setup "$name"
+    clean_build
+    
+    cd "$old_pwd"
 }
 
 install_git(){
