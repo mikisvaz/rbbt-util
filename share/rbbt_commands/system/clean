@@ -14,6 +14,7 @@ Clean orphaned files
 $ rbbt system clean <workflow> <task>
 
 -a--all Apply to all jobs, not only uncompleted
+-o--older* Clean jobs not access in some time
 -f--force Remove locks and files regardless of been active
 -q--quick Quick check
 -d--dirty Clean dirty jobs
@@ -29,6 +30,9 @@ task = task.split "," if task
 all = options.delete :all
 force = options.delete :force
 dirty = options.delete :dirty
+time = options.delete :older
+
+time = Misc.timespan time, 'd' if time
 
 puts Log.color(:magenta, "# System clean")
 
@@ -103,8 +107,17 @@ TSV.traverse jobs, :_bar => "Checking job status" do |file,i|
     status = status.to_s
   end
 
-  next unless (force and status !~ /done/) or status == 'dirty' or status =~ /\bnopid/ or status =~ /\berror$/ or status =~ /\bmissing$/ or status =~ /\baborted$/ or status =~ /\bdead$/ or status =~ /\bsync$/ or status == "" 
-  puts "  Removing #{ file } - #{status}" 
-  Step.clean(file) 
+  if time and File.exists?(file)
+    old = Time.now - File.atime(file)
+    status = 'old'
+  end
+
+  if (force and status !~ /done/) or 
+    status =~ /\b(old|dirty|nopid|error|missing|aborted|dead|sync)$/ or
+    status == "" 
+
+    puts "  Removing #{ file } - #{status}" 
+    Step.clean(file) 
+  end
 end
 

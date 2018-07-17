@@ -67,6 +67,26 @@ module Misc
   def self.tokenize(str)
     str.scan(/"[^"]*"|'[^']*'|[^"'\s]+/)
   end
+
+  def self.timespan(str, default = "s")
+    tokens = {
+      "s" => (1),
+      "m" => (60),
+      "h" => (60 * 60),
+      "d" => (60 * 60 * 24),
+      "w" => (60 * 60 * 24 * 7),
+    }
+
+    tokens[nil] = tokens[default]
+    tokens[""] = tokens[default]
+    time = 0
+    str.scan(/(\d+)(\w?)/).each do |amount, measure|
+      time += amount.to_i * tokens[measure]
+    end
+    time
+  end
+
+  
 end
 
 module PDF2Text

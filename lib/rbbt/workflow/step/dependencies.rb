@@ -290,7 +290,7 @@ class Step
   def run_dependencies
     dep_step = {}
 
-    rec_dependencies = self.rec_dependencies
+    rec_dependencies = self.rec_dependencies(true)
 
     return if rec_dependencies.empty?
 

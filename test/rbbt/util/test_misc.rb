@@ -602,4 +602,12 @@ EOF
     assert_equal 1, hash[:A]
     assert_equal 3, hash[:C]
   end
+  
+  def test_time_stamp
+    assert_equal 10, Misc.timespan('10')
+    assert_equal 10, Misc.timespan('10s')
+    assert_equal 60, Misc.timespan('1m')
+    assert_equal 60*60*24, Misc.timespan('1d')
+    assert_equal 60*60*24, Misc.timespan('1d')
+  end
 end

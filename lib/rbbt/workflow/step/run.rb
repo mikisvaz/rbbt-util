@@ -108,6 +108,7 @@ class Step
     rec_dependencies.
       select{|dependency| ! (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) }.
       select{|dependency| ! Open.remote?(dependency.path) }.
+      select{|dependency| Open.exists?(dependency.info_file) }.
       select{|dependency| ! dependency.error? }
   end
 
@@ -126,9 +127,15 @@ class Step
     outdated_dep  = []
     canfail_paths = self.canfail_paths
     checks.each do |dep| 
-      if dep.done? && self.done? && (File.mtime(dep.path) > File.mtime(self.path))
-        outdated_time << dep
+      next unless Open.exists?(dep.info_file)
+
+      begin
+        if dep.done? && self.done? && Open.exists?(dep.path) && Open.exists?(self.path) && (File.mtime(dep.path) > File.mtime(self.path))
+          outdated_time << dep
+        end
+      rescue
       end
+
       if (! dep.done? && ! canfail_paths.include?(dep.path)) || ! dep.updated?
         outdated_dep << dep
       end

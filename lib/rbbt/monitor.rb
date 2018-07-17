@@ -146,12 +146,13 @@ module Rbbt
           task = File.basename(taskdir)
           next if tasks and not tasks.include? task
 
-          cmd = "find -L '#{ taskdir }/' -not \\( -path \"#{taskdir}/*.files\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' -not -type d 2>/dev/null"
+          #cmd = "find -L '#{ taskdir }/'  -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' 2>/dev/null"
+          cmd = "find -L '#{ taskdir }/' -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' \\( -not -type d -o -name '*.files' \\)  2>/dev/null"
 
           files = CMD.cmd(cmd, :pipe => true)
           TSV.traverse files, :type => :array, :into => jobs, :_bar => "Finding jobs in #{ taskdir }" do |file|
             _files << file
-            if m = file.match(/(.*).(info|pid)$/)
+            if m = file.match(/(.*)\.(info|pid|files)$/)
               file = m[1]
             end
             next if seen.include? file

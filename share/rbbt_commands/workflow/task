@@ -315,7 +315,9 @@ end
 
 if clean_task
   job.rec_dependencies.each do |dep|
-    dep.clean if dep.task_name.to_s == clean_task.to_s
+    next unless dep.task_name.to_s == clean_task.to_s
+    dep.clean 
+    dep.set_info :status, :cleaned
   end
 end
 

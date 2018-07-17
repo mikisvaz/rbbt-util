@@ -273,7 +273,7 @@ class Step
     pid_file = Step.pid_file path
     files_dir = Step.files_dir path
 
-    if Open.exists?(path) or Open.exists?(pid_file) or Open.exists?(info_file)
+    if Open.exists?(path) or Open.exists?(pid_file) or Open.exists?(info_file) or Open.exists?(files_dir)
 
       @result = nil
       @pid = nil
@@ -305,7 +305,7 @@ class Step
     self
   end
 
-  def rec_dependencies
+  def rec_dependencies(need_run = false)
 
     # A step result with no info_file means that it was manually
     # placed. In that case, do not consider its dependencies
@@ -315,7 +315,9 @@ class Step
 
     new_dependencies = []
     dependencies.each{|step| 
-      r = step.rec_dependencies
+      next if self.done? && need_run && Open.exists?(step.info_file) 
+
+      r = step.rec_dependencies(need_run)
       new_dependencies.concat r
       new_dependencies << step
     }
