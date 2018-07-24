@@ -227,12 +227,12 @@ module Path
       compact.select{|file| file.exists? }.uniq
   end
 
-  def glob_all(caller_lib = nil, search_paths = nil)
+  def glob_all(pattern = nil, caller_lib = nil, search_paths = nil)
     search_paths ||= @search_paths || SEARCH_PATHS
     search_paths = search_paths.dup
 
     search_paths.keys.
-      collect{|where| Dir.glob(find(where, Path.caller_lib_dir, search_paths))}.
+      collect{|where| pattern ? Dir.glob(File.join(find(where, Path.caller_lib_dir, search_paths), pattern)) : Dir.glob(find(where, Path.caller_lib_dir, search_paths)) }.
       compact.flatten.collect{|file| File.expand_path(file)}.uniq.collect{|path| Path.setup(path, self.resource, self.pkgdir)}
   end
   #{{{ Methods

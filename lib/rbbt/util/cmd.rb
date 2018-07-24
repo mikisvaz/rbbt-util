@@ -65,9 +65,7 @@ module CMD
 
         if IO === in_content
           in_content.close if in_content.respond_to?(:close) and not in_content.closed?
-          in_content.join if in_content.respond_to?(:join) and not in_content.joined?
         end
-
 
         STDERR.reopen serr.last
         serr.last.close
