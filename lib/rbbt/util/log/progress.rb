@@ -61,5 +61,10 @@ module Log
         Log.exception $!
       end
     end
+
+    def pos(pos)
+      step = pos - (@ticks || 0)
+      tick(step)
+    end
   end
 end
