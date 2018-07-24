@@ -236,6 +236,13 @@ module Open
     end
   end
 
+  def self.mkdir(target)
+    target = target.find if Path === target
+    if not File.exists?(target)
+      FileUtils.mkdir_p target
+    end
+  end
+
   def self.ln_s(source, target, options = {})
     source = source.find if Path === source
     target = target.find if Path === target
@@ -344,6 +351,14 @@ module Open
    
   def self.gunzip(stream)
     CMD.cmd('zcat', :in => stream, :pipe => true, :no_fail => true, :no_wait => true)
+  end
+
+  def self.gzip(stream)
+    CMD.cmd('gzip', :in => stream, :pipe => true, :no_fail => true, :no_wait => true)
+  end
+
+  def self.bgzip(stream)
+    CMD.cmd('bgzip', :in => stream, :pipe => true, :no_fail => true, :no_wait => true)
   end
 
   def self.unzip(stream)

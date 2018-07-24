@@ -197,7 +197,10 @@ module Misc
         rescue IOError
         end
 
+        stream.close unless stream.closed?
+        stream.join if stream.respond_to? :join
         in_pipes.first.close
+        #Log.medium "Tee done #{Misc.fingerprint stream}"
       rescue Aborted, Interrupt
         stream.abort if stream.respond_to? :abort
         out_pipes.each do |sout|
@@ -219,10 +222,11 @@ module Misc
       ConcurrentStream.setup sout, :threads => splitter_thread, :filename => filename, :_pair => stream
     end
 
-    out_pipes.first.autojoin = true
+    main_pipe = out_pipes.first
+    main_pipe.autojoin = true
 
-    out_pipes.first.callback = Proc.new do 
-      stream.join
+    main_pipe.callback = Proc.new do 
+      stream.join if stream.respond_to? :join
       in_pipes[1..-1].each do |sin|
         sin.close unless sin.closed?
       end
@@ -246,7 +250,7 @@ module Misc
     rest
   end
 
-  def Misc.dup_stream (stream)
+  def self.dup_stream(stream)
     dup_stream_multiple(stream, 1).first
   end
 
@@ -314,6 +318,8 @@ module Misc
         into.close if into and into_close and not into.closed?
         into.join if into and into_close and into.respond_to?(:joined?) and not into.joined?
         block.call if block_given?
+
+        #Log.medium "Done consuming stream #{Misc.fingerprint io}"
       rescue Aborted
         Log.medium "Consume stream aborted #{Misc.fingerprint io}"
         io.abort if io.respond_to? :abort
@@ -514,7 +520,7 @@ module Misc
     end
   end
 
-  def self._paste_streams(streams, output, lines = nil, sep = "\t", header = nil)
+  def self._paste_streams(streams, output, lines = nil, sep = "\t", header = nil, &block)
     output.puts header if header
     streams = streams.collect do |stream|
       if defined? Step and Step === stream
@@ -542,7 +548,11 @@ module Misc
       sizes = parts.collect{|p| p.nil? ? 0 : p.length }
       last_min = nil
       while lines.compact.any?
-        min = keys.compact.sort.first
+        if block_given?
+          min = keys.compact.sort(&block).first
+        else
+          min = keys.compact.sort.first
+        end
         str = []
         keys.each_with_index do |key,i|
           case key
@@ -576,11 +586,11 @@ module Misc
     end
   end
 
-  def self.paste_streams(streams, lines = nil, sep = "\t", header = nil)
+  def self.paste_streams(streams, lines = nil, sep = "\t", header = nil, &block)
     sep ||= "\t"
     num_streams = streams.length
     Misc.open_pipe do |sin|
-      self._paste_streams(streams, sin, lines, sep, header)
+      self._paste_streams(streams, sin, lines, sep, header, &block)
     end
   end
 
@@ -696,6 +706,29 @@ module Misc
 
   def self.remove_quoted_new_line(stream, quote = '"')
     swap_quoted_character(stream, "\n", " ", quote)
+  end
+
+  def self.line_monitor_stream(stream, &block)
+    monitor, out = tee_stream stream
+    monitor_thread = Thread.new do
+      begin
+        while line = monitor.gets
+          block.call line
+        end
+      rescue
+        Log.exception $!
+        monitor.raise $!
+        monitor.close unless monitor.closed?
+        monitor.join if monitor.respond_to?(:join) && ! monitor.aborted?
+        out.raise $! if out.respond_to?(:raise)
+      ensure
+        monitor.close unless monitor.closed?
+        monitor.join if monitor.respond_to?(:join) && ! monitor.aborted?
+      end
+    end
+
+    stream.annotate out if stream.respond_to? :annotate
+    ConcurrentStream.setup out, :threads => monitor_thread
   end
 
 end

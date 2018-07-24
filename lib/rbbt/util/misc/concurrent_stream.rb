@@ -18,10 +18,10 @@ module ConcurrentStream
     stream.pids ||= []
     stream.threads.concat(Array === threads ? threads : [threads]) unless threads.nil? 
     stream.pids.concat(Array === pids ? pids : [pids]) unless pids.nil? or pids.empty?
-    stream.autojoin = autojoin
-    stream.no_fail = no_fail
+    stream.autojoin = autojoin unless autojoin.nil?
+    stream.no_fail = no_fail unless no_fail.nil?
 
-    stream.pair = pair if pair
+    stream.pair = pair unless pair.nil?
 
     callback = block if block_given?
     if callback
@@ -50,7 +50,7 @@ module ConcurrentStream
 
     stream.filename = filename unless filename.nil?
 
-    stream.lockfile = lockfile if lockfile
+    stream.lockfile = lockfile unless lockfile.nil?
 
     stream.aborted = false
 
@@ -217,6 +217,14 @@ module ConcurrentStream
       old_callback.call if old_callback
       block.call
     end
+  end
+
+  def raise(exception)
+    threads.each do |thread|
+      threads.raise exception
+    end
+
+    self.abort
   end
 
 end
