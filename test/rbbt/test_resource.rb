@@ -34,7 +34,6 @@ class TestTSV < Test::Unit::TestCase
   end
 
   def __test_rake
-    iii TestResource.tmp.test.work.footest.foo.find
     TestResource.tmp.test.work.footest.foo.read == "TEST"
     assert TestResource.tmp.test.work.footest.foo.read == "TEST"
   end

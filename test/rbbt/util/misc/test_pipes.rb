@@ -131,13 +131,17 @@ row2 AA BB CC
 row3 AAA BBB CCC
 row1 A B C
     EOF
+    Log.severity = 0
 
     text = text * 10000
     TmpFile.with_file(text) do |tmp|
       io = Open.open(tmp)
       dup = Misc.dup_stream(io)
-      Misc.consume_stream io, true
-      assert_equal text, dup.read
+      new_text = StringIO.new ""
+      Misc.consume_stream dup, true, new_text
+      Misc.consume_stream io, false
+      new_text.rewind
+      assert_equal text, new_text.read
     end
 
 
@@ -244,7 +248,25 @@ line4
       out.rewind
       assert_equal text, out.read
     end
+  end
 
+  def test_monitor
+    text =<<-EOF
+line1
+line2
+line3
+line4
+    EOF
 
+    Log.severity = 0
+    TmpFile.with_file(text) do |file|
+      io = Open.open(file)
+      lines = Set.new
+      io2 = Misc.line_monitor_stream io do |line|
+        lines << line
+      end
+      Misc.consume_stream(io2, false)
+      assert_equal text, lines.to_a * ""
+    end
   end
 end

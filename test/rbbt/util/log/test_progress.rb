@@ -68,7 +68,23 @@ class TestProgress < Test::Unit::TestCase
         sleep 0.2
       end
     end
+  end
 
+  def test_pos
+    size = 10000
+
+    Log::ProgressBar.with_bar(size, :desc => "Bar 1") do |bar|
+      bar.init
+      nums = []
+      100.times do
+        nums << rand(size)
+      end
+      nums.sort.each do |num|
+        bar.pos num
+        sleep 0.1
+      end
+      bar.tick
+    end
   end
 
 end

@@ -124,11 +124,26 @@ for this dependency
     step(:t1).load + step(:t2).load
   end
 
+  input :name, :string, "Name", nil, :jobname => true
+  task :call_name => :string do |name|
+    "Hi #{name}"
+  end
+
 end
 
 TestWF.workdir = Rbbt.tmp.test.workflow
 
 class TestWorkflow < Test::Unit::TestCase
+
+  def test_as_jobname
+    job = TestWF.job(:call_name, "Miguel")
+    assert_equal "Hi Miguel", job.run
+    assert_equal "Miguel", job.clean_name
+
+    job = TestWF.job(:call_name, nil, :name => "Miguel")
+    assert_equal "Hi Miguel", job.run
+    assert_equal "Miguel", job.clean_name
+  end
 
   def test_update_on_input_dependency_update
     send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
