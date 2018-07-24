@@ -299,7 +299,6 @@ module Workflow
     taskname = taskname.to_sym
     return remote_tasks[taskname].job(taskname, jobname, inputs) if remote_tasks and remote_tasks.include? taskname
 
-    jobname = DEFAULT_NAME if jobname.nil? or jobname.empty?
 
     task = tasks[taskname]
     raise "Task not found: #{ taskname }" if task.nil?
@@ -326,7 +325,15 @@ module Workflow
       raise ParameterException, "Inputs #{Misc.humanize_list(missing_inputs)} are required but were not provided or are nil"
     end
 
-    dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
+    if task.input_options
+      jobname_input = task.input_options.select{|i,o| o[:jobname]}.collect{|i,o| i }.first
+    else
+      jobname_input = nil 
+    end
+
+    if jobname_input && jobname && inputs[jobname_input].nil?
+      inputs[jobname_input] = jobname
+    end
 
     real_inputs = {}
 
@@ -339,6 +346,14 @@ module Workflow
       real_inputs[k] = v 
     end
 
+    jobname_input_value = inputs[jobname_input] || defaults[jobname_input]
+    if jobname_input && jobname.nil? && String === jobname_input_value && ! jobname_input_value.include?('/')
+      jobname = jobname_input_value
+    end
+
+    jobname = DEFAULT_NAME if jobname.nil? or jobname.empty?
+
+    dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
     overriden = dependencies.select{|dep| dep.overriden }.any?
 
     if real_inputs.empty? and not Workflow::TAG == :inputs and not overriden 

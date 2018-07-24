@@ -354,7 +354,7 @@ class Step
             ConcurrentStream.setup stream, :callback => callback, :abort_callback => abort_callback
 
             if AbortedStream === stream 
-              exception = stream.exception || Aborted
+              exception = stream.exception || Aborted.new("Aborted stream: #{Misc.fingerprint stream}")
               self.exception exception
               _clean_finished
               raise exception

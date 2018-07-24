@@ -325,12 +325,14 @@ class Step
 
   def exception(ex, msg = nil)
     ex_class = ex.class.to_s
-    set_info :backtrace, ex.backtrace
-    set_info :exception, {:class => ex_class, :message => ex.message, :backtrace => ex.backtrace}
+    backtrace = ex.backtrace if ex.respond_to?(:backtrace)
+    message = ex.message if ex.respond_to?(:message)
+    set_info :backtrace, backtrace
+    set_info :exception, {:class => ex_class, :message => message, :backtrace => backtrace}
     if msg.nil?
-      log :error, "#{ex_class} -- #{ex.message}"
+      log :error, "#{ex_class} -- #{message}"
     else
-      log :error, "#{msg} -- #{ex.message}"
+      log :error, "#{msg} -- #{message}"
     end
     self._abort
   end
@@ -575,6 +577,51 @@ class Step
     end
   end
 
+  def monitor_stream(stream, options = {}, &block)
+    case options[:bar] 
+    when TrueClass
+      bar = progress_bar 
+    when Hash
+      bar = progress_bar options[:bar]
+    when Numeric
+      bar = progress_bar :max => options[:bar]
+    else
+      bar = options[:bar]
+    end
+
+    out = if bar.nil?
+            Misc.line_monitor_stream stream, &block
+          elsif (block.nil? || block.arity == 0)
+            Misc.line_monitor_stream stream do
+              bar.tick
+            end
+          elsif block.arity == 1
+            Misc.line_monitor_stream stream do |line|
+              bar.tick
+              block.call line
+            end
+          elsif block.arity == 2
+            Misc.line_monitor_stream stream do |line|
+              block.call line, bar
+            end
+          end
+
+    ConcurrentStream.setup out do
+      Log::ProgressBar.remove_bar bar if bar
+    end
+
+    bgzip = (options[:compress] || options[:gzip]).to_s == 'bgzip'
+    bgzip = true if options[:bgzip]
+
+    gzip = true if options[:compress] || options[:gzip]
+    if bgzip
+      Open.bgzip(out)
+    elsif gzip
+      Open.gzip(out)
+    else
+      out
+    end
+  end
 end
 
 module Workflow
@@ -1039,5 +1086,6 @@ module Workflow
   def task_exports
     [exec_exports, synchronous_exports, asynchronous_exports, stream_exports].compact.flatten.uniq
   end
+
 
 end
