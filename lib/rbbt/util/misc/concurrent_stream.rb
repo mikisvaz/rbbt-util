@@ -221,7 +221,7 @@ module ConcurrentStream
 
   def raise(exception)
     threads.each do |thread|
-      threads.raise exception
+      thread.raise exception
     end
 
     self.abort
