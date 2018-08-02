@@ -15,6 +15,10 @@ class RbbtProcessQueue
     @process_mutex = Mutex.new
   end
 
+
+  ABORT_SIGNAL = :INT
+  CLOSE_SIGNAL = :PIPE
+
   attr_accessor :callback, :callback_queue, :callback_thread
   def callback(&block)
     if block_given?
@@ -64,8 +68,9 @@ class RbbtProcessQueue
 
     @master_pid = Process.fork do
       @close_up = false
-      Signal.trap(:INT) do
-        @close_up = true
+
+      Signal.trap(CLOSE_SIGNAL) do
+        @close_up = true unless @closing_thread
         Misc.insist([0,0.01,0.1,0.2,0.5]) do
           raise TryAgain unless @manager_thread
           if @manager_thread.alive?
@@ -74,6 +79,25 @@ class RbbtProcessQueue
           end
         end
       end
+
+      Signal.trap(:USR1) do
+        @count += 1
+        @manager_thread.raise TryAgain
+      end
+
+      Signal.trap(:USR2) do
+        @count -= 1
+        @manager_thread.raise TryAgain
+      end
+
+      Signal.trap(ABORT_SIGNAL) do
+        begin
+          @monitor_thread.raise Aborted
+        rescue Exception
+          Log.exception $!
+        end
+      end
+
 
       if @callback_queue
         Misc.purge_pipes(@queue.swrite,@queue.sread,@callback_queue.swrite, @callback_queue.sread) 
@@ -91,15 +115,16 @@ class RbbtProcessQueue
           begin
             Thread.current["working"] = true
             if @close_up
+              @close_up = false
               Log.debug "Closing up process queue #{Process.pid}"
               @count = 0
-              Thread.new do
+              @closing_thread = Thread.new do
                 Log.debug "Pushing closed stream #{Process.pid}"
                 while true
                   @queue.push ClosedStream.new unless @queue.cleaned 
+                  break if @processes.empty?
                 end unless @processes.empty?
               end
-              @close_up = false
             end
 
             begin
@@ -141,17 +166,6 @@ class RbbtProcessQueue
         end
       end
 
-      Signal.trap(:USR1) do
-        @count += 1
-        @manager_thread.raise TryAgain
-      end
-
-      Signal.trap(:USR2) do
-        @count -= 1
-        @manager_thread.raise TryAgain
-      end
-
-
       @callback_queue.close_read if @callback_queue
 
       num_processes.times do |i|
@@ -183,16 +197,12 @@ class RbbtProcessQueue
         end
       end
 
-      Signal.trap(20) do
-        begin
-          @monitor_thread.raise Aborted.new
-        rescue Exception
-          Log.exception $!
-        end
-      end
 
       begin
-        @monitor_thread.join
+
+        while @monitor_thread.alive?
+          @monitor_thread.join(1)
+        end
       rescue Exception
         Log.exception $!
       end
@@ -222,7 +232,7 @@ class RbbtProcessQueue
     rescue Exception
       Log.warn "Error closing callback: #{$!.message}"
     end
-    @callback_thread.join  #if @callback_thread.alive?
+    @callback_thread.join  if @callback_thread && @callback_thread.alive?
     t.join
   end
 
@@ -240,6 +250,8 @@ class RbbtProcessQueue
       Log.error "Exception joining queue: #{$!.message}"
       raise $!
     ensure
+      close_callback if @callback
+      @callback_thread.join if @callback_thread
       if @join
         if @join.arity == 1
           @join.call(error) 
@@ -253,7 +265,7 @@ class RbbtProcessQueue
 
   def join
     begin
-      Process.kill :INT, @master_pid
+      Process.kill CLOSE_SIGNAL, @master_pid
     rescue Errno::ECHILD, Errno::ESRCH
       Log.debug "Cannot kill #{@master_pid}: #{$!.message}"
     end 
@@ -264,20 +276,16 @@ class RbbtProcessQueue
       close_callback if @callback
       @queue.swrite.close unless @queue.swrite.closed?
     end
-    @callback_thread.join if @callback_thread
+    #@callback_thread.join if @callback_thread
     self.clean
   end
 
   def _abort
     begin
-      Process.kill 20, @master_pid
+      Process.kill ABORT_SIGNAL, @master_pid
+      pid, status = Process.waitpid2 @master_pid
     rescue Errno::ECHILD, Errno::ESRCH
-      Log.debug "Cannot kill #{@master_pid}: #{$!.message}"
-    end
-
-    begin
-      _join
-    rescue ProcessFailed
+      Log.warn "Cannot kill #{@master_pid}: #{$!.message}"
     end
   end
 
