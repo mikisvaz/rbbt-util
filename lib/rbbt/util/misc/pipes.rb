@@ -677,10 +677,13 @@ module Misc
     end
   end
 
+  def self.sort_mutation_stream_strict(stream, sep=":")
+    CMD.cmd("grep '#{sep}' | sort -u | sed 's/^M:/MT:/' | env LC_ALL=C sort -V -k1,1 -k2,2n -k3,3n -t'#{sep}'", :in => stream, :pipe => true, :no_fail => true)
+  end
+
   def self.sort_mutation_stream(stream, sep=":")
     CMD.cmd("grep '#{sep}' | sort -u | sed 's/^M:/MT:/' | env LC_ALL=C sort -k1,1 -k2,2n -k3,3n -t'#{sep}'", :in => stream, :pipe => true, :no_fail => true)
   end
-
 
   def self.swap_quoted_character(stream, charout="\n", charin=" ", quote='"')
     io = Misc.open_pipe do |sin|

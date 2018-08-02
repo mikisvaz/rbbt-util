@@ -266,9 +266,9 @@ module Misc
   end
 
 
-  def self.sort_mutations(mutations)
+  def self.sort_mutations_strict(mutations)
     mutations.collect do |mutation|
-      chr,pos,mut = mutation.split ":"
+      chr, pos, mut = mutation.split ":"
       chr.sub!(/^chr/i,'')
       chr = 22 if chr == "Y"
       chr = 23 if chr == "X"
@@ -293,6 +293,10 @@ module Misc
     end.collect{|p| p.last }
   end
 
+  class << self
+    alias sort_mutations sort_mutations_strict 
+  end
+
   def self.ensembl_server(organism)
     date = organism.split("/")[1]
     if date.nil?
@@ -302,8 +306,12 @@ module Misc
     end
   end
 
+  def self.sort_genomic_locations_strict(stream, sep = ":")
+    sort_stream(stream, '#', "-k1,1V -k2,2n -t#{sep}")
+  end
+  
   def self.sort_genomic_locations(stream)
-    sort_stream(stream, '#', '-k1,1 -k2,2n -t:')
+    sort_stream(stream, '#', "-k1,1 -k2,2n -t#{sep}")
   end
 
   def self.intersect_streams_read(io, sep=":")
@@ -319,16 +327,44 @@ module Misc
     [line,chr, start, eend, rest]
   end
 
-  def self.intersect_streams_cmp_chr(chr1, chr2)
-    if chr1 =~ /^\d+$/ and chr2 =~ /^\d+$/
-      chr1 <=> chr2
-    elsif chr1 =~ /^\d+$/
+  def self.chr_cmp_strict(chr1, chr2)
+    if (m1 = chr1.match(/(\d+)$/)) && (m2 = chr2.match(/(\d+)$/))
+      m1[1].to_i <=> m2[1].to_i
+    elsif chr1 =~ /\d+$/
       -1
-    elsif chr2 =~ /^\d+$/
+    elsif chr2 =~ /\d+$/
       1
     else
       chr1 <=> chr2
     end
+  end
+
+  def self.genomic_location_cmp(gpos1, gpos2, sep = ":")
+    chr1, _sep, pos1 = gpos1.partition(sep)
+    chr2, _sep, pos2 = gpos2.partition(sep)
+    cmp = chr1 <=> chr2
+    case cmp
+    when 0
+      pos1.to_i <=> pos2.to_i
+    else
+      cmp
+    end
+  end
+
+  def self.genomic_location_cmp_strict(gpos1, gpos2, sep = ":")
+    chr1, _sep, pos1 = gpos1.partition(sep)
+    chr2, _sep, pos2 = gpos2.partition(sep)
+    cmp = chr_cmp_strict(chr1, chr2)
+    case cmp
+    when 0
+      pos1.to_i <=> pos2.to_i
+    else
+      cmp
+    end
+  end
+
+  def self.intersect_streams_cmp_chr(chr1, chr2)
+    chr1 <=> chr2
   end
 
   def self.intersect_streams(f1, f2, out, sep=":")
@@ -404,7 +440,7 @@ module Misc
       max_size = 0
       nio = Misc.open_pipe do |sin|
         while line = io.gets
-          chr, start, eend, id, *rest = line.split("\t")
+          chr, start, eend, id, *rest = line.chomp.split("\t")
           l = id.length
           max_size = l if max_size < l
           chr = chr.sub('chr','')
@@ -422,6 +458,7 @@ module Misc
         end
 
         TSV.traverse tmpfile, :type => :array, :bar => "Creating BED index for #{Misc.fingerprint source}" do |line|
+          next if line.empty?
           chr, start, eend, id, *rest = line.split("\t")
           key = [chr, start, eend] * ":"
           sharder[key] = id

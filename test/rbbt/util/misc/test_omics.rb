@@ -78,7 +78,6 @@ class TestMiscOmics < Test::Unit::TestCase
       end
     end
 
-
     io = Misc.open_pipe do |sin|
       sin.write text
     end
