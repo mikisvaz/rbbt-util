@@ -68,13 +68,14 @@ class RbbtProcessQueue
 
     @master_pid = Process.fork do
       @close_up = false
+      @processes_initiated = false
 
       Signal.trap(CLOSE_SIGNAL) do
         @close_up = true unless @closing_thread
         Misc.insist([0,0.01,0.1,0.2,0.5]) do
           raise TryAgain unless @manager_thread
           if @manager_thread.alive?
-            raise "Manager thread for #{Process.pid} Not working yet" unless @manager_thread["working"]
+            raise "Manager thread for #{Process.pid} not working yet" unless @manager_thread["working"]
             @manager_thread.raise TryAgain
           end
         end
@@ -91,13 +92,11 @@ class RbbtProcessQueue
       end
 
       Signal.trap(ABORT_SIGNAL) do
-        begin
-          @monitor_thread.raise Aborted
-        rescue Exception
-          Log.exception $!
+        Misc.insist([0,0.01,0.1,0.2,0.5]) do
+          raise TryAgain unless @monitor_thread
+          @monitor_thread.raise Aborted if @monitor_thread && @monitor_thread.alive?
         end
       end
-
 
       if @callback_queue
         Misc.purge_pipes(@queue.swrite,@queue.sread,@callback_queue.swrite, @callback_queue.sread) 
@@ -115,16 +114,16 @@ class RbbtProcessQueue
           begin
             Thread.current["working"] = true
             if @close_up
-              @close_up = false
               Log.debug "Closing up process queue #{Process.pid}"
               @count = 0
               @closing_thread = Thread.new do
                 Log.debug "Pushing closed stream #{Process.pid}"
                 while true
                   @queue.push ClosedStream.new unless @queue.cleaned 
-                  break if @processes.empty?
+                  break if @processes_initiated && @processes.empty?
                 end unless @processes.empty?
               end
+              @close_up = false
             end
 
             begin
@@ -173,6 +172,8 @@ class RbbtProcessQueue
           @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
         end
       end
+
+      @processes_initiated = true
 
       @monitor_thread = Thread.new do
         begin
