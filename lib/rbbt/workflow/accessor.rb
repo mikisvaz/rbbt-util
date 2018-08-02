@@ -606,9 +606,11 @@ class Step
             end
           end
 
-    ConcurrentStream.setup out do
-      Log::ProgressBar.remove_bar bar if bar
-    end
+    ConcurrentStream.setup(out, :abort_callback => Proc.new{
+      Log::ProgressBar.remove_bar(bar, true) if bar
+    }, :callback => Proc.new{
+      Log::ProgressBar.remove_bar(bar) if bar
+    })
 
     bgzip = (options[:compress] || options[:gzip]).to_s == 'bgzip'
     bgzip = true if options[:bgzip]
