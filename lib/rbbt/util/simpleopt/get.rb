@@ -4,6 +4,7 @@ module SOPT
     values = {}
     while i < args.length do
       current = args[i]
+      break if current == "--"
       if m = current.match(/--?(.+?)(?:=(.+))?$/)
         key = $1
         value = $2

@@ -1,13 +1,5 @@
 module Log
   class ProgressBar
-    def up_lines(depth)
-      "\033[#{depth + 1}F\033[2K"
-    end
-
-    def down_lines(depth)
-      "\n\033[#{depth + 2}E"
-    end
-
     def print(io, str)
       return if ENV["RBBT_NO_PROGRESS"] == "true"
       LOG_MUTEX.synchronize do
@@ -149,8 +141,8 @@ module Log
         bars = BARS
       end
 
-      print(io, up_lines(bars.length) << Log.color(:yellow, "...Progress\n") << down_lines(bars.length)) 
-      print(io, up_lines(@depth) << report_msg << down_lines(@depth)) 
+      print(io, Log.up_lines(bars.length) << Log.color(:yellow, "...Progress\n") << Log.down_lines(bars.length)) 
+      print(io, Log.up_lines(@depth) << report_msg << Log.down_lines(@depth)) 
       @last_time = Time.now
       @last_count = ticks
       @last_percent = percent if max and max > 0
@@ -169,7 +161,7 @@ module Log
       @last_count = 0
       @last_time = @start
       done_msg << " (" << thr_msg << ")"
-      print(io, up_lines(@depth) << done_msg << down_lines(@depth)) 
+      print(io, Log.up_lines(@depth) << done_msg << Log.down_lines(@depth)) 
       Open.rm @file if @file and Open.exists? @file
     end
 
@@ -185,7 +177,7 @@ module Log
       @last_count = 0
       @last_time = @start
       done_msg << " (" << thr_msg << ")"
-      print(io, up_lines(@depth) << done_msg << down_lines(@depth)) 
+      print(io, Log.up_lines(@depth) << done_msg << Log.down_lines(@depth)) 
       Open.rm @file if @file and Open.exists? @file
     end
   end

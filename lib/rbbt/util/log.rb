@@ -133,6 +133,14 @@ module Log
     end
   end
 
+  def self.up_lines(num = 0)
+    "\033[#{num+1}F\033[2K"
+  end
+
+  def self.down_lines(num = 0)
+    "\n\033[#{num+2}E"
+  end
+
   def self.return_line
     nocolor ? "" : "\033[1A"
   end
