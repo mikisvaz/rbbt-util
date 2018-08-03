@@ -3,16 +3,19 @@ require 'rbbt/util/concurrency/processes/socket'
 
 class RbbtProcessQueue
 
-  attr_accessor :num_processes, :processes, :queue, :process_monitor, :cleanup, :join, :reswpan, :offset
+  attr_accessor :num_processes, :queue, :process_monitor, :cleanup, :join, :reswpan, :offset
   def initialize(num_processes, cleanup = nil, join = nil, reswpan = nil, offset = false)
     @num_processes = num_processes
-    @processes = []
     @cleanup = cleanup
     @join = join
     @respawn = reswpan
     @offset = offset
     @queue = RbbtProcessSocket.new
-    @process_mutex = Mutex.new
+
+    key = "/" << rand(1000000000).to_s << '.' << Process.pid.to_s;
+    @sem = key + '.process'
+    Log.debug "Creating process semaphore: #{@sem}"
+    RbbtSemaphore.create_semaphore(@sem,1)
   end
 
 
@@ -66,17 +69,25 @@ class RbbtProcessQueue
   def init(&block)
     @init_block = block
 
+    RbbtSemaphore.wait_semaphore(@sem)
     @master_pid = Process.fork do
       @close_up = false
-      @processes_initiated = false
+      processes_initiated = false
+      process_mutex = Mutex.new
 
       Signal.trap(CLOSE_SIGNAL) do
-        @close_up = true unless @closing_thread
-        Misc.insist([0,0.01,0.1,0.2,0.5]) do
-          raise TryAgain unless @manager_thread
-          if @manager_thread.alive?
-            raise "Manager thread for #{Process.pid} not working yet" unless @manager_thread["working"]
-            @manager_thread.raise TryAgain
+        if ! @closing_thread
+          @close_up = true 
+          Misc.insist([0,0.01,0.1,0.2,0.5]) do
+            if ! @manager_thread
+              Thread.pass 
+              raise "Manager thread for #{Process.pid} not found yet" 
+            end
+
+            if @manager_thread.alive?
+              raise "Manager thread for #{Process.pid} not working yet" unless @manager_thread["working"]
+              @manager_thread.raise TryAgain
+            end
           end
         end
       end
@@ -93,20 +104,19 @@ class RbbtProcessQueue
 
       Signal.trap(ABORT_SIGNAL) do
         Misc.insist([0,0.01,0.1,0.2,0.5]) do
-          raise TryAgain unless @monitor_thread
           @monitor_thread.raise Aborted if @monitor_thread && @monitor_thread.alive?
         end
       end
 
       if @callback_queue
-        Misc.purge_pipes(@queue.swrite,@queue.sread,@callback_queue.swrite, @callback_queue.sread) 
+        Misc.purge_pipes(@queue.swrite, @queue.sread, @callback_queue.swrite, @callback_queue.sread) 
       else
-        Misc.purge_pipes(@queue.swrite,@queue.sread) 
+        Misc.purge_pipes(@queue.swrite, @queue.sread) 
       end
 
-      @total = num_processes
+      @total = 0
       @count = 0
-      @processes = []
+      processes = []
 
       @manager_thread = Thread.new do
         begin
@@ -114,16 +124,20 @@ class RbbtProcessQueue
           begin
             Thread.current["working"] = true
             if @close_up
-              Log.debug "Closing up process queue #{Process.pid}"
-              @count = 0
-              @closing_thread = Thread.new do
-                Log.debug "Pushing closed stream #{Process.pid}"
-                while true
-                  @queue.push ClosedStream.new unless @queue.cleaned 
-                  break if @processes_initiated && @processes.empty?
-                end unless @processes.empty?
+              Thread.handle_interrupt(TryAgain => :never) do
+                Log.debug "Closing up process queue #{Process.pid}"
+                @count = 0
+                @closing_thread = Thread.new do
+                  Thread.handle_interrupt(TryAgain => :never) do
+                    Log.debug "Pushing closed stream #{Process.pid}"
+                    while true
+                      @queue.push ClosedStream.new unless @queue.cleaned 
+                      break if processes_initiated && processes.empty?
+                    end unless processes_initiated && processes.empty?
+                  end
+                end
+                @close_up = false
               end
-              @close_up = false
             end
 
             begin
@@ -133,20 +147,22 @@ class RbbtProcessQueue
 
             raise TryAgain if @close_up
 
-            @process_mutex.synchronize do
-              while @count > 0
-                @count -= 1
-                @total += 1
-                @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
-                Log.warn "Added process #{@processes.last.pid} to #{Process.pid} (#{@processes.length})"
-              end
+            process_mutex.synchronize do
+              Thread.handle_interrupt(TryAgain => :never) do
+                while @count > 0
+                  @count -= 1
+                  @total += 1
+                  processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
+                  Log.warn "Added process #{processes.last.pid} to #{Process.pid} (#{processes.length})"
+                end
 
-              while @count < 0
-                @count += 1
-                next unless @processes.length > 1
-                first = @processes.shift
-                first.stop
-                Log.warn "Removed process #{first.pid} from #{Process.pid} (#{@processes.length})"
+                while @count < 0
+                  @count += 1
+                  next unless processes.length > 1
+                  first = processes.shift
+                  first.stop
+                  Log.warn "Removed process #{first.pid} from #{Process.pid} (#{processes.length})"
+                end
               end
             end
           rescue TryAgain
@@ -168,36 +184,38 @@ class RbbtProcessQueue
       @callback_queue.close_read if @callback_queue
 
       num_processes.times do |i|
-        @process_mutex.synchronize do
-          @processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
+        @total += 1 
+        process_mutex.synchronize do
+          processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
         end
       end
 
-      @processes_initiated = true
+      processes_initiated = true
 
       @monitor_thread = Thread.new do
         begin
-          while @processes.any?
-            @processes[0].join 
-            @processes.shift
+          while processes.any?
+            processes[0].join 
+            processes.shift
           end
         rescue Aborted
           Log.warn "Aborting process monitor"
-          @processes.each{|p| p.abort_and_join}
-          @processes.clear
+          processes.each{|p| p.abort_and_join}
+          processes.clear
 
           @callback_thread.kill if @callback_thread && @callback_thread.alive?
           @manager_thread.kill if @manager_thread.alive?
         rescue Exception
           Log.warn "Process monitor exception: #{$!.message}"
-          @processes.each{|p| p.abort_and_join}
-          @processes.clear
+          processes.each{|p| p.abort_and_join}
+          processes.clear
 
           @callback_thread.kill if @callback_thread && @callback_thread.alive?
           @manager_thread.kill if @manager_thread.alive?
         end
       end
 
+      RbbtSemaphore.post_semaphore(@sem)
 
       begin
 
@@ -234,7 +252,7 @@ class RbbtProcessQueue
       Log.warn "Error closing callback: #{$!.message}"
     end
     @callback_thread.join  if @callback_thread && @callback_thread.alive?
-    t.join
+    t.join if t && t.alive?
   end
 
   def _join
@@ -266,7 +284,9 @@ class RbbtProcessQueue
 
   def join
     begin
-      Process.kill CLOSE_SIGNAL, @master_pid
+      RbbtSemaphore.synchronize(@sem) do
+        Process.kill CLOSE_SIGNAL, @master_pid
+      end
     rescue Errno::ECHILD, Errno::ESRCH
       Log.debug "Cannot kill #{@master_pid}: #{$!.message}"
     end 
@@ -297,6 +317,7 @@ class RbbtProcessQueue
   end
 
   def clean
+    RbbtSemaphore.delete_semaphore(@sem)
     begin
       self.abort if Misc.pid_exists?(@master_pid)
 
