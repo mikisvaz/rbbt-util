@@ -227,15 +227,15 @@ class Step
       nil
     when :bootstrap
       cpus = rest.nil? ? nil : rest.first 
-      cpus = 5 if cpus.nil?
-      cpus = list.length / 2 if cpus > list.length / 2
+
+      cpus = config('dep_cpus', 'bootstrap', :default => [5, list.length / 2].min) if cpus.nil?
 
       respawn = rest && rest.include?(:respawn)
       respawn = false if rest && rest.include?(:norespawn)
       respawn = rest && rest.include?(:always_respawn)
       respawn = :always if respawn.nil?
 
-      Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{path}", :respawn => respawn) do |dep|
+      Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{path} [#{cpus}]", :respawn => respawn) do |dep|
         Misc.insist do
           begin
             dep.produce 

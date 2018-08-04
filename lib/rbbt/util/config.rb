@@ -74,7 +74,7 @@ module Rbbt::Config
         priorities[prio] ||= []
         priorities[prio] << value
       end
-    end
+    end if entries
     priorities
   end
 
