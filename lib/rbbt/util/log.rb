@@ -238,7 +238,7 @@ module Log
   def self.exception(e)
     stack = caller
     error([e.class.to_s, e.message].compact * ": " )
-    error("BACKTRACE: " << Log.last_caller(stack) << "\n" + color_stack(e.backtrace)*"\n")
+    error("BACKTRACE [#{Process.pid}]: " << Log.last_caller(stack) << "\n" + color_stack(e.backtrace)*"\n")
   end
 
   def self.deprecated(m)
@@ -265,7 +265,7 @@ module Log
   def self.stack(stack)
     LOG_MUTEX.synchronize do
 
-      STDERR.puts Log.color :magenta, "Stack trace: " << Log.last_caller(caller)
+      STDERR.puts Log.color :magenta, "Stack trace [#{Process.pid}]: " << Log.last_caller(caller)
       color_stack(stack).each do |line|
         STDERR.puts line
       end
