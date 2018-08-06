@@ -271,4 +271,13 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal "CB", TestWF.job(:t3).run
   end
 
+  def test_relocate
+    listed = '/home/user/.rbbt/var/jobs/TestWF/task1/Default'
+    real = '/usr/local/var/rbbt/jobs/TestWF/task1/Default'
+    other = '/home/user/.rbbt/var/jobs/TestWF/task2/Default'
+    real_other = '/usr/local/var/rbbt/jobs/TestWF/task2/Default'
+
+    assert_equal real_other, Workflow.relocate(listed, real, other)
+  end
+
 end

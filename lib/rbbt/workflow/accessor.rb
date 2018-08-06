@@ -153,7 +153,7 @@ class Step
   def init_info
     return nil if @exec or info_file.nil? or Open.exists?(info_file)
     Open.lock(info_file, :lock => info_lock) do
-      i = {:status => :waiting, :pid => Process.pid}
+      i = {:status => :waiting, :pid => Process.pid, :path => path}
       i[:dependencies] = dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies
       @info_cache = i
       Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
@@ -169,7 +169,6 @@ class Step
       i[key] = value 
       @info_cache = i
       Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
-      #Misc.insist(([0.01,0.1,1] * 3).sort) do
       Misc.insist do
         Open.open(info_file) do |file|
           INFO_SERIALIAZER.load(file) 

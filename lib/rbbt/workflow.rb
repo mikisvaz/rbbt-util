@@ -423,11 +423,31 @@ module Workflow
     end
   end
 
+  def self.relocate(listed, real, other)
+    sl = listed.split("/", -1)
+    so = other.split("/", -1)
+    sr = real.split("/", -1)
+    prefix = [] 
+    while true
+      break if sl[0] != so[0]
+      cl = sl.shift
+      co = so.shift
+      prefix << cl
+    end
+    File.join(sr - sl + so)
+  end
+
   def self.load_step(path)
     step = Step.new path
     step.dependencies = (step.info[:dependencies] || []).collect do |task,name,dep_path|
-      Workflow.load_step dep_path
+      if File.exists?(dep_path)
+        Workflow.load_step dep_path
+      else
+        new_path = relocate(step.info[:path], path, dep_path)
+        Workflow.load_step new_path
+      end
     end
+
     step
   end
 
