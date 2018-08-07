@@ -30,49 +30,17 @@ class RbbtProcessQueue
 
       @callback_queue = RbbtProcessSocket.new
 
-      @callback_thread = Thread.new(Thread.current) do |parent|
-        begin
-          loop do
-            p = @callback_queue.pop unless @callback_queue.cleaned
-
-            if Exception === p or (Array === p and Exception === p.first)
-              e = Array === p ? p.first : p
-              Log.warn "Callback recieved exception from worker: #{e.message}" unless Aborted === e or ClosedStream === e
-              raise e 
-            end
-
-            if @callback.arity == 0
-              @callback.call
-            else
-              @callback.call p
-            end
-          end
-        rescue ClosedStream
-        rescue Aborted
-          Log.warn "Callback thread aborted"
-          self._abort
-          raise $!
-        rescue Exception
-          Log.warn "Exception captured in callback: #{$!.message}"
-          self._abort
-          raise $!
-        ensure
-
-          @callback_queue.sread.close unless @callback_queue.sread.closed?
-        end
-      end
     else
       @callback, @callback_queue, @callback_thread = nil, nil, nil
     end
   end
 
-  def init(&block)
-    @init_block = block
-
+  def init_master
     RbbtSemaphore.wait_semaphore(@sem)
     @master_pid = Process.fork do
       @close_up = false
       processes_initiated = false
+      processes = []
       process_mutex = Mutex.new
 
       Signal.trap(CLOSE_SIGNAL) do
@@ -103,24 +71,22 @@ class RbbtProcessQueue
       end
 
       Signal.trap(ABORT_SIGNAL) do
-        Misc.insist([0,0.01,0.1,0.2,0.5]) do
-          @monitor_thread.raise Aborted if @monitor_thread && @monitor_thread.alive?
-        end
+        @abort_monitor = true
+        @monitor_thread.raise Aborted if @monitor_thread && @monitor_thread.alive?
       end
 
       if @callback_queue
-        Misc.purge_pipes(@queue.swrite, @queue.sread, @callback_queue.swrite, @callback_queue.sread) 
+        Misc.purge_pipes(@queue.swrite, @queue.sread, @callback_queue.swrite) 
       else
         Misc.purge_pipes(@queue.swrite, @queue.sread) 
       end
 
       @total = 0
       @count = 0
-      processes = []
 
       @manager_thread = Thread.new do
-        begin
         while true 
+          break if processes_initiated && processes.empty? && (@monitor_thread && ! @monitor_thread.alive?)
           begin
             Thread.current["working"] = true
             if @close_up
@@ -171,14 +137,10 @@ class RbbtProcessQueue
             Log.low "Aborting manager thread #{Process.pid}"
             raise Aborted
           rescue Exception
-            Log.exception $!
             raise Exception
           end
         end
-        rescue Exception
-          Log.exception $!
-          raise $!
-        end
+        Log.low "Manager thred stopped #{Process.pid}"
       end
 
       @callback_queue.close_read if @callback_queue
@@ -195,43 +157,84 @@ class RbbtProcessQueue
       @monitor_thread = Thread.new do
         begin
           while processes.any?
-            processes[0].join 
+            raise Aborted if @abort_monitor
+            processes[0].join
+            Log.debug "Joined process #{processes[0].pid} of queue #{Process.pid}"
             processes.shift
           end
+          Log.low "All processes completed #{Process.pid}"
         rescue Aborted
-          Log.warn "Aborting process monitor"
-          processes.each{|p| p.abort_and_join}
+          Log.low "Aborting process monitor #{Process.pid}"
+          processes.each{|p|  p.abort_and_join}
+          Log.low "Processes aborted #{Process.pid}"
           processes.clear
 
-          @callback_thread.kill if @callback_thread && @callback_thread.alive?
-          @manager_thread.kill if @manager_thread.alive?
+          @manager_thread.raise Aborted if @manager_thread.alive?
+          raise Aborted, "Aborted monitor thread"
         rescue Exception
-          Log.warn "Process monitor exception: #{$!.message}"
+          Log.low "Process monitor exception [#{Process.pid}]: #{$!.message}"
           processes.each{|p| p.abort_and_join}
+          Log.low "Processes aborted #{Process.pid}"
           processes.clear
 
-          @callback_thread.kill if @callback_thread && @callback_thread.alive?
-          @manager_thread.kill if @manager_thread.alive?
+          @manager_thread.raise $! if @manager_thread.alive?
+          raise Aborted, "Aborted monitor thread with exception"
         end
       end
 
       RbbtSemaphore.post_semaphore(@sem)
 
       begin
-
-        while @monitor_thread.alive?
-          @monitor_thread.join(1)
-        end
+        @monitor_thread.join
+        @manager_thread.raise TryAgain if @manager_thread.alive?
+        @manager_thread.join 
+        @callback_queue.push ClosedStream.new if @callback_queue
       rescue Exception
-        Log.exception $!
+        Kernel.exit -1
       end
 
-      Kernel.exit! 0
+      Kernel.exit 0
     end
 
-    Log.info "Cpu process (#{num_processes}) started with master: #{@master_pid}"
-    
     @queue.close_read
+    Log.info "Cpu process (#{num_processes}) started with master: #{@master_pid}"
+  end
+
+  def init(&block)
+    @init_block = block
+
+    init_master
+
+    RbbtSemaphore.synchronize(@sem) do
+    @callback_thread = Thread.new do
+      begin
+        loop do
+          p = @callback_queue.pop unless @callback_queue.cleaned
+
+          if Exception === p or (Array === p and Exception === p.first)
+            e = Array === p ? p.first : p
+            Log.low "Callback recieved exception from worker: #{e.message}" unless Aborted === e or ClosedStream === e
+            raise e 
+          end
+
+          if @callback.arity == 0
+            @callback.call
+          else
+            @callback.call p
+          end
+        end
+      rescue ClosedStream
+        Log.low "Callback thread closing"
+      rescue Aborted
+        Log.low "Callback thread aborted"
+        raise $!
+      rescue Exception
+        Log.low "Exception captured in callback: #{$!.message}"
+        raise $!
+      end
+    end if @callback_queue
+    end
+
   end
 
   def add_process
@@ -242,78 +245,84 @@ class RbbtProcessQueue
     Process.kill :USR2, @master_pid
   end
 
-  def close_callback
-    return unless @callback_thread.alive?
-    begin
-      t = Thread.new do
-        @callback_queue.push ClosedStream.new
-      end
-    rescue Exception
-      Log.warn "Error closing callback: #{$!.message}"
-    end
-    @callback_thread.join  if @callback_thread && @callback_thread.alive?
-    t.join if t && t.alive?
-  end
-
   def _join
-    error = true
+    error = :redo 
     begin
-      pid, status = Process.waitpid2 @master_pid
-      error = false if status.success?
-      raise ProcessFailed if error
-    rescue Errno::ECHILD
-    rescue Aborted
-      Log.error "Aborted joining queue"
-      raise $!
+      pid, @status = Process.waitpid2 @master_pid unless @status
+      error = true unless @status.success?
+      raise ProcessFailed.new @master_pid unless @status.success?
+      @callback_thread.join 
+      error = false
+    rescue Aborted, Interrupt
+      Log.exception $!
+      self.abort
+      error = true
+      Log.high "Process queue #{@master_pid} aborted"
+      retry
+    rescue Errno::ESRCH, Errno::ECHILD
+      retry if Misc.pid_exists? @master_pid
+      error = ! @status.success?
+    rescue ProcessFailed
     rescue Exception
-      Log.error "Exception joining queue: #{$!.message}"
-      raise $!
+      Log.exception $!
+      retry
     ensure
-      close_callback if @callback
-      @callback_thread.join if @callback_thread
-      if @join
-        if @join.arity == 1
-          @join.call(error) 
-        else
-          @join.call
+      begin
+        begin
+          self.abort
+        ensure
+          _join 
+        end if error == :redo
+
+        begin
+          @callback_thread.join 
+        rescue Exception
         end
+
+        Log.high "Joining #{"(error) " if error}#{@master_pid} #{@join}" 
+        begin
+          if @join
+            if @join.arity == 1
+              @join.call(error) 
+            else
+              @join.call
+            end
+          end
+        end
+      ensure
+        self.clean
       end
     end
-
   end
 
-  def join
+  def close_up_queue
     begin
       RbbtSemaphore.synchronize(@sem) do
         Process.kill CLOSE_SIGNAL, @master_pid
       end
     rescue Errno::ECHILD, Errno::ESRCH
-      Log.debug "Cannot kill #{@master_pid}: #{$!.message}"
-    end 
+      Log.debug "Cannot kill (CLOSE) #{@master_pid}: #{$!.message}"
+    end if Misc.pid_exists? @master_pid 
+  end
 
-    begin
-      _join
-    ensure
-      close_callback if @callback
-      @queue.swrite.close unless @queue.swrite.closed?
-    end
-    #@callback_thread.join if @callback_thread
-    self.clean
+  def join
+    close_up_queue
+
+    _join
   end
 
   def _abort
     begin
       Process.kill ABORT_SIGNAL, @master_pid
-      pid, status = Process.waitpid2 @master_pid
     rescue Errno::ECHILD, Errno::ESRCH
-      Log.warn "Cannot kill #{@master_pid}: #{$!.message}"
+      Log.debug "Cannot abort #{@master_pid}: #{$!.message}"
     end
   end
 
   def abort
     _abort
     (@callback_thread.raise(Aborted.new); @callback_thread.join) if @callback_thread and @callback_thread.alive?
-    raise Aborted.new
+    @aborted = true
   end
 
   def clean
@@ -323,7 +332,8 @@ class RbbtProcessQueue
 
     ensure
       @queue.clean if @queue
-      @callback_queue.clean if @callback_queue
+      #@callback_thread.push ClosedStream if @callback_thread && @callback_thread.alive?
+      @callback_queue.clean if @queue
     end
   end
 

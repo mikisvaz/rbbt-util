@@ -37,29 +37,24 @@ module Log
       return if ENV["RBBT_NO_PROGRESS"] == "true"
       @ticks += step
 
-      begin
-        time = Time.now
-        if @last_time.nil?
-          @last_time = time
-          @last_count = @ticks
-          @start = time
-          return
-        end
-
-        diff = time - @last_time
-        report and return if diff > @frequency
-        return unless max and max > 0
-
-        percent = self.percent
-        if @last_percent.nil?
-          @last_percent = percent
-          return
-        end
-        report and return if percent > @last_percent and diff > 0.3
-      rescue Exception
-        Log.warn "Exception during report: " << $!.message
-        Log.exception $!
+      time = Time.now
+      if @last_time.nil?
+        @last_time = time
+        @last_count = @ticks
+        @start = time
+        return
       end
+
+      diff = time - @last_time
+      report and return if diff > @frequency
+      return unless max and max > 0
+
+      percent = self.percent
+      if @last_percent.nil?
+        @last_percent = percent
+        return
+      end
+      report and return if percent > @last_percent and diff > 0.3
     end
 
     def pos(pos)

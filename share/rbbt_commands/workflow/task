@@ -394,7 +394,7 @@ begin
 
   if options.delete(:printpath)
     job.join
-    raise job.messages.last if job.error?
+    raise job.messages.last if job.error? or job.aborted?
     if Open.remote? job.path
       puts job.url + Log.color(:blue, "?_format=raw")
     else

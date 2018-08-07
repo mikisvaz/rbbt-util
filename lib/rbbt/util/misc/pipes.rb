@@ -209,7 +209,7 @@ module Misc
         Log.medium "Tee aborting #{Misc.fingerprint stream}"
         raise $!
       rescue Exception
-        stream.abort if stream.respond_to? :abort
+        stream.abort($!) if stream.respond_to? :abort
         out_pipes.each do |sout|
           sout.abort if sout.respond_to? :abort
         end

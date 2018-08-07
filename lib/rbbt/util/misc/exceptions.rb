@@ -3,7 +3,14 @@ class ParameterException < RbbtException; end
 class FieldNotFoundError < RbbtException;end
 class ClosedStream < RbbtException; end
 
-class ProcessFailed < StandardError; end
+class ProcessFailed < StandardError; 
+  def initialize(pid = Process.pid)
+    @pid = pid
+    @msg = "Process #{@pid} failed"
+    super(@msg)
+  end
+
+end
 
 class Aborted < StandardError; end
 

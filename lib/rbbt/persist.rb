@@ -209,14 +209,17 @@ module Persist
       rescue Exception
         Log.medium "Persist stream thread exception: #{ Log.color :blue, path }"
         file.abort if file.respond_to? :abort
-        parent.raise $!
+        #parent.raise $!
         raise $!
       rescue Exception
         Log.exception $!
         raise $!
       end
     end
-    ConcurrentStream.setup(out, :threads => saver_thread, :filename => path)
+
+    threads = [saver_thread]
+    threads += stream.threads if stream.respond_to?(:threads) && stream.threads
+    ConcurrentStream.setup(out, :threads => threads, :filename => path)
 
     out.callback = callback
     out.abort_callback = abort_callback
@@ -224,6 +227,7 @@ module Persist
 
     stream.callback = callback
     stream.abort_callback = abort_callback
+
 
     out
   end

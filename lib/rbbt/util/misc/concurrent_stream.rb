@@ -110,10 +110,9 @@ module ConcurrentStream
     if @callback and not joined?
       begin
         @callback.call
-      rescue Exception
-        Log.exception $!
+      ensure
+        @callback = nil
       end
-      @callback = nil
     end
   end
 
@@ -135,7 +134,7 @@ module ConcurrentStream
 
     @threads.each do |t| 
       next if t == Thread.current
-      Log.low "Aborting thread #{t.inspect} with exception: #{exception}"
+      Log.debug "Aborting thread #{t.inspect} with exception: #{exception}"
       t.raise((exception.nil? ? Aborted.new : exception))
     end 
 
@@ -150,7 +149,7 @@ module ConcurrentStream
         t.join unless t == Thread.current
       rescue Aborted
       rescue Exception
-        Log.warn "Thread exception: #{$!.message}"
+        Log.debug "Thread exception: #{$!.message}"
       end
     end
   end

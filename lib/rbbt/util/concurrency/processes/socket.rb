@@ -21,7 +21,7 @@ class RbbtProcessQueue
       @cleaned = true
       @sread.close unless @sread.closed?
       @swrite.close unless @swrite.closed?
-      Log.debug "Destroying socket semaphores: #{[@key] * ", "}"
+      Log.low "Destroying socket semaphores: #{[@key] * ", "}"
       RbbtSemaphore.delete_semaphore(@write_sem)
       RbbtSemaphore.delete_semaphore(@read_sem)
     end

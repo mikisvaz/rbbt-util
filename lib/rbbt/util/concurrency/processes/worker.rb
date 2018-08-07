@@ -30,7 +30,6 @@ class RbbtProcessQueue
           @abort = false
           Signal.trap(20){ 
             @abort = true
-            raise Aborted
           }
 
           loop do
@@ -64,8 +63,10 @@ class RbbtProcessQueue
           retry unless @stop 
           Log.high "Worker #{Process.pid} leaving"
         rescue Exception
-          Log.exception $!
-          @callback_queue.push($!) if @callback_queue
+          begin
+            @callback_queue.push($!) if @callback_queue
+          rescue
+          end
           Kernel.exit! -1
         ensure
           @callback_queue.close_write if @callback_queue 
@@ -119,6 +120,35 @@ class RbbtProcessQueue
           sleep 0.1
         end
 
+        @current = nil
+        Signal.trap(:INT){ 
+          begin
+            Process.kill :INT, @current if @current
+          rescue Errno::ESRCH, Errno::ECHILD
+          end
+        }
+
+        Signal.trap(:USR1){ 
+          begin
+            Process.kill :USR1, @current if @current
+          rescue Errno::ESRCH, Errno::ECHILD
+          end
+        }
+
+        Signal.trap(:USR2){ 
+          begin
+            Process.kill :USR2, @current if @current
+          rescue Errno::ESRCH, Errno::ECHILD
+          end
+        }
+
+        Signal.trap(20){ 
+          begin
+            Process.kill 20, @current if @current
+          rescue Errno::ESRCH, Errno::ECHILD
+          end
+        }
+
         @current = Process.fork do
           run
         end
@@ -135,12 +165,11 @@ class RbbtProcessQueue
           Log.high "Worker #{Process.pid} respawning from #{@prev} to #{@current}"
         end
       rescue Aborted, Interrupt
-        Log.warn "Worker #{Process.pid} aborted. Current #{@current} #{Misc.pid_exists?(@current) ? "exists" : "does not exist"}"
+        Log.high "Worker #{Process.pid} aborted. Current #{@current} #{Misc.pid_exists?(@current) ? "exists" : "does not exist"}"
         Process.kill "INT", @current if Misc.pid_exists? @current
         @callback_queue.close_write if @callback_queue 
         Kernel.exit! 0
       rescue Exception
-        Log.exception $!
         raise $!
       ensure
         @monitor_thread.kill if @monitor_thread
@@ -185,10 +214,10 @@ class RbbtProcessQueue
       return unless Misc.pid_exists? @pid
       begin
         pid, status = Process.waitpid2 @pid
-        raise ProcessFailed if not status.success?
+        raise ProcessFailed.new @pid if not status.success?
       rescue Aborted
         self.abort
-        raise $!
+        raise Aborted
       rescue Errno::ESRCH, Errno::ECHILD
         Log.exception $!
       rescue ProcessFailed
@@ -204,37 +233,39 @@ class RbbtProcessQueue
       begin
         Process.kill 20, @pid
       rescue Errno::ESRCH, Errno::ECHILD
-      rescue Exception
-        Log.exception $!
       end
     end
 
     def abort_and_join
-      begin
-        Process.kill 20, @pid
-      rescue Errno::ESRCH, Errno::ECHILD
-        Log.low "Already joined worker #{@pid}"
-        return
-      end
+      self.abort
 
+      begin
       Misc.insist([0,0.05,0.5,1,2]) do
         begin
           pid, status = Process.waitpid2 @pid, Process::WNOHANG
-          raise if status.nil?
           Log.low "Abort and join of #{@pid}"
+          return
+        rescue Aborted
+          abort
+          raise 
+        rescue ProcessFailed
+          Log.low "Abort and join of #{@pid} (ProcessFailed)"
           return
         rescue Errno::ESRCH, Errno::ECHILD
           Log.low "Already joined worker #{@pid}"
           return
         end
       end
-
+      rescue Aborted
+        retry
+      end
 
       begin
         Log.low "Forcing abort of #{@pid}"
         Process.kill 9, @pid
         pid, status = Process.waitpid2 @pid
       rescue Errno::ESRCH, Errno::ECHILD
+        Log.low "Force killed worker #{@pid}"
       end
     end
 

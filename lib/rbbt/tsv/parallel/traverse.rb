@@ -349,7 +349,6 @@ module TSV
     end
 
     q.join
-    q.clean
     nil
   end
 
@@ -375,8 +374,8 @@ module TSV
 
     rescue Interrupt, Aborted
       error = true
-      q.abort
       Log.low{"Aborted traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.backtrace*","}"}
+      q.abort
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
@@ -384,15 +383,14 @@ module TSV
       raise "Traversal aborted"
     rescue Exception
       error = true
+      Log.low{"Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.message}"}
       q.abort
-      Log.low "Exception during traversal in CPUs for #{stream_name(obj) || Misc.fingerprint(obj)}: #{$!.message}"
       stream = obj_stream(obj)
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
       raise $!
     ensure
-      q.clean
       if bar
         Log::ProgressBar.remove_bar(bar, error)
       end
@@ -509,13 +507,13 @@ module TSV
   def self.traverse_stream(obj, threads = nil, cpus = nil, options = {}, &block)
     into = options[:into]        
 
-    thread = Thread.new(Thread.current) do |parent|
+    thread = Thread.new do 
       begin
         traverse_run(obj, threads, cpus, options, &block)
         into.close if into.respond_to?(:close) and not (into.respond_to? :closed? and into.closed?) 
       rescue Exception
         abort_stream obj
-        parent.raise $!
+        abort_stream into
         raise $!
       end
     end
