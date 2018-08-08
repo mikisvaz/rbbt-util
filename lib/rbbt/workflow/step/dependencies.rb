@@ -236,29 +236,41 @@ class Step
       respawn = :always if respawn.nil?
 
       Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{path} [#{cpus}]", :respawn => respawn) do |dep|
-        Misc.insist do
-          begin
-            dep.produce 
-            Log.warn "Error in bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
-
-          rescue Aborted
+        begin
+          Signal.trap(:INT) do
             dep.abort
-            Log.warn "Aborted bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
-            raise $!
+            raise Aborted
+          end
 
-          rescue RbbtException
-            if canfail || dep.canfail?
-              Log.warn "Allowing failing of #{dep.path}: #{dep.messages.last}"
-            else
-              Log.warn "NOT Allowing failing of #{dep.path}: #{dep.messages.last}"
-              dep.exception $!
-              if dep.recoverable_error?
-                raise $!
+          Misc.insist do
+            begin
+              dep.produce 
+              Log.warn "Error in bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
+
+            rescue Aborted
+              dep.abort
+              Log.warn "Aborted bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
+              raise $!
+
+            rescue RbbtException
+              if canfail || dep.canfail?
+                Log.warn "Allowing failing of #{dep.path}: #{dep.messages.last}"
               else
-                raise StopInsist.new($!)
+                Log.warn "NOT Allowing failing of #{dep.path}: #{dep.messages.last}"
+                dep.exception $!
+                if dep.recoverable_error?
+                  dep.abort
+                  raise $!
+                else
+                  raise StopInsist.new($!)
+                end
               end
             end
           end
+        rescue
+          iif [:ABORTIN, dep]
+          dep.abort
+          raise $!
         end
         nil
       end
@@ -416,15 +428,9 @@ class Step
         next
       end
 
-      begin
-        next if dep.done? or dep.aborted?
-      rescue
-      end
+      next if dep.done? or dep.aborted?
 
-      begin
-        dep.abort if dep.running?
-      rescue
-      end
+      dep.abort if dep.running?
     end
     kill_children
   end

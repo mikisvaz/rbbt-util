@@ -269,4 +269,24 @@ line4
       assert_equal text, lines.to_a * ""
     end
   end
+
+  def test_sort
+    assert_raise RbbtException do
+      io = Misc.open_pipe do |sin|
+        sin.puts "#START"
+        20.times do
+          sin.puts rand(1000).to_s
+          sleep 0.1
+        end
+        raise RbbtException
+      end
+
+      sio = Misc.sort_stream(io)
+      begin
+        Misc.consume_stream(sio, false, STDOUT)
+      rescue
+        Log.exception $!
+      end
+    end
+  end
 end

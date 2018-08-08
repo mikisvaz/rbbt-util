@@ -71,162 +71,200 @@ module TSV
   def self.traverse_tsv(tsv, options = {}, &block)
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
 
-    if callback
-      bar.init if bar
-      tsv.through options[:key_field], options[:fields] do |k,v|
-        begin
-          callback.call yield(k,v)
-        rescue Exception
-          Log.exception $!
-          raise $!
-        ensure
-          bar.tick if bar
+    begin
+      error = false
+      if callback
+        bar.init if bar
+        tsv.through options[:key_field], options[:fields] do |k,v|
+          begin
+            callback.call yield(k,v)
+          rescue Exception
+            Log.exception $!
+            raise $!
+          ensure
+            bar.tick if bar
+          end
+        end
+      else
+        bar.init if bar
+        tsv.through options[:key_field], options[:fields] do |k,v|
+          begin
+            yield k,v 
+          ensure
+            bar.tick if bar
+          end
         end
       end
-    else
-      bar.init if bar
-      tsv.through options[:key_field], options[:fields] do |k,v|
-        begin
-          yield k,v 
-        ensure
-          bar.tick if bar
-        end
+      rescue
+        Log.exception $!
+        error = true
+        raise $!
+      ensure
+        Log::ProgressBar.remove_bar(bar) if bar
+        join.call(error) if join
       end
-    end
-    Log::ProgressBar.remove_bar(bar) if bar
-    join.call if join
   end
 
   def self.traverse_hash(hash, options = {}, &block)
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
 
-    if callback
-      bar.init if bar
-      hash.each do |k,v|
-        begin
-          callback.call yield(k,v)
-        ensure
-          bar.tick if bar
+    begin
+      error = false
+      if callback
+        bar.init if bar
+        hash.each do |k,v|
+          begin
+            callback.call yield(k,v)
+          ensure
+            bar.tick if bar
+          end
+        end
+      else
+        bar.init if bar
+        hash.each do |k,v|
+          begin
+            yield k,v 
+          ensure
+            bar.tick if bar
+          end
         end
       end
-    else
-      bar.init if bar
-      hash.each do |k,v|
-        begin
-          yield k,v 
-        ensure
-          bar.tick if bar
-        end
-      end
+    rescue
+      error = true
+      raise $!
+    ensure
+      Log::ProgressBar.remove_bar(bar) if bar
+      join.call(error) if join
     end
-    Log::ProgressBar.remove_bar(bar) if bar
-    join.call if join
   end
 
   def self.traverse_array(array, options = {}, &block)
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
 
-    if callback
-      bar.init if bar
-      array.each do |e|
-        begin
-          callback.call yield(e)
-        ensure
-          bar.tick if bar
+    begin
+      error = false
+      if callback
+        bar.init if bar
+        array.each do |e|
+          begin
+            callback.call yield(e)
+          ensure
+            bar.tick if bar
+          end
+        end
+      else
+        bar.init if bar
+        array.each do |e|
+          begin
+            yield e
+          rescue Exception
+            Log.exception $!
+            raise $!
+          ensure
+            bar.tick if bar
+          end
         end
       end
-    else
-      bar.init if bar
-      array.each do |e|
-        begin
-          yield e
-        rescue Exception
-          Log.exception $!
-          raise $!
-        ensure
-          bar.tick if bar
-        end
-      end
+
+    rescue
+      error = true
+      raise $!
+    ensure
+      Log::ProgressBar.remove_bar(bar) if bar
+      join.call(error) if join
     end
-    Log::ProgressBar.remove_bar(bar) if bar
-    join.call if join
   end
 
   def self.traverse_io_array(io, options = {}, &block)
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
-    if File === io and io.closed? 
-      begin
-        Log.low{"Rewinding stream #{stream_name(io)}"}
-        io.reopen io.filename, "r"
-      rescue
-        Log.exception $!
-        raise "File closed and could not reopen #{stream_name(io)}"
+    begin
+      error = false
+      if File === io and io.closed? 
+        begin
+          Log.low{"Rewinding stream #{stream_name(io)}"}
+          io.reopen io.filename, "r"
+        rescue
+          Log.exception $!
+          raise "File closed and could not reopen #{stream_name(io)}"
+        end
       end
-    end
 
-    if callback
-      bar.init if bar
-      while line = io.gets
-        if line[-1] != "\n"
-          while c = io.getc
-            line << c
-            break if c=="\n"
+      if callback
+        bar.init if bar
+        while line = io.gets
+          if line[-1] != "\n"
+            while c = io.getc
+              line << c
+              break if c=="\n"
+            end
+          end
+          begin
+            callback.call yield line.chomp
+          ensure
+            bar.tick if bar
           end
         end
-        begin
-          callback.call yield line.chomp
-        ensure
-          bar.tick if bar
+      else
+        bar.init if bar
+        while line = io.gets
+          begin
+            yield line.chomp
+          ensure
+            bar.tick if bar
+          end
         end
       end
-    else
-      bar.init if bar
-      while line = io.gets
-        begin
-          yield line.chomp
-        ensure
-          bar.tick if bar
-        end
-      end
+    rescue
+      error = true
+      raise $!
+    ensure
+      Log::ProgressBar.remove_bar(bar) if bar
+      join.call(error) if join
     end
-    Log::ProgressBar.remove_bar(bar) if bar
-    join.call if join
   end
 
   def self.traverse_io(io, options = {}, &block)
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
-    if File === io and io.closed? 
-      begin
-        Log.low{"Rewinding stream #{stream_name(io)}"}
-        io.reopen io.filename, "r"
-      rescue
-        Log.exception $!
-        raise "File closed and could not reopen #{stream_name(io)}"
-      end
-    end
 
-    options[:monitor] = bar
-    if callback
-      bar.init if bar
-      exception = nil
-      begin
-      TSV::Parser.traverse(io, options) do |k,v|
+    begin
+      error = false
+      if File === io and io.closed? 
         begin
-          callback.call yield k, v
-        rescue Exception
-          exception = $!
-          raise $!
+          Log.low{"Rewinding stream #{stream_name(io)}"}
+          io.reopen io.filename, "r"
+        rescue
+          Log.exception $!
+          raise "File closed and could not reopen #{stream_name(io)}"
         end
-        bar.tick if bar
       end
-      ensure
-        raise exception if exception
+
+      options[:monitor] = bar
+      if callback
+        bar.init if bar
+        exception = nil
+        begin
+          TSV::Parser.traverse(io, options) do |k,v|
+            begin
+              callback.call yield k, v
+            rescue Exception
+              exception = $!
+              raise $!
+            end
+            bar.tick if bar
+          end
+        ensure
+          raise exception if exception
+        end
+      else
+        TSV::Parser.traverse(io, options.merge(:monitor => bar), &block)
       end
-    else
-      TSV::Parser.traverse(io, options.merge(:monitor => bar), &block)
+    rescue
+      error = true
+      raise $!
+    ensure
+      Log::ProgressBar.remove_bar(bar) if bar
+      join.call(error) if join
     end
-    Log::ProgressBar.remove_bar(bar) if bar
-    join.call if join
   end
 
   def self.traverse_obj(obj, options = {}, &block)
@@ -261,6 +299,7 @@ module TSV
           end
         rescue Aborted
           obj.abort if obj.respond_to? :abort
+          raise $!
         rescue Exception
           obj.abort if obj.respond_to? :abort
           raise $!
@@ -380,6 +419,7 @@ module TSV
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
+      q.join
       raise "Traversal aborted"
     rescue Exception
       error = true
@@ -389,6 +429,7 @@ module TSV
       stream.abort if stream.respond_to? :abort
       stream = obj_stream(options[:into])
       stream.abort if stream.respond_to? :abort
+      q.join
       raise $!
     ensure
       if bar

@@ -155,8 +155,6 @@ def self.add_libdir(dir=nil)
     rescue StopInsist
       raise $!.exception
     rescue Aborted, Interrupt
-      Log.exception $!
-      Log.stack caller
       if msg
         Log.warn("Not Insisting after Aborted: #{$!.message} -- #{msg}")
       else
@@ -171,10 +169,6 @@ def self.add_libdir(dir=nil)
       else
         Log.warn("Insisting after exception:  #{$!.class} #{$!.message}")
       end
-
-      Log.stack caller
-      Log.exception $!
-
 
       if sleep and try > 0
         sleep sleep

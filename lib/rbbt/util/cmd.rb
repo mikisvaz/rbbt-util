@@ -116,10 +116,16 @@ module CMD
             in_content.join if in_content.respond_to? :join 
           end
         rescue
-          parent.raise $!
-          Process.kill "INT", pid
-        ensure
-          sin.close  unless sin.closed?
+          Log.exception $!
+          raise $!
+        #  begin
+        #    Process.kill "INT", pid
+        #    #parent.raise $!
+        #  ensure
+        #    raise $!
+        #  end
+        #ensure
+        #  #sin.close  unless sin.closed?
         end
       end
     else

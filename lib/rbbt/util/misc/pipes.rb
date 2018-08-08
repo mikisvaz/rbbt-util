@@ -68,7 +68,7 @@ module Misc
 
     if do_fork
 
-      parent_pid = Process.pid
+      #parent_pid = Process.pid
       pid = Process.fork {
         purge_pipes(sin)
         sout.close
@@ -79,7 +79,7 @@ module Misc
 
         rescue Exception
           Log.exception $!
-          Process.kill :INT, parent_pid
+          #Process.kill :INT, parent_pid
           Kernel.exit! -1
         end
         Kernel.exit! 0
@@ -92,7 +92,7 @@ module Misc
 
       ConcurrentStream.setup sin, :pair => sout
 
-      thread = Thread.new(Thread.current) do |parent|
+      thread = Thread.new do 
         begin
           
           yield sin
@@ -104,7 +104,7 @@ module Misc
         rescue Exception
           Log.medium "Exception in open_pipe: #{$!.message}"
           Log.exception $!
-          parent.raise $!
+          sin.close
           raise $!
         end
       end
@@ -442,26 +442,34 @@ module Misc
 
   def self.sort_stream(stream, header_hash = "#", cmd_args = "-u")
     Misc.open_pipe do |sin|
-      begin
-        stream = TSV.get_stream stream
+      stream = TSV.get_stream stream
 
+      line = stream.gets
+      while line =~ /^#{header_hash}/ do
+        sin.puts line
         line = stream.gets
-        while line =~ /^#{header_hash}/ do
-          sin.puts line
-          line = stream.gets
-        end
+      end
 
-        line_stream = Misc.open_pipe do |line_stream_in|
-          line_stream_in.puts line
+      line_stream = Misc.open_pipe do |line_stream_in|
+        line_stream_in.puts line
+        begin
           Misc.consume_stream(stream, false, line_stream_in)
+        rescue
+          raise $!
         end
+      end
 
-        sorted = CMD.cmd("env LC_ALL=C sort #{cmd_args || ""}", :in => line_stream, :pipe => true)
+      sorted = CMD.cmd("env LC_ALL=C sort #{cmd_args || ""}", :in => line_stream, :pipe => true)
 
+      begin
         Misc.consume_stream(sorted, false, sin)
       rescue
-        if defined? step and step
-          step.abort
+        begin
+          Log.exception $!
+          sorted.abort
+          stream.abort
+        ensure
+          raise $!
         end
       end
     end

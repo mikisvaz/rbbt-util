@@ -117,24 +117,26 @@ module ConcurrentStream
   end
 
   def join
-    join_threads
-    join_pids
-
-    join_callback
-
-    @joined = true
-
-    lockfile.unlock if lockfile and lockfile.locked?
-    close unless closed?
+    begin
+      join_threads
+      join_pids
+      join_callback
+      close unless closed?
+    ensure
+      @joined = true
+      lockfile.unlock if lockfile and lockfile.locked?
+    end
   end
 
   def abort_threads(exception = nil)
     return unless @threads and @threads.any?
-    Log.low "Aborting threads (#{Thread.current.inspect}) #{@threads.collect{|t| t.inspect } * ", "}"
+    name = Thread.current.inspect
+    name = filename if filename
+    Log.low "Aborting threads (#{name}) #{@threads.collect{|t| t.inspect } * ", "}"
 
     @threads.each do |t| 
       next if t == Thread.current
-      Log.debug "Aborting thread #{t.inspect} with exception: #{exception}"
+      Log.debug "Aborting thread (#{name}) #{t.inspect} with exception: #{exception}"
       t.raise((exception.nil? ? Aborted.new : exception))
     end 
 
@@ -142,14 +144,14 @@ module ConcurrentStream
       next if t == Thread.current
       if t.alive? 
         sleep 1
-        Log.low "Kill thread #{t.inspect}"
+        Log.low "Kill thread (#{name}) #{t.inspect}"
         t.kill
       end
       begin
         t.join unless t == Thread.current
       rescue Aborted
       rescue Exception
-        Log.debug "Thread exception: #{$!.message}"
+        Log.debug "Thread (#{name}) exception: #{$!.message}"
       end
     end
   end
@@ -219,11 +221,15 @@ module ConcurrentStream
   end
 
   def raise(exception)
-    threads.each do |thread|
-      thread.raise exception
-    end
+    begin
+      threads.each do |thread|
+        thread.raise exception
+      end
 
-    self.abort
+      self.abort
+    ensure
+      Kernel.raise $!
+    end
   end
 
 end

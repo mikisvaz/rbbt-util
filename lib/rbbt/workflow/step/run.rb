@@ -344,7 +344,6 @@ class Step
                 end
                 _clean_finished
               rescue
-                Log.exception $!
                 stop_dependencies
                 set_info :pid, nil
                 FileUtils.rm pid_file if File.exist?(pid_file)
@@ -563,15 +562,16 @@ class Step
     doretry = true
     begin
       return if done?
-      stop_dependencies
-      abort_stream
       abort_pid if running?
+      abort_stream
+      stop_dependencies
     rescue Aborted, Interrupt
       Log.medium{"#{Log.color :red, "Aborting ABORTED RETRY"} #{Log.color :blue, path}"}
       if doretry
         doretry = false
         retry
       end
+      raise $!
     rescue Exception
       if doretry
         doretry = false

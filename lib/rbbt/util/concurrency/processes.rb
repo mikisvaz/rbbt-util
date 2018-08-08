@@ -135,7 +135,7 @@ class RbbtProcessQueue
             retry
           rescue Aborted
             Log.low "Aborting manager thread #{Process.pid}"
-            raise Aborted
+            raise $!
           rescue Exception
             raise Exception
           end
@@ -254,16 +254,19 @@ class RbbtProcessQueue
       @callback_thread.join 
       error = false
     rescue Aborted, Interrupt
+      exception = $!
       Log.exception $!
-      self.abort
       error = true
+      self.abort
       Log.high "Process queue #{@master_pid} aborted"
       retry
     rescue Errno::ESRCH, Errno::ECHILD
       retry if Misc.pid_exists? @master_pid
       error = ! @status.success?
     rescue ProcessFailed
+      exception = $!
     rescue Exception
+      exception = $!
       Log.exception $!
       retry
     ensure
@@ -292,6 +295,12 @@ class RbbtProcessQueue
       ensure
         self.clean
       end
+
+      if exception
+        raise exception 
+      else
+        raise "Process queue #{@master_pid} failed" 
+      end if error
     end
   end
 
@@ -321,8 +330,12 @@ class RbbtProcessQueue
 
   def abort
     _abort
-    (@callback_thread.raise(Aborted.new); @callback_thread.join) if @callback_thread and @callback_thread.alive?
+    @callback_thread.raise(Aborted.new) if @callback_thread and @callback_thread.alive?
     @aborted = true
+    begin
+      _join
+    rescue
+    end
   end
 
   def clean
