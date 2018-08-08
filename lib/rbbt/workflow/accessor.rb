@@ -987,7 +987,7 @@ module Workflow
                      dep = dependency.call jobname, _inputs, real_dependencies
                      if Hash === dep
                        dep[:workflow] ||= wf  || self
-                       if override_dependencies[d[:workflow].to_s] && value = override_dependencies[d[:workflow].to_s][d[:task]]
+                       if override_dependencies[dep[:workflow].to_s] && value = override_dependencies[dep[:workflow].to_s][dep[:task]]
                          dep = (Step === value ? value : Workflow.load_step(value))
                          dep.task = d[:workflow].tasks[d[:task]]
                          dep.workflow = self
