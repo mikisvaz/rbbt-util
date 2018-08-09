@@ -177,6 +177,8 @@ module ConcurrentStream
     AbortedStream.setup(self, exception)
     @aborted = true 
     begin
+      close unless closed?
+
       @abort_callback.call exception if @abort_callback
 
       abort_threads(exception)
@@ -186,8 +188,6 @@ module ConcurrentStream
       @abort_callback = nil
 
       @pair.abort exception if @pair
-
-      close unless closed?
     ensure
       if lockfile and lockfile.locked?
         lockfile.unlock 
@@ -228,7 +228,7 @@ module ConcurrentStream
 
       self.abort
     ensure
-      Kernel.raise $!
+      Kernel.raise exception
     end
   end
 

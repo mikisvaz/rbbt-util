@@ -659,7 +659,10 @@ class Step
 
       self
     ensure
-      set_info :joined, true
+      begin
+        set_info :joined, true 
+      rescue
+      end if File.exists?(info_file) && File.writable?(info_file)
       @result = nil
     end
   end

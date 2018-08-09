@@ -104,7 +104,7 @@ module Misc
         rescue Exception
           Log.medium "Exception in open_pipe: #{$!.message}"
           Log.exception $!
-          sin.close
+          sin.raise($!) if sin.respond_to? :raise
           raise $!
         end
       end
@@ -464,10 +464,10 @@ module Misc
       begin
         Misc.consume_stream(sorted, false, sin)
       rescue
+        Log.exception $!
         begin
-          Log.exception $!
-          sorted.abort
-          stream.abort
+          sorted.raise($!) if sorted.respond_to? :raise
+          stream.raise($!) if stream.respond_to? :raise
         ensure
           raise $!
         end

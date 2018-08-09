@@ -116,7 +116,7 @@ module CMD
             in_content.join if in_content.respond_to? :join 
           end
         rescue
-          Log.exception $!
+          Log.error "Error in CMD  [#{pid}] #{cmd}: #{$!.message}"
           raise $!
         #  begin
         #    Process.kill "INT", pid
