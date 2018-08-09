@@ -36,7 +36,7 @@ test_str = options[:test] ? '-nv' : ''
 
 source, target, _sep, *other = ARGV
 
-cmd = "rsync -a #{test_str} #{excludes_str} #{source} #{target} #{other * " "}"
+cmd = "rsync -at #{test_str} #{excludes_str} #{source} #{target} #{other * " "}"
 
 if options[:print]
   puts cmd 
