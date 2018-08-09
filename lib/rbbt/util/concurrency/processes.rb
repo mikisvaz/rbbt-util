@@ -282,7 +282,7 @@ class RbbtProcessQueue
         rescue Exception
         end
 
-        Log.high "Joining #{"(error) " if error}#{@master_pid} #{@join}" 
+        Log.medium "Joining process queue #{"(error) " if error}#{@master_pid} #{@join}" 
         begin
           if @join
             if @join.arity == 1

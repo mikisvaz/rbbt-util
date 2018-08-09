@@ -268,7 +268,6 @@ class Step
             end
           end
         rescue
-          iif [:ABORTIN, dep]
           dep.abort
           raise $!
         end
