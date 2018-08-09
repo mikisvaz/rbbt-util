@@ -281,6 +281,7 @@ class Step
   end
 
   def canfail_paths
+    return Set.new if ! File.exists?(info_file)
     if info[:canfail_paths]
       Set.new(info[:canfail_paths])
     else
@@ -293,7 +294,10 @@ class Step
         canfail_paths += dep.rec_dependencies.collect{|d| d.path }
       end
       canfail_paths
-      set_info :canfail_paths, canfail_paths.to_a
+      begin
+        set_info :canfail_paths, canfail_paths.to_a
+      rescue Errno::EROFS
+      end
       canfail_paths
     end
   end

@@ -376,6 +376,8 @@ class Step
   end
 
   def dirty_files
+    rec_dependencies = self.rec_dependencies
+    return [] if rec_dependencies.empty?
     canfail_paths = self.canfail_paths
     dirty_files = rec_dependencies.reject{|dep|
       (defined?(WorkflowRESTClient) && WorkflowRESTClient::RemoteStep === dep) || 

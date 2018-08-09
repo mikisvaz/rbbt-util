@@ -123,6 +123,8 @@ class Step
 
   def out_of_date
 
+    checks = self.checks
+    return [] if checks.empty?
     outdated_time  = []
     outdated_dep  = []
     canfail_paths = self.canfail_paths

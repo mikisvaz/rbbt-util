@@ -203,10 +203,10 @@ module Workflow
 
   def self.workdir
     @@workdir ||= if defined? Rbbt
-                   Rbbt.var.jobs.find
-                 else
-                   Path.setup('var/jobs')
-                 end
+                    Rbbt.var.jobs
+                  else
+                    Path.setup('var/jobs')
+                  end
   end
 
   def workdir=(path)
@@ -217,7 +217,7 @@ module Workflow
   def workdir
     @workdir ||= begin
                    text = Module === self ? self.to_s : "Misc"
-                   Workflow.workdir[text].find
+                   Workflow.workdir[text]
                  end
   end
 
