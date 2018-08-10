@@ -621,7 +621,7 @@ class Step
 
   def join
 
-    grace
+    grace if Open.exists?(info_file) 
 
     if streaming?
       join_stream 
