@@ -40,7 +40,7 @@ module Resource
 
       FileUtils.mkdir_p opt_dir unless File.exist? opt_dir
 
-      %w(.ld-paths .pkgconfig-paths .aclocal-paths .java-classpaths).each do |file|
+      %w(.ld-paths .c-paths .pkgconfig-paths .aclocal-paths .java-classpaths).each do |file|
         filename = File.join(opt_dir, file)
         begin
           FileUtils.touch filename unless File.exist? filename
@@ -48,6 +48,10 @@ module Resource
           Log.warn("Could not touch #{ filename }")
         end
       end
+
+      Open.read(File.join opt_dir, '.c-paths').split(/\n/).each do |line|
+        Misc.env_add('C_INCLULDE_PATH',line.chomp)
+      end if File.exist? File.join(opt_dir, '.c-paths')
 
       Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
         Misc.env_add('LD_LIBRARY_PATH',line.chomp)
