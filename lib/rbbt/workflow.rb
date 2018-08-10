@@ -423,7 +423,13 @@ module Workflow
     end
   end
 
-  def self.relocate(listed, real, other)
+  def self.transplant(listed, real, other)
+    if listed.nil?
+      parts = real.split("/")
+      other_parts = other.split("/")
+      listed = (other_parts[0..-4] + parts[-3..-1]) * "/"
+    end
+
     sl = listed.split("/", -1)
     so = other.split("/", -1)
     sr = real.split("/", -1)
@@ -437,13 +443,19 @@ module Workflow
     File.join(sr - sl + so)
   end
 
+  def  self.relocate(real, other)
+    preal = real.split(/\/+/)
+    pother = other.split(/\/+/)
+    (preal[0..-4] + pother[-3..-1]) * "/"
+  end
+
   def self.load_step(path)
     step = Step.new path
     step.dependencies = (step.info[:dependencies] || []).collect do |task,name,dep_path|
       if File.exists?(dep_path)
         Workflow.load_step dep_path
       else
-        new_path = relocate(step.info[:path], path, dep_path)
+        new_path = relocate(path, dep_path)
         Workflow.load_step new_path
       end
     end

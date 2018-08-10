@@ -277,7 +277,27 @@ class TestWorkflow < Test::Unit::TestCase
     other = '/home/user/.rbbt/var/jobs/TestWF/task2/Default'
     real_other = '/usr/local/var/rbbt/jobs/TestWF/task2/Default'
 
-    assert_equal real_other, Workflow.relocate(listed, real, other)
+    assert_equal real_other, Workflow.relocate(real, other)
+    assert_equal real_other, Workflow.relocate(real, other)
+  end
+
+  def test_transplant
+    listed = '/home/user/.rbbt/var/jobs/TestWF/task1/Default'
+    real = '/usr/local/var/rbbt/jobs/TestWF/task1/Default'
+    other = '/home/user/.rbbt/var/jobs/TestWF/task2/Default'
+    real_other = '/usr/local/var/rbbt/jobs/TestWF/task2/Default'
+
+    assert_equal real_other, Workflow.transplant(listed, real, other)
+    assert_equal real_other, Workflow.transplant(nil, real, other)
+  end
+
+  def test_relocate_alt
+    listed = '/scratch/tmp/rbbt/.rbbt/var/jobs/Study/sample_gene_cnvs_focal/Bladder-TCC'
+    real = '/home/bsc26/bsc26892/.rbbt/var/jobs/Study/sample_gene_cnvs_focal/Bladder-TCC'
+    other = '/scratch/tmp/rbbt/scratch/bsc26892/rbbt/var/jobs/Sample/gene_cnv_status_focal/PCAWG'
+    real_other = '/home/bsc26/bsc26892/.rbbt/var/jobs/Sample/gene_cnv_status_focal/PCAWG'
+
+    assert_equal real_other, Workflow.relocate(real, other)
   end
 
 end
