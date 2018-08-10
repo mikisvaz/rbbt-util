@@ -126,10 +126,20 @@ build_dir(){
 compile(){
     local name=$1; shift
     local extra="$@"
-    [ -f Makefile ] && make && make install
-    [ -f build.xml ] && ant
-    [ -f setup.rb ] && ruby -Ilib/ setup.rb --prefix="$(opt_dir "$name")" $extra
-    [ -f setup.py ] && python setup.py build &&  python setup.py install --user && clean_build
+
+    if [ -f Makefile -o -f makefile ]; then
+        make || exit -1
+        make install || echo "No install"
+    fi
+
+    [ -f build.xml ] && (ant || exit -1)
+
+    [ -f setup.rb ] && (ruby -Ilib/ setup.rb --prefix="$(opt_dir "$name")" $extra || exit -1)
+
+    if [ -f setup.py ]; then 
+        python setup.py build &&  python setup.py install --user || exit -1
+        clean_build 
+    fi
 }
 
 build(){
@@ -140,7 +150,7 @@ build(){
 
     local old_pwd="`expand_path $(pwd)`"
     cd "`build_dir`"
-    echo `pwd`
+    echo PWD: `pwd`
     ls
 
     if [ -f Makefile.am -a ! -f configure ]; then
@@ -164,6 +174,7 @@ build(){
         compile "$name" $extra
         setup "$name"
         clean_build
+        cd "$old_pwd"
     else
         compile "$name" $extra
         move_opt "$name"
@@ -171,7 +182,6 @@ build(){
         clean_build
     fi
     
-    cd "$old_pwd"
 }
 
 #{{{ SETUP
