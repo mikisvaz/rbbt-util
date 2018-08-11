@@ -91,6 +91,7 @@ module Misc
 
 
       ConcurrentStream.setup sin, :pair => sout
+      ConcurrentStream.setup out, :pair => sin
 
       thread = Thread.new do 
         begin
@@ -101,17 +102,21 @@ module Misc
 
         rescue Aborted
           Log.medium "Aborted open_pipe: #{$!.message}"
+          raise $!
         rescue Exception
           Log.medium "Exception in open_pipe: #{$!.message}"
           Log.exception $!
-          sin.raise($!) if sin.respond_to? :raise
-          raise $!
+          begin
+            sin.raise($!) if sin.respond_to? :raise
+            sin.join if sin.respond_to? :join
+          ensure
+            raise $!
+          end
         end
       end
 
-
       sin.threads = [thread]
-      ConcurrentStream.setup sout, :threads => [thread], :pair => sin
+      sout.threads = [thread]
     end
 
     sout

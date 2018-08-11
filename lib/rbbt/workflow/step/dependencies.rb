@@ -158,7 +158,7 @@ class Step
       end
 
     rescue TryAgain
-      Log.low "Retrying dep. #{Log.color :yellow, dependency.task_name.to_s} -- [#{dependency.status}] #{dependency.messages.last}"
+      Log.low "Retrying dep. #{Log.color :yellow, dependency.task_name.to_s} -- [#{dependency.status}] #{(dependency.messages || ["No message"]).last}"
       retry
     rescue Aborted, Interrupt
       Log.error "Aborted dep. #{Log.color :red, dependency.task_name.to_s}"
@@ -414,12 +414,11 @@ class Step
       run_compute_dependencies(type, list, dep_step)
     end
 
-    Log.medium "Aborting waiting dangling dependencies"
-    all_deps.each do |dep|
-      next if dep.done?
-      next unless canfail_paths.include? dep.path
-      dep.abort if dep.waiting?
-    end
+    dangling_deps = all_deps.reject{|dep| dep.done? || canfail_paths.include?(dep.path) }.
+      select{|dep| dep.waiting? }
+
+    Log.medium "Aborting waiting dangling dependencies #{Misc.fingerprint dangling_deps}" if dangling_deps.any?
+    dangling_deps.each{|dep| dep.abort }
 
   end
 
