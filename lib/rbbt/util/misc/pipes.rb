@@ -91,7 +91,7 @@ module Misc
 
 
       ConcurrentStream.setup sin, :pair => sout
-      ConcurrentStream.setup out, :pair => sin
+      ConcurrentStream.setup sout, :pair => sin
 
       thread = Thread.new do 
         begin
