@@ -80,18 +80,23 @@ class Step
       return if status == 'streaming' and job.running?
     end
 
-    if (status == 'error' && (job.recoverable_error? || job.dirty?)) ||
-      job.aborted? ||
-      (job.done? && ! job.updated?)  || (job.error? && ! job.updated?) ||
-      (job.done? && job.dirty?)  || (job.error? && job.dirty?) ||
-      (!(job.noinfo? || job.done? || job.error? || job.aborted? || job.running?))
+    job.status_lock.synchronize do
+      status = job.status.to_s
 
-      job.clean 
+      if (status == 'error' && (job.recoverable_error? || job.dirty?)) ||
+          job.aborted? ||
+          (job.done? && ! job.updated?)  || (job.error? && ! job.updated?) ||
+          (job.done? && job.dirty?)  || (job.error? && job.dirty?) ||
+          (!(job.noinfo? || job.done? || job.error? || job.aborted? || job.running?))
+
+        job.clean 
+      end
+
+      (job.init_info and job.dup_inputs) unless status == 'done' or job.started?
+
+      canfail = ComputeDependency === job && job.canfail?
     end
 
-    (job.init_info and job.dup_inputs) unless status == 'done' or job.started?
-
-    canfail = ComputeDependency === job && job.canfail?
     raise DependencyError, job if job.error? and not canfail
   end
 
@@ -125,16 +130,18 @@ class Step
         return
       end
 
-      if dependency.aborted? or (dependency.error? and dependency.recoverable_error?) or (!Open.remote?(dependency.path) && dependency.missing?)
-        Log.warn "Cleaning dep. #{Log.color :red, dependency.task_name.to_s}"
-        dependency.clean
-        raise TryAgain
-      end
+      dependency.status_lock.synchronize do
+        if dependency.aborted? or (dependency.error? and dependency.recoverable_error?) or (!Open.remote?(dependency.path) && dependency.missing?)
+          Log.warn "Cleaning dep. #{Log.color :red, dependency.task_name.to_s}"
+          dependency.clean
+          raise TryAgain
+        end
 
-      if ! dependency.started? && ! dependency.error?
-        log_dependency_exec(dependency, :starting)
-        dependency.run(true)
-        raise TryAgain
+        if ! dependency.started? && ! dependency.error?
+          log_dependency_exec(dependency, :starting)
+          dependency.run(true)
+          raise TryAgain
+        end
       end
 
       dependency.grace

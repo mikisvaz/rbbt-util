@@ -111,6 +111,14 @@ class Step
     @info_lock
   end
 
+  def status_lock
+    @status_lock = begin
+                   path = Persist.persistence_path(info_file + '.status.lock', {:dir => Step.lock_dir})
+                   Lockfile.new path, :refresh => false, :dont_use_lock_id => true
+                 end if @status_lock.nil?
+    @status_lock
+  end
+
   def info(check_lock = true)
     return {:status => :noinfo} if info_file.nil? or not Open.exists? info_file
     begin

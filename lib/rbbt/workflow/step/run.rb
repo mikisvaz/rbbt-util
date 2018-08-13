@@ -120,7 +120,6 @@ class Step
     (dependency_checks + input_checks).uniq
   end
 
-
   def out_of_date
 
     checks = self.checks
@@ -130,7 +129,7 @@ class Step
     canfail_paths = self.canfail_paths
     checks.each do |dep| 
       next unless Open.exists?(dep.info_file)
-      next unless dep.relocated?
+      next if dep.relocated?
 
       begin
         if dep.done? && self.done? && Open.exists?(dep.path) && Open.exists?(self.path) && (File.mtime(dep.path) > File.mtime(self.path))

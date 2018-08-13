@@ -146,18 +146,22 @@ class TestWorkflow < Test::Unit::TestCase
   end
 
   def test_update_on_input_dependency_update
+    Log.severity = 0
     send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
     send_input_dep_to_reverse_job.clean
     send_input_dep_to_reverse_job.run
+
     input_dep_job = send_input_dep_to_reverse_job.step(:input_dep)
+    mtime_orig = File.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
+
+    sleep 1
     input_dep_job.clean
     input_dep_job.run
     send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
-    mtime_orig = File.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
+
     send_input_dep_to_reverse_job.run
     mtime_new = File.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
     assert mtime_orig < mtime_new
-
   end
 
   def test_helper
