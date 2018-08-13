@@ -134,11 +134,11 @@ module Log
   end
 
   def self.up_lines(num = 1)
-    "\033[#{num}F\033[2K"
+    "\033[#{num+1}F\033[2K"
   end
 
   def self.down_lines(num = 1)
-    "\033[#{num}E"
+    "\033[#{num+1}E"
   end
 
   def self.return_line
