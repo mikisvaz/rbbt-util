@@ -164,6 +164,7 @@ class RbbtProcessQueue
           end
           Log.low "All processes completed #{Process.pid}"
         rescue Aborted
+          Log.exception $!
           Log.low "Aborting process monitor #{Process.pid}"
           processes.each{|p|  p.abort_and_join}
           Log.low "Processes aborted #{Process.pid}"

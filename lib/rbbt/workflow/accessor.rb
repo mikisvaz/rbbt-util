@@ -443,7 +443,7 @@ class Step
   end
 
   def stalled?
-    started? && ! (done? || error? || aborted?) && ! running?
+    started? && ! (done? || error? || aborted? || running? || waiting?)
   end
 
   def missing?

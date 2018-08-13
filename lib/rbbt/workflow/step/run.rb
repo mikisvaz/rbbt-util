@@ -407,16 +407,22 @@ class Step
   def produce(force=false, dofork=false)
     return self if done? and not dirty?
 
-    if error? or aborted? or stalled?
-      abort if stalled?
-      if force or aborted? or recoverable_error?
-        clean
-      else
-        e = get_exception
-        if e
-          raise e
+
+    self.status_lock.synchronize do
+      if error? or aborted? or stalled?
+        if stalled?
+          Log.warn "Aborting stalled job #{self.path}"
+          abort
+        end
+        if force or aborted? or recoverable_error?
+          clean
         else
-          raise "Error in job: #{self.path}"
+          e = get_exception
+          if e
+            raise e
+          else
+            raise "Error in job: #{self.path}"
+          end
         end
       end
     end

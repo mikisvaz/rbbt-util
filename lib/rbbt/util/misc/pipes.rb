@@ -203,7 +203,7 @@ module Misc
         end
 
         stream.close unless stream.closed?
-        stream.join if stream.respond_to? :join
+        #stream.join if stream.respond_to? :join
         in_pipes.first.close
         #Log.medium "Tee done #{Misc.fingerprint stream}"
       rescue Aborted, Interrupt
@@ -608,7 +608,7 @@ module Misc
   end
 
   def self.save_stream(file, stream)
-    out, save = Misc.tee_stream stream
+    save, out = Misc.tee_stream stream
     out.filename = file
     save.filename = file
 
