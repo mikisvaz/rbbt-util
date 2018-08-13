@@ -108,7 +108,7 @@ class Step
     rec_dependencies.
       select{|dependency| ! (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) }.
       select{|dependency| ! Open.remote?(dependency.path) }.
-      select{|dependency| Open.exists?(dependency.info_file) }.
+      select{|dependency| Open.exists?(dependency.info_file) && ! dependency.relocated? }.
       select{|dependency| ! dependency.error? }
   end
 
@@ -130,6 +130,7 @@ class Step
     canfail_paths = self.canfail_paths
     checks.each do |dep| 
       next unless Open.exists?(dep.info_file)
+      next unless dep.relocated?
 
       begin
         if dep.done? && self.done? && Open.exists?(dep.path) && Open.exists?(self.path) && (File.mtime(dep.path) > File.mtime(self.path))
@@ -150,7 +151,7 @@ class Step
   end
 
   def updated?
-    return true unless (done? || error?)
+    return true unless (done? || error? || ! writable?)
 
     @updated ||= out_of_date.empty?
   end
@@ -662,7 +663,7 @@ class Step
       begin
         set_info :joined, true 
       rescue
-      end if File.exists?(info_file) && File.writable?(info_file)
+      end if File.exists?(info_file) && writable?
       @result = nil
     end
   end

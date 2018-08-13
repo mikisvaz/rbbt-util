@@ -92,7 +92,6 @@ class RbbtProcessQueue
 
         initial = Misc.memory_use(Process.pid)
         memory_cap = multiplier * initial
-        Log.debug "Worker for #{Process.pid} started with pid #{@current} -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap}"
 
         @asked = false
         @monitored = false
@@ -152,6 +151,8 @@ class RbbtProcessQueue
         @current = Process.fork do
           run
         end
+
+        Log.debug "Worker for #{Process.pid} started with pid #{@current} -- initial: #{initial} - multiplier: #{multiplier} - cap: #{memory_cap}"
 
         while true
           @prev = @current

@@ -273,6 +273,11 @@ class Step
     pid_file = Step.pid_file path
     files_dir = Step.files_dir path
 
+    if ! (Open.writable?(path) && Open.writable?(info_file))
+      Log.warn "Could not clean #{path}: not writable"
+      return 
+    end
+
     if Open.exists?(path) or Open.exists?(pid_file) or Open.exists?(info_file) or Open.exists?(files_dir)
 
       @result = nil
@@ -322,6 +327,10 @@ class Step
       new_dependencies << step
     }
     new_dependencies.uniq
+  end
+
+  def writable?
+    Open.writable?(self.path) && Open.writable?(self.info_file)
   end
 
   def recursive_clean

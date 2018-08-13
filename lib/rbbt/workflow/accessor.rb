@@ -163,7 +163,7 @@ class Step
 
   def set_info(key, value)
     return nil if @exec or info_file.nil?
-    return nil if ! File.writable? info_file
+    return nil if ! writable?
     value = Annotated.purge value if defined? Annotated
     Open.lock(info_file, :lock => info_lock) do
       i = info(false).dup
@@ -626,6 +626,11 @@ class Step
       out
     end
   end
+
+  def relocated?
+    done? && info[:path] && info[:path] != path
+  end
+
 end
 
 module Workflow

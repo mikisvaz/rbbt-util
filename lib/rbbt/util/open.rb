@@ -563,4 +563,12 @@ module Open
     end
     notify_write(file) 
   end
+
+  def self.writable?(path)
+    if File.exists?(path)
+      File.writable?(path)
+    else
+      File.writable?(File.dirname(File.expand_path(path)))
+    end
+  end
 end

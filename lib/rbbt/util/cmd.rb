@@ -138,7 +138,7 @@ module CMD
     if pipe
       err_thread = Thread.new do
         while line = serr.gets
-          Log.log "STDERR [#{pid}]: " +  line, stderr if Integer === stderr and log
+          Log.log "STDERR [#{pid}]: " +  line, stderr if Integer === stderr and log
         end
         serr.close
       end
@@ -183,7 +183,7 @@ module CMD
     pid = io.pids.first
     while line = io.gets
       if pid
-        Log.debug "STDOUT [#{pid}]: " + line
+        Log.debug "STDOUT [#{pid}]: " + line
       else
         Log.debug "STDOUT: " + line
       end
