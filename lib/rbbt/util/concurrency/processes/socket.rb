@@ -78,11 +78,11 @@ class RbbtProcessQueue
     end
 
     def close_write
-      @swrite.close
+      @swrite.close unless closed_write?
     end
 
     def close_read
-      @sread.close 
+      @sread.close unless closed_read?
     end
     #{{{ ACCESSOR
   
