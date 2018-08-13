@@ -10,22 +10,73 @@ module Log
     end
 
     attr_accessor :history, :mean_max, :max_history
-    def thr
-      count = @ticks - @last_count
-      if @last_time.nil?
-        seconds = 0.001
-      else
-        seconds = Time.now - @last_time
-      end
-      thr = count / seconds
-    end
+    #def thr
+    #  count = (@ticks - @last_count).to_f
+    #  if @last_time.nil?
+    #    seconds = 0.001
+    #  else
+    #    seconds = Time.now - @last_time
+    #  end
+    #  thr = count / seconds
+    #end
+
+
+    #def thr_msg
+    #  thr = self.thr
+    #  if @history.nil?
+    #    @history ||= [thr]
+    #  else
+    #    @history << thr
+    #    max_history ||= case 
+    #                  when @ticks > 20
+    #                    count = @ticks - @last_count
+    #                    if @max
+    #                      times = @max / count
+    #                      num = times / 20
+    #                      num = 2 if num < 2
+    #                    else
+    #                      num = 10
+    #                    end
+    #                    count * num
+    #                  else
+    #                    20
+    #                  end
+    #    max_history = 30 if max_history > 30
+    #    max_history = 100
+    #    @history.shift if @history.length > max_history
+    #  end
+
+    #  @mean_max ||= 0
+    #  if @history.length > 3
+
+    #    w_mean = 0
+    #    total_w = 0
+    #    @history.each_with_index do |v,i|
+    #      c = i ** 10
+    #      w_mean += v * c
+    #      total_w += c
+    #    end
+    #    mean = @mean = w_mean.to_f / total_w
+
+    #    @mean_max = mean if mean > @mean_max
+    #  end
+
+    #  if mean.nil? or mean.to_i > 1
+    #    str = "#{ Log.color :blue, thr.to_i.to_s } per sec."
+    #    str << " #{ Log.color :yellow, mean.to_i.to_s } avg. #{Log.color :yellow, @mean_max.to_i.to_s} max." if @mean_max > 0
+    #  else
+    #    str = "#{ Log.color :blue, (1/thr).ceil.to_s } secs each"
+    #    str << " #{ Log.color :yellow, (1/mean).ceil.to_s } avg. #{Log.color :yellow, (1/@mean_max).ceil.to_s} min." if @mean_max > 0
+    #  end
+
+    #  str
+    #end
 
     def thr_msg
-      thr = self.thr
       if @history.nil?
-        @history ||= [thr]
+        @history ||= [[@ticks, Time.now] ]
       else
-        @history << thr
+        @history << [@ticks, Time.now]
         max_history ||= case 
                       when @ticks > 20
                         count = @ticks - @last_count
@@ -47,18 +98,17 @@ module Log
       @mean_max ||= 0
       if @history.length > 3
 
-        w_mean = 0
-        total_w = 0
-        @history.each_with_index do |v,i|
-          c = i ** 10
-          w_mean += v * c
-          total_w += c
-        end
-        mean = @mean = w_mean.to_f / total_w
+        sticks, stime = @history.first
+        ssticks, sstime = @history[3]
+        lticks, ltime = @history.last
+
+        mean = @mean = (lticks - sticks).to_f / (ltime - stime)
+        short_mean = (ssticks - sticks).to_f / (sstime - stime)
 
         @mean_max = mean if mean > @mean_max
       end
 
+      thr = short_mean
       if mean.nil? or mean.to_i > 1
         str = "#{ Log.color :blue, thr.to_i.to_s } per sec."
         str << " #{ Log.color :yellow, mean.to_i.to_s } avg. #{Log.color :yellow, @mean_max.to_i.to_s} max." if @mean_max > 0
@@ -69,6 +119,7 @@ module Log
 
       str
     end
+
 
     def eta_msg
       percent = self.percent
@@ -140,8 +191,9 @@ module Log
       else
         bars = BARS
       end
+      bars << self unless BARS.include? self
 
-      print(io, Log.up_lines(bars.length) << Log.color(:yellow, "...Progress\n") << Log.down_lines(bars.length)) 
+      print(io, Log.up_lines(bars.length+1) << Log.color(:yellow, "...Progress\n") << Log.down_lines(bars.length+1)) 
       print(io, Log.up_lines(@depth) << report_msg << Log.down_lines(@depth)) 
       @last_time = Time.now
       @last_count = ticks
