@@ -132,16 +132,16 @@ class Step
 
       dependency.status_lock.synchronize do
         if dependency.aborted? or (dependency.error? and dependency.recoverable_error?) or (!Open.remote?(dependency.path) && dependency.missing?)
-          Log.warn "Cleaning dep. on exec #{Log.color :red, dependency.task_name.to_s} (missing: #{dependency.missing?}; error #{dependency.error?})"
+          Log.warn "Cleaning dep. on exec #{Log.color :blue, dependency.path} (missing: #{dependency.missing?}; error #{dependency.error?})"
           dependency.clean
           raise TryAgain
         end
+      end
 
-        if ! dependency.started? && ! dependency.error?
-          log_dependency_exec(dependency, :starting)
-          dependency.run(true)
+      if ! dependency.started? && ! dependency.error?
+        log_dependency_exec(dependency, :starting)
+        dependency.run(true)
           raise TryAgain
-        end
       end
 
       dependency.grace

@@ -182,201 +182,203 @@ class Step
       res = @mutex.synchronize do
         no_load = :stream if no_load
 
-        Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
-        result = Persist.persist "Job", @task.result_type, :file => path, :check => checks.collect{|dep| dep.path}, :no_load => no_load do 
-          if Step === Step.log_relay_step and not self == Step.log_relay_step
-            relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
-          end
+        self.status_lock.synchronize do
+          Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
+          result = Persist.persist "Job", @task.result_type, :file => path, :check => checks.collect{|dep| dep.path}, :no_load => no_load do 
+            if Step === Step.log_relay_step and not self == Step.log_relay_step
+              relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
+            end
 
-          Open.write(pid_file, Process.pid.to_s) unless Open.exists? pid_file
+            Open.write(pid_file, Process.pid.to_s) unless Open.exists? pid_file
 
-          @exec = false
-          init_info
+            @exec = false
+            init_info
 
-          log :setup, "#{Log.color :green, "Setup"} step #{Log.color :yellow, task.name.to_s || ""}"
+            log :setup, "#{Log.color :green, "Setup"} step #{Log.color :yellow, task.name.to_s || ""}"
 
-          merge_info({
-            :issued => (issue_time = Time.now),
-            :name => name,
-            :clean_name => clean_name,
-            :workflow => (@workflow || @task.workflow).to_s,
-            :task_name => @task.name,
-            :result_type => @task.result_type,
-            :result_description => @task.result_description,
-            :dependencies => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
-          })
+            merge_info({
+              :issued => (issue_time = Time.now),
+              :name => name,
+              :clean_name => clean_name,
+              :workflow => (@workflow || @task.workflow).to_s,
+              :task_name => @task.name,
+              :result_type => @task.result_type,
+              :result_description => @task.result_description,
+              :dependencies => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
+            })
 
 
-          begin
-            run_dependencies
-          rescue Exception
-            FileUtils.rm pid_file if File.exist?(pid_file)
-            stop_dependencies
-            raise $!
-          end
+            begin
+              run_dependencies
+            rescue Exception
+              FileUtils.rm pid_file if File.exist?(pid_file)
+              stop_dependencies
+              raise $!
+            end
 
-          new_inputs = []
-          @inputs.each_with_index do |input,i|
-            name = @task.inputs[i]
-            type = @task.input_types[name]
+            new_inputs = []
+            @inputs.each_with_index do |input,i|
+              name = @task.inputs[i]
+              type = @task.input_types[name]
 
-            if type == :directory
-              directory_inputs = file('directory_inputs')
-              input_source = directory_inputs['.source'][name].find
-              input_dir = directory_inputs[name].find
+              if type == :directory
+                directory_inputs = file('directory_inputs')
+                input_source = directory_inputs['.source'][name].find
+                input_dir = directory_inputs[name].find
 
-              case input
-              when Path
-                if input.directory?
-                  new_inputs << input
-                else
-                  input.open do |io|
-                    begin
-                      Misc.untar(io, input_source)
-                    rescue
-                      raise ParameterException, "Error unpackaging tar directory input '#{name}':\n\n#{$!.message}"
+                case input
+                when Path
+                  if input.directory?
+                    new_inputs << input
+                  else
+                    input.open do |io|
+                      begin
+                        Misc.untar(io, input_source)
+                      rescue
+                        raise ParameterException, "Error unpackaging tar directory input '#{name}':\n\n#{$!.message}"
+                      end
                     end
+                    tar_1 = input_source.glob("*")
+                    raise ParameterException, "When using tar.gz files for directories, the directory must be the single first level entry" if tar_1.length != 1
+                    FileUtils.ln_s Misc.path_relative_to(directory_inputs, tar_1.first), input_dir
+                    new_inputs << input_dir
+                  end
+                when File, IO, Tempfile
+                  begin
+                    Misc.untar(Open.gunzip(input), input_source)
+                  rescue
+                    raise ParameterException, "Error unpackaging tar directory input '#{name}':\n\n#{$!.message}"
                   end
                   tar_1 = input_source.glob("*")
                   raise ParameterException, "When using tar.gz files for directories, the directory must be the single first level entry" if tar_1.length != 1
-                FileUtils.ln_s Misc.path_relative_to(directory_inputs, tar_1.first), input_dir
+                  FileUtils.ln_s Misc.path_relative_to(directory_inputs, tar_1.first), input_dir
                   new_inputs << input_dir
-                end
-              when File, IO, Tempfile
-                begin
-                  Misc.untar(Open.gunzip(input), input_source)
-                rescue
-                  raise ParameterException, "Error unpackaging tar directory input '#{name}':\n\n#{$!.message}"
-                end
-                tar_1 = input_source.glob("*")
-                raise ParameterException, "When using tar.gz files for directories, the directory must be the single first level entry" if tar_1.length != 1
-                FileUtils.ln_s Misc.path_relative_to(directory_inputs, tar_1.first), input_dir
-                new_inputs << input_dir
-              else
-                raise ParameterException, "Format of directory input '#{name}' not understood: #{Misc.fingerprint input}"
-              end
-            else
-              new_inputs << input
-            end
-          end if @inputs
-          
-          @inputs = new_inputs if @inputs
-
-          if not task.inputs.nil?
-            info_inputs = @inputs.collect do |i| 
-              if Path === i 
-                i.to_s
-              else 
-                i 
-              end
-            end
-            set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, info_inputs)) 
-          end
-
-          set_info :started, (start_time = Time.now)
-          log :started, "Starting step #{Log.color :yellow, task.name.to_s || ""}"
-
-          begin
-            result = _exec
-          rescue Aborted, Interrupt
-            log(:aborted, "Aborted")
-            raise $!
-          rescue Exception
-            backtrace = $!.backtrace
-
-            # HACK: This fixes an strange behaviour in 1.9.3 where some
-            # backtrace strings are coded in ASCII-8BIT
-            backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
-            set_info :backtrace, backtrace 
-            log(:error, "#{$!.class}: #{$!.message}")
-            stop_dependencies
-            raise $!
-          end
-
-          if not no_load or ENV["RBBT_NO_STREAM"] == "true" 
-            result = prepare_result result, @task.description, info if IO === result 
-            result = prepare_result result.stream, @task.description, info if TSV::Dumper === result 
-          end
-
-          stream = case result
-                   when IO
-                     result
-                   when TSV::Dumper
-                     result.stream
-                   end
-
-          if stream
-            log :streaming, "Streaming step #{Log.color :yellow, task.name.to_s || ""}"
-
-            callback = Proc.new do
-              if AbortedStream === stream
-                if stream.exception
-                  raise stream.exception 
                 else
-                  raise Aborted
+                  raise ParameterException, "Format of directory input '#{name}' not understood: #{Misc.fingerprint input}"
+                end
+              else
+                new_inputs << input
+              end
+            end if @inputs
+
+            @inputs = new_inputs if @inputs
+
+            if not task.inputs.nil?
+              info_inputs = @inputs.collect do |i| 
+                if Path === i 
+                  i.to_s
+                else 
+                  i 
                 end
               end
-              begin
-                status = self.status
-                if status != :done and status != :error and status != :aborted
-                  Misc.insist do
-                    merge_info({
-                     :done => (done_time = Time.now),
-                     :total_time_elapsed => (total_time_elapsed = done_time - issue_time),
-                     :time_elapsed => (time_elapsed = done_time - start_time)
-                    })
-                    log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
+              set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, info_inputs)) 
+            end
+
+            set_info :started, (start_time = Time.now)
+            log :started, "Starting step #{Log.color :yellow, task.name.to_s || ""}"
+
+            begin
+              result = _exec
+            rescue Aborted, Interrupt
+              log(:aborted, "Aborted")
+              raise $!
+            rescue Exception
+              backtrace = $!.backtrace
+
+              # HACK: This fixes an strange behaviour in 1.9.3 where some
+              # backtrace strings are coded in ASCII-8BIT
+              backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
+              set_info :backtrace, backtrace 
+              log(:error, "#{$!.class}: #{$!.message}")
+              stop_dependencies
+              raise $!
+            end
+
+            if not no_load or ENV["RBBT_NO_STREAM"] == "true" 
+              result = prepare_result result, @task.description, info if IO === result 
+              result = prepare_result result.stream, @task.description, info if TSV::Dumper === result 
+            end
+
+            stream = case result
+                     when IO
+                       result
+                     when TSV::Dumper
+                       result.stream
+                     end
+
+            if stream
+              log :streaming, "Streaming step #{Log.color :yellow, task.name.to_s || ""}"
+
+              callback = Proc.new do
+                if AbortedStream === stream
+                  if stream.exception
+                    raise stream.exception 
+                  else
+                    raise Aborted
                   end
                 end
-              rescue
-                Log.exception $!
-              ensure
-                Step.purge_stream_cache
-                set_info :pid, nil
-                FileUtils.rm pid_file if File.exist?(pid_file)
-              end
-            end
-
-            abort_callback = Proc.new do |exception|
-              begin
-                if exception
-                  self.exception exception
-                else
-                  log :aborted, "#{Log.color :red, "Aborted"} step #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
+                begin
+                  status = self.status
+                  if status != :done and status != :error and status != :aborted
+                    Misc.insist do
+                      merge_info({
+                        :done => (done_time = Time.now),
+                        :total_time_elapsed => (total_time_elapsed = done_time - issue_time),
+                        :time_elapsed => (time_elapsed = done_time - start_time)
+                      })
+                      log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
+                    end
+                  end
+                rescue
+                  Log.exception $!
+                ensure
+                  Step.purge_stream_cache
+                  set_info :pid, nil
+                  FileUtils.rm pid_file if File.exist?(pid_file)
                 end
-                _clean_finished
-              rescue
-                stop_dependencies
-                set_info :pid, nil
-                FileUtils.rm pid_file if File.exist?(pid_file)
               end
+
+              abort_callback = Proc.new do |exception|
+                begin
+                  if exception
+                    self.exception exception
+                  else
+                    log :aborted, "#{Log.color :red, "Aborted"} step #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
+                  end
+                  _clean_finished
+                rescue
+                  stop_dependencies
+                  set_info :pid, nil
+                  FileUtils.rm pid_file if File.exist?(pid_file)
+                end
+              end
+
+              ConcurrentStream.setup stream, :callback => callback, :abort_callback => abort_callback
+
+              if AbortedStream === stream 
+                exception = stream.exception || Aborted.new("Aborted stream: #{Misc.fingerprint stream}")
+                self.exception exception
+                _clean_finished
+                raise exception
+              end
+            else
+              merge_info({
+                :done => (done_time = Time.now),
+                :total_time_elapsed => (total_time_elapsed = done_time - issue_time),
+                :time_elapsed => (time_elapsed = done_time - start_time)
+              })
+              log :ending
+              Step.purge_stream_cache
+              FileUtils.rm pid_file if File.exist?(pid_file)
             end
 
-            ConcurrentStream.setup stream, :callback => callback, :abort_callback => abort_callback
+            set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
 
-            if AbortedStream === stream 
-              exception = stream.exception || Aborted.new("Aborted stream: #{Misc.fingerprint stream}")
-              self.exception exception
-              _clean_finished
-              raise exception
+            if result.nil? && File.exists?(self.tmp_path) && ! File.exists?(self.path)
+              FileUtils.mv self.tmp_path, self.path
             end
-          else
-            merge_info({
-              :done => (done_time = Time.now),
-              :total_time_elapsed => (total_time_elapsed = done_time - issue_time),
-              :time_elapsed => (time_elapsed = done_time - start_time)
-            })
-            log :ending
-            Step.purge_stream_cache
-            FileUtils.rm pid_file if File.exist?(pid_file)
+            result
           end
-
-          set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
-
-          if result.nil? && File.exists?(self.tmp_path) && ! File.exists?(self.path)
-            FileUtils.mv self.tmp_path, self.path
-          end
-          result
         end
 
         if no_load

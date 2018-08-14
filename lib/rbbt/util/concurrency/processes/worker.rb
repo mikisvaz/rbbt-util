@@ -53,7 +53,6 @@ class RbbtProcessQueue
               break
             end
           end
-          Kernel.exit! 0
         rescue Respawn
           Kernel.exit! 28
         rescue ClosedStream
@@ -75,6 +74,8 @@ class RbbtProcessQueue
       rescue Aborted
         Log.high "Worker #{Process.pid} aborted"
       end
+
+      Log.high "Worker #{Process.pid} completed"
       Kernel.exit! 0
     end
 
@@ -180,6 +181,7 @@ class RbbtProcessQueue
       end
 
       if status
+        Log.high "Worker respawner with #{Process.pid} (#{@current}) completed with status #{status}"
         Kernel.exit! status.to_i >> 8
       else
         Kernel.exit! -1

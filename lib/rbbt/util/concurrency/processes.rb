@@ -158,9 +158,13 @@ class RbbtProcessQueue
         begin
           while processes.any?
             raise Aborted if @abort_monitor
-            processes[0].join
-            Log.debug "Joined process #{processes[0].pid} of queue #{Process.pid}"
-            processes.shift
+            #processes[0].join
+            #Log.debug "Joined process #{processes[0].pid} of queue #{Process.pid}"
+            #processes.shift
+            pid, status = Process.wait2
+            Log.debug "Joined process #{pid} of queue #{Process.pid} (status: #{status})"
+            processes.reject!{|p| p.pid == pid}
+            raise ProcessFailed.new pid if not status.success?
           end
           Log.low "All processes completed #{Process.pid}"
         rescue Aborted
@@ -251,25 +255,28 @@ class RbbtProcessQueue
     begin
       pid, @status = Process.waitpid2 @master_pid unless @status
       error = true unless @status.success?
-      raise ProcessFailed.new @master_pid unless @status.success?
-      @callback_thread.join 
+      begin
+        @callback_thread.join if @callback_thread
+        raise ProcessFailed.new @master_pid unless @status.success?
+      rescue
+        exception = $!
+        raise $!
+      end
       error = false
     rescue Aborted, Interrupt
       exception = $!
       Log.exception $!
       error = true
-      self.abort
-      Log.high "Process queue #{@master_pid} aborted"
-      retry
+      if @aborted
+        raise $!
+      else
+        self.abort
+        Log.high "Process queue #{@master_pid} aborted"
+        retry
+      end
     rescue Errno::ESRCH, Errno::ECHILD
       retry if Misc.pid_exists? @master_pid
       error = ! @status.success?
-    rescue ProcessFailed
-      exception = $!
-    rescue Exception
-      exception = $!
-      Log.exception $!
-      retry
     ensure
       begin
         begin
@@ -347,7 +354,7 @@ class RbbtProcessQueue
     ensure
       @queue.clean if @queue
       #@callback_thread.push ClosedStream if @callback_thread && @callback_thread.alive?
-      @callback_queue.clean if @queue
+      @callback_queue.clean if @callback_queue
     end
   end
 
