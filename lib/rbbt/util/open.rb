@@ -192,7 +192,7 @@ module Open
     if (dir_sub_path = find_repo_dir(file))
       remove_from_repo(*dir_sub_path)
     else
-      FileUtils.rm(file)
+      FileUtils.rm(file) if File.exists?(file)
     end
   end
 

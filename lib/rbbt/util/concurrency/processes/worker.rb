@@ -63,6 +63,7 @@ class RbbtProcessQueue
           retry unless @stop 
           Log.high "Worker #{Process.pid} leaving"
         rescue Exception
+          Log.high "Worker #{Process.pid} had exception: #{$!.message}"
           begin
             @callback_queue.push($!) if @callback_queue
           rescue

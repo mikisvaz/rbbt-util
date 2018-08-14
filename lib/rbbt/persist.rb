@@ -197,6 +197,9 @@ module Persist
   def self.tee_stream_thread(stream, path, type, callback = nil, abort_callback = nil, lockfile = nil)
     file, out = Misc.tee_stream(stream)
 
+    out.pair = file
+    file.pair = out
+
     saver_thread = Thread.new do
       begin
         file.threads = []
@@ -220,13 +223,12 @@ module Persist
     threads += stream.threads if stream.respond_to?(:threads) && stream.threads
     ConcurrentStream.setup(out, :threads => threads, :filename => path)
 
-    out.callback = callback
+    #out.callback = callback
     out.abort_callback = abort_callback
     out.lockfile = stream.lockfile if stream.respond_to? :lockfile and stream.lockfile
 
-    stream.callback = callback
-    stream.abort_callback = abort_callback
-
+    #stream.callback = callback
+    #stream.abort_callback = abort_callback
 
     out
   end
