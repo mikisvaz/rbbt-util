@@ -108,7 +108,13 @@ module Log
         @mean_max = mean if mean > @mean_max
       end
 
-      thr = short_mean
+      if short_mean
+        thr = short_mean
+      else
+        thr = @ticks / (Time.now - @start) 
+      end
+      iii [short_mean, thr]
+      
       if mean.nil? or mean.to_i > 1
         str = "#{ Log.color :blue, thr.to_i.to_s } per sec."
         str << " #{ Log.color :yellow, mean.to_i.to_s } avg. #{Log.color :yellow, @mean_max.to_i.to_s} max." if @mean_max > 0
