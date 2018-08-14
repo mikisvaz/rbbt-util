@@ -80,6 +80,7 @@ class Step
       return if status == 'streaming' and job.running?
     end
 
+    canfail = nil
     job.status_lock.synchronize do
       status = job.status.to_s
 
