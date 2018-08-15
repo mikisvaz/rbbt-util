@@ -411,9 +411,6 @@ module Misc
           FileUtils.touch path if File.exist? path
           content.join if content.respond_to? :join and not (content.respond_to?(:joined?) and content.joined?)
 
-          if Lockfile === lock_options[:lock] and lock_options[:lock].locked?
-            lock_options[:lock].unlock
-          end
           Open.notify_write(path) 
         rescue Aborted
           Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
@@ -430,6 +427,9 @@ module Misc
           raise $!
         ensure
           FileUtils.rm_f tmp_path if File.exist? tmp_path
+          if Lockfile === lock_options[:lock] and lock_options[:lock].locked?
+            lock_options[:lock].unlock
+          end
         end
       end
     end

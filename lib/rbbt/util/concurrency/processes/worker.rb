@@ -27,9 +27,9 @@ class RbbtProcessQueue
             @stop = true
           }
 
-          @abort = false
           Signal.trap(20){ 
-            @abort = true
+            Log.high "Worker #{Process.pid} signaled to abort"
+            Kernel.exit! -1
           }
 
           loop do
@@ -63,6 +63,7 @@ class RbbtProcessQueue
           Log.high "Worker #{Process.pid} leaving"
         rescue Exception
           Log.high "Worker #{Process.pid} had exception: #{$!.message}"
+          Log.exception $!
           begin
             @callback_queue.push($!) if @callback_queue
           rescue
@@ -144,6 +145,7 @@ class RbbtProcessQueue
         }
 
         Signal.trap(20){ 
+          Log.high "Killing respawned process #{@current}"
           begin
             Process.kill 20, @current if @current
           rescue Errno::ESRCH, Errno::ECHILD
@@ -181,7 +183,7 @@ class RbbtProcessQueue
       end
 
       if status
-        Log.high "Worker respawner with #{Process.pid} (#{@current}) completed with status #{status}"
+        Log.high "Worker #{@current} (respawner #{Process.pid} ) completed with status #{status}"
         Kernel.exit! status.to_i >> 8
       else
         Kernel.exit! -1

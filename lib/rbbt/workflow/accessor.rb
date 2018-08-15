@@ -112,6 +112,7 @@ class Step
   end
 
   def status_lock
+    return @mutex
     @status_lock = begin
                    path = Persist.persistence_path(info_file + '.status.lock', {:dir => Step.lock_dir})
                    Lockfile.new path, :refresh => false, :dont_use_lock_id => true
@@ -411,6 +412,7 @@ class Step
     end
 
     if dirty_files.any?
+      Log.low "Some dirty files found for #{self.path}: #{Misc.fingerprint dirty_files}"
       true
     else
       ! self.updated?
@@ -429,21 +431,22 @@ class Step
     status == :noinfo
   end
 
-  def running?
+  def running? 
+    return false if ! (started? || status == :ending)
     pid = info[:pid]
     return nil if pid.nil?
 
-    return false if done? or error? or aborted? or not started?
+    return false if done? or error? or aborted? 
 
     if Misc.pid_exists?(pid) 
       pid
     else
-      false
+      done? or error? or aborted? 
     end
   end
 
   def stalled?
-    started? && ! (done? || error? || aborted? || running? || waiting?)
+    started? && ! (done? || running? || done? || error? || aborted?)
   end
 
   def missing?

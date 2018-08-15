@@ -330,6 +330,7 @@ class RbbtProcessQueue
 
   def _abort
     begin
+      Log.warn "Aborting process queue #{@master_pid}"
       Process.kill ABORT_SIGNAL, @master_pid
     rescue Errno::ECHILD, Errno::ESRCH
       Log.debug "Cannot abort #{@master_pid}: #{$!.message}"

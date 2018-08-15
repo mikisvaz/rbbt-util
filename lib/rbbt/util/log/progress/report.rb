@@ -113,7 +113,6 @@ module Log
       else
         thr = @ticks / (Time.now - @start) 
       end
-      iii [short_mean, thr]
       
       if mean.nil? or mean.to_i > 1
         str = "#{ Log.color :blue, thr.to_i.to_s } per sec."

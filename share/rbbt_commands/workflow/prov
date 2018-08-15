@@ -164,7 +164,7 @@ if options[:plot]
   TmpFile.with_file do |edge_file|
     Open.write(edge_file) do |f|
       f.puts "from,to"
-      edges.each do |from,to|
+      edges.uniq.each do |from,to|
         f.puts [from,to]*","
       end
     end
