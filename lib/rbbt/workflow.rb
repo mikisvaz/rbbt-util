@@ -308,7 +308,7 @@ module Workflow
     Workflow.resolve_locals(inputs)
 
     task_info = task_info(taskname)
-    task_inputs = task_info[:inputs]
+    task_inputs = task.inputs
     #defaults = IndiferentHash.setup(task_info[:input_defaults]).merge(task.input_defaults)
     defaults = IndiferentHash.setup(task.input_defaults)
 
@@ -338,8 +338,8 @@ module Workflow
     real_inputs = {}
 
     inputs.each do |k,v|
-      default = defaults[k]
       next unless (task_inputs.include?(k.to_sym) or task_inputs.include?(k.to_s))
+      default = defaults[k]
       next if default == v 
       next if (String === default and Symbol === v and v.to_s == default)
       next if (Symbol === default and String === v and v == default.to_s)
@@ -405,7 +405,11 @@ module Workflow
   end
 
   def load_id(id)
-    path = File.join(workdir, id)
+    path = if Path === workdir
+             workdir[id].find
+           else
+             File.join(workdir, id)
+           end
     task = task_for path
     return remote_tasks[task].load_id(id) if remote_tasks and remote_tasks.include? task
     step = Step.new path, tasks[task.to_sym]
