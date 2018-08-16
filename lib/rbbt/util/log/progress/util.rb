@@ -74,12 +74,16 @@ module Log
     def self.with_bar(max, options = {})
       bar = new_bar(max, options)
       begin
+        error = false
         yield bar
         keep = false
       rescue KeepBar
         keep = true
+      rescue
+        error = true
+        raise $!
       ensure
-        remove_bar(bar) if bar
+        remove_bar(bar, error) if bar
       end
     end
   end

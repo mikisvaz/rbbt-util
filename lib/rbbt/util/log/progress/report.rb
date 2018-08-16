@@ -99,11 +99,11 @@ module Log
       if @history.length > 3
 
         sticks, stime = @history.first
-        ssticks, sstime = @history[3]
+        ssticks, sstime = @history[-3]
         lticks, ltime = @history.last
 
         mean = @mean = (lticks - sticks).to_f / (ltime - stime)
-        short_mean = (ssticks - sticks).to_f / (sstime - stime)
+        short_mean = (lticks - ssticks).to_f / (ltime - sstime)
 
         @mean_max = mean if mean > @mean_max
       end
