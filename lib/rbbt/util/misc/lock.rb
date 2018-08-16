@@ -26,21 +26,25 @@ module Misc
     FileUtils.mkdir_p File.dirname(File.expand_path(file)) unless File.exist? File.dirname(File.expand_path(file))
 
 
-    case options[:lock]
-    when Lockfile
-      lockfile = options[:lock]
-      lockfile.lock unless lockfile.locked?
-    when FalseClass
-      lockfile = nil
-      unlock = false
-    when Path, String
-      lock_path = options[:lock].find
-      lockfile = Lockfile.new(lock_path, options)
-      lockfile.lock 
-    else
-      lock_path = File.expand_path(file + '.lock')
-      lockfile = Lockfile.new(lock_path, options)
-      lockfile.lock 
+    begin
+      case options[:lock]
+      when Lockfile
+        lockfile = options[:lock]
+        lockfile.lock unless lockfile.locked?
+      when FalseClass
+        lockfile = nil
+        unlock = false
+      when Path, String
+        lock_path = options[:lock].find
+        lockfile = Lockfile.new(lock_path, options)
+        lockfile.lock
+      else
+        lock_path = File.expand_path(file + '.lock')
+        lockfile = Lockfile.new(lock_path, options)
+        lockfile.lock
+      end
+    rescue Aborted, Interrupt
+      raise LockInterrupted
     end
 
     res = nil

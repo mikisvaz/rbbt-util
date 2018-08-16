@@ -391,6 +391,8 @@ class Step
       res
     rescue DependencyError
       exception $!
+    rescue LockInterrupted
+      raise $!
     rescue Aborted, Interrupt
       abort
       stop_dependencies

@@ -16,6 +16,7 @@ class Aborted < StandardError; end
 
 class TryAgain < StandardError; end
 class SemaphoreInterrupted < TryAgain; end
+class LockInterrupted < TryAgain; end
 
 class RemoteServerError < RbbtException; end
 
