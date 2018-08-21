@@ -6,7 +6,7 @@ module Log
 
     attr_accessor :max, :ticks, :frequency, :depth, :desc, :file, :bytes
     def initialize(max = nil, options = {})
-      options = Misc.add_defaults options, :depth => 0, :num_reports => 100, :desc => "Progress", :io => STDERR, :severity => Log.severity, :frequency => 2
+      options = Misc.add_defaults options, :depth => 0, :num_reports => 100, :io => STDERR, :severity => Log.severity, :frequency => 2
       depth, num_reports, desc, io, severity, file, bytes, frequency = Misc.process_options options, :depth, :num_reports, :desc, :io, :severity, :file, :bytes, :frequency
 
       @max = max
@@ -16,7 +16,7 @@ module Log
       @last_count = nil
       @last_percent = nil
       @depth = depth
-      @desc = desc.nil? ? "Progress" : desc.gsub(/\n/,' ')
+      @desc = desc.nil? ? "" : desc.gsub(/\n/,' ')
       @file = file
       @bytes = bytes
     end

@@ -116,10 +116,10 @@ module Log
       
       if mean.nil? or mean.to_i > 1
         str = "#{ Log.color :blue, thr.to_i.to_s } per sec."
-        str << " #{ Log.color :yellow, mean.to_i.to_s } avg. #{Log.color :yellow, @mean_max.to_i.to_s} max." if @mean_max > 0
+        #str << " #{ Log.color :yellow, mean.to_i.to_s } avg. #{Log.color :yellow, @mean_max.to_i.to_s} max." if @mean_max > 0
       else
         str = "#{ Log.color :blue, (1/thr).ceil.to_s } secs each"
-        str << " #{ Log.color :yellow, (1/mean).ceil.to_s } avg. #{Log.color :yellow, (1/@mean_max).ceil.to_s} min." if @mean_max > 0
+        #str << " #{ Log.color :yellow, (1/mean).ceil.to_s } avg. #{Log.color :yellow, (1/@mean_max).ceil.to_s} min." if @mean_max > 0
       end
 
       str
@@ -158,12 +158,12 @@ module Log
     end
 
     def report_msg
-      str = Log.color :magenta, desc
+      str = Log.color(:magenta, "·")
       if @ticks == 0
         if @max
-          return str << " " << Log.color(:yellow, "waiting on #{@max} #{bytes ? 'bytes' : 'items'}") 
+          return str << " " << Log.color(:magenta, "waiting on #{@max} #{bytes ? 'bytes' : 'items'}") <<  Log.color(:magenta, " · " << desc)
         else
-          return str << " " << Log.color(:yellow, "waiting - PID: #{Process.pid}") 
+          return str << " " << Log.color(:magenta, "waiting - PID: #{Process.pid}") <<  Log.color(:magenta, " · " << desc)
         end
       end
       str << " " << thr_msg
@@ -172,6 +172,7 @@ module Log
       else
         str << Log.color(:blue, " -- ") << ticks.to_s << " #{bytes ? 'bytes' : 'items'}"
       end
+      str <<  Log.color(:magenta, " · " << desc)
       str
     end
 
@@ -183,14 +184,20 @@ module Log
 
     def report(io = STDERR)
       if Log::LAST != "progress"
-        length = Log::ProgressBar.cleanup_bars
         bars = BARS
-        print(io, Log.color(:yellow, "...Progress\n"))
-        bars.sort_by{|b| b.depth }.reverse.each do |bar|
-          if SILENCED.include? bar
-            print(io, Log.color(:yellow ,bar.report_msg) << "\n") 
-          else
-            print(io, "\n") 
+        if Log::LAST == "new_bar"
+          Log::LAST.replace "progress"
+          bar = bars.sort_by{|b| b.depth}.first
+          print(io, Log.color(:magenta ,bar.report_msg) << "\n") 
+        else
+          length = Log::ProgressBar.cleanup_bars
+          print(io, Log.color(:magenta, "···Progress\n"))
+          bars.sort_by{|b| b.depth }.reverse.each do |bar|
+            if SILENCED.include? bar
+              print(io, Log.color(:magenta, "·\n")) 
+            else
+              print(io, Log.color(:magenta ,bar.report_msg) << "\n") 
+            end
           end
         end
       else
@@ -198,7 +205,7 @@ module Log
       end
       bars << self unless BARS.include? self
 
-      print(io, Log.up_lines(bars.length+1) << Log.color(:yellow, "...Progress\n") << Log.down_lines(bars.length+1)) 
+      print(io, Log.up_lines(bars.length) << Log.color(:magenta, "···Progress\n") << Log.down_lines(bars.length+1)) 
       print(io, Log.up_lines(@depth) << report_msg << Log.down_lines(@depth)) 
       @last_time = Time.now
       @last_count = ticks
@@ -207,7 +214,7 @@ module Log
     end
 
     def done(io = STDERR)
-      done_msg = Log.color(:magenta, desc) << " " << Log.color(:green, "done")
+      done_msg = Log.color(:magenta, "· ") << Log.color(:green, "done")
       if @start
         ellapsed = (Time.now - @start).to_i
       else
@@ -217,13 +224,14 @@ module Log
       done_msg << " " << Log.color(:blue, (@ticks).to_s) << " #{bytes ? 'bytes' : 'items'} in " << Log.color(:green, ellapsed)
       @last_count = 0
       @last_time = @start
-      done_msg << " (" << thr_msg << ")"
+      done_msg << " - " << thr_msg 
+      done_msg << Log.color(:magenta, " · " << desc)
       print(io, Log.up_lines(@depth) << done_msg << Log.down_lines(@depth)) 
       Open.rm @file if @file and Open.exists? @file
     end
 
     def error(io = STDERR)
-      done_msg = Log.color(:magenta, desc) << " " << Log.color(:red, "error")
+      done_msg = Log.color(:magenta, "· ") << Log.color(:red, "error")
       if @start
         ellapsed = (Time.now - @start).to_i
       else
@@ -233,7 +241,8 @@ module Log
       done_msg << " " << Log.color(:blue, (@ticks).to_s) << " in " << Log.color(:green, ellapsed)
       @last_count = 0
       @last_time = @start
-      done_msg << " (" << thr_msg << ")"
+      done_msg << " - " << thr_msg
+      done_msg << Log.color(:magenta, " · " << desc)      
       print(io, Log.up_lines(@depth) << done_msg << Log.down_lines(@depth)) 
       Open.rm @file if @file and Open.exists? @file
     end
