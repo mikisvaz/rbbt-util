@@ -290,6 +290,7 @@ class Step
 
   def canfail_paths
     return Set.new if ! File.exists?(info_file)
+
     if info[:canfail_paths]
       Set.new(info[:canfail_paths])
     else

@@ -310,7 +310,8 @@ module Workflow
     task_info = task_info(taskname)
     task_inputs = task_info[:inputs]
     #defaults = IndiferentHash.setup(task_info[:input_defaults]).merge(task.input_defaults)
-    defaults = IndiferentHash.setup(task_info[:input_defaults])
+    all_defaults = IndiferentHash.setup(task_info[:input_defaults])
+    defaults = IndiferentHash.setup(task.input_defaults)
 
     missing_inputs = []
     task.required_inputs.each do |input|
@@ -339,14 +340,14 @@ module Workflow
 
     inputs.each do |k,v|
       next unless (task_inputs.include?(k.to_sym) or task_inputs.include?(k.to_s))
-      default = defaults[k]
+      default = all_defaults[k]
       next if default == v 
       next if (String === default and Symbol === v and v.to_s == default)
       next if (Symbol === default and String === v and v == default.to_s)
       real_inputs[k] = v 
     end
 
-    jobname_input_value = inputs[jobname_input] || defaults[jobname_input]
+    jobname_input_value = inputs[jobname_input] || all_defaults[jobname_input]
     if jobname_input && jobname.nil? && String === jobname_input_value && ! jobname_input_value.include?('/')
       jobname = jobname_input_value
     end
