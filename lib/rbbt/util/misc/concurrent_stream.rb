@@ -85,7 +85,7 @@ module ConcurrentStream
             Log.low "Not failing on exception joining thread in ConcurrenStream: #{filename}"
           else
             Log.low "Exception joining thread in ConcurrenStream: #{filename}"
-            raise $! 
+            stream_raise_exception $! 
           end
         end
       end
@@ -98,7 +98,7 @@ module ConcurrentStream
       @pids.each do |pid| 
         begin
           Process.waitpid(pid, Process::WUNTRACED)
-          raise ProcessFailed.new "Error joining process #{pid} in #{self.filename || self.inspect}" unless $?.success? or no_fail
+          stream_raise_exception ProcessFailed.new "Error joining process #{pid} in #{self.filename || self.inspect}" unless $?.success? or no_fail
         rescue Errno::ECHILD
         end
       end 
@@ -203,7 +203,7 @@ module ConcurrentStream
         Log.exception $!
         self.abort
         self.join 
-        raise $!
+        stream_raise_exception $!
       ensure
         self.join if self.closed? or self.eof? 
       end
@@ -220,16 +220,12 @@ module ConcurrentStream
     end
   end
 
-  def raise(exception)
-    begin
-      threads.each do |thread|
-        thread.raise exception
-      end
-
-      self.abort
-    ensure
-      Kernel.raise exception
+  def stream_raise_exception(exception)
+    threads.each do |thread|
+      thread.raise exception
     end
+
+    self.abort
   end
 
 end

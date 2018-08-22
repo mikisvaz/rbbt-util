@@ -236,7 +236,7 @@ class Step
     when :bootstrap
       cpus = rest.nil? ? nil : rest.first 
 
-      cpus = config('dep_cpus', 'bootstrap', :default => [5, list.length / 2].min) if cpus.nil?
+      cpus = config('dep_cpus', 'bootstrap', :default => [5, list.length / 2].min) if cpus.nil? || cpus.to_i == 0
 
       respawn = rest && rest.include?(:respawn)
       respawn = false if rest && rest.include?(:norespawn)
@@ -256,9 +256,13 @@ class Step
               Log.warn "Error in bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
 
             rescue Aborted
-              dep.abort
-              Log.warn "Aborted bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
-              raise $!
+              ex = $!
+              begin
+                dep.abort
+                Log.warn "Aborted bootstrap dependency #{dep.path}: #{dep.messages.last}" if dep.error? or dep.aborted?
+              rescue
+              end
+              raise StopInsist.new(ex)
 
             rescue RbbtException
               if canfail || dep.canfail?
@@ -267,7 +271,10 @@ class Step
                 Log.warn "NOT Allowing failing of #{dep.path}: #{dep.messages.last}"
                 dep.exception $!
                 if dep.recoverable_error?
-                  dep.abort
+                  begin
+                    dep.abort
+                  rescue
+                  end
                   raise $!
                 else
                   raise StopInsist.new($!)

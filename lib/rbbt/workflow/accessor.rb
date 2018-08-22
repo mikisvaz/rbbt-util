@@ -106,18 +106,19 @@ class Step
   def info_lock
     @info_lock = begin
                    path = Persist.persistence_path(info_file + '.lock', {:dir => Step.lock_dir})
-                   Lockfile.new path, :refresh => false, :dont_use_lock_id => true
+                   #Lockfile.new path, :refresh => false, :dont_use_lock_id => true
+                   Lockfile.new path
                  end if @info_lock.nil?
     @info_lock
   end
 
   def status_lock
     return @mutex
-    @status_lock = begin
-                   path = Persist.persistence_path(info_file + '.status.lock', {:dir => Step.lock_dir})
-                   Lockfile.new path, :refresh => false, :dont_use_lock_id => true
-                 end if @status_lock.nil?
-    @status_lock
+    #@status_lock = begin
+    #               path = Persist.persistence_path(info_file + '.status.lock', {:dir => Step.lock_dir})
+    #               Lockfile.new path, :refresh => false, :dont_use_lock_id => true
+    #             end if @status_lock.nil?
+    #@status_lock
   end
 
   def info(check_lock = true)

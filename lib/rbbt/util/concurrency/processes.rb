@@ -189,6 +189,7 @@ class RbbtProcessQueue
 
       RbbtSemaphore.post_semaphore(@sem)
 
+      Log.low "Process monitor #{Process.pid} joining threads"
       begin
         @monitor_thread.join
         @manager_thread.raise TryAgain if @manager_thread.alive?
@@ -197,6 +198,7 @@ class RbbtProcessQueue
       rescue Exception
         Kernel.exit -1
       end
+      Log.low "Process monitor #{Process.pid} threads joined successfully, now exit"
 
       Kernel.exit 0
     end
