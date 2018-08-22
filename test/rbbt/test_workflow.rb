@@ -304,4 +304,21 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal real_other, Workflow.relocate(real, other)
   end
 
+  def test_delete_dep
+    job = TestWF.job(:t3).recursive_clean
+    job.run
+    assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
+    job = TestWF.job(:t3)
+    job.step(:t1).clean
+    assert job.checks.select{|d| d.task_name.to_s == "t1" }.empty?
+    job = TestWF.job(:t3).recursive_clean
+    job.run
+    assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
+    job = TestWF.job(:t3)
+    job.step(:t1).clean
+    Misc.with_env "RBBT_UPDATE_ALL_JOBS", "true" do
+      assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
+    end
+  end
+
 end

@@ -45,6 +45,18 @@ end
       end
   end
 
+  def self.with_env(var, value, &block)
+    var = var.to_s
+    value = value.to_s
+    current = ENV[var]
+    begin
+      ENV[var] = value
+      yield
+    ensure
+      ENV[var] = current
+    end
+  end
+
   def self.path_relative_to(basedir, path)
     path = File.expand_path(path) unless path[0] == "/"
     basedir = File.expand_path(basedir) unless basedir[0] == "/"

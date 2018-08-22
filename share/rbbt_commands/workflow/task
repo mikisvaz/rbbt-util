@@ -190,6 +190,7 @@ the job dependencies recursively.
 -cl--clean Clean the last step of the job so that it gets recomputed
 -ct--clean_task* Clean a particular dependency task
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely
+-uaj--update_all_jobs Consider all dependencies when checking for updates, even when they have no info files
 --fork Run job asyncronously and monitor progress. It monitors detached processes as well
 --detach Run job asyncronously and detach process
 --exec Run job with no persistence
@@ -233,6 +234,10 @@ else
 end
 
 workflow = Workflow.require_workflow workflow
+
+if options[:update_all_jobs]
+  ENV["RBBT_UPDATE_ALL_JOBS"] = 'true'
+end
 
 if options[:workflows]
   require 'rbbt/workflow'

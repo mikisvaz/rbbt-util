@@ -104,20 +104,34 @@ class Step
     (no_load or ENV["RBBT_NO_STREAM"]) ? @result : prepare_result(@result, @task.result_description)
   end
 
+  def updatable?
+    (ENV["RBBT_UPDATE_ALL_JOBS"] == 'true' || Open.exists?(info_file)) && ! relocated?
+  end
+
   def dependency_checks
     rec_dependencies.
       select{|dependency| ! (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) }.
       select{|dependency| ! Open.remote?(dependency.path) }.
-      select{|dependency| Open.exists?(dependency.info_file) && ! dependency.relocated? }.
+      select{|dependency| dependency.updatable? }.
       select{|dependency| ! dependency.error? }
   end
 
   def input_checks
-    inputs.select{|i| Step === i }
+    inputs.select{|i| Step === i }.
+      select{|dependency| dependency.updatable? }
   end
 
   def checks
     (dependency_checks + input_checks).uniq
+  end
+
+  def persist_checks
+    canfail_paths = self.canfail_paths
+    checks.collect do |dep| 
+      path = dep.path
+      next if ! dep.done? && canfail_paths.include?(path)
+      path 
+    end.compact
   end
 
   def out_of_date
@@ -128,8 +142,7 @@ class Step
     outdated_dep  = []
     canfail_paths = self.canfail_paths
     checks.each do |dep| 
-      next unless Open.exists?(dep.info_file)
-      next if dep.relocated?
+      next unless dep.updatable?
 
       begin
         if dep.done? && self.done? && Open.exists?(dep.path) && Open.exists?(self.path) && (File.mtime(dep.path) > File.mtime(self.path))
@@ -183,7 +196,7 @@ class Step
         no_load = :stream if no_load
 
         Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
-        result = Persist.persist "Job", @task.result_type, :file => path, :check => checks.collect{|dep| dep.path}, :no_load => no_load do 
+        result = Persist.persist "Job", @task.result_type, :file => path, :check => persist_checks, :no_load => no_load do 
           if Step === Step.log_relay_step and not self == Step.log_relay_step
             relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
           end
