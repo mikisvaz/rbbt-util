@@ -310,7 +310,7 @@ class Step
     self
   end
 
-  def rec_dependencies(need_run = false)
+  def rec_dependencies(need_run = false, seen = [])
 
     # A step result with no info_file means that it was manually
     # placed. In that case, do not consider its dependencies
@@ -320,9 +320,10 @@ class Step
 
     new_dependencies = []
     dependencies.each{|step| 
-      next if self.done? && need_run && Open.exists?(step.info_file) 
+      next if seen.include? step
+      next if self.done? && need_run && ! updatable?
 
-      r = step.rec_dependencies(need_run)
+      r = step.rec_dependencies(need_run, new_dependencies)
       new_dependencies.concat r
       new_dependencies << step
     }

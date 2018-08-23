@@ -468,6 +468,7 @@ module Persist
     when String
       persist name, :memory, :file => name + "_" << options, &block
     else
+      options = options.dup
       file = name
       repo = options.delete :repo if options and options.any?
       file << "_" << (options[:key] ? options[:key] : Misc.hash2md5(options)) if options and options.any?

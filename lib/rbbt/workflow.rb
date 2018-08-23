@@ -299,7 +299,6 @@ module Workflow
     taskname = taskname.to_sym
     return remote_tasks[taskname].job(taskname, jobname, inputs) if remote_tasks and remote_tasks.include? taskname
 
-
     task = tasks[taskname]
     raise "Task not found: #{ taskname }" if task.nil?
 
@@ -369,7 +368,14 @@ module Workflow
     job.workflow = self
     job.clean_name = jobname
     job.overriden = overriden
+    step_cache.clear
     job
+  end
+
+  def _job(taskname, jobname = nil, inputs = {})
+    Persist.memory("STEP", :taskname => taskname, :jobname => jobname, :inputs => inputs, :repo => step_cache) do
+      job(taskname, jobname, inputs)
+    end
   end
 
   def set_step_dependencies(step)

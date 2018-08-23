@@ -950,7 +950,7 @@ module Workflow
                      _inputs = assign_dep_inputs(_inputs, options, all_d, workflow.task_info(dep_task))
                      jobname = _inputs[:jobname] if _inputs.include? :jobname
 
-                     job = workflow.job(dep_task, jobname, _inputs)
+                     job = workflow._job(dep_task, jobname, _inputs)
                      ComputeDependency.setup(job, compute) if compute
                      job
                    end
@@ -964,7 +964,7 @@ module Workflow
                      d_.overriden = true
                      d_
                    else
-                     job(dependency, jobname, _inputs)
+                     _job(dependency, jobname, _inputs)
                    end
                  when Proc
                    if DependencyBlock === dependency
@@ -995,7 +995,7 @@ module Workflow
                            task_info = d[:workflow].task_info(d[:task])
 
                            inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
-                           d = d[:workflow].job(d[:task], d[:jobname], inputs) 
+                           d = d[:workflow]._job(d[:task], d[:jobname], inputs) 
                          end
                        end
                        ComputeDependency.setup(d, compute) if compute
