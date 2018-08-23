@@ -1015,7 +1015,7 @@ module Workflow
                        else
                          task_info = (dep[:task] && dep[:workflow]) ? dep[:workflow].task_info(dep[:task]) : nil
                          inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, task_info)
-                         dep = dep[:workflow].job(dep[:task], dep[:jobname], inputs)
+                         dep = dep[:workflow]._job(dep[:task], dep[:jobname], inputs)
                        end
                      end
                    end

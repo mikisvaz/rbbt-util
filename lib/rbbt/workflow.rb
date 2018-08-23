@@ -295,7 +295,7 @@ module Workflow
     @_m
   end
 
-  def job(taskname, jobname = nil, inputs = {})
+  def __job(taskname, jobname = nil, inputs = {})
     taskname = taskname.to_sym
     return remote_tasks[taskname].job(taskname, jobname, inputs) if remote_tasks and remote_tasks.include? taskname
 
@@ -368,15 +368,23 @@ module Workflow
     job.workflow = self
     job.clean_name = jobname
     job.overriden = overriden
-    step_cache.clear
     job
   end
 
   def _job(taskname, jobname = nil, inputs = {})
     Persist.memory("STEP", :taskname => taskname, :jobname => jobname, :inputs => inputs, :repo => step_cache) do
-      job(taskname, jobname, inputs)
+      __job(taskname, jobname, inputs)
     end
   end
+
+  def job(taskname, jobname = nil, inputs = {})
+    begin
+      _job(taskname, jobname, inputs)
+    ensure
+      #step_cache.clear
+    end
+  end
+
 
   def set_step_dependencies(step)
     if step.info[:dependencies]

@@ -111,7 +111,11 @@ module Log
       if short_mean
         thr = short_mean
       else
-        thr = @ticks / (Time.now - @start) 
+        thr = begin
+                @ticks / (Time.now - @start) 
+              rescue
+                0
+              end
       end
       
       if mean.nil? or mean.to_i > 1
