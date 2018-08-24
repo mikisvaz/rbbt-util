@@ -112,9 +112,9 @@ module Log
         thr = short_mean
       else
         thr = begin
-                @ticks / (Time.now - @start) 
+                (@ticks || 1) / (Time.now - @start) 
               rescue
-                0
+                1
               end
       end
       

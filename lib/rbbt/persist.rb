@@ -371,7 +371,7 @@ module Persist
       when type.to_sym == :memory
         repo = persist_options[:repo] || Persist::MEMORY
         path = path.find if Path === path
-        repo[path] = yield
+        repo[path] ||= yield
 
       when (type.to_sym == :annotations and persist_options.include? :annotation_repo)
 

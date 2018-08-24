@@ -372,7 +372,12 @@ module Workflow
   end
 
   def _job(taskname, jobname = nil, inputs = {})
-    Persist.memory("STEP", :taskname => taskname, :jobname => jobname, :inputs => inputs, :repo => step_cache) do
+
+    _inputs = IndiferentHash.setup(inputs.dup)
+
+    task_info = task_info(taskname)
+    task_inputs = task_info[:inputs]
+    Persist.memory("STEP", :taskname => taskname, :jobname => jobname, :inputs => inputs.values_at(*task_inputs), :repo => step_cache) do
       __job(taskname, jobname, inputs)
     end
   end
@@ -381,7 +386,7 @@ module Workflow
     begin
       _job(taskname, jobname, inputs)
     ensure
-      #step_cache.clear
+      step_cache.clear
     end
   end
 
