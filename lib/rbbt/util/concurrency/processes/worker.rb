@@ -195,7 +195,7 @@ class RbbtProcessQueue
 
       @pid = Process.fork do
         Misc.pre_fork
-        Log::ProgressBar.add_offset if @offset
+        Log::ProgressBar.add_offset @offset if @offset
 
         @cleanup.call if @cleanup
         @queue.close_write 
@@ -212,7 +212,7 @@ class RbbtProcessQueue
         else
           run
         end
-        Log::ProgressBar.remove_offset if @offset
+        Log::ProgressBar.remove_offset @offset if @offset
       end
     end
 

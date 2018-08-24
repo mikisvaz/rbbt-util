@@ -118,16 +118,17 @@ class RbbtProcessQueue
                 while @count > 0
                   @count -= 1
                   @total += 1
-                  processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
+                  processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, (@offset ? @total : false), &@init_block)
                   Log.warn "Added process #{processes.last.pid} to #{Process.pid} (#{processes.length})"
                 end
 
                 while @count < 0
                   @count += 1
+                  @total -= 1
                   next unless processes.length > 1
-                  first = processes.shift
-                  first.stop
-                  Log.warn "Removed process #{first.pid} from #{Process.pid} (#{processes.length})"
+                  last = processes.last
+                  last.stop
+                  Log.warn "Removed process #{last.pid} from #{Process.pid} (#{processes.length})"
                 end
               end
             end
@@ -148,7 +149,7 @@ class RbbtProcessQueue
       num_processes.times do |i|
         @total += 1 
         process_mutex.synchronize do
-          processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, @offset, &@init_block)
+          processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, (@offset ? @total : false), &@init_block)
         end
       end
 

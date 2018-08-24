@@ -191,7 +191,7 @@ module Log
         bars = BARS
         if Log::LAST == "new_bar"
           Log::LAST.replace "progress"
-          bar = bars.sort_by{|b| b.depth}.first
+          bar = bars.sort_by{|b| b.depth }.first
           print(io, Log.color(:magenta ,bar.report_msg) << "\n") 
         else
           length = Log::ProgressBar.cleanup_bars
@@ -209,7 +209,7 @@ module Log
       end
       bars << self unless BARS.include? self
 
-      print(io, Log.up_lines(bars.length) << Log.color(:magenta, "···Progress\n") << Log.down_lines(bars.length+1)) 
+      print(io, Log.up_lines(bars.length) << Log.color(:magenta, "···Progress\n") << Log.down_lines(bars.length+1)) if Log::ProgressBar.offset == 0
       print(io, Log.up_lines(@depth) << report_msg << Log.down_lines(@depth)) 
       @last_time = Time.now
       @last_count = ticks

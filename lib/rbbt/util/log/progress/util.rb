@@ -5,14 +5,16 @@ module Log
     REMOVE = []
     SILENCED = []
 
-    def self.add_offset
-      @@offset = offset + 1
+    def self.add_offset(value = 1)
+      value = 1 if TrueClass === value
+      @@offset = offset + value.to_i
       @@offset = 0 if @@offset < 0
       @@offset
     end
 
-    def self.remove_offset
-      @@offset = offset - 1
+    def self.remove_offset(value = 1)
+      value = 1 if TrueClass === value
+      @@offset = offset - value.to_i
       @@offset = 0 if @@offset < 0
       @@offset
     end
