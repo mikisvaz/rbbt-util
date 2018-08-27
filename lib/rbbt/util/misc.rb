@@ -71,10 +71,12 @@ module Misc
   def self.timespan(str, default = "s")
     tokens = {
       "s" => (1),
-      "m" => (60),
+      "min" => (60),
       "h" => (60 * 60),
       "d" => (60 * 60 * 24),
       "w" => (60 * 60 * 24 * 7),
+      "m" => (60 * 60 * 24 * 30),
+      "y" => (60 * 60 * 24 * 365),
     }
 
     tokens[nil] = tokens[default]

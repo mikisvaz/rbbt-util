@@ -109,7 +109,9 @@ TSV.traverse jobs, :_bar => "Checking job status" do |file,i|
 
   if time and File.exists?(file)
     old = Time.now - File.atime(file)
-    status = 'old'
+    if old > time
+      status = 'old'
+    end
   end
 
   if (force and status !~ /done/) or 
