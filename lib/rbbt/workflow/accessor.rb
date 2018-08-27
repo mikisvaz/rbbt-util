@@ -1038,7 +1038,8 @@ module Workflow
                        when :hash
                          clean_inputs = Annotated.purge(inputs)
                          clean_inputs = clean_inputs.collect{|i| Symbol === i ? i.to_s : i }
-                         key_obj = {:inputs => clean_inputs, :dependencies => dependencies}
+                         deps_str = dependencies.collect{|d| Step === d ? d.short_path : d }
+                         key_obj = {:inputs => clean_inputs, :dependencies => deps_str }
                          key_str = Misc.obj2str(key_obj)
                          hash_str = Misc.digest(key_str)
                          #Log.debug "Hash for '#{[taskname, jobname] * "/"}' #{hash_str} for #{key_str}"
