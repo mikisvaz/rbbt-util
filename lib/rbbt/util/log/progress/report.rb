@@ -117,6 +117,8 @@ module Log
                 1
               end
       end
+
+      thr = 0.0000001 if thr == 0
       
       if mean.nil? or mean.to_i > 1
         str = "#{ Log.color :blue, thr.to_i.to_s } per sec."
