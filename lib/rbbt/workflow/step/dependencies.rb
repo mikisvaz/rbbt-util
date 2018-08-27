@@ -85,6 +85,7 @@ class Step
       status = job.status.to_s
 
       if (status == 'error' && (job.recoverable_error? || job.dirty?)) ||
+          (job.noinfo? && Open.exists?(job.pid_file)) ||
           job.aborted? ||
           (job.done? && ! job.updated?)  || (job.error? && ! job.updated?) ||
           (job.done? && job.dirty?)  || (job.error? && job.dirty?) ||
@@ -118,6 +119,8 @@ class Step
 
   def execute_dependency(dependency, log = true)
     task_name = self.task_name
+    canfail_paths = self.canfail_paths
+    already_failed = []
     begin
 
       dependency.resolve_input_steps
@@ -132,17 +135,18 @@ class Step
       end
 
       dependency.status_lock.synchronize do
-        if dependency.aborted? or (dependency.error? and dependency.recoverable_error?) or (!Open.remote?(dependency.path) && dependency.missing?)
+        if dependency.aborted? || (dependency.error? && dependency.recoverable_error? && ! canfail_paths.include?(dependency.path) && ! already_failed << dependency.path) || (!Open.remote?(dependency.path) && dependency.missing?)
           Log.warn "Cleaning dep. on exec #{Log.color :blue, dependency.path} (missing: #{dependency.missing?}; error #{dependency.error?})"
           dependency.clean
+          already_failed << dependency.path
           raise TryAgain
         end
       end
 
-      if ! dependency.started? && ! dependency.error?
+      if ! (dependency.started? || dependency.error?)
         log_dependency_exec(dependency, :starting)
         dependency.run(true)
-          raise TryAgain
+        raise TryAgain
       end
 
       dependency.grace
@@ -302,7 +306,7 @@ class Step
       Set.new(info[:canfail_paths])
     else
       canfail_paths = Set.new
-      all_deps = rec_dependencies + [self]
+      all_deps = dependencies
       all_deps.each do |dep|
         next if canfail_paths.include? dep.path
         next unless ComputeDependency === dep && dep.canfail?

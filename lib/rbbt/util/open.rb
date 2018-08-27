@@ -565,6 +565,7 @@ module Open
   end
 
   def self.writable?(path)
+    path = path.find if Path === path
     if File.exists?(path)
       File.writable?(path)
     else
