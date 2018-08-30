@@ -1,3 +1,4 @@
+require 'base64'
 module TSV
 
   class CleanSerializer
@@ -5,6 +6,11 @@ module TSV
     def self.load(o); o end
   end
 
+  class BinarySerializer
+    def self.dump(o); [o].pack('m'); end
+    def self.load(str); str.unpack('m').first; end
+  end
+  
   class IntegerSerializer
     def self.dump(i); [i].pack("l"); end
     def self.load(str); str.unpack("l").first; end
@@ -103,6 +109,7 @@ module TSV
     :flat => StringArraySerializer,
     :double => StringDoubleArraySerializer,
     :clean => CleanSerializer,
+    :binary => BinarySerializer,
     :tsv => TSVSerializer,
     :marshal_tsv => TSVMarshalSerializer
   }

@@ -15,7 +15,6 @@ end
 
 class Step
 
-
   INFO_SERIALIAZER = Marshal
 
   def self.wait_for_jobs(jobs)
@@ -64,7 +63,7 @@ class Step
 
   def self.step_info(path)
     begin
-      Open.open(info_file(path)) do |f|
+      Open.open(info_file(path), :mode => 'rb') do |f|
         INFO_SERIALIAZER.load(f)
       end
     rescue Exception
@@ -126,7 +125,7 @@ class Step
     begin
       Misc.insist do
         begin
-          return @info_cache if @info_cache and @info_cache_time and File.ctime(info_file) < @info_cache_time
+          return @info_cache if @info_cache and @info_cache_time and Open.ctime(info_file) < @info_cache_time 
         rescue Exception
           raise $!
         end
@@ -138,7 +137,7 @@ class Step
                 raise TryAgain, "Info locked" if check_lock and info_lock.locked?
                 info_lock.lock if check_lock and false
                 begin
-                  Open.open(info_file) do |file|
+                  Open.open(info_file, :mode => 'rb') do |file|
                     INFO_SERIALIAZER.load(file) #|| {}
                   end
                 ensure
@@ -179,12 +178,8 @@ class Step
       i = info(false).dup
       i[key] = value 
       @info_cache = i
-      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
-      Misc.insist do
-        Open.open(info_file) do |file|
-          INFO_SERIALIAZER.load(file) 
-        end
-      end
+      dump = INFO_SERIALIAZER.dump(i)
+      Misc.sensiblewrite(info_file, dump, :force => true, :lock => false)
       @info_cache_time = Time.now
       value
     end
@@ -192,12 +187,14 @@ class Step
 
   def merge_info(hash)
     return nil if @exec or info_file.nil?
+    return nil if ! writable?
     value = Annotated.purge value if defined? Annotated
     Open.lock(info_file, :lock => info_lock) do
       i = info(false)
       i.merge! hash
       @info_cache = i
-      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
+      dump = INFO_SERIALIAZER.dump(i)
+      Misc.sensiblewrite(info_file, dump, :force => true, :lock => false)
       @info_cache_time = Time.now
       value
     end
@@ -546,8 +543,8 @@ class Step
     provenance = {}
     dependencies.each do |dep|
       next unless dep.path.exists?
-      if File.exist? dep.info_file
-        provenance[dep.path] = dep.provenance if File.exist? dep.path
+      if Open.exists? dep.info_file
+        provenance[dep.path] = dep.provenance if Open.exists? dep.path
       else
         provenance[dep.path] = nil
       end
@@ -558,7 +555,7 @@ class Step
   def provenance_paths
     provenance = {}
     dependencies.each do |dep|
-      provenance[dep.path] = dep.provenance_paths if File.exist? dep.path
+      provenance[dep.path] = dep.provenance_paths if Open.exists? dep.path
     end
     provenance
   end

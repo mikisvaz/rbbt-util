@@ -129,11 +129,63 @@ for this dependency
     "Hi #{name}"
   end
 
+  input :num, :integer
+  task :odd => :integer do |num|
+    raise ParameterException, "Not odd" if num % 2 == 0
+    num
+  end
+
+  dep :odd, :num => 10, :compute => :canfail 
+  dep :odd, :num => 11, :compute => :canfail 
+  dep :odd, :num => 12, :compute => :canfail 
+  dep :odd, :num => 13, :compute => :canfail 
+  task :sum_odds => :integer do 
+    dependencies.inject(0) do |acc, dep|
+      acc += dep.load unless dep.error?
+      acc
+    end
+  end
+
+  dep :sum_odds
+  task :sum_odds_str => :string do
+    "Sum odds: " << step(:sum_odds).load.to_s
+  end
+
+
 end
 
 TestWF.workdir = Rbbt.tmp.test.workflow
 
 class TestWorkflow < Test::Unit::TestCase
+
+  
+  def test_repo_marshal
+    TmpFile.with_file do |tmpdir|
+      tmpdir = Rbbt.tmp.repo_dir.find
+      repo = File.join(tmpdir, 'repo')
+
+      filename = 'file'
+      Open.repository_dirs.push(repo)
+
+      job = TestWF.job(:call_name, "Miguel")
+      job.run
+
+      obj = job.info
+      Open.write(File.join(repo, filename), Marshal.dump(obj))
+      new =Open.open(File.join(repo, filename)) do |f|
+        Marshal.load(f)
+      end
+
+      assert_equal new, obj
+    end
+
+  end
+  
+  def test_in_repo
+    job = TestWF.job(:call_name, "Miguel")
+    assert_equal "Hi Miguel", job.run
+    assert_equal "Miguel", job.clean_name
+  end
 
   def test_as_jobname
     job = TestWF.job(:call_name, "Miguel")
@@ -146,21 +198,22 @@ class TestWorkflow < Test::Unit::TestCase
   end
 
   def test_update_on_input_dependency_update
+    Open.repository_dirs << File.join(ENV["HOME"],".rbbt/tmp/test/workflow")
     Log.severity = 0
     send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
     send_input_dep_to_reverse_job.clean
     send_input_dep_to_reverse_job.run
 
     input_dep_job = send_input_dep_to_reverse_job.step(:input_dep)
-    mtime_orig = File.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
+    mtime_orig = Open.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
 
-    sleep 1
+    sleep 2
     input_dep_job.clean
     input_dep_job.run
     send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
 
     send_input_dep_to_reverse_job.run
-    mtime_new = File.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
+    mtime_new = Open.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
     assert mtime_orig < mtime_new
   end
 
@@ -170,7 +223,7 @@ class TestWorkflow < Test::Unit::TestCase
 
   def test_job
     str = "TEST"
-    job = TestWF.job(:repeat2, "Default", :number => 3).fork
+    job = TestWF.job(:repeat2, "Default", :number => 3).clean.fork
     while not job.done?
       sleep 1
     end
@@ -275,16 +328,6 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal "CB", TestWF.job(:t3).run
   end
 
-  def test_relocate
-    listed = '/home/user/.rbbt/var/jobs/TestWF/task1/Default'
-    real = '/usr/local/var/rbbt/jobs/TestWF/task1/Default'
-    other = '/home/user/.rbbt/var/jobs/TestWF/task2/Default'
-    real_other = '/usr/local/var/rbbt/jobs/TestWF/task2/Default'
-
-    assert_equal real_other, Workflow.relocate(real, other)
-    assert_equal real_other, Workflow.relocate(real, other)
-  end
-
   def test_transplant
     listed = '/home/user/.rbbt/var/jobs/TestWF/task1/Default'
     real = '/usr/local/var/rbbt/jobs/TestWF/task1/Default'
@@ -295,13 +338,29 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal real_other, Workflow.transplant(nil, real, other)
   end
 
-  def test_relocate_alt
-    listed = '/scratch/tmp/rbbt/.rbbt/var/jobs/Study/sample_gene_cnvs_focal/Bladder-TCC'
-    real = '/home/bsc26/bsc26892/.rbbt/var/jobs/Study/sample_gene_cnvs_focal/Bladder-TCC'
-    other = '/scratch/tmp/rbbt/scratch/bsc26892/rbbt/var/jobs/Sample/gene_cnv_status_focal/PCAWG'
-    real_other = '/home/bsc26/bsc26892/.rbbt/var/jobs/Sample/gene_cnv_status_focal/PCAWG'
+  def test_relocate
+    TmpFile.with_file do |tmpdir|
+      listed = File.join(tmpdir, '/home/user/.rbbt/var/jobs/TestWF/task1/Default')
+      real = File.join(tmpdir, '/usr/local/var/rbbt/jobs/TestWF/task1/Default')
+      other = File.join(tmpdir, '/home/user/.rbbt/var/jobs/TestWF/task2/Default')
+      real_other = File.join(tmpdir, '/usr/local/var/rbbt/jobs/TestWF/task2/Default')
 
-    assert_equal real_other, Workflow.relocate(real, other)
+      Open.write(real_other,'')
+      assert_equal real_other, Workflow.relocate(real, other)
+      assert_equal real_other, Workflow.relocate(real, other)
+    end
+  end
+
+  def test_relocate_alt
+    TmpFile.with_file do |tmpdir|
+      listed = File.join(tmpdir, '/scratch/tmp/rbbt/.rbbt/var/jobs/Study/sample_gene_cnvs_focal/Bladder-TCC')
+      real = File.join(tmpdir, '/home/bsc26/bsc26892/.rbbt/var/jobs/Study/sample_gene_cnvs_focal/Bladder-TCC')
+      other = File.join(tmpdir, '/scratch/tmp/rbbt/scratch/bsc26892/rbbt/var/jobs/Sample/gene_cnv_status_focal/PCAWG')
+      real_other = File.join(tmpdir, '/home/bsc26/bsc26892/.rbbt/var/jobs/Sample/gene_cnv_status_focal/PCAWG')
+      Open.write(real_other,'')
+
+      assert_equal real_other, Workflow.relocate(real, other)
+    end
   end
 
   def test_delete_dep
@@ -317,8 +376,17 @@ class TestWorkflow < Test::Unit::TestCase
     job = TestWF.job(:t3)
     job.step(:t1).clean
     Misc.with_env "RBBT_UPDATE_ALL_JOBS", "true" do
-      assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
+     assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
     end
+  end
+
+  def test_canfail
+    job = TestWF.job(:sum_odds)
+    assert_equal 24, job.run
+
+    job = TestWF.job(:sum_odds_str)
+    job.recursive_clean
+    assert_equal "Sum odds: 24", job.run
   end
 
 end

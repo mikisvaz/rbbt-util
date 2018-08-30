@@ -29,8 +29,8 @@ module Persist
     return true if not Open.exists? file
     path = path.find if Path === path
     file = file.find if Path === file
-    patht = File.mtime(path)
-    filet = File.mtime(file)
+    patht = Open.mtime(path)
+    filet = Open.mtime(file)
     diff = patht - filet
     return diff if diff < 0
     return false
@@ -109,7 +109,7 @@ module Persist
       when :string, :text
         Open.read(path)
       when :binary
-        f = File.open(path, 'rb')
+        f = Open.open(path, 'rb')
         res = f.read
         f.close
         res.force_encoding("ASCII-8BIT") if res.respond_to? :force_encoding

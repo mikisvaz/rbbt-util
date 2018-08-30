@@ -137,11 +137,14 @@ module Open
     end
   end
 
+  def self.clear_dir_repos
+    @@repos.clear if defined? @@repos and @@repos
+  end
   def self.get_repo_from_dir(dir)
-    @repos ||= {}
-    @repos[dir] ||= begin
+    @@repos ||= {}
+    @@repos[dir] ||= begin
                       repo_path = File.join(dir, '.file_repo')
-                      Persist.open_tokyocabinet(repo_path, false, :clean,TokyoCabinet::BDB )
+                      Persist.open_tokyocabinet(repo_path, false, :clean, TokyoCabinet::BDB )
                     end
   end
 
@@ -149,13 +152,45 @@ module Open
     repo = get_repo_from_dir(dir)
     repo.read_and_close do
       content = repo[sub_path]
-      content.nil? ? nil : StringIO.new(content)
+      content.nil? ? nil : StringIO.new(content).tap{|o| o.binmode }
+    end
+  end
+
+  def self.get_time_from_repo(dir, sub_path)
+    repo = get_repo_from_dir(dir)
+    time = repo.read_and_close do
+      Time.at(repo['.time.' + sub_path].to_i)
+    end
+    time
+  end
+
+  def self.get_atime_from_repo(dir, sub_path)
+    repo = get_repo_from_dir(dir)
+    File.atime(repo.persistance_path)
+  end
+
+  def self.writable_repo?(dir, sub_path)
+    repo = get_repo_from_dir(dir)
+    begin
+      repo.write_and_close do
+      end
+      true
+    rescue
+      false
+    end
+  end
+
+  def self.set_time_from_repo(dir, sub_path)
+    repo = get_repo_from_dir(dir)
+    repo.read_and_close do
+      repo['.time.' + sub_path] = Time.now.to_i.to_s
     end
   end
 
   def self.save_content_in_repo(dir, sub_path, content)
     repo = get_repo_from_dir(dir)
     repo.write_and_close do
+      repo['.time.' + sub_path] = Time.now.to_i.to_s
       repo[sub_path] = content
     end
   end
@@ -174,15 +209,24 @@ module Open
   def self.exists_in_repo(dir, sub_path, content)
     repo = get_repo_from_dir(dir)
     repo.read_and_close do
-      repo.include? sub_path 
+      repo.include?(sub_path) && ! repo[sub_path].nil?
     end
   end
 
   def self.find_repo_dir(file)
     self.repository_dirs.each do |dir|
-      if file.start_with? dir
-        sub_path = file.to_s[dir.length..-1]
-        return [dir, sub_path]
+      dir = dir + '/' unless dir[-1] == "/"
+
+      begin
+        if file.start_with? dir
+          sub_path = file.to_s[dir.length..-1]
+          return [dir, sub_path]
+        else 
+          if Path === file and (ffile = file.find).start_with? dir
+            sub_path = ffile.to_s[dir.length..-1]
+            return [dir, sub_path]
+          end
+        end
       end
     end
     nil
@@ -237,9 +281,13 @@ module Open
   end
 
   def self.mkdir(target)
-    target = target.find if Path === target
-    if not File.exists?(target)
-      FileUtils.mkdir_p target
+    if (dir_sub_path = find_repo_dir(target))
+      nil
+    else
+      target = target.find if Path === target
+      if ! File.exists?(target)
+        FileUtils.mkdir_p target
+      end
     end
   end
 
@@ -279,13 +327,47 @@ module Open
     end
   end
 
-  def self.cp(source, target, options = {})
-    source = source.find if Path === source
-    target = target.find if Path === target
+  #def self.cp(source, target, options = {})
+  #  source = source.find if Path === source
+  #  target = target.find if Path === target
 
-    FileUtils.mkdir_p File.dirname(target) unless File.exists?(File.dirname(target))
-    FileUtils.rm target if File.exists?(target)
-    FileUtils.cp source, target
+  #  FileUtils.mkdir_p File.dirname(target) unless File.exists?(File.dirname(target))
+  #  FileUtils.rm target if File.exists?(target)
+  #  FileUtils.cp source, target
+  #end
+
+  def self.cp(source, target, options = {})
+    dir_sub_path_source = find_repo_dir(source)
+    dir_sub_path_target = find_repo_dir(target)
+
+    if dir_sub_path_source.nil? and dir_sub_path_target.nil?
+      FileUtils.mkdir_p File.dirname(target) unless File.exist? File.dirname(target)
+      tmp_target = File.join(File.dirname(target), '.tmp_mv.' + File.basename(target))
+      FileUtils.cp source, tmp_target
+      FileUtils.cp tmp_target, target
+      return
+    end
+
+    if dir_sub_path_source.nil?
+      save_content_in_repo(dir_sub_path_target[0], dir_sub_path_target[1], Open.read(source, :mode => 'rb', :nofix => true))
+      return nil
+    end
+
+    if dir_sub_path_target.nil?
+      Open.write(target, get_stream_from_repo(dir_sub_path_source))
+      return nil
+    end
+
+    repo_source = get_repo_from_dir(dir_sub_path_source[0])
+    repo_target = get_repo_from_dir(dir_sub_path_target[0])
+
+    repo_source.read_and_close do
+      repo_target.write_and_close do
+        repo_source[dir_sub_path_source[1]] = repo_target[dir_sub_path_target[1]]
+      end
+    end
+
+    return nil
   end
 
   def self.mv(source, target, options = {})
@@ -301,7 +383,7 @@ module Open
     end
 
     if dir_sub_path_source.nil?
-      save_content_in_repo(dir_sub_path_target[0], dir_sub_path_target[1], Open.read(source))
+      save_content_in_repo(dir_sub_path_target[0], dir_sub_path_target[1], Open.read(source, :mode => 'rb', :nofix => true))
       return nil
     end
 
@@ -317,6 +399,7 @@ module Open
       repo_target.write_and_close do
         repo_source[dir_sub_path_source[1]] = repo_target[dir_sub_path_target[1]]
       end
+      repo_source.delete dir_sub_path_source[1]
     end
 
     return nil
@@ -330,6 +413,9 @@ module Open
       file = file.find if Path === file
       File.exist?(file) || File.symlink?(file)
     end
+  end
+  class << self
+    alias exist? exists?
   end
 
   def self.lock(file, options = {}, &block)
@@ -485,7 +571,7 @@ module Open
   end
 
   def self.can_open?(file)
-    String === file and (File.exist?(file) or remote?(file))
+    String === file and (Open.exist?(file) or remote?(file))
   end
 
   def self.read(file, options = {}, &block)
@@ -511,13 +597,14 @@ module Open
   def self.notify_write(file)
     begin
       notification_file = file + '.notify'
-      if File.exist? notification_file
+      if Open.exists? notification_file
         key = Open.read(notification_file).strip
         key = nil if key.empty?
         Misc.notify("Wrote " << file, nil, key)
-        FileUtils.rm notification_file
+        Open.rm notification_file
       end
     rescue
+      Log.exception $!
       Log.warn "Error notifying write of #{ file }"
     end
   end
@@ -528,48 +615,106 @@ module Open
     file = file.find(options[:where]) if Path === file
     mode = Misc.process_options options, :mode
 
-    FileUtils.mkdir_p File.dirname(file)
-    case
-    when block_given?
-      begin
-        f = File.open(file, mode)
-        begin
-          yield f
-        ensure
-          f.close unless f.closed?
-        end
-      rescue Exception
-        FileUtils.rm file if File.exist? file
-        raise $!
-      end
-    when content.nil?
-      File.open(file, mode){|f| f.write "" }
-    when String === content
-      file_write(file, content, mode)
+    if (dir_sub_path = find_repo_dir(file))
+      content = case content
+                when String
+                  content
+                when nil 
+                  if block_given?
+                    yield
+                  else
+                    ""
+                  end
+                else
+                  content.read
+                end
+      dir_sub_path.push content
+      save_content_in_repo(*dir_sub_path)
     else
-      begin
-        File.open(file, mode) do |f| 
-          f.flock(File::LOCK_EX)
-          while block = content.read(Misc::BLOCK_SIZE)
-            f.write block
+      FileUtils.mkdir_p File.dirname(file)
+      case
+      when block_given?
+        begin
+          f = File.open(file, mode)
+          begin
+            yield f
+          ensure
+            f.close unless f.closed?
           end
-          f.flock(File::LOCK_UN)
+        rescue Exception
+          FileUtils.rm file if File.exist? file
+          raise $!
         end
-      rescue Exception
-        FileUtils.rm_rf file if File.exist? file
-        raise $!
+      when content.nil?
+        File.open(file, mode){|f| f.write "" }
+      when String === content
+        file_write(file, content, mode)
+      else
+        begin
+          File.open(file, mode) do |f| 
+            f.flock(File::LOCK_EX)
+            while block = content.read(Misc::BLOCK_SIZE)
+              f.write block
+            end
+            f.flock(File::LOCK_UN)
+          end
+        rescue Exception
+          FileUtils.rm_rf file if File.exist? file
+          raise $!
+        end
+        content.close
       end
-      content.close
     end
+
     notify_write(file) 
   end
 
   def self.writable?(path)
     path = path.find if Path === path
-    if File.exists?(path)
-      File.writable?(path)
+    if (dir_sub_path = find_repo_dir(path))
+      writable_repo?(*dir_sub_path)
     else
-      File.writable?(File.dirname(File.expand_path(path)))
+      if File.exists?(path)
+        File.writable?(path)
+      else
+        File.writable?(File.dirname(File.expand_path(path)))
+      end
+    end
+  end
+
+  def self.ctime(file)
+    if (dir_sub_path = find_repo_dir(file))
+      get_time_from_repo(*dir_sub_path)
+    else
+      file = file.find if Path === file
+      File.ctime(file)
+    end
+  end
+
+  def self.mtime(file)
+    if (dir_sub_path = find_repo_dir(file))
+      get_time_from_repo(*dir_sub_path)
+    else
+      file = file.find if Path === file
+      File.mtime(file)
+    end
+  end
+
+  def self.atime(file)
+    if (dir_sub_path = find_repo_dir(file))
+      get_atime_from_repo(*dir_sub_path)
+    else
+      file = file.find if Path === file
+      File.atime(file)
+    end
+  end
+
+  def self.touch(file)
+    if (dir_sub_path = find_repo_dir(file))
+      set_time_from_repo(*dir_sub_path)
+    else
+      file = file.find if Path === file
+      FileUtils.touch(file)
     end
   end
 end

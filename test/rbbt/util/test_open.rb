@@ -109,7 +109,7 @@ class TestOpen < Test::Unit::TestCase
     file1 = "TEST"
     file2 = "TEST" * 1000
     TmpFile.with_file do |tmpdir|
-      tmpdir = "/home/mvazquezg/tmp/repo_dir"
+      tmpdir = Rbbt.tmp.repo_dir.find
       normal = File.join(tmpdir, 'normal')
       repo = File.join(tmpdir, 'repo')
 
@@ -135,7 +135,7 @@ class TestOpen < Test::Unit::TestCase
   
   def test_repo_dir2
     TmpFile.with_file do |tmpdir|
-      tmpdir = "/home/mvazquezg/tmp/repo_dir"
+      tmpdir = Rbbt.tmp.repo_dir.find
       repo = File.join(tmpdir, 'repo')
 
       Open.repository_dirs.push(repo)
@@ -149,5 +149,24 @@ class TestOpen < Test::Unit::TestCase
     end
   end
 
+  def test_repo_marshal
+    TmpFile.with_file do |tmpdir|
+      tmpdir = Rbbt.tmp.repo_dir.find
+      repo = File.join(tmpdir, 'repo')
+
+      filename = 'file'
+      Open.repository_dirs.push(repo)
+
+      obj = {:a => "string", :pid => nil, :num => 1000, :p  => Rbbt.tmp.foo}
+      Open.write(File.join(repo, filename), Marshal.dump(obj))
+      new =Open.open(File.join(repo, filename)) do |f|
+        Marshal.load(f)
+      end
+
+      assert_equal new, obj
+    end
+
+  end
+  
 end
 

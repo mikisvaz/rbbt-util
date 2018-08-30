@@ -145,7 +145,8 @@ class Step
       next unless dep.updatable?
 
       begin
-        if dep.done? && self.done? && Open.exists?(dep.path) && Open.exists?(self.path) && (File.mtime(dep.path) > File.mtime(self.path))
+
+        if dep.done? && self.done? && Open.exists?(dep.path) && Open.exists?(self.path) && (Open.mtime(dep.path) > Open.mtime(self.path))
           outdated_time << dep
         end
       rescue
@@ -223,7 +224,7 @@ class Step
           begin
             run_dependencies
           rescue Exception
-            FileUtils.rm pid_file if File.exist?(pid_file)
+            Open.rm pid_file if Open.exists?(pid_file)
             stop_dependencies
             raise $!
           end
@@ -346,7 +347,7 @@ class Step
               ensure
                 Step.purge_stream_cache
                 set_info :pid, nil
-                FileUtils.rm pid_file if File.exist?(pid_file)
+                Open.rm pid_file if Open.exist?(pid_file)
               end
             end
 
@@ -361,7 +362,7 @@ class Step
               rescue
                 stop_dependencies
                 set_info :pid, nil
-                FileUtils.rm pid_file if File.exist?(pid_file)
+                Open.rm pid_file if Open.exist?(pid_file)
               end
             end
 
@@ -381,13 +382,13 @@ class Step
             })
             log :ending
             Step.purge_stream_cache
-            FileUtils.rm pid_file if File.exist?(pid_file)
+            Open.rm pid_file if Open.exist?(pid_file)
           end
 
           set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
 
           if result.nil? && File.exists?(self.tmp_path) && ! File.exists?(self.path)
-            FileUtils.mv self.tmp_path, self.path
+            Open.mv self.tmp_path, self.path
           end
           result
         end # END PERSIST
@@ -464,7 +465,7 @@ class Step
       Misc.pre_fork
       begin
         RbbtSemaphore.wait_semaphore(semaphore) if semaphore
-        FileUtils.mkdir_p File.dirname(path) unless File.exist? File.dirname(path)
+        Open.mkdir File.dirname(path) unless Open.exist?(File.dirname(path))
         begin
           @forked = true
           res = run no_load
@@ -626,7 +627,7 @@ class Step
   end
 
   def soft_grace
-    until done? or File.exist?(info_file)
+    until done? or Open.exist?(info_file)
       sleep 1 
     end
     self
@@ -672,8 +673,8 @@ class Step
         dependencies.each{|dep| dep.join }
       end
 
-      until (path.exists? && status == :done) or error? or aborted? or waiting?
-        sleep 1 
+      until (Open.exists?(path) && status == :done) or error? or aborted? or waiting?
+        sleep 1
         join_stream if streaming?
       end
 
@@ -682,7 +683,7 @@ class Step
       begin
         set_info :joined, true 
       rescue
-      end if File.exists?(info_file) && writable?
+      end if Open.exists?(info_file) && writable?
       @result = nil
     end
   end

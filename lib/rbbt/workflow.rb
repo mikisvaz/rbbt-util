@@ -471,7 +471,7 @@ module Workflow
     preal = real.split(/\/+/)
     pother = other.split(/\/+/)
     end_part = pother[-3..-1] * "/"
-    new_path = preal[0..-4] * "/" << end_part
+    new_path = preal[0..-4] * "/" << "/" << end_part
     return new_path if File.exists? new_path
     Rbbt.var.jobs[end_part].find
   end

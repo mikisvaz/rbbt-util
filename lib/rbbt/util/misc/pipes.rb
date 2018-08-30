@@ -405,10 +405,10 @@ module Misc
               Open.mv tmp_path, path, lock_options
             end
           rescue Exception
-            raise $! unless File.exist? path
+            raise $! unless Open.exists? path
           end
 
-          FileUtils.touch path if File.exist? path
+          Open.touch path if Open.exists? path
           content.join if content.respond_to? :join and not (content.respond_to?(:joined?) and content.joined?)
 
           Open.notify_write(path) 

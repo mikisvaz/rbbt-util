@@ -88,6 +88,8 @@ orig_name = name
 
 $saved_args = ARGV.dup
 
+$saved_args.shift if $saved_args.include? '--'
+
 workflow = Workflow.require_workflow workflow
 
 tasks = task ? [task] : workflow.libdir.examples.glob('*').collect{|file| File.basename file }

@@ -180,7 +180,7 @@ class Step
       raise $!
     rescue Exception
       Log.error "Exception in dep. #{ Log.color :red, dependency.task_name.to_s } -- #{$!.message}"
-      raise $!
+      raise $! unless canfail_paths.include? dependency.path
     end
   end
 
@@ -300,7 +300,7 @@ class Step
   end
 
   def canfail_paths
-    return Set.new if ! File.exists?(info_file)
+    return Set.new if ! Open.exists?(info_file)
 
     if info[:canfail_paths]
       Set.new(info[:canfail_paths])

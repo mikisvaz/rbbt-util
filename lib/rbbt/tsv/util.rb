@@ -106,7 +106,7 @@ module TSV
       end
       file
     when String
-      if Open.remote?(file) or File.exist? file
+      if Open.remote?(file) or Open.exist? file
         Open.open(file, open_options)
       else
         StringIO.new file
