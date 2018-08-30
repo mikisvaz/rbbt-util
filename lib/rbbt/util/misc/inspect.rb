@@ -45,7 +45,7 @@ module Misc
     when nil
       "nil"
     when (defined? Step and Step)
-      "<Step:"  << (obj.path || Misc.fingerprint([obj.task.name, obj.inputs])) << ">"
+      "<Step:"  << (obj.short_path || Misc.fingerprint([obj.task.name, obj.inputs])) << ">"
     when TrueClass
       "true"
     when FalseClass
@@ -295,7 +295,7 @@ module Misc
               "<IO:" << obj.path << "--" << mtime_str(obj.path) << ">"
             end
           when (defined? Step and Step)
-            "<IO:" << obj.path << ">"
+            "<IO:" << obj.short_path << ">"
           when IO
             if obj.respond_to? :filename and obj.filename
               "<IO:" << obj.filename << "--" << mtime_str(obj.filename) << ">"
