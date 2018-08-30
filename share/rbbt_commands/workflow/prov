@@ -70,7 +70,7 @@ def report_msg(status, name, path, info = nil)
     task, status, workflow = Log.color(:yellow, info[:task_name]), Log.color(:blue, "file"), Log.color(:magenta, "-")
   end
 
-  str = if not Open.remote?(path) and (File.exists?(path) and $main_mtime and ($main_mtime - File.mtime(path)) < 0)
+  str = if not Open.remote?(path) and (Open.exists?(path) and $main_mtime and ($main_mtime - Open.mtime(path)) < 0)
     status_msg(status.to_s) << " " << [workflow, task, path].compact * " " << " (#{Log.color(:red, "Mtime out of sync") })"
   else
     status_msg(status.to_s) << " " << [workflow, task, path].compact * " " 
@@ -108,7 +108,7 @@ def report(step, offset = 0, task = nil)
   status = info[:status] || :missing
   status = "remote" if Open.remote?(path)
   name = info[:name] || File.basename(path)
-  status = :unsync if status == :done and not File.exist? path
+  status = :unsync if status == :done and not Open.exist? path
   str = " " * offset
   str << report_msg(status, name, path, info)
   step.dependencies.each do |dep|
@@ -124,7 +124,7 @@ def report(step, offset = 0, task = nil)
 end
 
 step = get_step file
-$main_mtime = File.exist?(step.path) ? File.mtime(step.path) : nil
+$main_mtime = Open.exist?(step.path) ? Open.mtime(step.path) : nil
 
 def adjacency(step)
 
@@ -138,7 +138,7 @@ def adjacency(step)
     workflow, task, name = path.split("/")[-3..-1]
   end
   name = name.split(":").last
-  status = :unsync if status == :done and not File.exist? path
+  status = :unsync if status == :done and not Open.exist? path
   shapes = Hash.new "circle"
   edge_info = {:status =>  status, :workflow => workflow, :task => task, :name => name, :label => task, :shape => shapes[workflow], :color => status == 'remote' ? 'blue' : 'green'}
   id = Misc.digest(path)

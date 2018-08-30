@@ -167,6 +167,26 @@ class TestOpen < Test::Unit::TestCase
     end
 
   end
+
+  def test_write_stream_repo
+    Log.severity = 0
+    TmpFile.with_file do |tmpdir|
+      tmpdir = Rbbt.tmp.repo_dir.find
+      repo = File.join(tmpdir, 'repo')
+
+      file = File.join(repo, 'file')
+      Open.repository_dirs.push(repo)
+
+      text = (["text"] * 5) * "\n"
+
+      Misc.consume_stream(StringIO.new(text), false, file)
+
+      assert_equal text, Open.read(file)
+      assert !File.exists?(file)
+      assert Open.exists? file
+    end
+
+  end
   
 end
 

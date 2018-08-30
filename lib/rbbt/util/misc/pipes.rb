@@ -304,7 +304,7 @@ module Misc
         into = into.find if Path === into
         if String === into 
           dir = File.dirname(into)
-          FileUtils.mkdir_p dir unless Open.exists?(dir)
+          Open.mkdir dir unless Open.exists?(dir)
           into_path, into = into, Open.open(into, :mode => 'w') 
         end
         into.sync = true if IO === into

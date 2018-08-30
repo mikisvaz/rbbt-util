@@ -250,7 +250,21 @@ module Open
 
   def self.file_open(file, grep, mode = 'r', invert_grep = false)
     if (dir_sub_path = find_repo_dir(file))
-      stream = get_stream_from_repo(*dir_sub_path)
+      if mode.include? 'w'
+
+        stream = StringIO.new
+        class << stream
+          attr_accessor :dir_sub_path
+          def close
+            self.rewind
+            Open.save_content_in_repo(*dir_sub_path, self.read)
+          end
+        end
+        stream.dir_sub_path = dir_sub_path
+
+      else
+        stream = get_stream_from_repo(*dir_sub_path)
+      end
     else
       file = file.find if Path === file
       stream =  File.open(file, mode)
