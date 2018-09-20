@@ -27,26 +27,38 @@ module Workflow
 
   def self.load_inputs(dir, input_names, input_types)
     inputs = {}
-    dir = Path.setup(dir.dup)
-    input_names.each do |input|
-      file = dir[input].find
-      file = dir.glob(input.to_s + ".*").first if file.nil? or not file.exists?
-      Log.debug "Trying #{ input }: #{file}"
-      next unless file and file.exists?
-
-      case input_types[input]
-      when :tsv, :array, :text, :file
-        Log.debug "Pointing #{ input } to #{file}"
-        inputs[input.to_sym]  = file
-      when :boolean
-        inputs[input.to_sym]  = (file.read.strip == 'true')
-      else
-        Log.debug "Loading #{ input } from #{file}"
-        inputs[input.to_sym]  = file.read.strip
+    if File.exists?(dir) && ! File.directory?(dir) && (dir =~ /\.tar\.gz$/ || dir =~ /\.tgz$/)
+      tarfile = dir
+      digest = CMD.cmd("md5sum '#{tarfile}'").read.split(" ").first
+      tmpdir = Rbbt.tmp.input_bundle[digest].find
+      files = tmpdir.glob("*")
+      if files.length == 1 && File.directory?(files.first)
+        tmpdir = files.first
       end
+      Misc.untar(tarfile, tmpdir) unless File.exists? tmpdir
+      load_inputs(tmpdir, input_names, input_types)
+    else
+      dir = Path.setup(dir.dup)
+      input_names.each do |input|
+        file = dir[input].find
+        file = dir.glob(input.to_s + ".*").first if file.nil? or not file.exists?
+        Log.debug "Trying #{ input }: #{file}"
+        next unless file and file.exists?
 
+        case input_types[input]
+        when :tsv, :array, :text, :file
+          Log.debug "Pointing #{ input } to #{file}"
+          inputs[input.to_sym]  = file
+        when :boolean
+          inputs[input.to_sym]  = (file.read.strip == 'true')
+        else
+          Log.debug "Loading #{ input } from #{file}"
+          inputs[input.to_sym]  = file.read.strip
+        end
+
+      end
+      IndiferentHash.setup(inputs)
     end
-    IndiferentHash.setup(inputs)
   end
 
   def example_inputs(task_name, example)

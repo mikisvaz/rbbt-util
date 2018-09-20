@@ -92,7 +92,14 @@ module Misc
   # untars the given IO into the specified
   # directory
   def self.untar(io, destination)
-    return _untar_cmd(io, destination)
+    io = io.find if Path === io
+    if String === io and File.exists?(io)
+      Open.open(io) do |f|
+        untar(f, destination)
+      end
+    else
+      return _untar_cmd(io, destination)
+    end
   end
 end
 
