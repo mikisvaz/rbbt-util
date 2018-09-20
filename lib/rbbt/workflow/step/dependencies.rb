@@ -302,7 +302,7 @@ class Step
   def canfail_paths
     return Set.new if ! Open.exists?(info_file)
 
-    if info[:canfail_paths]
+    if !relocated && info[:canfail_paths] 
       Set.new(info[:canfail_paths])
     else
       canfail_paths = Set.new

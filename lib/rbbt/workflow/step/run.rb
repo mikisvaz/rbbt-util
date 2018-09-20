@@ -416,6 +416,8 @@ class Step
       stop_dependencies
       raise $!
     ensure 
+      no_load = false unless IO === result
+      Open.rm pid_file if Open.exist?(pid_file) unless no_load
       set_info :pid, nil unless no_load
     end
   end
@@ -434,6 +436,7 @@ class Step
         else
           e = get_exception
           if e
+            Log.error "Raising exception in produced job #{job.path}: #{e.message}" 
             raise e
           else
             raise "Error in job: #{self.path}"

@@ -478,14 +478,17 @@ module Workflow
 
   def self.load_step(path)
     step = Step.new path
+    relocated = false
     step.dependencies = (step.info[:dependencies] || []).collect do |task,name,dep_path|
-      if File.exists?(dep_path)
+      if Open.exists?(dep_path)
         Workflow.load_step dep_path
       else
         new_path = relocate(path, dep_path)
+        relocated = true if Open.exists?(new_path)
         Workflow.load_step new_path
       end
     end
+    step.relocated = relocated
 
     step
   end

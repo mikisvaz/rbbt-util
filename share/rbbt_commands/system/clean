@@ -103,6 +103,14 @@ TSV.traverse jobs, :_bar => "Checking job status" do |file,i|
     status = :sync if status != "done" and File.exist? file
 
     status = :dirty if info[:status].to_s == "done" and dirty and Workflow.load_step(file).dirty?
+    if info[:status] == :error
+      begin
+        exception = info[:exception][:class]
+        Kernel.const_get exception
+        status = :non_recoverable if exception.superclass === RbbtException
+      rescue
+      end
+    end
 
     status = status.to_s
   end

@@ -9,6 +9,7 @@ class Step
   attr_accessor :task_name, :overriden
   attr_accessor :pid
   attr_accessor :exec
+  attr_accessor :relocated
   attr_accessor :result, :mutex, :seen
 
   class << self
@@ -252,18 +253,28 @@ class Step
 
 
   def load
-    res = if @result and not @path == @result
-            res = @result
-          else
-            join if not done?
-            @path.exists? ? Persist.load_file(@path, result_type) : exec
-          end
+    res = begin
+            if @result and not @path == @result
+              res = @result
+            else
+              join if not done?
+              res = @path.exists? ? Persist.load_file(@path, result_type) : exec
+            end
 
-    if result_description
-      entity_info = info.dup
-      entity_info.merge! info[:inputs] if info[:inputs]
-      res = prepare_result res, result_description, entity_info 
-    end
+            if result_description
+              entity_info = info.dup
+              entity_info.merge! info[:inputs] if info[:inputs]
+              res = prepare_result res, result_description, entity_info 
+            end
+
+            res
+          rescue IOError
+            if @result
+              @result = nil
+              retry
+            end
+            raise $!
+          end
 
     res
   end
