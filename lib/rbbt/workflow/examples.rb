@@ -27,15 +27,16 @@ module Workflow
 
   def self.load_inputs(dir, input_names, input_types)
     inputs = {}
-    if File.exists?(dir) && ! File.directory?(dir) && (dir =~ /\.tar\.gz$/ || dir =~ /\.tgz$/)
+    if File.exists?(dir) && ! File.directory?(dir)
+      Log.debug "Loading inputs from #{dir}, not a directory trying as tar.gz"
       tarfile = dir
       digest = CMD.cmd("md5sum '#{tarfile}'").read.split(" ").first
       tmpdir = Rbbt.tmp.input_bundle[digest].find
+      Misc.untar(tarfile, tmpdir) unless File.exists? tmpdir
       files = tmpdir.glob("*")
       if files.length == 1 && File.directory?(files.first)
         tmpdir = files.first
       end
-      Misc.untar(tarfile, tmpdir) unless File.exists? tmpdir
       load_inputs(tmpdir, input_names, input_types)
     else
       dir = Path.setup(dir.dup)
@@ -46,9 +47,18 @@ module Workflow
         next unless file and file.exists?
 
         case input_types[input]
-        when :tsv, :array, :text, :file
+        when :file
           Log.debug "Pointing #{ input } to #{file}"
           inputs[input.to_sym]  = file
+        when :text
+          Log.debug "Reading #{ input } from #{file}"
+          inputs[input.to_sym]  = Open.read(file)
+        when :array
+          Log.debug "Reading array #{ input } from #{file}"
+          inputs[input.to_sym]  = Open.read(file).split("\n")
+        when :tsv
+          Log.debug "Opening tsv #{ input } from #{file}"
+          inputs[input.to_sym]  = TSV.open(file)
         when :boolean
           inputs[input.to_sym]  = (file.read.strip == 'true')
         else
