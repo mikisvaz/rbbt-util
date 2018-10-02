@@ -109,7 +109,7 @@ module Persist
       when :string, :text
         Open.read(path)
       when :binary
-        f = Open.open(path, 'rb')
+        f = Open.open(path, :mode => 'rb')
         res = f.read
         f.close
         res.force_encoding("ASCII-8BIT") if res.respond_to? :force_encoding
