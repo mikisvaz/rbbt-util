@@ -7,7 +7,7 @@ module AbortedStream
 end
 
 module ConcurrentStream
-  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :aborted, :autojoin, :lockfile, :no_fail, :pair, :thread
+  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :aborted, :autojoin, :lockfile, :no_fail, :pair, :thread, :stream_exception
 
   def self.setup(stream, options = {}, &block)
     
@@ -125,6 +125,7 @@ module ConcurrentStream
     ensure
       @joined = true
       lockfile.unlock if lockfile and lockfile.locked?
+      raise stream_exception if stream_exception
     end
   end
 
@@ -224,6 +225,7 @@ module ConcurrentStream
     threads.each do |thread|
       thread.raise exception
     end
+    self.stream_exception = exception
 
     self.abort
   end

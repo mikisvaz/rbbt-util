@@ -189,6 +189,7 @@ module CMD
       end
     end
     io.join
+
     nil
   end
 end

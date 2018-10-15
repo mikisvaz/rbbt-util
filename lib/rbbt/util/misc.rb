@@ -84,7 +84,7 @@ module Misc
     tokens[nil] = tokens[default]
     tokens[""] = tokens[default]
     time = 0
-    str.scan(/(\d+)(\w?)/).each do |amount, measure|
+    str.scan(/(\d+)(\w*)/).each do |amount, measure|
       time += amount.to_i * tokens[measure]
     end
     time

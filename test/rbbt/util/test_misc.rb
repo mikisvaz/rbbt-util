@@ -428,9 +428,6 @@ eum fugiat quo voluptas nulla pariatur?"
     assert_equal [737407, ["-----", "-----G", "-----GTTAAT"]], Misc.correct_vcf_mutation(737406, "GTTAAT", "G,GG,GGTTAAT")
   end
 
-  def test_mutation_to_ensembl_format
-    assert_equal Misc.mutation_to_ensembl_format("1:100:T", "A"), %w(1 100 100 A/T)
-  end
 
   def test_fingerprint
     assert_equal '{:a=>1}', Misc.fingerprint({:a => 1})
@@ -487,9 +484,11 @@ eum fugiat quo voluptas nulla pariatur?"
 
   def test_obj2md5
     str = "string" *  1000000
-    obj1 = [1,2,"test", 0.3, [1,2,3], {:a => [1,2], :b => str}]
-    obj2 = [1,2,"test", 0.3, [1,2,3], {:a => [1,2,3], :b => str}]
-    obj3 = [1,2,:test, 0.3, [1,2,3], {:a => [1,2,"3"], :b => str}]
+    obj1 = [1,2,"test_str", 0.3, [1,2,3], {:a => [1,2], :b => str}]
+
+    obj2 = [1,2,"test_str", 0.3, [1,2,3], {:a => [1,2,3], :b => str}]
+    obj3 = [1,2,:test_str, 0.3, [1,2,3], {:a => [1,2,"3"], :b => str}]
+
     assert_not_equal Misc.obj2md5(obj1), Misc.obj2md5(obj2)
     assert_equal Misc.obj2md5(obj2), Misc.obj2md5(obj3)
     hash = Hash[*(0..obj1.length).zip(obj1).flatten]

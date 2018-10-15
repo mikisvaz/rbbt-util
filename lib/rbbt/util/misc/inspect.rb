@@ -270,7 +270,7 @@ module Misc
               obj + " (file missing)"
             end
           when String
-            if Misc.is_filename?(obj)
+            if Misc.is_filename?(obj) 
               obj2str Path.setup(obj.dup)
             else
               obj = obj.chomp if String === obj
