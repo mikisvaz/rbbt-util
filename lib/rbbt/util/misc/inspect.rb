@@ -300,7 +300,15 @@ module Misc
             if obj.respond_to? :filename and obj.filename
               "<IO:" << obj.filename << "--" << mtime_str(obj.filename) << ">"
             else
-              obj.inspect + rand(1000000).to_s
+
+              if obj.respond_to? :obj2str
+                obj.obj2str
+              else
+                class << obj
+                  attr_accessor :obj2str
+                end
+                obj.obj2str = obj.inspect + rand(1000000).to_s
+              end
             end
           else
             if obj.respond_to? :filename and obj.filename
