@@ -132,7 +132,17 @@ module Resource
       rake_dir, content = rake_for(path)
       rake_dir = Path.setup(rake_dir.dup, self.pkgdir, self)
     else
-      raise "Resource is missing and does not seem to be claimed: #{ self } -- #{ path } "
+      begin
+        if path !~ /\.(gz|bgz)$/
+          begin
+            produce(path + '.gz', force)
+          rescue
+            produce(path + '.bgz', force)
+          end
+        end
+      rescue
+        raise "Resource is missing and does not seem to be claimed: #{ self } -- #{ path } "
+      end
     end
 
     if path.respond_to?(:find) 
