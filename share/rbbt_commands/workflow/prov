@@ -70,7 +70,12 @@ def report_msg(status, name, path, info = nil)
     task, status, workflow = Log.color(:yellow, info[:task_name]), Log.color(:blue, "file"), Log.color(:magenta, "-")
   end
 
-  str = if not Open.remote?(path) and (Open.exists?(path) and $main_mtime and ($main_mtime - Open.mtime(path)) < 0)
+  path_mtime = begin
+                   Open.mtime(path)
+               rescue
+                   nil
+               end
+  str = if not Open.remote?(path) and (Open.exists?(path) and $main_mtime and path_mtime and ($main_mtime - path_mtime) < 0)
     status_msg(status.to_s) << " " << [workflow, task, path].compact * " " << " (#{Log.color(:red, "Mtime out of sync") })"
   else
     status_msg(status.to_s) << " " << [workflow, task, path].compact * " " 
