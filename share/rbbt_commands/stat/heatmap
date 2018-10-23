@@ -53,6 +53,6 @@ else
 data = rbbt.tsv2matrix(rbbt.tsv('#{file}'))
 rbbt.pheatmap('#{png}', data, width=#{ width }, height=#{ height }, take_log=#{R.ruby2R logs}, positive=#{R.ruby2R positive})
         EOF
-        `op #{png}`
+        `eog #{png}`
     end
 end
