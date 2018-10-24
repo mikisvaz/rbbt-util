@@ -31,6 +31,7 @@ module Persist
     file = file.find if Path === file
     patht = Open.mtime(path)
     filet = Open.mtime(file)
+    return true if patht.nil? || filet.nil?
     diff = patht - filet
     return diff if diff < 0
     return false

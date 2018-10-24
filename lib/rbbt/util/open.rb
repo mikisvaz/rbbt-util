@@ -2,6 +2,7 @@ require 'rbbt/util/cmd'
 require 'rbbt/util/tmpfile'
 require 'rbbt/util/misc'
 require 'rbbt/util/misc/bgzf'
+require 'pathname'
 
 require 'zlib'
 
@@ -710,7 +711,12 @@ module Open
       get_time_from_repo(*dir_sub_path)
     else
       file = file.find if Path === file
-      File.mtime(file)
+      file = Pathname.new(file).realpath.to_s if File.symlink?(file)
+      begin
+        File.mtime(file)
+      rescue
+        nil
+      end
     end
   end
 
