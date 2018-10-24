@@ -945,7 +945,7 @@ module Workflow
                      all_d = (real_dependencies + real_dependencies.flatten.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
 
                      _inputs = assign_dep_inputs(_inputs, options, all_d, workflow.task_info(dep_task))
-                     jobname = _inputs[:jobname] if _inputs.include? :jobname
+                     jobname = _inputs.delete :jobname if _inputs.include? :jobname
 
                      job = workflow._job(dep_task, jobname, _inputs)
                      ComputeDependency.setup(job, compute) if compute
