@@ -436,7 +436,7 @@ class Step
         else
           e = get_exception
           if e
-            Log.error "Raising exception in produced job #{job.path}: #{e.message}" 
+            Log.error "Raising exception in produced job #{self.path}: #{e.message}" 
             raise e
           else
             raise "Error in job: #{self.path}"
