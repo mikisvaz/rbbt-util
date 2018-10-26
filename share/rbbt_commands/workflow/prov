@@ -120,6 +120,7 @@ def report(step, offset = 0, task = nil)
     path = dep.path
     new = ! $seen.include?(path)
     if new
+      $seen << path
       str << report(dep, offset + 1, task)
     else
       str << Log.color(:blue, Log.uncolor(report(dep, offset+1, task)))
