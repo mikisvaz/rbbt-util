@@ -252,6 +252,7 @@ module Misc
     end
     tee1, *rest = Misc.tee_stream stream_dup, num + 1
     stream.reopen(tee1)
+    tee1.annotate(stream)
     rest
   end
 
