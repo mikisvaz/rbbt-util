@@ -426,7 +426,7 @@ module Open
       exists_in_repo(*dir_sub_path)
     else
       file = file.find if Path === file
-      File.exist?(file) || File.symlink?(file)
+      File.exist?(file) #|| File.symlink?(file)
     end
   end
   class << self
@@ -711,8 +711,8 @@ module Open
       get_time_from_repo(*dir_sub_path)
     else
       file = file.find if Path === file
-      file = Pathname.new(file).realpath.to_s if File.symlink?(file)
       begin
+        file = Pathname.new(file).realpath.to_s if File.symlink?(file)
         File.mtime(file)
       rescue
         nil

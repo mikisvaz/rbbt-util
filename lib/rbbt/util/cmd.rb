@@ -1,5 +1,6 @@
 require 'rbbt/util/log'
 require 'stringio'
+require 'open3'
 
 module CMD
 
@@ -53,50 +54,58 @@ module CMD
 
     in_content = StringIO.new in_content if String === in_content
 
-    sout, serr, sin = Misc.pipe, Misc.pipe, Misc.pipe
+    #sout, serr, sin = Misc.pipe, Misc.pipe, Misc.pipe
 
-    pid = fork {
-      begin
-        Misc.purge_pipes(sin.last,sout.last,serr.last)
+    #pid = fork {
+    #  begin
+    #    Misc.purge_pipes(sin.last,sout.last,serr.last)
 
-        sin.last.close
-        sout.first.close
-        serr.first.close
+    #    sin.last.close
+    #    sout.first.close
+    #    serr.first.close
 
-        if IO === in_content
-          in_content.close if in_content.respond_to?(:close) and not in_content.closed?
-        end
+    #    if IO === in_content
+    #      in_content.close if in_content.respond_to?(:close) and not in_content.closed?
+    #    end
 
-        STDERR.reopen serr.last
-        serr.last.close
+    #    STDERR.reopen serr.last
+    #    serr.last.close
 
-        STDIN.reopen sin.first
-        sin.first.close
+    #    STDIN.reopen sin.first
+    #    sin.first.close
 
-        STDOUT.reopen sout.last
-        sout.last.close
+    #    STDOUT.reopen sout.last
+    #    sout.last.close
 
-        STDOUT.sync = STDERR.sync = true
+    #    STDOUT.sync = STDERR.sync = true
 
-        exec(ENV, cmd)
+    #    exec(ENV, cmd)
 
-        exit(-1)
-      rescue Exception
-        Log.debug{ "ProcessFailed: #{$!.message}" } if log
-        Log.debug{ "Backtrace: \n" + $!.backtrace * "\n" } if log
-        raise ProcessFailed, $!.message
-      end
-    }
+    #    exit(-1)
+    #  rescue Exception
+    #    Log.debug{ "ProcessFailed: #{$!.message}" } if log
+    #    Log.debug{ "Backtrace: \n" + $!.backtrace * "\n" } if log
+    #    raise ProcessFailed, $!.message
+    #  end
+    #}
 
-    sin.first.close
-    sout.last.close
-    serr.last.close
+    #sin.first.close
+    #sout.last.close
+    #serr.last.close
 
 
-    sin = sin.last
-    sout = sout.first
-    serr = serr.first
+    #sin = sin.last
+    #sout = sout.first
+    #serr = serr.first
 
+    sin, sout, serr, wait_thr = begin
+                                  Open3.popen3(ENV, cmd)
+                                rescue
+                                  Log.warn $!.message
+                                  raise ProcessFailed, cmd unless no_fail
+                                  return
+                                end
+    pid = wait_thr.pid
 
     Log.debug{"CMD: [#{pid}] #{cmd}" if log}
 
@@ -160,10 +169,9 @@ module CMD
       out = StringIO.new sout.read
       sout.close unless sout.closed?
 
-      Process.waitpid pid
-
-      if not $?.success? and not no_fail
-        raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{$?.exitstatus}.\n#{err}"
+      status = wait_thr.value
+      if not status.success? and not no_fail
+        raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{status.exitstatus}.\n#{err}"
       else
         Log.log err, stderr if Integer === stderr and log
       end

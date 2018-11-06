@@ -35,8 +35,8 @@ class TestCmd < Test::Unit::TestCase
     assert_raise ProcessFailed do CMD.cmd('fake-command', :stderr => true) end
     assert_raise ProcessFailed do CMD.cmd('ls -fake_option', :stderr => true) end
  
-    assert_nothing_raised ProcessFailed do CMD.cmd('fake-command', :stderr => false, :pipe => true) end
-    assert_nothing_raised ProcessFailed do CMD.cmd('ls -fake_option', :stderr => false, :pipe => true) end
+    assert_nothing_raised ProcessFailed do CMD.cmd('fake-command', :no_fail => true, :pipe => true) end
+    assert_nothing_raised ProcessFailed do CMD.cmd('ls -fake_option', :no_fail => true, :pipe => true) end
  
     assert_raise ProcessFailed do CMD.cmd('fake-command', :stderr => true, :pipe => true).join end
     assert_raise ProcessFailed do CMD.cmd('ls -fake_option', :stderr => true, :pipe => true).join end
@@ -59,6 +59,18 @@ line33
         io2 = CMD.cmd('head -n 10', :in => io, :pipe => true)
         io3 = CMD.cmd('head -n 10', :in => io2, :pipe => true)
         assert_equal 10, io3.read.split(/\n/).length
+      end
+    end
+  end
+
+  def test_STDIN_close
+    TmpFile.with_file("Hello") do |file|
+      STDIN.close
+      Open.open(file) do |f|
+        io = CMD.cmd("tr 'e' 'E'", :in => f, :pipe => true)
+        txt = io.read
+        io.join
+        assert_equal "HEllo", txt
       end
     end
   end

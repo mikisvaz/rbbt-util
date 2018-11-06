@@ -84,13 +84,14 @@ module Rbbt::Config
       l =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
         l =~ /rbbt\/resource\/path\.rb/ or
         l =~ /rbbt\/util\/misc\.rb/ or
+        l =~ /accessor\.rb/ or
         l =~ /progress-monitor\.rb/ 
     }.first.partition(":")
 
     File.expand_path(file)
 
     tokens << ("file:" << file)
-    tokens << ("line:" << file << ":" << line)
+    tokens << ("line:" << file << ":" << line.sub(/:in \`.*/,''))
 
     entries = CACHE[key.to_s]
     priorities = {}
@@ -105,7 +106,9 @@ module Rbbt::Config
 
     return nil if priorities.empty?
 
-    priorities.sort_by{|p,v| p}.first.last.first
+    value = priorities.sort_by{|p,v| p}.first.last.first
+    Log.debug "Value '#{value}' for config key '#{ key }': #{tokens * ", "}"
+    value
   end
 
   self.load_config

@@ -105,7 +105,7 @@ module TSV
       workbook = Spreadsheet.open Open.open(file)
 
       if sheet && sheet.to_s =~ /^\d+$/
-        sheet = workbook.worksheets.collect{|s| s.sheet_name }[sheet.to_i]
+        sheet = workbook.worksheets.collect{|s| s.name }[sheet.to_i]
       end
       sheet_name = sheet
       Log.debug "Opening LSX #{file} sheet #{ sheet_name }"

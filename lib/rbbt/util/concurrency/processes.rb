@@ -126,7 +126,7 @@ class RbbtProcessQueue
                   @count += 1
                   @total -= 1
                   next unless processes.length > 1
-                  last = processes.last
+                  last = processes.reject{|p| p.stopping }.last
                   last.stop
                   Log.warn "Removed process #{last.pid} from #{Process.pid} (#{processes.length})"
                 end

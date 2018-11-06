@@ -315,7 +315,7 @@ module Workflow
     missing_inputs = []
     task.required_inputs.each do |input|
       missing_inputs << input if inputs[input].nil?
-    end
+    end if task.required_inputs
 
     if missing_inputs.length == 1
       raise ParameterException, "Input #{missing_inputs.first} is required but was not provided or is nil"

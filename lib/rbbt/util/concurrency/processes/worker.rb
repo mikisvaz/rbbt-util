@@ -1,7 +1,7 @@
 require 'rbbt/util/concurrency/processes/socket'
 class RbbtProcessQueue
   class RbbtProcessQueueWorker
-    attr_reader :pid, :queue, :callback_queue, :cleanup, :block
+    attr_reader :pid, :queue, :callback_queue, :cleanup, :block, :stopping
 
     class Respawn < Exception
       attr_accessor :payload 
@@ -277,6 +277,7 @@ class RbbtProcessQueue
 
     def stop
       begin
+        @stoping = true
         Process.kill :USR2, @pid
       rescue Errno::ESRCH 
       rescue Exception

@@ -97,10 +97,12 @@ TSV.traverse jobs, :_bar => "Checking job status" do |file,i|
     pid = info[:pid]
 
     status = info[:status].to_s
-    status = :missing if status == "done" and not File.exist? file
-    status = :nopid if status != "done" and pid.nil?
-    status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
-    status = :sync if status != "done" and File.exist? file
+    if status != "noinfo"
+      status = :missing if status == "done" and not File.exist? file
+      status = :nopid if status != "done" and pid.nil?
+      status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
+      status = :sync if status != "done" and File.exist? file
+    end
 
     status = :dirty if info[:status].to_s == "done" and dirty and Workflow.load_step(file).dirty?
     if info[:status] == :error
