@@ -16,4 +16,3 @@ require 'rbbt/util/cmd'
 require 'rbbt/tsv'
 
 require 'rbbt/util/config'
-

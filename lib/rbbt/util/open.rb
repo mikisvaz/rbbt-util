@@ -216,7 +216,7 @@ module Open
 
   def self.find_repo_dir(file)
     self.repository_dirs.each do |dir|
-      dir = dir + '/' unless dir[-1] == "/"
+      dir = dir + '/' unless dir.chars[-1] == "/"
 
       begin
         if file.start_with? dir

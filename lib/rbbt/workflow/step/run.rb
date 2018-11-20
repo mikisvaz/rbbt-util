@@ -141,18 +141,24 @@ class Step
     outdated_time  = []
     outdated_dep  = []
     canfail_paths = self.canfail_paths
+    this_mtime = Open.mtime(self.path) if Open.exists?(self.path)
+
     checks.each do |dep| 
       next unless dep.updatable?
+      dep_done = dep.done?
 
       begin
-
-        if dep.done? && self.done? && Open.exists?(dep.path) && Open.exists?(self.path) && (Open.mtime(dep.path) > Open.mtime(self.path))
+        if this_mtime && dep_done && Open.exists?(dep.path) && (Open.mtime(dep.path) > this_mtime)
           outdated_time << dep
         end
       rescue
       end
 
-      if (! dep.done? && ! canfail_paths.include?(dep.path)) || ! dep.updated?
+      # Is this pointless? this would mean some dep got updated after a later
+      # dep but but before this one.
+      #if (! dep.done? && ! canfail_paths.include?(dep.path)) || ! dep.updated?
+
+      if (! dep_done && ! canfail_paths.include?(dep.path))
         outdated_dep << dep
       end
     end
