@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*" "} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Compare two lists and do confusion matrix
+
+$ #{$0} [options] <filename1> <filename2>
+
+-h--help Print this help
+-c--common Print the common entries
+-o1--only_1 Print entries only in file 1
+-o2--only_2 Print entries only in file 2
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+raise ParameterException, "Please provide two files with the entities to compare" unless ARGV.length == 2
+file1, file2 = ARGV
+
+list1 = Open.read(file1).split("\n")
+list2 = Open.read(file2).split("\n")
+
+common = list1 & list2
+only_1 = list1 - list2
+only_2 = list2 - list1
+
+case
+when options[:common]
+  puts common * "\n"
+when options[:only_1]
+  puts only_1 * "\n"
+when options[:only_2]
+  puts only_2 * "\n"
+else
+  puts "Common: #{common.length}"
+  puts "Unique to 1 (#{File.basename(file1)}): #{only_1.length}"
+  puts "Unique to 2 (#{File.basename(file2)}): #{only_2.length}"
+end

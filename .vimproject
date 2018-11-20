@@ -424,6 +424,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     log
     pvalue.qqplot
     heatmap
+    compare_lists
    }
    study=study{
     task
