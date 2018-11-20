@@ -42,7 +42,7 @@ get_pkg(){
     local url="$2"
 
     if [ ! -f "$OPT_SRC_DIR/$name.pkg" ]; then
-        wget "$url" -O "$OPT_SRC_DIR/$name.pkg" 
+        wget "$url" -O "$OPT_SRC_DIR/$name.pkg"  || wget "$url" -O "$OPT_SRC_DIR/$name.pkg" --no-check-certificate
     fi
 }
 
@@ -56,7 +56,7 @@ uncompress_pkg(){
     mkdir -p "$OPT_BUILD_DIR"
     cd "$OPT_BUILD_DIR"
 
-    (tar xvfz $pkg || tar xvfj $pkg || unzip $pkg || echo "Error decompressing") 2> /dev/null
+    (tar xvfz $pkg || tar xvfJ $pkg || tar xvfj $pkg || unzip $pkg || echo "Error decompressing") 2> /dev/null
 
     cd "$old_pwd"
 }
@@ -81,7 +81,8 @@ get_svn(){
         cd "$name" 
         svn update
     else
-        git checkout "$url" "$name"
+        echo svn checkout "$url" "$name"
+        svn checkout "$url" "$name"
     fi
 
     clean_build
@@ -146,6 +147,8 @@ compile(){
 
     [ -f setup.rb ] && (ruby -Ilib/ setup.rb --prefix="$(opt_dir "$name")" $extra || exit -1)
 
+    [ -f install.rb ] && ruby -Ilib/ install.rb config --prefix="$(opt_dir "$name")" $extra && ruby -Ilib/ install.rb install
+
     if [ -f setup.py ]; then 
         python setup.py build &&  python setup.py install --user || exit -1
         clean_build 
@@ -157,11 +160,20 @@ build(){
     local extra="$@"
 
     echo "Building $name"
+    if [ "x$extra" != "x" ]; then
+        echo "Extra params: $extra"
+    fi
 
     local old_pwd="`expand_path $(pwd)`"
     cd "`build_dir`"
     echo PWD: `pwd`
     ls
+
+    if [ -f config/m4 ]; then
+        libtoolize --force
+        aclocal
+        autoheader
+    fi
 
     if [ -f Makefile.am -a ! -f configure ]; then
       autoreconf
@@ -176,22 +188,43 @@ build(){
     fi
 
     if [ -f aclocal.m4 ]; then
+        autoreconf -i
         autoconf
+        automake
+    else
+        autoconf
+        automake
     fi
 
+    if [ -f config ]; then
+        ln -s config configure
+    fi
+
+    if [ -f CMakeLists.txt ]; then
+        mkdir build
+        cd build
+        cmake -DCMAKE_INSTALL_PREFIX:PATH=/ ..
+        make -j4
+        make DESTDIR="$(opt_dir "$name")" install
+        setup "$name"
+        clean_build
+    fi
+    
     if [ -f configure ]; then 
+        echo ./configure --prefix="$(opt_dir "$name")" $extra
         ./configure --prefix="$(opt_dir "$name")" $extra
         compile "$name" $extra
         setup "$name"
         clean_build
-        cd "$old_pwd"
     else
         compile "$name" $extra
         move_opt "$name"
         setup "$name"
         clean_build
     fi
+
     
+    cd "$old_pwd"
 }
 
 #{{{ SETUP
@@ -261,6 +294,7 @@ setup(){
         cd "$old_pwd"
     fi
     
+    ([ -d "$pkg_dir/include" ]       && add2file "$OPT_DIR/.c-paths" "$pkg_dir/include")
     ([ -d "$pkg_dir/lib" ]           && add2file "$OPT_DIR/.ld-paths" "$pkg_dir/lib")
     ([ -d "$pkg_dir/lib/pkgconfig" ] && add2file "$OPT_DIR/.pkgconfig-paths" "$pkg_dir/lib/pkgconfig")
 }
@@ -276,6 +310,16 @@ install_src(){
     get_pkg "$name" "$url"
     uncompress_pkg "$name"
     build "$name"  "$extra"
+}
+
+install_svn(){
+    local name="$1"
+    local url="$2"
+    shift;shift;
+    local extra="$@"
+    
+    get_svn "$name" "$url"
+    build "$name" $extra
 }
 
 custom_build(){
@@ -314,7 +358,7 @@ install_jar(){
     local url="$2"
 
     [ -d  "$OPT_DIR/$name/" ] || mkdir -p  "$OPT_DIR/$name/"
-    wget "$url" -O "$OPT_DIR/$name/$name.jar"
+    wget "$url" -O "$OPT_DIR/jars/$name.jar" | wget "$url" -O "$OPT_DIR/jars/$name.jar" --no-check-certificate
     link "$OPT_DIR/$name/$name.jar" "$OPT_JAR_DIR/$name.jar" 
 }
 
