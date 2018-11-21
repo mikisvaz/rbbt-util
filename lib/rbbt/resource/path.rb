@@ -129,7 +129,7 @@ module Path
     @path ||= {}
     rsearch_paths = (resource and resource.respond_to?(:search_paths)) ? resource.search_paths : nil 
     key_elems = [where, caller_lib, rsearch_paths, paths]
-    key = Misc.digest(key_elems.inspect)
+    key = Misc.obj2digest(key_elems)
     self.sub!('~/', Etc.getpwuid.dir + '/') if self.include? "~"
 
     return @path[key] if @path[key]

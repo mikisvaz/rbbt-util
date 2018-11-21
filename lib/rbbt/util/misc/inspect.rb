@@ -251,6 +251,8 @@ module Misc
     obj = Annotated.purge(obj) if Annotated === obj
 
     str = case obj
+          when nil
+            '--NIL--'
           when TrueClass
             'true'
           when FalseClass
