@@ -252,7 +252,7 @@ module Misc
 
     str = case obj
           when nil
-            '--NIL--'
+            'nil'
           when TrueClass
             'true'
           when FalseClass
