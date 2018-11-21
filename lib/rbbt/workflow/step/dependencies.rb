@@ -300,7 +300,7 @@ class Step
   end
 
   def canfail_paths
-    return Set.new if ! Open.exists?(info_file)
+    return Set.new if done? && ! Open.exists?(info_file)
 
     if !relocated && info[:canfail_paths] 
       Set.new(info[:canfail_paths])
@@ -309,6 +309,7 @@ class Step
       all_deps = dependencies
       all_deps.each do |dep|
         next if canfail_paths.include? dep.path
+        canfail_paths += dep.canfail_paths
         next unless ComputeDependency === dep && dep.canfail?
         canfail_paths << dep.path
         canfail_paths += dep.rec_dependencies.collect{|d| d.path }
