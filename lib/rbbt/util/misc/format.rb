@@ -41,6 +41,7 @@ module Misc
                   line << word << " "
                   word = words.shift
                 end
+                offset = 0
                 lines << ((" " * indent) << line[0..-2])
                 line = ""
               end

@@ -40,7 +40,8 @@ module SOPT
     else
       "=<#{ type }>"
     end
-    extra << " (default: #{Array === default ? (default.length > 3 ? default[0..2]*", " + ', ...' : default*", " ): default})" if default != nil
+    #extra << " (default: #{Array === default ? (default.length > 3 ? default[0..2]*", " + ', ...' : default*", " ): default})" if default != nil
+    extra << " (default: #{Misc.fingerprint(default)})" if default != nil
     input_str << Log.color(:green, extra)
   end
 
