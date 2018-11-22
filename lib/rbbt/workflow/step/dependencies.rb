@@ -302,8 +302,8 @@ class Step
   def canfail_paths
     return Set.new if done? && ! Open.exists?(info_file)
 
-    if !relocated && info[:canfail_paths] 
-      Set.new(info[:canfail_paths])
+    if !relocated && info[:canfail] 
+      Set.new(info[:canfail])
     else
       canfail_paths = Set.new
       all_deps = dependencies
@@ -316,7 +316,7 @@ class Step
       end
       canfail_paths
       begin
-        set_info :canfail_paths, canfail_paths.to_a
+        set_info :canfail, canfail_paths.to_a
       rescue Errno::EROFS
       end
       canfail_paths
