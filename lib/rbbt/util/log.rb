@@ -272,6 +272,31 @@ module Log
     end
   end
 
+  def self.count_stack
+    if ! $count_stacks
+      Log.debug "Counting stacks at: " << caller.first
+      return 
+    end
+    $stack_counts ||= {}
+    head = $count_stacks_head
+    stack = caller[1..head+1]
+    stack.reverse.each do |line,i|
+      $stack_counts[line] ||= 0
+      $stack_counts[line] += 1
+    end
+  end
+
+  def self.with_stack_counts(head = 10, total = 100)
+    $count_stacks_head = head
+    $count_stacks = true
+    $stack_counts = {}
+    res = yield
+    $count_stacks = false
+    Log.debug "STACK_COUNTS:\n" + $stack_counts.sort_by{|line,c| c}.reverse.collect{|line,c| [c, line] * " - "}[0..total] * "\n"
+    $stack_counts = {}
+    res
+  end
+
   case ENV['RBBT_LOG'] 
   when 'DEBUG' 
     self.severity = DEBUG
