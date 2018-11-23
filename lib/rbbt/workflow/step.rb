@@ -98,13 +98,20 @@ class Step
     else
       i = {}
     end
-    dependencies.each do |dep|
-      di = dep.recursive_inputs
-      next unless NamedArray === di
-      di.fields.zip(di).each do |k,v|
-        i[k] = v unless i.include? k
+    rec_dependencies.each do |dep|
+      next unless NamedArray === dep.inputs
+      dep.inputs.zip(dep.inputs.fields).each do |v,f|
+        next if i.include?(f)
+        i[f] = v
       end
     end
+    #dependencies.each do |dep|
+    #  di = dep.recursive_inputs
+    #  next unless NamedArray === di
+    #  di.fields.zip(di).each do |k,v|
+    #    i[k] = v unless i.include? k
+    #  end
+    #end
     v = i.values
     NamedArray.setup v, i.keys 
     v

@@ -9,6 +9,7 @@ require 'rbbt/workflow/archive'
 module Workflow
 
   STEP_CACHE = {}
+  LOAD_STEP_CACHE = {}
 
   class TaskNotFoundException < Exception 
     def initialize(workflow, task = nil)
@@ -192,6 +193,7 @@ module Workflow
   attr_accessor :task_dependencies, :task_description, :last_task 
   attr_accessor :stream_exports, :asynchronous_exports, :synchronous_exports, :exec_exports
   attr_accessor :step_cache
+  attr_accessor :load_step_cache
   attr_accessor :remote_tasks
 
   #{{{ ATTR DEFAULTS
@@ -229,6 +231,11 @@ module Workflow
   def step_cache
     @step_cache ||= Workflow::STEP_CACHE
   end
+
+  def self.load_step_cache
+    @load_step_cache ||= Workflow::LOAD_STEP_CACHE
+  end
+
 
   def helpers
     @helpers ||= {}
@@ -396,7 +403,11 @@ module Workflow
       Misc.insist do
         step.dependencies = step.info[:dependencies].collect do |task, job, path|
           next if job.nil?
-          load_step(path) 
+          if Open.exists?(path)
+            load_step(path) 
+          else
+            Workflow.load_step(path)
+          end
         end
       end
     end
@@ -420,21 +431,6 @@ module Workflow
     step.inputs ||= input_values
     step.dependencies = dependencies if dependencies and (step.dependencies.nil? or step.dependencies.length < dependencies.length)
 
-
-    step
-  end
-
-  def load_id(id)
-    path = if Path === workdir
-             workdir[id].find
-           else
-             File.join(workdir, id)
-           end
-    task = task_for path
-    return remote_tasks[task].load_id(id) if remote_tasks and remote_tasks.include? task
-    step = Step.new path, tasks[task.to_sym]
-    step.load_inputs_from_info
-    set_step_dependencies(step)
     step
   end
 
@@ -467,6 +463,21 @@ module Workflow
     File.join(sr - sl + so)
   end
 
+  def  self.relocate_array(real, list)
+    preal = real.split(/\/+/)
+    prefix = preal[0..-4] * "/" 
+    list.collect do |other|
+      pother = other.split(/\/+/)
+      end_part = pother[-3..-1] * "/"
+      new_path = prefix + "/" << end_part
+      if File.exists? new_path
+        new_path 
+      else
+        Rbbt.var.jobs[end_part].find
+      end
+    end
+  end
+
   def  self.relocate(real, other)
     preal = real.split(/\/+/)
     pother = other.split(/\/+/)
@@ -476,7 +487,8 @@ module Workflow
     Rbbt.var.jobs[end_part].find
   end
 
-  def self.load_step(path)
+
+  def self.__load_step(path)
     step = Step.new path
     relocated = false
     step.dependencies = (step.info[:dependencies] || []).collect do |task,name,dep_path|
@@ -485,13 +497,44 @@ module Workflow
       else
         new_path = relocate(path, dep_path)
         relocated = true if Open.exists?(new_path)
-        Workflow.load_step new_path
+        Workflow._load_step new_path
       end
     end
     step.relocated = relocated
+    step.load_inputs_from_info
 
     step
   end
+
+  def self._load_step(path)
+    Persist.memory("STEP", :path => path, :repo => load_step_cache) do
+      __load_step(path)
+    end
+  end
+
+  def self.load_step(path)
+    begin
+      _load_step(path)
+    ensure
+      load_step_cache.clear
+    end
+  end
+
+  def load_id(id)
+    path = if Path === workdir
+             workdir[id].find
+           else
+             File.join(workdir, id)
+           end
+    task = task_for path
+    return remote_tasks[task].load_id(id) if remote_tasks and remote_tasks.include? task
+    return Workflow.load_step path
+    #step = Step.new path, tasks[task.to_sym]
+    #step.load_inputs_from_info
+    #set_step_dependencies(step)
+    #step
+  end
+
 
   def load_name(task, name)
     return remote_tasks[task].load_step(path) if remote_tasks and remote_tasks.include? task

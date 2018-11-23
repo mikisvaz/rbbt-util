@@ -302,25 +302,30 @@ class Step
   def canfail_paths
     return Set.new if done? && ! Open.exists?(info_file)
 
-    if !relocated && info[:canfail] 
-      Set.new(info[:canfail])
-    else
-      canfail_paths = Set.new
-      all_deps = dependencies
-      all_deps.each do |dep|
-        next if canfail_paths.include? dep.path
-        canfail_paths += dep.canfail_paths
-        next unless ComputeDependency === dep && dep.canfail?
-        canfail_paths << dep.path
-        canfail_paths += dep.rec_dependencies.collect{|d| d.path }
-      end
-      canfail_paths
-      begin
-        set_info :canfail, canfail_paths.to_a
-      rescue Errno::EROFS
-      end
-      canfail_paths
-    end
+    @canfail_paths ||= begin 
+                         if info[:canfail] 
+                           paths = info[:canfail].uniq
+                           paths = Workflow.relocate_array self.path, paths if relocated
+                           Set.new(paths)
+                         else
+                           canfail_paths = Set.new
+                           all_deps = dependencies
+                           all_deps.each do |dep|
+                             next if canfail_paths.include? dep.path
+                             canfail_paths += dep.canfail_paths
+                             next unless ComputeDependency === dep && dep.canfail?
+                             canfail_paths << dep.path
+                             iii dep.path
+                             canfail_paths += dep.rec_dependencies.collect{|d| d.path }
+                           end
+                           canfail_paths
+                           begin
+                             set_info :canfail, canfail_paths.to_a
+                           rescue Errno::EROFS
+                           end
+                           canfail_paths
+                         end
+                       end
   end
 
   def run_dependencies

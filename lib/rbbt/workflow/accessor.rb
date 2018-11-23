@@ -652,8 +652,9 @@ module Workflow
     name = name.to_sym
     task = tasks[name]
     raise "No '#{name}' task in '#{self.to_s}' Workflow" if task.nil?
-    @@task_info ||= {}
-    @@task_info[name] ||= begin description = task.description
+    id = File.join(self.to_s, name.to_s)
+    @task_info ||= {}
+    @task_info[id] ||= begin description = task.description
                            result_description = task.result_description
                            result_type = task.result_type
                            inputs = rec_inputs(name).uniq
@@ -675,9 +676,8 @@ module Workflow
                                       :none
                                     end
 
-
                            dependencies = task_dependencies[name].select{|dep| String === dep or Symbol === dep}
-                           { :id => File.join(self.to_s, name.to_s),
+                           info = { :id => id,
                              :description => description,
                              :export => export,
                              :inputs => inputs,
