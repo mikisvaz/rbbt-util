@@ -315,7 +315,6 @@ class Step
                              canfail_paths += dep.canfail_paths
                              next unless ComputeDependency === dep && dep.canfail?
                              canfail_paths << dep.path
-                             iii dep.path
                              canfail_paths += dep.rec_dependencies.collect{|d| d.path }
                            end
                            canfail_paths
