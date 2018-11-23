@@ -94,14 +94,15 @@ TSV.traverse jobs, :_bar => "Checking job status" do |file,i|
              {:status => :noinfo}
            end
 
-    pid = info[:pid]
+    done = Open.exists?(file)
+    pid = info[:pid] || (Open.exists?(file + '.pid') && Open.read(file + '.pid')) unless done
 
     status = info[:status].to_s
     if status != "noinfo"
-      status = :missing if status == "done" and not File.exist? file
+      status = :missing if status == "done" and not done
       status = :nopid if status != "done" and pid.nil?
       status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
-      status = :sync if status != "done" and File.exist? file
+      status = :sync if status != "done" and done
     end
 
     status = :dirty if info[:status].to_s == "done" and dirty and Workflow.load_step(file).dirty?
@@ -126,6 +127,7 @@ TSV.traverse jobs, :_bar => "Checking job status" do |file,i|
 
   if (force and status !~ /done/) or 
     status =~ /\b(old|dirty|nopid|error|missing|aborted|dead|sync)$/ or
+    (status == "noinfo" and not done) or
     status == "" 
 
     puts "  Removing #{ file } - #{status}" 
