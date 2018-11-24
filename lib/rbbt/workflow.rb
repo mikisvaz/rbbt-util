@@ -493,7 +493,7 @@ module Workflow
     relocated = false
     step.dependencies = (step.info[:dependencies] || []).collect do |task,name,dep_path|
       if Open.exists?(dep_path)
-        Workflow.load_step dep_path
+        Workflow._load_step dep_path
       else
         new_path = relocate(path, dep_path)
         relocated = true if Open.exists?(new_path)
