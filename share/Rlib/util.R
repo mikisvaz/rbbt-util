@@ -711,6 +711,13 @@ rbbt.plot.venn <- function(data, a, ...) {
     return(out)
 }
 
+rbbt.plot.pca <- function(data, center = TRUE, scale. = TRUE, ...) {
+  rbbt.require('vqv/ggbiplot')
+  data <- rbbt.impute(data)
+  pca <- prcomp(data, center=center, scale.=scale.)
+  ggbiplot(pca, ...)
+}
+
 
 rbbt.plot.text_scatter <- function(formula, data) {
     plot(formula, data=data, cex = 0)
