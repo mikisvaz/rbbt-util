@@ -218,6 +218,7 @@ class Step
           merge_info({
             :issued => (issue_time = Time.now),
             :name => name,
+            :pid => Process.pid.to_s,
             :clean_name => clean_name,
             :workflow => (@workflow || @task.workflow).to_s,
             :task_name => @task.name,
@@ -636,7 +637,7 @@ class Step
   end
 
   def soft_grace
-    until done? or Open.exist?(info_file)
+    until done? or (Open.exist?(info_file) && info[:status] != :noinfo)
       sleep 1 
     end
     self

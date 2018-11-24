@@ -222,6 +222,7 @@ class Step
   end
 
   def message(message)
+    message = Log.uncolor(message)
     set_info(:messages, (messages || []) << message)
   end
 
@@ -456,12 +457,13 @@ class Step
   end
 
   def nopid?
-    pid = info[:pid]
-    pid.nil? && ! (status.nil? || status.nil? || status == :aborted || status == :done || status == :error)
+    pid = info[:pid] || Open.exists?(pid_file)
+    ! pid && ! (status.nil? || status == :aborted || status == :done || status == :error)
   end
 
   def aborted?
-    status == :aborted || (status != :noinfo && nopid?)
+    status = self.status
+    status == :aborted || ((status != :noinfo || status != :setup) && nopid?)
   end
 
   # {{{ INFO
