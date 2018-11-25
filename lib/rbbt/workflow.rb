@@ -487,7 +487,6 @@ module Workflow
     Rbbt.var.jobs[end_part].find
   end
 
-
   def self.__load_step(path)
     step = Step.new path
     relocated = false
@@ -502,7 +501,41 @@ module Workflow
     end
     step.relocated = relocated
     step.load_inputs_from_info
+    step
+  end
+    
+  def self.fast_load_step(path)
+    step = Step.new path
+    step.dependencies = nil
+    class << step
+      def dependencies
+        @dependencies ||= (self.info[:dependencies] || []).collect do |task,name,dep_path|
+          dep = if Open.exists?(dep_path)
+                  relocate = false
+                  Workflow.fast_load_step dep_path
+                else
+                  new_path = Workflow.relocate(path, dep_path)
+                  relocated = true if Open.exists?(new_path)
+                  Workflow.fast_load_step new_path
+                end
+          dep.relocated = relocated
+          dep
+        end
+        @dependencies
+      end
 
+      def inputs
+        self.load_inputs_from_info unless @inputs
+        @inputs
+      end
+
+      def dirty?
+        false
+      end
+      def updated?
+        true
+      end
+    end
     step
   end
 
@@ -529,12 +562,19 @@ module Workflow
     task = task_for path
     return remote_tasks[task].load_id(id) if remote_tasks and remote_tasks.include? task
     return Workflow.load_step path
-    #step = Step.new path, tasks[task.to_sym]
-    #step.load_inputs_from_info
-    #set_step_dependencies(step)
-    #step
   end
 
+
+  def fast_load_id(id)
+    path = if Path === workdir
+             workdir[id].find
+           else
+             File.join(workdir, id)
+           end
+    task = task_for path
+    return remote_tasks[task].load_id(id) if remote_tasks and remote_tasks.include? task
+    return Workflow.fast_load_step path
+  end
 
   def load_name(task, name)
     return remote_tasks[task].load_step(path) if remote_tasks and remote_tasks.include? task
