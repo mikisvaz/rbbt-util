@@ -58,7 +58,7 @@ class Step
     @info_mutex = Mutex.new
     @inputs = inputs 
     NamedArray.setup @inputs, task.inputs.collect{|s| s.to_s} if task and task.respond_to? :inputs and task.inputs
-    if File.exists?(info_file) and info[:path] != path
+    if Open.exists?(info_file) and (info[:path] != path)
       @relocated = true
     end
   end
