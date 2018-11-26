@@ -309,7 +309,7 @@ class Step
                            Set.new(paths)
                          else
                            canfail_paths = Set.new
-                           all_deps = dependencies
+                           all_deps = dependencies || []
                            all_deps.each do |dep|
                              next if canfail_paths.include? dep.path
                              canfail_paths += dep.canfail_paths
