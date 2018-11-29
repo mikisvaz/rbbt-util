@@ -207,6 +207,15 @@ module Open
     end
   end
 
+  def self.list_repo_files(dir, sub_path = nil)
+    repo = get_repo_from_dir(dir)
+    files = repo.keys
+    files.reject!{|f| f[0] == "."}
+    return files unless sub_path
+
+    files.select{|file| file.start_with?(sub_path) }
+  end
+
   def self.exists_in_repo(dir, sub_path, content)
     repo = get_repo_from_dir(dir)
     repo.read_and_close do
@@ -219,7 +228,7 @@ module Open
       dir = dir + '/' unless dir.chars[-1] == "/"
 
       begin
-        if file.start_with? dir
+        if file.start_with?(dir) || file == dir[0..-2]
           sub_path = file.to_s[dir.length..-1]
           return [dir, sub_path]
         else 
@@ -376,10 +385,12 @@ module Open
     repo_source = get_repo_from_dir(dir_sub_path_source[0])
     repo_target = get_repo_from_dir(dir_sub_path_target[0])
 
-    repo_source.read_and_close do
-      repo_target.write_and_close do
-        repo_source[dir_sub_path_source[1]] = repo_target[dir_sub_path_target[1]]
-      end
+    content = repo_source.read_and_close do
+      repo_target[dir_sub_path_target[1]]
+    end
+
+    repo_target.write_and_close do
+      repo_source[dir_sub_path_source[1]] = content
     end
 
     return nil
@@ -410,10 +421,15 @@ module Open
     repo_source = get_repo_from_dir(dir_sub_path_source[0])
     repo_target = get_repo_from_dir(dir_sub_path_target[0])
 
+    content = repo_source.read_and_close do
+      repo_target[dir_sub_path_target[1]]
+    end
+
+    repo_target.write_and_close do
+      repo_source[dir_sub_path_source[1]] = content
+    end
+
     repo_source.write_and_close do
-      repo_target.write_and_close do
-        repo_source[dir_sub_path_source[1]] = repo_target[dir_sub_path_target[1]]
-      end
       repo_source.delete dir_sub_path_source[1]
     end
 
