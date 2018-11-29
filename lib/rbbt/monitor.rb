@@ -138,18 +138,45 @@ module Rbbt
     dirs.collect do |dir|
       next unless Open.exists? dir
 
-      dir.glob("*").collect do |workflowdir|
+      workflowdirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
+                       repo_dir, sub_path = dir_sub_path
+                       Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
+                     else
+                       dir.glob("*")
+                     end
+
+      workflowdirs.collect do |workflowdir|
         workflow = File.basename(workflowdir)
         next if workflows and not workflows.include? workflow
 
-        workflowdir.glob("*").collect do |taskdir|
+        tasks_dirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
+                       repo_dir, sub_path = dir_sub_path
+                       Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
+                     else
+                       workflowdir.glob("*")
+                     end
+
+        tasks_dirs.collect do |taskdir|
           task = File.basename(taskdir)
           next if tasks and not tasks.include? task
 
-          #cmd = "find -L '#{ taskdir }/'  -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' 2>/dev/null"
-          cmd = "find -L '#{ taskdir }/' -not \\( -path \"#{taskdir}/.info/*\" -prune \\) -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' \\( -not -type d -o -name '*.files' \\)  2>/dev/null"
 
-          files = CMD.cmd(cmd, :pipe => true)
+          files = if (dir_sub_path = Open.find_repo_dir(taskdir))
+                    repo_dir, sub_path = dir_sub_path
+                    Open.list_repo_files(*dir_sub_path).reject do |f|
+                      f.include?("/.info/") ||
+                        f.include?(".files/") ||
+                        f.include?(".pid/") ||
+                        File.directory?(f)
+                    end.collect do |f|
+                      File.join(repo_dir, f)
+                    end
+                  else
+                    #cmd = "find -L '#{ taskdir }/'  -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' 2>/dev/null"
+                    cmd = "find -L '#{ taskdir }/' -not \\( -path \"#{taskdir}/.info/*\" -prune \\) -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' \\( -not -type d -o -name '*.files' \\)  2>/dev/null"
+
+                    CMD.cmd(cmd, :pipe => true)
+                  end
           TSV.traverse files, :type => :array, :into => jobs, :_bar => "Finding jobs in #{ taskdir }" do |file|
             _files << file
             if m = file.match(/(.*)\.(info|pid|files)$/)
@@ -167,10 +194,10 @@ module Rbbt
             info[:task] = task
             info[:name] = name
 
-            if File.exists? file
+            if Open.exists? file
               info = info.merge(file_time(file))
               info[:done] = true
-              info[:info_file] = File.exist?(info_file) ? info_file : nil
+              info[:info_file] = Open.exist?(info_file) ? info_file : nil
             else
               info = info.merge({:info_file => info_file, :done => false})
             end
