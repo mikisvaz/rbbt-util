@@ -9,7 +9,7 @@ class Step
     return if target_dir[workflow][task][name].exists? || File.symlink?(target_dir[workflow][task][name].find)
     Log.debug "Linking #{ path }"
     FileUtils.mkdir_p target_dir[workflow][task] unless target_dir[workflow][task].exists?
-    FileUtils.ln_s path, target_dir[workflow][task][name].find
+    FileUtils.ln_s path, target_dir[workflow][task][name].find if File.exists?(path)
     FileUtils.ln_s path + '.files', target_dir[workflow][task][name].find + '.files' if File.exists?(path + '.files')
     FileUtils.ln_s path + '.info', target_dir[workflow][task][name].find + '.info' if File.exists?(path + '.info')
   end
