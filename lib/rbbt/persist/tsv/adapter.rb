@@ -86,7 +86,6 @@ module Persist
     end
 
     def read_and_close
-      #mutex.synchronize do
       read if closed? or not read?
       res = begin
               yield
@@ -94,7 +93,6 @@ module Persist
               close
             end
       res
-      #end
     end
 
 
