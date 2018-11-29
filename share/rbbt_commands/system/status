@@ -67,6 +67,35 @@ def status_msg(status)
           end
   Log.color(color, status.to_s)
 end
+
+def input_msg(file, inputs)
+
+  str = ""
+  job_inputs = Workflow.load_step(file).recursive_inputs.to_hash
+  IndiferentHash.setup(job_inputs)
+
+  inputs.each do |input|
+    value = job_inputs[input]
+    next if  value.nil?
+    value_str = Misc.fingerprint(value)
+    str << "\t#{Log.color :magenta, input}=#{value_str}"
+  end
+  str
+end
+
+def info_msg(info, info_fields)
+
+  str = ""
+  info_fields.each do |field|
+    value = info[field]
+    next if  value.nil?
+    value_str = Misc.fingerprint(value)
+    str << "\t#{Log.color :magenta, field}=#{value_str}"
+  end
+  str
+end
+
+
 puts Log.color(:magenta, "# System report")
 puts
 sort_files = Proc.new do |a,b|
@@ -143,6 +172,21 @@ workflows.sort.each do |workflow,tasks|
       if options[:quick] and i[:done]
         status = 'done'
         str << " #{ status_msg status }"
+        if inputs and inputs.any? 
+          str << input_msg(file, inputs)
+        end
+
+        if info_fields and info_fields.any?
+          info = begin
+                   Open.open(i[:info_file]) do |f|
+                     Step::INFO_SERIALIAZER.load(f)
+                   end
+                 rescue
+                   {:status => :noinfo}
+                 end
+          IndiferentHash.setup(info)
+          str << info_msg(info, info_fields)
+        end
       else
         info = begin
                  Open.open(i[:info_file]) do |f|
@@ -155,7 +199,7 @@ workflows.sort.each do |workflow,tasks|
 
         pid = info[:pid]
         status = info[:status]
-        status = :missing if status == :done and not File.exist? file
+        status = :missing if status == :done and not Open.exist? file
         status = status.to_s
         if status != "done" and pid and not Misc.pid_exists?(pid)
           if File.exist? file
@@ -167,25 +211,12 @@ workflows.sort.each do |workflow,tasks|
         str << " #{ status_msg status }"
         str << " (dirty)" if status == 'done' && Workflow.load_step(file).dirty?
 
-        if inputs and inputs.any? and info[:inputs]
-          job_inputs = Workflow.load_step(file).recursive_inputs.to_hash
-          IndiferentHash.setup(job_inputs)
-
-          inputs.each do |input|
-            value = job_inputs[input]
-            next if  value.nil?
-            value_str = Misc.fingerprint(value)
-            str << "\t#{Log.color :magenta, input}=#{value_str}"
-          end
+        if inputs and inputs.any? 
+          str << input_msg(file, inputs)
         end
 
         if info_fields and info_fields.any?
-          info_fields.each do |field|
-            value = info[field]
-            next if  value.nil?
-            value_str = Misc.fingerprint(value)
-            str << "\t#{Log.color :magenta, field}=#{value_str}"
-          end
+          str << info_msg(info, info_fields)
         end
       end
       str << "; #{pid_msg pid}" unless status == "done"
