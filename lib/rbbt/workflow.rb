@@ -505,7 +505,6 @@ module Workflow
   end
     
   def self.fast_load_step(path)
-    return load_step(path)
     step = Step.new path
     step.dependencies = nil
     class << step
@@ -533,6 +532,7 @@ module Workflow
       def dirty?
         false
       end
+
       def updated?
         true
       end
