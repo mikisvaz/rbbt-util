@@ -13,6 +13,18 @@ module Open
   REMOTE_CACHEDIR = File.join(ENV["HOME"], "/tmp/open_cache")
   FileUtils.mkdir_p REMOTE_CACHEDIR unless File.exist? REMOTE_CACHEDIR
 
+  GREP_CMD = begin
+               if ENV["GREP_CMD"] 
+                 ENV["GREP_CMD"]
+               elsif File.exists?('/bin/grep')
+                 "/bin/grep"
+               elsif File.exists?('/usr/bin/grep')
+                 "/usr/bin/grep"
+               else
+                 "grep"
+               end
+             end
+
   class << self
     attr_accessor :repository_dirs
 
@@ -127,14 +139,13 @@ module Open
   # Grep
   
   def self.grep(stream, grep, invert = false)
-    grep_cmd = ENV["GREP_CMD"] || "/bin/grep"
     case 
     when Array === grep
       TmpFile.with_file(grep * "\n", false) do |f|
-        CMD.cmd("#{grep_cmd} #{invert ? '-v' : ''} -", "-w" => true, "-F" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
+        CMD.cmd("#{GREP_CMD} #{invert ? '-v' : ''} -", "-w" => true, "-F" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
       end
     else
-      CMD.cmd("#{grep_cmd} #{invert ? '-v ' : ''} '#{grep}' -", :in => stream, :pipe => true, :post => proc{begin stream.force_close; rescue Exception; end if stream.respond_to?(:force_close)})
+      CMD.cmd("#{GREP_CMD} #{invert ? '-v ' : ''} '#{grep}' -", :in => stream, :pipe => true, :post => proc{begin stream.force_close; rescue Exception; end if stream.respond_to?(:force_close)})
     end
   end
 

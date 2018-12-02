@@ -38,7 +38,8 @@ end
 
 parser = TSV::Parser.new TSV.get_stream(file), options
 
-dumper = TSV::Dumper.new parser.options
+dumper = TSV::Dumper.new parser.options.merge(:sep => "\t", :sep2 => '|')
+dumper.init
 
 options[:merge] = false if options[:merge] == "false"
 
@@ -68,7 +69,6 @@ Thread.new do
   dumper.close
 end
 
-dumper.init
 stream = dumper.stream
 stream = TSV.collapse_stream(dumper.stream).stream if options[:merge]
 
