@@ -386,11 +386,11 @@ module Open
     repo_target = get_repo_from_dir(dir_sub_path_target[0])
 
     content = repo_source.read_and_close do
-      repo_target[dir_sub_path_target[1]]
+      repo_source[dir_sub_path_source[1]]
     end
 
     repo_target.write_and_close do
-      repo_source[dir_sub_path_source[1]] = content
+      repo_target[dir_sub_path_target[1]] = content
     end
 
     return nil
@@ -405,7 +405,7 @@ module Open
       tmp_target = File.join(File.dirname(target), '.tmp_mv.' + File.basename(target))
       FileUtils.mv source, tmp_target
       FileUtils.mv tmp_target, target
-      return
+      return nil
     end
 
     if dir_sub_path_source.nil?
@@ -422,11 +422,11 @@ module Open
     repo_target = get_repo_from_dir(dir_sub_path_target[0])
 
     content = repo_source.read_and_close do
-      repo_target[dir_sub_path_target[1]]
+      repo_source[dir_sub_path_target[1]]
     end
 
     repo_target.write_and_close do
-      repo_source[dir_sub_path_source[1]] = content
+      repo_target[dir_sub_path_source[1]] = content
     end
 
     repo_source.write_and_close do
