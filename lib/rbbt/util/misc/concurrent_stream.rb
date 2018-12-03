@@ -79,7 +79,10 @@ module ConcurrentStream
       @threads.each do |t| 
         next if t == Thread.current
         begin
-          t.join #unless FalseClass === t.status 
+          t.join
+          if Process::Status === t.value
+            raise ProcessFailed.new "Error joining process #{t.pid} in #{self.filename || self.inspect}" if ! (t.value.success? || no_fail)
+          end
         rescue Exception
           if no_fail
             Log.low "Not failing on exception joining thread in ConcurrenStream: #{filename}"

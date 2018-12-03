@@ -152,7 +152,7 @@ module CMD
         serr.close
       end
 
-      ConcurrentStream.setup sout, :pids => pids, :threads => [in_thread, err_thread].compact, :autojoin => no_wait, :no_fail => no_fail 
+      ConcurrentStream.setup sout, :pids => pids, :threads => [in_thread, err_thread, wait_thr].compact, :autojoin => no_wait, :no_fail => no_fail 
 
       sout
     else
