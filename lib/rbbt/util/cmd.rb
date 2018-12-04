@@ -127,14 +127,6 @@ module CMD
         rescue
           Log.error "Error in CMD  [#{pid}] #{cmd}: #{$!.message}"
           raise $!
-        #  begin
-        #    Process.kill "INT", pid
-        #    #parent.raise $!
-        #  ensure
-        #    raise $!
-        #  end
-        #ensure
-        #  #sin.close  unless sin.closed?
         end
       end
     else

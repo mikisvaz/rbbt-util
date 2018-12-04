@@ -674,8 +674,9 @@ class Step
         dependencies.each{|dep| dep.join }
       else
         begin
+          pid = pid.to_i if String === pid
           Log.debug{"Waiting for pid: #{pid}"}
-          Process.waitpid pid 
+          Process.waitpid pid
         rescue Errno::ECHILD
           Log.debug{"Process #{ pid } already finished: #{ path }"}
         end if Misc.pid_exists? pid
