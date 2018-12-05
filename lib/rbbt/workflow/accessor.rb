@@ -944,8 +944,6 @@ module Workflow
                    if override_dependencies[workflow.to_s] && value = override_dependencies[workflow.to_s][dep_task]
                      d_ = Step === value ? value : Workflow.load_step(value)
                      d_.task_name = dep_task
-                     #d_.task = workflow.tasks[dep_task]
-                     #d_.workflow = workflow
                      d_.overriden = true
                      d_
                    else
@@ -967,8 +965,6 @@ module Workflow
                    if override_dependencies[self.to_s] && value = override_dependencies[self.to_s][dependency]
                      d_ = Step === value ? value : Workflow.load_step(value)
                      d_.task_name = dependency
-                     #d_.task = self.tasks[dependency]
-                     #d_.workflow = self
                      d_.overriden = true
                      d_
                    else
@@ -996,8 +992,6 @@ module Workflow
                          if override_dependencies[d[:workflow].to_s] && value = override_dependencies[d[:workflow].to_s][d[:task]]
                            d = (Step === value ? value : Workflow.load_step(value))
                            d.task_name = d[:task]
-                           #d.task = d[:workflow].tasks[d[:task]]
-                           #d.workflow = self
                            d.overriden = true
                            d
                          else
@@ -1019,8 +1013,6 @@ module Workflow
                        if override_dependencies[dep[:workflow].to_s] && value = override_dependencies[dep[:workflow].to_s][dep[:task]]
                          dep = (Step === value ? value : Workflow.load_step(value))
                          dep.task_name = d[:task]
-                         #dep.task = d[:workflow].tasks[d[:task]]
-                         #dep.workflow = self
                          dep.overriden = true
                          dep
                        else

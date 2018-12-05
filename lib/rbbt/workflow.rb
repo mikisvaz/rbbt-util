@@ -343,8 +343,10 @@ module Workflow
     end
 
     real_inputs = {}
+    has_overriden_inputs = false
 
     inputs.each do |k,v|
+      has_overriden_inputs = true if String === k and k.include? "#"
       next unless (task_inputs.include?(k.to_sym) or task_inputs.include?(k.to_s))
       default = all_defaults[k]
       next if default == v 
@@ -361,7 +363,7 @@ module Workflow
     jobname = DEFAULT_NAME if jobname.nil? or jobname.empty?
 
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
-    overriden = dependencies.select{|dep| dep.overriden }.any?
+    overriden = has_overriden_inputs && dependencies.select{|dep| dep.overriden }.any?
 
     if real_inputs.empty? and not Workflow::TAG == :inputs and not overriden 
       step_path = step_path taskname, jobname, [], [], task.extension
