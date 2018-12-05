@@ -127,14 +127,6 @@ module CMD
         rescue
           Log.error "Error in CMD  [#{pid}] #{cmd}: #{$!.message}"
           raise $!
-        #  begin
-        #    Process.kill "INT", pid
-        #    #parent.raise $!
-        #  ensure
-        #    raise $!
-        #  end
-        #ensure
-        #  #sin.close  unless sin.closed?
         end
       end
     else
@@ -152,7 +144,7 @@ module CMD
         serr.close
       end
 
-      ConcurrentStream.setup sout, :pids => pids, :threads => [in_thread, err_thread].compact, :autojoin => no_wait, :no_fail => no_fail 
+      ConcurrentStream.setup sout, :pids => pids, :threads => [in_thread, err_thread, wait_thr].compact, :autojoin => no_wait, :no_fail => no_fail 
 
       sout
     else

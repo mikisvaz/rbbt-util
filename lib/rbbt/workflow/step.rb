@@ -104,8 +104,12 @@ class Step
     rec_dependencies.each do |dep|
       next unless NamedArray === dep.inputs
       dep.inputs.zip(dep.inputs.fields).each do |v,f|
-        next if i.include?(f)
-        i[f] = v
+        if i.include?(f) && i[f] != v
+          Log.debug "Conflict in #{ f }: #{[i[f].inspect, v.inspect] * " <-> "}"
+          i[f] = nil
+        else 
+          i[f] = v
+        end
       end
     end
     #dependencies.each do |dep|
