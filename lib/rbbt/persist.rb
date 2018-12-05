@@ -350,7 +350,10 @@ module Persist
     type ||= :marshal
 
     persist_options ||= {}
-    if type ==:memory and persist_options[:file] and persist_options[:persist] and persist_options[:persist] != :update and not persist_options[:update]
+    if type == :memory and persist_options[:file] and persist_options[:persist] 
+      if persist_options[:persist] == :update || persist_options[:update]
+        (persist_options[:repo] || Persist::MEMORY).delete persist_options[:file]
+      end
       return (persist_options[:repo] || Persist::MEMORY)[persist_options[:file]] ||= yield 
     end
 
