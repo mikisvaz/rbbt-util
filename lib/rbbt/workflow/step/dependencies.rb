@@ -354,9 +354,18 @@ class Step
       end
       next unless step.dependencies and step.dependencies.any?
       step.dependencies.each do |step_dep|
-        next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and step_dep.compute == :nodup)
+        next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and (step_dep.compute == :nodup or step_dep.compute == :ignore))
         dep_step[step_dep.path] ||= []
-        dep_step[step_dep.path] << step_dep
+        dep_step[step_dep.path] << step
+      end
+      step.inputs.each do |inputs|
+        inputs = [inputs] unless Array === inputs
+        inputs.each do |step_dep|
+          next unless Step === step_dep
+          next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and (step_dep.compute == :nodup or step_dep.compute == :ignore))
+          dep_step[step_dep.path] ||= []
+          dep_step[step_dep.path] << step
+        end
       end
     end
 
@@ -377,7 +386,6 @@ class Step
     end
 
     required_dep_paths.concat dependencies.collect{|dep| dep.path }
-
 
     log :dependencies, "Dependencies for step #{Log.color :yellow, task.name.to_s || ""}"
 
