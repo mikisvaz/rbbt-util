@@ -135,7 +135,7 @@ class Step
       end
 
       dependency.status_lock.synchronize do
-        if dependency.aborted? || (dependency.error? && dependency.recoverable_error? && ! canfail_paths.include?(dependency.path) && ! already_failed << dependency.path) || (!Open.remote?(dependency.path) && dependency.missing?)
+        if dependency.aborted? || (dependency.error? && dependency.recoverable_error? && ! canfail_paths.include?(dependency.path) && ! already_failed.include?(dependency.path)) || (!Open.remote?(dependency.path) && dependency.missing?)
           Log.warn "Cleaning dep. on exec #{Log.color :blue, dependency.path} (missing: #{dependency.missing?}; error #{dependency.error?})"
           dependency.clean
           already_failed << dependency.path
