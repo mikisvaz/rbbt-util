@@ -362,6 +362,14 @@ module Open
     end
   end
 
+  def self.link(source, target, options = {})
+    begin
+      Open.ln(source, target, options)
+    rescue
+      Open.ln_s(source, target, options)
+    end
+  end
+
   #def self.cp(source, target, options = {})
   #  source = source.find if Path === source
   #  target = target.find if Path === target

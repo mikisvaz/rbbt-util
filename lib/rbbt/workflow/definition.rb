@@ -63,6 +63,16 @@ module Workflow
     end
   end
 
+  def dep_task(name, *dependency, &block)
+    dep(*dependency, &block)
+    task name do
+      dep = dependencies.last.join
+      set_info :result_type, dep.info[:result_type]
+      Open.link dep.path, self.path
+      nil
+    end
+  end
+
   def task(name, &block)
     if Hash === name
       type = name.first.last
