@@ -204,7 +204,7 @@ module Misc
 
         stream.close unless stream.closed?
         #stream.join if stream.respond_to? :join
-        in_pipes.first.close
+        in_pipes.first.close unless in_pipes.first.closed?
         #Log.medium "Tee done #{Misc.fingerprint stream}"
       rescue Aborted, Interrupt
         stream.abort if stream.respond_to? :abort

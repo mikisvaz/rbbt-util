@@ -261,10 +261,11 @@ module Misc
             "{"<< obj.collect{|k,v| obj2str(k) + '=>' << obj2str(v)}*"," << "}"
           when Symbol 
             obj.to_s
-          when (defined? Path and Path)
+          when (defined?(Path) and Path)
             if obj.exists?
               if obj.directory?
-                "directory: #{obj.glob("**/*")}"
+                files = obj.glob("**/*")
+                "directory: #{files}"
               else
                 "file: " << obj << "--" << mtime_str(obj)
               end
@@ -272,7 +273,7 @@ module Misc
               obj + " (file missing)"
             end
           when String
-            if Misc.is_filename?(obj) 
+            if Misc.is_filename?(obj) and ! %w(. ..).include?(obj)
               obj2str Path.setup(obj.dup)
             else
               obj = obj.chomp if String === obj

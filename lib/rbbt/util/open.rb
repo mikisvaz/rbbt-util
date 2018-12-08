@@ -733,6 +733,11 @@ module Open
     end
   end
 
+  def self.realpath(file)
+    file = file.find if Path === file
+    Pathname.new(File.expand_path(file)).realpath.to_s 
+  end
+
   def self.mtime(file)
     if (dir_sub_path = find_repo_dir(file))
       get_time_from_repo(*dir_sub_path)

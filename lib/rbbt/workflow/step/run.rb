@@ -1,5 +1,8 @@
 require 'rbbt/workflow/step/dependencies'
 
+
+module StreamArray; end
+
 class Step
 
   attr_reader :stream, :dupped, :saved_stream
@@ -8,10 +11,12 @@ class Step
     @mutex.synchronize do
       Log.low "Getting stream from #{path} #{!@saved_stream} [#{object_id}-#{Misc.fingerprint(@result)}]"
       begin
-        return nil if @saved_stream
         if IO === @result 
+          return nil if @saved_stream
           @saved_stream = @result 
-        else 
+        elsif StreamArray === @result and @result.any?
+          @saved_stream = @result.pop 
+        else
           nil
         end
       end
