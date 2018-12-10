@@ -353,12 +353,8 @@ module Open
     begin
       CMD.cmd("ln -L '#{ source }' '#{ target }'")
     rescue ProcessFailed
-      if $!.message.include? "Invalid cross-device link"
-        Log.debug "Could not hard link #{source} and #{target}: cross-device link"
-        CMD.cmd("cp -L '#{ source }' '#{ target }'")
-      else
-        raise $!
-      end
+      Log.debug "Could not hard link #{source} and #{target}: #{$!.message.gsub("\n", '. ')}"
+      CMD.cmd("cp -L '#{ source }' '#{ target }'")
     end
   end
 
@@ -752,7 +748,13 @@ module Open
     else
       file = file.find if Path === file
       begin
-        file = Pathname.new(file).realpath.to_s if File.symlink?(file)
+        if File.symlink?(file) || File.stat(file).nlink > 1
+          if File.exists?(file + '.info')
+            file = file + '.info'
+          else
+            file = Pathname.new(file).realpath.to_s 
+          end
+        end
         File.mtime(file)
       rescue
         nil

@@ -104,10 +104,9 @@ module Rbbt::Config
       end
     end
 
-    return nil if priorities.empty?
-
-    value = priorities.sort_by{|p,v| p}.first.last.first
-    Log.debug "Value '#{value}' for config key '#{ key }': #{tokens * ", "}"
+    value = priorities.empty? ? nil : priorities.sort_by{|p,v| p}.first.last.first
+    value = false if value == 'false'
+    Log.debug "Value #{value.inspect} for config key '#{ key }': #{tokens * ", "}"
     value
   end
 
