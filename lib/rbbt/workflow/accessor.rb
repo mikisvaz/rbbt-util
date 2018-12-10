@@ -564,7 +564,7 @@ class Step
 
   def config(key, *tokens)
     options = tokens.pop if Hash === tokens.last
-    default = options[:default] if options
+    options ||= {}
 
     new_tokens = []
     if workflow
@@ -574,9 +574,7 @@ class Step
     end
     new_tokens << ("task:" << task_name.to_s)
 
-    value = Rbbt::Config.get(key, tokens + new_tokens)
-
-    value || default
+    Rbbt::Config.get(key, tokens + new_tokens, options)
   end
 
   def access
