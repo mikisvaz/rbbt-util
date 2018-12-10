@@ -261,7 +261,6 @@ class Step
     else
       children_pids << child_pid
     end
-    #Process.detach(child_pid)
     set_info :children_pids, children_pids
     child_pid
   end

@@ -479,8 +479,13 @@ class Step
       sout.close if sout
       Misc.pre_fork
       begin
-        RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         Open.mkdir File.dirname(path) unless Open.exist?(File.dirname(path))
+        Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
+        if semaphore
+          init_info
+          log :queue, "Queued over semaphore: #{semaphore}"
+          RbbtSemaphore.wait_semaphore(semaphore) 
+        end
         begin
           @forked = true
           res = run no_load
