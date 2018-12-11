@@ -135,9 +135,9 @@ module Resource
       begin
         if path !~ /\.(gz|bgz)$/
           begin
-            produce(path + '.gz', force)
+            produce(path.annotate(path + '.gz'), force)
           rescue
-            produce(path + '.bgz', force)
+            produce(path.annotate(path + '.bgz'), force)
           end
         end
       rescue
