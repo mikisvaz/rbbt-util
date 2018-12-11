@@ -15,6 +15,7 @@ module Rbbt::Config
     TSV.traverse file, :type => :array do |line|
       next if line =~ /^#/
       key, value, *tokens = line.split(/\s/)
+      tokens << "key:#{key}"
 
       self.add_entry(key, value, tokens) if key
     end
