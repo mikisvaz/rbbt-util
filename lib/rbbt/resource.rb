@@ -125,7 +125,7 @@ module Resource
     case
     when @resources.include?(path)
       type, content = @resources[path]
-    when @resources.include?(path.original)
+    when (Path === path && @resources.include?(path.original))
       type, content = @resources[path.original]
     when has_rake(path)
       type = :rake
@@ -151,12 +151,12 @@ module Resource
       final_path = path
     end
 
-    if not File.exist? final_path or force
+    if type and not File.exist?(final_path) or force
       Log.medium "Producing: #{ final_path }"
       lock_filename = Persist.persistence_path(final_path, {:dir => Resource.lock_dir})
       Misc.lock lock_filename do
         FileUtils.rm_rf final_path if force and File.exist? final_path
-        if not File.exist? final_path or force
+        if not File.exist?(final_path) or force
           (remote_server and get_from_server(path, final_path)) or
           begin
             case type
