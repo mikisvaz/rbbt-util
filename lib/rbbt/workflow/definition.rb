@@ -153,4 +153,19 @@ module Workflow
   end
 
   alias export export_asynchronous
+
+  def import(source, *args)
+    if args.empty?
+      tasks = source.tasks.collect{|n,t| n} + source.helpers.collect{|n,h| n }
+    else
+      tasks = args.flatten
+    end
+
+    tasks.each do |task|
+      self.tasks[task.to_sym] = source.tasks[task.to_sym] if source.tasks.include? task.to_sym
+      self.task_dependencies[task.to_sym] = source.task_dependencies[task.to_sym] if source.tasks.include? task.to_sym
+      self.task_description[task.to_sym] = source.task_description[task.to_sym] if source.tasks.include? task.to_sym
+      self.helpers[task.to_sym] = source.helpers[task.to_sym] if source.helpers.include? task.to_sym
+    end
+  end
 end
