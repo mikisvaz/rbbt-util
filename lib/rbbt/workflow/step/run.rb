@@ -476,16 +476,21 @@ class Step
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil? and not Process.pid == @pid and Misc.pid_exists?(@pid) and not done? and info[:forked]
     sout, sin = Misc.pipe if no_load == :stream
     @pid = Process.fork do
+      Signal.trap(:TERM) do
+        raise Aborted, "Recieved TERM Signal on forked process #{Process.pid}"
+      end
       sout.close if sout
       Misc.pre_fork
+      Open.mkdir File.dirname(path) unless Open.exist?(File.dirname(path))
+      Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
+
+      if semaphore
+        init_info
+        log :queue, "Queued over semaphore: #{semaphore}"
+        ret = RbbtSemaphore.wait_semaphore(semaphore)
+        raise SemaphoreInterrupted if ret == -1
+      end
       begin
-        Open.mkdir File.dirname(path) unless Open.exist?(File.dirname(path))
-        Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
-        if semaphore
-          init_info
-          log :queue, "Queued over semaphore: #{semaphore}"
-          RbbtSemaphore.wait_semaphore(semaphore) 
-        end
         begin
           @forked = true
           res = run no_load
@@ -547,7 +552,7 @@ class Step
   end
 
   def abort_pid
-    @pid ||= info[:pid]
+    @pid ||= info[:pid] || Open.read(pid_file)
 
     case @pid
     when nil
@@ -557,14 +562,14 @@ class Step
       Log.medium "Could not abort #{path}: same process"
       false
     else
-      Log.medium "Aborting pid #{path}: #{ @pid }"
+      Log.medium "Aborting pid #{path}: #{ @pid } #{Process.pid}"
       begin
-        Process.kill("INT", @pid)
-        Process.waitpid @pid
+        Process.kill("TERM", @pid.to_i)
+        s = Process.waitpid2 @pid.to_i
+        Log.medium "Aborted pid #{path}: #{ @pid } #{s.exitstatus}"
       rescue Exception
         Log.debug("Aborted job #{@pid} was not killed: #{$!.message}")
       end
-      Log.medium "Aborted pid #{path}: #{ @pid }"
       true
     end
   end
