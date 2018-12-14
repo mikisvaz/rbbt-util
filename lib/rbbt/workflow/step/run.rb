@@ -188,7 +188,7 @@ class Step
         children_pids.each do |pid|
           Log.medium("Killing child #{ pid }")
           begin
-            Process.kill "INT", pid
+            Process.kill "TERM", pid.to_i
           rescue Exception
             Log.medium("Exception killing child #{ pid }: #{$!.message}")
           end
@@ -542,7 +542,6 @@ class Step
         set_info :pid, nil
       ensure
         RbbtSemaphore.post_semaphore(semaphore) if semaphore
-        Kernel.exit! 0
       end
     end
     sin.close if sin
@@ -566,7 +565,7 @@ class Step
       begin
         Process.kill("TERM", @pid.to_i)
         s = Process.waitpid2 @pid.to_i
-        Log.medium "Aborted pid #{path}: #{ @pid } #{s.exitstatus}"
+        Log.medium "Aborted pid #{path} #{s}"
       rescue Exception
         Log.debug("Aborted job #{@pid} was not killed: #{$!.message}")
       end
@@ -611,6 +610,7 @@ class Step
     begin
       return if done?
       abort_pid if running?
+      kill_children
       abort_stream
       stop_dependencies
     rescue Aborted, Interrupt
