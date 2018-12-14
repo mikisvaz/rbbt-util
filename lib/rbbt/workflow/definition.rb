@@ -63,6 +63,24 @@ module Workflow
     end
   end
 
+  FORGET_DEP_TASKS = ENV["RBBT_FORGET_DEP_TASKS"] == "true"
+  def dep_task(name, *dependency, &block)
+    dep(*dependency, &block)
+    task name do
+      dep = dependencies.last.join
+      set_info :result_type, dep.info[:result_type]
+      forget = config :forget_dep_tasks, :forget_dep_tasks, :default => FORGET_DEP_TASKS
+      if forget
+        Open.ln_h dep.path, self.path
+        self.dependencies = self.dependencies - [dep]
+        self.set_info :dependency, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
+      else
+        Open.link dep.path, self.path
+      end
+      nil
+    end
+  end
+
   def task(name, &block)
     if Hash === name
       type = name.first.last
@@ -76,7 +94,7 @@ module Workflow
     block = self.method(name) unless block_given?
 
     task_info = {
-      :name => name,
+      :name               => name,
       :inputs             => consume_inputs,
       :description        => consume_description,
       :input_types        => consume_input_types,
@@ -135,4 +153,19 @@ module Workflow
   end
 
   alias export export_asynchronous
+
+  def import(source, *args)
+    if args.empty?
+      tasks = source.tasks.collect{|n,t| n} + source.helpers.collect{|n,h| n }
+    else
+      tasks = args.flatten
+    end
+
+    tasks.each do |task|
+      self.tasks[task.to_sym] = source.tasks[task.to_sym] if source.tasks.include? task.to_sym
+      self.task_dependencies[task.to_sym] = source.task_dependencies[task.to_sym] if source.tasks.include? task.to_sym
+      self.task_description[task.to_sym] = source.task_description[task.to_sym] if source.tasks.include? task.to_sym
+      self.helpers[task.to_sym] = source.helpers[task.to_sym] if source.helpers.include? task.to_sym
+    end
+  end
 end

@@ -67,6 +67,9 @@ load_file Rbbt.etc['app.d/post.rb'].find_all
 #{{{ PRELOAD
 load_file Rbbt.etc['app.d/preload.rb'].find_all
 
+#{{{ PRELOAD
+load_file Rbbt.etc['app.d/semaphores.rb'].find_all
+
 #{{{ SINATRA
 load_file Rbbt.lib['sinatra.rb'].find_all
 
@@ -82,4 +85,3 @@ $title = app_name
 require 'rack'
 use Rack::Deflater
 run app
-

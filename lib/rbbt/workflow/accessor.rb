@@ -81,7 +81,7 @@ class Step
   end
 
   def name
-    path.sub(/.*\/#{Regexp.quote task_name.to_s}\/(.*)/, '\1')
+    @name ||= path.sub(/.*\/#{Regexp.quote task_name.to_s}\/(.*)/, '\1')
   end
 
   def short_path
@@ -564,7 +564,7 @@ class Step
 
   def config(key, *tokens)
     options = tokens.pop if Hash === tokens.last
-    default = options[:default] if options
+    options ||= {}
 
     new_tokens = []
     if workflow
@@ -574,9 +574,7 @@ class Step
     end
     new_tokens << ("task:" << task_name.to_s)
 
-    value = Rbbt::Config.get(key, tokens + new_tokens)
-
-    value || default
+    Rbbt::Config.get(key, tokens + new_tokens, options)
   end
 
   def access
@@ -943,6 +941,7 @@ module Workflow
 
                    if override_dependencies[workflow.to_s] && value = override_dependencies[workflow.to_s][dep_task]
                      d_ = Step === value ? value : Workflow.load_step(value)
+                     d_.info[:name] = d_.name
                      d_.task_name = dep_task
                      d_.overriden = true
                      d_
@@ -964,6 +963,7 @@ module Workflow
                  when Symbol
                    if override_dependencies[self.to_s] && value = override_dependencies[self.to_s][dependency]
                      d_ = Step === value ? value : Workflow.load_step(value)
+                     d_.info[:name] = d_.name
                      d_.task_name = dependency
                      d_.overriden = true
                      d_
@@ -991,6 +991,7 @@ module Workflow
                          d[:task] ||= task_name
                          if override_dependencies[d[:workflow].to_s] && value = override_dependencies[d[:workflow].to_s][d[:task]]
                            d = (Step === value ? value : Workflow.load_step(value))
+                           d.info[:name] = d.name
                            d.task_name = d[:task]
                            d.overriden = true
                            d
@@ -1012,6 +1013,7 @@ module Workflow
                        dep[:workflow] ||= wf  || self
                        if override_dependencies[dep[:workflow].to_s] && value = override_dependencies[dep[:workflow].to_s][dep[:task]]
                          dep = (Step === value ? value : Workflow.load_step(value))
+                         dep.info[:name] = dep.name
                          dep.task_name = d[:task]
                          dep.overriden = true
                          dep

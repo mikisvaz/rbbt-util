@@ -5,7 +5,7 @@ module Rbbt
   #LOCK_DIRS = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all +  Rbbt.var.jobs.find_all +
   #  Rbbt.tmp.tsv_open_locks.find_all + Rbbt.tmp.persist_locks.find_all + Rbbt.tmp.sensiblewrite_lock_dir.find_all +
   #  Rbbt.tmp.produce_locks.find_all + Rbbt.tmp.step_info_locks.find_all
-  LOCK_DIRS = Rbbt.tmp.tsv_open_locks.find_all + Rbbt.tmp.persist_locks.find_all + Rbbt.tmp.sensiblewrite_lock_dir.find_all +
+  LOCK_DIRS = Rbbt.tmp.tsv_open_locks.find_all + Rbbt.tmp.persist_locks.find_all + Rbbt.tmp.sensiblewrite_locks.find_all +
     Rbbt.tmp.produce_locks.find_all + Rbbt.tmp.step_info_locks.find_all
 
   SENSIBLE_WRITE_DIRS = Misc.sensiblewrite_dir.find_all

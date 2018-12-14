@@ -94,7 +94,8 @@ class Step
         job.clean 
       end
 
-      (job.init_info and job.dup_inputs) unless status == 'done' or job.started?
+      job.dup_inputs unless status == 'done' or job.started?
+      job.init_info unless status == 'noinfo' or status == 'done' or job.started?
 
       canfail = ComputeDependency === job && job.canfail?
     end
@@ -194,10 +195,8 @@ class Step
         return unless other_steps.length > 1
         log_dependency_exec(step, "duplicating #{other_steps.length}") 
         copies = Misc.tee_stream_thread_multiple(stream, other_steps.length)
-        other_steps.zip(copies).each do |other,dupped_stream|
-          stream.annotate(dupped_stream) if stream.respond_to?(:annotate)
-          other.instance_variable_set("@result", dupped_stream)
-        end
+        copies.extend StreamArray
+        step.instance_variable_set("@result", copies)
       end
     end
   end
@@ -356,7 +355,7 @@ class Step
       step.dependencies.each do |step_dep|
         next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and (step_dep.compute == :nodup or step_dep.compute == :ignore))
         dep_step[step_dep.path] ||= []
-        dep_step[step_dep.path] << step
+        dep_step[step_dep.path] << step_dep
       end
       step.inputs.each do |inputs|
         inputs = [inputs] unless Array === inputs
@@ -364,7 +363,7 @@ class Step
           next unless Step === step_dep
           next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and (step_dep.compute == :nodup or step_dep.compute == :ignore))
           dep_step[step_dep.path] ||= []
-          dep_step[step_dep.path] << step
+          dep_step[step_dep.path] << step_dep
         end
       end
     end

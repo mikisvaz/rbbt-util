@@ -15,6 +15,7 @@ module Rbbt::Config
     TSV.traverse file, :type => :array do |line|
       next if line =~ /^#/
       key, value, *tokens = line.split(/\s/)
+      tokens << "key:#{key}"
 
       self.add_entry(key, value, tokens) if key
     end
@@ -79,6 +80,9 @@ module Rbbt::Config
   end
 
   def self.get(key, *tokens)
+    options = tokens.pop if Hash === tokens.last
+    default = options.nil? ? nil : options[:default]
+
     tokens = tokens.flatten
     file, _sep, line = caller.reject{|l| 
       l =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
@@ -104,10 +108,9 @@ module Rbbt::Config
       end
     end
 
-    return nil if priorities.empty?
-
-    value = priorities.sort_by{|p,v| p}.first.last.first
-    Log.debug "Value '#{value}' for config key '#{ key }': #{tokens * ", "}"
+    value = priorities.empty? ? default : priorities.sort_by{|p,v| p}.first.last.first
+    value = false if value == 'false'
+    Log.debug "Value #{value.inspect} for config key '#{ key }': #{tokens * ", "}"
     value
   end
 

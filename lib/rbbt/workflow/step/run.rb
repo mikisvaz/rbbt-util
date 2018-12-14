@@ -1,5 +1,8 @@
 require 'rbbt/workflow/step/dependencies'
 
+
+module StreamArray; end
+
 class Step
 
   attr_reader :stream, :dupped, :saved_stream
@@ -8,10 +11,12 @@ class Step
     @mutex.synchronize do
       Log.low "Getting stream from #{path} #{!@saved_stream} [#{object_id}-#{Misc.fingerprint(@result)}]"
       begin
-        return nil if @saved_stream
         if IO === @result 
+          return nil if @saved_stream
           @saved_stream = @result 
-        else 
+        elsif StreamArray === @result and @result.any?
+          @saved_stream = @result.pop 
+        else
           nil
         end
       end
@@ -474,8 +479,13 @@ class Step
       sout.close if sout
       Misc.pre_fork
       begin
-        RbbtSemaphore.wait_semaphore(semaphore) if semaphore
         Open.mkdir File.dirname(path) unless Open.exist?(File.dirname(path))
+        Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
+        if semaphore
+          init_info
+          log :queue, "Queued over semaphore: #{semaphore}"
+          RbbtSemaphore.wait_semaphore(semaphore) 
+        end
         begin
           @forked = true
           res = run no_load

@@ -167,7 +167,7 @@ class Step
     @result_type ||= if @task.nil?
                        info[:result_type]
                      else
-                       @task.result_type
+                       @task.result_type || info[:result_type]
                      end
   end
 
@@ -261,7 +261,6 @@ class Step
     else
       children_pids << child_pid
     end
-    #Process.detach(child_pid)
     set_info :children_pids, children_pids
     child_pid
   end

@@ -353,12 +353,16 @@ module Open
     begin
       CMD.cmd("ln -L '#{ source }' '#{ target }'")
     rescue ProcessFailed
-      if $!.message.include? "Invalid cross-device link"
-        Log.debug "Could not hard link #{source} and #{target}: cross-device link"
-        CMD.cmd("cp -L '#{ source }' '#{ target }'")
-      else
-        raise $!
-      end
+      Log.debug "Could not hard link #{source} and #{target}: #{$!.message.gsub("\n", '. ')}"
+      CMD.cmd("cp -L '#{ source }' '#{ target }'")
+    end
+  end
+
+  def self.link(source, target, options = {})
+    begin
+      Open.ln(source, target, options)
+    rescue
+      Open.ln_s(source, target, options)
     end
   end
 
@@ -733,13 +737,24 @@ module Open
     end
   end
 
+  def self.realpath(file)
+    file = file.find if Path === file
+    Pathname.new(File.expand_path(file)).realpath.to_s 
+  end
+
   def self.mtime(file)
     if (dir_sub_path = find_repo_dir(file))
       get_time_from_repo(*dir_sub_path)
     else
       file = file.find if Path === file
       begin
-        file = Pathname.new(file).realpath.to_s if File.symlink?(file)
+        if File.symlink?(file) || File.stat(file).nlink > 1
+          if File.exists?(file + '.info')
+            file = file + '.info'
+          else
+            file = Pathname.new(file).realpath.to_s 
+          end
+        end
         File.mtime(file)
       rescue
         nil
