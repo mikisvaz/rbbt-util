@@ -45,6 +45,9 @@ class KnowledgeBase
       begin 
         if options.empty?
           key = name.to_s
+        elsif options[:key]
+          key = options[:key]
+          key = name if key == :name
         else
           fp = Misc.hash2md5(options)
           key = name.to_s + "_" + fp
@@ -90,7 +93,13 @@ class KnowledgeBase
   def get_database(name, options = {})
     name = name.to_s
 
-    options[:organism] ||= options[:namespace] ||= self.namespace unless self.namespace.nil?
+    options = options.dup
+    if self.namespace == options[:namespace]
+      options.delete(:namespace) 
+    end
+    if self.namespace == options[:organism]
+      options.delete(:organism) 
+    end
     @databases[[name, options]] ||= 
       begin 
         fp = Misc.fingerprint([name,options])
@@ -101,6 +110,8 @@ class KnowledgeBase
           fp = Misc.hash2md5(options)
           key = name.to_s + "_" + fp
         end
+
+        options[:organism] ||= options[:namespace] ||= self.namespace unless self.namespace.nil?
 
         key += '.database'
         Persist.memory("Database:" << [key, dir] * "@") do
@@ -124,14 +135,14 @@ class KnowledgeBase
           persist_options = Misc.pull_keys options, :persist
 
           database = if persist_file.exists? and persist_options[:persist] and not persist_options[:update]
-                    Log.low "Re-opening database #{ name } from #{ Misc.fingerprint persist_file }. #{options}"
-                    Association.open(file, options, persist_options)
-                  else
-                    options = Misc.add_defaults options, registered_options if registered_options
-                    raise "Repo #{ name } not found and not registered" if file.nil?
-                    Log.medium "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
-                    Association.open(file, options, persist_options)
-                  end
+                       Log.low "Re-opening database #{ name } from #{ Misc.fingerprint persist_file }. #{options}"
+                       Association.open(file, options, persist_options)
+                     else
+                       options = Misc.add_defaults options, registered_options if registered_options
+                       raise "Repo #{ name } not found and not registered" if file.nil?
+                       Log.medium "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
+                       Association.open(file, options, persist_options)
+                     end
 
           database.namespace = self.namespace if self.namespace
 

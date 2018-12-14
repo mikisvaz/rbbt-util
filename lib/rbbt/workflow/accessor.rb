@@ -640,6 +640,13 @@ class Step
     done? && info[:path] && info[:path] != path
   end
 
+  def knowledge_base(organism = nil)
+    @_kb ||= begin
+               kb_dir = self.file('knowledge_base')
+               KnowledgeBase.new kb_dir, organism
+             end
+  end
+
 end
 
 module Workflow
