@@ -158,7 +158,7 @@ class WorkflowRESTClient
 
     def done?
       init_job unless @url
-      @done || status.to_s == 'done'
+      @done || status.to_s == 'done' || status.to_s == 'noinfo'
     end
 
     def files
