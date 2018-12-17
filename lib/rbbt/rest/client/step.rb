@@ -128,7 +128,15 @@ class WorkflowRESTClient
 
     def info(check_lock=false)
       @done = @info && @info[:status] && @info[:status].to_sym == :done
-      @info = Persist.memory("RemoteSteps Info", :url => @url, :persist => true, :update => !@done) do
+
+      if !@done && (@last_info_time.nil? || (Time.now - @last_info_time) > 0.5)
+        update = true 
+      else
+        update = false
+      end
+
+      @info = Persist.memory("RemoteSteps Info", :url => @url, :persist => true, :update => update) do
+        @last_info_time = Time.now
         init_job unless @url
         info = WorkflowRESTClient.get_json(File.join(@url, 'info'))
         info = WorkflowRESTClient.fix_hash(info)
@@ -140,7 +148,7 @@ class WorkflowRESTClient
     def status
       return :done if @done
       return nil unless url or started?
-      return :streaming if @streaming
+      #return :streaming if @streaming 
       begin
         status = info[:status]
         @done = true if status and status.to_sym == :done
@@ -195,6 +203,8 @@ class WorkflowRESTClient
     def init_job(cache_type = nil, other_params = {})
       cache_type = :asynchronous if cache_type.nil? and not @is_exec
       cache_type = :exec if cache_type.nil?
+      @last_info_time = nil
+      @done = false
       get_streams
       @name ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
         WorkflowRESTClient.post_jobname(File.join(base_url, task.to_s), inputs.merge(other_params).merge(:jobname => @name||@base_name, :_cache_type => cache_type))

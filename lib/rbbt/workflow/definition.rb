@@ -162,6 +162,7 @@ module Workflow
     end
 
     tasks.each do |task|
+      Log.high "Task #{task} from #{source.to_s} is already present in #{self.to_s} and will be cloacked" if self.tasks.include? task.to_sym
       self.tasks[task.to_sym] = source.tasks[task.to_sym] if source.tasks.include? task.to_sym
       self.task_dependencies[task.to_sym] = source.task_dependencies[task.to_sym] if source.tasks.include? task.to_sym
       self.task_description[task.to_sym] = source.task_description[task.to_sym] if source.tasks.include? task.to_sym

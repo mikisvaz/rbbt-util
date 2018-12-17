@@ -486,6 +486,7 @@ when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
     res.join if res.respond_to? :join
   elsif res.nil?
     job.join
+    raise job.get_exception if job.error? || job.aborted?
     puts Open.read(job.path, :nocache => true, :nofail => true)
   else
     if Array === res

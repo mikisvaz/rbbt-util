@@ -351,16 +351,17 @@ module Persist
 
     persist_options ||= {}
     if type == :memory and persist_options[:file] and persist_options[:persist] 
+      repo = persist_options[:repo] || Persist::MEMORY
       if persist_options[:persist] == :update || persist_options[:update]
-        (persist_options[:repo] || Persist::MEMORY).delete persist_options[:file]
+        repo.delete persist_options[:file]
       end
-      return (persist_options[:repo] || Persist::MEMORY)[persist_options[:file]] ||= yield 
+      return repo[persist_options[:file]] ||= yield 
     end
 
     if FalseClass === persist_options[:persist]
       yield
     else
-      persist_options[:update] ||= true if persist_options[:persist].to_s == "update"
+      persist_options[:update] = true if persist_options[:persist].to_s == "update"
       other_options = Misc.process_options persist_options, :other
       path = persistence_path(name, persist_options, other_options || {})
 
@@ -375,6 +376,7 @@ module Persist
       when type.to_sym == :memory
         repo = persist_options[:repo] || Persist::MEMORY
         path = path.find if Path === path
+        repo.delete path if persist_options[:update]
         repo[path] ||= yield
 
       when (type.to_sym == :annotations and persist_options.include? :annotation_repo)
@@ -475,8 +477,9 @@ module Persist
       options = options.dup
       file = name
       repo = options.delete :repo if options and options.any?
+      update = options.delete :update if options and options.any?
       file << "_" << (options[:key] ? options[:key] : Misc.hash2md5(options)) if options and options.any?
-      persist name, :memory, {:repo => repo, :persist => true, :file => file}.merge(options), &block
+      persist name, :memory, {:repo => repo, :update => update, :persist => true, :file => file}.merge(options), &block
     end
   end
 end

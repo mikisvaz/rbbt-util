@@ -80,6 +80,9 @@ load_file etc_dir['app.d/post.rb'].find_all
 #{{{ PRELOAD
 load_file etc_dir['app.d/preload.rb'].find_all
 
+#{{{ PRELOAD
+load_file Rbbt.etc['app.d/semaphores.rb'].find_all
+
 if etc_dir['target_workflow_exports'].exists?
   exports = etc_dir['target_workflow_exports'].read.split("\n")
   exports.each do |task|
