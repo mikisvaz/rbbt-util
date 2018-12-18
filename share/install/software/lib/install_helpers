@@ -16,8 +16,8 @@ function link(){
   local rel_source=$(realpath --relative-to="$(dirname $target)" "$source")
   
   [ -h "$target" ] && rm "$target"
-  echo ln -s "$rel_source" "$target"
-  [ -f "$target" ] || ln -s "$rel_source" "$target"
+  echo ln -s "$rel_source" "$target" 1>&2
+  [ -h "$target" ] || ln -s "$rel_source" "$target"
 }
 
 function expand_path(){
@@ -271,27 +271,21 @@ setup(){
     fi
 
     if [ -d "$pkg_dir/bin/" ]; then
-        local old_pwd="`expand_path $(pwd)`"
-        cd "$OPT_DIR/bin" 
 
         for exe in ` find "$pkg_dir/bin/" -maxdepth 1 -type f -executable`; do
             exe=$(basename $exe)
-            rm -f ./$exe
-            link "$pkg_dir/bin/$exe" ./$exe 2>/dev/null
+            rm -f "$OPT_DIR/bin/$exe"
+            link "$pkg_dir/bin/$exe" "$OPT_DIR/bin/$exe" 2>/dev/null
         done
 
-        cd "$old_pwd"
     else
         local old_pwd="`expand_path $(pwd)`"
-        cd "$OPT_DIR/bin" 
 
         for exe in ` find "$pkg_dir/" -maxdepth 1 -type f -executable`; do
             exe=$(basename $exe)
-            rm -f ./$exe
-            link "$pkg_dir/$exe" . 2>/dev/null
+            rm -f "$OPT_DIR/bin/$exe"
+            link "$pkg_dir/$exe" "$OPT_DIR/bin/$exe" 2>/dev/null
         done
-
-        cd "$old_pwd"
     fi
     
     ([ -d "$pkg_dir/include" ]       && add2file "$OPT_DIR/.c-paths" "$pkg_dir/include")
