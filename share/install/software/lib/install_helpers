@@ -17,7 +17,7 @@ function link(){
   
   [ -h "$target" ] && rm "$target"
   echo ln -s "$rel_source" "$target"
-  ln -s "$rel_source" "$target"
+  [ -f "$target" ] || ln -s "$rel_source" "$target"
 }
 
 function expand_path(){
@@ -277,7 +277,7 @@ setup(){
         for exe in ` find "$pkg_dir/bin/" -maxdepth 1 -type f -executable`; do
             exe=$(basename $exe)
             rm -f ./$exe
-            link "$pkg_dir/bin/$exe" . 2>/dev/null
+            link "$pkg_dir/bin/$exe" ./$exe 2>/dev/null
         done
 
         cd "$old_pwd"
