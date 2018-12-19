@@ -80,6 +80,29 @@ class Step
     end
   end
 
+  def self.save_job_inputs(job, dir)
+
+    task_name = job.task_name
+    task_info = job.workflow.task_info(task_name)
+    input_types = task_info[:input_types]
+    task_inputs = task_info[:inputs]
+    job.recursive_inputs.zip(job.recursive_inputs.fields).each do |value,name|
+      next unless task_inputs.include? name.to_sym
+      next if value.nil?
+      path = File.join(dir, name.to_s)
+      type = input_types[name]
+      Log.debug "Saving job input #{name} (#{type}) into #{path}"
+      case
+      when Array === value
+        Open.write(path, value * "\n")
+      when IO === value
+        Open.write(path, value)
+      else
+        Open.write(path, value.to_s)
+      end
+    end
+  end
+
   def name
     @name ||= path.sub(/.*\/#{Regexp.quote task_name.to_s}\/(.*)/, '\1')
   end
@@ -108,7 +131,7 @@ class Step
                    #Lockfile.new path, :refresh => false, :dont_use_lock_id => true
                    Lockfile.new path
                  end if @info_lock.nil?
-    @info_lock
+                 @info_lock
   end
 
   def status_lock
