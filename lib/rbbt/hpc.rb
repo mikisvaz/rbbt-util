@@ -16,6 +16,7 @@ module Marenostrum
       copy_image       = options.delete :copy_image
       exclusive        = options.delete :exclusive
       highmem          = options.delete :highmem
+      inputs_dir       = options.delete :inputs_dir
 
       if contain_and_sync
         contain = "/scratch/tmp/rbbt" if contain.nil?
@@ -101,19 +102,35 @@ mkdir -p "$SINGULARITY_RUBY_INLINE"
 
       if contain
         env +=<<-EOF
+
+# Prepare container dir
 CONTAINER_DIR="#{contain}"
 mkdir -p $CONTAINER_DIR/.rbbt/etc/
 for tmpd in persist_locks  produce_locks  R_sockets  sensiblewrite  sensiblewrite_locks  step_info_locks  tsv_open_locks; do
     mkdir -p $CONTAINER_DIR/.rbbt/tmp/$tmpd
 done
+
+# Copy environment 
 cp ~/.rbbt/etc/environment $CONTAINER_DIR/.rbbt/etc/
+
+# Set search_paths
 echo "rbbt_user: /home/rbbt/.rbbt/{TOPLEVEL}/{SUBPATH}" > $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "home: $CONTAINER_DIR/home/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "group_projects: $CONTAINER_DIR/projects/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "group_scratch: $CONTAINER_DIR/scratch/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "user_projects: $CONTAINER_DIR/projects/#{ENV['USER']}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "user_scratch: $CONTAINER_DIR/scratch/#{ENV['USER']}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
+echo "/scratch/tmp/rbbt/projects/rbbt/workflows/" > $CONTAINER_DIR/.rbbt/etc/workflow_dir
         EOF
+        
+        if inputs_dir
+          env +=<<-EOF
+
+# Copy inputs
+cp -R '#{inputs_dir}' $CONTAINER_DIR/inputs
+          EOF
+          rbbt_cmd = rbbt_cmd.sub(inputs_dir, "#{contain}/inputs")
+        end
 
         if copy_image
           env +=<<EOF
@@ -162,7 +179,7 @@ EOF
 #{cmd}
 
 # Save exit status
-echo $? > #{fexit}
+exit_status=$?
 
 # Clean job.id, since we are done
 rm #{fjob}
@@ -195,6 +212,12 @@ unset sync_es
 EOF
         end
       end
+      coda +=<<-EOF
+
+# Write exit status to file
+echo $exit_status > #{fexit}
+unset exit_status
+EOF
 
       template = [header, env, run, coda] * "\n"
 
@@ -319,10 +342,12 @@ EOF
       workflow = job.workflow
       task = job.task_name
       name = job.clean_name
-      TmpFile.with_file(nil, false) do |tmp_directory|
+      keep_workdir = options.delete :keep_SLURM_workdir 
+      TmpFile.with_file(nil, !keep_workdir) do |tmp_directory|
         workdir = options[:workdir] ||= File.join(tmp_directory, 'workdir')
         inputs_dir = File.join(tmp_directory, 'inputs_dir')
         Step.save_job_inputs(job, inputs_dir)
+        options[:inputs_dir] = inputs_dir
         cmd = ['workflow', 'task', workflow.to_s, task.to_s, '-pf', '-jn', name, '--load_inputs', inputs_dir, '--log', (options[:log] || Log.severity).to_s]
         template = self.template(cmd, options)
         self.issue_template(template, options)
@@ -331,10 +356,13 @@ EOF
         end
         self.wait_for_job(workdir)
         t_monitor.raise Aborted
+        return unless Open.read(File.join(workdir, 'exit.status')).strip == '0'
         path = Open.read(File.join(workdir, 'std.out')).strip
-        if job.path != path
+        if Open.exists?(path) && job.path != path
           Log.info "Path of SLURM job #{path} is different from original job #{job.path}. Stablishing link."
           Open.ln path, job.path
+          Open.ln path + '.info', job.path + '.info'  if Open.exists?(path + '.info')
+          Open.ln path + '.files', job.path + '.files' if Open.exists?(path + '.files')
         end
       end
     end
