@@ -346,9 +346,9 @@ EOF
         template = self.template(cmd, options)
         self.issue_template(template, options)
         self.wait_for_job(workdir)
-        path = Open.read(File.join(workdir, 'std.out'))
+        path = Open.read(File.join(workdir, 'std.out')).strip
         if job.path != path
-          Log.medium "Path of SLURM job #{path} is different from original job #{job.path}. Stablishing link."
+          Log.info "Path of SLURM job #{path} is different from original job #{job.path}. Stablishing link."
           Open.ln path, job.path
         end
       end
