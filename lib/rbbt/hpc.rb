@@ -281,7 +281,7 @@ EOF
         STDERR.puts Log.color(:magenta, "Output:")
         begin
           CMD.cmd("squeue --job #{job} > #{fstatus}")
-          out = CMD.cmd("tail -f '#{fout}'", :pipe => true) if File.exists? fout
+          out = CMD.cmd("tail -f '#{fout}'", :pipe => true) if File.exists?(fout) and not tail == :STDERR
           err = CMD.cmd("tail -f '#{ferr}'", :pipe => true) if File.exists? ferr
 
           Misc.consume_stream(err, true, STDERR) if err
@@ -309,27 +309,8 @@ EOF
       fjob = File.join(workdir, 'job.id')
       job = Open.read(fjob) if Open.exists?(fjob)
 
-      status_txt = CMD.cmd("squeue --job #{job}").read
-      STDERR.puts Log.color(:magenta, "Status [#{job.to_i}]:")
-      STDERR.puts status_txt
-      lines = status_txt.split("\n").length
 
       while ! Open.exists?(fexit)
-        STDERR.puts
-        Log.clear_line(STDERR)
-        STDERR.write Log.color(:magenta, "Waiting for end")
-        3.times do
-          STDERR.write Log.color(:magenta, ".")
-          sleep 1
-        end
-        status_txt = CMD.cmd("squeue --job #{job}").read
-        lines.times do
-          Log.clear_line(STDERR)
-        end
-        Log.clear_line(STDERR)
-        STDERR.puts Log.color(:magenta, "Status [#{job.to_i}]:")
-        STDERR.puts status_txt
-        lines = status_txt.split("\n").length
         sleep time
       end
     end
@@ -345,7 +326,11 @@ EOF
         cmd = ['workflow', 'task', workflow.to_s, task.to_s, '-pf', '-jn', name, '--load_inputs', inputs_dir, '--log', (options[:log] || Log.severity).to_s]
         template = self.template(cmd, options)
         self.issue_template(template, options)
+        t_monitor = Thread.new do
+          self.follow_job(workdir, :STDERR)
+        end
         self.wait_for_job(workdir)
+        t_monitor.raise Aborted
         path = Open.read(File.join(workdir, 'std.out')).strip
         if job.path != path
           Log.info "Path of SLURM job #{path} is different from original job #{job.path}. Stablishing link."
