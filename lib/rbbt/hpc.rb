@@ -349,6 +349,12 @@ EOF
         Step.save_job_inputs(job, inputs_dir)
         options[:inputs_dir] = inputs_dir
         cmd = ['workflow', 'task', workflow.to_s, task.to_s, '-pf', '-jn', name, '--load_inputs', inputs_dir, '--log', (options[:log] || Log.severity).to_s]
+
+        %w(workflows requires remote_workflow_tasks override_deps).each do |key|
+          next unless options[key]
+          cmd += ["--#{key.to_s}", options[key]]
+        end
+
         template = self.template(cmd, options)
         self.issue_template(template, options)
         t_monitor = Thread.new do
