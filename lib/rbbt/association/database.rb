@@ -111,11 +111,12 @@ module Association
   end
 
   def self.open_stream(stream, options = {})
-    options = Misc.add_defaults options, :type => :double, :merge => true
     fields, persist, data = Misc.process_options options, :fields, :persist, :data
 
 
     parser = TSV::Parser.new stream, options.merge(:fields => nil, :key_field => nil)
+    options = options.merge(parser.options)
+    options = Misc.add_defaults options, :type => :double, :merge => true
 
     key_field, *_fields = all_fields = parser.all_fields
 
@@ -124,34 +125,34 @@ module Association
     parser.key_field = source_pos
     parser.fields = field_pos
 
-    case parser.type
-    when :single
-      class << parser
-        def get_values(parts)
-          [parts[@key_field], parts.values_at(*@fields).first]
-        end
-      end
-    when :list
-      class << parser
-        def get_values(parts)
-          [parts[@key_field], parts.values_at(*@fields)]
-        end
-      end
-    when :double
-      class << parser
-        def get_values(parts)
-          [parts[@key_field].split(@sep2,-1), parts.values_at(*@fields).collect{|v| v.nil? ? [] : v.split(@sep2,-1) }]
-        end
-      end
-    when :flat
-      class << parser
-        def get_values(parts)
-          fields = (0..parts.length-1).to_a - [@key_field]
-          values = parts.values_at(*fields).compact.collect{|v| v.split(@sep2,-1) }.flatten
-          [parts[@key_field].split(@sep2,-1), values]
-        end
-      end
-    end
+    #case parser.type
+    #when :single
+    #  class << parser
+    #    def get_values(parts)
+    #      [parts[@key_field], parts.values_at(*@fields).first]
+    #    end
+    #  end
+    #when :list
+    #  class << parser
+    #    def get_values(parts)
+    #      [parts[@key_field], parts.values_at(*@fields)]
+    #    end
+    #  end
+    #when :__double
+    #  class << parser
+    #    def get_values(parts)
+    #      [parts[@key_field].split(@sep2,-1), parts.values_at(*@fields).collect{|v| v.nil? ? [] : v.split(@sep2,-1) }]
+    #    end
+    #  end
+    #when :flat
+    #  class << parser
+    #    def get_values(parts)
+    #      fields = (0..parts.length-1).to_a - [@key_field]
+    #      values = parts.values_at(*fields).compact.collect{|v| v.split(@sep2,-1) }.flatten
+    #      [parts[@key_field].split(@sep2,-1), values]
+    #    end
+    #  end
+    #end
 
     open_options = options.merge(parser.options).merge(:parser => parser)
     open_options = Misc.add_defaults open_options, :monitor => {:desc => "Parsing #{ Misc.fingerprint stream }"}

@@ -86,6 +86,18 @@ module TSV
 
     end
 
+    def get_values_double_from_flat(parts)
+      return [parts.shift], [parts.flatten] if field_positions.nil? and key_position.nil?
+      if key_position == 0
+        [parts.shift, [parts.flatten]]
+      else
+        value = parts.shift
+        keys = parts.flatten
+        [keys, [[value]]]
+      end
+
+    end
+
     def get_values_single(parts)
       return parts.shift, parts.first if field_positions.nil? and key_position.nil?
       key = parts[key_position]
@@ -263,7 +275,8 @@ module TSV
       end
 
       values = values.collect{|v| v.length != num ? [v.first] * num : v}
-      all = values.unshift keys
+      all = values
+      all.unshift keys
       Misc.zip_fields(all).each do |values|
         key = values.shift
         if data.include? key
@@ -437,7 +450,11 @@ module TSV
 
       case @type
       when :double 
-        self.instance_eval do alias get_values get_values_double end
+        if @header_options[:type] == :flat
+          self.instance_eval do alias get_values get_values_double_from_flat end
+        else
+          self.instance_eval do alias get_values get_values_double end
+        end
         self.instance_eval do alias cast_values cast_values_double end
         case
         when (merge and not zipped)

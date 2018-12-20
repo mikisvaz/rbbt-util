@@ -141,7 +141,7 @@ class RbbtProcessQueue
             raise Exception
           end
         end
-        Log.low "Manager thred stopped #{Process.pid}"
+        Log.low "Manager thread stopped #{Process.pid}"
       end
 
       @callback_queue.close_read if @callback_queue

@@ -2,6 +2,24 @@ require File.expand_path(File.join(File.dirname(__FILE__), '../..', 'test_helper
 require 'rbbt/tsv'
 
 class TestTSVParser < Test::Unit::TestCase
+  def test_flat
+    TmpFile.with_file do |tmpdir|
+      file = File.join(tmpdir, 'file')
+      str =<<-EOF
+#: :type=:flat#:sep=' '
+#Key Value
+a b c d e
+A B C D E
+      EOF
+      Open.write(file, str)
+      Open.open(file) do |io|
+        parser = TSV::Parser.new(io, :merge => true, :zipped => true, :type => :double)
+        parser.traverse do |k,v|
+          assert v.length > 1
+        end
+      end
+    end
+  end
   def test_traverse
 
     content =<<-EOF

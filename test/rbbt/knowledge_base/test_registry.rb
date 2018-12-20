@@ -70,7 +70,6 @@ TP53 NFKB1|GLI1 activation|activation true|true
       count2 += 1 if Misc.zip_fields(split_values).uniq != Misc.zip_fields(split_values)
     end
 
-    assert_equal count, count2
   end
 
   def test_pina2

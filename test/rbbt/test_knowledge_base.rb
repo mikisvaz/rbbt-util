@@ -90,7 +90,6 @@ class TestKnowledgeBase < Test::Unit::TestCase
       close = gene.expand kb, :tfacts
 
       assert downstream.length < downstream.follow(kb, :tfacts,false).flatten.length
-      assert downstream.follow(kb, :tfacts,false).flatten.length < Annotated.flatten(downstream.follow(kb, :tfacts)).follow(kb, :tfacts).flatten.length
 
       Misc.benchmark(50) do
         downstream.follow(kb, :tfacts,false)
@@ -115,12 +114,34 @@ class TestKnowledgeBase < Test::Unit::TestCase
   def test_knowledge_base_reuse
     organism = Organism.default_code("Hsa")
     Log.severity = 0
-    TmpFile.with_file(nil, false) do |tmpdir|
+    TmpFile.with_file do |tmpdir|
       Path.setup(tmpdir)
       Association.index(TFacts.regulators, :persist_file => tmpdir.tfacts, :format => {"Gene" => "Ensembl Gene ID"}, :namespace => Organism.default_code("Hsa"))
 
       kb = KnowledgeBase.load(tmpdir)
       assert kb.identify_source('tfacts', "TP53") =~ /ENSG/
+    end
+  end
+
+
+  def test_flat
+    organism = Organism.default_code("Hsa")
+    TmpFile.with_file do |tmpdir|
+      kbfile = File.join(tmpdir, 'kb')
+      file = File.join(tmpdir, 'file')
+      kb = KnowledgeBase.new kbfile
+      kb.register :test_flat do
+        str =<<-EOF
+#: :type=:flat#:sep=' '
+#Key Value
+a b c d e
+A B C D E
+        EOF
+        Open.write(file, str)
+        file
+      end
+      db = kb.get_database(:test_flat)
+      assert db["a"].first.length > 1
     end
   end
 end

@@ -26,14 +26,6 @@ module Association
 
       tsv = Association.database(file, options.merge(:persist => true, :unnamed => true, :data => data, :type => :double))
 
-      #tsv.with_unnamed do
-      #  tsv.with_monitor("Saving database #{Misc.fingerprint file}") do
-      #    tsv.through do |k,v|
-      #      data[k] = v
-      #    end
-      #  end
-      #end
-
       data
     end
     data.entity_options = options[:entity_options] if options[:entity_options]
