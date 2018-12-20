@@ -146,7 +146,7 @@ class RbbtProcessQueue
 
       @callback_queue.close_read if @callback_queue
 
-      num_processes.times do |i|
+      num_processes.to_i.times do |i|
         @total += 1 
         process_mutex.synchronize do
           processes << RbbtProcessQueueWorker.new(@queue, @callback_queue, @cleanup, @respawn, (@offset ? @total : false), &@init_block)
