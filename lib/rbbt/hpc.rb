@@ -7,7 +7,6 @@ module Marenostrum
 
     def self.template(args, options = {})
 
-      dry_run          = options.delete :dry_run
       development      = options.delete :drbbt
       contain          = options.delete :contain
       sync             = options.delete :sync
@@ -228,12 +227,15 @@ EOF
 
       workdir = options[:workdir]
       Open.mkdir workdir
-      fout = File.join(workdir, 'std.out')
-      ferr = File.join(workdir, 'std.err')
-      fjob = File.join(workdir, 'job.id')
+
+      dry_run = options.delete :dry_run
+
+      fout  = File.join(workdir, 'std.out')
+      ferr  = File.join(workdir, 'std.err')
+      fjob  = File.join(workdir, 'job.id')
       fexit = File.join(workdir, 'exit.status')
       fsync = File.join(workdir, 'sync.log')
-      fcmd = File.join(workdir, 'command.slurm')
+      fcmd  = File.join(workdir, 'command.slurm')
 
       job = nil
       if options[:clean_job]
@@ -253,6 +255,10 @@ EOF
       else
         if File.exists?(fout)
           return
+        elsif dry_run
+          STDERR.puts Log.color(:magenta, "Prepared work directory: ")
+          puts workdir
+          STDERR.puts Log.color(:magenta, "To execute run: sbatch '#{workdir}/command.slurm'")
         else
           Open.rm fsync
           Open.rm fexit
