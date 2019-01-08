@@ -1,5 +1,11 @@
 #!/usr/bin/env ruby
 
+class CmdStop < Exception
+  attr_accessor :exit_status
+  def initialize(exit_status = 0)
+    @exit_status = exit_status
+  end
+end
 dev_dir = nil
 if _i = ARGV.index("--dev")
   dev_dir = ARGV[_i+1]
@@ -248,6 +254,9 @@ rescue ParameterException
   puts
   exit -1
 rescue SystemExit
+rescue CmdStop
+  exit_status = $!.exit_status
+  exit exit_status
 rescue Exception
   Log.exception $!
   exit -1

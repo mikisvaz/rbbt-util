@@ -3,6 +3,13 @@ require 'rbbt/util/cmd'
 
 module Marenostrum
   SERVER='mn1'
+  class SBATCH < Exception; 
+    attr_accessor :directory
+    def initialize(directory)
+      @directory = directory
+    end
+  end
+
   module SLURM
 
     def self.template(args, options = {})
@@ -256,10 +263,8 @@ EOF
         if File.exists?(fout)
           return
         elsif dry_run
-          STDERR.puts Log.color(:magenta, "Prepared work directory: ")
-          puts workdir
           STDERR.puts Log.color(:magenta, "To execute run: sbatch '#{workdir}/command.slurm'")
-          Kernel.exit! -2
+          raise Marenostrum::SBATCH, workdir
         else
           Open.rm fsync
           Open.rm fexit
