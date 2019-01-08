@@ -263,8 +263,8 @@ EOF
         if File.exists?(fout)
           return
         elsif dry_run
-          STDERR.puts Log.color(:magenta, "To execute run: sbatch '#{workdir}/command.slurm'")
-          STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): rbbt mn --tail -w '#{workdir}'")
+          STDERR.puts Log.color(:magenta, "To execute run: ") + Log.color(:blue, "sbatch '#{workdir}/command.slurm'")
+          STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): ") + Log.color(:blue, "rbbt mn --tail -w '#{workdir}'")
           raise Marenostrum::SBATCH, workdir
         else
           Open.rm fsync
