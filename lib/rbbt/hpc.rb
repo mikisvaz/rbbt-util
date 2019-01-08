@@ -259,6 +259,7 @@ EOF
           STDERR.puts Log.color(:magenta, "Prepared work directory: ")
           puts workdir
           STDERR.puts Log.color(:magenta, "To execute run: sbatch '#{workdir}/command.slurm'")
+          Kernel.exit! -2
         else
           Open.rm fsync
           Open.rm fexit
