@@ -264,6 +264,7 @@ EOF
           return
         elsif dry_run
           STDERR.puts Log.color(:magenta, "To execute run: sbatch '#{workdir}/command.slurm'")
+          STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): rbbt --tail -w '#{workdir}'")
           raise Marenostrum::SBATCH, workdir
         else
           Open.rm fsync
