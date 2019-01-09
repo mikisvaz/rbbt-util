@@ -31,7 +31,7 @@ function add2file(){
     file=$1
     line=$2
 
-    rel=$(realpath --relative-to=$OPT_DIR $rel)
+    rel="$(realpath -s --relative-to="$OPT_DIR" "$line")"
     grep "$rel" "$file" || echo "$rel" >> "$file"
 }
 
