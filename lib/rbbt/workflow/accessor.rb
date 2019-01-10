@@ -83,7 +83,9 @@ class Step
   def self.save_job_inputs(job, dir)
 
     task_name = job.task_name
-    task_info = job.workflow.task_info(task_name)
+    workflow = job.workflow
+    workflow = Kernel.const_get workflow if String === workflow
+    task_info = workflow.task_info(task_name)
     input_types = task_info[:input_types]
     task_inputs = task_info[:inputs]
     job.recursive_inputs.zip(job.recursive_inputs.fields).each do |value,name|
