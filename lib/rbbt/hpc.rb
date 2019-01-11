@@ -99,7 +99,6 @@ module load java
         env +=<<-EOF
 module load intel/2018.1
 module load singularity
-module load samtools
 SINGULARITY_IMG="$HOME/projects/rbbt.singularity.img"
 SINGULARITY_RUBY_INLINE="$HOME/.singularity_ruby_inline"
 mkdir -p "$SINGULARITY_RUBY_INLINE"
@@ -356,7 +355,9 @@ EOF
       task = job.task_name
       name = job.clean_name
       keep_workdir = options.delete :keep_SLURM_workdir 
-      TmpFile.with_file(nil, !keep_workdir) do |tmp_directory|
+      slurm_basedir = options.delete :SLURM_basedir
+      slurm_basedir = "~/rbbt-workdir" if slurm_basedir.nil?
+      TmpFile.with_file(nil, !keep_workdir, :tmpdir => slurm_basedir, :prefix => "SLURM_rbbt_job-") do |tmp_directory|
         workdir = options[:workdir] ||= File.join(tmp_directory, 'workdir')
         inputs_dir = File.join(tmp_directory, 'inputs_dir')
         Step.save_job_inputs(job, inputs_dir)

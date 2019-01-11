@@ -5,7 +5,7 @@ require 'test/unit'
 class TestTmpFile < Test::Unit::TestCase
 
   def test_tmp_file
-    assert(TmpFile.tmp_file("test") =~ /tmp\/test\d+$/)
+    assert(TmpFile.tmp_file("test") =~ /(tmpfiles|tmp)\/test\d+$/)
   end
 
   def test_do_tmp_file
@@ -19,7 +19,12 @@ class TestTmpFile < Test::Unit::TestCase
     TmpFile.with_file(nil, true, :extension => 'txt') do |file|
       assert file =~ /\.txt$/
     end
+  end
 
+  def test_tmpdir
+    TmpFile.with_file(nil, true, :tmpdir => 'TMPDIR') do |file|
+      assert file =~ /TMPDIR/
+    end
   end
 
 end
