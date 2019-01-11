@@ -100,20 +100,32 @@ get_git(){
     local name="$1"
     local url="$2"
 
+    if [[ "$url" == *" "* ]]; then
+      version="${url/* /}"
+      url="${url/ */}"
+      echo "Using version $version of repo $url"
+    else
+      version='none'
+    fi
+
     local old_pwd="`expand_path $(pwd)`"
 
     cd $OPT_SCM_DIR
     if [ -d "$name" ]; then
         cd "$name" 
 
-        if [ ! "$NOWEB" == "true" ]; then
+        if [ ! "$NOWEB" == "true" -a $version == 'none' ]; then
           git stash
           git pull origin master
           git rebase master
           git stash apply
         fi
     else
+      if [ $version == 'none' ];then
         git clone "$url" "$name"
+      else
+        git clone "$url" "$name" -b $version
+      fi
     fi
 
     clean_build
@@ -202,28 +214,32 @@ build(){
     fi
 
     if [ -f CMakeLists.txt ]; then
-        mkdir build
-        cd build
-        cmake -DCMAKE_INSTALL_PREFIX:PATH=/ ..
-        make -j4
-        make DESTDIR="$(opt_dir "$name")" install
-        setup "$name"
-        clean_build
-    fi
-    
-    if [ -f configure ]; then 
+      [ -d build ] || mkdir build
+      cd build
+      cmake -DCMAKE_INSTALL_PREFIX:PATH=/install_dir ..
+      make DESTDIR="$(opt_dir "$name")"  -j4
+      make DESTDIR="$(opt_dir "$name")" install || (cd .. ; mv build "$(opt_dir "$name")")
+      if [ -d "$(opt_dir "$name")/install_dir" ]; then
+        mv "$(opt_dir "$name")/install_dir"/** "$(opt_dir "$name")"
+        rmdir "$(opt_dir "$name")/install_dir"
+      fi
+
+      setup "$name"
+      clean_build
+    else
+      if [ -f configure ]; then 
         echo ./configure --prefix="$(opt_dir "$name")" $extra
         ./configure --prefix="$(opt_dir "$name")" $extra
         compile "$name" $extra
         setup "$name"
         clean_build
-    else
+      else
         compile "$name" $extra
         move_opt "$name"
         setup "$name"
         clean_build
+      fi
     fi
-
     
     cd "$old_pwd"
 }
