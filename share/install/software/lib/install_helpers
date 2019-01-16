@@ -122,9 +122,9 @@ get_git(){
         fi
     else
       if [ $version == 'none' ];then
-        git clone "$url" "$name"
+        git clone --recursive "$url" "$name"
       else
-        git clone "$url" "$name" -b $version
+        git clone --recursive "$url" "$name" -b $version
       fi
     fi
 
@@ -179,6 +179,9 @@ build(){
 
     local old_pwd="`expand_path $(pwd)`"
     cd "`build_dir`"
+
+    [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile ] && cd src
+
     echo PWD: `pwd`
     ls
 
@@ -216,19 +219,26 @@ build(){
     if [ -f CMakeLists.txt ]; then
       [ -d build ] || mkdir build
       cd build
-      cmake -DCMAKE_INSTALL_PREFIX:PATH=/install_dir ..
-      make DESTDIR="$(opt_dir "$name")"  -j4
-      make DESTDIR="$(opt_dir "$name")" install || (cd .. ; mv build "$(opt_dir "$name")")
-      if [ -d "$(opt_dir "$name")/install_dir" ]; then
-        mv "$(opt_dir "$name")/install_dir"/** "$(opt_dir "$name")"
-        rmdir "$(opt_dir "$name")/install_dir"
+      cmake -DCMAKE_INSTALL_PREFIX=/install_dir ..
+
+      if [ -f ../configure ]; then
+        ../configure --prefix="$(opt_dir "$name")" $extra
+        make -j4
+        make install || (cd .. ; mv build "$(opt_dir "$name")")
+      else
+        make DESTDIR="$(opt_dir "$name")"  -j4
+        make DESTDIR="$(opt_dir "$name")" install || (cd .. ; mv build "$(opt_dir "$name")")
+
+        if [ -d "$(opt_dir "$name")/install_dir" ]; then
+          mv "$(opt_dir "$name")/install_dir"/** "$(opt_dir "$name")"
+          rmdir "$(opt_dir "$name")/install_dir"
+        fi
       fi
 
       setup "$name"
       clean_build
     else
       if [ -f configure ]; then 
-        echo ./configure --prefix="$(opt_dir "$name")" $extra
         ./configure --prefix="$(opt_dir "$name")" $extra
         compile "$name" $extra
         setup "$name"
@@ -298,15 +308,18 @@ setup(){
     else
         local old_pwd="`expand_path $(pwd)`"
 
-        for exe in ` find "$pkg_dir/" -maxdepth 1 -type f -executable`; do
+        for exe in ` find "$pkg_dir/" "$pkg_dir/src/" -maxdepth 1 -type f -executable`; do
+            orig=$exe
             exe=$(basename $exe)
+            echo "EXE $exe"
             rm -f "$OPT_DIR/bin/$exe"
-            link "$pkg_dir/$exe" "$OPT_DIR/bin/$exe" 2>/dev/null
+            link "$orig" "$OPT_DIR/bin/$exe" 2>/dev/null
         done
     fi
     
     ([ -d "$pkg_dir/include" ]       && add2file "$OPT_DIR/.c-paths" "$pkg_dir/include")
     ([ -d "$pkg_dir/lib" ]           && add2file "$OPT_DIR/.ld-paths" "$pkg_dir/lib")
+    ([ -d "$pkg_dir/lib64" ]         && add2file "$OPT_DIR/.ld-paths" "$pkg_dir/lib64")
     ([ -d "$pkg_dir/lib/pkgconfig" ] && add2file "$OPT_DIR/.pkgconfig-paths" "$pkg_dir/lib/pkgconfig")
 }
 
@@ -370,7 +383,6 @@ install_jar(){
 
     [ -d  "$OPT_DIR/$name/" ] || mkdir -p  "$OPT_DIR/$name/"
     wget "$url" -O "$OPT_DIR/jars/$name.jar" | wget "$url" -O "$OPT_DIR/jars/$name.jar" --no-check-certificate
-    link "$OPT_DIR/$name/$name.jar" "$OPT_JAR_DIR/$name.jar" 
 }
 
 jar2bin(){

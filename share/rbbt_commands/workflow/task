@@ -319,10 +319,17 @@ if clean
 end
 
 if clean_task
-  job.rec_dependencies.each do |dep|
-    next unless dep.task_name.to_s == clean_task.to_s
-    dep.clean 
-    dep.set_info :status, :cleaned
+  clean_task.split(",").each do |clean_task|
+    if clean_task.include? "#"
+      clean_workflow, clean_task = clean_task.split("#")
+    end
+
+    job.rec_dependencies.each do |dep|
+      next unless dep.task_name.to_s == clean_task.to_s
+      next unless clean_workflow.nil? || clean_workflow == dep.workflow.to_s
+      dep.clean 
+      dep.set_info :status, :cleaned
+    end
   end
 end
 

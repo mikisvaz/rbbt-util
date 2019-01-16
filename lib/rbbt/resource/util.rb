@@ -53,12 +53,14 @@ module Resource
       Open.read(File.join opt_dir, '.c-paths').split(/\n/).each do |line|
         dir = line.chomp
         dir = File.join(opt_dir, dir) unless dir[0] == "/"
-        Misc.env_add('C_INCLULDE_PATH',dir)
+        Misc.env_add('CPLUS_INCLUDE_PATH',dir)
+        Misc.env_add('C_INCLUDE_PATH',dir)
       end if File.exist? File.join(opt_dir, '.c-paths')
 
       Open.read(File.join opt_dir, '.ld-paths').split(/\n/).each do |line|
         dir = line.chomp
         dir = File.join(opt_dir, dir) unless dir[0] == "/"
+        Misc.env_add('LIBRARY_PATH',dir)
         Misc.env_add('LD_LIBRARY_PATH',dir)
         Misc.env_add('LD_RUN_PATH',dir)
       end if File.exist? File.join(opt_dir, '.ld-paths')
