@@ -349,6 +349,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    log
    knowledge_base
    watch
+   cmd
    rsync
    system=system{
     deleted_files

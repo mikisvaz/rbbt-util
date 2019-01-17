@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*" "} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Run a bash command
+
+$ #{$0} [options] *
+
+-h--help Print this help
+-W--workflows* Load workflows
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+if options[:workflows]
+  require 'rbbt/workflow'
+  options[:workflows].split(",").each do |workflow|
+    Workflow.require_workflow workflow
+  end
+end
+
+CMD.cmd_log(ARGV.collect{|e| '"' + e + '"'} * " ")
+
