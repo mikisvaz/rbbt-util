@@ -180,7 +180,7 @@ build(){
     local old_pwd="`expand_path $(pwd)`"
     cd "`build_dir`"
 
-    [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile ] && cd src
+    [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd src
 
     echo PWD: `pwd`
     ls
@@ -241,6 +241,7 @@ build(){
       if [ -f configure ]; then 
         ./configure --prefix="$(opt_dir "$name")" $extra
         compile "$name" $extra
+        [ -d "$(opt_dir "$name")" ] || move_opt "$name"
         setup "$name"
         clean_build
       else
