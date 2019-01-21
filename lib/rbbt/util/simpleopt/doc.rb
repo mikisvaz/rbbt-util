@@ -26,7 +26,7 @@ module SOPT
   end
 
   def self.input_format(name, type = nil, default = nil, short = nil)
-    input_str = (short.nil? or short.empty?) ? "--#{name}" : "-#{short}, --#{name}"
+    input_str = (short.nil? or short.empty?) ? "--#{name}" : "-#{short},--#{name}"
     input_str = Log.color(:blue, input_str)
     extra = case type
     when nil
