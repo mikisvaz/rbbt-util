@@ -160,9 +160,9 @@ EOF
           group = File.basename(File.dirname(ENV['HOME']))
           scratch_group_dir = File.join('/gpfs/scratch/', group)
           projects_group_dir = File.join('/gpfs/projects/', group)
-          exec_cmd = %(singularity exec -e -C -H "$CONTAINER_DIR" -B "$SINGULARITY_RUBY_INLINE":"$CONTAINER_DIR/.ruby_inline":rw  -B ~/git:"$CONTAINER_DIR/git":ro -B #{scratch_group_dir}:"$CONTAINER_DIR/scratch":ro -B ~/.rbbt/software/opt/:"/opt/":ro  -B ~/.rbbt:"$CONTAINER_DIR/home/":ro -B #{projects_group_dir}:"$CONTAINER_DIR/projects":ro "$SINGULARITY_IMG" env TMPDIR="$CONTAINER_DIR/.rbbt/tmp" rbbt)
+          exec_cmd = %(singularity exec -e -C -H "$CONTAINER_DIR" -B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$CONTAINER_DIR/.ruby_inline":rw  -B ~/git:"$CONTAINER_DIR/git":ro -B #{scratch_group_dir}:"$CONTAINER_DIR/scratch":ro -B ~/.rbbt/software/opt/:"/opt/":ro  -B ~/.rbbt:"$CONTAINER_DIR/home/":ro -B #{projects_group_dir}:"$CONTAINER_DIR/projects":ro "$SINGULARITY_IMG" env TMPDIR="$CONTAINER_DIR/.rbbt/tmp" rbbt)
         else
-          exec_cmd = %(singularity exec -e -B "$SINGULARITY_RUBY_INLINE":"$HOME/.ruby_inline":rw "$SINGULARITY_IMG" rbbt)
+          exec_cmd = %(singularity exec -e -B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$HOME/.ruby_inline":rw "$SINGULARITY_IMG" rbbt)
         end
 
         if development
