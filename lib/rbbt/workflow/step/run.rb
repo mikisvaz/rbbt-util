@@ -225,7 +225,7 @@ class Step
             :issued => (issue_time = Time.now),
             :name => name,
             :pid => Process.pid.to_s,
-            :pid_hostname => Socket.hostname,
+            :pid_hostname => Socket.gethostname,
             :clean_name => clean_name,
             :workflow => (@workflow || @task.workflow).to_s,
             :task_name => @task.name,
