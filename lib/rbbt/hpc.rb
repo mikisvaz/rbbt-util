@@ -41,6 +41,7 @@ module Marenostrum
 
       queue = options[:queue] || 'bsc_ls'
       tasks = options[:tasks] || 1
+      nodes = options[:nodes] || 1
       time = options[:time] || "0:00:10"
 
       time = Misc.format_seconds Misc.timespan(time) unless time.include? ":"
@@ -69,6 +70,7 @@ module Marenostrum
 #SBATCH --error="#{ferr}"
 #SBATCH --ntasks="#{tasks}"
 #SBATCH --time="#{time}"
+#SBATCH --nodes="#{nodes}"
       EOF
 
       if highmem
@@ -282,7 +284,7 @@ EOF
       ferr = File.join(workdir, 'std.err')
       fstatus = File.join(workdir, 'job.status')
 
-      job = Open.read(fjob) if Open.exists?(fjob)
+      job = Open.read(fjob).strip if Open.exists?(fjob)
 
       if job
         status_txt = CMD.cmd("squeue --job #{job}").read
@@ -317,7 +319,7 @@ EOF
         begin
           CMD.cmd("squeue --job #{job} > #{fstatus}")
           out = CMD.cmd("tail -f '#{fout}'", :pipe => true) if File.exists?(fout) and not tail == :STDERR
-          err = CMD.cmd("tail -f '#{ferr}'", :pipe => true) if File.exists? ferr
+          err = CMD.cmd("tail -f '#{ferr}'", :pipe => true) if File.exists?(ferr)
 
           Misc.consume_stream(err, true, STDERR) if err
           Misc.consume_stream(out, true, STDOUT) if out

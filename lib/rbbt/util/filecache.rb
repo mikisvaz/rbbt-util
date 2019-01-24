@@ -4,7 +4,11 @@ require 'rbbt/util/misc'
 # Provides caching functionality for files downloaded from the internet
 module FileCache
   CACHEDIR = "/tmp/rbbt_cache" 
-  FileUtils.mkdir CACHEDIR unless File.exist? CACHEDIR
+  begin
+    FileUtils.mkdir(CACHEDIR)
+  rescue
+  end unless File.exist? CACHEDIR
+
 
   def self.cachedir=(cachedir)
     CACHEDIR.replace cachedir

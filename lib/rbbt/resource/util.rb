@@ -34,8 +34,8 @@ module Resource
     software_dir.find_all.each do |software_dir|
       next unless software_dir.exists?
       software_dir = File.expand_path(software_dir)
-      bin_dir = File.join(software_dir, 'bin')
       opt_dir = File.join(software_dir, 'opt')
+      bin_dir = File.join(opt_dir, 'bin')
 
       Misc.env_add 'PATH', bin_dir
 

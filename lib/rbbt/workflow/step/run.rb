@@ -1,4 +1,5 @@
 require 'rbbt/workflow/step/dependencies'
+require 'socket'
 
 
 module StreamArray; end
@@ -224,6 +225,7 @@ class Step
             :issued => (issue_time = Time.now),
             :name => name,
             :pid => Process.pid.to_s,
+            :pid_hostname => Socket.hostname,
             :clean_name => clean_name,
             :workflow => (@workflow || @task.workflow).to_s,
             :task_name => @task.name,
