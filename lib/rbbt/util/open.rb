@@ -750,7 +750,7 @@ module Open
       begin
         if File.symlink?(file) || File.stat(file).nlink > 1
           if File.exists?(file + '.info')
-            file = file + '.info'
+            return Step::INFO_SERIALIAZER.load(Open.open(file + '.info'))[:done]
           else
             file = Pathname.new(file).realpath.to_s 
           end
@@ -760,6 +760,19 @@ module Open
         nil
       end
     end
+  end
+
+  def self.update_mtime(path, target)
+    if File.symlink?(target) || File.stat(target).nlink > 1
+      if File.exists?(target + '.info')
+        target = target + '.info'
+      else
+        target = Pathname.new(target).realpath.to_s 
+      end
+    end
+
+    CMD.cmd("touch -r '#{path}' '#{target}'")
+    CMD.cmd("touch -r '#{path}.info' '#{target}'") if File.exists?(path + '.info')
   end
 
   def self.atime(file)

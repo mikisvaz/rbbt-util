@@ -154,7 +154,7 @@ class Step
       dep_done = dep.done?
 
       begin
-        if this_mtime && dep_done && Open.exists?(dep.path) && (Open.mtime(dep.path) > this_mtime)
+        if this_mtime && dep_done && Open.exists?(dep.path) && (Open.mtime(dep.path) > this_mtime + 1)
           outdated_time << dep
         end
       rescue

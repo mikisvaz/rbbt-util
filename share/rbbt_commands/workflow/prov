@@ -76,7 +76,8 @@ def report_msg(status, name, path, info = nil)
                rescue
                    nil
                end
-  str = if not Open.remote?(path) and (Open.exists?(path) and $main_mtime and path_mtime and ($main_mtime - path_mtime) < 0)
+  str = if not Open.remote?(path) and (Open.exists?(path) and $main_mtime and path_mtime and ($main_mtime - path_mtime) < -2)
+          iii [path, path_mtime, $main_mtime, $main_mtime - path_mtime]
     status_msg(status.to_s) << " " << [workflow, task, path].compact * " " << " (#{Log.color(:red, "Mtime out of sync") })"
   else
     status_msg(status.to_s) << " " << [workflow, task, path].compact * " " 
@@ -111,11 +112,11 @@ def touch(step)
   return unless File.exists?(step.path)
   step.dependencies.each do |dep|
     next unless Open.exists?(dep.path)
-    touch(dep)
-    if Open.mtime(step.path) < Open.mtime(dep.path) 
+    if Open.mtime(dep.path) > Open.mtime(step.path) + 1
       Log.debug("Updating #{step.path} to #{dep.path}")
-      CMD.cmd("touch -r '#{dep.path}' '#{step.path}'")
+      Open.update_mtime(dep.path, step.path)
     end
+    touch(dep)
   end if step.dependencies
 end
 

@@ -160,7 +160,7 @@ module Log
   end
 
   LAST = "log"
-  def self.log(message = nil, severity = MEDIUM, &block)
+  def self.logn(message = nil, severity = MEDIUM, &block)
     return if severity < self.severity 
     message ||= block.call if block_given?
     return if message.nil?
@@ -174,11 +174,19 @@ module Log
     str = prefix << " " << message.to_s
 
     LOG_MUTEX.synchronize do
-      STDERR.puts str
+      STDERR.write str
       Log::LAST.replace "log"
-      logfile.puts str unless logfile.nil?
+      logfile.write str unless logfile.nil?
       nil
     end
+  end
+
+  def self.log(message = nil, severity = MEDIUM, &block)
+    return if severity < self.severity 
+    message ||= block.call if block_given?
+    return if message.nil?
+    message = message + "\n" unless message[-1] == "\n"
+    self.logn message, severity, &block
   end
 
   def self.log_obj_inspect(obj, level, file = $stdout)

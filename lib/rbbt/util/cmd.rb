@@ -54,50 +54,6 @@ module CMD
 
     in_content = StringIO.new in_content if String === in_content
 
-    #sout, serr, sin = Misc.pipe, Misc.pipe, Misc.pipe
-
-    #pid = fork {
-    #  begin
-    #    Misc.purge_pipes(sin.last,sout.last,serr.last)
-
-    #    sin.last.close
-    #    sout.first.close
-    #    serr.first.close
-
-    #    if IO === in_content
-    #      in_content.close if in_content.respond_to?(:close) and not in_content.closed?
-    #    end
-
-    #    STDERR.reopen serr.last
-    #    serr.last.close
-
-    #    STDIN.reopen sin.first
-    #    sin.first.close
-
-    #    STDOUT.reopen sout.last
-    #    sout.last.close
-
-    #    STDOUT.sync = STDERR.sync = true
-
-    #    exec(ENV, cmd)
-
-    #    exit(-1)
-    #  rescue Exception
-    #    Log.debug{ "ProcessFailed: #{$!.message}" } if log
-    #    Log.debug{ "Backtrace: \n" + $!.backtrace * "\n" } if log
-    #    raise ProcessFailed, $!.message
-    #  end
-    #}
-
-    #sin.first.close
-    #sout.last.close
-    #serr.last.close
-
-
-    #sin = sin.last
-    #sout = sout.first
-    #serr = serr.first
-
     sin, sout, serr, wait_thr = begin
                                   Open3.popen3(ENV, cmd)
                                 rescue
@@ -139,8 +95,8 @@ module CMD
     if pipe
       err_thread = Thread.new do
         while line = serr.gets
-          Log.log "STDERR [#{pid}]: " +  line, stderr if Integer === stderr and log
-        end
+          Log.log "STDERR [#{pid}]: " +  line, stderr 
+        end if Integer === stderr and log
         serr.close
       end
 
@@ -181,13 +137,17 @@ module CMD
 
     io = cmd(*all_args)
     pid = io.pids.first
-    while line = io.gets
-      if pid
-        Log.debug "STDOUT [#{pid}]: " + line
-      else
-        Log.debug "STDOUT: " + line
+
+    while c = io.getc
+      STDERR << c
+      if c == "\n"
+        if pid
+          Log.logn "STDOUT [#{pid}]: ", 0
+        else
+          Log.logn "STDOUT: ", 0
+        end
       end
-    end
+    end 
     io.join
 
     nil
