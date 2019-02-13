@@ -130,4 +130,27 @@ module Workflow
         end
       end
   end
+
+  def SOPT_str(task)
+    sopt_options = []
+    self.rec_inputs(task.name).each do |name|
+      short = name.to_s.chars.first
+      boolean = self.rec_input_types(task.name)[name].to_sym == :boolean
+
+      sopt_options << "-#{short}--#{name}#{boolean ? "" : "*"}"
+    end
+
+    sopt_options * ":"
+  end
+
+  def get_SOPT(task)
+    sopt_option_string = self.SOPT_str(task)
+    SOPT.get sopt_option_string
+  end
+
+  def self.get_SOPT(workflow, task)
+    workflow = Workflow.require_workflow workflow if String === workflow
+    task = workflow.tasks[task.to_sym] if String === task || Symbol === task
+    workflow.get_SOPT(task)
+  end
 end

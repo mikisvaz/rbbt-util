@@ -48,18 +48,6 @@ def usage(workflow = nil, task = nil, exception=nil)
   true
 end
 
-def SOPT_options(workflow, task)
-  sopt_options = []
-  workflow.rec_inputs(task.name).each do |name|
-    short = name.to_s.chars.first
-    boolean = workflow.rec_input_types(task.name)[name].to_sym == :boolean
-    
-    sopt_options << "-#{short}--#{name}#{boolean ? "" : "*"}"
-  end
-
-  sopt_options * ":"
-end
-
 def get_value_stream(value)
   if value == "-"
     io = Misc.open_pipe do |sin|
@@ -289,8 +277,7 @@ usage workflow, task and exit 0 if help
 name = options.delete(:jobname) 
 
 # get job args
-sopt_option_string = SOPT_options(workflow, task)
-job_options = SOPT.get sopt_option_string
+job_options = workflow.get_SOPT(task)
 
 if options[:load_inputs]
   task_info = workflow.task_info(task_name)
