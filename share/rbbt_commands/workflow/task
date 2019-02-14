@@ -281,8 +281,9 @@ job_options = workflow.get_SOPT(task)
 
 if options[:load_inputs]
   task_info = workflow.task_info(task_name)
-  job_options = Workflow.load_inputs(options[:load_inputs], task_info[:inputs], task_info[:input_types]).merge(SOPT.get(sopt_option_string)).merge(job_options)
+  job_options = Workflow.load_inputs(options[:load_inputs], task_info[:inputs], task_info[:input_types]).merge(job_options)
 end
+
 job_options = fix_options(workflow, task, job_options)
 saved_job_options = job_options
 

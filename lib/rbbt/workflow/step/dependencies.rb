@@ -59,6 +59,7 @@ class Step
   end
 
   def dup_inputs
+    return if @inputs.nil?
     return if @dupped or ENV["RBBT_NO_STREAM"] == 'true'
     return if ComputeDependency === self and self.compute == :produce
     Log.low "Dupping inputs for #{path}"
