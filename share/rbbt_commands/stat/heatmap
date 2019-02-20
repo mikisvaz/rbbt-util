@@ -16,7 +16,7 @@ $ rbbt stat heatmap [options] <filename.tsv> [file.png]
 -h--height* Image Height
 -s--size* Image Size (Height and Width)
 -l--logs Take logs
--p--positive single color heatmap (positive values
+-p--positive single color heatmap (positive values)
 
 EOF
 if options[:help]
