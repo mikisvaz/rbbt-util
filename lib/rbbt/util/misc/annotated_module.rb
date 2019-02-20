@@ -5,8 +5,8 @@ module AnnotatedModule
       annotations.first.each do |annotation, default|
         target.send(:attr_accessor, annotation)
         target.send(:define_method, "consume_#{annotation}") do
-          value = instance_variable_get("@#{annotation}") || default.dup
-          instance_variable_set("@#{annotation}", default.dup)
+          value = instance_variable_get("@#{annotation}") || (default.nil? ? nil : default.dup)
+          instance_variable_set("@#{annotation}", (default.nil? ? nil : default.dup))
           value
         end
       end

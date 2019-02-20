@@ -703,7 +703,7 @@ class Step
         dependencies.each{|dep| dep.join }
       end
 
-      until (Open.exists?(path) && status == :done) or error? or aborted? or waiting?
+      until (Open.exists?(path) && (status == :done || status == :noinfo)) or error? or aborted? or waiting?
         sleep 1
         join_stream if streaming?
       end
