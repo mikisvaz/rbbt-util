@@ -10,6 +10,8 @@ class RbbtProcessQueue
       end
     end
 
+    WORKER_ABORT_SIGNAL=15
+
     def run
       begin
         begin
@@ -27,7 +29,7 @@ class RbbtProcessQueue
             @stop = true
           }
 
-          Signal.trap(20){ 
+          Signal.trap(WORKER_ABORT_SIGNAL){ 
             Log.high "Worker #{Process.pid} signaled to abort"
             Kernel.exit! -1
           }
@@ -144,10 +146,10 @@ class RbbtProcessQueue
           end
         }
 
-        Signal.trap(20){ 
+        Signal.trap(WORKER_ABORT_SIGNAL){ 
           Log.high "Killing respawned process #{@current}"
           begin
-            Process.kill 20, @current if @current
+            Process.kill WORKER_ABORT_SIGNAL, @current if @current
           rescue Errno::ESRCH, Errno::ECHILD
           end
         }
@@ -237,7 +239,7 @@ class RbbtProcessQueue
 
     def abort
       begin
-        Process.kill 20, @pid
+        Process.kill WORKER_ABORT_SIGNAL, @pid
       rescue Errno::ESRCH, Errno::ECHILD
       end
     end
