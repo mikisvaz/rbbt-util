@@ -386,7 +386,8 @@ module Workflow
 
     task_info = task_info(taskname)
     task_inputs = task_info[:inputs]
-    Persist.memory("STEP", :taskname => taskname, :jobname => jobname, :inputs => inputs.values_at(*task_inputs), :repo => step_cache) do
+    persist_inputs = inputs.values_at(*task_inputs)
+    Persist.memory("STEP", :taskname => taskname, :jobname => jobname, :inputs => persist_inputs, :repo => step_cache) do
       __job(taskname, jobname, inputs)
     end
   end

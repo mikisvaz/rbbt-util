@@ -188,12 +188,12 @@ rbbt.tsv2matrix <- function(data){
   return(new);
 }
 
-rbbt.tsv.write <- function(filename, data, key.field = NULL, extra_headers = NULL){
+rbbt.tsv.write <- function(filename, data, key.field = NULL, extra_headers = NULL, eol="\n", ...){
 
   if (is.null(key.field)){ key.field = attributes(data)$key.field;}
   if (is.null(key.field)){ key.field = "ID";}
 
-  f = file(filename, 'w');
+  f = file(filename, 'wb');
 
   if (!is.null(extra_headers)){
       extra_headers = paste("#: ", extra_headers, "\n", sep="");
@@ -205,9 +205,9 @@ rbbt.tsv.write <- function(filename, data, key.field = NULL, extra_headers = NUL
   header = paste(header, "\n", sep="");
   cat(header, file=f);
   
-  close(f);
+  write.table(data, file=f, quote=FALSE, append=TRUE, col.names=FALSE, row.names=TRUE, sep="\t", eol="\n", ...);
 
-  write.table(data, file=filename, quote=FALSE, append=TRUE, col.names=FALSE, row.names=TRUE, sep="\t");
+  close(f);
 
   return(NULL);
 }

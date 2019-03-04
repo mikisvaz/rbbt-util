@@ -59,7 +59,7 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 -ck--config_keys*       #{Log.color :yellow, "Override some config keys"}
 EOF
 
-if options[:jobname_as_inputs]
+if options[:jobname_show_inputs]
   ENV["RBBT_INPUT_JOBNAME"] = "true"
 end
 

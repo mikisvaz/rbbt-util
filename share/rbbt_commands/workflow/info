@@ -148,7 +148,7 @@ end
 if recursive
   inputs = step.info[:inputs]
   inputs = {}
-  deps = step.info[:dependencies].collect{|v| get_step v.last }
+  deps = (step.info[:dependencies] || []).collect{|v| get_step v.last }
 
   while deps.any? do
     dep = deps.shift

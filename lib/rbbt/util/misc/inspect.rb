@@ -176,7 +176,7 @@ module Misc
       next if k == :monitor or k == "monitor" or k == :in_situ_persistence or k == "in_situ_persistence"
       _v = hash[k]
       _k = k
-      v = Annotated.purge(_v)
+      v = TSV === _v ? _v : Annotated.purge(_v)
       k = Annotated.purge(k)
 
       case
@@ -184,6 +184,9 @@ module Misc
         str << k.to_s << "=>true" 
       when FalseClass === v
         str << k.to_s << "=>false" 
+      when TSV === v
+        iii :TSV
+        str << k.to_s << "=>" << obj2md5(v)
       when Hash === v
         str << k.to_s << "=>" << hash2md5(v)
       when Symbol === v

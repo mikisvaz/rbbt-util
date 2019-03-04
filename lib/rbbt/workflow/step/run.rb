@@ -83,6 +83,7 @@ class Step
       next unless input.respond_to? :rewind
       begin
         input.rewind
+        input.first_line = nil if TSV::Parser === input
         Log.debug "Rewinded #{Misc.fingerprint input}"
       rescue
       end

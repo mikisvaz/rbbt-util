@@ -162,6 +162,9 @@ module Annotated
       object.respond_to?(:clean_annotations) ?
         object.clean_annotations(true) : 
         object.inject([]){|acc,e| acc << Annotated.purge(e); acc}
+    when TSV
+      object.unnamed = true
+      object
     when Hash
       new = {}
       object.each do |key, value|
