@@ -57,14 +57,21 @@ else
   end
 
   if String === file and not Open.remote? file and File.exist? file
-    rows = `wc -l '#{ file }' 2>/dev/null|cut -f 1 -d' '`
+    rows = `wc -l '#{ file }' 2> /dev/null|cut -f 1 -d' '`.strip
+    header_rows = `(head '#{ file }' |grep "#" | wc -l) 2> /dev/null|cut -f 1 -d' '`
+    if header_rows.to_i <= 2 and header_rows.to_i >= 1
+      rows = rows.to_i - header_rows.to_i
+    else
+      rows << ' (possibly including header)'
+    end
   else
     rows = "Could not get rows of #{Misc.fingerprint file}"
   end
-    puts "Rows: #{Log.color :blue, rows}" 
-    parts = []
-    header.first_line.split(header.sep, -1).each_with_index{|p,i| parts << (Log.color(:cyan, "(#{i}) ") << p.strip) }
-    puts parts * "\t"
+  
+  puts "Rows: #{Log.color :blue, rows}" 
+  parts = []
+  header.first_line.split(header.sep, -1).each_with_index{|p,i| parts << (Log.color(:cyan, "(#{i}) ") << p.strip) }
+  puts parts * "\t"
   puts
 end
 

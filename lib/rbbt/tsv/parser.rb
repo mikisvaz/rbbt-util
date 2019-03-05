@@ -545,7 +545,7 @@ module TSV
 
       # first line
       line = self.rescue_first_line
-      line = stream.gets
+      line = stream.gets if line.nil?
 
       if @tsv_grep
 

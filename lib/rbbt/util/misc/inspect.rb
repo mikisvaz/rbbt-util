@@ -185,7 +185,6 @@ module Misc
       when FalseClass === v
         str << k.to_s << "=>false" 
       when TSV === v
-        iii :TSV
         str << k.to_s << "=>" << obj2md5(v)
       when Hash === v
         str << k.to_s << "=>" << hash2md5(v)
