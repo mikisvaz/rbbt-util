@@ -123,13 +123,22 @@ app.get '/reload_workflow' do
     halt 500, "Not allowed in production" 
   end
 
-  workflow = params[:workflow] if params[:workflow]
-  wf_file = Workflow.local_workflow_filename(workflow)
-  wf_dir = File.dirname(wf_file)
-  $LOADED_FEATURES.delete_if do |path|
-    Misc.path_relative_to(wf_dir, path)
+  begin
+      workflow = params[:workflow] if params[:workflow]
+      wf_file = Workflow.local_workflow_filename(workflow)
+      wf_dir = File.dirname(wf_file)
+      $LOADED_FEATURES.delete_if do |path|
+          Misc.path_relative_to(wf_dir, path)
+      end
+      load wf_file
+  rescue Exception
+      if File.exists?(Rbbt.etc['target_workflow'].read.strip)
+          load Rbbt.etc['target_workflow'].read.strip
+      else
+          raise $!
+      end
   end
-  load wf_file
+
   halt 200, "Workflow #{ workflow } reloaded"
 end
 
