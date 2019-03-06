@@ -10,10 +10,38 @@ OPT_BUILD_DIR="$SOFTWARE_DIR/.build"; [ -d $OPT_BUILD_DIR ] || mkdir -p $OPT_BUI
 
 mkdir -p "$OPT_BUILD_DIR"
 
+if command -v realpath; then
+	function relative_path(){
+		local basedir=$1
+		local path=$2
+		echo $(realpath --relative-to="$basedir" "$path")
+	}
+else
+	realpath(){
+			OURPWD=$PWD
+			echo "REALPATH $@" >&2
+			cd "$(dirname "$1")"
+			LINK=$(readlink "$(basename "$1")")
+			while [ "$LINK" ]; do
+				cd "$(dirname "$LINK")"
+				LINK=$(readlink "$(basename "$1")")
+			done
+			REALPATH="$PWD/$(basename "$1")"
+			cd "$OURPWD"
+			echo "$REALPATH"
+	}
+
+	function relative_path(){
+		local basedir="$(realpath $1)"
+		local path="$(realpath "$2")"
+		echo ${path/$basedir\/}
+	}
+fi
+
 function link(){
   local source="$1"
   local target="$2"
-  local rel_source=$(realpath --relative-to="$(dirname $target)" "$source")
+  local rel_source=$(relative_path "$(dirname $target)" "$source")
   
   [ -h "$target" ] && rm "$target"
   echo ln -s "$rel_source" "$target" 1>&2
@@ -31,7 +59,7 @@ function add2file(){
     file=$1
     line=$2
 
-    rel="$(realpath -s --relative-to="$OPT_DIR" "$line")"
+    local rel=$(relative_path "$OPT_DIR" "$line")
     grep "$rel" "$file" || echo "$rel" >> "$file"
 }
 
