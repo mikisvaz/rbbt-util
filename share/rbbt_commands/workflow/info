@@ -146,15 +146,14 @@ if all
 end
 
 if recursive
-  inputs = step.info[:inputs]
-  inputs = {}
-  deps = (step.info[:dependencies] || []).collect{|v| get_step v.last }
+  inputs = step.info[:inputs] || {}
+  deps = step.dependencies
 
   while deps.any? do
     dep = deps.shift
     inputs = {} if inputs.nil?
     inputs = inputs.merge(dep.info[:inputs] || {})
-    deps.concat (dep.info[:dependencies] || []).collect{|v| get_step v.last }
+    deps = deps.concat dep.dependencies
   end
 
   if inputs.any?

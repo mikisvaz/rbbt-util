@@ -32,8 +32,9 @@ module TSV
     TmpFile.with_file(values.uniq * "\n", false) do |value_file|
       cmd = "cat '#{ path }' | sed 's/\\t/\\tHEADERNOMATCH/' | grep -w -F -f '#{ value_file }' | sed 's/HEADERNOMATCH//' |sort -u|cut -f 2  |sort|uniq -c|sed 's/^ *//;s/ /\t/'"
       begin
-        TSV.open(CMD.cmd(cmd), :key_field => 1, :type => :single, :cast => :to_i)
+        TSV.open(CMD.cmd(cmd), :key_field => 1, :fields => [0], :type => :single, :cast => :to_i)
       rescue
+        Log.exception $!
         TSV.setup({}, :type => :single, :cast => :to_i)
       end
     end

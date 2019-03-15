@@ -29,7 +29,7 @@ module TSV
   end
 
   def self.str2options(str)
-    field_options, rest =  str.split("#")
+    field_options,_sep, rest =  str.partition("#")
     key, fields_str = field_options.split("~")
 
     fields = fields_str.nil? ? [] : fields_str.split(/,\s*/)

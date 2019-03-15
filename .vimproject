@@ -1,4 +1,4 @@
-rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.bdoc *.R *.sh *.js *.haml *.sass *.txt *.conf LICENSE" {
+rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf LICENSE" {
  Migration-1.9.txt
  Troubleshooting.txt
  ToDo.txt
@@ -80,6 +80,8 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.bdoc *.R *.sh *.js *.haml *.sass 
      model.rb
      plot.rb
     }
+
+    python.rb
 
     excel2tsv.rb
     

@@ -91,13 +91,17 @@ module Resource
 
       if File.exist?(File.join(opt_dir, '.post_install')) and File.directory?(File.join(opt_dir, '.post_install'))
         Dir.glob(File.join(opt_dir, '.post_install','*')).each do |file|
-          begin
-            begin
-              File.chmod file
-              CMD.cmd(file) 
-            rescue
-              Log.warn("Could not execute #{ file }")
-            end
+
+          # Load exports
+          Open.read(file).split("\n").each do |line|
+            next unless line =~ /^\s*export\s+([^=]+)=(.*)/
+            var = $1.strip
+            value = $2.strip
+            value.sub!(/^['"]/,'')
+            value.sub!(/['"]$/,'')
+            value.gsub!(/\$[a-z_0-9]+/i){|var| ENV[var[1..-1]] }
+            Log.debug "Set variable export from .post_install: #{Misc.fingerprint [var,value]*"="}"
+            ENV[var] = value
           end
         end
       end

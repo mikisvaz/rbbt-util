@@ -51,10 +51,10 @@ end
 #{{{ BASE
 app_eval app, etc_dir['app.d/base.rb'].find
 
-app.add_workflow wf, :priority
-
 #{{{ WORKFLOWS
 app_eval app, etc_dir['app.d/workflows.rb'].find_all
+
+app.add_workflow wf, :priority
 
 #{{{ RESOURCES
 load_file etc_dir['app.d/resources.rb'].find

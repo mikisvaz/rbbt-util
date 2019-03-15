@@ -10,7 +10,7 @@ OPT_BUILD_DIR="$SOFTWARE_DIR/.build"; [ -d $OPT_BUILD_DIR ] || mkdir -p $OPT_BUI
 
 mkdir -p "$OPT_BUILD_DIR"
 
-if command -v realpath; then
+if command -v realpath > /dev/null; then
 	function relative_path(){
 		local basedir=$1
 		local path=$2
@@ -213,59 +213,63 @@ build(){
     echo PWD: `pwd`
     ls
 
-    if [ -f config/m4 ]; then
-        libtoolize --force
-        aclocal
-        autoheader
-    fi
-
-    if [ -f Makefile.am -a ! -f configure ]; then
-      autoreconf
-    fi
-
-    if [ -f aclocal.m4 ]; then
-        autoconf
-    fi
-
-    if [ -f autogen.sh ]; then
-        ./autogen.sh
-    fi
-
-    if [ -f aclocal.m4 ]; then
-        autoreconf -i
-        autoconf
-        automake
-    else
-        autoconf
-        automake
-    fi
-
-    if [ -f config ]; then
-        ln -s config configure
-    fi
-
     if [ -f CMakeLists.txt ]; then
+      echo "Using cmake"
       [ -d build ] || mkdir build
-      cd build
-      cmake -DCMAKE_INSTALL_PREFIX=/install_dir ..
 
-      if [ -f ../configure ]; then
+      cd build
+      cmake -DCMAKE_INSTALL_PREFIX=/ ..
+      if [ ! -f Makefile -a -f ../configure ]; then
         ../configure --prefix="$(opt_dir "$name")" $extra
-        make -j4
+        make -j4 || exit -1
         make install || (cd .. ; mv build "$(opt_dir "$name")")
       else
-        make DESTDIR="$(opt_dir "$name")"  -j4
-        make DESTDIR="$(opt_dir "$name")" install || (cd .. ; mv build "$(opt_dir "$name")")
+        make DESTDIR="$(opt_dir "$name")"  -j4 || exit -1 && make DESTDIR="$(opt_dir "$name")" install
+      fi
+      cd ..
 
-        if [ -d "$(opt_dir "$name")/install_dir" ]; then
-          mv "$(opt_dir "$name")/install_dir"/** "$(opt_dir "$name")"
-          rmdir "$(opt_dir "$name")/install_dir"
-        fi
+      if [ ! -d "$(opt_dir "$name")" ]; then 
+        mkdir -p "$(opt_dir "$name")"
+        for subd in bin lib lib64 include pkgdir; do
+          [ -d $subd ] && mv $subd "$(opt_dir "$name")"/$subd
+        done
       fi
 
       setup "$name"
       clean_build
     else
+
+      if [ -f config/m4 ]; then
+          libtoolize --force
+          aclocal
+          autoheader
+      fi
+
+      if [ -f Makefile.am -a ! -f configure ]; then
+        autoreconf
+      fi
+
+      if [ -f aclocal.m4 ]; then
+          autoconf
+      fi
+
+      if [ -f autogen.sh ]; then
+          ./autogen.sh
+      fi
+
+      if [ -f aclocal.m4 ]; then
+          autoreconf -i
+          autoconf
+          automake
+      else
+          autoconf
+          automake
+      fi
+
+      if [ -f config ]; then
+          ln -s config configure
+      fi
+
       if [ -f configure ]; then 
         ./configure --prefix="$(opt_dir "$name")" $extra
         compile "$name" $extra
@@ -285,14 +289,14 @@ build(){
 
 #{{{ SETUP
 
-versioned?(){
+is_versioned(){
     local name="$1"
     [[ $name =~ : ]]
 }
 
 opt_dir(){
     local name="$1"
-    if versioned? "$name"; then
+    if is_versioned "$name"; then
         local real_name=`echo $1 | sed 's/:.*//'`
         local version=`echo $1 | sed 's/.*://'`
         echo "$OPT_DIR/$real_name/$version"
@@ -320,7 +324,7 @@ setup(){
     local name="$1"
     local pkg_dir="`opt_dir \"$name\"`"
 
-    if versioned? "$name"; then
+    if is_versioned "$name"; then
         rm -f "$(dirname $pkg_dir)/current"
         link "$pkg_dir" "$(dirname $pkg_dir)/current"
         pkg_dir="$(dirname $pkg_dir)/current"
@@ -412,6 +416,7 @@ install_jar(){
 
     [ -d  "$OPT_DIR/$name/" ] || mkdir -p  "$OPT_DIR/$name/"
     wget "$url" -O "$OPT_DIR/jars/$name.jar" | wget "$url" -O "$OPT_DIR/jars/$name.jar" --no-check-certificate
+    link "$OPT_DIR/$name/$name.jar" "$OPT_JAR_DIR/$name.jar" 
 }
 
 jar2bin(){

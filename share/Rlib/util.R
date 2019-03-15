@@ -526,7 +526,7 @@ rbbt.png_plot <- function(filename, p, width=500, height=500, ...){
 rbbt.pheatmap <- function(filename, data, width=800, height=800, take_log=FALSE, stdize=FALSE, positive=FALSE, ...){
     rbbt.require('pheatmap')
 
-    opar = par()
+    #opar = par()
     png(filename=filename, width=width, height=height);
 
     data = as.matrix(data)
@@ -556,8 +556,8 @@ rbbt.pheatmap <- function(filename, data, width=800, height=800, take_log=FALSE,
         pheatmap(data, ...)
     }
 
+    #par(opar)
     dev.off();
-    par(opar)
 }
 
 rbbt.heatmap <- function(filename, data, width=800, height=800, take_log=FALSE, stdize=FALSE, ...){
@@ -725,18 +725,22 @@ rbbt.plot.text_scatter <- function(formula, data) {
 }
 
 rbbt.install.CRAN <- function(pkg){
+    cat("Try CRAN install:", pkg, "\n")
     res = FALSE
-    tryCatch({ install.packages(pkg); library(pkg); res = TRUE }, error = function(e){ warning(paste("Could not install CRAN ", pkg)); res = FALSE })
+    tryCatch({ install.packages(pkg); res = TRUE; }, error = function(e){ str(e); warning(paste("Could not install CRAN ", pkg)); res = FALSE })
+    cat("CRAN", res)
     return(res)
 }
 
 rbbt.install.bioc <-function(pkg){
+    cat("Try BIOC install:", pkg, "\n")
     res = FALSE
     tryCatch({ source("http://bioconductor.org/biocLite.R"); biocLite(pkg, ask=FALSE, suppressUpdates = TRUE); res = TRUE }, error = function(e){ warning(paste("Could not install Bioconductor ", pkg)); res = FALSE })
     return(res)
 }
 
 rbbt.install.github <- function(pkg, ...){
+    cat("Try GITHUB install:", pkg, "\n")
     res = FALSE
     tryCatch({ library(devtools); install_github(pkg, ...); res = TRUE }, error = function(e){ warning(paste("Could not install GITHUB ", pkg)); res = FALSE })
     return(res)

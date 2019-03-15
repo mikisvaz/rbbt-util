@@ -364,6 +364,7 @@ module Open
     rescue
       Open.ln_s(source, target, options)
     end
+    nil
   end
 
   #def self.cp(source, target, options = {})
