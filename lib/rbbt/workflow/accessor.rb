@@ -184,8 +184,8 @@ class Step
     end
   end
 
-  def init_info
-    return nil if @exec or info_file.nil? or Open.exists?(info_file)
+  def init_info(force = false)
+    return nil if @exec or info_file.nil? or (Open.exists?(info_file) and ! force)
     Open.lock(info_file, :lock => info_lock) do
       i = {:status => :waiting, :pid => Process.pid, :path => path}
       i[:dependencies] = dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies

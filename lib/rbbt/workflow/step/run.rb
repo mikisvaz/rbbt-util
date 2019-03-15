@@ -220,7 +220,7 @@ class Step
           Open.write(pid_file, Process.pid.to_s) unless Open.exists? pid_file
 
           @exec = false
-          init_info
+          init_info(true)
 
           log :setup, "#{Log.color :green, "Setup"} step #{Log.color :yellow, task.name.to_s || ""}"
 
