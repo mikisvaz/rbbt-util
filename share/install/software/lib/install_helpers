@@ -196,6 +196,129 @@ compile(){
     fi
 }
 
+prepare_make(){
+    local name=$1; shift
+    local extra="$@"
+
+    local old_pwd="`expand_path $(pwd)`"
+    cd "`build_dir`"
+
+    [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd src
+
+
+    if [ -f config/m4 ]; then
+        libtoolize --force
+        aclocal
+        autoheader
+    fi
+
+    if [ -f Makefile.am -a ! -f configure ]; then
+        autoreconf
+    fi
+
+    if [ -f aclocal.m4 ]; then
+        autoconf
+    fi
+
+    if [ -f autogen.sh ]; then
+        ./autogen.sh
+    fi
+
+    if [ -f aclocal.m4 ]; then
+        autoreconf -i
+        autoconf
+        automake
+    else
+        autoconf
+        automake
+    fi
+
+    if [ -f config ]; then
+        ln -s config configure
+    fi
+
+    cd "$old_pwd"
+}
+
+build_make(){
+    local name=$1; shift
+    local extra="$@"
+
+    local old_pwd="`expand_path $(pwd)`"
+    cd "`build_dir`"
+    echo PWD: `pwd`
+    ls
+
+
+    [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd src
+
+    echo "Building with configure $name"
+    if [ "x$extra" != "x" ]; then
+        echo "Extra params: $extra"
+    fi
+
+    prepare_make $name
+
+    if [ -f configure ]; then 
+        ./configure --prefix="$(opt_dir "$name")" $extra
+        compile "$name" $extra
+        [ -d "$(opt_dir "$name")" ] || move_opt "$name"
+        setup "$name"
+        clean_build
+    else
+        compile "$name" $extra
+        move_opt "$name"
+        setup "$name"
+        clean_build
+    fi
+
+    cd "$old_pwd"
+}
+
+buid_cmake(){
+    local name=$1; shift
+    local extra="$@"
+
+    local old_pwd="`expand_path $(pwd)`"
+    cd "`build_dir`"
+    echo PWD: `pwd`
+    ls
+
+
+    [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd src
+
+    echo "Building with cmake $name"
+    if [ "x$extra" != "x" ]; then
+        echo "Extra params: $extra"
+    fi
+
+    echo "Using cmake"
+    [ -d build ] || mkdir build
+
+    cd build
+    cmake -DMAKE_INSTALL_PREFIX=/ $extra ..
+    if [ ! -f Makefile -a -f ../configure ]; then
+        ../configure --prefix="$(opt_dir "$name")" $extra
+        make -j4
+        make install || (cd .. ; mv build "$(opt_dir "$name")")
+    else
+        make DESTDIR="$(opt_dir "$name")"  -j4 && make DESTDIR="$(opt_dir "$name")" install
+    fi
+    cd ..
+
+    if [ ! -d "$(opt_dir "$name")" ]; then 
+        mkdir -p "$(opt_dir "$name")"
+        for subd in bin lib lib64 include pkgdir; do
+            [ -d $subd ] && mv $subd "$(opt_dir "$name")"/$subd
+        done
+    fi
+
+    setup "$name"
+    clean_build
+
+    cd "$old_pwd"
+}
+
 build(){
     local name=$1; shift
     local extra="$@"
@@ -205,86 +328,14 @@ build(){
         echo "Extra params: $extra"
     fi
 
-    local old_pwd="`expand_path $(pwd)`"
-    cd "`build_dir`"
-
     [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd src
 
-    echo PWD: `pwd`
-    ls
-
     if [ -f CMakeLists.txt ]; then
-      echo "Using cmake"
-      [ -d build ] || mkdir build
-
-      cd build
-      cmake -DCMAKE_INSTALL_PREFIX=/ ..
-      if [ ! -f Makefile -a -f ../configure ]; then
-        ../configure --prefix="$(opt_dir "$name")" $extra
-        make -j4 || exit -1
-        make install || (cd .. ; mv build "$(opt_dir "$name")")
-      else
-        make DESTDIR="$(opt_dir "$name")"  -j4 || exit -1 && make DESTDIR="$(opt_dir "$name")" install
-      fi
-      cd ..
-
-      if [ ! -d "$(opt_dir "$name")" ]; then 
-        mkdir -p "$(opt_dir "$name")"
-        for subd in bin lib lib64 include pkgdir; do
-          [ -d $subd ] && mv $subd "$(opt_dir "$name")"/$subd
-        done
-      fi
-
-      setup "$name"
-      clean_build
+        buid_cmake "$name" $extra
     else
-
-      if [ -f config/m4 ]; then
-          libtoolize --force
-          aclocal
-          autoheader
-      fi
-
-      if [ -f Makefile.am -a ! -f configure ]; then
-        autoreconf
-      fi
-
-      if [ -f aclocal.m4 ]; then
-          autoconf
-      fi
-
-      if [ -f autogen.sh ]; then
-          ./autogen.sh
-      fi
-
-      if [ -f aclocal.m4 ]; then
-          autoreconf -i
-          autoconf
-          automake
-      else
-          autoconf
-          automake
-      fi
-
-      if [ -f config ]; then
-          ln -s config configure
-      fi
-
-      if [ -f configure ]; then 
-        ./configure --prefix="$(opt_dir "$name")" $extra
-        compile "$name" $extra
-        [ -d "$(opt_dir "$name")" ] || move_opt "$name"
-        setup "$name"
-        clean_build
-      else
-        compile "$name" $extra
-        move_opt "$name"
-        setup "$name"
-        clean_build
-      fi
+        build_make "$name" $extra
     fi
     
-    cd "$old_pwd"
 }
 
 #{{{ SETUP
@@ -358,14 +409,22 @@ setup(){
 
 #{{{ HELPERS
 
+prepare_src_pkg(){
+    local name="$1"
+    local url="$2"
+    shift;shift;
+
+    get_pkg "$name" "$url"
+    uncompress_pkg "$name"
+}
+
 install_src(){
     local name="$1"
     local url="$2"
     shift;shift;
     local extra="$@"
-    
-    get_pkg "$name" "$url"
-    uncompress_pkg "$name"
+
+    prepare_src_pkg "$name" "$url"
     build "$name"  "$extra"
 }
 
@@ -374,7 +433,7 @@ install_svn(){
     local url="$2"
     shift;shift;
     local extra="$@"
-    
+
     get_svn "$name" "$url"
     build "$name" $extra
 }
