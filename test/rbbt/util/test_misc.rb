@@ -609,4 +609,16 @@ EOF
     assert_equal 60*60*24, Misc.timespan('1d')
     assert_equal 60*60*24, Misc.timespan('1d')
   end
+
+  def test_remove_long_items
+    tsv = TSV.setup({}, "key~value1,value2#:type=:list")
+    tsv["a"] = [2,3]
+    tsv["b"] = [6,7]
+    iii Misc.remove_long_items(tsv)
+    1000.times do |n|
+      tsv[n] = [n*2, n*3]
+    end
+    iii Misc.remove_long_items(tsv)
+  end
 end
+

@@ -1,6 +1,8 @@
 module Misc
   ARRAY_MAX_LENGTH = 1000
   STRING_MAX_LENGTH = ARRAY_MAX_LENGTH * 100
+  TSV_MAX_FIELDS=100
+  TSV_MAX_ROWS=100
 
   def self.break_lines(text, char_size=80)
     text = text.gsub("\n", " ")
@@ -120,7 +122,28 @@ module Misc
       filename = "STDIN(rand-#{rand(10000000)})" if filename == '-'
       remove_long_items("TSV Stream: " + filename + " -- " << Misc.fingerprint(obj.options))
     when TSV === obj
-      remove_long_items((obj.all_fields || []) + obj.keys.sort)
+      tsv = obj
+      fields = tsv.fields
+
+      if obj.size > TSV_MAX_ROWS
+        tsv = obj.head(TSV_MAX_ROWS)
+        tsv["Truncated rows at #{TSV_MAX_ROWS} (#{obj.size})"] = nil
+      end
+
+      if fields && fields.length > TSV_MAX_FIELDS
+        tsv = obj.slice(fields[0..TSV_MAX_ROWS-1])
+        tsv.add_field "Truncated at #{TSV_MAX_ROWS} (#{fields.length})" do
+          nil
+        end
+      elsif fields.nil?
+        new = tsv.annotate({})
+        tsv.each do |k,v|
+          new[k] = Misc.remove_long_items(v)
+        end
+        tsv = new
+      end
+
+      tsv
     when (Array === obj and obj.length > ARRAY_MAX_LENGTH)
       remove_long_items(obj[0..ARRAY_MAX_LENGTH-2] << "TRUNCATED at #{ ARRAY_MAX_LENGTH }/#{obj.length}")
     when (Hash === obj and obj.length > ARRAY_MAX_LENGTH)
