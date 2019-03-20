@@ -39,6 +39,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      multipart_payload.rb
      annotated_module.rb
     }
+    version.rb
     tar.rb
     color.rb
     colorize.rb

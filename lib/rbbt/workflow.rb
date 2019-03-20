@@ -63,6 +63,8 @@ module Workflow
 
       filename = File.expand_path(filename)
 
+      Rbbt.add_version(filename)
+
       require filename
       Log.debug{"Workflow loaded from: #{ filename }"}
       return true

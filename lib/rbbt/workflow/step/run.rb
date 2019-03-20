@@ -234,7 +234,8 @@ class Step
             :task_name => @task.name,
             :result_type => @task.result_type,
             :result_description => @task.result_description,
-            :dependencies => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
+            :dependencies => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]},
+            :versions => Rbbt.versions
           })
 
 
