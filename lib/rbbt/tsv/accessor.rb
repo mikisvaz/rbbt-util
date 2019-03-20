@@ -672,7 +672,7 @@ module TSV
     peek
   end
 
-  def head(times=10)
+  def head_str(times=10)
     stream = dumper_stream
     str = ""
     times.times do |i|
@@ -681,6 +681,19 @@ module TSV
     end
     str
   end
+
+  def head_tsv(times = 10)
+    new = self.annotate({})
+    i = 0
+    self.each do |k,v|
+      return new if i == times
+      new[k] = v
+      i += 1
+    end
+    new
+  end
+
+  alias head head_tsv
 
   def summary
 
