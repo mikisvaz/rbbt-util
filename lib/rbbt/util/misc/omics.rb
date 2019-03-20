@@ -173,7 +173,7 @@ module Misc
 
     muts = muts.collect do |m|
       case
-      when ref.empty?
+      when (ref.empty? or ref == '-')
         "+" << m
       when (m.length < ref.length and (m.empty? or ref.index(m)))
         "-" * (ref.length - m.length)
