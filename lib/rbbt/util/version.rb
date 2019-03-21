@@ -9,8 +9,12 @@ module Rbbt
     version = if dir.VERSION.exists?
       dir.VERSION.read
     elsif dir[".git"].exists?
-      head = dir[".git"]["HEAD"].read.split(" ").last.strip
-      dir[".git"][head].read.strip
+      begin
+        head = dir[".git"]["HEAD"].read.split(" ").last.strip
+        dir[".git"][head].read.strip
+      rescue
+        nil
+      end
     elsif libname.include?("-")
       name,_sep, v = libname.partition("-")
       if v =~ /^\d+\.\d+\.\d+$/

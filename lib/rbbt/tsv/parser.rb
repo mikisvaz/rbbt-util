@@ -619,7 +619,7 @@ module TSV
             key, values = self.get_values parts
             values = self.cast_values values if self.cast?
             
-            yield key, values
+            yield key, values, fields
 
             line = stream.gets
 

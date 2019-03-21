@@ -73,11 +73,12 @@ module TSV
 
     begin
       error = false
+      fields = tsv.fields
       if callback
         bar.init if bar
         tsv.through options[:key_field], options[:fields] do |k,v|
           begin
-            callback.call yield(k,v)
+            callback.call yield(k,v,fields)
           rescue Exception
             Log.exception $!
             raise $!
@@ -89,7 +90,7 @@ module TSV
         bar.init if bar
         tsv.through options[:key_field], options[:fields] do |k,v|
           begin
-            yield k,v 
+            yield k,v,fields
           ensure
             bar.tick if bar
           end
@@ -243,9 +244,9 @@ module TSV
         bar.init if bar
         exception = nil
         begin
-          TSV::Parser.traverse(io, options) do |k,v|
+          TSV::Parser.traverse(io, options) do |k,v,f|
             begin
-              callback.call yield k, v
+              callback.call yield k, v,f
             rescue Exception
               exception = $!
               raise $!
