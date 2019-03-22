@@ -23,6 +23,7 @@ module Marenostrum
       exclusive        = options.delete :exclusive
       highmem          = options.delete :highmem
       inputs_dir       = options.delete :inputs_dir
+      config_keys      = options.delete :config_keys
 
       if contain_and_sync
         contain = "/scratch/tmp/rbbt" if contain.nil?
@@ -38,6 +39,8 @@ module Marenostrum
       workdir = options[:workdir] ||= File.expand_path(File.join('~/rbbt-workdir', name)) if workdir.nil?
 
       rbbt_cmd = args.reject{|e| e == '--' }.collect{|e| e.include?(" ")? '"' + e + '"' : e } * " "
+
+      rbbt_cmd << " --config_keys='#{config_keys}'"
 
       queue = options[:queue] || 'bsc_ls'
       tasks = options[:tasks] || 1
