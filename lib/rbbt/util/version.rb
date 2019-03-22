@@ -35,7 +35,6 @@ module Rbbt
     versions = Rbbt::VERSIONS
     Gem.loaded_specs.keys.each do |gem|
       next unless gem.include? 'rbbt'
-      iii gem
       name = gem.sub('rbbt-','')
       next if versions.include? name
       version =  Gem.loaded_specs[gem].version.version
