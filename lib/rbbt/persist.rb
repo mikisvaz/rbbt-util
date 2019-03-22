@@ -493,6 +493,10 @@ module LocalPersist
     @local_persist_dir
   end
 
+  def local_persist_dir=(value)
+    @local_persist_dir = value
+  end
+
   def local_persist(name, type = nil, options= {}, persist_options = nil, &block)
     persist_options ||= {}
     persist_options = {:dir => local_persist_dir}.merge persist_options
