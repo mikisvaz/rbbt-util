@@ -385,7 +385,14 @@ class Step
       required_dep_paths << path if list.length > 1
     end
 
-    required_dep_paths.concat dependencies.collect{|dep| dep.path }
+    required_dep_paths.concat dependencies.collect{|dep| dep.path}
+    required_dep_paths.concat(rec_dependencies.collect do |dep| 
+      dep.inputs.flatten.select{|i| Step === i}.collect{|d| d.path}
+    end.flatten)
+
+    required_dep_paths.concat(dependencies.collect do |dep| 
+      [dep.path] + dep.inputs.flatten.select{|i| Step === i}.collect{|d| d.path}
+    end.flatten)
 
     log :dependencies, "Dependencies for step #{Log.color :yellow, task.name.to_s || ""}"
 
@@ -398,7 +405,7 @@ class Step
       next if seen_paths.include? step.path
       seen_paths << step.path
       next unless required_dep_paths.include? step.path
-      if dependencies.include?(step) and step.inputs.flatten.select{|i| Step === i}.any?
+      if step.inputs.flatten.select{|i| Step === i}.any?
         if ComputeDependency === step
           next if produced.include? step.path 
           compute_last_deps[step.compute] ||= []
@@ -417,6 +424,11 @@ class Step
       end
     end
 
+    Log.medium "Computing pre dependencies: #{Misc.fingerprint(compute_pre_deps)} - #{Log.color :blue, self.path}" if compute_pre_deps.any?
+    compute_pre_deps.each do |type,list|
+      run_compute_dependencies(type, list, dep_step)
+    end
+
     Log.medium "Processing pre dependencies: #{Misc.fingerprint(pre_deps)} - #{Log.color :blue, self.path}" if pre_deps.any?
     pre_deps.each do |step|
       next if compute_deps.include? step
@@ -425,11 +437,6 @@ class Step
       rescue Exception
         raise $! unless canfail_paths.include?(step.path)
       end
-    end
-
-    Log.medium "Computing pre dependencies: #{Misc.fingerprint(compute_pre_deps)} - #{Log.color :blue, self.path}" if compute_pre_deps.any?
-    compute_pre_deps.each do |type,list|
-      run_compute_dependencies(type, list, dep_step)
     end
 
     Log.medium "Processing last dependencies: #{Misc.fingerprint(last_deps)} - #{Log.color :blue, self.path}" if last_deps.any?

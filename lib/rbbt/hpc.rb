@@ -43,7 +43,7 @@ module Marenostrum
       rbbt_cmd << " --config_keys='#{config_keys}'"
 
       queue = options[:queue] || 'bsc_ls'
-      tasks = options[:tasks] || 1
+      task_cpus = options[:task_cpus] || 1
       nodes = options[:nodes] || 1
       time = options[:time] || "0:00:10"
 
@@ -71,7 +71,7 @@ module Marenostrum
 #SBATCH --workdir="#{Dir.pwd}"
 #SBATCH --output="#{fout}"
 #SBATCH --error="#{ferr}"
-#SBATCH --ntasks="#{tasks}"
+#SBATCH --cpus-per-task="#{task_cpus}"
 #SBATCH --time="#{time}"
 #SBATCH --nodes="#{nodes}"
       EOF

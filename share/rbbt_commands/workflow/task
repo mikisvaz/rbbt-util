@@ -364,6 +364,12 @@ begin
     exit 0
   end
 
+  if options.delete(:provenance)
+    require 'rbbt/workflow/provenance'
+    puts Step.prov_report(job)
+    exit 0
+  end
+
   if do_fork
     ENV["RBBT_NO_PROGRESS"] = "true"
     if detach
@@ -379,12 +385,6 @@ begin
     res = job
   end
 
-
-  if options.delete(:provenance)
-    job.join
-    pp job.provenance_paths
-    exit 0
-  end
 
   if options.delete(:printname)
     job.join if IO === job.result

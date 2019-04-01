@@ -1,4 +1,5 @@
 module SOPT
+  GOT_OPTIONS= IndiferentHash.setup({})
   def self.consume(args = ARGV)
     i = 0
     values = {}
@@ -35,6 +36,7 @@ module SOPT
     end
 
     IndiferentHash.setup values
+    GOT_OPTIONS.merge! values
 
     values
   end

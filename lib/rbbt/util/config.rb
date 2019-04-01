@@ -5,6 +5,8 @@ module Rbbt::Config
 
   CACHE = IndiferentHash.setup({})
 
+  GOT_KEYS=[]
+
   def self.add_entry(key, value, tokens)
     CACHE[key.to_s] ||= [] 
     CACHE[key.to_s] << [tokens, value]
@@ -110,7 +112,10 @@ module Rbbt::Config
 
     value = priorities.empty? ? default : priorities.sort_by{|p,v| p}.first.last.first
     value = false if value == 'false'
+
     Log.debug "Value #{value.inspect} for config key '#{ key }': #{tokens * ", "}"
+    GOT_KEYS << [key, value, tokens]
+
     value
   end
 

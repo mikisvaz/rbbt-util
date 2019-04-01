@@ -747,7 +747,7 @@ module Workflow
                                   when Array
                                     wf, t, o = dep
 
-                                    wf.rec_dependencies(t).each do |d|
+                                    wf.rec_dependencies(t.to_sym).each do |d|
                                       if Array === d
                                         new = d.dup
                                       else

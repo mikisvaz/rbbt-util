@@ -98,15 +98,19 @@ if mem_dump = options.delete(:dump_mem)
 end
 
 if options[:config_keys]
-  options[:config_keys].split(",").each do |config|
-    key, value, *tokens = config.split(/\s/)
-    tokens = ['key:' << key << '::0'] if tokens.empty?
-    tokens = tokens.collect do |tok|
-      tok, _sep, prio = tok.partition("::")
-      prio = "0" if prio.nil? or prio.empty?
-      [tok, prio] * "::"
+  if Misc.is_filename?(options[:config_keys]) && File.exists?(options[:config_keys])
+    Rbbt::Config.load_file(options[:config_keys])
+  else
+    options[:config_keys].split(",").each do |config|
+      key, value, *tokens = config.split(/\s/)
+      tokens = ['key:' << key << '::0'] if tokens.empty?
+      tokens = tokens.collect do |tok|
+        tok, _sep, prio = tok.partition("::")
+        prio = "0" if prio.nil? or prio.empty?
+        [tok, prio] * "::"
+      end
+      Rbbt::Config.set({key => value}, *tokens)
     end
-    Rbbt::Config.set({key => value}, *tokens)
   end
 end
 
