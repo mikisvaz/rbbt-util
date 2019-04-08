@@ -523,6 +523,12 @@ rbbt.png_plot <- function(filename, p, width=500, height=500, ...){
     eval(parse(text=p));
 }
 
+rbbt.tiff_plot <- function(filename, p, width=500, height=500, ...){
+    tiff(filename=filename, width=width, height=height, ...);
+    eval(parse(text=p));
+}
+
+
 rbbt.pheatmap <- function(filename, data, width=800, height=800, take_log=FALSE, stdize=FALSE, positive=FALSE, ...){
     rbbt.require('pheatmap')
 

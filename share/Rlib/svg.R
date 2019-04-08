@@ -32,7 +32,7 @@ rbbt.SVG.extract <- function(plot, size=NULL, prefix=NULL, ...){
     xml
 }
 
-rbbt.SVG.save <- function(filename, plot, width=NULL, height=NULL){
+rbbt.SVG.save <- function(filename, plot, width=NULL, height=NULL, ...){
     if (is.null(width)){
         if (is.null(height)){
             size = NULL
@@ -47,7 +47,7 @@ rbbt.SVG.save <- function(filename, plot, width=NULL, height=NULL){
         }
     }
 
-    xml = rbbt.SVG.extract(plot, size)
+    xml = rbbt.SVG.extract(plot, size, ...)
     fileConn<-file(filename, 'w')
     cat(xml, file=fileConn)
     close(fileConn)
