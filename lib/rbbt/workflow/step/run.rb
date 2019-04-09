@@ -219,8 +219,6 @@ class Step
 
           Open.write(pid_file, Process.pid.to_s) unless Open.exists? pid_file
 
-          config_keys_pre = Rbbt::Config::GOT_KEYS.dup
-
           @exec = false
           init_info(true)
 
@@ -310,7 +308,9 @@ class Step
           set_info :started, (start_time = Time.now)
           log :started, "Starting step #{Log.color :yellow, task.name.to_s || ""}"
 
+          config_keys_pre = Rbbt::Config::GOT_KEYS.dup
           begin
+
             result = _exec
           rescue Aborted, Interrupt
             log(:aborted, "Aborted")

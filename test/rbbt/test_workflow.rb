@@ -151,6 +151,11 @@ for this dependency
     "Sum odds: " << step(:sum_odds).load.to_s
   end
 
+  input :file, :file, "Save file"
+  task :reverse_file => :text do |file|
+    Open.read(file).reverse
+  end
+
 
 end
 
@@ -288,8 +293,8 @@ class TestWorkflow < Test::Unit::TestCase
   end
 
   def test_override_dep
-    TmpFile.with_file("OTHER") do |file|
-      assert TestWF.job(:repeat2, nil, :number => 3, "TestWF#str" => file).run.include? "OTHER"
+    TmpFile.with_file("OTHER", false) do |file|
+      assert TestWF.job(:repeat2, nil, :number => 3, "TestWF#str" => file).clean.run.include? "OTHER"
     end
   end
 
@@ -387,6 +392,27 @@ class TestWorkflow < Test::Unit::TestCase
     job = TestWF.job(:sum_odds_str)
     job.recursive_clean
     assert_equal "Sum odds: 24", job.run
+  end
+
+  def test_save_inputs
+    TmpFile.with_file("Hi") do |file|
+      job = TestWF.job(:reverse_file, nil, :file => file)
+      TmpFile.with_file do |dir|
+        Path.setup(dir)
+        Step.save_job_inputs(job, dir)
+        assert_equal Dir.glob(dir + "/*"), [dir.file.find]
+      end
+    end
+
+    job = TestWF.job(:reverse_file, nil, :file => "code")
+    TmpFile.with_file do |dir|
+      Path.setup(dir)
+      Step.save_job_inputs(job, dir)
+      assert_equal Dir.glob(dir + "/*"), [dir.file.find + '.read']
+      inputs  = Workflow.load_inputs(dir, [:file], :file => :file)
+      assert_equal inputs, {:file => 'code'}
+    end
+
   end
 
 end

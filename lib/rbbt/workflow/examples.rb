@@ -49,7 +49,11 @@ module Workflow
         case input_types[input]
         when :file
           Log.debug "Pointing #{ input } to #{file}"
-          inputs[input.to_sym]  = file
+          if file =~ /\.read$/
+            inputs[input.to_sym]  = Open.read(file)
+          else
+            inputs[input.to_sym]  = Open.realpath(file)
+          end
         when :text
           Log.debug "Reading #{ input } from #{file}"
           inputs[input.to_sym]  = Open.read(file)

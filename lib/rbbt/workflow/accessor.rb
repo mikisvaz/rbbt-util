@@ -92,13 +92,19 @@ class Step
       next unless task_inputs.include? name.to_sym
       next if value.nil?
       path = File.join(dir, name.to_s)
-      type = input_types[name]
+      type = input_types[name].to_s
       Log.debug "Saving job input #{name} (#{type}) into #{path}"
       case
       when Array === value
         Open.write(path, value * "\n")
       when IO === value
         Open.write(path, value)
+      when type == "file"
+        if String === value && File.exists?(value)
+          Open.ln(value, path)
+        else
+          Open.write(path + '.read', value.to_s)
+        end
       else
         Open.write(path, value.to_s)
       end
@@ -974,6 +980,7 @@ module Workflow
                    if override_dependencies[workflow.to_s] && value = override_dependencies[workflow.to_s][dep_task]
                      d_ = Step === value ? value : Workflow.load_step(value)
                      d_.info[:name] = d_.name
+                     d_.task = workflow.tasks[dep_task] if workflow.tasks.include?(dep_task)
                      d_.task_name = dep_task
                      d_.overriden = true
                      d_
@@ -995,6 +1002,7 @@ module Workflow
                  when Symbol
                    if override_dependencies[self.to_s] && value = override_dependencies[self.to_s][dependency]
                      d_ = Step === value ? value : Workflow.load_step(value)
+                     d_.task = self.tasks[dependency] if self.tasks.include?(dependency)
                      d_.info[:name] = d_.name
                      d_.task_name = dependency
                      d_.overriden = true
@@ -1024,6 +1032,12 @@ module Workflow
                          if override_dependencies[d[:workflow].to_s] && value = override_dependencies[d[:workflow].to_s][d[:task]]
                            d = (Step === value ? value : Workflow.load_step(value))
                            d.info[:name] = d.name
+                           begin
+                             workflow = String === d[:workflow] ? Kernel.const_get(d[:workflow]) : d[:workflow]
+                             d.task = workflow.tasks[d[:task]] if workflow.tasks.include?(d[:task])
+                           rescue
+                             Log.exception $!
+                           end
                            d.task_name = d[:task]
                            d.overriden = true
                            d
@@ -1042,11 +1056,17 @@ module Workflow
                      _inputs = IndiferentHash.setup(_inputs.dup)
                      dep = dependency.call jobname, _inputs, real_dependencies
                      if Hash === dep
-                       dep[:workflow] ||= wf  || self
+                       dep[:workflow] ||= wf || self
                        if override_dependencies[dep[:workflow].to_s] && value = override_dependencies[dep[:workflow].to_s][dep[:task]]
                          dep = (Step === value ? value : Workflow.load_step(value))
                          dep.info[:name] = dep.name
-                         dep.task_name = d[:task]
+                         begin
+                           workflow = String === dep[:workflow] ? Kernel.const_get(dep[:workflow]): dep[:workflow]
+                           dep.task = workflow.tasks[dep[:task]] if workflow.tasks.include?(dep[:task])
+                         rescue
+                           Log.exception $!
+                         end
+                         dep.task_name = dep[:task]
                          dep.overriden = true
                          dep
                        else
