@@ -771,7 +771,7 @@ module Workflow
                                       end
 
                                       all_deps << new
-                                    end
+                                    end if wf && t
 
                                   when String, Symbol
                                     rec_deps = rec_dependencies(dep.to_sym)
