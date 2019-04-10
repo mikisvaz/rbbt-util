@@ -36,7 +36,6 @@ class Step
                    nil
                  end
     str = if not Open.remote?(path) and (Open.exists?(path) and $main_mtime and path_mtime and ($main_mtime - path_mtime) < -2)
-            iii [path, path_mtime, $main_mtime, $main_mtime - path_mtime]
             prov_status_msg(status.to_s) << " " << [workflow, task, path].compact * " " << " (#{Log.color(:red, "Mtime out of sync") })"
           else
             prov_status_msg(status.to_s) << " " << [workflow, task, path].compact * " " 
@@ -67,7 +66,7 @@ class Step
     str << "\n"
   end
 
-  def self.prov_report(step, offset = 0, task = nil)
+  def self.prov_report(step, offset = 0, task = nil, seen = [])
     info = step.info  || {}
     info[:task_name] = task
     path  = step.path
@@ -77,13 +76,12 @@ class Step
     status = :unsync if status == :done and not Open.exist? path
     str = " " * offset
     str << prov_report_msg(status, name, path, info)
-    seen = []
     step.dependencies.each do |dep|
       path = dep.path
       new = ! seen.include?(path)
       if new
         seen << path
-        str << prov_report(dep, offset + 1, task)
+        str << prov_report(dep, offset + 1, task, seen)
       else
         str << Log.color(:blue, Log.uncolor(prov_report(dep, offset+1, task)))
       end
