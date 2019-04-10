@@ -962,6 +962,20 @@ module Workflow
     override_dependencies
   end
 
+  def setup_override_dependency(dep, workflow, task_name)
+    dep = Step === dep ? dep : Workflow.load_step(dep)
+    dep.info[:name] = dep.name
+    begin
+      workflow = Kernel.const_get workflow if String === workflow
+      dep.task = workflow.tasks[task_name] if dep.task.nil? && workflow.tasks.include?(task_name)
+    rescue
+      Log.exception $!
+    end
+    dep.task_name = task_name
+    dep.overriden = true
+    dep
+  end
+
   def real_dependencies(task, orig_jobname, inputs, dependencies)
     real_dependencies = []
     path_deps = {}
@@ -978,12 +992,7 @@ module Workflow
                    workflow, dep_task, options = dependency
 
                    if override_dependencies[workflow.to_s] && value = override_dependencies[workflow.to_s][dep_task]
-                     d_ = Step === value ? value : Workflow.load_step(value)
-                     d_.info[:name] = d_.name
-                     d_.task = workflow.tasks[dep_task] if workflow.tasks.include?(dep_task)
-                     d_.task_name = dep_task
-                     d_.overriden = true
-                     d_
+                     setup_override_dependency(value, workflow, dep_task)
                    else
 
                      compute = options[:compute] if options
@@ -1001,12 +1010,7 @@ module Workflow
                    dependency
                  when Symbol
                    if override_dependencies[self.to_s] && value = override_dependencies[self.to_s][dependency]
-                     d_ = Step === value ? value : Workflow.load_step(value)
-                     d_.task = self.tasks[dependency] if self.tasks.include?(dependency)
-                     d_.info[:name] = d_.name
-                     d_.task_name = dependency
-                     d_.overriden = true
-                     d_
+                     setup_override_dependency(value, self, dependency)
                    else
                      _job(dependency, jobname, _inputs)
                    end
@@ -1030,17 +1034,7 @@ module Workflow
                          d[:workflow] ||= wf 
                          d[:task] ||= task_name
                          if override_dependencies[d[:workflow].to_s] && value = override_dependencies[d[:workflow].to_s][d[:task]]
-                           d = (Step === value ? value : Workflow.load_step(value))
-                           d.info[:name] = d.name
-                           begin
-                             workflow = String === d[:workflow] ? Kernel.const_get(d[:workflow]) : d[:workflow]
-                             d.task = workflow.tasks[d[:task]] if workflow.tasks.include?(d[:task])
-                           rescue
-                             Log.exception $!
-                           end
-                           d.task_name = d[:task]
-                           d.overriden = true
-                           d
+                           setup_override_dependency(value, d[:workflow], d[:task])
                          else
                            task_info = d[:workflow].task_info(d[:task])
 
@@ -1058,17 +1052,7 @@ module Workflow
                      if Hash === dep
                        dep[:workflow] ||= wf || self
                        if override_dependencies[dep[:workflow].to_s] && value = override_dependencies[dep[:workflow].to_s][dep[:task]]
-                         dep = (Step === value ? value : Workflow.load_step(value))
-                         dep.info[:name] = dep.name
-                         begin
-                           workflow = String === dep[:workflow] ? Kernel.const_get(dep[:workflow]): dep[:workflow]
-                           dep.task = workflow.tasks[dep[:task]] if workflow.tasks.include?(dep[:task])
-                         rescue
-                           Log.exception $!
-                         end
-                         dep.task_name = dep[:task]
-                         dep.overriden = true
-                         dep
+                         setup_override_dependency(value, dep[:workflow], dep[:task])
                        else
                          task_info = (dep[:task] && dep[:workflow]) ? dep[:workflow].task_info(dep[:task]) : nil
                          inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, task_info)
