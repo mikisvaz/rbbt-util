@@ -40,7 +40,7 @@ module Marenostrum
 
       rbbt_cmd = args.reject{|e| e == '--' }.collect{|e| e.include?(" ")? '"' + e + '"' : e } * " "
 
-      rbbt_cmd << " --config_keys='#{config_keys}'"
+      rbbt_cmd << " --config_keys='#{config_keys}'" if config_keys and not config_keys.empty?
 
       queue = options[:queue] || 'bsc_ls'
       task_cpus = options[:task_cpus] || 1
