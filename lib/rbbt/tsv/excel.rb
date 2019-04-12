@@ -94,10 +94,12 @@ module TSV
 
   module XLS
     def self.read(file, options = {})
-      options = Misc.add_defaults options, :sep2 => /[,|]\s?/
+      options = Misc.add_defaults options, :sep2 => /[,|]\s?/, :skip_rows => 0
       sheet = Misc.process_options options, :sheet
       header = Misc.process_options options, :header
       text = Misc.process_options options, :text
+      skip_rows = Misc.process_options options, :skip_rows
+      skip_rows = skip_rows.to_i
 
       header = true unless header == false
       sheet ||= "0"
@@ -117,6 +119,11 @@ module TSV
         rows = []
 
         sheet.each do |row|
+          if skip_rows > 0
+            skip_rows -= 1
+            next
+          end
+          
           rows << row.values_at(0..(row.size - 1)).collect{|c| String === c ? c.gsub("\n", ' ') : c }
         end
 
@@ -159,10 +166,12 @@ module TSV
 
   module XLSX
     def self.read(file, options = {})
-      options = Misc.add_defaults options, :sep2 => /[,|]\s?/
+      options = Misc.add_defaults options, :sep2 => /[,|]\s?/, :skip_rows => 0
       sheet = Misc.process_options options, :sheet
       header = Misc.process_options options, :header
       text = Misc.process_options options, :text
+      skip_rows = Misc.process_options options, :skip_rows
+      skip_rows = skip_rows.to_i
 
       header = true unless header == false
 
@@ -182,6 +191,11 @@ module TSV
 
         sheet.each do |row|
           next if row.nil?
+          if skip_rows > 0
+            skip_rows -= 1
+            next
+          end
+          
           rows << row.cells.collect{|c| c.nil? ? nil : c.value}.collect{|c| String === c ? c.gsub("\n", ' ') : c }
         end
 
