@@ -74,6 +74,10 @@ module Log
       Log::LAST.replace "remove_bar" if Log::LAST == "progress"
     end
 
+    def remove(error = false)
+      Log::ProgressBar.remove_bar self, error
+    end
+
     def self.with_bar(max, options = {})
       bar = new_bar(max, options)
       begin
