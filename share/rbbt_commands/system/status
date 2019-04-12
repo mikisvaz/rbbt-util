@@ -48,7 +48,7 @@ end
 
 def status_msg(status)
   color = case status.to_sym
-          when :error, :aborted, :missing, :dead
+          when :error, :aborted, :missing, :dead, :broken
             :red
           when :streaming, :started
             :cyan
@@ -56,7 +56,7 @@ def status_msg(status)
             :green
           when :noinfo
             :blue
-          when :dependencies, :waiting, :setyp
+          when :dependencies, :waiting, :setup
             :yellow
           else
             if status.to_s.index ">"
@@ -199,7 +199,8 @@ workflows.sort.each do |workflow,tasks|
 
         pid = info[:pid]
         status = info[:status]
-        status = :missing if status == :done and not Open.exist? file
+        status = :missing if status == :done and not (Open.exist?(file) && ! Open.broken_link?(file))
+        status = :broken if Open.broken_link?(file)
         status = status.to_s
         if status != "done" and pid and not Misc.pid_exists?(pid)
           if File.exist? file

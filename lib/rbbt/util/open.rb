@@ -257,7 +257,7 @@ module Open
     if (dir_sub_path = find_repo_dir(file))
       remove_from_repo(*dir_sub_path)
     else
-      FileUtils.rm(file) if File.exists?(file)
+      FileUtils.rm(file) if File.exists?(file) or Open.broken_link?(file)
     end
   end
 
@@ -792,5 +792,9 @@ module Open
       file = file.find if Path === file
       FileUtils.touch(file)
     end
+  end
+
+  def self.broken_link?(path)
+    File.symlink?(path) && ! File.exists?(File.readlink(path))
   end
 end

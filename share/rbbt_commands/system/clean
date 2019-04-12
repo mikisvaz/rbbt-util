@@ -82,7 +82,7 @@ puts
 jobs = Rbbt.job_info workflow, task
 workflows = {}
 
-TSV.traverse jobs, :_bar => "Checking job status" do |file,i|
+TSV.traverse jobs do |file,i|
   if options[:quick] and i[:done]
     status = 'done'
   else
@@ -94,7 +94,7 @@ TSV.traverse jobs, :_bar => "Checking job status" do |file,i|
              {:status => :noinfo}
            end
 
-    done = Open.exists?(file)
+    done = Open.exists?(file) && ! Open.broken_link?(file)
     pid = info[:pid] || (Open.exists?(file + '.pid') && Open.read(file + '.pid')) unless done
 
     status = info[:status].to_s
