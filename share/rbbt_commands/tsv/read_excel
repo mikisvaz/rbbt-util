@@ -21,6 +21,7 @@ Use - to read from STDIN
 -s2--sep2* Second level separator. Default /[,|]\\s?/
 -h--help Print this help
 -s--sheet* Sheet to extract
+-skip--skip_rows* Initial rows to skip
 
 EOF
 if options[:help]
