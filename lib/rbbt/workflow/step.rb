@@ -303,14 +303,15 @@ class Step
       return 
     end
 
-    if Open.exists?(path) or Open.exists?(pid_file) or Open.exists?(info_file) or Open.exists?(files_dir)
+    if (Open.exists?(path) or Open.broken_link?(path)) or Open.exists?(pid_file) or Open.exists?(info_file) or Open.exists?(files_dir)
 
       @result = nil
       @pid = nil
 
       Misc.insist do
         Open.rm info_file if Open.exists? info_file
-        Open.rm path if Open.exists? path
+        Open.rm path if (Open.exists?(path) or Open.broken_link?(path))
+        Open.rm path if (Open.exists?(path) or Open.broken_link?(path))
         Open.rm_rf files_dir if Open.exists? files_dir
         Open.rm pid_file if Open.exists? pid_file
       end

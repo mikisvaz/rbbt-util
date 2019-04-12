@@ -139,7 +139,7 @@ module CMD
     pid = io.pids.first
 
     while c = io.getc
-      STDERR << c
+      STDERR << c if Log.severity == 0
       if c == "\n"
         if pid
           Log.logn "STDOUT [#{pid}]: ", 0

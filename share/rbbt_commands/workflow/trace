@@ -1,0 +1,90 @@
+#!/usr/bin/env ruby
+
+require 'rbbt/workflow'
+
+require 'rbbt-util'
+require 'fileutils'
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow/step'
+require 'rbbt/workflow/provenance'
+require 'rbbt/util/misc'
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+require 'rbbt/util/R'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Examine the provenance of a job result
+
+$ rbbt workflow trace <job-result> <file.png>
+
+-h--help Help
+-i--inputs* List of inputs to print
+-if--info_fields* List of info fields to print
+EOF
+
+SOPT.usage if options[:help]
+
+$inputs = (options[:inputs] || "").split(",")
+$info_fields = (options[:info_fields] || "").split(",")
+
+file = ARGV.shift || "/home/mvazque2/.rbbt/var/jobs/Sample/haplotype/NA12878"
+plot = ARGV.shift || "/tmp/plot.png"
+
+$seen = []
+def get_step(file)
+  file = File.expand_path(file)
+  file = file.sub(/\.(info|files)/,'')
+  $seen << file
+  Workflow.load_step file
+end
+
+step = get_step file
+$main_mtime = Open.exist?(step.path) ? Open.mtime(step.path) : nil
+
+data = TSV.setup({}, "Job~Workflow,Task,Start,End#:type=:list")
+
+jobs = step.rec_dependencies + [step]
+
+jobs = jobs.select{|job| job.info[:done]}.sort_by{|job| job.info[:started]}
+
+min_start = nil
+max_done = nil
+jobs.each do |job|
+  next unless job.done?
+  started = job.info[:started]
+  ddone = job.info[:done]
+  data[job.name] = [job.workflow.to_s, job.task_name,started,ddone]
+  if min_start.nil?
+    min_start = started
+  else
+    min_start = started if started < min_start
+  end
+
+  if max_done.nil?
+    max_done = ddone
+  else
+    max_done = ddone if ddone > max_done
+  end
+end
+
+#data.process "Start" do |value|
+#  value - min_start
+#end
+#
+#data.process "End" do |value|
+#  value - min_start
+#end
+
+Log.severity = 0
+data.R_interactive <<-EOF
+  rbbt.require('timevis')
+  data$id = rownames(data)
+  data$content = data$Task
+  data$start = data$Start
+  data$end = data$End
+
+  timevis(data)
+EOF
