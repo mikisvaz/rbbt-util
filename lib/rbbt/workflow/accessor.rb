@@ -57,6 +57,10 @@ class Step
     File.join(dir, '.' << filename)
   end
 
+  def self.md5_file(path)
+    path.nil? ? nil : path + '.md5'
+  end
+
   def self.pid_file(path)
     path.nil? ? nil : path + '.pid'
   end

@@ -374,6 +374,19 @@ module Misc
     obj2digest(obj)
   end
 
+  def self.file2md5(file)
+    if File.exists?(file + '.md5')
+      Open.read(file + '.md5')
+    else
+      md5 = CMD.cmd("md5sum '#{file}'").read.strip.split(" ").first
+      begin
+        Open.write(file + '.md5', md5)
+      rescue
+      end
+      md5
+    end
+  end
+
   def self.get_filename(obj)
     if obj.respond_to? :filename
       obj.filename

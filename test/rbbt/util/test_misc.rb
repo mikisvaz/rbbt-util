@@ -620,5 +620,11 @@ EOF
     end
     iii Misc.remove_long_items(tsv)
   end
+
+  def test_digest_file
+    TmpFile.with_file("FILE CONTENT") do |file|
+      assert_match /^[0-9a-z]{10,}$/, Misc.file2md5(file)
+    end
+  end
 end
 

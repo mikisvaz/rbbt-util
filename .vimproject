@@ -378,21 +378,23 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     get
    }
    workflow=workflow{
-    task
     archive
-    knowledge_base
-    jobs
-    example
-    list
-    server
-    install
     cmd
+    example
+    info
+    init
+    install
+    jobs
+    knowledge_base
+    list
     monitor
     prov
-    info
+    server
+    task
+    trace
     remote=remote{
-     list
      add
+     list
      remove
     }
    }

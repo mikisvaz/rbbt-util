@@ -171,7 +171,7 @@ workflows.sort.each do |workflow,tasks|
       str = file.dup
       if options[:quick] and i[:done]
         status = 'done'
-        str << " #{ status_msg status }"
+        str << " #{ Step.prov_status_msg status }"
         if inputs and inputs.any? 
           str << input_msg(file, inputs)
         end

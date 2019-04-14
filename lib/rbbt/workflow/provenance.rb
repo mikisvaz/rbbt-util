@@ -1,16 +1,16 @@
 class Step
   def self.prov_status_msg(status)
     color = case status.to_sym
-            when :error, :aborted, :missing, :dead
+            when :error, :aborted, :missing, :dead, :unsync
               :red
             when :streaming, :started
               :cyan
-            when :done
+            when :done, :noinfo
               :green
-            when :noinfo
-              :blue
-            when :dependencies, :waiting, :setyp
+            when :dependencies, :waiting, :setup
               :yellow
+            when :notfound
+              :blue
             else
               if status.to_s.index ">"
                 :cyan
@@ -27,7 +27,7 @@ class Step
     task = Log.color(:yellow, parts.pop)
     workflow = Log.color(:magenta, parts.pop)
     if status.to_s == 'noinfo' and parts.last != 'jobs'
-      task, status, workflow = Log.color(:yellow, info[:task_name]), Log.color(:blue, "file"), Log.color(:magenta, "-")
+      task, status, workflow = Log.color(:yellow, info[:task_name]), Log.color(:green, "file"), Log.color(:magenta, "-")
     end
 
     path_mtime = begin
@@ -73,7 +73,8 @@ class Step
     status = info[:status] || :missing
     status = "remote" if Open.remote?(path)
     name = info[:name] || File.basename(path)
-    status = :unsync if status == :done and not Open.exist? path
+    status = :unsync if status == :done and not Open.exist?(path)
+    status = :notfound if status == :noinfo and not Open.exist?(path)
     str = " " * offset
     str << prov_report_msg(status, name, path, info)
     step.dependencies.each do |dep|
@@ -83,7 +84,7 @@ class Step
         seen << path
         str << prov_report(dep, offset + 1, task, seen)
       else
-        str << Log.color(:blue, Log.uncolor(prov_report(dep, offset+1, task)))
+        str << Log.color(:green, Log.uncolor(prov_report(dep, offset+1, task)))
       end
     end if step.dependencies
     str

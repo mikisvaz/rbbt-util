@@ -328,6 +328,8 @@ module Misc
   end
 
   def self.chr_cmp_strict(chr1, chr2)
+    chr1 = chr1.sub(/^chr/)
+    chr2 = chr2.sub(/^chr/)
     if (m1 = chr1.match(/(\d+)$/)) && (m2 = chr2.match(/(\d+)$/))
       m1[1].to_i <=> m2[1].to_i
     elsif chr1 =~ /\d+$/
@@ -337,6 +339,10 @@ module Misc
     else
       chr1 <=> chr2
     end
+  end
+
+  def self.chr_cmp_contigs(chr1, chr2, contigs)
+    contigs.index(chr1) <=> contigs.index(chr2)
   end
 
   def self.genomic_location_cmp(gpos1, gpos2, sep = ":")
@@ -363,6 +369,18 @@ module Misc
     end
   end
 
+  def self.genomic_location_cmp_contigs(gpos1, gpos2, contigs, sep = ":")
+    chr1, _sep, pos1 = gpos1.partition(sep)
+    chr2, _sep, pos2 = gpos2.partition(sep)
+    iii [gpos1, gpos2, chr1, chr2]
+    cmp = chr_cmp_contigs(chr1, chr2, contigs)
+    case cmp
+    when 0
+      pos1.to_i <=> pos2.to_i
+    else
+      cmp
+    end
+  end
   def self.intersect_streams_cmp_chr(chr1, chr2)
     chr1 <=> chr2
   end
