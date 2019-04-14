@@ -21,17 +21,21 @@ Examine the provenance of a job result
 $ rbbt workflow trace <job-result> <file.png>
 
 -h--help Help
--i--inputs* List of inputs to print
--if--info_fields* List of info fields to print
+-w--width* Image Width
+-h--height* Image Height
+-s--size* Image Size (Height and Width)
 EOF
 
 SOPT.usage if options[:help]
 
-$inputs = (options[:inputs] || "").split(",")
-$info_fields = (options[:info_fields] || "").split(",")
-
 file = ARGV.shift || "/home/mvazque2/.rbbt/var/jobs/Sample/haplotype/NA12878"
 plot = ARGV.shift || "/tmp/plot.png"
+
+width, height, size = options.values_at :width, :height, :size
+
+size = 800 if size.nil?
+width = size if width.nil?
+height = size if height.nil?
 
 $seen = []
 def get_step(file)
@@ -138,5 +142,5 @@ data.R <<-EOF, [:svg]
     labs(x=NULL, y=NULL) + 
     theme_gantt() + theme(axis.text.x=element_text(angle=45, hjust=1))
 
-  rbbt.png_plot('#{plot}', 'timeline', width=2000)
+  rbbt.png_plot('#{plot}', 'timeline', width=#{width}, height=#{height})
 EOF

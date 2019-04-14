@@ -372,7 +372,6 @@ module Misc
   def self.genomic_location_cmp_contigs(gpos1, gpos2, contigs, sep = ":")
     chr1, _sep, pos1 = gpos1.partition(sep)
     chr2, _sep, pos2 = gpos2.partition(sep)
-    iii [gpos1, gpos2, chr1, chr2]
     cmp = chr_cmp_contigs(chr1, chr2, contigs)
     case cmp
     when 0
