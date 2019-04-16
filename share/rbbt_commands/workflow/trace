@@ -24,12 +24,13 @@ $ rbbt workflow trace <job-result> <file.png>
 -w--width* Image Width
 -h--height* Image Height
 -s--size* Image Size (Height and Width)
+-fg--fix_gap Remove execution gaps
 EOF
 
 SOPT.usage if options[:help]
 
 file = ARGV.shift || "/home/mvazque2/.rbbt/var/jobs/Sample/haplotype/NA12878"
-plot = ARGV.shift || "/tmp/plot.png"
+plot = ARGV.shift 
 
 width, height, size = options.values_at :width, :height, :size
 
@@ -37,16 +38,13 @@ size = 800 if size.nil?
 width = size if width.nil?
 height = size if height.nil?
 
-$seen = []
 def get_step(file)
   file = File.expand_path(file)
   file = file.sub(/\.(info|files)/,'')
-  $seen << file
   Workflow.load_step file
 end
 
 step = get_step file
-$main_mtime = Open.exist?(step.path) ? Open.mtime(step.path) : nil
 
 data = TSV.setup({}, "Job~Workflow,Task,Start,End#:type=:list")
 
@@ -60,7 +58,11 @@ jobs.each do |job|
   next unless job.done?
   started = job.info[:started]
   ddone = job.info[:done]
-  data[[job.task_name.to_s, job.clean_name] * "."] = [job.workflow.to_s, job.task_name,started,ddone]
+
+  code = [job.workflow, job.task_name].compact.collect{|s| s.to_s} * "."
+  code = code + '.' + job.clean_name
+
+  data[code] = [job.workflow.to_s, job.task_name,started,ddone]
   if min_start.nil?
     min_start = started
   else
@@ -82,65 +84,123 @@ data.add_field "End.second" do |k,value|
   value["End"] - min_start
 end
 
-Log.severity = 0
-#data.R_interactive <<-EOF
-#  rbbt.require('timevis')
-#  data$id = rownames(data)
-#  data$content = data$Task
-#  data$start = data$Start
-#  data$end = data$End
-#
-#  timevis(data)
-#EOF
+if options[:fix_gap]
+  ranges = []
+  data.through do |k,values|
+    start, eend = values.values_at "Start.second", "End.second"
 
+    ranges << (start.floor..eend.ceil)
+  end
 
-data.R <<-EOF, [:svg]
-  rbbt.require('tidyverse')
-  rbbt.require('ggplot2')
+  gaps = {}
+  last = nil
+  Misc.collapse_ranges(ranges).each do |range|
+    start = range.begin
+    eend = range.end
+    if last
+      gaps[last] = start - last
+    end
+    last = eend
+  end
 
-  names(data) <- make.names(names(data))
-  data$id = rownames(data)
-  data$content = data$Task
-  data$start = data$Start
-  data$end = data$End
-  data$Project = data$Workflow
+  data.process "End.second" do |value,k,values|
+    gap = Misc.sum(gaps.select{|pos,size| pos < values["Start.second"]}.collect{|pos,size| size})
+    value - gap
+  end
 
-  tasks = data
+  data.process "Start.second" do |value,k,values|
+    gap = Misc.sum(gaps.select{|pos,size| pos < values["Start.second"]}.collect{|pos,size| size})
+    value - gap
+  end
+end
 
-  #theme_gantt <- function(base_size=11, base_family="Source Sans Pro Light") {
-  theme_gantt <- function(base_size=11, base_family="Sans Serif") {
-    ret <- theme_bw(base_size, base_family) %+replace%
-      theme(panel.background = element_rect(fill="#ffffff", colour=NA),
-            axis.title.x=element_text(vjust=-0.2), axis.title.y=element_text(vjust=1.5),
-            title=element_text(vjust=1.2, family="Source Sans Pro Semibold"),
-            panel.border = element_blank(), axis.line=element_blank(),
-            panel.grid.minor=element_blank(),
-            panel.grid.major.y = element_blank(),
-            panel.grid.major.x = element_line(size=0.5, colour="grey80"),
-            axis.ticks=element_blank(),
-            legend.position="bottom", 
-            axis.title=element_text(size=rel(0.8), family="Source Sans Pro Semibold"),
-            strip.text=element_text(size=rel(1), family="Source Sans Pro Semibold"),
-            strip.background=element_rect(fill="#ffffff", colour=NA),
-            panel.spacing.y=unit(1.5, "lines"),
-            legend.key = element_blank())
-    
-    ret
-  }
+tasks_info = {}
 
-  tasks.long <- tasks %>%
-  gather(date.type, task.date, -c(Project, Task, id, Start.second, End.second)) %>%
-  arrange(date.type, task.date) %>%
-  mutate(id = factor(id, levels=rev(unique(id)), ordered=TRUE))
+jobs.each do |dep|
+  next unless dep.done?
+  task = [dep.workflow, dep.task_name].compact.collect{|s| s.to_s} * "#"
+  info = tasks_info[task] ||= {}
 
-  x.breaks <- seq(length(tasks$Task) + 0.5 - 3, 0, by=-3)
+  time = dep.info[:done] - dep.info[:started]
+  info[:time] ||= []
+  info[:time] << time
 
-  timeline <- ggplot(tasks.long, aes(y=id, yend=id, x=Start.second, xend=End.second, colour=Task)) + 
-    geom_segment() + 
-    geom_vline(xintercept=x.breaks, colour="grey80", linetype="dotted") + 
-    guides(colour=guide_legend(title=NULL)) +
-    labs(x=NULL, y=NULL) + 
-    theme_gantt() + theme(axis.text.x=element_text(angle=45, hjust=1))
+  cpus = nil
+  spark = false
+  shard = false
+  dep.info[:config_keys].select do |kinfo| 
+    key, value, tokens = kinfo
+    key = key.to_s
+    cpus = value if key.include? 'cpu'
+    spark = value if key == 'spark'
+    shard = value if key == 'shard'
+  end
 
-  rbbt.png_plot('#{plot}', 'timeline', width=#{width}, height=#{height})
-EOF
+  info[:cpus] = cpus || 1
+  info[:spark] = spark
+  info[:shard] = shard
+end
+
+stats = TSV.setup({}, "Task~Calls,Time,Cpus,Spark,Shard#:type=:list")
+
+tasks_info.each do |task, info|
+  time_lists, cpus, spark, shard = info.values_at :time, :cpus, :spark, :shard
+  avg_time = Misc.mean(time_lists).to_i
+  calls = time_lists.length
+  stats[task] = [calls,avg_time, cpus, spark, shard]
+end
+
+puts stats.to_s
+
+if plot
+  data.R <<-EOF, [:svg]
+    rbbt.require('tidyverse')
+    rbbt.require('ggplot2')
+
+    names(data) <- make.names(names(data))
+    data$id = rownames(data)
+    data$content = data$Task
+    data$start = data$Start
+    data$end = data$End
+    data$Project = data$Workflow
+
+    tasks = data
+
+    #theme_gantt <- function(base_size=11, base_family="Source Sans Pro Light") {
+    theme_gantt <- function(base_size=11, base_family="Sans Serif") {
+      ret <- theme_bw(base_size, base_family) %+replace%
+        theme(panel.background = element_rect(fill="#ffffff", colour=NA),
+              axis.title.x=element_text(vjust=-0.2), axis.title.y=element_text(vjust=1.5),
+              title=element_text(vjust=1.2, family="Source Sans Pro Semibold"),
+              panel.border = element_blank(), axis.line=element_blank(),
+              panel.grid.minor=element_blank(),
+              panel.grid.major.y = element_blank(),
+              panel.grid.major.x = element_line(size=0.5, colour="grey80"),
+              axis.ticks=element_blank(),
+              legend.position="bottom", 
+              axis.title=element_text(size=rel(1.2), family="Source Sans Pro Semibold"),
+              strip.text=element_text(size=rel(1.5), family="Source Sans Pro Semibold"),
+              strip.background=element_rect(fill="#ffffff", colour=NA),
+              panel.spacing.y=unit(1.5, "lines"),
+              legend.key = element_blank())
+
+      ret
+    }
+
+    tasks.long <- tasks %>%
+    gather(date.type, task.date, -c(Project, Task, id, Start.second, End.second)) %>%
+    arrange(date.type, task.date) %>%
+    mutate(id = factor(id, levels=rev(unique(id)), ordered=TRUE))
+
+    x.breaks <- seq(length(tasks$Task) + 0.5 - 3, 0, by=-3)
+
+    timeline <- ggplot(tasks.long, aes(y=id, yend=id, x=Start.second, xend=End.second, colour=Task)) + 
+      geom_segment() + 
+      geom_vline(xintercept=x.breaks, colour="grey80", linetype="dotted") + 
+      guides(colour=guide_legend(title=NULL)) +
+      labs(x=NULL, y=NULL) + 
+      theme_gantt() + theme(axis.text.x=element_text(angle=45, hjust=1))
+
+    rbbt.png_plot('#{plot}', 'timeline', width=#{width}, height=#{height}, pointsize=6)
+  EOF
+end

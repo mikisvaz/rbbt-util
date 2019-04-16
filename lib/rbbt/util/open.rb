@@ -384,7 +384,7 @@ module Open
       FileUtils.mkdir_p File.dirname(target) unless File.exist? File.dirname(target)
       tmp_target = File.join(File.dirname(target), '.tmp_mv.' + File.basename(target))
       FileUtils.cp source, tmp_target
-      FileUtils.cp tmp_target, target
+      FileUtils.mv tmp_target, target
       return
     end
 
