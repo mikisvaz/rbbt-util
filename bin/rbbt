@@ -100,7 +100,7 @@ end
 if options[:config_keys]
   if Misc.is_filename?(options[:config_keys]) && File.exists?(options[:config_keys])
     Rbbt::Config.load_file(options[:config_keys])
-  elsif Misc.is_filename?(options[:config_keys]) && Rbbt.etc.config_profile[options[:config_keys]].exists?
+  elsif Rbbt.etc.config_profile[options[:config_keys]].exists?
     Rbbt::Config.load_file(Rbbt.etc.config_profile[options[:config_keys]].find)
   else
     options[:config_keys].split(",").each do |config|
