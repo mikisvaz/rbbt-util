@@ -114,6 +114,7 @@ mkdir -p "$SINGULARITY_RUBY_INLINE"
       end
 
       if contain
+        user = ENV['USER'] || `whoami`.strip
         env +=<<-EOF
 
 # Prepare container dir
@@ -131,8 +132,8 @@ echo "rbbt_user: /home/rbbt/.rbbt/{TOPLEVEL}/{SUBPATH}" > $CONTAINER_DIR/.rbbt/e
 echo "home: $CONTAINER_DIR/home/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "group_projects: $CONTAINER_DIR/projects/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "group_scratch: $CONTAINER_DIR/scratch/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
-echo "user_projects: $CONTAINER_DIR/projects/#{ENV['USER']}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
-echo "user_scratch: $CONTAINER_DIR/scratch/#{ENV['USER']}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
+echo "user_projects: $CONTAINER_DIR/projects/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
+echo "user_scratch: $CONTAINER_DIR/scratch/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "/scratch/tmp/rbbt/projects/rbbt/workflows/" > $CONTAINER_DIR/.rbbt/etc/workflow_dir
         EOF
         
