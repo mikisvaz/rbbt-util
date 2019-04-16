@@ -168,16 +168,16 @@ EOF
           group = File.basename(File.dirname(ENV['HOME']))
           scratch_group_dir = File.join('/gpfs/scratch/', group)
           projects_group_dir = File.join('/gpfs/projects/', group)
-          exec_cmd = %(singularity exec -e -C -H "$CONTAINER_DIR" -B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$CONTAINER_DIR/.ruby_inline":rw  -B ~/git:"$CONTAINER_DIR/git":ro -B #{scratch_group_dir}:"$CONTAINER_DIR/scratch":ro -B ~/.rbbt/software/opt/:"/opt/":ro  -B ~/.rbbt:"$CONTAINER_DIR/home/":ro -B #{projects_group_dir}:"$CONTAINER_DIR/projects":ro "$SINGULARITY_IMG" env TMPDIR="$CONTAINER_DIR/.rbbt/tmp" env _JAVA_OPTION="-Xms1g -Xmx${MAX_MEMORY}m" rbbt)
+          exec_cmd = %(singularity exec -e -C -H "$CONTAINER_DIR" -B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$CONTAINER_DIR/.ruby_inline":rw  -B ~/git:"$CONTAINER_DIR/git":ro -B #{scratch_group_dir}:"$CONTAINER_DIR/scratch":ro -B ~/.rbbt/software/opt/:"/opt/":ro  -B ~/.rbbt:"$CONTAINER_DIR/home/":ro -B #{projects_group_dir}:"$CONTAINER_DIR/projects":ro "$SINGULARITY_IMG" env TMPDIR="$CONTAINER_DIR/.rbbt/tmp" env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m" rbbt)
         else
-          exec_cmd = %(singularity exec -e -B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$HOME/.ruby_inline":rw "$SINGULARITY_IMG" env _JAVA_OPTION="-Xms1g -Xmx${MAX_MEMORY}m" rbbt)
+          exec_cmd = %(singularity exec -e -B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$HOME/.ruby_inline":rw "$SINGULARITY_IMG" env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m" rbbt)
         end
 
         if development
           exec_cmd += ' --dev=git'
         end
       else
-        exec_cmd = %(env _JAVA_OPTION="-Xms1g -Xmx${MAX_MEMORY}m" ~/git/rbbt-util/bin/rbbt --dev=~/git/)
+        exec_cmd = %(env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m" ~/git/rbbt-util/bin/rbbt --dev=~/git/)
       end
 
 
