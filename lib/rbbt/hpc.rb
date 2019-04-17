@@ -208,8 +208,11 @@ singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean 
 EOF
         end
 
+        source = File.join(File.expand_path(contain), '.rbbt/var/jobs')
+        target = File.expand_path(sync)
         coda +=<<-EOF
-rsync -avt "#{File.join(File.expand_path(contain), '.rbbt/var/jobs')}/" "#{File.expand_path(sync)}/" &>> #{fsync} 
+rsync -avt "#{source}/" "#{target}/" &>> #{fsync} 
+find '#{target}' -type l -ls | awk '$13 ~ /^#{target.gsub('/','\/')}/ { sub("#{source}", "#{target}", $13); print $11, $13 }' | while read A B; do rm $A; ln -s $B $A; done
 EOF
 
         if  contain && (wipe_container == "post" || wipe_container == "both")

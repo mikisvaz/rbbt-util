@@ -25,6 +25,7 @@ $ rbbt workflow trace <job-result> <file.png>
 -h--height* Image Height
 -s--size* Image Size (Height and Width)
 -fg--fix_gap Remove execution gaps
+-pd--plot_data Print plot data
 EOF
 
 SOPT.usage if options[:help]
@@ -150,7 +151,21 @@ tasks_info.each do |task, info|
   stats[task] = [calls,avg_time, cpus, spark, shard]
 end
 
-puts stats.to_s
+start = data.column("Start.second").values.flatten.collect{|v| v.to_i}.min
+eend = data.column("End.second").values.flatten.collect{|v| v.to_i}.max
+total = eend - start
+Log.info "Total time elapsed: #{total} seconds"
+
+if options[:fix_gap]
+  total_gaps = Misc.sum(gaps.collect{|k,v| v})
+  Log.info "Total gaps: #{total_gaps} seconds"
+end
+
+if options[:plot_data]
+  puts data.to_s
+else
+  puts stats.to_s
+end
 
 if plot
   data.R <<-EOF, [:svg]

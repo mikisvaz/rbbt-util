@@ -187,7 +187,7 @@ the job dependencies recursively.
 -ljf--list_job_files List all the files produced in that step
 --load_inputs* Load inputs from a directory
 --info Show the job info
---provenance Report the jobs provenance
+-prov--provenance Report the jobs provenance
 -W--workflows* Load a list of workflows
 -R--requires* Require a list of files
 -rwt--remote_workflow_tasks* Load a yaml file describing remote workflow tasks
