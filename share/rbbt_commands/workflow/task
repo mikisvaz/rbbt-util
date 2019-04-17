@@ -190,6 +190,8 @@ the job dependencies recursively.
 -prov--provenance Report the jobs provenance
 -W--workflows* Load a list of workflows
 -R--requires* Require a list of files
+-pre--prepare* Prepare dependencies
+-prec--prepare_cpus* Number of dependencies prepared in parallel
 -rwt--remote_workflow_tasks* Load a yaml file describing remote workflow tasks
 -od--override_deps* Override deps using 'Workflow#task=<path>' array_separated
 EOF
@@ -369,6 +371,15 @@ begin
     puts Step.prov_report(job)
     exit 0
   end
+
+  if tasks = options.delete(:prepare)
+    require 'rbbt/workflow/prepare'
+    tasks = tasks.split(",")
+    prepare_cpus = (options[:prepare_cpus] || 1)
+    puts Step.prepare_dependencies(job, tasks,  prepare_cpus)
+    exit 0
+  end
+
 
   if do_fork
     ENV["RBBT_NO_PROGRESS"] = "true"
