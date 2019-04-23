@@ -151,6 +151,8 @@ tasks_info.each do |task, info|
   stats[task] = [calls,avg_time, cpus, spark, shard]
 end
 
+raise "No jobs to process" if data.size == 0
+
 start = data.column("Start.second").values.flatten.collect{|v| v.to_i}.min
 eend = data.column("End.second").values.flatten.collect{|v| v.to_i}.max
 total = eend - start

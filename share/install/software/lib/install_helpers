@@ -180,7 +180,7 @@ compile(){
     local extra="$@"
 
     if [ -f Makefile -o -f makefile ]; then
-        make || exit -1
+        make -j 4 || exit -1
         make install || echo "No install"
     fi
 
@@ -204,7 +204,6 @@ prepare_make(){
     cd "`build_dir`"
 
     [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd src
-
 
     if [ -f config/m4 ]; then
         libtoolize --force
@@ -257,7 +256,9 @@ build_make(){
         echo "Extra params: $extra"
     fi
 
-    prepare_make $name
+    if [ ! -f configure ]; then 
+     prepare_make $name
+    fi
 
     if [ -f configure ]; then 
         ./configure --prefix="$(opt_dir "$name")" $extra

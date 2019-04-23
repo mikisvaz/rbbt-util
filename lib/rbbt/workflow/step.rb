@@ -298,6 +298,7 @@ class Step
     pid_file = Step.pid_file path
     md5_file = Step.md5_file path
     files_dir = Step.files_dir path
+    tmp_path = Step.tmp_path path
 
     if ! (Open.writable?(path) && Open.writable?(info_file))
       Log.warn "Could not clean #{path}: not writable"
@@ -315,6 +316,7 @@ class Step
         Open.rm path if (Open.exists?(path) or Open.broken_link?(path))
         Open.rm_rf files_dir if Open.exists?(files_dir)
         Open.rm pid_file if Open.exists?(pid_file)
+        Open.rm tmp_path if Open.exists?(tmp_path)
       end
     end
   end

@@ -176,6 +176,44 @@ module TSV
     end
   end
 
+  def self.traverse_priority_queue(queue, options = {}, &block)
+    callback, bar, join = Misc.process_options options, :callback, :bar, :join
+
+    begin
+      error = false
+      if callback
+        bar.init if bar
+        while queue.any?
+          e = queue.pop
+          begin
+            callback.call yield(e)
+          ensure
+            bar.tick if bar
+          end
+        end
+      else
+        bar.init if bar
+        while queue.any?
+          e = queue.pop
+          begin
+            yield e
+          rescue Exception
+            Log.exception $!
+            raise $!
+          ensure
+            bar.tick if bar
+          end
+        end
+      end
+
+    rescue
+      error = true
+      raise $!
+    ensure
+      Log::ProgressBar.remove_bar(bar) if bar
+      join.call(error) if join
+    end
+  end
   def self.traverse_io_array(io, options = {}, &block)
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
     begin
@@ -278,6 +316,8 @@ module TSV
     Log.low{"Traversing #{name} #{Log.color :green, "->"} #{stream_name(options[:into])}"}
     begin
       case obj
+      when (defined? FastContainers and FastContainers::PriorityQueue)
+        traverse_priority_queue(obj, options, &block)
       when TSV
         traverse_tsv(obj, options, &block)
       when Hash

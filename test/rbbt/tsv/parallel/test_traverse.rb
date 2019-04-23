@@ -120,6 +120,21 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
     assert_equal array, res
   end
+  
+  def test_traverse_priority
+    require 'fc'
+
+    queue = FastContainers::PriorityQueue.new(:min)
+
+    array = []
+    100.times do e = rand(1000).to_i; array << e; queue.push(e,e) end
+
+    res = TSV.traverse queue, :into => [] do |v|
+      v
+    end
+
+    assert_equal array.sort, res
+  end
 
   def test_traverse_array_threads
     require 'rbbt/sources/organism'
