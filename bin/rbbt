@@ -98,12 +98,12 @@ if mem_dump = options.delete(:dump_mem)
 end
 
 if options[:config_keys]
-  if Misc.is_filename?(options[:config_keys]) && File.exists?(options[:config_keys])
-    Rbbt::Config.load_file(options[:config_keys])
-  elsif Rbbt.etc.config_profile[options[:config_keys]].exists?
-    Rbbt::Config.load_file(Rbbt.etc.config_profile[options[:config_keys]].find)
-  else
-    options[:config_keys].split(",").each do |config|
+  options[:config_keys].split(",").each do |config|
+    if Misc.is_filename?(config) && File.exists?(config)
+      Rbbt::Config.load_file(config)
+    elsif Rbbt.etc.config_profile[config].exists?
+      Rbbt::Config.load_file(Rbbt.etc.config_profile[config].find)
+    else
       key, value, *tokens = config.split(/\s/)
       tokens = ['key:' << key << '::0'] if tokens.empty?
       tokens = tokens.collect do |tok|
