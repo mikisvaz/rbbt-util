@@ -71,7 +71,7 @@ module Workflow
       set_info :result_type, dep.info[:result_type]
       forget = config :forget_dep_tasks, :forget_dep_tasks, :default => FORGET_DEP_TASKS
       if forget
-        Open.ln_h dep.path, self.path
+        Open.cp dep.path, self.path
         self.dependencies = self.dependencies - [dep]
         self.set_info :dependency, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
       else
