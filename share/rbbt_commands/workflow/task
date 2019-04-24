@@ -170,6 +170,7 @@ the job dependencies recursively.
 
 -h--help Show this help
 -wd--workdir* Change the working directory of the workflow
+-wda--workdir_all* Change the working directory of ALL workflow
 -as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default
 -fs--field_separator* Change the character that separates fields of TSV files '\\t' by default
 -jn--jobname* Job name to use. The name 'Default' is used by default
@@ -222,6 +223,8 @@ if Rbbt.etc.remote_workflows.exists?
 else
   remote_workflows = {}
 end
+
+Workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir_all))) if options[:workdir_all]
 
 workflow = Workflow.require_workflow workflow
 
