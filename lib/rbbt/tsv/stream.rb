@@ -56,7 +56,7 @@ module TSV
       preambles     = []
 
       streams = streams.collect do |stream|
-        parser = TSV::Parser.new stream, options
+        parser = TSV::Parser.new stream, options.dup
 
         lines         << parser.first_line
         empty         << stream               if parser.first_line.nil?
@@ -178,7 +178,7 @@ module TSV
               if values.nil?
                 values = _p.collect{|v| [v]}
               else
-                _p.each_with_index{|v,i| values[i] << v}
+                _p.each_with_index{|v,i| values[i] ||= []; values[i] << v}
               end
             end
 

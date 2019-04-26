@@ -64,9 +64,11 @@ module Resource
 
       if type == :install
         Log.debug "Preparing software: #{path}"
+        $set_software_env = false unless path.exists?
         path.produce
         software_dir = path.resource.root.software
-        set_software_env(software_dir)
+        set_software_env(software_dir) unless $set_software_env
+        $set_software_env = true
       end
     end
   end

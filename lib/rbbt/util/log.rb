@@ -353,39 +353,39 @@ def mmm(obj, file = $stdout)
   Log.log_obj_inspect(obj, :medium, file)
 end
 
-def iii(obj, file = $stdout)
+def iii(obj=nil, file = $stdout)
   Log.log_obj_inspect(obj, :info, file)
 end
 
-def wwww(obj, file = $stdout)
+def wwww(obj=nil, file = $stdout)
   Log.log_obj_inspect(obj, :warn, file)
 end
 
-def eee(obj, file = $stdout)
+def eee(obj=nil, file = $stdout)
   Log.log_obj_inspect(obj, :error, file)
 end
 
-def ddf(obj, file = $stdout)
+def ddf(obj=nil, file = $stdout)
   Log.log_obj_fingerprint(obj, :debug, file)
 end
 
-def llf(obj, file = $stdout)
+def llf(obj=nil, file = $stdout)
   Log.log_obj_fingerprint(obj, :low, file)
 end
 
-def mmf(obj, file = $stdout)
+def mmf(obj=nil, file = $stdout)
   Log.log_obj_fingerprint(obj, :medium, file)
 end
 
-def iif(obj, file = $stdout)
+def iif(obj=nil, file = $stdout)
   Log.log_obj_fingerprint(obj, :info, file)
 end
 
-def wwwf(obj, file = $stdout)
+def wwwf(obj=nil, file = $stdout)
   Log.log_obj_fingerprint(obj, :warn, file)
 end
 
-def eef(obj, file = $stdout)
+def eef(obj=nil, file = $stdout)
   Log.log_obj_fingerprint(obj, :error, file)
 end
 
