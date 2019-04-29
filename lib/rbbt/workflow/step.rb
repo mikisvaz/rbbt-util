@@ -323,7 +323,7 @@ class Step
 
   def update
     if dirty?
-      dependencies.collect{|d| d.update} if dependencies
+      dependencies.collect{|d| d.update } if dependencies
       clean
     end
   end
@@ -349,6 +349,7 @@ class Step
 
     new_dependencies = []
     dependencies.each{|step| 
+      next if self.done? && Open.exists?(info_file) && info[:dependencies] && info[:dependencies].select{|task,name,path| path == step.path }.empty?
       next if seen.include? step
       next if self.done? && need_run && ! updatable?
 
