@@ -71,9 +71,10 @@ module Workflow
       set_info :result_type, dep.info[:result_type]
       forget = config :forget_dep_tasks, :forget_dep_tasks, :default => FORGET_DEP_TASKS
       if forget
-        Open.cp dep.path, self.path
         self.dependencies = self.dependencies - [dep]
         self.set_info :dependency, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
+        FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist? dep.files_dir
+        Open.cp dep.path, self.tmp_path
       else
         Open.link dep.path, self.path
       end
