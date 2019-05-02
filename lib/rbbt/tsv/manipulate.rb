@@ -395,7 +395,7 @@ module TSV
           new[key] = values if invert ^ ([key,values].flatten.select{|v| v =~ method}.any?)
         end
       end
-    when String === method
+    when (String === method || Symbol === method)
       if block_given?
         case 
         when block.arity == 1
