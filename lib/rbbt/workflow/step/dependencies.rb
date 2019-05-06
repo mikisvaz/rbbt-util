@@ -247,7 +247,7 @@ class Step
       respawn = rest && rest.include?(:always_respawn)
       respawn = :always if respawn.nil?
 
-      Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{path} [#{cpus}]", :respawn => respawn) do |dep|
+      Misc.bootstrap(list, cpus, :bar => "Bootstrapping dependencies for #{self.short_path} [#{cpus}]", :respawn => respawn) do |dep|
         begin
           Signal.trap(:INT) do
             dep.abort
