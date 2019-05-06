@@ -42,7 +42,7 @@ module Workflow
       dir = Path.setup(dir.dup)
       input_names.each do |input|
         file = dir[input].find
-        file = dir.glob(input.to_s + ".*").first if file.nil? or not file.exists?
+        file = dir.glob(input.to_s + ".*").reject{|f| f =~ /\.md5$/}.first if file.nil? or not file.exists?
         Log.debug "Trying #{ input }: #{file}"
         next unless file and file.exists?
 

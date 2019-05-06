@@ -75,7 +75,7 @@ module Log
     def thr_msg
       if @history.nil?
         @history ||= [[@ticks, Time.now] ]
-      else
+      elsif @last_ticks != @ticks
         @history << [@ticks, Time.now]
         max_history ||= case 
                       when @ticks > 20
@@ -96,12 +96,15 @@ module Log
         @history.shift if @history.length > max_history
       end
 
+      @last_ticks = @ticks
+
       @mean_max ||= 0
-      if @history.length > 3
+      if @history.length > 2
 
         sticks, stime = @history.first
         ssticks, sstime = @history[-3]
         lticks, ltime = @history.last
+
 
         mean = @mean = (lticks - sticks).to_f / (ltime - stime)
         short_mean = (lticks - ssticks).to_f / (ltime - sstime)
