@@ -328,8 +328,8 @@ module Misc
   end
 
   def self.chr_cmp_strict(chr1, chr2)
-    chr1 = chr1.sub(/^chr/)
-    chr2 = chr2.sub(/^chr/)
+    chr1 = chr1.sub(/^chr/, '')
+    chr2 = chr2.sub(/^chr/, '')
     if (m1 = chr1.match(/(\d+)$/)) && (m2 = chr2.match(/(\d+)$/))
       m1[1].to_i <=> m2[1].to_i
     elsif chr1 =~ /\d+$/
