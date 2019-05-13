@@ -119,6 +119,11 @@ class Step
     Log.info str
   end
 
+  def input_dependencies
+    inputs.flatten.select{|i| Step === i}
+  end
+
+
   def execute_dependency(dependency, log = true)
     task_name = self.task_name
     canfail_paths = self.canfail_paths
@@ -338,7 +343,7 @@ class Step
 
     compute_deps = rec_dependencies.collect do |dep|
       next unless ComputeDependency === dep
-      dep.rec_dependencies
+      dep.rec_dependencies + dep.inputs.flatten.select{|i| Step === i}
     end.compact.flatten.uniq
 
     canfail_paths = self.canfail_paths
@@ -353,24 +358,15 @@ class Step
         raise $! unless canfail_paths.include? step.path
       end
       next unless step.dependencies and step.dependencies.any?
-      step.dependencies.each do |step_dep|
+      (step.dependencies + step.input_dependencies).each do |step_dep|
         next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and (step_dep.compute == :nodup or step_dep.compute == :ignore))
         dep_step[step_dep.path] ||= []
         dep_step[step_dep.path] << step_dep
       end
-      step.inputs.each do |inputs|
-        inputs = [inputs] unless Array === inputs
-        inputs.each do |step_dep|
-          next unless Step === step_dep
-          next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and (step_dep.compute == :nodup or step_dep.compute == :ignore))
-          dep_step[step_dep.path] ||= []
-          dep_step[step_dep.path] << step_dep
-        end
-      end
     end
 
     produced = []
-    dependencies.each do |dep|
+    (dependencies + input_dependencies).each do |dep|
       next unless ComputeDependency === dep
       if dep.compute == :produce
         dep.produce 
@@ -382,16 +378,16 @@ class Step
 
     required_dep_paths = []
     dep_step.each do |path,list|
-      required_dep_paths << path if list.length > 1
+      #required_dep_paths << path if list.length > 1
+      required_dep_paths << path if (list & dependencies).any?
     end
 
     required_dep_paths.concat dependencies.collect{|dep| dep.path}
-    required_dep_paths.concat(rec_dependencies.collect do |dep| 
-      dep.inputs.flatten.select{|i| Step === i}.collect{|d| d.path}
-    end.flatten)
+
+    required_dep_paths.concat input_dependencies.collect{|dep| dep.path}
 
     required_dep_paths.concat(dependencies.collect do |dep| 
-      [dep.path] + dep.inputs.flatten.select{|i| Step === i}.collect{|d| d.path}
+      [dep.path] + dep.input_dependencies
     end.flatten)
 
     log :dependencies, "Dependencies for step #{Log.color :yellow, task.name.to_s || ""}"
