@@ -75,7 +75,7 @@ module Workflow
         self.set_info :dependency, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
         Open.rm_rf self.files_dir if Open.exist? self.files_dir
         FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist? dep.files_dir
-        Open.cp dep.path, self.tmp_path
+        Open.ln_h dep.path, self.tmp_path
       else
         Open.link dep.path, self.path
       end
