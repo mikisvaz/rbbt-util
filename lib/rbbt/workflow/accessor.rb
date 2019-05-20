@@ -105,7 +105,7 @@ class Step
         Open.write(path, value)
       when type == "file"
         if String === value && File.exists?(value)
-          Open.ln(value, path)
+          Open.link(value, path)
         else
           Open.write(path + '.read', value.to_s)
         end
