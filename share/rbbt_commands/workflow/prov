@@ -117,7 +117,7 @@ if options[:plot]
       nodes <- read.csv("#{node_info_file}", header=T, as.is=T)
       links <- read.csv("#{edge_file}", header=T, as.is=T)
 
-      library(igraph)
+      rbbt.require('igraph')
 
       net <- graph.data.frame(links, nodes, directed=T)
       net <- simplify(net, remove.multiple = F, remove.loops = T)

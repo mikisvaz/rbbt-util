@@ -238,15 +238,6 @@ class Step
             :versions => Rbbt.versions
           })
 
-
-          begin
-            run_dependencies
-          rescue Exception
-            Open.rm pid_file if Open.exists?(pid_file)
-            stop_dependencies
-            raise $!
-          end
-
           new_inputs = []
           @inputs.each_with_index do |input,i|
             name = @task.inputs[i]
@@ -303,6 +294,14 @@ class Step
               end
             end
             set_info :inputs, Misc.remove_long_items(Misc.zip2hash(task.inputs, info_inputs)) 
+          end
+
+          begin
+            run_dependencies
+          rescue Exception
+            Open.rm pid_file if Open.exists?(pid_file)
+            stop_dependencies
+            raise $!
           end
 
           set_info :started, (start_time = Time.now)
