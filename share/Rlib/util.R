@@ -182,7 +182,15 @@ rbbt.tsv.numeric <- function(filename, sep="\t", ...){
 }
 
 rbbt.tsv2matrix <- function(data){
-  new <- data.matrix(data);
+  d = data
+
+  d[d == TRUE] = 1
+  d[d == FALSE] = 0
+
+  d[d == 'true'] = 1
+  d[d == 'false'] = 0
+
+  new <- data.matrix(d);
   colnames(new) <- colnames(data);
   rownames(new) <- rownames(data);
   return(new);
@@ -521,11 +529,13 @@ rbbt.get.modes <- function(x,bw = NULL,spar = NULL) {
 rbbt.png_plot <- function(filename, p, width=500, height=500, ...){
     png(filename=filename, width=width, height=height, ...);
     eval(parse(text=p));
+    dev.off()
 }
 
 rbbt.tiff_plot <- function(filename, p, width=500, height=500, ...){
     tiff(filename=filename, width=width, height=height, ...);
     eval(parse(text=p));
+    dev.off()
 }
 
 

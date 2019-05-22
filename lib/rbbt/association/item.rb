@@ -218,3 +218,9 @@ module AssociationItem
     end
   end
 end
+
+module TSV
+  def self.incidence(tsv)
+    AssociationItem.incidence Association.index(tsv, :persist => false).keys
+  end
+end
