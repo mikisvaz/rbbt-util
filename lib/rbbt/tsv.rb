@@ -33,6 +33,8 @@ module TSV
     key, fields_str = field_options.split("~")
 
     fields = fields_str.nil? ? [] : fields_str.split(/,\s*/)
+
+    rest = ":type=" << rest if rest =~ /^:?\w+$/
     rest_options = rest.nil? ? {} : Misc.string2hash(rest)
 
     {:key_field => key, :fields => fields}.merge(rest_options)

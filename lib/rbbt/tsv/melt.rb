@@ -3,7 +3,8 @@ module TSV
     dumper = TSV::Dumper.new :key_field => "ID", :fields => [key_field] + info_fields, :type => :list
     dumper.init
     TSV.traverse tsv, :into => dumper, :fields => info_fields do |k,values|
-      values = [values] if tsv.type == :flat
+      values = [values] if tsv.type == :single
+      values = values.collect{|v| [v]} if tsv.type == :list
       values = Misc.zip_fields(values) if tsv.type == :double
 
       res = []
