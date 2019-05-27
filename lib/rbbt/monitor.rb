@@ -177,7 +177,8 @@ module Rbbt
 
                     CMD.cmd(cmd, :pipe => true).read.split("\n")
                   end
-          files = files.sort_by{|f| Open.mtime f}
+
+          files = files.sort_by{|f| Open.mtime(f) || Time.now}
           TSV.traverse files, :type => :array, :into => jobs, :_bar => "Finding jobs in #{ taskdir }" do |file|
             _files << file
             if m = file.match(/(.*)\.(info|pid|files)$/)
