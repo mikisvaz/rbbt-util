@@ -63,9 +63,6 @@ module Resource
       @resources[path] = [type, content || block]
 
       if type == :install
-        Log.debug "Preparing software: #{path}"
-        $set_software_env = false unless path.exists?
-        path.produce
         software_dir = path.resource.root.software
         set_software_env(software_dir) unless $set_software_env
         $set_software_env = true
@@ -192,6 +189,9 @@ module Resource
               run_rake(path, content, rake_dir)
             when :install
               Log.debug "Installing software: #{path}"
+
+              $set_software_env = false unless File.exists? path
+              
               software_dir = path.resource.root.software.find :user
               helper_file = File.expand_path(Rbbt.share.install.software.lib.install_helpers.find(:lib, caller_lib_dir(__FILE__)))
               #helper_file = File.expand_path(Rbbt.share.install.software.lib.install_helpers.find)
@@ -208,7 +208,8 @@ source "$INSTALL_HELPER_FILE"
               script = preamble + "\n" + Open.read(content)
               CMD.cmd_log('bash', :in => script)
 
-              set_software_env(software_dir)
+              set_software_env(software_dir) unless $set_software_env
+              $set_software_env = true
             else
               raise "Could not produce #{ resource }. (#{ type }, #{ content })"
             end

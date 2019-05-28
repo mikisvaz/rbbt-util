@@ -382,6 +382,7 @@ setup(){
         pkg_dir="$(dirname $pkg_dir)/current"
     fi
 
+    echo $pkg_dir
     if [ -d "$pkg_dir/bin/" ]; then
 
         for exe in ` find "$pkg_dir/bin/" -maxdepth 1 -type f -executable`; do
@@ -406,11 +407,12 @@ setup(){
     ([ -d "$pkg_dir/lib" ]           && add2file "$OPT_DIR/.ld-paths" "$pkg_dir/lib")
     ([ -d "$pkg_dir/lib64" ]         && add2file "$OPT_DIR/.ld-paths" "$pkg_dir/lib64")
     ([ -d "$pkg_dir/lib/pkgconfig" ] && add2file "$OPT_DIR/.pkgconfig-paths" "$pkg_dir/lib/pkgconfig")
+    echo $name setup
 }
 
 #{{{ HELPERS
 
-prepare_src_pkg(){
+prepare_pkg(){
     local name="$1"
     local url="$2"
     shift;shift;
@@ -425,7 +427,7 @@ install_src(){
     shift;shift;
     local extra="$@"
 
-    prepare_src_pkg "$name" "$url"
+    prepare_pkg "$name" "$url"
     build "$name"  "$extra"
 }
 

@@ -7,14 +7,18 @@ $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_c
 options = SOPT.setup <<EOF
 Calculate density 
 
-$ rbbt stat density <file>
+$ rbbt stat density <file> <plot>
 
 -h--help Help
+-m--max* Upper limit
 EOF
 
 SOPT.usage if options[:help]
 
 file = ARGV.shift
+plot = ARGV.shift
+
+file, plot = ["-", file] if plot.nil? and file.include? '.png'
 
 if file == '-' or file.nil?
   file = STDIN 
@@ -22,15 +26,26 @@ else
   file = Open.open file
 end
 
+
 values = file.read.split("\n").collect{|v| v.to_f}
+max = options[:max]
+
 
 res = TmpFile.with_file nil, :extension => 'png' do |tmp|
-  R.run <<-EOF
+  if max
+    R.run <<-EOF
 values = #{R.ruby2R values}
 d = density(values)
-rbbt.png_plot(filename = '#{tmp}', 'plot(d)')
-  EOF
+rbbt.png_plot(filename = '#{plot || tmp}', 'plot(d, xlim=c(0,#{max})); abline(v=mean(values))')
+    EOF
+  else
+    R.run <<-EOF
+values = #{R.ruby2R values}
+d = density(values)
+rbbt.png_plot(filename = '#{plot || tmp}', 'plot(d); abline(v=mean(values))')
+    EOF
+  end
 
-  `op '#{tmp}'` 
+  `op '#{plot || tmp}'` 
 end
 
