@@ -59,7 +59,8 @@ TP53 NFKB1|GLI1 activation|activation true|true
   end
 
   def test_gene_ages
-    assert Association.database('/home/mvazquezg/git/workflows/genomics/share/gene_ages', :source => "FamilyAge", :merge => true, :target => "Ensembl Gene ID", :persist => false).values.first.length > 1
+    file = datafile_test('gene_ages')
+    assert Association.database(file, :source => "FamilyAge", :merge => true, :target => "Ensembl Gene ID", :persist => false).values.first.length > 1
   end
 
   def __test_reorder_multiple_mismatch

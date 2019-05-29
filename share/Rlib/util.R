@@ -757,7 +757,7 @@ rbbt.install.bioc <-function(pkg){
 rbbt.install.biocManager <-function(pkg, ...){
     cat("Try BiocManager install:", pkg, "\n")
     res = FALSE
-    tryCatch({ BiocManager::install(pkg, ...) }, error = function(e){ warning(paste("Could not install BiocManager ", pkg, "\n")); res = FALSE })
+    tryCatch({ BiocManager::install(pkg, ...); res = TRUE }, error = function(e){ warning(paste("Could not install BiocManager ", pkg, "\n")); res = FALSE })
     return(res)
 }
 
@@ -782,8 +782,8 @@ rbbt.require <- function(pkg, ...){
     for (pkg in new.packages){ 
         if (!rbbt.install.github(pkg, ...)){
             if (!rbbt.install.CRAN(pkg, ...)){
+              if (!rbbt.install.biocManager(pkg, ...)){
                 if (!rbbt.install.bioc(pkg, ...)){
-                    if (!rbbt.install.biocManager(pkg, ...)){
                         stop("Error!", pkg)
                     }
                 }

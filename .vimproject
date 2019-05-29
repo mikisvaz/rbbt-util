@@ -433,11 +433,12 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
    stat=stat{
     abs
+    boxplot
+    compare_lists
     density
+    heatmap
     log
     pvalue.qqplot
-    heatmap
-    compare_lists
    }
    study=study{
     task

@@ -18,7 +18,7 @@ module Workflow
     :description        => "",
     :result_type        => nil,
     :result_description => "",
-    :extension          => '')
+    :extension          => nil)
 
 
   def helper(name, &block)
@@ -108,7 +108,20 @@ module Workflow
       :extension          => consume_extension,
       :input_options      => consume_input_options
     }
-    
+
+    task_info[:extension] = case task_info[:result_type].to_s
+                            when "tsv"
+                              "tsv"
+                            when "yaml"
+                              "yaml"
+                            when "marshal"
+                              "marshal"
+                            when "json"
+                              "json"
+                            else
+                              nil
+                            end if task_info[:extension].nil?
+
     task = Task.setup(task_info, &block)
 
     last_task = task

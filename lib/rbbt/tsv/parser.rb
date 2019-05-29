@@ -356,7 +356,6 @@ module TSV
       key_field = Misc.process_options options, :key_field
       fields    = Misc.process_options options, :fields
 
-
       if (key_field.nil? or key_field == 0 or key_field == :key) and
         (fields.nil? or fields == @fields or (not @fields.nil? and fields == (1..@fields.length).to_a))
 

@@ -113,7 +113,6 @@ module Association
   def self.open_stream(stream, options = {})
     fields, persist, data = Misc.process_options options, :fields, :persist, :data
 
-
     parser = TSV::Parser.new stream, options.merge(:fields => nil, :key_field => nil)
     options = options.merge(parser.options)
     options = Misc.add_defaults options, :type => :double, :merge => true
@@ -124,6 +123,8 @@ module Association
 
     parser.key_field = source_pos
     parser.fields = field_pos
+    parser.field_positions = field_pos
+    parser.key_position = source_pos
 
     #case parser.type
     #when :single
@@ -160,9 +161,10 @@ module Association
     data ||= {}
     tsv = nil
     TmpFile.with_file do |tmpfile|
-      tmp_data = Persist.open_database(tmpfile, true, :double, "HDB")
+      tmp_data = Persist.open_database(tmpfile, true, open_options[:type], "HDB")
 
       tsv = TSV.parse parser.stream, tmp_data, open_options
+      tsv = tsv.to_double
       tsv.key_field = source_header
       tsv.fields = field_headers
 

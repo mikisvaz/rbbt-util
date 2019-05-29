@@ -152,7 +152,8 @@ module Association
       target_format = process_formats(specs[:target][1] || specs[:target][0], format) || target_format unless target_format
     end
 
-    Log.low "Headers -- #{[source_pos, field_pos, source_header, field_headers, source_format, target_format]}"
-    [source_pos, field_pos, source_header, field_headers, source_format, target_format]
+    res = [source_pos, field_pos, source_header, field_headers, source_format, target_format]
+    Log.low "Headers -- #{res}"
+    res
   end
 end
