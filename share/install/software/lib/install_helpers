@@ -300,10 +300,10 @@ buid_cmake(){
     cmake -DMAKE_INSTALL_PREFIX=/ $extra ..
     if [ ! -f Makefile -a -f ../configure ]; then
         ../configure --prefix="$(opt_dir "$name")" $extra
-        make -j4
+        make -j 4
         make install || (cd .. ; mv build "$(opt_dir "$name")")
     else
-        make DESTDIR="$(opt_dir "$name")"  -j4 && make DESTDIR="$(opt_dir "$name")" install
+        make DESTDIR="$(opt_dir "$name")"  -j 4 && make DESTDIR="$(opt_dir "$name")" install
     fi
     cd ..
 
@@ -329,6 +329,9 @@ build(){
         echo "Extra params: $extra"
     fi
 
+    local old_pwd="`expand_path $(pwd)`"
+    cd "`build_dir`"
+
     [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd src
 
     if [ -f CMakeLists.txt ]; then
@@ -336,7 +339,8 @@ build(){
     else
         build_make "$name" $extra
     fi
-    
+
+    cd "$old_pwd"
 }
 
 #{{{ SETUP
@@ -382,7 +386,6 @@ setup(){
         pkg_dir="$(dirname $pkg_dir)/current"
     fi
 
-    echo $pkg_dir
     if [ -d "$pkg_dir/bin/" ]; then
 
         for exe in ` find "$pkg_dir/bin/" -maxdepth 1 -type f -executable`; do
