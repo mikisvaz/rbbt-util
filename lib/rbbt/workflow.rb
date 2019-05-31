@@ -213,6 +213,15 @@ module Workflow
                   end
   end
 
+  def import_task(workflow, orig, new)
+    new_task = workflow.tasks[orig].clone
+    new_task.workflow = self
+    new_task.name = new
+    tasks[new] = new_task
+    task_dependencies[new] = workflow.task_dependencies[orig]
+    task_description[new] = workflow.task_description[orig]
+  end
+
   def workdir=(path)
     path = Path.setup path.dup unless Path === path
     @workdir = path

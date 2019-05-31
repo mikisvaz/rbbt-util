@@ -179,18 +179,24 @@ module Misc
         "-" * (ref.length - m.length)
       when (ref.length == 1 and m.length == 1)
         m
+      when (ref == m)
+        nil
       else
         if ref == '-'
           res = '+' + m
         else
-          res = '-' * ref.length
-          res << m unless m == '-'
+          if ref[0] == m[0]
+            res = '+' << m[1..-1]
+          else
+            res = '-' * ref.length
+            res << m unless m == '-'
+          end
         end
         Log.debug{"Non-standard annotation: #{[ref, m]} (#{ muts }) => #{ res }"}
 
         res
       end
-    end
+    end.compact
 
     [pos, muts]
   end

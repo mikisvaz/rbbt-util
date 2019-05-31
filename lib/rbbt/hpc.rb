@@ -120,6 +120,11 @@ mkdir -p "$SINGULARITY_RUBY_INLINE"
 # Prepare container dir
 CONTAINER_DIR="#{contain}"
 mkdir -p $CONTAINER_DIR/.rbbt/etc/
+
+for dir in .ruby_inline git scratch home projects; do
+    mkdir -p $CONTAINER_DIR/$dir
+done
+
 for tmpd in persist_locks  produce_locks  R_sockets  sensiblewrite  sensiblewrite_locks  step_info_locks  tsv_open_locks; do
     mkdir -p $CONTAINER_DIR/.rbbt/tmp/$tmpd
 done

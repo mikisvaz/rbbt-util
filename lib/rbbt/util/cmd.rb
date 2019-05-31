@@ -4,6 +4,14 @@ require 'open3'
 
 module CMD
 
+  def self.gzip_pipe(file)
+    Open.gzip?(file) ? "<(gunzip -c '#{file}')" : "'#{file}'"
+  end
+
+  def self.bash(cmd)
+    %Q(bash <<EOF\n#{cmd}\nEOF\n)
+  end
+
   def self.process_cmd_options(options = {})
     string = ""
     options.each do |option, value|

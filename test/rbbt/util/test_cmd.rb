@@ -75,4 +75,7 @@ line33
     end
   end
 
+  def test_bash
+    puts CMD.bash("awk 'test'")
+  end
 end

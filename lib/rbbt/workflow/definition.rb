@@ -67,6 +67,7 @@ module Workflow
   def dep_task(name, *dependency, &block)
     dep(*dependency, &block)
     task name do
+      raise RbbtException, "dependency not found in dep_task" if dependencies.empty?
       dep = dependencies.last.join
       set_info :result_type, dep.info[:result_type]
       forget = config :forget_dep_tasks, :forget_dep_tasks, :default => FORGET_DEP_TASKS
