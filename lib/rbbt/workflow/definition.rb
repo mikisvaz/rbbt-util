@@ -64,16 +64,18 @@ module Workflow
   end
 
   FORGET_DEP_TASKS = ENV["RBBT_FORGET_DEP_TASKS"] == "true"
-  def dep_task(name, *dependency, &block)
-    dep(*dependency, &block)
+  def dep_task(name, workflow, oname, *rest, &block)
+    dep(workflow, oname, *rest, &block) 
+    extension workflow.tasks[oname].extension if workflow.tasks.include?(oname) unless @extension
     task name do
       raise RbbtException, "dependency not found in dep_task" if dependencies.empty?
       dep = dependencies.last.join
       set_info :result_type, dep.info[:result_type]
       forget = config :forget_dep_tasks, :forget_dep_tasks, :default => FORGET_DEP_TASKS
       if forget
+        self.set_info :archived_info, archived_info
+        self.set_info :archived_dependencies, info[:dependencies]
         self.dependencies = self.dependencies - [dep]
-        self.set_info :dependency, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
         Open.rm_rf self.files_dir if Open.exist? self.files_dir
         FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist? dep.files_dir
         Open.ln_h dep.path, self.tmp_path

@@ -214,7 +214,17 @@ module Workflow
   end
 
   def import_task(workflow, orig, new)
-    new_task = workflow.tasks[orig].clone
+    orig_task = workflow.tasks[orig]
+    new_task = orig_task.dup
+    options = {}
+    orig_task.singleton_methods.
+      select{|method| method.to_s[-1] != "="[0]}.each{|method|
+      if orig_task.respond_to?(method.to_s + "=") 
+        options[method.to_s] = orig_task.send(method.to_s)
+      end
+    }
+
+    Task.setup(options, &new_task)
     new_task.workflow = self
     new_task.name = new
     tasks[new] = new_task

@@ -67,6 +67,7 @@ class Step
     @workflow || info[:workflow]
   end
 
+
   def load_inputs_from_info
     if info[:inputs]
       info_inputs = info[:inputs]
@@ -92,6 +93,37 @@ class Step
     @inputs || []
   end
 
+  def archived_info
+    return info[:archived_info] if info[:archived_info]
+
+    archived_info = {}
+    dependencies.each do |dep|
+      archived_info[dep.path] = dep.info
+      archived_info.merge!(dep.archived_info)
+    end if dependencies
+
+    archived_info
+  end
+
+  def archived_inputs
+    return {} unless info[:archived_dependencies]
+    archived_info = self.archived_info
+
+    all_inputs = IndiferentHash.setup({})
+    deps = info[:archived_dependencies].collect{|p| p.last}
+    seen = []
+    while path = deps.pop
+      dep_info = archived_info[path]
+      dep_info[:inputs].each do |k,v|
+        all_inputs[k] = v unless all_inputs.include?(k)
+      end
+      deps.concat(dep_info[:dependencies].collect{|p| p.last } - seen)
+      seen << path
+    end
+
+    all_inputs
+  end
+
   def recursive_inputs
     if NamedArray === inputs
       i = {}
@@ -103,6 +135,7 @@ class Step
     end
     rec_dependencies.each do |dep|
       next unless NamedArray === dep.inputs
+
       dep.inputs.zip(dep.inputs.fields).each do |v,f|
         if i.include?(f) && i[f] != v
           Log.debug "Conflict in #{ f }: #{[i[f].inspect, v.inspect] * " <-> "}"
@@ -111,7 +144,16 @@ class Step
           i[f] = v
         end
       end
+
+      dep.archived_inputs.each do |k,v|
+        i[k] = v unless i.include? k
+      end
     end
+
+    self.archived_inputs.each do |k,v|
+      i[k] = v unless i.include? k
+    end
+
     #dependencies.each do |dep|
     #  di = dep.recursive_inputs
     #  next unless NamedArray === di
@@ -119,6 +161,7 @@ class Step
     #    i[k] = v unless i.include? k
     #  end
     #end
+    
     v = i.values
     NamedArray.setup v, i.keys 
     v
