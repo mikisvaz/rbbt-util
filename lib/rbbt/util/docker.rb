@@ -1,5 +1,5 @@
 module Docker
-  def self.run(image, cmd, options)
+  def self.run(image, cmd, options = {})
     mounts, job_inputs, directory, pipe = Misc.process_options options, :mounts, :job_inputs, :directory, :pipe
 
     if mounts
@@ -18,7 +18,7 @@ module Docker
       job_inputs.each do |name,obj|
         case obj
         when File 
-          FileUtils.cp obj.filename, directory[name]
+          Open.ln_h Open.realpath(obj.filename), directory[name]
         when IO
           begin
             Open.write(directory[name], obj)
@@ -27,21 +27,27 @@ module Docker
           end
         when String
           if obj.length < 256 and File.exist?(obj)
-            FileUtils.cp obj, directory[name]
+            Open.ln_h Open.realpath(obj), directory[name]
           else
             Open.write(directory[name], obj)
           end
         end
       end if job_inputs
+      cmd = "docker run #{mount_cmd} #{image_cmd} #{cmd}"
+      if pipe
+        CMD.cmd(cmd, :log => true, :pipe => true)
+      else
+        CMD.cmd_log(cmd, :log => true)
+      end
     else
       TmpFile.with_file do |tmpfile|
         Path.setup(tmpfile)
-        FileUtils.mkdir_p tmpfile
+        Open.mkdir tmpfile
         mount_cmd += " -v '#{tmpfile}':/job"
         job_inputs.each do |name,obj|
           case obj
           when File 
-            FileUtils.cp obj.filename, tmpfile[name]
+            Open.ln_h Open.realpath(obj.filename), tmpfile[name]
           when IO
             begin
               Open.write(tmpfile[name], obj)
@@ -50,21 +56,15 @@ module Docker
             end
           when String
             if obj.length < 256 and File.exist?(obj)
-              FileUtils.cp obj, tmpfile[name]
+              Open.ln_h Open.realpath(obj), tmpfile[name]
             else
               Open.write(tmpfile[name], obj)
             end
           end
         end if job_inputs
-        pipe = false
+        cmd = "docker run #{mount_cmd} #{image_cmd} #{cmd}"
+        CMD.cmd_log(cmd, :log => true)
       end
-
-    end
-    cmd = "docker run #{mount_cmd} #{image_cmd} #{cmd}"
-    if pipe
-      CMD.cmd(cmd, :log => true, :pipe => true)
-    else
-      CMD.cmd_log(cmd, :log => true)
     end
   end
 end

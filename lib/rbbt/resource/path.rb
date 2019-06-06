@@ -378,9 +378,9 @@ module Path
 
   def replace_extension(new_extension = nil, multiple = false)
     if multiple
-      new_path = self.sub(/(\.[^\.\/]{2,4})+$/,'')
+      new_path = self.sub(/(\.[^\.\/]{2,5})+$/,'')
     else
-      new_path = self.sub(/\.[^\.\/]{2,4}$/,'')
+      new_path = self.sub(/\.[^\.\/]{2,5}$/,'')
     end
     new_path = new_path + "." + new_extension.to_s
     self.annotate(new_path)
