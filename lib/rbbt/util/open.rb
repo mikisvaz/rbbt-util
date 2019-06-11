@@ -272,7 +272,6 @@ module Open
   def self.file_open(file, grep, mode = 'r', invert_grep = false)
     if (dir_sub_path = find_repo_dir(file))
       if mode.include? 'w'
-
         stream = StringIO.new
         class << stream
           attr_accessor :dir_sub_path
@@ -287,6 +286,8 @@ module Open
         stream = get_stream_from_repo(*dir_sub_path)
       end
     else
+      Open.mkdir File.dirname(file) if mode.include? 'w'
+
       file = file.find if Path === file
       stream =  File.open(file, mode)
     end

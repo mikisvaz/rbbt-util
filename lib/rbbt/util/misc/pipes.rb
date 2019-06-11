@@ -194,8 +194,11 @@ module Misc
               begin 
                 sin.write block
               rescue IOError
-                Log.error("Tee stream #{i} #{Misc.fingerprint stream} IOError: #{$!.message}");
+                Log.error("Tee stream #{i} #{Misc.fingerprint stream} IOError: #{$!.message} (#{Misc.fingerprint sin})");
                 skip[i] = true
+              rescue
+                Log.error("Tee stream #{i} #{Misc.fingerprint stream} Exception: #{$!.message} (#{Misc.fingerprint sin})");
+                raise $!
               end unless skip[i] 
             end
           end

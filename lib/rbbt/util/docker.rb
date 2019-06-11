@@ -1,6 +1,7 @@
 module Docker
   def self.run(image, cmd, options = {})
-    mounts, job_inputs, directory, pipe = Misc.process_options options, :mounts, :job_inputs, :directory, :pipe
+    mounts, job_inputs, directory, pipe, host_user = Misc.process_options options, :mounts, :job_inputs, :directory, :pipe, :host_user
+    pipe = false if pipe.nil?
 
     if mounts
       mounts.each{|t,s| FileUtils.mkdir_p s unless File.exist? s}
@@ -10,6 +11,8 @@ module Docker
     end
 
     image_cmd = "-t #{image}"
+    
+    user_cmd = host_user ? "-u $(id -u ${USER}):$(id -g ${USER})" : "" 
 
     if directory
       Path.setup(directory) unless Path === directory
@@ -33,12 +36,9 @@ module Docker
           end
         end
       end if job_inputs
-      cmd = "docker run #{mount_cmd} #{image_cmd} #{cmd}"
-      if pipe
-        CMD.cmd(cmd, :log => true, :pipe => true)
-      else
-        CMD.cmd_log(cmd, :log => true)
-      end
+
+      cmd = "docker run #{mount_cmd} #{user_cmd} #{image_cmd} #{cmd}"
+      CMD.cmd_log(cmd, :log => true, :pipe => pipe)
     else
       TmpFile.with_file do |tmpfile|
         Path.setup(tmpfile)
@@ -62,7 +62,8 @@ module Docker
             end
           end
         end if job_inputs
-        cmd = "docker run #{mount_cmd} #{image_cmd} #{cmd}"
+
+        cmd = "docker run #{mount_cmd} #{user_cmd} #{image_cmd} #{cmd}"
         CMD.cmd_log(cmd, :log => true)
       end
     end
