@@ -116,8 +116,8 @@ class Step
       dep_info = archived_info[path]
       dep_info[:inputs].each do |k,v|
         all_inputs[k] = v unless all_inputs.include?(k)
-      end
-      deps.concat(dep_info[:dependencies].collect{|p| p.last } - seen)
+      end if dep_info[:inputs]
+      deps.concat(dep_info[:dependencies].collect{|p| p.last } - seen) if dep_info[:dependencies]
       seen << path
     end
 
