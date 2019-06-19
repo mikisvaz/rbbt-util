@@ -250,6 +250,7 @@ build_make(){
 
 
     [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd src
+    [ -d source -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd source
 
     echo "Building with configure $name"
     if [ "x$extra" != "x" ]; then
@@ -287,6 +288,7 @@ buid_cmake(){
 
 
     [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd src
+    [ -d source -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd source
 
     echo "Building with cmake $name"
     if [ "x$extra" != "x" ]; then

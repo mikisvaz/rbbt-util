@@ -212,7 +212,7 @@ class Step
       type, *rest = type
     end
 
-    canfail = rest && rest.include?(:canfail)
+    canfail = (rest && rest.include?(:canfail)) || type == :canfail
 
     case type
     when :canfail

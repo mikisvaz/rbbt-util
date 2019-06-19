@@ -376,11 +376,15 @@ module Path
     self.annotate(new_path)
   end
 
+  def self.get_extension(path)
+    path.match(/\.([^\.\/]{1,5})$/)[1]
+  end
+
   def replace_extension(new_extension = nil, multiple = false)
     if multiple
-      new_path = self.sub(/(\.[^\.\/]{2,5})+$/,'')
+      new_path = self.sub(/(\.[^\.\/]{1,5})+$/,'')
     else
-      new_path = self.sub(/\.[^\.\/]{2,5}$/,'')
+      new_path = self.sub(/\.[^\.\/]{1,5}$/,'')
     end
     new_path = new_path + "." + new_extension.to_s
     self.annotate(new_path)
