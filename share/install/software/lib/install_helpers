@@ -273,8 +273,6 @@ build_make(){
         setup "$name"
         clean_build
     fi
-
-    cd "$old_pwd"
 }
 
 buid_cmake(){
@@ -388,7 +386,7 @@ setup(){
         pkg_dir="$(dirname $pkg_dir)/current"
     fi
 
-    if [ -d "$pkg_dir/bin/" ]; then
+    if [ -d "$pkg_dir/bin/" -o -d "$pkg_dir/usr/local/bin/" ]; then
 
         for exe in ` find "$pkg_dir/bin/" -maxdepth 1 -type f -executable`; do
             exe=$(basename $exe)
@@ -396,10 +394,17 @@ setup(){
             link "$pkg_dir/bin/$exe" "$OPT_DIR/bin/$exe" 2>/dev/null
         done
 
+        for exe in ` find "$pkg_dir/usr/local/bin/" -maxdepth 1 -type f -executable`; do
+            exe=$(basename $exe)
+            rm -f "$OPT_DIR/usr/local/bin/$exe"
+            link "$pkg_dir/usr/local/bin/$exe" "$OPT_DIR/bin/$exe" 2>/dev/null
+        done
+
+
     else
         local old_pwd="`expand_path $(pwd)`"
 
-        for exe in ` find "$pkg_dir/" "$pkg_dir/src/" -maxdepth 1 -type f -executable`; do
+        for exe in ` find "$pkg_dir/" "$pkg_dir/source/" "$pkg_dir/src/" -maxdepth 1 -type f -executable`; do
             orig=$exe
             exe=$(basename $exe)
             echo "EXE $exe"

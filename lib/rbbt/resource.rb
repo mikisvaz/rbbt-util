@@ -205,7 +205,65 @@ INSTALL_HELPER_FILE="#{helper_file}"
 source "$INSTALL_HELPER_FILE"
               EOF
 
-              script = preamble + "\n" + Open.read(content)
+              content = content.call if Proc === content
+
+              content = if content =~ /git:|\.git$/
+                          {:git => content}
+                        else
+                          {:src => content}
+                        end if String === content and Open.remote?(content)
+
+              script_text = case content
+                            when nil
+                              raise "No way to install #{path}"
+                            when Path
+                              Open.read(content) 
+                            when String
+                              if Misc.is_filename?(content) and Open.exists?(content)
+                                Open.read(content) 
+                              else
+                                content
+                              end
+                            when Hash
+                              name = content[:name] || File.basename(path)
+                              git = content[:git]
+                              src = content[:src]
+                              url = content[:url]
+                              extra = content[:extra]
+                              commands = content[:commands]
+                              if git
+                                <<-EOF
+
+name='#{name}'
+url='#{git}'
+
+install_git "$name" "$url" #{extra}
+
+#{commands}
+                                EOF
+                              elsif src
+                                <<-EOF
+
+name='#{name}'
+url='#{src}'
+
+install_src "$name" "$url" #{extra}
+
+#{commands}
+                                EOF
+                              else
+                                <<-EOF
+
+name='#{name}'
+url='#{url}'
+
+#{commands}
+                                EOF
+                              end
+                            end
+
+              script = preamble + "\n" + script_text
+              Log.debug "Installing software with script:\n" << script
               CMD.cmd_log('bash', :in => script)
 
               set_software_env(software_dir) unless $set_software_env

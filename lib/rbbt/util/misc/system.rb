@@ -99,14 +99,14 @@ end
     res
   end
 
-  def self.filename?(string)
-    String === string and string.length > 0 and string.length < 250 and File.exist?(string)
-  end
-
   def self.is_filename?(string)
     return true if defined? PATH and Path === string
     return true if string.respond_to? :exists
-    return true if String === string and string.length < 265 and File.exist? string
+    return true if String === string and string.length < 265 and File.exist?(string)
     return false
+  end
+
+  class << self
+    alias filename? is_filename?
   end
 end
