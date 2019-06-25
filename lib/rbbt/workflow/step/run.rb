@@ -319,7 +319,7 @@ class Step
 
             # HACK: This fixes an strange behaviour in 1.9.3 where some
             # backtrace strings are coded in ASCII-8BIT
-            backtrace.each{|l| l.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
+            backtrace = backtrace.collect{|l| l.dup.force_encoding("UTF-8")} if String.instance_methods.include? :force_encoding
             set_info :backtrace, backtrace 
             log(:error, "#{$!.class}: #{$!.message}")
             stop_dependencies
