@@ -81,6 +81,15 @@ Entity.entity_property_cache = Rbbt.var.sinatra.app[app_name].find.entity_proper
 
 Sinatra::RbbtRESTMain.add_resource_path($app_dir.www.views.find, true)
 
+require 'tilt/sass'
+class Tilt::SassTemplate
+  private
+  def sass_options
+    options.merge(:filename => eval_file, :line => line, :syntax => :sass, :load_paths => RbbtRESTHelpers.sass_resources)
+  end
+end
+
+
 $title = app_name
 require 'rack'
 use Rack::Deflater

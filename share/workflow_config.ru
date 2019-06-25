@@ -142,6 +142,14 @@ app.get '/reload_workflow' do
   halt 200, "Workflow #{ workflow } reloaded"
 end
 
+require 'tilt/sass'
+class << Tilt::SassTemplate
+  private
+  def sass_options
+    options.merge(:filename => eval_file, :line => line, :syntax => :scss, :load_paths => RbbtRESTHelpers.sass_resources)
+  end
+end
+
 #{{{ RUN
 require 'rack'
 use Rack::Deflater

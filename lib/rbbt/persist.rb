@@ -124,6 +124,10 @@ module Persist
           content = stream.read.unpack("m").first
           Marshal.load(content) 
         end
+      when :json
+        Open.open(path) do |stream|
+          JSON.parse(stream.read)
+        end
       when :yaml
         Open.open(path) do |stream|
           YAML.load(stream)
@@ -186,6 +190,8 @@ module Persist
     when :marshal
       dump = Marshal.dump(content)
       Misc.sensiblewrite(path, [dump].pack("m"), :lock => lockfile)
+    when :json
+      Misc.sensiblewrite(path, JSON.dump(content), :lock => lockfile)
     when :yaml
       Misc.sensiblewrite(path, YAML.dump(content), :lock => lockfile)
     when :float, :integer, :tsv

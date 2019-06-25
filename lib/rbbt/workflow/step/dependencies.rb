@@ -220,7 +220,7 @@ class Step
         begin
           dep.produce
         rescue RbbtException
-          Log.warn "Allowing failing of #{dep.path}: #{dep.messages.last}"
+          Log.warn "Allowing failing of #{dep.path}: #{dep.messages.last if dep.messages}"
         end
         nil
       end
