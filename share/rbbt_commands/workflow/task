@@ -161,12 +161,14 @@ available. Examples can be enacted using `rbbt workflow example <workflow>
 
 When a task is enacted a job is instantiated. This job is identified by the
 `jobname` (which is *Default* unless specified otherwise) and the values of the
-parameters. If the same taks is enacted using the same `jobname` and
-parameters, then the same job will be the same. 
+parameters; these two things determine the filename under which the job result
+will be saved. If the taks is enacted using the same `jobname` and parameters
+it will result in the same job, pointing to the same result file.
 
-The first time a job is executed it will save the result. Once the job is done
-you can re-doit using the `clean` parameter. The `recursive_clean` cleans all
-the job dependencies recursively.
+The first time a job is executed it will save the result. The saved result will
+be returned directly if the same task is re-enacted. Once the job is done you
+can redo it using the `clean` parameter, this cleans the last step of the task.
+The `recursive_clean` cleans all the job dependency steps recursively.
 
 -h--help Show this help
 -wd--workdir* Change the working directory of the workflow

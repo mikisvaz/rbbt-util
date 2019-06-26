@@ -28,5 +28,5 @@ SOPT.usage if options[:help]
 
 target, *files = ARGV
 
-raise "Target already exists: #{ target }" if File.exists?(target) and not File.directory(target)
+raise "Target already exists: #{ target }" if File.exists?(target) and not File.directory?(target)
 Step.archive(files, target)
