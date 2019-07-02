@@ -74,7 +74,7 @@ module TSV
     else
       stream = get_stream(file)
       stream.abort(exception) if stream.respond_to? :abort
-      AbortedStream.setup(stream, exception)
+      AbortedStream.setup(stream, exception) unless stream.respond_to?(:exception) && stream.exception
     end
   end
 

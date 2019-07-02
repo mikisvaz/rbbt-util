@@ -261,7 +261,7 @@ module Log
       color = :green if line =~ /workflow/
       color = :blue if line =~ /rbbt-/
       Log.color color, line
-    end
+    end unless stack.nil?
   end
 
   def self.tsv(tsv)
