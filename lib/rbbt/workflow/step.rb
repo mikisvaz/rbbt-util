@@ -118,6 +118,7 @@ class Step
         all_inputs[k] = v unless all_inputs.include?(k)
       end if dep_info[:inputs]
       deps.concat(dep_info[:dependencies].collect{|p| p.last } - seen) if dep_info[:dependencies]
+      deps.concat(dep_info[:archived_dependencies].collect{|p| p.last } - seen) if dep_info[:archived_dependencies]
       seen << path
     end
 

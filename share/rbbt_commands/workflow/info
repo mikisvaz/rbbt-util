@@ -156,6 +156,7 @@ if recursive
     deps = deps.concat dep.dependencies
   end
 
+  inputs = inputs.merge step.archived_inputs
   if inputs.any?
     puts Log.color(:magenta, "Recursive inputs") << ": "
     inputs.each do |input,value|
