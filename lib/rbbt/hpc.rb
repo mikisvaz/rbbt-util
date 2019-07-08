@@ -22,6 +22,12 @@ module Marenostrum
       copy_image       = options.delete :copy_image
       exclusive        = options.delete :exclusive
       highmem          = options.delete :highmem
+
+      queue            = options.delete(:queue) || 'bsc_ls'
+      task_cpus        = options.delete(:task_cpus) || 1
+      nodes            = options.delete(:nodes) || 1
+      time             = options.delete(:time) || "0:00:10"
+
       inputs_dir       = options.delete :inputs_dir
       config_keys      = options.delete :config_keys
 
@@ -36,30 +42,40 @@ module Marenostrum
 
 
       name = options[:name] ||= Misc.obj2digest({:options => options.collect{|k,v| [k,v]}.sort_by{|k,v| k.to_s }, :args => args})
-      workdir = options[:workdir] ||= File.expand_path(File.join('~/rbbt-workdir', name)) if workdir.nil?
+      options.delete(:name)
+      slurm_basedir = options[:slurm_basedir] ||= File.expand_path(File.join('~/rbbt-slurm', name)) if slurm_basedir.nil?
+      options.delete(:slurm_basedir)
 
       rbbt_cmd = args.reject{|e| e == '--' }.collect{|e| e.include?(" ")? '"' + e + '"' : e } * " "
 
+      rbbt_cmd += " "  << options.collect do |o,v|
+        o = o.to_s
+        case v
+        when TrueClass 
+          '--' << o
+        when FalseClass 
+          '--' << o << "=false"
+        else
+          ['--' << o, "'#{v}'"] * " "
+        end
+      end * " "
+
       rbbt_cmd << " --config_keys='#{config_keys}'" if config_keys and not config_keys.empty?
 
-      queue = options[:queue] || 'bsc_ls'
-      task_cpus = options[:task_cpus] || 1
-      nodes = options[:nodes] || 1
-      time = options[:time] || "0:00:10"
 
       time = Misc.format_seconds Misc.timespan(time) unless time.include? ":"
 
 
       #{{{ PREPARE LOCAL LOGFILES
 
-      Open.mkdir workdir
+      Open.mkdir slurm_basedir
 
-      fout = File.join(workdir, 'std.out')
-      ferr = File.join(workdir, 'std.err')
-      fjob = File.join(workdir, 'job.id')
-      fexit = File.join(workdir, 'exit.status')
-      fsync = File.join(workdir, 'sync.log')
-      fcmd = File.join(workdir, 'command.slurm')
+      fout = File.join(slurm_basedir, 'std.out')
+      ferr = File.join(slurm_basedir, 'std.err')
+      fjob = File.join(slurm_basedir, 'job.id')
+      fexit = File.join(slurm_basedir, 'exit.status')
+      fsync = File.join(slurm_basedir, 'sync.log')
+      fcmd = File.join(slurm_basedir, 'command.slurm')
 
       #{{{ GENERATE TEMPLATE
 
@@ -115,13 +131,17 @@ mkdir -p "$SINGULARITY_RUBY_INLINE"
 
       if contain
         user = ENV['USER'] || `whoami`.strip
+        group = File.basename(File.dirname(ENV['HOME']))
+        scratch_group_dir = File.join('/gpfs/scratch/', group)
+        projects_group_dir = File.join('/gpfs/projects/', group)
+
         env +=<<-EOF
 
 # Prepare container dir
 CONTAINER_DIR="#{contain}"
 mkdir -p $CONTAINER_DIR/.rbbt/etc/
 
-for dir in .ruby_inline git scratch home projects; do
+for dir in .ruby_inline git home; do
     mkdir -p $CONTAINER_DIR/$dir
 done
 
@@ -140,19 +160,24 @@ echo "group_scratch: $CONTAINER_DIR/scratch/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $C
 echo "user_projects: $CONTAINER_DIR/projects/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "user_scratch: $CONTAINER_DIR/scratch/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "/scratch/tmp/rbbt/projects/rbbt/workflows/" > $CONTAINER_DIR/.rbbt/etc/workflow_dir
+
+[[ -f "$CONTAINER_DIR/projects" ]] || ln -s '#{projects_group_dir}' "$CONTAINER_DIR/projects"
+[[ -f "$CONTAINER_DIR/scratch" ]] || ln -s '#{scratch_group_dir}' "$CONTAINER_DIR/scratch"
         EOF
         
         if inputs_dir
           env +=<<-EOF
 
 # Copy inputs
-cp -R '#{inputs_dir}' $CONTAINER_DIR/inputs
+[[ -d '#{inputs_dir}' ]] && cp -R '#{inputs_dir}' $CONTAINER_DIR/inputs
           EOF
           rbbt_cmd = rbbt_cmd.sub(inputs_dir, "#{contain}/inputs")
         end
 
         if copy_image
           env +=<<EOF
+
+# Copy image
 rsync -avz "$SINGULARITY_IMG" "$CONTAINER_DIR/rbbt.singularity.img"
 SINGULARITY_IMG="$CONTAINER_DIR/rbbt.singularity.img"
 EOF
@@ -160,8 +185,11 @@ EOF
 
         if  wipe_container == "pre" || wipe_container == "both"
           env +=<<-EOF
+
+# Clean container pre
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv .rbbt/var/jobs &>> #{fsync}
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean -f &>> #{fsync}
+singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv tmp/ &>> #{fsync}
 EOF
         end
       end
@@ -171,10 +199,16 @@ EOF
 
       if singularity
         if contain
-          group = File.basename(File.dirname(ENV['HOME']))
-          scratch_group_dir = File.join('/gpfs/scratch/', group)
-          projects_group_dir = File.join('/gpfs/projects/', group)
-          exec_cmd = %(singularity exec -e -C -H "$CONTAINER_DIR" -B /scratch/tmp -B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$CONTAINER_DIR/.ruby_inline":rw  -B ~/git:"$CONTAINER_DIR/git":ro -B #{scratch_group_dir}:"$CONTAINER_DIR/scratch":ro -B ~/.rbbt/software/opt/:"/opt/":ro  -B ~/.rbbt:"$CONTAINER_DIR/home/":ro -B #{projects_group_dir}:"$CONTAINER_DIR/projects":ro "$SINGULARITY_IMG" env TMPDIR="$CONTAINER_DIR/.rbbt/tmp" env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m" rbbt)
+          exec_cmd = %(singularity exec -e -C -H "$CONTAINER_DIR" \
+-B /apps/ \
+-B /scratch/tmp \
+-B "$SINGULARITY_RUBY_INLINE":"$CONTAINER_DIR/.ruby_inline":rw  \
+-B ~/git:"$CONTAINER_DIR/git":ro \
+-B ~/.rbbt/software/opt/:"/opt/":ro \
+-B ~/.rbbt:"$CONTAINER_DIR/home/":ro \
+-B #{scratch_group_dir} \
+-B #{projects_group_dir} \
+"$SINGULARITY_IMG" env TMPDIR="$CONTAINER_DIR/.rbbt/tmp" env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m" rbbt)
         else
           exec_cmd = %(singularity exec -e -B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$HOME/.ruby_inline":rw "$SINGULARITY_IMG" env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m" rbbt)
         end
@@ -213,7 +247,15 @@ singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean 
 EOF
         end
 
-        source = File.join(File.expand_path(contain), '.rbbt/var/jobs')
+        if sync.include?("=>")
+          source, _sep, sync = sync.partition("=>")
+          source = source.strip
+          sync = sync.strip
+          source = File.join(File.expand_path(contain), source)
+        else
+          source = File.join(File.expand_path(contain), '.rbbt/var/jobs')
+        end
+
         target = File.expand_path(sync)
         coda +=<<-EOF
 rsync -avt "#{source}/" "#{target}/" &>> #{fsync} 
@@ -227,6 +269,7 @@ singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean 
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -v /dev/shm/sem.*.{in,out,process} /dev/shm/sem.Session-PID.*.sem 2> /dev/null >> #{fsync}
 if [ $sync_es == '0' ]; then 
     singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv .rbbt/var/jobs &>> #{fsync}
+    singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv tmp/ &>> #{fsync}
 else
     echo "WARNING: Results could not sync correctly. Job directory not purged"
 fi
@@ -248,17 +291,17 @@ EOF
     
     def self.issue_template(template, options = {})
 
-      workdir = options[:workdir]
-      Open.mkdir workdir
+      slurm_basedir = options[:slurm_basedir]
+      Open.mkdir slurm_basedir
 
       dry_run = options.delete :dry_run
 
-      fout  = File.join(workdir, 'std.out')
-      ferr  = File.join(workdir, 'std.err')
-      fjob  = File.join(workdir, 'job.id')
-      fexit = File.join(workdir, 'exit.status')
-      fsync = File.join(workdir, 'sync.log')
-      fcmd  = File.join(workdir, 'command.slurm')
+      fout  = File.join(slurm_basedir, 'std.out')
+      ferr  = File.join(slurm_basedir, 'std.err')
+      fjob  = File.join(slurm_basedir, 'job.id')
+      fexit = File.join(slurm_basedir, 'exit.status')
+      fsync = File.join(slurm_basedir, 'sync.log')
+      fcmd  = File.join(slurm_basedir, 'command.slurm')
 
       job = nil
       if options[:clean_job]
@@ -279,9 +322,9 @@ EOF
         if File.exists?(fout)
           return
         elsif dry_run
-          STDERR.puts Log.color(:magenta, "To execute run: ") + Log.color(:blue, "sbatch '#{workdir}/command.slurm'")
-          STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): ") + Log.color(:blue, "rbbt mn --tail -w '#{workdir}'")
-          raise Marenostrum::SBATCH, workdir
+          STDERR.puts Log.color(:magenta, "To execute run: ") + Log.color(:blue, "sbatch '#{slurm_basedir}/command.slurm'")
+          STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): ") + Log.color(:blue, "rbbt mn --tail -w '#{slurm_basedir}'")
+          raise Marenostrum::SBATCH, slurm_basedir
         else
           Open.rm fsync
           Open.rm fexit
@@ -293,11 +336,11 @@ EOF
       end
     end
 
-    def self.follow_job(workdir, tail = true)
-      fjob = File.join(workdir, 'job.id')
-      fout = File.join(workdir, 'std.out')
-      ferr = File.join(workdir, 'std.err')
-      fstatus = File.join(workdir, 'job.status')
+    def self.follow_job(slurm_basedir, tail = true)
+      fjob = File.join(slurm_basedir, 'job.id')
+      fout = File.join(slurm_basedir, 'std.out')
+      ferr = File.join(slurm_basedir, 'std.err')
+      fstatus = File.join(slurm_basedir, 'job.status')
 
       job = Open.read(fjob).strip if Open.exists?(fjob)
 
@@ -309,6 +352,7 @@ EOF
       end
 
       if tail
+        Log.severity = 10
         while ! File.exists? fout
           if job
             STDERR.puts
@@ -356,9 +400,9 @@ EOF
       end
     end
 
-    def self.wait_for_job(workdir, time = 1)
-      fexit = File.join(workdir, 'exit.status')
-      fjob = File.join(workdir, 'job.id')
+    def self.wait_for_job(slurm_basedir, time = 1)
+      fexit = File.join(slurm_basedir, 'exit.status')
+      fjob = File.join(slurm_basedir, 'job.id')
       job = Open.read(fjob) if Open.exists?(fjob)
 
 
@@ -368,33 +412,34 @@ EOF
     end
 
     def self.run_job(job, options = {})
+      options = IndiferentHash.setup(options.dup)
+        
+      dry_run          = options.delete :dry_run
+
       workflow = job.workflow
       task = job.task_name
-      name = job.clean_name
-      keep_workdir = options.delete :keep_SLURM_workdir 
+
+      keep_slurm_basedir = options.delete :keep_SLURM_slurm_basedir 
       slurm_basedir = options.delete :SLURM_basedir
-      slurm_basedir = "~/rbbt-workdir" if slurm_basedir.nil?
-      TmpFile.with_file(nil, !keep_workdir, :tmpdir => slurm_basedir, :prefix => "SLURM_rbbt_job-") do |tmp_directory|
-        workdir = options[:workdir] ||= File.join(tmp_directory, 'workdir')
+      slurm_basedir = "~/rbbt-slurm" if slurm_basedir.nil?
+      TmpFile.with_file(nil, !keep_slurm_basedir, :tmpdir => slurm_basedir, :prefix => "SLURM_rbbt_job-") do |tmp_directory|
+        options[:slurm_basedir] ||= File.join(tmp_directory, 'workdir')
+        slurm_basedir = options[:slurm_basedir]
         inputs_dir = File.join(tmp_directory, 'inputs_dir')
         Step.save_job_inputs(job, inputs_dir)
         options[:inputs_dir] = inputs_dir
-        cmd = ['workflow', 'task', workflow.to_s, task.to_s, '-pf', '-jn', name, '--load_inputs', inputs_dir, '--log', (options[:log] || Log.severity).to_s]
+        cmd = ['workflow', 'task', workflow.to_s, task.to_s, '-pf', '--load_inputs', inputs_dir, '--log', (options[:log] || Log.severity).to_s]
 
-        %w(workflows requires remote_workflow_tasks override_deps).each do |key|
-          next unless options[key]
-          cmd += ["--#{key.to_s}", options[key]]
-        end
 
         template = self.template(cmd, options)
-        self.issue_template(template, options)
+        self.issue_template(template, options.merge(:slurm_basedir => slurm_basedir, :dry_run => dry_run))
         t_monitor = Thread.new do
-          self.follow_job(workdir, :STDERR)
+          self.follow_job(slurm_basedir, :STDERR)
         end
-        self.wait_for_job(workdir)
+        self.wait_for_job(slurm_basedir)
         t_monitor.raise Aborted
-        return unless Open.read(File.join(workdir, 'exit.status')).strip == '0'
-        path = Open.read(File.join(workdir, 'std.out')).strip
+        return unless Open.read(File.join(slurm_basedir, 'exit.status')).strip == '0'
+        path = Open.read(File.join(slurm_basedir, 'std.out')).strip
         if Open.exists?(path) && job.path != path
           Log.info "Path of SLURM job #{path} is different from original job #{job.path}. Stablishing link."
           Open.ln path, job.path
