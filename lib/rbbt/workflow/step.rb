@@ -139,7 +139,7 @@ class Step
 
       dep.inputs.zip(dep.inputs.fields).each do |v,f|
         if i.include?(f) && i[f] != v
-          Log.debug "Conflict in #{ f }: #{[i[f].inspect, v.inspect] * " <-> "}"
+          Log.debug "Conflict in #{ f }: #{[Misc.fingerprint(i[f]), Misc.fingerprint(v)] * " <-> "}"
           i[f] = nil
         else 
           i[f] = v
