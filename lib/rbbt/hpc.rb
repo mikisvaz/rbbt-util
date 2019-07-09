@@ -178,7 +178,7 @@ echo "/scratch/tmp/rbbt/projects/rbbt/workflows/" > $CONTAINER_DIR/.rbbt/etc/wor
           env +=<<EOF
 
 # Copy image
-rsync -avz "$SINGULARITY_IMG" "$CONTAINER_DIR/rbbt.singularity.img"
+rsync -avz "$SINGULARITY_IMG" "$CONTAINER_DIR/rbbt.singularity.img" 1>&2
 SINGULARITY_IMG="$CONTAINER_DIR/rbbt.singularity.img"
 EOF
         end
@@ -426,9 +426,13 @@ EOF
         options[:slurm_basedir] ||= File.join(tmp_directory, 'workdir')
         slurm_basedir = options[:slurm_basedir]
         inputs_dir = File.join(tmp_directory, 'inputs_dir')
-        Step.save_job_inputs(job, inputs_dir)
-        options[:inputs_dir] = inputs_dir
-        cmd = ['workflow', 'task', workflow.to_s, task.to_s, '-pf', '--load_inputs', inputs_dir, '--log', (options[:log] || Log.severity).to_s]
+        saved = Step.save_job_inputs(job, inputs_dir, options)
+        if saved
+          options[:inputs_dir] = inputs_dir
+          cmd = ['workflow', 'task', workflow.to_s, task.to_s, '-pf', '--load_inputs', inputs_dir, '--log', (options[:log] || Log.severity).to_s]
+        else
+          cmd = ['workflow', 'task', workflow.to_s, task.to_s, '-pf', '--log', (options[:log] || Log.severity).to_s]
+        end
 
 
         template = self.template(cmd, options)

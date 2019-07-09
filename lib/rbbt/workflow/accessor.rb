@@ -84,7 +84,8 @@ class Step
     end
   end
 
-  def self.save_job_inputs(job, dir)
+  def self.save_job_inputs(job, dir, options = nil)
+    options = IndiferentHash.setup options.dup if options
 
     task_name = job.task_name
     workflow = job.workflow
@@ -92,9 +93,13 @@ class Step
     task_info = workflow.task_info(task_name)
     input_types = task_info[:input_types]
     task_inputs = task_info[:inputs]
+
+    saved = false
     job.recursive_inputs.zip(job.recursive_inputs.fields).each do |value,name|
       next unless task_inputs.include? name.to_sym
+      next if options and ! options.include?(name)
       next if value.nil?
+      saved = true
       path = File.join(dir, name.to_s)
       type = input_types[name].to_s
       Log.debug "Saving job input #{name} (#{type}) into #{path}"
@@ -113,6 +118,8 @@ class Step
         Open.write(path, value.to_s)
       end
     end
+
+    saved
   end
 
   def name

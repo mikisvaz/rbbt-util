@@ -224,6 +224,7 @@ $previous_commands = []
 
 cmd_alias
 
+exit_status = 0
 begin
   while ARGV.any?
     $command = ARGV.shift
@@ -234,38 +235,45 @@ begin
     when dir[$command].exists?
       if locate
         puts dir[$command].find
-        exit 0
+        exit_status = 0
+        exit exit_status
       else
         load dir[$command].find
-        exit 0
+        exit_status = 0
+        exit exit_status
       end
     when File.exist?($command)
       load $command
-      exit 0
+      exit_status = 0
+      exit exit_status
     else
       error = "Command '#{$command }' not understood"
       rbbt_usage($previous_commands)
       print_error(error)
-      exit -1
+      exit_status = -1
+      exit exit_status
     end
   end
 
   rbbt_usage($previous_commands)
-  exit 0
+  exit_status = 0
+  exit exit_status
 
 rescue ParameterException
   puts
   rbbt_usage
   print_error($!.message, $!.backtrace)
   puts
-  exit -1
+  exit_status = -1
+  exit exit_status
 rescue SystemExit
 rescue CmdStop
   exit_status = $!.exit_status
   exit exit_status
 rescue Exception
   Log.exception $!
-  exit -1
+  exit_status = -1
+  exit exit_status
 ensure
   if options[:profile]
     result = RubyProf.stop
@@ -273,3 +281,5 @@ ensure
     printer.print(STDOUT, :min_percent => 10)
   end
 end
+
+exit exit_status

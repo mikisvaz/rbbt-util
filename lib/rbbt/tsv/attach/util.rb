@@ -86,8 +86,16 @@ module TSV
                   [source_key]
                 else
                   if other.include? source_key
-                    v = other.type == :flat ?  other[source_key] : other[source_key][pos]
-                    Array === v ? v : [v]
+                    v = case other.type
+                        when :flat
+                          other[source_key] 
+                        when :single
+                          [other[source_key]]
+                        when :double
+                          other[source_key][pos]
+                        when :list
+                          [other[source_key][pos]]
+                        end
                   else
                     [nil]
                   end
