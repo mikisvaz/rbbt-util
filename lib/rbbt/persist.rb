@@ -26,7 +26,7 @@ module Persist
   MAX_FILE_LENGTH = 150
 
   def self.newer?(path, file)
-    return true if not Open.exists? file
+    return true if not Open.exists?(file)
     path = path.find if Path === path
     file = file.find if Path === file
     patht = Open.mtime(path)

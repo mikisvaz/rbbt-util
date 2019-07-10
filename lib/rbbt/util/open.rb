@@ -751,11 +751,12 @@ module Open
       file = file.find if Path === file
       begin
         if File.symlink?(file) || File.stat(file).nlink > 1
-          if File.exists?(file + '.info')
-            return Step::INFO_SERIALIAZER.load(Open.open(file + '.info'))[:done]
-          else
-            file = Pathname.new(file).realpath.to_s 
+          if File.exists?(file + '.info') && defined?(Step)
+            done = Step::INFO_SERIALIAZER.load(Open.open(file + '.info'))[:done]
+            return done if done
           end
+
+          file = Pathname.new(file).realpath.to_s 
         end
         File.mtime(file)
       rescue
