@@ -112,13 +112,14 @@ class Step
   end
 
   def updatable?
-    (ENV["RBBT_UPDATE_ALL_JOBS"] == 'true' || Open.exists?(info_file)) && ! relocated?
+    (ENV["RBBT_UPDATE_ALL_JOBS"] == 'true' || Open.exists?(info_file)) && ! (relocated? && done?)
   end
 
   def dependency_checks
     rec_dependencies.
       select{|dependency| ! (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) }.
-      select{|dependency| ! Open.exists?(dependency.path) }.
+      collect{|dependency| Workflow.relocate_dependency self, dependency}.
+      select{|dependency| Open.exists?(dependency.path) || Open.exists?(dependency.info_file) }.
       select{|dependency| ! Open.remote?(dependency.path) }.
       select{|dependency| dependency.updatable? }.
       select{|dependency| ! dependency.error? }

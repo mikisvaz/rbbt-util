@@ -259,12 +259,12 @@ EOF
         target = File.expand_path(sync)
         coda +=<<-EOF
 rsync -avt "#{source}/" "#{target}/" &>> #{fsync} 
+sync_es="$?" 
 find '#{target}' -type l -ls | awk '$13 ~ /^#{target.gsub('/','\/')}/ { sub("#{source}", "#{target}", $13); print $11, $13 }' | while read A B; do rm $A; ln -s $B $A; done
 EOF
 
         if  contain && (wipe_container == "post" || wipe_container == "both")
           coda +=<<-EOF
-sync_es="$?" 
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean -f &>> #{fsync}
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -v /dev/shm/sem.*.{in,out,process} /dev/shm/sem.Session-PID.*.sem 2> /dev/null >> #{fsync}
 if [ $sync_es == '0' ]; then 

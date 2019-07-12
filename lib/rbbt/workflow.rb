@@ -511,6 +511,18 @@ module Workflow
     Rbbt.var.jobs[end_part].find
   end
 
+  def self.relocate_dependency(main, dep)
+    dep_path = dep.path
+    path = main.path
+    if Open.exists?(dep_path) || Open.exists?(dep_path + '.info')
+      dep
+    else
+      new_path = relocate(path, dep_path)
+      relocated = true if Open.exists?(new_path) || Open.exists?(new_path + '.info')
+      Workflow._load_step new_path
+    end
+  end
+
   def self.__load_step(path)
     step = Step.new path
     relocated = false
@@ -519,7 +531,7 @@ module Workflow
         Workflow._load_step dep_path
       else
         new_path = relocate(path, dep_path)
-        relocated = true if Open.exists?(new_path)
+        relocated = true if Open.exists?(new_path) || Open.exists?(new_path + '.info')
         Workflow._load_step new_path
       end
     end
@@ -534,12 +546,12 @@ module Workflow
     class << step
       def dependencies
         @dependencies ||= (self.info[:dependencies] || []).collect do |task,name,dep_path|
-          dep = if Open.exists?(dep_path)
+          dep = if Open.exists?(dep_path) || Open.exists?(dep_path + '.info')
                   relocate = false
                   Workflow.fast_load_step dep_path
                 else
                   new_path = Workflow.relocate(path, dep_path)
-                  relocated = true if Open.exists?(new_path)
+                  relocated = true if Open.exists?(new_path) || Open.exists?(new_path + '.info')
                   Workflow.fast_load_step new_path
                 end
           dep.relocated = relocated
