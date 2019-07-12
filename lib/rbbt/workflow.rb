@@ -507,7 +507,7 @@ module Workflow
     pother = other.split(/\/+/)
     end_part = pother[-3..-1] * "/"
     new_path = preal[0..-4] * "/" << "/" << end_part
-    return new_path if File.exists? new_path
+    return new_path if File.exists?(new_path) || File.exists?(new_path + '.info')
     Rbbt.var.jobs[end_part].find
   end
 
