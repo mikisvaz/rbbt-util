@@ -40,21 +40,19 @@ module Persist
   def self.is_persisted?(path, persist_options = {})
     return false if not Open.exists? path
     return false if TrueClass === persist_options[:update]
+    return true unless ENV["RBBT_UPDATE"]
 
-    check = persist_options[:check]
-    if not check.nil?
-      if Array === check
-        newer = check.select{|file| newer? path, file}
-        if newer.any?
-          Log.medium "Persistence check for #{path} failed in: #{ Misc.fingerprint(newer)}"
-          return false 
-        end
-     else
-        return false if newer? path, check
-     end
+    case check = persist_options[:check]
+    when nil
+      true
+    when Array
+      newer = check.select{|file| newer? path, file}
+      return true if newer.empty?
+      Log.medium "Persistence check for #{path} failed in: #{ Misc.fingerprint(newer)}"
+      return false 
+    else
+      ! newer?(path, check)
     end
-
-    return true
   end
 
   def self.persistence_path(file, persist_options = {}, options = {})
