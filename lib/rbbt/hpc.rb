@@ -415,6 +415,7 @@ EOF
       options = IndiferentHash.setup(options.dup)
         
       dry_run          = options.delete :dry_run
+      tail             = options.delete :tail
 
       workflow = job.workflow
       task = job.task_name
@@ -437,6 +438,9 @@ EOF
 
         template = self.template(cmd, options)
         self.issue_template(template, options.merge(:slurm_basedir => slurm_basedir, :dry_run => dry_run))
+
+        return unless tail
+
         t_monitor = Thread.new do
           self.follow_job(slurm_basedir, :STDERR)
         end
