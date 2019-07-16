@@ -99,7 +99,6 @@ module R
       end
     end
 
-
     def self.ggplotPNG(*args)
       ggplot(*args)
     end

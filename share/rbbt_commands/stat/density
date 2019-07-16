@@ -36,13 +36,13 @@ res = TmpFile.with_file nil, :extension => 'png' do |tmp|
     R.run <<-EOF
 values = #{R.ruby2R values}
 d = density(values)
-rbbt.png_plot(filename = '#{plot || tmp}', 'plot(d, xlim=c(0,#{max})); abline(v=mean(values))')
+rbbt.png_plot(filename = '#{plot || tmp}', 'plot(d, xlim=c(0,#{max})); abline(v=mean(values));rug(jitter(values))')
     EOF
   else
     R.run <<-EOF
 values = #{R.ruby2R values}
 d = density(values)
-rbbt.png_plot(filename = '#{plot || tmp}', 'plot(d); abline(v=mean(values))')
+rbbt.png_plot(filename = '#{plot || tmp}', 'plot(d); abline(v=mean(values));rug(jitter(values))')
     EOF
   end
 
