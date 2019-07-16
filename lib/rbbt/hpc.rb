@@ -161,8 +161,8 @@ echo "user_projects: $CONTAINER_DIR/projects/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPAT
 echo "user_scratch: $CONTAINER_DIR/scratch/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "/scratch/tmp/rbbt/projects/rbbt/workflows/" > $CONTAINER_DIR/.rbbt/etc/workflow_dir
 
-[[ -f "$CONTAINER_DIR/projects" ]] || ln -s '#{projects_group_dir}' "$CONTAINER_DIR/projects"
-[[ -f "$CONTAINER_DIR/scratch" ]] || ln -s '#{scratch_group_dir}' "$CONTAINER_DIR/scratch"
+[[ -a "$CONTAINER_DIR/projects" ]] || ln -s '#{projects_group_dir}' "$CONTAINER_DIR/projects"
+[[ -a "$CONTAINER_DIR/scratch" ]] || ln -s '#{scratch_group_dir}' "$CONTAINER_DIR/scratch"
         EOF
         
         if inputs_dir
@@ -415,6 +415,7 @@ EOF
       options = IndiferentHash.setup(options.dup)
         
       dry_run          = options.delete :dry_run
+      tail             = options.delete :tail
 
       workflow = job.workflow
       task = job.task_name
@@ -437,6 +438,9 @@ EOF
 
         template = self.template(cmd, options)
         self.issue_template(template, options.merge(:slurm_basedir => slurm_basedir, :dry_run => dry_run))
+
+        return unless tail
+
         t_monitor = Thread.new do
           self.follow_job(slurm_basedir, :STDERR)
         end
