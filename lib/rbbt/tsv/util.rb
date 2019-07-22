@@ -216,13 +216,17 @@ module TSV
     new
   end
 
-  def to_list
+  def to_list(&block)
     new = {}
     case type
     when :double
       if block_given?
         through do |k,v|
-          new[k] = v.collect{|e| yield e}
+          if block.arity == 1
+            new[k] = v.collect{|e| yield e}
+          else
+            new[k] = yield k, v
+          end
         end
       else
         through do |k,v|
