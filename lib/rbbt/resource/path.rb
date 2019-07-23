@@ -109,6 +109,7 @@ module Path
     :cache   => File.join('/cache', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
     :bulk   => File.join('/bulk', "{TOPLEVEL}", "{PKGDIR}", "{SUBPATH}"),
     :lib     => File.join('{LIBDIR}', "{TOPLEVEL}", "{SUBPATH}"),
+    :base   => File.join(caller_lib_dir(__FILE__), "{TOPLEVEL}", "{SUBPATH}"),
     :default => :user
   })
 
