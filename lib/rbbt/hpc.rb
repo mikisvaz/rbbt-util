@@ -124,6 +124,7 @@ let "MAX_MEMORY=$SLURM_MEM_PER_CPU * $SLURM_CPUS_ON_NODE"
 module load intel/2018.1
 module load singularity
 SINGULARITY_IMG="$HOME/projects/rbbt.singularity.img"
+SINGULARITY_OVERLAY_DIR="$HOME/projects/rbbt.singularity.overlays"
 SINGULARITY_RUBY_INLINE="$HOME/.singularity_ruby_inline"
 mkdir -p "$SINGULARITY_RUBY_INLINE"
         EOF
@@ -197,9 +198,14 @@ EOF
       # RUN
       run = ""
 
+
+      exec_cmd = %(env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m")
+
       if singularity
+        singularity_exec = %(singularity exec -e $(ls $SINGULARITY_OVERLAY_DIR/*.img  |xargs -l echo -n " " --overlay) )
+
         if contain
-          exec_cmd = %(singularity exec -e -C -H "$CONTAINER_DIR" \
+          singularity_exec << %( -C -H "$CONTAINER_DIR" \
 -B /apps/ \
 -B /scratch/tmp \
 -B "$SINGULARITY_RUBY_INLINE":"$CONTAINER_DIR/.ruby_inline":rw  \
@@ -208,16 +214,21 @@ EOF
 -B ~/.rbbt:"$CONTAINER_DIR/home/":ro \
 -B #{scratch_group_dir} \
 -B #{projects_group_dir} \
-"$SINGULARITY_IMG" env TMPDIR="$CONTAINER_DIR/.rbbt/tmp" env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m" rbbt)
+"$SINGULARITY_IMG")
+          exec_cmd << ' TMPDIR="$CONTAINER_DIR/.rbbt/tmp" '
         else
-          exec_cmd = %(singularity exec -e -B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$HOME/.ruby_inline":rw "$SINGULARITY_IMG" env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m" rbbt)
+          singularity_exec = %(-B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$HOME/.ruby_inline":rw "$SINGULARITY_IMG")
         end
 
         if development
-          exec_cmd += ' --dev=git'
+          exec_cmd += 'rbbt --dev=git'
+        else
+          exec_cmd += 'rbbt'
         end
+
+        exec_cmd = singularity_exec + " " + exec_cmd
       else
-        exec_cmd = %(env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m" ~/git/rbbt-util/bin/rbbt --dev=~/git/)
+        exec_cmd << %(~/git/rbbt-util/bin/rbbt --dev=~/git/)
       end
 
 
