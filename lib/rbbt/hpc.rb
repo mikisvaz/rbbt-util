@@ -206,7 +206,7 @@ EOF
       exec_cmd = %(env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m")
 
       if singularity
-        singularity_exec = %(singularity exec -e $(for f in `ls $SINGULARITY_OVERLAY_DIR/*.img`; do  echo -n  --overlay "'$f' "; done) )
+        singularity_exec = %(singularity exec -e $(for f in `ls $SINGULARITY_OVERLAY_DIR/*.img`; do  echo -n  --overlay "\"$f\" "; done) )
 
         if contain
           singularity_exec << %( -C -H "$CONTAINER_DIR" \
