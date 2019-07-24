@@ -221,13 +221,13 @@ EOF
 "$SINGULARITY_IMG")
           exec_cmd << ' TMPDIR="$CONTAINER_DIR/.rbbt/tmp" '
         else
-          singularity_exec += %(-B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$HOME/.ruby_inline":rw "$SINGULARITY_IMG")
+          singularity_exec += %( -B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$HOME/.ruby_inline":rw "$SINGULARITY_IMG" )
         end
 
         if development
-          exec_cmd += 'rbbt --dev=git'
+          exec_cmd += ' rbbt --dev=git'
         else
-          exec_cmd += 'rbbt'
+          exec_cmd += ' rbbt'
         end
 
         exec_cmd = singularity_exec + " " + exec_cmd
