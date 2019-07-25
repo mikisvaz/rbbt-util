@@ -203,7 +203,7 @@ EOF
       exec_cmd = %(env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m")
 
       if singularity
-        singularity_exec = %(singularity exec -e -B $SINGULARITY_OPT:/singularity_opt/ -B /apps/)
+        singularity_exec = %(singularity exec -e -B $SINGULARITY_OPT_DIR:/singularity_opt/ -B /apps/)
 
         if contain
           singularity_exec << %( -C -H "$CONTAINER_DIR" \
