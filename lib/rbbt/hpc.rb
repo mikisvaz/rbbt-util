@@ -125,7 +125,7 @@ module load intel/2018.1
 module load singularity
 PROJECTS_ROOT="/gpfs/projects/bsc26/"
 SINGULARITY_IMG="$PROJECTS_ROOT/rbbt.singularity.img"
-SINGULARITY_OVERLAY_DIR="$PROJECTS_ROOT/rbbt.singularity.overlays"
+SINGULARITY_OPT_DIR="$PROJECTS_ROOT/singularity_opt/"
 SINGULARITY_RUBY_INLINE="$HOME/.singularity_ruby_inline"
 mkdir -p "$SINGULARITY_RUBY_INLINE"
         EOF
@@ -182,9 +182,6 @@ echo "/scratch/tmp/rbbt/projects/rbbt/workflows/" > $CONTAINER_DIR/.rbbt/etc/wor
 # Copy image
 rsync -avz "$SINGULARITY_IMG" "$CONTAINER_DIR/rbbt.singularity.img" 1>&2
 SINGULARITY_IMG="$CONTAINER_DIR/rbbt.singularity.img"
-
-rsync -avz "$SINGULARITY_OVERLAY_DIR"/ "$CONTAINER_DIR/rbbt.singularity.overlays/" 1>&2
-SINGULARITY_OVERLAY_DIR="$CONTAINER_DIR/rbbt.singularity.overlays"
 EOF
         end
 
@@ -206,11 +203,10 @@ EOF
       exec_cmd = %(env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m")
 
       if singularity
-        singularity_exec = %(singularity exec -e $(for f in `ls $SINGULARITY_OVERLAY_DIR/*.img`; do  echo -n  --overlay "\"$f\" "; done) )
+        singularity_exec = %(singularity exec -e -B $SINGULARITY_OPT:/singularity_opt/ -B /apps/)
 
         if contain
           singularity_exec << %( -C -H "$CONTAINER_DIR" \
--B /apps/ \
 -B /scratch/tmp \
 -B "$SINGULARITY_RUBY_INLINE":"$CONTAINER_DIR/.ruby_inline":rw  \
 -B ~/git:"$CONTAINER_DIR/git":ro \
@@ -221,7 +217,7 @@ EOF
 "$SINGULARITY_IMG")
           exec_cmd << ' TMPDIR="$CONTAINER_DIR/.rbbt/tmp" '
         else
-          singularity_exec += %( -B /apps/ -B "$SINGULARITY_RUBY_INLINE":"$HOME/.ruby_inline":rw "$SINGULARITY_IMG" )
+          singularity_exec += %( -B "$SINGULARITY_RUBY_INLINE":"$HOME/.ruby_inline":rw "$SINGULARITY_IMG" )
         end
 
         if development
