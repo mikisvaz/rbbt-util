@@ -32,7 +32,7 @@ module Marenostrum
       config_keys      = options.delete :config_keys
 
       if contain_and_sync
-        contain = "/scratch/tmp/rbbt" if contain.nil?
+        contain = "/scratch/tmp/rbbt-#{ENV["USER"]}" if contain.nil?
         sync = "~/.rbbt/var/jobs" if sync.nil?
       end
 

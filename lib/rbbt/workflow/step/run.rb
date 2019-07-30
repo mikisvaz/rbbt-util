@@ -119,7 +119,7 @@ class Step
     rec_dependencies.
       select{|dependency| ! (defined? WorkflowRESTClient and WorkflowRESTClient::RemoteStep === dependency) }.
       collect{|dependency| Workflow.relocate_dependency self, dependency}.
-      select{|dependency| Open.exists?(dependency.path) || (Open.exists?(dependency.info_file) && dependency.status == :cleaned) }.
+      select{|dependency| Open.exists?(dependency.path) || ((Open.exists?(dependency.info_file) && (dependency.status == :cleaned) || dependency.status == :waiting)) }.
       select{|dependency| ! Open.remote?(dependency.path) }.
       select{|dependency| dependency.updatable? }.
       select{|dependency| ! dependency.error? }
