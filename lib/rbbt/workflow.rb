@@ -299,7 +299,7 @@ module Workflow
 
   def self.resolve_locals(inputs)
     inputs.each do |name, value|
-      if value =~ /^local:(.*?):(.*)/ or 
+      if (String === value and value =~ /^local:(.*?):(.*)/) or 
         (Array === value and value.length == 1 and value.first =~ /^local:(.*?):(.*)/) or
         (TSV === value and value.size == 1 and value.keys.first =~ /^local:(.*?):(.*)/)
         task_name = $1
