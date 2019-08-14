@@ -93,6 +93,7 @@ class Step
           (!(job.noinfo? || job.done? || job.error? || job.aborted? || job.running?))
 
         job.clean 
+        job.set_info :status, :cleaned
       end
 
       job.dup_inputs unless status == 'done' or job.started?

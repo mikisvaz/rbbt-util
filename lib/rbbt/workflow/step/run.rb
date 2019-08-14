@@ -179,6 +179,7 @@ class Step
   end
 
   def updated?
+    return true if ENV["RBBT_UPDATE"] != "true"
     return true unless (done? || error? || ! writable?)
 
     @updated ||= out_of_date.empty?
