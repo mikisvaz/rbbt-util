@@ -1,5 +1,13 @@
+rbbt.ruby.exec.singularity <- function(code, image){
+  return(system(paste('singularity -e exec', image,'rbbt_exec.rb - file', sep=" "), input = code, intern=TRUE));
+}
+
+rbbt.ruby.exec <- function(code){
+  return(system('rbbt_exec.rb - file', input = code, intern=TRUE));
+}
+
 rbbt.ruby <- function(code, load = TRUE, flat = FALSE, type = 'tsv', ...){
-  file = system('rbbt_exec.rb - file', input = code, intern=TRUE);
+  file = rbbt.ruby.exec(code)
 
   error_str = "^#:rbbt_exec Error"
   if (regexpr(error_str, file)[1] != -1 ){
