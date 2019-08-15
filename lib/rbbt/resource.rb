@@ -25,7 +25,7 @@ module Resource
     base.resources = {}
     base.rake_dirs = {}
     base.search_paths = Path::SEARCH_PATHS.dup
-    base.remote_server = Resource.remote_servers[base.to_s]
+    base.remote_server = Resource.remote_servers[base.to_s] || Resource.remote_servers["*"]
     base
   end
 

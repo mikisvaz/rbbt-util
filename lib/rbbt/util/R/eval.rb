@@ -73,7 +73,6 @@ module R
                        if not File.exist? socket_file
 
                          sh_pid = Process.fork do
-                           #args = %w(CMD Rserve --vanilla --quiet --RS-socket)
                            args = %w(--quiet --no-save --RS-socket)
                            args << "'#{socket_file}'"
                            args << "--RS-workdir"
