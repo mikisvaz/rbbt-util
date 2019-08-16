@@ -1,5 +1,5 @@
 rbbt.ruby.exec.singularity <- function(code, image){
-  return(system(paste('singularity -e exec "', image,'" rbbt_exec.rb - file', sep=""), input = code, intern=TRUE));
+  return(system(paste('singularity exec -e ', image,' rbbt_exec.rb - file', sep=""), input = code, intern=TRUE));
 }
 
 rbbt.ruby.exec <- function(code){
