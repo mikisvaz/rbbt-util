@@ -41,11 +41,13 @@ rbbt.ruby <- function(code, load = TRUE, flat = FALSE, type = 'tsv', ...){
   }
 }
 
-rbbt.job <- function(workflow, task, load=TRUE, flat = FALSE, type = 'tsv', jobname="Default", code='', ...){
+rbbt.job <- function(workflow, task, load=TRUE, flat = FALSE, type = 'tsv', jobname="Default", code='', log=4, ...){
 
     str = "require 'rbbt/workflow'"
 
-    str = paste(str, code, sep="\n")
+    log_str = paste("Log.severity=", log)
+
+    str = paste(str, log_str, code, sep="\n")
 
     str = paste(str, paste("wf = Workflow.require_workflow '", workflow, "'", sep=""), sep="\n")
 
