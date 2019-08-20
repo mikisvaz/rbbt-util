@@ -112,7 +112,7 @@ module TSV
       sheet_name = sheet
       Log.debug "Opening LSX #{file} sheet #{ sheet_name }"
 
-      TmpFile.with_file :extension => Misc.sanitize_filename(sheet_name) do |filename|
+      TmpFile.with_file :extension => Misc.sanitize_filename(sheet_name.to_s) do |filename|
 
         sheet    = workbook.worksheet sheet
 
@@ -183,7 +183,7 @@ module TSV
       sheet_name = sheet
       Log.debug "Opening XLSX #{file} sheet #{ sheet_name }"
 
-      TmpFile.with_file :extension => Misc.sanitize_filename(sheet_name) do |filename|
+      TmpFile.with_file :extension => Misc.sanitize_filename(sheet_name.to_s) do |filename|
 
         sheet    = sheet ? workbook[sheet] : workbook.worksheets.first
 
