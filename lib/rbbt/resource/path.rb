@@ -13,7 +13,7 @@ module Path
     string.resource = resource
     string.search_paths = search_paths
     string.search_order = search_order
-    string.libdir = libdir
+    string.libdir = libdir || Path.caller_lib_dir
     string
   end
 

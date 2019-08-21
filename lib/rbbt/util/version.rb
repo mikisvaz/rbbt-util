@@ -2,7 +2,7 @@ module Rbbt
   VERSIONS = IndiferentHash.setup({})
 
   def self.add_version(file)
-    dir = Path.caller_lib_dir(file)
+    dir = Path.setup(Path.caller_lib_dir(file))
     libname = File.basename(dir).sub('rbbt-','')
     return if VERSIONS.include? libname
 

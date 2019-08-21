@@ -14,7 +14,7 @@ module Path
     while file != '/'
       dir = File.dirname file
 
-      return Path.setup(dir) if File.exist? File.join(dir, relative_to)
+      return dir if File.exist? File.join(dir, relative_to)
 
       file = File.dirname file
     end
