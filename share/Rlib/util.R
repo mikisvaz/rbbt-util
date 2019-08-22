@@ -52,8 +52,8 @@ job = Workflow.load_step path
 
 data = TSV.setup({}, "ID~Workflow,Task,Path#:type=:list")
 
-job.rec_dependencies.each do |dep|
-  id = Misc.digest(dep.path)
+job.rec_dependencies.each_with_index do |dep,i|
+  id = "dependency-#{i}"
   data[id] = [dep.workflow, dep.task_name, dep.path]
 end
 
