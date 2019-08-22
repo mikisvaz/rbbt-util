@@ -41,6 +41,28 @@ rbbt.ruby <- function(code, load = TRUE, flat = FALSE, type = 'tsv', ...){
   }
 }
 
+rbbt.job.prov <- function(path){
+  code <- '
+require "rbbt-util"
+require "rbbt/workflow"
+
+path="PATH"
+
+job = Workflow.load_step path
+
+data = TSV.setup({}, "ID~Workflow,Task,Path#:type=:list")
+
+job.rec_dependencies.each do |dep|
+  id = Misc.digest(dep.path)
+  data[id] = [dep.workflow, dep.task_name, dep.path]
+end
+
+data
+'
+  code = sub("PATH", path, code)
+  return(rbbt.ruby(code, type='tsv'))
+}
+
 rbbt.job <- function(workflow, task, load=TRUE, flat = FALSE, type = 'tsv', jobname="Default", code='', log=4, ...){
 
     str = "require 'rbbt/workflow'"

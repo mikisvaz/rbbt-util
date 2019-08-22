@@ -25,7 +25,7 @@ rescue Exception
   exit(-1)
 end
 
-data = data.to_s(:sort, true) if TSV === data
+#data = data.to_s(:sort) if TSV === data
 data = data * "\n" if Array === data
 
 case
@@ -36,10 +36,10 @@ when output == "file"
     tmpfile = data
   else
     tmpfile = TmpFile.tmp_file
-    Open.write(tmpfile, data)
+    Open.write(tmpfile, data.to_s)
   end
 
   puts tmpfile
 else
-  Open.write(output, data)
+  Open.write(output, data.to_s)
 end
