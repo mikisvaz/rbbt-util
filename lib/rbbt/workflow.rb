@@ -245,7 +245,7 @@ module Workflow
   end
 
   def libdir
-    @libdir = Path.caller_lib_dir if @libdir.nil?
+    @libdir = Path.setup(Path.caller_lib_dir) if @libdir.nil?
     @libdir 
   end
 
