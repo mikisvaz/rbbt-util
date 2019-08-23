@@ -228,6 +228,10 @@ rbbt.tsv2matrix <- function(data){
   return(new);
 }
 
+rbbt.tsv2tibble <- function(data){
+  as_tibble(data, rownames=attr(data, 'key.field'))
+}
+
 rbbt.tsv.write <- function(filename, data, key.field = NULL, extra_headers = NULL, eol="\n", ...){
 
   if (is.null(key.field)){ key.field = attributes(data)$key.field;}
