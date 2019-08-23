@@ -75,7 +75,7 @@ module Workflow
   end
 
   def self.installed_workflows
-    self.workflow_dir.glob_all('**/workflow.rb').collect do |file|
+    self.workflow_dir['**/workflow.rb'].glob_all.collect do |file|
       File.basename(File.dirname(file))
     end
   end
