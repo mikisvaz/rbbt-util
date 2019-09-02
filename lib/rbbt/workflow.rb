@@ -384,7 +384,7 @@ module Workflow
     jobname = DEFAULT_NAME if jobname.nil? or jobname.empty?
 
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
-    overriden = has_overriden_inputs && dependencies.select{|dep| dep.overriden }.any?
+    overriden = has_overriden_inputs || dependencies.select{|dep| dep.overriden }.any?
 
     if real_inputs.empty? and not Workflow::TAG == :inputs and not overriden 
       step_path = step_path taskname, jobname, [], [], task.extension
@@ -408,6 +408,7 @@ module Workflow
     task_info = task_info(taskname)
     task_inputs = task_info[:inputs]
     persist_inputs = inputs.values_at(*task_inputs)
+    persist_inputs += inputs.values_at(*inputs.keys.select{|k| String === k && k.include?("#") }.sort)
     Persist.memory("STEP", :taskname => taskname, :jobname => jobname, :inputs => persist_inputs, :repo => step_cache) do
       __job(taskname, jobname, inputs)
     end
