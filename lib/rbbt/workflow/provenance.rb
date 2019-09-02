@@ -77,7 +77,7 @@ class Step
     status = :notfound if status == :noinfo and not Open.exist?(path)
     str = " " * offset
     str << prov_report_msg(status, name, path, info)
-    step.dependencies.each do |dep|
+    step.dependencies.reverse.each do |dep|
       path = dep.path
       new = ! seen.include?(path)
       if new

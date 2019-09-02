@@ -226,10 +226,10 @@ prepare_make(){
     if [ -f aclocal.m4 ]; then
         autoreconf -i
         autoconf
-        automake
+        automake --add-missing
     else
         autoconf
-        automake
+        automake --add-missing
     fi
 
     if [ -f config ]; then
@@ -487,7 +487,7 @@ install_jar(){
     local url="$2"
 
     [ -d  "$OPT_DIR/$name/" ] || mkdir -p  "$OPT_DIR/$name/"
-    wget "$url" -O "$OPT_DIR/jars/$name.jar" | wget "$url" -O "$OPT_DIR/jars/$name.jar" --no-check-certificate
+    wget "$url" -O "$OPT_DIR/$name/$name.jar" --no-check-certificate
     link "$OPT_DIR/$name/$name.jar" "$OPT_JAR_DIR/$name.jar" 
 }
 
