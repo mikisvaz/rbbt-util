@@ -144,6 +144,10 @@ module CMD
     all_args = *args
 
     all_args << {} unless Hash === all_args.last
+
+    level = all_args.last[:log] || 0
+    level = level.to_i
+
     all_args.last[:log] = true
     all_args.last[:pipe] = true
 
@@ -151,12 +155,12 @@ module CMD
     pid = io.pids.first
 
     while c = io.getc
-      STDERR << c if Log.severity == 0
+      STDERR << c if Log.severity <= level
       if c == "\n"
         if pid
-          Log.logn "STDOUT [#{pid}]: ", 0
+          Log.logn "STDOUT [#{pid}]: ", level
         else
-          Log.logn "STDOUT: ", 0
+          Log.logn "STDOUT: ", level
         end
       end
     end 

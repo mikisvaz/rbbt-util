@@ -58,7 +58,22 @@ class WorkflowRESTClient::RemoteStep
             end
             sin.close
           else
-            parent.raise "Error in RestClient: " << rok.message
+            err = StringIO.new
+            rok.read_body do |c,_a, _b|
+              err.write c
+            end
+            err.rewind
+            reader = Zlib::GzipReader.new(err)
+            text =  reader.read
+            ne = WorkflowRESTClient.parse_exception text
+            case ne
+            when String
+              parent.raise e.class, ne
+            when Exception
+              parent.raise ne
+            else
+              parent.raise "Error in RestClient: " << rok.message
+            end
           end
         end
 

@@ -9,7 +9,7 @@ class Step
               :green
             when :dependencies, :waiting, :setup
               :yellow
-            when :notfound
+            when :notfound, :cleaned
               :blue
             else
               if status.to_s.index ">"

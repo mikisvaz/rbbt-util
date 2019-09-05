@@ -34,15 +34,31 @@ class WorkflowRESTClient
     fixed
   end
 
+  def self.parse_exception(text)
+    klass, message = text.split " => "
+    begin
+      klass = Kernel.const_get klass
+      return klass.new message
+    rescue
+      message
+    end
+  end
+
   def self.capture_exception
     begin
       yield
     rescue Exception => e
       raise e unless e.respond_to? :response
       begin
-        klass, message = e.response.to_s.split " => "
-        klass = Kernel.const_get klass
-        raise klass.new message
+        ne = parse_exception e.response.to_s
+        case ne
+        when String
+          raise e.class, ne
+        when Exception
+          raise ne
+        else
+          raise
+        end
       rescue
         raise e
       end
