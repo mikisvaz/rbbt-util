@@ -62,9 +62,14 @@ class WorkflowRESTClient::RemoteStep
             rok.read_body do |c,_a, _b|
               err.write c
             end
-            err.rewind
-            reader = Zlib::GzipReader.new(err)
-            text =  reader.read
+            text = begin
+                     reader = Zlib::GzipReader.new(err)
+                     reader.read
+                   rescue
+                     err.rewind
+                     err.read
+                   end
+            iii text
             ne = WorkflowRESTClient.parse_exception text
             case ne
             when String
