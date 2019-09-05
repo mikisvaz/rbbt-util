@@ -146,6 +146,8 @@ module CMD
     all_args << {} unless Hash === all_args.last
 
     level = all_args.last[:log] || 0
+    level = 0 if TrueClass === level
+    level = 10 if FalseClass === level
     level = level.to_i
 
     all_args.last[:log] = true

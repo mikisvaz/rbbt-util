@@ -152,7 +152,12 @@ workflow = nil if workflow == ["all"]
 
 puts Log.color(:magenta, "# Workflows")
 
-jobs = Rbbt.job_info workflow, task
+if workflow === ['.']
+  jobs = Rbbt.job_info ["all"], task, ['.']
+else
+  jobs = Rbbt.job_info workflow, task
+end
+
 workflows = {}
 
 TSV.traverse jobs, :_bar => "Checking job status" do |file,info|

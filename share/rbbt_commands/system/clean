@@ -79,7 +79,12 @@ puts
 puts Log.color(:magenta, "# Workflow clean")
 puts
 
-jobs = Rbbt.job_info workflow, task
+if workflow === ['.']
+  jobs = Rbbt.job_info ["all"], task, ['.']
+else
+  jobs = Rbbt.job_info workflow, task
+end
+
 workflows = {}
 
 TSV.traverse jobs do |file,i|

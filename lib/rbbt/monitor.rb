@@ -138,76 +138,80 @@ module Rbbt
     dirs.collect do |dir|
       next unless Open.exists? dir
 
-      workflowdirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
-                       repo_dir, sub_path = dir_sub_path
-                       Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
-                     else
-                       dir.glob("*")
-                     end
-
-      workflowdirs.collect do |workflowdir|
-        workflow = File.basename(workflowdir)
-        next if workflows and not workflows.include? workflow
-
-        tasks_dirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
-                       repo_dir, sub_path = dir_sub_path
-                       Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
-                     else
-                       workflowdir.glob("*")
-                     end
-
-        tasks_dirs.collect do |taskdir|
-          task = File.basename(taskdir)
-          next if tasks and not tasks.include? task
-
-
-          files = if (dir_sub_path = Open.find_repo_dir(taskdir))
-                    repo_dir, sub_path = dir_sub_path
-                    Open.list_repo_files(*dir_sub_path).reject do |f|
-                      f.include?("/.info/") ||
-                        f.include?(".files/") ||
-                        f.include?(".pid/") ||
-                        File.directory?(f)
-                    end.collect do |f|
-                      File.join(repo_dir, f)
-                    end
+      tasks_dirs = if dir == '.'
+                    ["."]
                   else
-                    #cmd = "find -L '#{ taskdir }/'  -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' 2>/dev/null"
-                    cmd = "find -L '#{ taskdir }/' -not \\( -path \"#{taskdir}/.info/*\" -prune \\) -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.md5' -not -name '*.notify' -not -name '\\.*' \\( -not -type d -o -name '*.files' \\)  2>/dev/null"
+                    workflowdirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
+                                     repo_dir, sub_path = dir_sub_path
+                                     Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
+                                   else
+                                     dir.glob("*")
+                                   end
 
-                    CMD.cmd(cmd, :pipe => true).read.split("\n")
+                    workflowdirs.collect do |workflowdir|
+                      workflow = File.basename(workflowdir)
+                      next if workflows and not workflows.include? workflow
+
+                      if (dir_sub_path = Open.find_repo_dir(workflowdir))
+                        repo_dir, sub_path = dir_sub_path
+                        Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
+                      else
+                        workflowdir.glob("*")
+                      end
+                    end.compact.flatten
                   end
 
-          files = files.sort_by{|f| Open.mtime(f) || Time.now}
-          TSV.traverse files, :type => :array, :into => jobs, :_bar => "Finding jobs in #{ taskdir }" do |file|
-            _files << file
-            if m = file.match(/(.*)\.(info|pid|files)$/)
-              file = m[1]
-            end
-            next if seen.include? file
-            seen << file
+      tasks_dirs.collect do |taskdir|
+        task = File.basename(taskdir)
+        next if tasks and not tasks.include? task
 
-            name = file[taskdir.length+1..-1]
-            info_file = file + '.info'
 
-            info = {}
+        files = if (dir_sub_path = Open.find_repo_dir(taskdir))
+                  repo_dir, sub_path = dir_sub_path
+                  Open.list_repo_files(*dir_sub_path).reject do |f|
+                    f.include?("/.info/") ||
+                      f.include?(".files/") ||
+                      f.include?(".pid/") ||
+                      File.directory?(f)
+                  end.collect do |f|
+                    File.join(repo_dir, f)
+                  end
+                else
+                  #cmd = "find -L '#{ taskdir }/'  -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' 2>/dev/null"
+                  cmd = "find -L '#{ taskdir }/' -not \\( -path \"#{taskdir}/.info/*\" -prune \\) -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.md5' -not -name '*.notify' -not -name '\\.*' \\( -not -type d -o -name '*.files' \\)  2>/dev/null"
 
-            info[:workflow] = workflow
-            info[:task] = task
-            info[:name] = name
+                  CMD.cmd(cmd, :pipe => true).read.split("\n")
+                end
 
-            if Open.exists? file
-              info = info.merge(file_time(file))
-              info[:done] = true
-              info[:info_file] = Open.exist?(info_file) ? info_file : nil
-            else
-              info = info.merge({:info_file => info_file, :done => false})
-            end
+        files = files.sort_by{|f| Open.mtime(f) || Time.now}
+        TSV.traverse files, :type => :array, :into => jobs, :_bar => "Finding jobs in #{ taskdir }" do |file|
+          _files << file
+          if m = file.match(/(.*)\.(info|pid|files)$/)
+            file = m[1]
+          end
+          next if seen.include? file
+          seen << file
 
-            [file, info]
+          name = file[taskdir.length+1..-1]
+          info_file = file + '.info'
+
+          info = {}
+
+          info[:workflow] = workflow
+          info[:task] = task
+          info[:name] = name
+
+          if Open.exists? file
+            info = info.merge(file_time(file))
+            info[:done] = true
+            info[:info_file] = Open.exist?(info_file) ? info_file : nil
+          else
+            info = info.merge({:info_file => info_file, :done => false})
           end
 
-        end.compact.flatten
+          [file, info]
+        end
+
       end.compact.flatten
     end.compact.flatten
     jobs
@@ -235,7 +239,7 @@ module Rbbt
         jobs[workflow][task] ||= {}
         files.each do |f|
           next if f =~ /\.lock$/
-            job = f.sub(/\.(info|files)/,'')
+          job = f.sub(/\.(info|files)/,'')
 
           jobs[workflow][task][job] ||= {}
           if jobs[workflow][task][job][:status].nil?
@@ -247,8 +251,8 @@ module Rbbt
                      rescue
                        {}
                      end
-            status = info[:status]
-            pid = info[:pid]
+              status = info[:status]
+              pid = info[:pid]
             end
 
             jobs[workflow][task][job][:pid] = pid if pid
