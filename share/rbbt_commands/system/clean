@@ -13,6 +13,8 @@ Clean orphaned files
 
 $ rbbt system clean <workflow> <task>
 
+Specify workflow '.' and no task to examine the jobs of the current directory (usefull for web-server cache).
+
 -a--all Apply to all jobs, not only uncompleted
 -o--older* Clean jobs not access in some time
 -f--force Remove locks and files regardless of been active
