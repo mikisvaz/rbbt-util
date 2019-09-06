@@ -397,7 +397,8 @@ begin
 
     job.fork
   else
-    job.run(:stream)
+    nostream = options[:printname] || options[:printpath]
+    job.run(nostream ? false : :stream)
     res = job
   end
 

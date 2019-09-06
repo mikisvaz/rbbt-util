@@ -84,7 +84,11 @@ class WorkflowRESTClient
     res = capture_exception do
       Misc.insist(2, 0.5) do
         Log.debug{ "RestClient clean: #{ url } - #{Misc.fingerprint params}" }
-        res = RestClient.get(self.encode(url), :params => params)
+        res = begin 
+                RestClient.get(self.encode(url), :params => params)
+              rescue RestClient::NotFound
+                return nil
+              end
         raise TryAgain if res.code == 202
         res
       end

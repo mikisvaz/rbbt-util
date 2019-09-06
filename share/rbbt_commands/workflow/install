@@ -18,6 +18,9 @@ repo is not specified then 'http://github.com/Rbbt-Workflows/' will be used. If
 the workflow is already installed it will be updated. If 'all' is specified
 instead of a particular workflow, all installed workflows will be updated.
 
+You can set the environment variable RBBT_WORKFLOW_AUTOINSTALL=true to make
+workflows install automatically as required.
+
 -h--help Print this help
 
 EOF

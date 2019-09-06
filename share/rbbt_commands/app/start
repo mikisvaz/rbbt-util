@@ -73,6 +73,7 @@ Misc.in_dir(app_dir) do
     options[:options].split(";").each do |pair|
       name, _sep, value = pair.partition("=")
       name = name[1..-1].to_sym if name[0] == ':'
+      value = value.to_i if value =~ /^\d+$/
       options[name] = value
     end
   end

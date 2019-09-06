@@ -28,3 +28,5 @@ bar = Log::ProgressBar.new_bar nil, :desc => "Throughput"
 while line = STDIN.gets
   bar.tick
 end
+
+bar.done

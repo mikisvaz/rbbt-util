@@ -69,7 +69,6 @@ class WorkflowRESTClient::RemoteStep
                      err.rewind
                      err.read
                    end
-            iii text
             ne = WorkflowRESTClient.parse_exception text
             case ne
             when String
@@ -82,23 +81,37 @@ class WorkflowRESTClient::RemoteStep
           end
         end
 
-        Log.debug{ "RestClient execute: #{ url } - #{Misc.fingerprint task_params}" }
+        task_params.each do |k,v|
+          task_params[k] = v.read if IO === v
+        end
+
+        Log.debug{ "RestClient execute: #{ task_url } - #{Misc.fingerprint task_params}" }
         RestClient::Request.execute(:method => :post, :url => task_url, :payload => task_params, :block_response => bl)
       end
 
-      reader = Zlib::GzipReader.new(sout)
-      res_io = Misc.open_pipe do |sin|
-        while c = reader.read(Misc::BLOCK_SIZE)
-          sin.write c
+      # It seems like now response body are now decoded by Net::HTTP after 2.1
+      # https://github.com/rest-client/rest-client/blob/cf3e5a115bcdb8f3344aeac0e45b44d67fac1a42/history.md
+      decode = Gem.loaded_specs["rest-client"].version < Gem::Version.create('2.1')
+      if decode
+        reader = Zlib::GzipReader.new(sout)
+        res_io = Misc.open_pipe do |sin|
+          while c = reader.read(Misc::BLOCK_SIZE)
+            sin.write c
+          end
+          sin.close
+          @done = true
         end
-        sin.close
-        @done = true
+        ConcurrentStream.setup(res_io, :threads => [post_thread]) do
+          @done = true
+          @streaming = false
+        end
+      else
+        ConcurrentStream.setup(sout, :threads => [post_thread]) do
+          @done = true
+          @streaming = false
+        end
       end
 
-      ConcurrentStream.setup(res_io, :threads => [post_thread]) do
-        @done = true
-        @streaming = false
-      end
     end
   end
 
