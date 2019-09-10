@@ -75,9 +75,11 @@ class TestTSV < Test::Unit::TestCase
 
   def test_server
     require 'rbbt/sources/organism'
-    TmpFile.with_file do |tmp|
-     Organism.get_from_server("Hsa/may2017/identifiers", tmp, 'http://rbbt.bsc.es')
-      assert Open.read(tmp).length > 10000
+    TmpFile.with_file :extension => 'gz' do |tmp|
+      Organism.get_from_server("Hsa/b37/known_sites/dbsnp_138.vcf.gz", tmp, 'http://rbbt.bsc.es')
+      Open.open(tmp) do |f|
+        assert f.gets =~  /^#/
+      end
     end
   end
 
