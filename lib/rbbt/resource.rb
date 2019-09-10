@@ -87,6 +87,7 @@ module Resource
 
       Misc.lock lock_filename do
         Net::HTTP.get_response URI(url) do |response|
+          response["content-encoding"] = 'none'
           case response
           when Net::HTTPSuccess, Net::HTTPOK
             Misc.sensiblewrite(final_path) do |file|

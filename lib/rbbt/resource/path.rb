@@ -98,7 +98,7 @@ module Path
       paths.each do |p|
         self.annotate p
         p.original = File.join(found.original, p.sub(/^#{found}/, ''))
-      end if found.original
+      end if found.original and pattern
 
       location_paths[where] = paths
     end

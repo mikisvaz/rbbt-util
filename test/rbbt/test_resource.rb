@@ -73,10 +73,10 @@ class TestTSV < Test::Unit::TestCase
     assert File.exist? TestResource[].share.Rlib["util.R"].find 
   end
 
-  def __test_server
+  def test_server
     require 'rbbt/sources/organism'
     TmpFile.with_file do |tmp|
-      Organism.get_from_server("Hsa/jun2011/identifiers", tmp)
+     Organism.get_from_server("Hsa/may2017/identifiers", tmp, 'http://rbbt.bsc.es')
       assert Open.read(tmp).length > 10000
     end
   end
