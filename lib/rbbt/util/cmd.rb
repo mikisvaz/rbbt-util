@@ -1,8 +1,39 @@
 require 'rbbt/util/log'
 require 'stringio'
 require 'open3'
+require 'rbbt/util/misc/indiferent_hash'
 
 module CMD
+
+  TOOLS = IndiferentHash.setup({})
+  def self.tool(tool, claim = nil, test = nil, &block)
+    TOOLS[tool] = [claim, test, block]
+  end
+
+  def self.get_tool(tool)
+    return tool.to_s unless TOOLS[tool]
+
+    @@init_cmd_tool ||= IndiferentHash.setup({})
+    if !@@init_cmd_tool[tool]
+      claim, test, block = TOOLS[tool]
+      begin
+        if test
+          CMD.cmd(test)
+        else
+          CMD.cmd("#{cmd} --help")
+        end
+      rescue
+        if claim
+          claim.produce
+        else
+          block.call
+        end
+      end
+      @@init_cmd_tool[tool] = true
+    end
+
+    tool.to_s
+  end
 
   def self.gzip_pipe(file)
     Open.gzip?(file) ? "<(gunzip -c '#{file}')" : "'#{file}'"
@@ -39,7 +70,9 @@ module CMD
     string.strip
   end
 
-  def self.cmd(cmd, options = {}, &block)
+  def self.cmd(tool, cmd = nil, options = {}, &block)
+    options, cmd = cmd, nil if Hash === cmd
+
     options = Misc.add_defaults options, :stderr => Log::DEBUG
     in_content = options.delete(:in)
     stderr     = options.delete(:stderr)
@@ -52,6 +85,18 @@ module CMD
     dont_close_in  = options.delete(:dont_close_in)
 
     log = true if log.nil?
+    
+    if cmd.nil? and ! Symbol === tool 
+      cmd = tool
+    else
+      tool = get_tool(tool)
+      if cmd.nil?
+        cmd = tool
+      else
+        cmd = tool + ' ' + cmd
+      end
+
+    end
 
     if stderr == true
       stderr = Log::HIGH
@@ -170,4 +215,5 @@ module CMD
 
     nil
   end
+
 end
