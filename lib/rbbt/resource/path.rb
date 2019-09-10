@@ -51,11 +51,13 @@ module Path
 
   def join(name)
     raise "Invalid path: #{ self }" if self.nil?
-    if self.empty?
-      self.annotate name.to_s.dup
-    else
-      self.annotate File.join(self, name.to_s)
-    end
+    new = if self.empty?
+            self.annotate name.to_s.dup
+          else
+            self.annotate File.join(self, name.to_s)
+          end
+    new.original = File.join(self.original, name.to_s) if self.original
+    new
   end
 
   def dirname
@@ -72,9 +74,37 @@ module Path
       self.glob_all
     else
       return [] unless self.exists? 
-      exp = File.join(self.find, pattern)
-      Dir.glob(exp).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
+      found = self.find
+      exp = File.join(found, pattern)
+      paths = Dir.glob(exp).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
+
+      paths.each do |p|
+        p.original = File.join(found.original, p.sub(/^#{found}/, ''))
+      end
+
+      paths
     end
+  end
+
+  def glob_all(pattern = nil, caller_lib = nil, search_paths = nil)
+    search_paths ||= @search_paths || SEARCH_PATHS
+    search_paths = search_paths.dup
+
+    location_paths = {}
+    search_paths.keys.collect do |where| 
+      found = find(where, Path.caller_lib_dir, search_paths)
+      paths = pattern ? Dir.glob(File.join(found, pattern)) : Dir.glob(found) 
+
+      paths.each do |p|
+        self.annotate p
+        p.original = File.join(found.original, p.sub(/^#{found}/, ''))
+      end
+
+      location_paths[where] = paths
+    end
+
+    #location_paths.values.compact.flatten.collect{|file| File.expand_path(file) }.uniq.collect{|path| Path.setup(path, self.resource, self.pkgdir)}
+    location_paths.values.compact.flatten.uniq
   end
 
   def [](name, orig = false)
@@ -232,14 +262,6 @@ module Path
       compact.select{|file| file.exists? }.uniq
   end
 
-  def glob_all(pattern = nil, caller_lib = nil, search_paths = nil)
-    search_paths ||= @search_paths || SEARCH_PATHS
-    search_paths = search_paths.dup
-
-    search_paths.keys.
-      collect{|where| pattern ? Dir.glob(File.join(find(where, Path.caller_lib_dir, search_paths), pattern)) : Dir.glob(find(where, Path.caller_lib_dir, search_paths)) }.
-      compact.flatten.collect{|file| File.expand_path(file)}.uniq.collect{|path| Path.setup(path, self.resource, self.pkgdir)}
-  end
   #{{{ Methods
 
   def in_dir?(dir)
