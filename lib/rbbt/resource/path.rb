@@ -80,7 +80,7 @@ module Path
 
       paths.each do |p|
         p.original = File.join(found.original, p.sub(/^#{found}/, ''))
-      end
+      end if found.original
 
       paths
     end
@@ -98,7 +98,7 @@ module Path
       paths.each do |p|
         self.annotate p
         p.original = File.join(found.original, p.sub(/^#{found}/, ''))
-      end
+      end if found.original
 
       location_paths[where] = paths
     end
@@ -167,6 +167,7 @@ module Path
 
     if located?
       @path[key] = self
+      self.original = self
       return self
     end
 
