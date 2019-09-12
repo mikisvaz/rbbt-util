@@ -341,6 +341,11 @@ begin
     exit 0
   end
 
+  if options.delete(:printname)
+    puts job.name
+    exit 0
+  end
+
   if do_exec or (job.respond_to?(:is_exec) and job.is_exec)
     res = job.exec(:stream)
 
@@ -373,7 +378,11 @@ begin
 
   if options.delete(:provenance)
     require 'rbbt/workflow/provenance'
-    puts Step.prov_report(job)
+    if options.delete(:printpath)
+      puts job.path
+    else
+      puts Step.prov_report(job)
+    end
     exit 0
   end
 
@@ -402,12 +411,6 @@ begin
     res = job
   end
 
-
-  if options.delete(:printname)
-    job.join if IO === job.result
-    puts job.name
-    exit 0
-  end
 
   if options.delete(:printpath)
     job.join
