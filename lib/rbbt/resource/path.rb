@@ -167,7 +167,7 @@ module Path
 
     if located?
       @path[key] = self
-      self.original = self
+      self.original ||= self
       return self
     end
 
@@ -247,7 +247,7 @@ module Path
                        res = path
                      end
 
-                     res.original = self
+                     res.original = self.original || self
 
                      res
                    end
