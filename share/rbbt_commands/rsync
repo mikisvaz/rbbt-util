@@ -28,7 +28,8 @@ if options[:help]
   exit 0
 end
 
-excludes = %w(.save .crap .source tmp filecache  open-remote workflows apps software jobs sinatra PCAWG)
+#excludes = %w(.save .crap .source tmp filecache open-remote workflows apps software jobs PCAWG)
+excludes = %w(.save .crap .source tmp filecache open-remote)
 excludes += (options[:exclude] || "").split(/,\s*/)
 excludes_str = excludes.collect{|s| "--exclude '#{s}'" } * " "
 
@@ -36,7 +37,7 @@ test_str = options[:test] ? '-nv' : ''
 
 source, target, _sep, *other = ARGV
 
-cmd = "rsync -at #{test_str} #{excludes_str} #{source} #{target} #{other * " "}"
+cmd = "rsync -atAX #{test_str} #{excludes_str} #{source} #{target} #{other * " "}"
 
 if options[:print]
   puts cmd 
