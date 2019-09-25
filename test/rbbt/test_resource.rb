@@ -83,4 +83,9 @@ class TestTSV < Test::Unit::TestCase
     end
   end
 
+  def test_identify
+    assert_equal 'share/databases/DATABASE/FILE', Rbbt.identify('/usr/local/share/rbbt/databases/DATABASE/FILE')
+    assert_equal 'share/databases/DATABASE/FILE', Rbbt.identify(File.join(ENV["HOME"], '.rbbt/share/databases/DATABASE/FILE'))
+  end
+
 end

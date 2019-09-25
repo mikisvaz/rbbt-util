@@ -281,5 +281,22 @@ url='#{url}'
 
     path
   end
+
+  def identify(path)
+    path = File.expand_path(path)
+    resource ||= Rbbt
+    (Path::STANDARD_SEARCH + resource.search_order + resource.search_paths.keys).uniq.each do |name|
+      pattern = resource.search_paths[name]
+      next if patterns.nil?
+      if String ===  pattern and pattern.include?('{')
+        regexp = "^" + pattern.gsub(/{([^}]+)}/,'(?<\1>[^/]+)') + "(?:/(?<REST>.*))?/?$"
+        if m = path.match(regexp) 
+          if m["PKGDIR"] == resource.pkgdir
+            return self[m["TOPLEVEL"]][m["SUBPATH"]][m["REST"]]
+          end
+        end
+      end
+    end
+  end
 end
 
