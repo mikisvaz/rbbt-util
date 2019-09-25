@@ -83,10 +83,8 @@ module Resource
         Misc.env_add('CLASSPATH', "#{dir}")
       end if File.exist? File.join(opt_dir, '.java-classpaths')
 
-      Dir.glob(File.join opt_dir, 'jars', '*').each do |file|
-        dir = line.chomp
-        dir = File.join(opt_dir, dir) unless dir[0] == "/"
-        Misc.env_add('CLASSPATH', "#{dir}")
+      Dir.glob(File.join opt_dir, 'jars', '*.jar').each do |file|
+        Misc.env_add('CLASSPATH', "#{file}")
       end
 
       if File.exist?(File.join(opt_dir, '.post_install')) and File.directory?(File.join(opt_dir, '.post_install'))
