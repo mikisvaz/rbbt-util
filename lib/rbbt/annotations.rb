@@ -22,7 +22,7 @@ module Annotated
     @info = nil
     @id = nil
     @self_md5 = nil
-    @annotation_values.instance_variable_set(:@annotation_md5, nil)
+    annotation_values.instance_variable_set(:@annotation_md5, nil)
   end
 
   def annotation_types
