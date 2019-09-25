@@ -299,6 +299,13 @@ module Open
     end
   end
 
+  def self.ssh_open(file)
+    m = file.match(/ssh:\/\/([^:]+):(.*)/)
+    server = m[1]
+    file = m[2]
+    CMD.cmd("ssh '#{server}' cat '#{file}'", :pipe => true)
+  end
+
   def self.file_write(file, content, mode = 'w')
     if (dir_sub_path = find_repo_dir(file))
       dir_sub_path.push content
@@ -507,6 +514,10 @@ module Open
     !! (file =~ /^(?:https?|ftp):\/\//)
   end
 
+  def self.ssh?(file)
+    !! (file =~ /^ssh:\/\//)
+  end
+
   def self.gzip?(file)
     file = file.find if Path === file
     !! (file =~ /\.gz$/)
@@ -571,15 +582,23 @@ module Open
     io = case
          when (IO === url or StringIO === url)
            url
-         when (not remote?(url))
+         when (not remote?(url) and not ssh?(url))
            file_open(url, options[:grep], mode, options[:invert_grep])
          when (options[:nocache] and options[:nocache] != :update)
            # What about grep?
-           wget(url, wget_options)
+           if ssh?(url)
+             ssh_open(url)
+           else
+             wget(url, wget_options)
+           end
          when (options[:nocache] != :update and in_cache(url, wget_options))
            file_open(in_cache(url, wget_options), options[:grep], mode, options[:invert_grep])
          else
-           io = wget(url, wget_options)
+           io = if ssh?(url)
+                  ssh_open(url)
+                else
+                  wget(url, wget_options)
+                end
            add_cache(url, io, wget_options)
            file_open(in_cache(url, wget_options), options[:grep], mode, options[:invert_grep])
          end
