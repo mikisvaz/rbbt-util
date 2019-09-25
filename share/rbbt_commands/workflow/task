@@ -230,6 +230,10 @@ Workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir_all))) if
 
 workflow = Workflow.require_workflow workflow
 
+if clean_task
+  ENV["RBBT_UPDATE"] = 'true'
+end
+
 if options[:update_all_jobs]
   ENV["RBBT_UPDATE_ALL_JOBS"] = 'true'
 end
@@ -306,6 +310,7 @@ end
 #- get job
 
 job = workflow.job(task.name, name, job_options)
+$job = job
 
 # clean job
 if clean 
@@ -351,7 +356,7 @@ begin
 
     result_type = job.result_type
 
-    res = JSON.parse(res.read) if (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep === job) && %w(array float integer boolean).include?(result_type.to_s)
+    res = JSON.parse(res.read) if (defined?(WorkflowRemoteClient) and WorkflowRemoteClient::RemoteStep === job) && %w(array float integer boolean).include?(result_type.to_s)
 
     case
     when res.respond_to?(:gets)
@@ -377,7 +382,6 @@ begin
   end
 
   if options.delete(:provenance)
-    require 'rbbt/workflow/provenance'
     if options.delete(:printpath)
       puts job.path
     else
@@ -387,7 +391,6 @@ begin
   end
 
   if tasks = options.delete(:prepare)
-    require 'rbbt/workflow/prepare'
     tasks = tasks.split(",")
     prepare_cpus = (options[:prepare_cpus] || 1)
     puts Step.prepare_dependencies(job, tasks,  prepare_cpus)
@@ -491,7 +494,7 @@ if job_file = options.delete(:job_file)
 end
 
 case res
-when (defined?(WorkflowRESTClient) and WorkflowRESTClient::RemoteStep)
+when (defined?(WorkflowRemoteClient) and WorkflowRemoteClient::RemoteStep)
   res = job.result
   if res.respond_to? :gets
     begin

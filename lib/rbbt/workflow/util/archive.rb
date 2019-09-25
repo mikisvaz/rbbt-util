@@ -49,32 +49,57 @@ class Step
     end
   end
 
+  def self.job_files_for_archive(files)
+    job_files = Set.new
+
+    jobs = files.collect do |file|  
+      if Step === file
+        file
+      else
+        file = file.sub(/\.info$/,'')
+        Step.new(File.expand_path(file))
+      end
+    end.uniq
+
+    jobs.each do |step|
+      next unless File.exists?(step.path)
+      job_files << step.path
+      job_files << step.info_file if File.exists?(step.info_file)
+      job_files << step.files_dir if Dir.glob(step.files_dir + '/*').any?
+      rec_dependencies = Set.new
+      deps = [step.path]
+      seen = Set.new
+      while deps.any?
+        path = deps.shift
+        dep = Step.new path
+        seen << dep.path
+        dep.info[:dependencies].each do |task, name, path|
+          dep = Step.new path
+          next if seen.include? dep.path
+          deps << dep.path
+          rec_dependencies << dep.path
+        end if dep.info[:dependencies]
+      end
+
+      rec_dependencies.each do |path|
+        next unless File.exists?(path)
+        job_files << dep.files_dir if Dir.glob(dep.files_dir + '/*').any?
+        job_files << dep.info_file if File.exists?(dep.info_file)
+        job_files << path
+      end
+    end
+
+    job_files.to_a
+  end
+
   def self.archive(files, target = nil)
     target = self.path + '.tar.gz' if target.nil?
-    target = File.expand_path(target)
+    target = File.expand_path(target) if String === target
 
-    jobs = files.collect{|file| file = file.sub(/\.info$/,''); Step.new(File.expand_path(file))}.uniq
+    job_files = job_files_for_archive files
     TmpFile.with_file do |tmpdir|
-      jobs.each do |step|
-        Step.link_job step.path, tmpdir
-        rec_dependencies = Set.new
-        deps = [step.path]
-        seen = Set.new
-        while deps.any?
-          path = deps.shift
-          dep = Step.new path
-          seen << dep.path
-          dep.info[:dependencies].each do |task, name, path|
-            dep = Step.new path
-            next if seen.include? dep.path
-            deps << dep.path
-            rec_dependencies << dep.path
-          end if dep.info[:dependencies]
-        end
-
-        rec_dependencies.each do |path|
-          Step.link_job path, tmpdir
-        end
+      job_files.each do |file|
+        Step.link_job file, tmpdir
       end
 
       Misc.in_dir(tmpdir) do

@@ -159,7 +159,7 @@ for this dependency
 
 end
 
-TestWF.workdir = Rbbt.tmp.test.workflow
+TestWF.workdir = Rbbt.tmp.test.jobs.TestWF
 
 class TestWorkflow < Test::Unit::TestCase
 
@@ -381,7 +381,8 @@ class TestWorkflow < Test::Unit::TestCase
     job = TestWF.job(:t3)
     job.step(:t1).clean
     Misc.with_env "RBBT_UPDATE_ALL_JOBS", "true" do
-     assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
+      job = TestWF.job(:t3)
+      assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
     end
   end
 
@@ -415,4 +416,19 @@ class TestWorkflow < Test::Unit::TestCase
 
   end
 
+  def test_archive
+    job = TmpFile.with_file("Hi") do |file|
+      job = TestWF.job(:reverse_file, nil, :file => file)
+      job.run
+      job
+    end
+    TmpFile.with_file nil, true, :extension => 'tar.gz' do |targz|
+      Step.archive([job], targz)
+      TmpFile.with_file do |dir|
+        dir = Path.setup(dir)
+        Misc.untar targz, dir
+        assert dir.glob("**/*").collect{|f| File.basename(f)}.include? job.name
+      end
+    end
+  end
 end

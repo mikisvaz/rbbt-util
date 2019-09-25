@@ -2,7 +2,8 @@ require 'rbbt/persist'
 require 'rbbt/persist/tsv'
 require 'rbbt/util/log'
 require 'rbbt/util/semaphore'
-require 'rbbt/workflow/accessor'
+require 'rbbt/workflow/step/accessor'
+require 'rbbt/workflow/step/prepare'
 
 class Step
   attr_accessor :clean_name, :path, :task, :workflow, :inputs, :dependencies, :bindings
@@ -140,7 +141,6 @@ class Step
       dep.inputs.zip(dep.inputs.fields).each do |v,f|
         if i.include?(f) && i[f] != v
           Log.debug "Conflict in #{ f }: #{[Misc.fingerprint(i[f]), Misc.fingerprint(v)] * " <-> "}"
-          i[f] = nil
         else 
           i[f] = v
         end
@@ -307,6 +307,46 @@ class Step
     end
     set_info :children_pids, children_pids
     child_pid
+  end
+
+  def cmd(*args)
+    all_args = *args
+
+    all_args << {} unless Hash === all_args.last
+
+    level = all_args.last[:log] || 0
+    level = 0 if TrueClass === level
+    level = 10 if FalseClass === level
+    level = level.to_i
+
+    all_args.last[:log] = true
+    all_args.last[:pipe] = true
+
+    io = CMD.cmd(*all_args)
+    child_pid = io.pids.first
+
+    children_pids = info[:children_pids]
+    if children_pids.nil?
+      children_pids = [child_pid]
+    else
+      children_pids << child_pid
+    end
+    set_info :children_pids, children_pids
+
+    while c = io.getc
+      STDERR << c if Log.severity <= level
+      if c == "\n"
+        if pid
+          Log.logn "STDOUT [#{pid}]: ", level
+        else
+          Log.logn "STDOUT: ", level
+        end
+      end
+    end 
+
+    io.join
+
+    nil
   end
 
 

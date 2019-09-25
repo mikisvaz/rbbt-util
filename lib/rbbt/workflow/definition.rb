@@ -80,6 +80,8 @@ module Workflow
         FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist? dep.files_dir
         Open.ln_h dep.path, self.tmp_path
       else
+        Open.rm_rf self.files_dir 
+        Open.link dep.files_dir, self.files_dir
         Open.link dep.path, self.path
       end
       nil

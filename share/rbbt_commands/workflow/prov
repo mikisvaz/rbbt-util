@@ -6,7 +6,7 @@ require 'rbbt-util'
 require 'fileutils'
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow/step'
-require 'rbbt/workflow/provenance'
+require 'rbbt/workflow/util/provenance'
 require 'rbbt/util/misc'
 
 require 'rbbt-util'
