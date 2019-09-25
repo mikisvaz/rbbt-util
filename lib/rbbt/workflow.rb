@@ -4,7 +4,9 @@ require 'rbbt/workflow/step'
 require 'rbbt/workflow/accessor'
 require 'rbbt/workflow/doc'
 require 'rbbt/workflow/examples'
-require 'rbbt/workflow/archive'
+
+require 'rbbt/workflow/util/archive'
+require 'rbbt/workflow/util/provenance'
 
 module Workflow
 
@@ -46,6 +48,11 @@ module Workflow
   def self.require_remote_workflow(wf_name, url)
     require 'rbbt/rest/client'
     eval "Object::#{wf_name} = WorkflowRESTClient.new '#{ url }', '#{wf_name}'"
+  end
+
+  def self.require_remote_workflow(wf_name, url)
+    require 'rbbt/workflow/remote/client'
+    eval "Object::#{wf_name} = WorkflowRemoteClient.new '#{ url }', '#{wf_name}'"
   end
 
   def self.load_workflow_libdir(filename)
@@ -159,9 +166,15 @@ module Workflow
       end
     end
 
-    if Open.remote? wf_name
+    if Open.remote?(wf_name) or Open.ssh?(wf_name)
       url = wf_name
-      wf_name = File.basename(url)
+
+      if Open.ssh?(wf_name)
+        wf_name = File.basename(url.split(":").last)
+      else
+        wf_name = File.basename(url)
+      end
+
       begin
         return require_remote_workflow(wf_name, url)
       ensure
