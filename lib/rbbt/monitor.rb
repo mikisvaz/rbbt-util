@@ -138,28 +138,32 @@ module Rbbt
     dirs.collect do |dir|
       next unless Open.exists? dir
 
+      task_dir_workflows = {}
       tasks_dirs = if dir == '.'
                     ["."]
-                  else
-                    workflowdirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
+                   else
+                     workflowdirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
+                                      repo_dir, sub_path = dir_sub_path
+                                      Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
+                                    else
+                                      dir.glob("*")
+                                    end
+
+                     workflowdirs.collect do |workflowdir|
+                       workflow = File.basename(workflowdir)
+                       next if workflows and not workflows.include? workflow
+
+                       task_dirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
                                      repo_dir, sub_path = dir_sub_path
                                      Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
                                    else
-                                     dir.glob("*")
+                                     workflowdir.glob("*")
                                    end
-
-                    workflowdirs.collect do |workflowdir|
-                      workflow = File.basename(workflowdir)
-                      next if workflows and not workflows.include? workflow
-
-                      if (dir_sub_path = Open.find_repo_dir(workflowdir))
-                        repo_dir, sub_path = dir_sub_path
-                        Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
-                      else
-                        workflowdir.glob("*")
-                      end
-                    end.compact.flatten
-                  end
+                       task_dirs.each do |tasks_dir|
+                         task_dir_workflows[tasks_dir] = workflow
+                       end
+                     end.compact.flatten
+                   end
 
       tasks_dirs.collect do |taskdir|
         task = File.basename(taskdir)
@@ -184,6 +188,7 @@ module Rbbt
                 end
 
         files = files.sort_by{|f| Open.mtime(f) || Time.now}
+        workflow = task_dir_workflows[taskdir]
         TSV.traverse files, :type => :array, :into => jobs, :_bar => "Finding jobs in #{ taskdir }" do |file|
           _files << file
           if m = file.match(/(.*)\.(info|pid|files)$/)
