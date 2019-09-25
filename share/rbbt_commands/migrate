@@ -1,0 +1,105 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow/remote/ssh/get'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+RSync a directory, commonly ~/.rbbt/ 
+
+$ rbbt migrate [options] <path> <search_path> 
+
+You can specify extra rsync options after --
+
+-h--help Print this help
+-t--test Do a verbose dry run
+-p--print Print command
+-d--delete Delete source file when moved
+-s--source* Source server
+-t--target* Target server
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+#excludes = %w(.save .crap .source tmp filecache open-remote workflows apps software jobs PCAWG)
+excludes = %w(.save .crap .source tmp filecache open-remote)
+excludes += (options[:exclude] || "").split(/,\s*/)
+excludes_str = excludes.collect{|s| "--exclude '#{s}'" } * " "
+
+test_str = options[:test] ? '-nv' : ''
+
+path, search_path, _sep, *other = ARGV
+
+resource = Rbbt
+
+path, real_paths = if options[:source]
+          paths = SSHClient.run(options[:source], <<-EOF).split("\n")
+require 'rbbt-util'
+path = "#{path}"
+if File.exists?(path)
+  path = #{resource.to_s}.identify(path)
+else
+  path = Path.setup(path)
+end
+puts path.glob_all * "\n"
+          EOF
+          [path, paths.collect{|p| [options[:source], p] * ":"}]
+        else
+          if File.exists?(path)
+            path = resource.identify(path) 
+          else
+            path = Path.setup(path)
+          end
+          [path, path.glob_all]
+        end
+
+target = if options[:target] 
+          target = SSHClient.run(options[:target], <<-EOF).split("\n").first
+require 'rbbt-util'
+path = "#{path}"
+resource = #{resource.to_s}
+search_path = "#{search_path}"
+puts resource[path].find(search_path)
+          EOF
+         else
+           resource[path].find(search_path)
+         end
+
+real_paths.each do |source|
+
+
+  if File.directory?(source)
+    source += "/" unless source[-1] == "/"
+    target += "/" unless target[-1] == "/"
+  end
+
+  next if source == target
+
+  if options[:target]
+    CMD.cmd("ssh #{options[:target]} mkdir -p '#{File.dirname(target)}'")
+  else
+    Open.mkdir File.dirname(target)
+  end
+
+  target = [options[:target], target] * ":" if options[:target]
+
+  cmd = "rsync -atAX #{test_str} #{excludes_str} #{source} #{target} #{other * " "}"
+
+  cmd << " && rm -Rf #{source}" if options[:delete]
+
+  if options[:print]
+    puts cmd 
+    exit 0
+  else
+    CMD.cmd_log(cmd)
+  end
+end

@@ -1,0 +1,132 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow'
+require 'rbbt/workflow/remote/ssh/get'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+RSync a directory, commonly ~/.rbbt/ 
+
+$ rbbt migrate [options] <job_path> <search_path> 
+
+You can specify extra rsync options after --
+
+-h--help Print this help
+-t--test Do a verbose dry run
+-p--print Print command
+-d--delete Delete source file when moved
+-s--source* Source server
+-t--target* Target server
+-r--recursive Recursively move all deps
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+excludes = %w(.save .crap .source tmp filecache open-remote)
+excludes += (options[:exclude] || "").split(/,\s*/)
+excludes_str = excludes.collect{|s| "--exclude '#{s}'" } * " "
+
+test_str = options[:test] ? '-nv' : ''
+
+path, search_path, _sep, *other = ARGV
+
+resource = Rbbt
+
+paths = if options[:source]
+          SSHClient.run(options[:source], <<-EOF).split("\n")
+require 'rbbt-util'
+require 'rbbt/workflow'
+
+path = "#{path}"
+if File.exists?(path)
+  path = #{resource.to_s}.identify(path)
+else
+  path = Path.setup(path)
+end
+files = path.glob_all
+if #{options[:recursive].to_s == 'true'}
+  files = Step.job_files_for_archive(files)
+end
+puts files * "\n"
+          EOF
+        else
+          if File.exists?(path)
+            path = resource.identify(path)
+          else
+            path = Path.setup(path)
+          end
+          files = path.glob_all
+          if options[:recursive]
+            files = Step.job_files_for_archive(files)
+          end
+          files
+        end
+
+target = if options[:target] 
+           target = SSHClient.run(options[:target], <<-EOF).split("\n").first
+require 'rbbt-util'
+path = "var/jobs"
+resource = #{resource.to_s}
+search_path = "#{search_path}"
+puts resource[path].find(search_path)
+           EOF
+         else
+           resource['var/jobs'].find(search_path)
+         end
+
+subpath_files = {}
+paths.each do |source|
+  parts = source.split("/")
+  subpath = parts[0..-4] * "/"
+  source = parts[-3..-1] * "/"
+  subpath_files[subpath] ||= []
+  subpath_files[subpath] << source
+end
+
+subpath_files.each do |subpath, files|
+  if options[:target]
+    CMD.cmd("ssh #{options[:target]} mkdir -p '#{File.dirname(target)}'")
+  else
+    Open.mkdir File.dirname(target)
+  end
+
+  if options[:source]
+    source = [options[:source], subpath] * ":"
+  else
+    source = subpath
+  end
+  target = [options[:target], target] * ":" if options[:target]
+
+  files_and_dirs = Set.new(files )
+  files.each do |file|
+    parts = file.split("/")[0..-2]
+    while parts.any?
+      files_and_dirs << parts * "/"
+      parts.pop
+    end
+  end
+
+  TmpFile.with_file(files_and_dirs.to_a * "\n") do |tmp_include_file|
+    includes_str = "--include-from='#{tmp_include_file}'"
+    cmd = "rsync -atAXmPL --progress #{test_str} --include-from='#{tmp_include_file}' --exclude='*' #{source}/ #{target}/ #{other * " "}"
+
+    cmd << " && rm -Rf #{source}" if options[:delete]
+
+    if options[:print]
+      ppp Open.read(tmp_include_file)
+      puts cmd 
+    else
+      CMD.cmd_log(cmd)
+    end
+  end
+end

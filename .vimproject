@@ -100,29 +100,51 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    workflow.rb
    workflow=workflow{
     annotate.rb
+
     definition.rb
     doc.rb
     examples.rb
     
+    accessor.rb
+
     task.rb
+
     step.rb
     step=step{
+     accessor.rb
+     prepare.rb
      dependencies.rb
      run.rb
     }
-    accessor.rb
-
-    provenance.rb
-
-    prepare.rb
 
     schedule.rb
 
     usage.rb
 
-    archive.rb
-
     soap.rb
+
+    util=util{
+     archive.rb
+     provenance.rb
+    }
+
+    remote=remote{
+     client.rb
+
+     remote_step.rb
+     rest=rest{
+      adaptor.rb
+      get.rb
+     }
+     ssh=ssh{
+      adaptor.rb
+      get.rb
+     }
+    }
+
+    integration=integration{
+     nextflow.rb
+    }
    }
 
    rest=rest{
@@ -360,6 +382,8 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    watch
    cmd
    rsync
+   migrate
+   migrate_job
    system=system{
     deleted_files
     status
