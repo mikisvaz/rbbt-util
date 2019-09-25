@@ -150,14 +150,18 @@ module CMD
     pids = [pid]
 
     if pipe
+
+      ConcurrentStream.setup sout, :pids => pids, :autojoin => no_wait, :no_fail => no_fail 
+
       err_thread = Thread.new do
         while line = serr.gets
+          sout.log = line
           Log.log "STDERR [#{pid}]: " +  line, stderr 
         end if Integer === stderr and log
         serr.close
       end
 
-      ConcurrentStream.setup sout, :pids => pids, :threads => [in_thread, err_thread, wait_thr].compact, :autojoin => no_wait, :no_fail => no_fail 
+      sout.threads = [in_thread, err_thread, wait_thr].compact
 
       sout
     else
