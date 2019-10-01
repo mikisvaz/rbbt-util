@@ -3,12 +3,16 @@ register Sinatra::MultiRoute
 
 register Sinatra::RbbtRESTMain
 register Sinatra::RbbtRESTEntity
-register Sinatra::RbbtRESTFileServer # Remove to prevent serving files
 register Sinatra::RbbtRESTKnowledgeBase
 register Sinatra::RbbtRESTWorkflow
 
 helpers Sinatra::RbbtToolHelper
 helpers Sinatra::RbbtMiscHelpers
+
+if ENV["RBBT_REST_FILE_SERVER"] == 'true'
+  Log.high "Activating File Server"
+  register Sinatra::RbbtRESTFileServer 
+end
 
 #{{{ SESSIONS
 

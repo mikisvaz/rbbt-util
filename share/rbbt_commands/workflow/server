@@ -23,6 +23,7 @@ $ rbbt workflow server [options] <Workflow>
 -R--requires* Require a list of files
 --views* Directory with view templates
 --stream Activate streaming of workflow tasks
+-fs--file_server Activate file serving for resources
 --export_all Export all workflow tasks (use with caution!)
 --export* Export workflow tasks (asynchronous)
 --export_asynchronous* Export workflow tasks as asynchronous
@@ -81,9 +82,10 @@ TmpFile.with_file do |app_dir|
     Open.write(app_dir.etc.requires.find, requires.split(/,\s*/)*"\n") if requires and not requires.empty? 
 
     require 'rack'
-    ENV["RBBT_FINDER"] = "true" if options.include?(:finder)
+    ENV["RBBT_FINDER"] = "true" if options[:finder]
     ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
     ENV["RBBT_VIEWS_DIR"] = options[:views] if options.include?(:views)
+    ENV["RBBT_REST_FILE_SERVER"] = "true" if  options[:file_server]
 
     if options[:export_all]
       ENV["RBBT_WORKFLOW_EXPORT_ALL"] = 'true'
