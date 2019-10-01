@@ -297,6 +297,7 @@ url='#{url}'
         end
       end
     end
+    nil
   end
 end
 

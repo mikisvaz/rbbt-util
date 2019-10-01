@@ -384,6 +384,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    rsync
    migrate
    migrate_job
+   purge_job
    system=system{
     deleted_files
     status

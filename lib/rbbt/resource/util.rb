@@ -25,7 +25,7 @@ module Path
   SLASH = "/"[0]
   DOT = "."[0]
   def located?
-    self.byte(0) == SLASH or (self.byte(0) == DOT and self.byte(1) == SLASH)
+    self.byte(0) == SLASH || (self.byte(0) == DOT && self.byte(1) == SLASH) || (resource != Rbbt && (Open.remote?(self) || Open.ssh?(self)))
   end
 end
 

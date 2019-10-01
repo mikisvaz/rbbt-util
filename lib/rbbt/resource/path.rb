@@ -236,6 +236,7 @@ module Path
                          sub('{BASENAME}', File.basename(self)).
                          sub('{PATH}', self).
                          sub('{LIBDIR}', libdir).
+                         sub('{RESOURCE}', resource.to_s).
                          sub('{REMOVE}/', '').
                          sub('{REMOVE}', '')
 

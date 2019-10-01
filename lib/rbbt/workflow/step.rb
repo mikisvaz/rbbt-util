@@ -83,6 +83,20 @@ class Step
     end
   end
 
+  def load_dependencies_from_info
+    @dependencies = (self.info[:dependencies] || []).collect do |task,name,dep_path|
+      if Open.exists?(dep_path) || Open.exists?(dep_path + '.info')
+        Workflow._load_step dep_path
+      else
+        next if FalseClass === relocated
+        new_path = Workflow.relocate(path, dep_path)
+        relocated = true if Open.exists?(new_path) || Open.exists?(new_path + '.info')
+        Workflow._load_step new_path
+      end
+    end.compact
+    @relocated = relocated
+  end
+
 
   def inputs
     return @inputs if NamedArray === @inputs
