@@ -95,8 +95,9 @@ module Path
       found = find(where, Path.caller_lib_dir, search_paths)
       paths = pattern ? Dir.glob(File.join(found, pattern)) : Dir.glob(found) 
 
-      paths.each do |p|
-        self.annotate p
+      paths = paths.collect{|p| self.annotate p }
+
+      paths = paths.each do |p|
         p.original = File.join(found.original, p.sub(/^#{found}/, ''))
       end if found.original and pattern
 
