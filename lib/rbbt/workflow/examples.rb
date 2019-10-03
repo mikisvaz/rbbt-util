@@ -46,6 +46,7 @@ module Workflow
         Log.debug "Trying #{ input }: #{file}"
         next unless file and file.exists?
 
+
         case input_types[input]
         when :file
           Log.debug "Pointing #{ input } to #{file}"

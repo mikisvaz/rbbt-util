@@ -441,7 +441,7 @@ class Step
 
     # A step result with no info_file means that it was manually
     # placed. In that case, do not consider its dependencies
-    return [] if not (defined? WorkflowRESTClient and  WorkflowRESTClient::RemoteStep === self) and not Open.exists?(self.info_file) and Open.exists?(self.path.to_s) 
+    return [] if ! (defined? WorkflowRemoteClient && WorkflowRemoteClient::RemoteStep === self) && ! Open.exists?(self.info_file) && Open.exists?(self.path.to_s) 
 
     return [] if dependencies.nil? or dependencies.empty?
 

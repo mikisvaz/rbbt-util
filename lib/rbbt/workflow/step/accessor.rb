@@ -423,7 +423,7 @@ class Step
     return [] if rec_dependencies.empty?
     canfail_paths = self.canfail_paths
     dirty_files = rec_dependencies.reject{|dep|
-      (defined?(WorkflowRESTClient) && WorkflowRESTClient::RemoteStep === dep) || 
+      (defined?(WorkflowRemoteClient) && WorkflowRemoteClient::RemoteStep === dep) || 
         ! Open.exists?(dep.info_file) ||
         (dep.path && (Open.exists?(dep.path) || Open.remote?(dep.path))) || 
         ((dep.error? || dep.aborted? || dep.waiting?) && (! dep.recoverable_error? || canfail_paths.include?(dep.path)))

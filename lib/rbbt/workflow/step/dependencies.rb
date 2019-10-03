@@ -75,7 +75,7 @@ class Step
 
     status = job.status.to_s
 
-    if defined?(WorkflowRESTClient) && WorkflowRESTClient::RemoteStep === job 
+    if defined?(WorkflowRemoteClient) && WorkflowRemoteClient::RemoteStep === job 
       return unless (status == 'done' or status == 'error' or status == 'aborted')
     else
       return if status == 'streaming' and job.running?
