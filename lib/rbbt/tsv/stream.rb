@@ -21,7 +21,7 @@ module TSV
  
   def self.paste_streams(streams, options = {})
     options = Misc.add_defaults options, :sep => "\t", :sort => true
-    sort, sep, preamble, header, same_fields, fix_flat, all_match = Misc.process_options options, :sort, :sep, :preamble, :header, :same_fields, :fix_flat, :all_match
+    sort, sep, preamble, header, same_fields, fix_flat, all_match, field_prefix = Misc.process_options options, :sort, :sep, :preamble, :header, :same_fields, :fix_flat, :all_match, :field_prefix
 
     out = Misc.open_pipe do |sin|
 
@@ -57,12 +57,20 @@ module TSV
 
       streams = streams.collect do |stream|
         parser = TSV::Parser.new stream, options.dup
+        sfields = parser.fields
+
+        if field_prefix
+          index = streams.index stream
+          prefix = field_prefix[index]
+
+          sfields = sfields.collect{|f| [prefix, f] * ":" }
+        end
 
         lines         << parser.first_line
         empty         << stream               if parser.first_line.nil?
         key_fields    << parser.key_field
-        fields        << parser.fields
-        sizes         << parser.fields.length if parser.fields
+        fields        << sfields
+        sizes         << sfields.length if sfields
         input_options << parser.options
         preambles     << parser.preamble      if preamble and not parser.preamble.empty?
 
