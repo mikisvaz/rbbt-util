@@ -422,7 +422,7 @@ module Workflow
     task_inputs = task_info[:inputs]
     persist_inputs = inputs.values_at(*task_inputs)
     persist_inputs += inputs.values_at(*inputs.keys.select{|k| String === k && k.include?("#") }.sort)
-    Persist.memory("STEP", :taskname => taskname, :jobname => jobname, :inputs => persist_inputs, :repo => step_cache) do
+    Persist.memory("STEP", :workflow => self.to_s, :taskname => taskname, :jobname => jobname, :inputs => persist_inputs, :repo => step_cache) do
       __job(taskname, jobname, inputs)
     end
   end
