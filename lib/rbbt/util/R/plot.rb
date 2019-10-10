@@ -220,16 +220,12 @@ data = NULL
         options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')' if field_classes.any?
 
         data.R <<-EOF, :plot, options
-  png("#{ filename }", #{ width }, #{ height })
-  { #{script} }
-  dev.off()
+  rbbt.png_plot("#{ filename }", width=#{ width }, height = #{ height }, function(){ #{script} })
   data = NULL
         EOF
       else
         R.run <<-EOF, :plot, options
-  png("#{ filename }", #{ width }, #{ height })
-  { #{script} }
-  dev.off()
+  rbbt.png_plot("#{ filename }", width=#{ width }, height = #{ height }, function(){ #{script} })
         EOF
       end
     end

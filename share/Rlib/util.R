@@ -563,14 +563,22 @@ rbbt.get.modes <- function(x,bw = NULL,spar = NULL) {
 #{{{ PLOTS
 
 rbbt.png_plot <- function(filename, p, width=500, height=500, ...){
-    png(filename=filename, width=width, height=height, ...);
-    eval(parse(text=p));
+    png(filename=filename, width=width, height=height, type='cairo', ...);
+    if (is.function(p)) {
+      p()
+    }else{
+      eval(parse(text=p));
+    }
     dev.off()
 }
 
 rbbt.tiff_plot <- function(filename, p, width=500, height=500, ...){
     tiff(filename=filename, width=width, height=height, ...);
-    eval(parse(text=p));
+    if (is.function(p)) {
+      p()
+    }else{
+      eval(parse(text=p));
+    }
     dev.off()
 }
 
@@ -713,9 +721,21 @@ rbbt.plot.matrix <- function(x, ...){
     layout(1);
 }
 
+rbbt.plot.set_colors <- function(size, set="Set1"){
+  rbbt.require('RColorBrewer')
+  return(brewer.pal(size, set))
+}
+
 # Adapted from: https://rstudio-pubs-static.s3.amazonaws.com/13301_6641d73cfac741a59c0a851feb99e98b.html
-rbbt.plot.venn <- function(data, a, ...) {
+rbbt.plot.venn <- function(data, a=NULL, category=NULL, fill=NULL, ...) {
     rbbt.require('VennDiagram')
+
+    if (is.null(a)){ 
+      a = names(data); 
+      category = a; 
+      fill=rbbt.plot.set_colors(dim(data)[2], "Set3")
+    }
+
     group.matches <- function(data, fields) {
         sub = data
         for (i in 1:length(fields)) {
@@ -725,20 +745,20 @@ rbbt.plot.venn <- function(data, a, ...) {
     }
 
     if (length(a) == 1) {
-        out <- draw.single.venn(group.matches(data, a), ...)
+        out <- draw.single.venn(group.matches(data, a), category=category, fill=fill, ...)
     }
     if (length(a) == 2) {
-        out <- draw.pairwise.venn(group.matches(data, a[1]), group.matches(data, a[2]), group.matches(data, a[1:2]), ...)
+        out <- draw.pairwise.venn(group.matches(data, a[1]), group.matches(data, a[2]), group.matches(data, a[1:2]), category=category, fill=fill, ...)
     }
     if (length(a) == 3) {
         out <- draw.triple.venn(group.matches(data, a[1]), group.matches(data, a[2]), group.matches(data, a[3]), group.matches(data, a[1:2]), 
-            group.matches(data, a[2:3]), group.matches(data, a[c(1, 3)]), group.matches(data, a), ...)
+            group.matches(data, a[2:3]), group.matches(data, a[c(1, 3)]), group.matches(data, a), category=category, fill=fill, ...)
     }
     if (length(a) == 4) {
         out <- draw.quad.venn(group.matches(data, a[1]), group.matches(data, a[2]), group.matches(data, a[3]), group.matches(data, a[4]), 
             group.matches(data, a[1:2]), group.matches(data, a[c(1, 3)]), group.matches(data, a[c(1, 4)]), group.matches(data, a[2:3]), 
             group.matches(data, a[c(2, 4)]), group.matches(data, a[3:4]), group.matches(data, a[1:3]), group.matches(data, a[c(1, 2, 
-                4)]), group.matches(data, a[c(1, 3, 4)]), group.matches(data, a[2:4]), group.matches(data, a), ...)
+                4)]), group.matches(data, a[c(1, 3, 4)]), group.matches(data, a[2:4]), group.matches(data, a), category=category, fill=fill, ...)
     }
     if (length(a) == 5) {
         out <- draw.quintuple.venn(
@@ -755,7 +775,7 @@ rbbt.plot.venn <- function(data, a, ...) {
             group.matches(data, a[c(3, 4, 5)]),
             group.matches(data, a[c(1, 2, 3, 4)]),group.matches(data, a[c(1, 2, 3, 5)]),group.matches(data, a[c(1, 2, 4, 5)]),group.matches(data, a[c(1, 3, 4, 5)]),group.matches(data, a[c(2, 3, 4, 5)]),
             group.matches(data, a),
-            ...)
+            category=category, fill=fill, ...)
 
     }
     if (!exists("out")) 
