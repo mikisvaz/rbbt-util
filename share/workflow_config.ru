@@ -38,8 +38,6 @@ $app = app = eval "class #{app_name} < Sinatra::Base; self end"
 Rbbt.search_paths = Path::SEARCH_PATHS.merge(:workflow => File.join(wf.libdir, '{TOPLEVEL}','{SUBPATH}'))
 
 etc_dir = Rbbt.etc
-#etc_dir.search_paths = Path::SEARCH_PATHS.merge(:workflow => File.join(wf.libdir, '{TOPLEVEL}','{SUBPATH}'))
-
 
 #{{{ PRE
 load_file etc_dir['app.d/pre.rb'].find 

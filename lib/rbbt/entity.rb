@@ -130,6 +130,8 @@ module Entity
       end
 
       def self.property(name, &block)
+        Log.debug "Defining property #{name} for #{self}"
+
         case
         when (Hash === name and name.size == 1)
           name, type = name.collect.first
