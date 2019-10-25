@@ -24,14 +24,13 @@ class Step
       seen = Set.new
       while deps.any?
         path = deps.shift
-        dep = Step.new path
+        dep = Workflow.load_step path
         seen << dep.path
-        dep.info[:dependencies].each do |task, name, path|
-          dep = Step.new path
+        dep.dependencies.each do |dep|
           next if seen.include? dep.path
           deps << dep.path
           rec_dependencies << dep.path
-        end if dep.info[:dependencies]
+        end if dep.dependencies
       end
 
       rec_dependencies.each do |path|
@@ -72,7 +71,7 @@ class Step
       while deps.any?
         path = deps.shift
 
-        dep = Step.new path
+        dep = Workflow.load_step path
         seen << dep.path
 
         dep.relocated = !!relocate
@@ -86,9 +85,7 @@ class Step
         end if dep.info[:dependencies]
       end
 
-      rec_dependencies.each do |path|
-        next unless File.exists?(path)
-        dep = Step.new path
+      rec_dependencies.each do |dep|
         job_files << dep.path
         job_files << dep.files_dir if Dir.glob(dep.files_dir + '/*').any?
         job_files << dep.info_file if File.exists?(dep.info_file)
