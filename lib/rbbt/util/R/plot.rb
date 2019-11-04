@@ -138,6 +138,7 @@ module R
       options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')'
 
       data.R <<-EOF, :plot, options
+rbbt.require('ggplot2')
 plot = { #{script} }
 
 ggsave('#{filename}', plot, width = #{R.ruby2R width}, height = #{R.ruby2R height})

@@ -404,7 +404,7 @@ setup(){
     else
         local old_pwd="`expand_path $(pwd)`"
 
-        for exe in ` find "$pkg_dir/" "$pkg_dir/source/" "$pkg_dir/src/" -maxdepth 1 -type f -executable`; do
+        for exe in ` find "$pkg_dir/" "$pkg_dir/build"  "$pkg_dir/source/" "$pkg_dir/src/" -maxdepth 1 -type f -executable`; do
             orig=$exe
             exe=$(basename $exe)
             echo "EXE $exe"

@@ -338,6 +338,7 @@ module Open
     source = source.find if Path === source
     target = target.find if Path === target
 
+    target = File.join(target, File.basename(source)) if File.directory? target
     FileUtils.mkdir_p File.dirname(target) unless File.exists?(File.dirname(target))
     FileUtils.rm target if File.exists?(target)
     FileUtils.ln_s source, target

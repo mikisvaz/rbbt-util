@@ -55,7 +55,7 @@ puts path.glob_all.collect{|p| File.directory?(p) ? p + "/" : p } * "\n"
           [path, paths.collect{|p| [options[:source], p] * ":"}]
         else
           if File.exists?(path)
-            path = resource.identify(path) 
+            path = resource.identify(path)
           else
             path = Path.setup(path)
           end

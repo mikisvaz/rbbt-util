@@ -20,7 +20,7 @@ module CMD
         if test
           CMD.cmd(test)
         else
-          CMD.cmd("#{cmd} --help")
+          CMD.cmd("#{tool} --help")
         end
       rescue
         if claim

@@ -4,19 +4,27 @@ require 'pycall/import'
 
 module RbbtPython
   extend PyCall::Import
-  def self.run(mod = nil, &block)
+  def self.run(mod = nil, imports = nil, &block)
     begin
-      pyimport mod unless mod.nil?
-      case block.arity
-      when 0
-        yield 
-      when 1
-        yield self.send(mod)
-      else
-        raise "Unknown arity on block of code #{block.arity}"
+      if mod
+        if imports
+          pyfrom mod, :import => imports
+        else
+          pyimport mod 
+        end
       end
+
+      module_eval(&block)
+
     rescue
       Log.exception $!
     end
   end
+
+  def self.add_path(path)
+    self.run 'sys' do
+      sys.path.append path
+    end
+  end
+
 end

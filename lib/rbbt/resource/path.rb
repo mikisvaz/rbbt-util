@@ -402,6 +402,11 @@ module Path
     self.annotate(new_path)
   end
 
+  def remove_extension(new_extension = nil)
+    self.sub(/\.[^\.\/]{1,5}$/,'')
+  end
+
+
   def self.get_extension(path)
     path.match(/\.([^\.\/]{1,5})$/)[1]
   end

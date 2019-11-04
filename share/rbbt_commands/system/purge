@@ -2,7 +2,6 @@
 
 options = SOPT.get("-a--app*")
 
-
 CMD.cmd("rbbt workflow monitor --quick -c -a -d #{Rbbt.var.jobs.find}").read
 CMD.cmd("rm -f  #{ Rbbt.tmp.tsv_open_locks.find.glob("*").collect{|f| "'#{f}'" } * " " }").read
 CMD.cmd("find #{Rbbt.share.find_all.collect{|f| "'#{f}'" } * " " } -name '*.lock' -delete").read 

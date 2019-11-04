@@ -485,6 +485,7 @@ rbbt.model.inpute <- function(data, formula, ...){
 }
 
 rbbt.tsv.melt <- function(tsv, variable = NULL, value = NULL, key.field = NULL){
+    rbbt.require('reshape2')
     if (is.null(key.field)){ key.field = attributes(data)$key.field;}
     if (is.null(key.field)){ key.field = "ID" }
 
