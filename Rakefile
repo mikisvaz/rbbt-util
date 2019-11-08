@@ -2,8 +2,8 @@ require 'rubygems'
 require 'rake'
 
 begin
-  require 'jeweler'
-  Jeweler::Tasks.new do |gem|
+  require 'juwelier'
+  Juwelier::Tasks.new do |gem|
     gem.name = "rbbt-util"
     gem.summary = %Q{Utilities for the Ruby Bioinformatics Toolkit (rbbt)}
     gem.description = %Q{Utilities for handling tsv files, caches, etc}
@@ -38,9 +38,9 @@ begin
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
     gem.license = "MIT"
   end
-  Jeweler::GemcutterTasks.new  
+  Juwelier::GemcutterTasks.new  
 rescue LoadError
-  puts "Jeweler (or a dependency) not available. Install it with: sudo gem install jeweler"
+  puts "Juwelier (or a dependency) not available. Install it with: sudo gem install jeweler"
 end
 
 require 'rake/testtask'
