@@ -15,6 +15,7 @@ module Marenostrum
     def self.template(args, options = {})
 
       development      = options.delete :drbbt
+      singularity      = options.delete :singularity
       contain          = options.delete :contain
       sync             = options.delete :sync
       contain_and_sync = options.delete :contain_and_sync
@@ -228,7 +229,11 @@ EOF
 
         exec_cmd = singularity_exec + " " + exec_cmd
       else
-        exec_cmd << " " << %(~/git/rbbt-util/bin/rbbt --dev=~/git/)
+        if development
+          exec_cmd << " " << %(~/git/rbbt-util/bin/rbbt --dev=~/git/)
+        else
+          exec_cmd << " " << 'rbbt'
+        end
       end
 
 
