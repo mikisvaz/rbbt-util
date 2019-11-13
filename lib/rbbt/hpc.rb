@@ -38,7 +38,7 @@ module Marenostrum
 
       contain = File.expand_path(contain) if contain
 
-      singularity = true if contain || ! development
+      singularity = true if contain 
 
 
       name = options[:name] ||= Misc.obj2digest({:options => options.collect{|k,v| [k,v]}.sort_by{|k,v| k.to_s }, :args => args})
@@ -228,7 +228,7 @@ EOF
 
         exec_cmd = singularity_exec + " " + exec_cmd
       else
-        exec_cmd << %(~/git/rbbt-util/bin/rbbt --dev=~/git/)
+        exec_cmd << " " << %(~/git/rbbt-util/bin/rbbt --dev=~/git/)
       end
 
 

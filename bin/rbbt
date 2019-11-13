@@ -55,11 +55,13 @@ $ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value
 --update_tsv            #{Log.color :yellow, "Update persisted TSV files also if source has been updated"}
 --locate_file           #{Log.color :yellow, "Report the location of the script instead of executing it"}
 --dump_mem*             #{Log.color :yellow, "Dump strings in memory each second into file"}
--nolock--no_lock_id            #{Log.color :yellow, "Do not track lockfiles with ids (prevent stale file handlers for high-througput and high-concurrency)"}
+-nolock--no_lock_id     #{Log.color :yellow, "Do not track lockfiles with ids (prevent stale file handlers for high-througput and high-concurrency)"}
 -ji--jobname_show_inputs  #{Log.color :yellow, "Show inputs as part of the jobname in workflows instead of digesting them"}
 -ck--config_keys*       #{Log.color :yellow, "Override some config keys"}
+-srand--random_seed*    #{Log.color :yellow, "Set the random seed"}
 EOF
 
+srand(options[:random_seed].to_i) if options[:random_seed]
 if options[:jobname_show_inputs]
   ENV["RBBT_INPUT_JOBNAME"] = "true"
 end

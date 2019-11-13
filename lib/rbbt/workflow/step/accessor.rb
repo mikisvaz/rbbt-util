@@ -283,7 +283,7 @@ class Step
       now = Time.now
       str = Log.color :reset
       str << "#{ Log.color status_color, status}"
-      str << ": #{ message }" if message
+      str << ": #{ message }" if message and message != :result
       str << " -- #{Log.color :blue, path.to_s}" if path
       str << " #{Log.color :yellow, Process.pid}"
       str
@@ -293,6 +293,7 @@ class Step
     Log.info do 
       now = Time.now
       str = "#{ Log.color :cyan, status.to_s } +#{Log.color :green, "%.2f" % (eend - start)}"
+      str << ": #{ res }" if message == :result
       str << " -- #{Log.color :blue, path.to_s}" if path
       str << " #{Log.color :yellow, Process.pid}"
       str

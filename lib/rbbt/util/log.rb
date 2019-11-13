@@ -34,6 +34,70 @@ module Log
     line.gsub('`', "'")
   end
 
+
+  def self.trap_std(msg = "STDOUT", msge = "STDERR", severity = 0, severity_err = nil)
+    sout, sin = Misc.pipe
+    soute, sine = Misc.pipe
+    backup_stderr = STDERR.dup
+    backup_stdout = STDOUT.dup
+    old_logfile = Log.logfile
+    Log.logfile(backup_stderr)
+
+    severity_err ||= severity
+    th_log = Thread.new do
+      while line = sout.gets
+        Log.logn "#{msg}: " + line, severity
+      end
+    end
+
+    th_loge = Thread.new do
+      while line = soute.gets
+        Log.logn "#{msge}: " + line, severity_err
+      end
+    end
+
+    begin
+      STDOUT.reopen(sin)
+      STDERR.reopen(sine)
+      yield
+    ensure
+      STDERR.reopen backup_stderr
+      STDOUT.reopen backup_stdout
+      sin.close
+      sine.close
+      th_log.join
+      th_loge.join
+      backup_stdout.close
+      backup_stderr.close
+      Log.logfile = old_logfile
+    end
+  end
+
+  def self.trap_stderr(msg = "STDERR", severity = 0)
+    sout, sin = Misc.pipe
+    backup_stderr = STDERR.dup
+    old_logfile = Log.logfile
+    Log.logfile(backup_stderr)
+
+    th_log = Thread.new do
+      while line = sout.gets
+        Log.logn "#{msg}: " + line, severity
+      end
+    end
+
+    begin
+      STDERR.reopen(sin)
+      yield
+      sin.close
+    ensure
+      STDERR.reopen backup_stderr
+      th_log.join
+      backup_stderr.close
+      Log.logfile = old_logfile
+    end
+  end
+
+
   def self._ignore_stderr
     backup_stderr = STDERR.dup
     File.open('/dev/null', 'w') do |f|
@@ -46,6 +110,7 @@ module Log
         end
     end
   end
+
 
   def self.ignore_stderr(&block)
     LOG_MUTEX.synchronize do
@@ -174,9 +239,12 @@ module Log
     str = prefix << " " << message.to_s
 
     LOG_MUTEX.synchronize do
-      STDERR.write str
+      if logfile.nil?
+        STDERR.write str
+      else
+        logfile.write str 
+      end
       Log::LAST.replace "log"
-      logfile.write str unless logfile.nil?
       nil
     end
   end
@@ -389,14 +457,3 @@ def eef(obj=nil, file = $stdout)
   Log.log_obj_fingerprint(obj, :error, file)
 end
 
-if __FILE__ == $0
-  Log.severity = 0
-
-  (0..6).each do |level|
-    Log.log("Level #{level}", level)
-  end
-
-  require 'rbbt/util/misc'
-  eee [1,2,3]
-  eef [1,2,3]
-end

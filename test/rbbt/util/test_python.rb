@@ -40,5 +40,29 @@ def python_test(a, b):
       assert_equal 3, res
     end
   end
-end
+
+  def test_run_log
+    Log.severity = 0
+    TmpFile.with_file do |tmpdir|
+      code =<<-EOF
+import sys
+def python_print():
+	print("Test STDERR", file=sys.stderr)
+	print("Test STDOUT")
+      EOF
+      Open.write(File.join(tmpdir, 'file_print.py'), code)
+      RbbtPython.add_path tmpdir
+
+      RbbtPython.run_log 'file_print' do 
+        file_print.python_print
+      end
+      RbbtPython.run_log_stderr 'file_print' do 
+        file_print.python_print
+      end
+
+      RbbtPython.run_log 'file_print' do 
+        file_print.python_print
+      end
+    end
+  end
 
