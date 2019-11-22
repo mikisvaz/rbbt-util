@@ -531,5 +531,41 @@ row5,D
     assert_equal tsv4.attach(tsv1)["row1"]["bar (ValueB)"], %w(b)
     assert_equal tsv3.attach(tsv1)["b"]["ValueD"], %w(d)
   end
+
+  def test_attach_single_nils
+    content1 =<<-EOF
+#Id,ValueA
+row1,
+row2,AA
+    EOF
+    content2 =<<-EOF
+#Id,ValueB
+row1,B
+row2,BB
+    EOF
+    content3 =<<-EOF
+#Id,ValueC
+row1,
+row2,CC
+    EOF
+
+    tsv1 = tsv2 = tsv3 = tsv4 = index = nil
+    TmpFile.with_file(content1) do |filename|
+      tsv1 = TSV.open(File.open(filename), :double, :sep => ',', :type => :single)
+      tsv1.keys.each{|k| tsv1[k] = nil if tsv1[k] == ""}
+    end
+
+    TmpFile.with_file(content2) do |filename|
+      tsv2 = TSV.open(File.open(filename), :double, :sep => ',', :type => :single)
+      tsv2.keys.each{|k| tsv2[k] = nil if tsv2[k] == ""}
+    end
+
+    TmpFile.with_file(content3) do |filename|
+      tsv3 = TSV.open(File.open(filename), :double, :sep => ',', :type => :single)
+      tsv3.keys.each{|k| tsv3[k] = nil if tsv3[k] == ""}
+    end
+
+    assert_equal tsv1.attach(tsv2, :complete => true).attach(tsv3, :complete => true)["row1"], [nil, "B", nil]
+  end
 end
 

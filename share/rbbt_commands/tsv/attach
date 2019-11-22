@@ -15,6 +15,7 @@ Use - to read from STDIN
 
 -f--fields* Fields to attach (all if not specified)
 -i--identifiers* Identifier file
+-c--complete Complete TSV with keys new in other files
 -h--help Print this help
 
 EOF
@@ -30,6 +31,7 @@ end
 file1, *rest = ARGV
 fields = options[:fields]
 identifiers = options[:identifiers] 
+complete = options[:complete] 
 
 if identifiers.nil?
   require 'rbbt/sources/organism'
@@ -44,7 +46,7 @@ tsv = tsv.to_double if tsv.type == :flat
 rest.each do |file2|
   file_fields = TSV.parse_header(file2).all_fields - tsv.all_fields
   these_fields = fields ? fields & file_fields : nil
-  tsv = tsv.attach file2, :fields => these_fields, :identifiers => identifiers
+  tsv = tsv.attach file2, :fields => these_fields, :identifiers => identifiers, :complete => complete
 end
 
 puts tsv.to_s
