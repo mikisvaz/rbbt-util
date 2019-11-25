@@ -133,12 +133,13 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
      remote_step.rb
      rest=rest{
-      adaptor.rb
       get.rb
+      adaptor.rb
      }
      ssh=ssh{
-      adaptor.rb
+      driver.rb
       get.rb
+      adaptor.rb
      }
     }
 

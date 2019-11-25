@@ -473,11 +473,21 @@ EOF
       end
     end
   end
-end
 
-if __FILE__ == $0
-  Log.severity = 0
-  iii Marenostrum::SLURM.run('ls', nil, nil, :qos => "debug", :user => 'bsc26892') if __FILE__ == $0
-end
+  def relay(job, options={})
+    options = Misc.add_defaults options, :target => 'mn1', :search_path => 'user'
+    done_deps = job.dependencies.select do |dep|
+      dep.done? 
+    end
 
+    error_deps = job.dependencies.select do |dep|
+      dep.error? && ! dep.recoverable_error?
+    end
+
+    (done_deps + error_deps).each do |dep|
+      Step.migrate(dep.path, options[:search_path], options)
+    end
+
+  end
+end
 

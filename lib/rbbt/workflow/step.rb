@@ -108,6 +108,11 @@ class Step
     @inputs || []
   end
 
+  def archive
+    self.set_info :archived_info, archived_info
+    self.set_info :archived_dependencies, info[:dependencies]
+  end
+
   def archived_info
     return info[:archived_info] if info[:archived_info]
 
@@ -223,7 +228,7 @@ class Step
 
   def result_type
     @result_type ||= if @task.nil?
-                       info[:result_type]
+                       info[:result_type] || :binary
                      else
                        @task.result_type || info[:result_type] || :string
                      end

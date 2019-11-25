@@ -73,8 +73,7 @@ module Workflow
       set_info :result_type, dep.info[:result_type]
       forget = config :forget_dep_tasks, :forget_dep_tasks, :default => FORGET_DEP_TASKS
       if forget
-        self.set_info :archived_info, archived_info
-        self.set_info :archived_dependencies, info[:dependencies]
+        self.archive
         self.dependencies = self.dependencies - [dep]
         Open.rm_rf self.files_dir if Open.exist? self.files_dir
         FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist? dep.files_dir

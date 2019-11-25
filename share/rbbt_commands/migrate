@@ -39,6 +39,7 @@ test_str = options[:test] ? '-nv' : ''
 
 path, search_path, _sep, *other = ARGV
 
+search_path = 'user' if search_path.nil?
 resource = Rbbt
 
 path, real_paths = if options[:source]

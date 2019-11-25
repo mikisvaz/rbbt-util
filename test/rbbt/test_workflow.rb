@@ -205,21 +205,23 @@ class TestWorkflow < Test::Unit::TestCase
   def test_update_on_input_dependency_update
     Open.repository_dirs << File.join(ENV["HOME"],".rbbt/tmp/test/workflow")
     Log.severity = 0
-    send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
-    send_input_dep_to_reverse_job.clean
-    send_input_dep_to_reverse_job.run
+    Misc.with_env "RBBT_UPDATE", "true" do
+      send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
+      send_input_dep_to_reverse_job.clean
+      send_input_dep_to_reverse_job.run
 
-    input_dep_job = send_input_dep_to_reverse_job.step(:input_dep)
-    mtime_orig = Open.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
+      input_dep_job = send_input_dep_to_reverse_job.step(:input_dep)
+      mtime_orig = Open.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
 
-    sleep 2
-    input_dep_job.clean
-    input_dep_job.run
-    send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
+      sleep 2
+      input_dep_job.clean
+      input_dep_job.run
+      send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
 
-    send_input_dep_to_reverse_job.run
-    mtime_new = Open.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
-    assert mtime_orig < mtime_new
+      send_input_dep_to_reverse_job.run
+      mtime_new = Open.mtime send_input_dep_to_reverse_job.step(:reverse_input_text).path
+      assert mtime_orig < mtime_new
+    end
   end
 
   def test_helper
@@ -252,9 +254,12 @@ class TestWorkflow < Test::Unit::TestCase
 
   def test_search
     str = "TEST"
-    job1 = TestWF.job(:repeat2, "subdir/Default", :number => 3).fork
-    job2 = TestWF.job(:repeat2, "subdir/Other", :number => 3).fork
-    job3 = TestWF.job(:repeat2, "Default", :number => 3).fork
+    TestWF.jobs(:repeat2).each do |name|
+      TestWF.load_name(:repeat2, name).clean
+    end
+    job1 = TestWF.job(:repeat2, "subdir/Default", :number => 3).clean.fork
+    job2 = TestWF.job(:repeat2, "subdir/Other", :number => 3).clean.fork
+    job3 = TestWF.job(:repeat2, "Default", :number => 3).clean.fork
 
     while not job1.done? and not job2.done? and not job3.done?
       sleep 1
@@ -379,10 +384,13 @@ class TestWorkflow < Test::Unit::TestCase
     job.run
     assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
     job = TestWF.job(:t3)
-    job.step(:t1).clean
-    Misc.with_env "RBBT_UPDATE_ALL_JOBS", "true" do
-      job = TestWF.job(:t3)
-      assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
+    sleep 1
+    Open.touch job.step(:t1).path
+    Misc.with_env "RBBT_UPDATE", "false" do
+      assert job.updated?
+    end
+    Misc.with_env "RBBT_UPDATE", "true" do
+      assert ! job.updated?
     end
   end
 
