@@ -2,7 +2,7 @@
 
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
-require 'rbbt/workflow/remote/ssh/get'
+require 'rbbt/workflow/remote/ssh/driver'
 
 $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
@@ -42,29 +42,30 @@ path, search_path, _sep, *other = ARGV
 search_path = 'user' if search_path.nil?
 resource = Rbbt
 
-path, real_paths = if options[:source]
-          paths = SSHClient.run(options[:source], <<-EOF).split("\n")
+path, real_paths, lpath = if options[:source]
+          lpath, *paths = SSHDriver.run(options[:source], <<-EOF).split("\n")
 require 'rbbt-util'
 path = "#{path}"
-if File.exists?(path)
+if Open.exists?(path)
   path = #{resource.to_s}.identify(path)
 else
   path = Path.setup(path)
 end
+puts path
 puts path.glob_all.collect{|p| File.directory?(p) ? p + "/" : p } * "\n"
           EOF
-          [path, paths.collect{|p| [options[:source], p] * ":"}]
+          [path, paths.collect{|p| [options[:source], p] * ":"}, lpath]
         else
           if File.exists?(path)
             path = resource.identify(path)
           else
             path = Path.setup(path)
           end
-          [path, path.glob_all]
+          [path, path.glob_all, path]
         end
 
 target = if options[:target] 
-          target = SSHClient.run(options[:target], <<-EOF).split("\n").first
+          target = SSHDriver.run(options[:target], <<-EOF).split("\n").first
 require 'rbbt-util'
 path = "#{path}"
 resource = #{resource.to_s}
@@ -72,7 +73,7 @@ search_path = "#{search_path}"
 puts resource[path].find(search_path)
           EOF
          else
-           resource[path].find(search_path)
+           resource[lpath].find(search_path)
          end
 
 real_paths.each do |source|
