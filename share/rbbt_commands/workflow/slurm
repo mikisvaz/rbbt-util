@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow'
+require 'rbbt/workflow/usage'
+require 'rbbt/hpc'
+require 'time'
+
+$slurm_options = SOPT.get <<EOF
+-dr--dry_run Print only the template
+-cj--clean_job Clean job
+--drbbt Use development version of rbbt 
+-sing--singularity Use Singularity
+-c--contain* Contain in directory (using Singularity)
+-s--sync* Contain in directory and sync jobs
+-e--exclusive Make exclusive use of the node
+-hm--highmem Make use of highmem cores
+-wc--wipe_container* Wipe the jobs from the contain directory
+-CS--contain_and_sync Contain and sync to default locations
+-ci--copy_image When using a container directory, copy image there
+-t--tail Tail the logs
+-q--queue* Queue
+-t--task_cpus* Tasks
+-tm--time* Time
+-S--server* SLURM login node
+EOF
+
+class Step
+    def run(*args)
+        if done?
+            self.load
+        else
+            Marenostrum::SLURM.run_job(self, SOPT::GOT_OPTIONS.merge($slurm_options)) 
+        end
+    end
+end
+
+load Rbbt.share.rbbt_commands.workflow.task.find
