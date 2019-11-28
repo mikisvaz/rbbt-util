@@ -1,3 +1,4 @@
+require 'rbbt/workflow/remote/ssh/driver'
 class Step
   def self.link_job(path, target_dir, task = nil, workflow = nil)
     Path.setup(target_dir)
@@ -124,7 +125,7 @@ class Step
     relocate = options[:relocate]
 
     paths = if options[:source]
-              SSHClient.run(options[:source], <<-EOF).split("\n")
+              SSHDriver.run(options[:source], <<-EOF).split("\n")
 require 'rbbt-util'
 require 'rbbt/workflow'
 
@@ -155,7 +156,7 @@ puts files * "\n"
             end
 
     target = if options[:target] 
-               target = SSHClient.run(options[:target], <<-EOF).split("\n").first
+               target = SSHDriver.run(options[:target], <<-EOF).split("\n").first
 require 'rbbt-util'
 path = "var/jobs"
 resource = #{resource.to_s}
