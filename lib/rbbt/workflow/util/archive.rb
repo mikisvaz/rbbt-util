@@ -86,7 +86,8 @@ class Step
         end if dep.info[:dependencies]
       end
 
-      rec_dependencies.each do |dep|
+      rec_dependencies.each do |path|
+        dep = Workflow.load_step path
         job_files << dep.path
         job_files << dep.files_dir if Dir.glob(dep.files_dir + '/*').any?
         job_files << dep.info_file if File.exists?(dep.info_file)
