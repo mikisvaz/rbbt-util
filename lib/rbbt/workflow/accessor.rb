@@ -367,7 +367,8 @@ module Workflow
                        if Hash === d
                          d[:workflow] ||= wf 
                          d[:task] ||= task_name
-                         d = if override_dependencies[d[:workflow].to_s] && value = override_dependencies[d[:workflow].to_s][d[:task]]
+                         _override_dependencies = override_dependencies.merge(override_dependencies(d[:inputs] || {}))
+                         d = if _override_dependencies[d[:workflow].to_s] && value = _override_dependencies[d[:workflow].to_s][d[:task]]
                                setup_override_dependency(value, d[:workflow], d[:task])
                              else
                                task_info = d[:workflow].task_info(d[:task])
@@ -385,7 +386,8 @@ module Workflow
                      dep = dependency.call jobname, _inputs, real_dependencies
                      if Hash === dep
                        dep[:workflow] ||= wf || self
-                       if override_dependencies[dep[:workflow].to_s] && value = override_dependencies[dep[:workflow].to_s][dep[:task]]
+                       _override_dependencies = override_dependencies.merge(override_dependencies(dep[:inputs] || {}))
+                       if _override_dependencies[dep[:workflow].to_s] && value = _override_dependencies[dep[:workflow].to_s][dep[:task]]
                          setup_override_dependency(value, dep[:workflow], dep[:task])
                        else
                          task_info = (dep[:task] && dep[:workflow]) ? dep[:workflow].task_info(dep[:task]) : nil
