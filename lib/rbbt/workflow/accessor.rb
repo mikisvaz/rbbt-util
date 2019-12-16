@@ -367,14 +367,14 @@ module Workflow
                        if Hash === d
                          d[:workflow] ||= wf 
                          d[:task] ||= task_name
-                         if override_dependencies[d[:workflow].to_s] && value = override_dependencies[d[:workflow].to_s][d[:task]]
-                           setup_override_dependency(value, d[:workflow], d[:task])
-                         else
-                           task_info = d[:workflow].task_info(d[:task])
+                         d = if override_dependencies[d[:workflow].to_s] && value = override_dependencies[d[:workflow].to_s][d[:task]]
+                               setup_override_dependency(value, d[:workflow], d[:task])
+                             else
+                               task_info = d[:workflow].task_info(d[:task])
 
-                           inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
-                           d = d[:workflow]._job(d[:task], d[:jobname], inputs) 
-                         end
+                               inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
+                               d[:workflow]._job(d[:task], d[:jobname], inputs) 
+                             end
                        end
                        ComputeDependency.setup(d, compute) if compute
                        new_ << d
