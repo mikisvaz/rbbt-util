@@ -66,21 +66,27 @@ module TSV
           sfields = sfields.collect{|f| [prefix, f] * ":" }
         end
 
-        lines         << parser.first_line
-        empty         << stream               if parser.first_line.nil?
+        first_line = parser.first_line
+        first_line = nil if first_line.empty?
+
+        lines         << first_line
         key_fields    << parser.key_field
         fields        << sfields
         sizes         << sfields.length if sfields
         input_options << parser.options
         preambles     << parser.preamble      if preamble and not parser.preamble.empty?
 
-        if fix_flat and parser.type == :flat and parser.first_line
-          parts = lines[-1].split("\t")
-          lines[-1] = [parts[0], (parts[1..-1] || [])*"|"] * "\t"
-          TSV.stream_flat2double(parser.stream, :noheader => true).stream
-        else
-          parser.stream
-        end
+        stream = if fix_flat and parser.type == :flat and first_line
+                   parts = lines[-1].nil? ? [] : lines[-1].split("\t")
+                   lines[-1] = [parts[0], (parts[1..-1] || [])*"|"] * "\t"
+                   TSV.stream_flat2double(parser.stream, :noheader => true).stream
+                 else
+                   parser.stream
+                 end
+
+        empty         << stream               if parser.first_line.nil? || parser.first_line.empty?
+
+        stream
       end
 
       key_field = key_fields.compact.first
@@ -121,7 +127,7 @@ module TSV
         keys = []
         parts = []
         lines.each_with_index do |line,i|
-          if line.nil?
+          if line.nil? || line.empty?
             keys[i] = nil
             parts[i] = nil
           else
