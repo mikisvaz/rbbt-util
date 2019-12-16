@@ -301,7 +301,7 @@ saved_job_options = job_options
 workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if options[:workdir]
 
 if override_deps
-  override_deps.split($array_separator).each do |part|
+  override_deps.split($array_separator || ",").each do |part|
     t_, value = part.split("=")
     job_options.merge!( t_ => value)
   end
