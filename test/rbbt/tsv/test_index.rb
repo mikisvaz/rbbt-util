@@ -36,6 +36,22 @@ row2    A    B    Id3
 
   end
 
+  def test_index_fields_key
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(File.open(filename), :sep => /\s+/, :key_field => "OtherID", :persistence => false)
+      Log.tsv tsv
+      index = tsv.index(:case_insensitive => true, :persistence => false, :fields => ["Id"], :target => "ValueA")
+      Log.tsv index
+    end
+
+  end
+
   def test_best_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
