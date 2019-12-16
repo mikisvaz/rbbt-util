@@ -3,7 +3,7 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
-require 'rbbt/workflow/provenance'
+require 'rbbt/workflow/util/provenance'
 require 'rbbt/monitor'
 
 $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
