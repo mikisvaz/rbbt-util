@@ -218,6 +218,6 @@ if plot
       labs(x=NULL, y=NULL) + 
       theme_gantt() + theme(axis.text.x=element_text(angle=45, hjust=1))
 
-    rbbt.png_plot('#{plot}', 'timeline', width=#{width}, height=#{height}, pointsize=6)
+    rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, pointsize=6)
   EOF
 end

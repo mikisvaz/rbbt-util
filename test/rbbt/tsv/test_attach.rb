@@ -567,5 +567,73 @@ row2,CC
 
     assert_equal tsv1.attach(tsv2, :complete => true).attach(tsv3, :complete => true)["row1"], [nil, "B", nil]
   end
+
+  def test_attach_index_both_non_key
+    content1 =<<-EOF
+#: :sep=/\\s+/
+#Id    ValueA    ValueB
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+    content2 =<<-EOF
+#: :sep=/\\s+/
+#ValueE    OtherID
+e    Id1|Id2
+E    Id3
+    EOF
+
+    content_index =<<-EOF
+#: :sep=/\\s+/
+#ValueA    OtherID
+a    Id1
+A    Id3
+    EOF
+
+    Rbbt.claim Rbbt.tmp.test.test1.data, :string, content1
+    Rbbt.claim Rbbt.tmp.test.test2.data, :string, content2
+    Rbbt.claim Rbbt.tmp.test.test2.identifiers, :string, content_index
+
+    tsv1 = tsv2 = nil
+
+    tsv1 = Rbbt.tmp.test.test1.data.tsv :double,  :sep => /\s+/
+    tsv2 = Rbbt.tmp.test.test2.data.tsv :double,  :sep => /\s+/
+
+    tsv2.identifiers = Rbbt.tmp.test.test2.identifiers.produce.find #.to_s
+
+    tsv1.attach tsv2, :fields => ["ValueE"] #, :persist_input => true
+    Log.tsv tsv1
+    ppp tsv1
+    
+  end
+
+  def test_attach_both_non_key
+    content1 =<<-EOF
+#: :sep=/\\s+/
+#Id    ValueA    ValueB
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+    content2 =<<-EOF
+#: :sep=/\\s+/
+#ValueE    ValueB
+e    b
+E    B
+    EOF
+    Rbbt.claim Rbbt.tmp.test.test1.data, :string, content1
+    Rbbt.claim Rbbt.tmp.test.test2.data, :string, content2
+
+    tsv1 = tsv2 = nil
+
+    tsv1 = Rbbt.tmp.test.test1.data.tsv :double,  :sep => /\s+/
+    tsv2 = Rbbt.tmp.test.test2.data.tsv :double,  :sep => /\s+/
+
+    Log.severity = 0
+    tsv1.attach tsv2, :fields => ["ValueE"] #, :persist_input => true
+    Log.tsv tsv1
+    ppp tsv1
+    
+  end
 end
 
