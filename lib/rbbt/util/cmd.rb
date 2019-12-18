@@ -18,7 +18,7 @@ module CMD
       claim, test, block = TOOLS[tool]
       begin
         if test
-          CMD.cmd(test)
+          CMD.cmd(test + " ")
         else
           CMD.cmd("#{tool} --help")
         end

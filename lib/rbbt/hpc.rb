@@ -222,7 +222,7 @@ EOF
         end
 
         if development
-          exec_cmd += ' rbbt --dev=git'
+          exec_cmd += " rbbt --dev='#{development}'"
         else
           exec_cmd += ' rbbt'
         end
