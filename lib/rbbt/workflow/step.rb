@@ -108,7 +108,7 @@ class Step
     @inputs || []
   end
 
-  def archive
+  def archive_deps
     self.set_info :archived_info, archived_info
     self.set_info :archived_dependencies, info[:dependencies]
   end
