@@ -230,7 +230,7 @@ EOF
         exec_cmd = singularity_exec + " " + exec_cmd
       else
         if development
-          exec_cmd << " " << %(~/git/rbbt-util/bin/rbbt --dev=~/git/)
+          exec_cmd << " " << %(~/git/rbbt-util/bin/rbbt --dev=#{development})
         else
           exec_cmd << " " << 'rbbt'
         end
