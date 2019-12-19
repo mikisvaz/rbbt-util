@@ -33,8 +33,11 @@ module Marenostrum
       inputs_dir       = options.delete :inputs_dir
       config_keys      = options.delete :config_keys
 
+      user = ENV['USER'] || `whoami`.strip
+      group = File.basename(File.dirname(ENV['HOME']))
+
       if contain_and_sync
-        contain = "/scratch/tmp/rbbt-#{ENV["USER"]}" if contain.nil?
+        contain = "/scratch/tmp/rbbt-#{user}" if contain.nil?
         sync = "~/.rbbt/var/jobs" if sync.nil?
         wipe_container = "post" if wipe_container.nil?
       end
@@ -141,8 +144,6 @@ mkdir -p "$SINGULARITY_RUBY_INLINE"
         EOF
 
         if contain
-          user = ENV['USER'] || `whoami`.strip
-          group = File.basename(File.dirname(ENV['HOME']))
           scratch_group_dir = File.join('/gpfs/scratch/', group)
           projects_group_dir = File.join('/gpfs/projects/', group)
 
