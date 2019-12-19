@@ -33,14 +33,12 @@ module Marenostrum
       config_keys      = options.delete :config_keys
 
       if contain_and_sync
-        contain = "/scratch/tmp/rbbt-${USER}" if contain.nil?
+        contain = "/scratch/tmp/rbbt-#{ENV["USER"]}" if contain.nil?
         sync = "~/.rbbt/var/jobs" if sync.nil?
+        wipe_container = "post" if wipe_container.nil?
       end
 
       contain = File.expand_path(contain) if contain
-
-      singularity = true if contain 
-
 
       name = options[:name] ||= Misc.obj2digest({:options => options.collect{|k,v| [k,v]}.sort_by{|k,v| k.to_s }, :args => args})
       options.delete(:name)
@@ -120,7 +118,17 @@ module load java
 let "MAX_MEMORY=$SLURM_MEM_PER_CPU * $SLURM_CPUS_ON_NODE"
       EOF
 
+
+      # RUN
+      run = ""
+      exec_cmd = %(env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m")
+
+
       if singularity
+        #{{{ SINGULARITY
+        
+        singularity_exec = %(singularity exec -e -B $SINGULARITY_OPT_DIR:/singularity_opt/ -B /apps/)
+        
         env +=<<-EOF
 module load intel/2018.1
 module load singularity
@@ -130,15 +138,14 @@ SINGULARITY_OPT_DIR="$PROJECTS_ROOT/singularity_opt/"
 SINGULARITY_RUBY_INLINE="$HOME/.singularity_ruby_inline"
 mkdir -p "$SINGULARITY_RUBY_INLINE"
         EOF
-      end
 
-      if contain
-        user = ENV['USER'] || `whoami`.strip
-        group = File.basename(File.dirname(ENV['HOME']))
-        scratch_group_dir = File.join('/gpfs/scratch/', group)
-        projects_group_dir = File.join('/gpfs/projects/', group)
+        if contain
+          user = ENV['USER'] || `whoami`.strip
+          group = File.basename(File.dirname(ENV['HOME']))
+          scratch_group_dir = File.join('/gpfs/scratch/', group)
+          projects_group_dir = File.join('/gpfs/projects/', group)
 
-        env +=<<-EOF
+          env +=<<-EOF
 
 # Prepare container dir
 CONTAINER_DIR="#{contain}"
@@ -168,43 +175,36 @@ echo "$CONTAINER_DIR/projects/rbbt/workflows/" > $CONTAINER_DIR/.rbbt/etc/workfl
 [[ -a "$CONTAINER_DIR/scratch" ]] || ln -s '#{scratch_group_dir}' "$CONTAINER_DIR/scratch"
         EOF
         
-        if inputs_dir
-          env +=<<-EOF
+          if inputs_dir
+            env +=<<-EOF
 
 # Copy inputs
 [[ -d '#{inputs_dir}' ]] && cp -R '#{inputs_dir}' $CONTAINER_DIR/inputs
-          EOF
-          rbbt_cmd = rbbt_cmd.sub(inputs_dir, "#{contain}/inputs")
-        end
+            EOF
+            rbbt_cmd = rbbt_cmd.sub(inputs_dir, "#{contain}/inputs")
+          end
 
-        if copy_image
-          env +=<<EOF
+          if copy_image
+            env +=<<EOF
 
 # Copy image
 rsync -avz "$SINGULARITY_IMG" "$CONTAINER_DIR/rbbt.singularity.img" 1>&2
 SINGULARITY_IMG="$CONTAINER_DIR/rbbt.singularity.img"
 EOF
-        end
+          end
 
-        if  wipe_container == "pre" || wipe_container == "both"
-          env +=<<-EOF
+          if  wipe_container == "pre" || wipe_container == "both"
+            if singularity
+              env +=<<-EOF
 
 # Clean container pre
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv .rbbt/var/jobs &>> #{fsync}
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean -f &>> #{fsync}
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv tmp/ &>> #{fsync}
 EOF
+            end
+          end
         end
-      end
-
-      # RUN
-      run = ""
-
-
-      exec_cmd = %(env _JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m")
-
-      if singularity
-        singularity_exec = %(singularity exec -e -B $SINGULARITY_OPT_DIR:/singularity_opt/ -B /apps/)
 
         if contain
           singularity_exec << %( -C -H "$CONTAINER_DIR" \
@@ -234,6 +234,10 @@ EOF
         else
           exec_cmd << " " << 'rbbt'
         end
+
+        if contain
+          rbbt_cmd << " " << %(--workdir_all='#{contain}')
+        end
       end
 
 
@@ -261,6 +265,10 @@ EOF
           coda +=<<-EOF
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean all -q &>> #{fsync}
 EOF
+        else
+          coda +=<<-EOF
+rbbt system clean all -q &>> #{fsync}
+EOF
         end
 
         if sync.include?("=>")
@@ -280,7 +288,13 @@ find '#{target}' -type l -ls | awk '$13 ~ /^#{target.gsub('/','\/')}/ { sub("#{s
 EOF
 
         if  contain && (wipe_container == "post" || wipe_container == "both")
-          coda +=<<-EOF
+          run =<<-EOF + run
+if $(ls -A '#{contain}'); then
+    echo "ERROR: Container directory not empty, refusing to wipe. #{contain}"
+fi
+          EOF
+          if singularity
+            coda +=<<-EOF
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean -f &>> #{fsync}
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -v /dev/shm/sem.*.{in,out,process} /dev/shm/sem.Session-PID.*.sem 2> /dev/null >> #{fsync}
 if [ $sync_es == '0' ]; then 
@@ -291,6 +305,18 @@ else
 fi
 unset sync_es
 EOF
+          else
+            coda +=<<-EOF
+#{exec_cmd} system clean
+if [ $sync_es == '0' ]; then 
+    rm -Rfv #{contain} &>> #{fsync}
+else
+    echo "WARNING: Results could not sync correctly. Contain directory not purged"
+fi
+unset sync_es
+EOF
+
+          end
         end
       end
       coda +=<<-EOF
