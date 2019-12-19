@@ -18,8 +18,8 @@ module Marenostrum
       singularity      = options.delete :singularity
       contain          = options.delete :contain
       sync             = options.delete :sync
+      user_group       = options.delete :user_group
       contain_and_sync = options.delete :contain_and_sync
-      group            = options.delete :user_group
       wipe_container   = options.delete :wipe_container
       copy_image       = options.delete :copy_image
       exclusive        = options.delete :exclusive
@@ -142,7 +142,7 @@ mkdir -p "$SINGULARITY_RUBY_INLINE"
 
         if contain
           user = ENV['USER'] || `whoami`.strip
-          group = File.basename(File.dirname(ENV['HOME'])) if group.nil?
+          group = File.basename(File.dirname(ENV['HOME']))
           scratch_group_dir = File.join('/gpfs/scratch/', group)
           projects_group_dir = File.join('/gpfs/projects/', group)
 
@@ -173,8 +173,16 @@ echo "user_scratch: $CONTAINER_DIR/scratch/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}
 
 [[ -a "$CONTAINER_DIR/projects" ]] || ln -s '#{projects_group_dir}' "$CONTAINER_DIR/projects"
 [[ -a "$CONTAINER_DIR/scratch" ]] || ln -s '#{scratch_group_dir}' "$CONTAINER_DIR/scratch"
-        EOF
-        
+          EOF
+
+          if group != user_group
+          env +=<<-EOF
+
+# Add user_group search_path
+echo "#{user_group}: /gpfs/projects/#{user_group}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
+          EOF
+          end
+
           if inputs_dir
             env +=<<-EOF
 
@@ -213,6 +221,7 @@ EOF
 -B ~/git:"$CONTAINER_DIR/git":ro \
 -B ~/.rbbt/software/opt/:"/opt/":ro \
 -B ~/.rbbt:"$CONTAINER_DIR/home/":ro \
+#{ group != user_group ? "-B /gpfs/projects/#{user_group}" : "" } \
 -B #{scratch_group_dir} \
 -B #{projects_group_dir} \
 "$SINGULARITY_IMG")
