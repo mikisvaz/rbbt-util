@@ -19,6 +19,7 @@ module Marenostrum
       contain          = options.delete :contain
       sync             = options.delete :sync
       contain_and_sync = options.delete :contain_and_sync
+      group            = options.delete :user_group
       wipe_container   = options.delete :wipe_container
       copy_image       = options.delete :copy_image
       exclusive        = options.delete :exclusive
@@ -141,7 +142,7 @@ mkdir -p "$SINGULARITY_RUBY_INLINE"
 
         if contain
           user = ENV['USER'] || `whoami`.strip
-          group = File.basename(File.dirname(ENV['HOME']))
+          group = File.basename(File.dirname(ENV['HOME'])) if group.nil?
           scratch_group_dir = File.join('/gpfs/scratch/', group)
           projects_group_dir = File.join('/gpfs/projects/', group)
 
@@ -169,7 +170,6 @@ echo "group_projects: $CONTAINER_DIR/projects/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> 
 echo "group_scratch: $CONTAINER_DIR/scratch/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "user_projects: $CONTAINER_DIR/projects/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
 echo "user_scratch: $CONTAINER_DIR/scratch/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
-echo "$CONTAINER_DIR/projects/rbbt/workflows/" > $CONTAINER_DIR/.rbbt/etc/workflow_dir
 
 [[ -a "$CONTAINER_DIR/projects" ]] || ln -s '#{projects_group_dir}' "$CONTAINER_DIR/projects"
 [[ -a "$CONTAINER_DIR/scratch" ]] || ln -s '#{scratch_group_dir}' "$CONTAINER_DIR/scratch"
