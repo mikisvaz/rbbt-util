@@ -6,8 +6,8 @@ require 'rbbt/util/misc/indiferent_hash'
 module CMD
 
   TOOLS = IndiferentHash.setup({})
-  def self.tool(tool, claim = nil, test = nil, &block)
-    TOOLS[tool] = [claim, test, block]
+  def self.tool(tool, claim = nil, test = nil, cmd = nil, &block)
+    TOOLS[tool] = [claim, test, block, cmd]
   end
 
   def self.get_tool(tool)
@@ -15,7 +15,7 @@ module CMD
 
     @@init_cmd_tool ||= IndiferentHash.setup({})
     if !@@init_cmd_tool[tool]
-      claim, test, block = TOOLS[tool]
+      claim, test, block, cmd = TOOLS[tool]
       begin
         if test
           CMD.cmd(test + " ")
@@ -30,6 +30,8 @@ module CMD
         end
       end
       @@init_cmd_tool[tool] = true
+
+      return cmd if cmd
     end
 
     tool.to_s
