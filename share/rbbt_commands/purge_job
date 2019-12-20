@@ -13,8 +13,6 @@ Remove a job and its dependencies
 
 $ rbbt purge [options] <job_path> 
 
-You can specify extra rsync options after --
-
 -h--help Print this help
 -t--test Do a verbose dry run
 -r--relocate Include relocated dependencies

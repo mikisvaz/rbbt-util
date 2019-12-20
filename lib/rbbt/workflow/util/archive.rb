@@ -40,7 +40,7 @@ class Step
 
       Misc.in_dir(tmpdir) do
         if File.directory?(target)
-          CMD.cmd_log("rsync -avzHP --copy-unsafe-links '#{ tmpdir }/' '#{ target }/'")
+          CMD.cmd_log("rsync -avztAXHP --copy-unsafe-links '#{ tmpdir }/' '#{ target }/'")
         else
           CMD.cmd_log("tar cvhzf '#{target}'  ./*")
         end
@@ -109,7 +109,7 @@ class Step
 
       Misc.in_dir(tmpdir) do
         if File.directory?(target)
-          CMD.cmd_log("rsync -avzHP --copy-unsafe-links '#{ tmpdir }/' '#{ target }/'")
+          CMD.cmd_log("rsync -avztAXHP --copy-unsafe-links '#{ tmpdir }/' '#{ target }/'")
         else
           CMD.cmd_log("tar cvhzf '#{target}'  ./*")
         end
@@ -204,7 +204,7 @@ puts resource[path].find(search_path)
         test_str = options[:test] ? '-nv' : ''
 
         includes_str = "--include-from='#{tmp_include_file}'"
-        cmd = "rsync -atAXmPL --progress #{test_str} --include-from='#{tmp_include_file}' --exclude='*' #{source}/ #{target}/ #{other_rsync_args}"
+        cmd = "rsync -avztAXHP --progress #{test_str} --include-from='#{tmp_include_file}' --exclude='*' #{source}/ #{target}/ #{other_rsync_args}"
 
         cmd << " && rm -Rf #{source}" if options[:delete]
 

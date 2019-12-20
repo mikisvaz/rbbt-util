@@ -94,7 +94,7 @@ real_paths.each do |source|
 
   target = [options[:target], target] * ":" if options[:target]
 
-  cmd = "rsync -atAX #{test_str} #{excludes_str} #{source} #{target} #{other * " "}"
+  cmd = "rsync -avztAXHP --copy-unsafe-links #{test_str} #{excludes_str} #{source} #{target} #{other * " "}"
 
   cmd << " && rm -Rf #{source}" if options[:delete]
 

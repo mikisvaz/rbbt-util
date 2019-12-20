@@ -37,7 +37,7 @@ test_str = options[:test] ? '-nv' : ''
 
 source, target, _sep, *other = ARGV
 
-cmd = "rsync -atAX #{test_str} #{excludes_str} #{source} #{target} #{other * " "}"
+cmd = "rsync -avztAXHP --copy-unsafe-links #{test_str} #{excludes_str} #{source} #{target} #{other * " "}"
 
 if options[:print]
   puts cmd 

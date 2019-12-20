@@ -293,7 +293,7 @@ EOF
 
         target = File.expand_path(sync)
         coda +=<<-EOF
-rsync -avt "#{source}/" "#{target}/" &>> #{fsync} 
+rsync -avztAXHP --copy-unsafe-links "#{source}/" "#{target}/" &>> #{fsync} 
 sync_es="$?" 
 find '#{target}' -type l -ls | awk '$13 ~ /^#{target.gsub('/','\/')}/ { sub("#{source}", "#{target}", $13); print $11, $13 }' | while read A B; do rm $A; ln -s $B $A; done
 EOF
