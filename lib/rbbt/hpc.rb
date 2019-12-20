@@ -176,7 +176,7 @@ echo "user_scratch: $CONTAINER_DIR/scratch/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}
 [[ -a "$CONTAINER_DIR/scratch" ]] || ln -s '#{scratch_group_dir}' "$CONTAINER_DIR/scratch"
           EOF
 
-          if group != user_group
+          if user_group && group != user_group
           env +=<<-EOF
 
 # Add user_group search_path
