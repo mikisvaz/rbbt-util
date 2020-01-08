@@ -290,6 +290,7 @@ EOF
 
         target = File.expand_path(sync)
         coda +=<<-EOF
+mkdir -p "$(dirname '#{target}')"
 rsync -avztAXHP --copy-unsafe-links "#{source}/" "#{target}/" &>> #{fsync} 
 sync_es="$?" 
 find '#{target}' -type l -ls | awk '$13 ~ /^#{target.gsub('/','\/')}/ { sub("#{source}", "#{target}", $13); print $11, $13 }' | while read A B; do rm $A; ln -s $B $A; done
@@ -331,7 +332,11 @@ EOF
 
 # Write exit status to file
 echo $exit_status > #{fexit}
-unset exit_status
+if [ $sync_es == '0' ]; then 
+  exit $exit_status
+else
+  exit $sync_es
+fi
 EOF
 
       template = [header, env, run, coda] * "\n"
