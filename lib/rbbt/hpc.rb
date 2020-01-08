@@ -42,6 +42,9 @@ module Marenostrum
         wipe_container = "post" if wipe_container.nil?
       end
 
+      contain = nil if contain == "" || contain == "none"
+      sync = nil if sync == "" || sync == "none"
+
       contain = File.expand_path(contain) if contain
 
       name = options[:name] ||= Misc.obj2digest({:options => options.collect{|k,v| [k,v]}.sort_by{|k,v| k.to_s }, :args => args})
