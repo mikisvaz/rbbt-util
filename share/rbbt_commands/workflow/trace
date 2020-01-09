@@ -58,7 +58,7 @@ step.info[:archived_info].each do |path,ainfo|
     ainfo
   end
   jobs << archived_step
-end
+end if step.info[:archived_info]
 
 jobs = jobs.select{|job| job.info[:done]}.sort_by{|job| job.info[:started]}
 

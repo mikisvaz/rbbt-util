@@ -315,7 +315,6 @@ if [ $sync_es == '0' ]; then
 else
     echo "WARNING: Results could not sync correctly. Job directory not purged"
 fi
-unset sync_es
 EOF
           else
             coda +=<<-EOF
@@ -336,6 +335,7 @@ EOF
 # Write exit status to file
 echo $exit_status > #{fexit}
 if [ $sync_es == '0' ]; then 
+  unset sync_es
   exit $exit_status
 else
   exit $sync_es
