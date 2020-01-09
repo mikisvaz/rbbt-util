@@ -6,7 +6,7 @@ require 'rbbt-util'
 require 'fileutils'
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow/step'
-require 'rbbt/workflow/provenance'
+require 'rbbt/workflow/util/provenance'
 require 'rbbt/util/misc'
 
 require 'rbbt-util'
@@ -47,23 +47,33 @@ end
 
 step = get_step file
 
-data = TSV.setup({}, "Job~Workflow,Task,Start,End#:type=:list")
 
 jobs = step.rec_dependencies + [step]
 
+step.info[:archived_info].each do |path,ainfo|
+  archived_step = Step.new path
+  class << archived_step
+    self
+  end.define_method :info do
+    ainfo
+  end
+  jobs << archived_step
+end
+
 jobs = jobs.select{|job| job.info[:done]}.sort_by{|job| job.info[:started]}
 
+data = TSV.setup({}, "Job~Workflow,Task,Start,End#:type=:list")
 min_start = nil
 max_done = nil
 jobs.each do |job|
-  next unless job.done?
+  next unless job.info[:done]
   started = job.info[:started]
   ddone = job.info[:done]
 
   code = [job.workflow, job.task_name].compact.collect{|s| s.to_s} * "."
-  code = code + '.' + job.clean_name
+  code = code + '.' + job.name
 
-  data[code] = [job.workflow.to_s, job.task_name,started,ddone]
+  data[code] = [job.workflow.to_s, job.task_name, started, ddone]
   if min_start.nil?
     min_start = started
   else
@@ -90,7 +100,7 @@ if options[:fix_gap]
   data.through do |k,values|
     start, eend = values.values_at "Start.second", "End.second"
 
-    ranges << (start.floor..eend.ceil)
+    ranges << (start..eend)
   end
 
   gaps = {}
@@ -118,7 +128,7 @@ end
 tasks_info = {}
 
 jobs.each do |dep|
-  next unless dep.done?
+  next unless dep.info[:done]
   task = [dep.workflow, dep.task_name].compact.collect{|s| s.to_s} * "#"
   info = tasks_info[task] ||= {}
 
@@ -142,13 +152,14 @@ jobs.each do |dep|
   info[:shard] = shard
 end
 
-stats = TSV.setup({}, "Task~Calls,Time,Cpus,Spark,Shard#:type=:list")
+stats = TSV.setup({}, "Task~Calls,Avg. Time,Total Time,Cpus,Spark,Shard#:type=:list")
 
 tasks_info.each do |task, info|
   time_lists, cpus, spark, shard = info.values_at :time, :cpus, :spark, :shard
   avg_time = Misc.mean(time_lists).to_i
+  total_time = Misc.sum(time_lists)
   calls = time_lists.length
-  stats[task] = [calls,avg_time, cpus, spark, shard]
+  stats[task] = [calls, avg_time, total_time, cpus, spark, shard]
 end
 
 raise "No jobs to process" if data.size == 0
