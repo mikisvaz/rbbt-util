@@ -301,7 +301,7 @@ EOF
 
         if  contain && (wipe_container == "post" || wipe_container == "both")
           run =<<-EOF + run
-if $(ls -A '#{contain}'); then
+if ls -A '#{contain}'; then
     echo "ERROR: Container directory not empty, refusing to wipe. #{contain}"
 fi
           EOF
@@ -319,10 +319,10 @@ EOF
           else
             coda +=<<-EOF
 #{exec_cmd} system clean
-if [ $sync_es == '0' ]; then 
+if [ $exit_status == '0' -a $sync_es == '0' ]; then 
     rm -Rfv #{contain} &>> #{fsync}
 else
-    echo "WARNING: Results could not sync correctly. Contain directory not purged"
+    echo "ERROR: Process failed or results could not sync correctly. Contain directory not purged"
 fi
 unset sync_es
 EOF
