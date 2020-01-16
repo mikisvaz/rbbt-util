@@ -146,11 +146,13 @@ SINGULARITY_RUBY_INLINE="$HOME/.singularity_ruby_inline"
 mkdir -p "$SINGULARITY_RUBY_INLINE"
         EOF
 
+        prep  = ""
+
         if contain
           scratch_group_dir = File.join('/gpfs/scratch/', group)
           projects_group_dir = File.join('/gpfs/projects/', group)
 
-          env +=<<-EOF
+          prep +=<<-EOF
 
 # Prepare container dir
 CONTAINER_DIR="#{contain}"
@@ -178,15 +180,15 @@ echo "user_scratch: #{scratch_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" 
           EOF
 
           if user_group && group != user_group
-          env +=<<-EOF
+            prep +=<<-EOF
 
 # Add user_group search_path
 echo "#{user_group}: /gpfs/projects/#{user_group}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> $CONTAINER_DIR/.rbbt/etc/search_paths
-          EOF
+            EOF
           end
 
           if inputs_dir
-            env +=<<-EOF
+            prep +=<<-EOF
 
 # Copy inputs
 [[ -d '#{inputs_dir}' ]] && cp -R '#{inputs_dir}' $CONTAINER_DIR/inputs
@@ -195,7 +197,7 @@ echo "#{user_group}: /gpfs/projects/#{user_group}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}"
           end
 
           if copy_image
-            env +=<<EOF
+            prep +=<<EOF
 
 # Copy image
 rsync -avz "$SINGULARITY_IMG" "$CONTAINER_DIR/rbbt.singularity.img" 1>&2
@@ -205,7 +207,7 @@ EOF
 
           if  wipe_container == "pre" || wipe_container == "both"
             if singularity
-              env +=<<-EOF
+              prep +=<<-EOF
 
 # Clean container pre
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv .rbbt/var/jobs &>> #{fsync}
@@ -300,8 +302,8 @@ find '#{target}' -type l -ls | awk '$13 ~ /^#{target.gsub('/','\/')}/ { sub("#{s
 EOF
 
         if  contain && (wipe_container == "post" || wipe_container == "both")
-          run =<<-EOF + run
-if ls -A '#{contain}'; then
+          prep =<<-EOF + prep
+if ls -A '#{contain}' > /dev/null ; then
     echo "ERROR: Container directory not empty, refusing to wipe. #{contain}"
 fi
           EOF
@@ -342,7 +344,7 @@ else
 fi
 EOF
 
-      template = [header, env, run, coda] * "\n"
+      template = [header, env, prep, run, coda] * "\n"
 
       template
     end
@@ -482,7 +484,7 @@ EOF
       slurm_basedir = options.delete :SLURM_basedir
       slurm_basedir = "~/rbbt-slurm" if slurm_basedir.nil?
       TmpFile.with_file(nil, !keep_slurm_basedir, :tmpdir => slurm_basedir, :prefix => "SLURM_rbbt_job-") do |tmp_directory|
-        options[:slurm_basedir] ||= File.join(tmp_directory, 'workdir')
+        options[:slurm_basedir] ||= tmp_directory
         slurm_basedir = options[:slurm_basedir]
         inputs_dir = File.join(tmp_directory, 'inputs_dir')
         saved = Step.save_job_inputs(job, inputs_dir, options)
