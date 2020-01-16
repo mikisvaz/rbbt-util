@@ -304,18 +304,18 @@ EOF
         if  contain && (wipe_container == "post" || wipe_container == "both")
           prep =<<-EOF + prep
 if ls -A '#{contain}' &> /dev/null ; then
-    echo "ERROR: Container directory not empty, refusing to wipe. #{contain}"
+    echo "ERROR: Container directory not empty, refusing to wipe. #{contain}" &>> #{fsync}
 fi
           EOF
           if singularity
             coda +=<<-EOF
-singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean -f &>> #{fsync}
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -v /dev/shm/sem.*.{in,out,process} /dev/shm/sem.Session-PID.*.sem 2> /dev/null >> #{fsync}
 if [ $exit_status == '0' -a $sync_es == '0' ]; then 
+    singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean -f &>> #{fsync}
     singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv .rbbt/var/jobs &>> #{fsync}
     singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv tmp/ &>> #{fsync}
 else
-    echo "WARNING: Results could not sync correctly. Job directory not purged"
+    echo "ERROR: Process failed or results could not sync correctly. Contain directory not purged" &>> #{fsync}
 fi
 EOF
           else
@@ -324,7 +324,7 @@ EOF
 if [ $exit_status == '0' -a $sync_es == '0' ]; then 
     rm -Rfv #{contain} &>> #{fsync}
 else
-    echo "ERROR: Process failed or results could not sync correctly. Contain directory not purged"
+    echo "ERROR: Process failed or results could not sync correctly. Contain directory not purged" &>> #{fsync}
 fi
 unset sync_es
 EOF
