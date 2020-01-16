@@ -303,7 +303,7 @@ EOF
 
         if  contain && (wipe_container == "post" || wipe_container == "both")
           prep =<<-EOF + prep
-if ls -A '#{contain}' > /dev/null ; then
+if ls -A '#{contain}' &> /dev/null ; then
     echo "ERROR: Container directory not empty, refusing to wipe. #{contain}"
 fi
           EOF
@@ -311,7 +311,7 @@ fi
             coda +=<<-EOF
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean -f &>> #{fsync}
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -v /dev/shm/sem.*.{in,out,process} /dev/shm/sem.Session-PID.*.sem 2> /dev/null >> #{fsync}
-if [ $sync_es == '0' ]; then 
+if [ $exit_status == '0' -a $sync_es == '0' ]; then 
     singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv .rbbt/var/jobs &>> #{fsync}
     singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv tmp/ &>> #{fsync}
 else
