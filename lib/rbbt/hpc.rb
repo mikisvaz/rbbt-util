@@ -295,6 +295,8 @@ EOF
 
         target = File.expand_path(sync)
         coda +=<<-EOF
+
+# Sync data to target location
 mkdir -p "$(dirname '#{target}')"
 rsync -avztAXHP --copy-unsafe-links "#{source}/" "#{target}/" &>> #{fsync} 
 sync_es="$?" 
@@ -310,6 +312,9 @@ fi
           if singularity
             coda +=<<-EOF
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -v /dev/shm/sem.*.{in,out,process} /dev/shm/sem.Session-PID.*.sem 2> /dev/null >> #{fsync}
+
+
+# Clean container directory
 if [ $exit_status == '0' -a $sync_es == '0' ]; then 
     singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean -f &>> #{fsync}
     singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv .rbbt/var/jobs &>> #{fsync}
