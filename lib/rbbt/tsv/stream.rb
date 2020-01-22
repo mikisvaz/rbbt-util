@@ -67,7 +67,7 @@ module TSV
         end
 
         first_line = parser.first_line
-        first_line = nil if first_line.empty?
+        first_line = nil if first_line == ""
 
         lines         << first_line
         key_fields    << parser.key_field
