@@ -46,8 +46,8 @@ module Workflow
   end
 
   def self.require_remote_workflow(wf_name, url)
-    require 'rbbt/rest/client'
-    eval "Object::#{wf_name} = WorkflowRESTClient.new '#{ url }', '#{wf_name}'"
+    require 'rbbt/workflow/remote/client'
+    eval "Object::#{wf_name} = WorkflowRemoteClient.new '#{ url }', '#{wf_name}'"
   end
 
   def self.require_remote_workflow(wf_name, url)
@@ -682,13 +682,13 @@ module Workflow
   end
 
   def self.process_remote_tasks(remote_tasks)
-    require 'rbbt/rest/client'
+    require 'rbbt/workflow/remote/client'
     remote_tasks.each do |workflow, info|
       wf = Workflow.require_workflow workflow
       wf.remote_tasks ||= {}
       IndiferentHash.setup wf.remote_tasks
       info.each do |remote, tasks|
-        remote_wf = WorkflowRESTClient.new remote, workflow
+        remote_wf = WorkflowRemoteClient.new remote, workflow
         tasks.each do |task|
           wf.remote_tasks[task.to_sym] = remote_wf
         end
