@@ -86,29 +86,36 @@ module Resource
       lock_filename = nil # it seems like this was locked already.
 
       Misc.lock lock_filename do
-        Net::HTTP.get_response URI(url) do |response|
-          case response
-          when Net::HTTPSuccess, Net::HTTPOK
-            Misc.sensiblewrite(final_path) do |file|
-              response.read_body do |chunk|
-                file.write chunk
+        uri = URI(url)
+
+        http = Net::HTTP.new(uri.host, uri.port)
+        request = Net::HTTP::Get.new(uri.request_uri)
+        timeout = 60 * 10
+        Net::HTTP.start(uri.host, uri.port, :timeout => timeout, :read_timeout => timeout, :open_timeout => timeout) do |http|
+          http.request request do |response|
+            case response
+            when Net::HTTPSuccess, Net::HTTPOK
+              Misc.sensiblewrite(final_path) do |file|
+                response.read_body do |chunk|
+                  file.write chunk
+                end
               end
-            end
-          when Net::HTTPRedirection, Net::HTTPFound
-            location = response['location']
-            Log.debug("Feching directory from: #{location}. Into: #{final_path}")
-            FileUtils.mkdir_p final_path unless File.exist? final_path
-            TmpFile.with_file do |tmp_dir|
-              Misc.in_dir tmp_dir do
-                CMD.cmd('tar xvfz -', :in => Open.open(location, :nocache => true))
+            when Net::HTTPRedirection, Net::HTTPFound
+              location = response['location']
+              Log.debug("Feching directory from: #{location}. Into: #{final_path}")
+              FileUtils.mkdir_p final_path unless File.exist? final_path
+              TmpFile.with_file do |tmp_dir|
+                Misc.in_dir tmp_dir do
+                  CMD.cmd('tar xvfz -', :in => Open.open(location, :nocache => true))
+                end
+                FileUtils.mv tmp_dir, final_path
               end
-              FileUtils.mv tmp_dir, final_path
+            when Net::HTTPInternalServerError
+              @server_missing_resource_cache << url
+              raise "Resource Not Found"
+            else
+              raise "Response not understood: #{response.inspect}"
             end
-          when Net::HTTPInternalServerError
-            @server_missing_resource_cache << url
-            raise "Resource Not Found"
-          else
-            raise "Response not understood: #{response.inspect}"
           end
         end
       end
