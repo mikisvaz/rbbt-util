@@ -690,6 +690,7 @@ module Workflow
       info.each do |remote, tasks|
         remote_wf = WorkflowRemoteClient.new remote, workflow
         tasks.each do |task|
+          Log.debug "Add remote task #{task} in #{wf} using #{remote_wf}"
           wf.remote_tasks[task.to_sym] = remote_wf
         end
       end

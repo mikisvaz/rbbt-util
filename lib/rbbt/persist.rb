@@ -41,12 +41,19 @@ module Persist
     return false if not Open.exists? path
     return false if TrueClass === persist_options[:update]
 
+    expiration = persist_options[:expiration]
+    if expiration
+      seconds = Misc.timespan(expiration)
+      patht = Open.mtime(path)
+      return false if Time.now > patht + seconds
+    end
+  
     check = persist_options[:check]
     return true if check.nil?
 
     missing = check.reject{|file| Open.exists?(file) }
     return false if missing.any?
-  
+
     return true unless ENV["RBBT_UPDATE"]
 
     if Array === check
@@ -497,7 +504,7 @@ module LocalPersist
   attr_accessor :local_persist_dir
 
   def local_persist_dir
-    @local_persist_dir ||= Rbbt.var.cache.persistence if defined? Rbbt
+    @local_persist_dir ||= Rbbt.var.cache.persistence.find(:lib) if defined? Rbbt
     @local_persist_dir
   end
 
@@ -505,11 +512,17 @@ module LocalPersist
     @local_persist_dir = value
   end
 
+  def self.local_persist(name, type = nil, options= {}, persist_options = nil, &block)
+    persist_options ||= {}
+    persist_options = {:dir => Rbbt.var.cache.persistence.find(:lib)}.merge persist_options
+    persist_options[:other] = options
+    Persist.persist(name, type, persist_options, &block)
+  end
+
   def local_persist(name, type = nil, options= {}, persist_options = nil, &block)
     persist_options ||= {}
     persist_options = {:dir => local_persist_dir}.merge persist_options
-    persist_options[:other] = options
-    Persist.persist(name, type, persist_options, &block)
+    self.local_persist(name, type, options, persist_options, &block)
   end
 
   def local_persist_tsv(source, name, opt = {}, options= {}, &block)

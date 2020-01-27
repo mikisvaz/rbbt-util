@@ -4,6 +4,7 @@ module Path
     file = caller.reject{|l| 
       l =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
       l =~ /rbbt\/resource\/path\.rb/ or
+      l =~ /rbbt\/persist.rb/ or
       l =~ /rbbt\/util\/misc\.rb/ or
       l =~ /progress-monitor\.rb/ 
     }.first.sub(/\.rb[^\w].*/,'.rb') if file.nil?

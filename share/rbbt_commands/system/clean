@@ -34,6 +34,8 @@ force = options.delete :force
 dirty = options.delete :dirty
 time = options.delete :older
 
+ENV["RBBT_UPDATE"] = 'true' if dirty
+
 time = Misc.timespan time, 'd' if time
 
 puts Log.color(:magenta, "# System clean")
