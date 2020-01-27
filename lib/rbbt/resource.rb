@@ -93,6 +93,11 @@ module Resource
         timeout = 60 * 10
         Net::HTTP.start(uri.host, uri.port, :timeout => timeout, :read_timeout => timeout, :open_timeout => timeout) do |http|
           http.request request do |response|
+            filename = response["Content-Disposition"].split(";").select{|f| f.include? "filename"}.collect{|f| f.split("=").last.gsub('"','')}.first
+            if filename && filename =~ /\.b?gz$/ && final_path !~ /\.b?gz$/
+              extension = filename.split(".").last
+              final_path += '.' + extension
+            end
             case response
             when Net::HTTPSuccess, Net::HTTPOK
               Misc.sensiblewrite(final_path) do |file|
