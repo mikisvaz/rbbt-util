@@ -191,8 +191,10 @@ class WorkflowRemoteClient
     def path
       if @url
         Misc.add_GET_param(@url, "_format", "raw")
-      else
+      elsif @base_name
         [base_url, task, @base_name + '-' +  Misc.fingerprint(inputs)] * "/"
+      else
+        nil
       end
     end
 

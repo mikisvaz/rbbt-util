@@ -5,6 +5,13 @@ module Entity
   
   UNPERSISTED_PREFIX = "entity_unpersisted_property_"
 
+  class DontPersist < Exception
+    attr_accessor :payload
+    def self.initialize(payload)
+      @payload = payload
+    end
+  end
+
   class << self
     attr_accessor :formats, :entity_property_cache
   end
@@ -203,8 +210,12 @@ module Entity
           persist_options = options
           persist_options = persist_options.merge(:other => {:args => args}) if args and args.any?
 
-          Persist.persist(persist_name, type, persist_options.merge(:persist => true)) do
-            self.send(orig_name, *args)
+          begin
+            Persist.persist(persist_name, type, persist_options.merge(:persist => true)) do
+              self.send(orig_name, *args)
+            end
+          rescue DontPersist
+            $!.payload
           end
         end
       end
