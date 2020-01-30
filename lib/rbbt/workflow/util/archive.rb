@@ -159,7 +159,6 @@ puts files * "\n"
               end
               files
             end
-    iii paths
 
     target = if options[:target] 
                target = SSHDriver.run(options[:target], <<-EOF).split("\n").first
