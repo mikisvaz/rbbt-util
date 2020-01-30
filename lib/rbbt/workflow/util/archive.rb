@@ -65,7 +65,7 @@ class Step
       next unless File.exists?(step.path)
       job_files << step.path
       job_files << step.info_file if File.exists?(step.info_file)
-      job_file_dir_content = Dir.glob(step.files_dir + '/**/*')
+      job_file_dir_content = Dir.glob(step.files_dir + '/**/*').collect{|f| File.join(step.files_dir, f)}
       job_files += job_file_dir_content
       rec_dependencies = Set.new
       next unless recursive
