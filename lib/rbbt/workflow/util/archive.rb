@@ -65,7 +65,8 @@ class Step
       next unless File.exists?(step.path)
       job_files << step.path
       job_files << step.info_file if File.exists?(step.info_file)
-      job_files << step.files_dir.glob("**") if Dir.glob(step.files_dir + '/*').any?
+      job_file_dir_content = Dir.glob(step.files_dir + '/**/*').any?
+      job_files += job_file_dir_content if job_file_dir_content
       rec_dependencies = Set.new
       next unless recursive
       deps = [step.path]
