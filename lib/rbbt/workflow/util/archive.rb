@@ -49,7 +49,7 @@ class Step
     end
   end
 
-  def self.job_files_for_archive(files, relocate = false)
+  def self.job_files_for_archive(files, recursive = false)
     job_files = Set.new
 
     jobs = files.collect do |file|  
@@ -65,8 +65,9 @@ class Step
       next unless File.exists?(step.path)
       job_files << step.path
       job_files << step.info_file if File.exists?(step.info_file)
-      job_files << step.files_dir if Dir.glob(step.files_dir + '/*').any?
+      job_files << step.files_dir.glob("**") if Dir.glob(step.files_dir + '/*').any?
       rec_dependencies = Set.new
+      next unless recursive
       deps = [step.path]
       seen = Set.new
       while deps.any?
@@ -74,8 +75,6 @@ class Step
 
         dep = Workflow.load_step path
         seen << dep.path
-
-        dep.relocated = !!relocate
 
         dep.load_dependencies_from_info
 
@@ -97,11 +96,11 @@ class Step
     job_files.to_a
   end
 
-  def self.archive(files, target = nil, relocate = true)
+  def self.archive(files, target = nil, recursive = true)
     target = self.path + '.tar.gz' if target.nil?
     target = File.expand_path(target) if String === target
 
-    job_files = job_files_for_archive files, relocate
+    job_files = job_files_for_archive files, recursive
     TmpFile.with_file do |tmpdir|
       job_files.each do |file|
         Step.link_job file, tmpdir
@@ -119,11 +118,12 @@ class Step
   end
 
   def self.migrate(path, search_path, options = {})
-
     resource=Rbbt
 
     other_rsync_args = options[:rsync]
-    relocate = options[:relocate]
+
+    recursive = options[:recursive]
+    recursive = false if recursive.nil?
 
     paths = if options[:source]
               SSHDriver.run(options[:source], <<-EOF).split("\n")
@@ -131,18 +131,21 @@ require 'rbbt-util'
 require 'rbbt/workflow'
 
 path = "#{path}"
-relocate = #{ relocate.to_s }
+recursive = #{ recursive.to_s }
+
 if File.exists?(path)
   path = #{resource.to_s}.identify(path)
 else
   path = Path.setup(path)
 end
+
 files = path.glob_all
-if #{options[:recursive].to_s == 'true'}
-  files = Step.job_files_for_archive(files, relocate)
-end
+
+files = Step.job_files_for_archive(files, recursive)
+
 puts files * "\n"
               EOF
+
             else
               if File.exists?(path)
                 path = resource.identify(path)
@@ -155,6 +158,7 @@ puts files * "\n"
               end
               files
             end
+    iii paths
 
     target = if options[:target] 
                target = SSHDriver.run(options[:target], <<-EOF).split("\n").first
@@ -218,9 +222,9 @@ puts resource[path].find(search_path)
     end
   end
 
-  def self.purge(path, relocate = false)
+  def self.purge(path, recursive = false)
     path = [path] if String === path
-    job_files = job_files_for_archive path, relocate
+    job_files = job_files_for_archive path, recursive
 
     job_files.each do |file|
       begin

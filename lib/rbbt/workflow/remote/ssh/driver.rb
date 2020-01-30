@@ -1,7 +1,7 @@
 module SSHDriver
   def self.run(server, script)
     Log.debug "Run ssh script in #{server}:\n#{script}"
-    CMD.cmd("ssh '#{server}' 'shopt -s expand_aliases; bash -ic \"ruby\"' ", :in => script, :log => true).read
+    CMD.cmd("ssh '#{server}' 'shopt -s expand_aliases; bash -l -i -c \"ruby\"' ", :in => script, :log => true).read
   end
 
   #def self.run_log(server, script)
