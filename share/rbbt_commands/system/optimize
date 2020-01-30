@@ -69,15 +69,17 @@ TSV.traverse all_files, :type => :array, :bar => "Processing Tokyo Cabinet files
   type = file_type.split(", ")[1]
   case type
   when "Hash"
-    cmd = 'tchmgr optimize "' << file << '"'
+    cmd = 'tchmgr optimize' 
   when "B+ tree"
-    cmd = 'tcbmgr optimize "' << file << '"'
+    cmd = 'tcbmgr optimize'
   else
     next
   end
   size = File.size(file)
-  cmd << ' -td -tl' if size > 2_000_000_000 or file_type =~ /deflate/
-  Log.info "Optimizing #{type} database #{file}"
+  cmd << ' -td -tl' if size > 100_000_000 or file_type =~ /deflate/
+  cmd << ' "' << file << '"'
+  Log.info "Optimizing #{type} database #{file} (#{size}): #{cmd}"
+
   io = CMD.cmd(cmd)
   while line = io.gets
     Log.debug line
