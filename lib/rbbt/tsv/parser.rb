@@ -12,6 +12,8 @@ module TSV
     end
 
     def parse_header(stream)
+      raise "Closed stream" if IO === stream && stream.closed?
+
       options = {}
       @preamble = []
 
