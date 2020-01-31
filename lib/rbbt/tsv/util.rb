@@ -123,7 +123,7 @@ module TSV
       else
         file.grace
         stream = file.get_stream
-        if stream
+        if stream && ! stream.closed?
           stream
         else
           file.join
