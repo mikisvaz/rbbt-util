@@ -371,7 +371,8 @@ class Step
 
   def load
     res = begin
-            if @result and not @path == @result
+            @result = nil if IO === @result && @result.closed?
+            if @result && @path != @result
               res = @result
             else
               join if not done?
@@ -391,6 +392,8 @@ class Step
               retry
             end
             raise $!
+          ensure
+            @result = nil if IO === @result
           end
 
     res
