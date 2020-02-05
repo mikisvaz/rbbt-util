@@ -66,7 +66,6 @@ class Step
       job_files << step.path
       job_files << step.info_file if File.exists?(step.info_file)
       job_file_dir_content = Dir.glob(step.files_dir + '/**/*')
-      iii job_file_dir_content
       job_files += job_file_dir_content
       rec_dependencies = Set.new
 
@@ -157,11 +156,10 @@ puts files * "\n"
                 path = Path.setup(path)
               end
               files = path.glob_all
-              if options[:recursive]
-                files = Step.job_files_for_archive(files)
-              end
+              files = Step.job_files_for_archive(files, recursive)
               files
             end
+
 
     target = if options[:target] 
                target = SSHDriver.run(options[:target], <<-EOF).split("\n").first
@@ -176,10 +174,16 @@ puts resource[path].find(search_path)
              end
 
     subpath_files = {}
-    paths.each do |source|
-      parts = source.split("/")
+    paths.sort.each do |path|
+      parts = path.split("/")
       subpath = parts[0..-4] * "/"
-      source = parts[-3..-1] * "/"
+
+      if subpath_files.keys.any? && subpath.start_with?(subpath_files.keys.last)
+        subpath = subpath_files.keys.last
+      end
+
+      source = path[subpath.length..-1]
+
       subpath_files[subpath] ||= []
       subpath_files[subpath] << source
     end
@@ -198,7 +202,7 @@ puts resource[path].find(search_path)
       end
       target = [options[:target], target] * ":" if options[:target]
 
-      files_and_dirs = Set.new(files )
+      files_and_dirs = Set.new( files )
       files.each do |file|
         parts = file.split("/")[0..-2]
         while parts.any?
