@@ -204,18 +204,17 @@ puts resource[path].find(search_path)
 
       files_and_dirs = Set.new( files )
       files.each do |file|
-        parts = file.split("/")[0..-2]
+        parts = file.split("/")[0..-2].reject{|p| p.empty?}
         while parts.any?
           files_and_dirs << parts * "/"
           parts.pop
         end
       end
 
-      TmpFile.with_file(files_and_dirs.to_a * "\n") do |tmp_include_file|
+      TmpFile.with_file(files_and_dirs.sort_by{|l| l.length}.to_a * "\n", false) do |tmp_include_file|
         test_str = options[:test] ? '-nv' : ''
 
-        includes_str = "--include-from='#{tmp_include_file}'"
-        cmd = "rsync -avztAXHP --progress #{test_str} --include-from='#{tmp_include_file}' --exclude='*' #{source}/ #{target}/ #{other_rsync_args}"
+        cmd = "rsync -avztAXHP --progress #{test_str} --files-from='#{tmp_include_file}' #{source}/ #{target}/ #{other_rsync_args}"
 
         cmd << " && rm -Rf #{source}" if options[:delete]
 
