@@ -112,17 +112,19 @@ class Step
   end
 
   def updatable?
-    (ENV["RBBT_UPDATE_ALL_JOBS"] == 'true' || Open.exists?(info_file)) && ! (relocated? && done?)
+    (ENV["RBBT_UPDATE_ALL_JOBS"] == 'true' || ( ENV["RBBT_UPDATE"] == "true" && Open.exists?(info_file)) && status != :noinfo && ! (relocated? && done?))
   end
 
   def dependency_checks
+    return [] if ENV["RBBT_UPDATE"] != "true"
+
     rec_dependencies.
-      select{|dependency| ! (defined? WorkflowRemoteClient and WorkflowRemoteClient::RemoteStep === dependency) }.
-      collect{|dependency| Workflow.relocate_dependency self, dependency}.
-      select{|dependency| Open.exists?(dependency.path) || ((Open.exists?(dependency.info_file) && (dependency.status == :cleaned) || dependency.status == :waiting)) }.
-      select{|dependency| ! Open.remote?(dependency.path) }.
+      reject{|dependency| (defined?(WorkflowRemoteClient) && WorkflowRemoteClient::RemoteStep === dependency) || Open.remote?(dependency.path) }.
+      reject{|dependency| dependency.error? }.
+      #select{|dependency| Open.exists?(dependency.path) || ((Open.exists?(dependency.info_file) && (dependency.status == :cleaned) || dependency.status == :waiting)) }.
+      #select{|dependency| Open.exists?(dependency.path) || ((Open.exists?(dependency.info_file) && (dependency.status == :cleaned) || dependency.status == :waiting)) }.
       select{|dependency| dependency.updatable? }.
-      select{|dependency| ! dependency.error? }
+      collect{|dependency| Workflow.relocate_dependency(self, dependency)}
   end
 
   def input_checks
