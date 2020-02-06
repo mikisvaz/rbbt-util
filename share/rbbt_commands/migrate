@@ -57,6 +57,7 @@ puts path.glob_all.collect{|p| File.directory?(p) ? p + "/" : p } * "\n"
           [path, paths.collect{|p| [options[:source], p] * ":"}, lpath]
         else
           if File.exists?(path)
+
             path = resource.identify(path)
           else
             path = Path.setup(path)
@@ -92,9 +93,13 @@ real_paths.each do |source|
     Open.mkdir File.dirname(target)
   end
 
-  target = [options[:target], target] * ":" if options[:target]
+  if options[:target]
+   target_path = [options[:target], target] * ":" 
+  else
+   target_path = target
+  end
 
-  cmd = "rsync -avztAXHP --copy-unsafe-links #{test_str} #{excludes_str} #{source} #{target} #{other * " "}"
+  cmd = "rsync -avztAXHP --copy-unsafe-links #{test_str} #{excludes_str} #{source} #{target_path} #{other * " "}"
 
   cmd << " && rm -Rf #{source}" if options[:delete]
 
