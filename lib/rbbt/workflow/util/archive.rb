@@ -211,7 +211,7 @@ puts resource[path].find(search_path)
         end
       end
 
-      TmpFile.with_file(files_and_dirs.sort_by{|l| l.length}.to_a * "\n", false) do |tmp_include_file|
+      TmpFile.with_file(files_and_dirs.sort_by{|l| l.length}.to_a * "\n") do |tmp_include_file|
         test_str = options[:test] ? '-nv' : ''
 
         cmd = "rsync -avztAXHP --progress #{test_str} --files-from='#{tmp_include_file}' #{source}/ #{target}/ #{other_rsync_args}"
