@@ -29,7 +29,6 @@ class TestRemote < Test::Unit::TestCase
   def test_rest
     Log.with_severity 0 do
 
-
       workflow_server(TestWFRest) do |client|
         assert_equal "Hello World", client.job(:hi, nil, {}).run
         assert_equal "Hello Miguel", client.job(:hi, nil, {:name => :Miguel}).run

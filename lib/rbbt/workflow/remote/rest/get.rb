@@ -231,6 +231,7 @@ module WorkflowRESTClient
   def _clean
     begin
       _restart
+      Open.rm cache_file
       params = {:_update => :clean}
       @adaptor.clean_url(url, params) if @url
     rescue Exception

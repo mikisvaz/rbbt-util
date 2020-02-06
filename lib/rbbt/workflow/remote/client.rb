@@ -29,7 +29,7 @@ class WorkflowRemoteClient
     end
     init_remote_tasks
   end
-  
+
   def to_s
     name
   end
