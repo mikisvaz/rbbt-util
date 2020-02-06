@@ -34,7 +34,7 @@ class WorkflowRemoteClient
     name
   end
 
-  def job(task, name, inputs)
+  def job(task, name = nil, inputs = {})
     task_info = task_info(task)
     fixed_inputs = {}
     input_types = IndiferentHash.setup(task_info[:input_types])
