@@ -236,6 +236,7 @@ end
 
 if options[:update_all_jobs]
   ENV["RBBT_UPDATE_ALL_JOBS"] = 'true'
+  ENV["RBBT_UPDATE"] = 'true'
 end
 
 if options[:workflows]
