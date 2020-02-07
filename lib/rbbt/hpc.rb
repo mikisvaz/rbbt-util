@@ -223,7 +223,7 @@ EOF
 -B /scratch/tmp \
 -B "$SINGULARITY_RUBY_INLINE":"$CONTAINER_DIR/.ruby_inline":rw  \
 -B ~/git:"$CONTAINER_DIR/git":ro \
--B ~/.rbbt/software/opt/:"/opt/":ro \
+#{Open.exists?('~/.rbbt/software/opt/')? '-B ~/.rbbt/software/opt/:"/opt/":ro' : '' } \
 -B ~/.rbbt:"$CONTAINER_DIR/home/":ro \
 #{ group != user_group ? "-B /gpfs/projects/#{user_group}" : "" } \
 -B #{scratch_group_dir} \
