@@ -166,7 +166,7 @@ module WorkflowRESTClient
   def get
     params ||= {}
     params = params.merge(:_format => [:string, :boolean, :tsv, :annotations, :array].include?(result_type.to_sym) ? :raw : :json )
-    @cache_result ||= Persist.persist("REST persist", result_type, :file => cache_file + "." + Misc.obj2digest(params)) do
+    @cache_result ||= Persist.persist("REST persist", :binary, :file => cache_file + "." + Misc.obj2digest(params)) do
       Misc.insist 3, rand(2) + 1 do
         begin
           init_job if url.nil?

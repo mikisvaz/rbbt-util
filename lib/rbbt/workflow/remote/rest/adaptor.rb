@@ -30,7 +30,6 @@ module WorkflowRESTClient
 
     key = [url, task] * "#"
     @@task_info[key] ||= begin
-                           iii url
                            task_info = WorkflowRESTClient.get_json(File.join(url, task.to_s, 'info'))
                            task_info = WorkflowRESTClient.fix_hash(task_info)
 
