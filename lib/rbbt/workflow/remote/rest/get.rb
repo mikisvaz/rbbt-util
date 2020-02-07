@@ -183,7 +183,7 @@ module WorkflowRESTClient
     params = {}
     join unless done? or streaming?
     raise get_exception if error? or aborted?
-    load_res get
+    load_res get, (result_type == :array ? :json : result_type)
   end
 
   def exec_job

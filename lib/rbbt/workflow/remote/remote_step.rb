@@ -34,7 +34,7 @@ class WorkflowRemoteClient
     def run(no_load = false)
       no_load = @is_stream ? :stream : true if no_load
 
-      @mutex.synchronize do
+      @result ||= @mutex.synchronize do
         begin
           if @is_exec
             exec(no_load)
@@ -44,8 +44,10 @@ class WorkflowRemoteClient
             init_job 
             nil
           else
-            init_job 
-            join
+            if ! done?
+              init_job 
+              join
+            end
             self.load
           end
         ensure
@@ -229,6 +231,7 @@ class WorkflowRemoteClient
     end
 
     def join
+      return true if cache_files.any?
       init_job unless @url
       Log.debug{ "Joining RestClient: #{path}" }
       if IO === @result
@@ -251,6 +254,7 @@ class WorkflowRemoteClient
     end
 
     def load_res(res, result_type = nil)
+
       stream = true if res.respond_to? :read
       join unless stream
       result_type ||= self.result_type
