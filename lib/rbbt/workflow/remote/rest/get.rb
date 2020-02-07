@@ -165,14 +165,16 @@ module WorkflowRESTClient
 
   def get
     params ||= {}
-    params = params.merge(:_format => [:string, :boolean, :tsv, :annotations,:array].include?(result_type.to_sym) ? :raw : :json )
-    Misc.insist 3, rand(2) + 1 do
-      begin
-        init_job if url.nil?
-        @adaptor.get_raw(url, params)
-      rescue
-        Log.exception $!
-        raise $!
+    params = params.merge(:_format => [:string, :boolean, :tsv, :annotations, :array].include?(result_type.to_sym) ? :raw : :json )
+    @cache_result ||= Persist.persist("REST persist", result_type, :file => cache_file + "." + Misc.obj2digest(params)) do
+      Misc.insist 3, rand(2) + 1 do
+        begin
+          init_job if url.nil?
+          @adaptor.get_raw(url, params)
+        rescue
+          Log.exception $!
+          raise $!
+        end
       end
     end
   end
@@ -231,7 +233,9 @@ module WorkflowRESTClient
   def _clean
     begin
       _restart
-      Open.rm cache_file
+      cache_files.each do |cache_file|
+        Open.rm cache_file
+      end
       params = {:_update => :clean}
       @adaptor.clean_url(url, params) if @url
     rescue Exception

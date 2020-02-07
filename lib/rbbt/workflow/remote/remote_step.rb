@@ -23,31 +23,33 @@ class WorkflowRemoteClient
     end
 
     def cache_file
-      digest = Misc.obj2digest([url, task, base_name, inputs])
-      Rbbt.var.cache.REST[digest].find
+      digest = Misc.obj2digest([base_url, task, base_name, inputs])
+      Rbbt.var.cache.REST[[task, clean_name, digest] * "."].find
+    end
+
+    def cache_files
+      Dir.glob(cache_file + '.*')
     end
 
     def run(no_load = false)
       no_load = @is_stream ? :stream : true if no_load
 
       @mutex.synchronize do
-        @result ||= Persist.persist("REST persist", result_type, :file => cache_file) do
-          begin
-            if @is_exec
-              exec(no_load)
-            elsif no_load == :stream
-              _run_job(:stream)
-            elsif no_load
-              init_job 
-              nil
-            else
-              init_job 
-              join
-              self.load
-            end
-          ensure
-            @started = true
+        begin
+          if @is_exec
+            exec(no_load)
+          elsif no_load == :stream
+            _run_job(:stream)
+          elsif no_load
+            init_job 
+            nil
+          else
+            init_job 
+            join
+            self.load
           end
+        ensure
+          @started = true
         end
       end
 
@@ -159,6 +161,7 @@ class WorkflowRemoteClient
     end
 
     def done?
+      return true if cache_files.any?
       init_job unless @url
       @done || status.to_s == 'done' || status.to_s == 'noinfo'
     end

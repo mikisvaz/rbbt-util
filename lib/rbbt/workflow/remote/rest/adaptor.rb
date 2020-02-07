@@ -25,22 +25,26 @@ module WorkflowRESTClient
     @documention ||= IndiferentHash.setup(WorkflowRESTClient.get_json(File.join(url, "documentation"),{}))
   end
 
+  def self.task_info(url, task)
+    @@task_info ||= {}
+
+    key = [url, task] * "#"
+    @@task_info[key] ||= begin
+                           iii url
+                           task_info = WorkflowRESTClient.get_json(File.join(url, task.to_s, 'info'))
+                           task_info = WorkflowRESTClient.fix_hash(task_info)
+
+                           task_info[:result_type] = task_info[:result_type].to_sym
+                           task_info[:export] = task_info[:export].to_sym
+                           task_info[:input_types] = WorkflowRESTClient.fix_hash(task_info[:input_types], true)
+                           task_info[:inputs] = task_info[:inputs].collect{|input| input.to_sym }
+
+                           @@task_info[key] = task_info
+                         end
+  end
+
   def task_info(task)
-    @task_info ||= {}
-    @task_info[task]
-    
-    if @task_info[task].nil?
-      task_info = WorkflowRESTClient.get_json(File.join(url, task.to_s, 'info'))
-      task_info = WorkflowRESTClient.fix_hash(task_info)
-
-      task_info[:result_type] = task_info[:result_type].to_sym
-      task_info[:export] = task_info[:export].to_sym
-      task_info[:input_types] = WorkflowRESTClient.fix_hash(task_info[:input_types], true)
-      task_info[:inputs] = task_info[:inputs].collect{|input| input.to_sym }
-
-      @task_info[task] = task_info
-    end
-    @task_info[task]
+    WorkflowRESTClient.task_info(url, task)
   end
 
   def exported_tasks
