@@ -18,6 +18,7 @@ $ rbbt app start [options] <app_name>
 -s--server* Server type:  thin, webrick, unicorn, etc
 -f--finder Start server with finder functionality
 -fs--file_server Activate file serving for resources
+-mj--monitor_jobs Monitor jobs (UNSAFE)
 -R--Rserve_session* Rserve session to use, otherwise start new one
 -wd--workdir* Change the working directory of the workflow
 --views* Directory with view templates
@@ -62,6 +63,7 @@ Misc.in_dir(app_dir) do
   ENV["RACK_ENV"] = options[:environment] if options.include?(:environment)
   ENV["RBBT_VIEWS_DIR"] = options[:views] if options.include?(:views)
   ENV["RBBT_REST_FILE_SERVER"] = "true" if  options[:file_server]
+  ENV["RBBT_MONITOR_REST_JOBS"] = "true" if  options[:monitor_jobs]
 
 
   if options[:stream]
