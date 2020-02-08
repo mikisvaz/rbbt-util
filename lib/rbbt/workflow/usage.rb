@@ -43,28 +43,100 @@ module Task
         else
           puts "  #{Log.color :yellow, task.name.to_s}:"
         end
-        puts
+        puts unless Log.compact
         puts SOPT.input_doc(new_inputs, task.input_types, task.input_descriptions, task.input_defaults, true)
-        puts
+        puts unless Log.compact
       end
+      puts
     end
 
     puts Log.color(:magenta, "Returns: ") << Log.color(:blue, result_type.to_s) << "\n"
     puts
-    
+
     if selects.any?
       puts Log.color(:magenta, "Input select options")
       puts
       selects.collect{|p| p}.uniq.each do |input,options|
         puts Log.color(:blue, input.to_s + ": ") << Misc.format_paragraph(options.collect{|o| o.to_s} * ", ") << "\n"
-        puts
+        puts unless Log.compact
       end
+      puts
     end
   end
 end
 
 module Workflow
-  def doc(task = nil)
+
+  def dep_tree(name)
+    @dep_tree ||= {}
+    @dep_tree[name] ||= begin
+                        dep_tree = {}
+                        self.rec_dependencies(name).each do |dep|
+                          dep = dep.first if Array === dep && dep.length == 1
+
+                          workflow, task = case dep
+                                           when Array
+                                             dep.values_at 0, 1
+                                           when Symbol, String
+                                             [self, dep]
+                                           else
+                                             next
+                                           end
+
+
+                          key = [workflow, task]
+
+                          dep_tree[key] = workflow.dep_tree(task)
+                        end
+                        dep_tree
+                      end
+  end
+
+  def prov_string(tree)
+    description = ""
+
+    last = nil
+    seen = Set.new
+    tree.collect.to_a.flatten.select{|e| Symbol === e }.each do |task_name|
+
+      child = last && last.include?(task_name)
+      first = last.nil?
+      last = dep_tree(task_name).collect.to_a.flatten.select{|e| Symbol === e}
+
+      next if seen.include?(task_name)
+
+      if child
+        description << "->" << task_name.to_s
+      elsif first
+        description << "" << task_name.to_s
+      else
+        description << ";" << task_name.to_s
+      end
+    end
+    description
+  end
+
+  def prov_tree(tree, offset = 0, seen = [])
+
+    return "" if tree.empty?
+
+    lines = []
+
+    offset_str = " " * offset
+
+    lines << offset_str 
+
+    tree.each do |p,dtree| 
+      next if seen.include?(p)
+      seen.push(p)
+      workflow, task = p
+      lines << offset_str + [workflow.to_s, task.to_s] * "#" + "\n" + workflow.prov_tree(dtree, offset + 1, seen)
+    end
+
+    lines * "\n"
+  end
+
+  def doc(task = nil, abridge = false)
 
     if task.nil?
       puts Log.color :magenta, self.to_s 
@@ -88,10 +160,27 @@ module Workflow
       end
       puts
 
+      final = Set.new
+      not_final = Set.new
+      tasks.each do |name,task|
+        tree = dep_tree(name)
+        not_final += tree.keys
+        final << name unless not_final.include?(name)
+      end
+
+      not_final.each do |p|
+        final -= [p.last]
+      end
+
       tasks.each do |name,task|
         description = task.description || ""
         description = description.split("\n\n").first
-        puts Misc.format_definition_list_item(name.to_s, description, 80, 30, :yellow)
+
+        next if abridge and ! final.include?(name)
+        puts Misc.format_definition_list_item(name.to_s, description, Log.terminal_width, 20, :yellow)
+
+        prov_string = prov_string(dep_tree(name))
+        puts Log.color :blue, " ->" + prov_string if prov_string && ! prov_string.empty?
       end
 
     else
@@ -106,29 +195,46 @@ module Workflow
       #dependencies = self.rec_dependencies(task_name).collect{|dep_name| Array === dep_name ? dep_name.first.tasks[dep_name[1].to_sym] : self.tasks[dep_name.to_sym]}
       task.doc(self, self.rec_dependencies(task_name))
 
-      if self.examples.include? task_name
-          self.examples[task_name].each do |example|
+      prov_tree = prov_tree(dep_tree(task_name))
+      if prov_tree && ! prov_tree.empty?
 
-            puts Log.color(:magenta, "Example ") << Log.color(:green, example) + " -- " + Log.color(:blue, example_dir[task_name][example])
-
-            inputs = self.example(task_name, example)
-
-            inputs.each do |input, type, file|
-                case type
-                when :tsv, :array, :text
-                  lines = file.read.split("\n")
-                  head = lines[0..5].compact * "\n\n"
-                  head = head[0..500]
-                  puts Misc.format_definition_list_item(input, head, 1000, -1, :blue).gsub(/\n\s*\n/,"\n") 
-                  puts '...' if lines.length > 6
-                else
-                  puts Misc.format_definition_list_item(input, file.read, 80, 20, :blue)
-                end
-            end
-            puts
+        puts Log.color :magenta, "## DEPENDENCY GRAPH (abridged)"
+        puts
+        prov_tree.split("\n").each do |line|
+          next if line.strip.empty?
+          if m = line.match(/^( *)(\w+?)#(\w*)/i)
+              offset, workflow, task_name =  m.values_at 1, 2, 3
+            puts [offset, Log.color(:magenta, workflow), "#", Log.color(:yellow, task_name)] * ""
+          else
+            puts Log.color :blue, line 
           end
         end
+        puts
       end
+
+      if self.examples.include? task_name
+        self.examples[task_name].each do |example|
+
+          puts Log.color(:magenta, "Example ") << Log.color(:green, example) + " -- " + Log.color(:blue, example_dir[task_name][example])
+
+          inputs = self.example(task_name, example)
+
+          inputs.each do |input, type, file|
+            case type
+            when :tsv, :array, :text
+              lines = file.read.split("\n")
+              head = lines[0..5].compact * "\n\n"
+              head = head[0..500]
+              puts Misc.format_definition_list_item(input, head, 1000, -1, :blue).gsub(/\n\s*\n/,"\n") 
+              puts '...' if lines.length > 6
+            else
+              puts Misc.format_definition_list_item(input, file.read, Log.terminal_width, 20, :blue)
+            end
+          end
+          puts
+        end
+      end
+    end
   end
 
   def SOPT_str(task)

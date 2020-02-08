@@ -24,6 +24,15 @@ module Log
                      names
                    end
 
+  def self.terminal_width
+    80
+  end
+  
+  def self.compact
+    true
+  end
+
+
   def self.last_caller(stack)
     line = nil
     pos ||= 0

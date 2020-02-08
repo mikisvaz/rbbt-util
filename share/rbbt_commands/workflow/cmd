@@ -51,8 +51,8 @@ end
 
 prev = []
 
-$previous_commands << 'cmd'
-$previous_commands << workflow
+$previous_commands << ' cmd'
+$previous_commands << ' '  << workflow
 
 begin
   while ARGV.any?

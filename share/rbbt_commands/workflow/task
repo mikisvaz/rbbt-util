@@ -15,7 +15,7 @@ def report_options(options)
   end
 end
 
-def usage(workflow = nil, task = nil, exception=nil)
+def usage(workflow = nil, task = nil, exception=nil, abridge = false)
   puts SOPT.doc
   puts
   if workflow.nil?
@@ -25,7 +25,7 @@ def usage(workflow = nil, task = nil, exception=nil)
 
   if task.nil?
     workflow.load_tasks if workflow.respond_to? :load_tasks
-    workflow.doc
+    workflow.doc nil, abridge
     puts
     puts "E.g. rbbt workflow task #{workflow.to_s} #{workflow.tasks.keys.first.to_s} -h"
   else
@@ -40,7 +40,7 @@ def usage(workflow = nil, task = nil, exception=nil)
       puts Misc.format_paragraph workflow.documentation[:description] 
     end
     puts
-    workflow.doc(task)
+    workflow.doc(task, abridge)
   end
 
   print_error(exception.message, exception.backtrace) if exception
@@ -171,6 +171,7 @@ can redo it using the `clean` parameter, this cleans the last step of the task.
 The `recursive_clean` cleans all the job dependency steps recursively.
 
 -h--help Show this help
+-ha--abridge Abridge help
 -wd--workdir* Change the working directory of the workflow
 -wda--workdir_all* Change the working directory of ALL workflow
 -as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default
@@ -265,14 +266,14 @@ namespace = nil, nil
 
 case 
 when task.nil?
-  usage workflow and exit 0
+  usage workflow, nil, nil, options[:abridge] and exit 0
 else
   task_name = task.to_sym
   begin
     task = workflow.tasks[task_name]
     raise Workflow::TaskNotFoundException.new workflow, task_name if task.nil?
   rescue Workflow::TaskNotFoundException
-    usage workflow 
+    usage workflow, nil, nil, options[:abridge]
 
     puts
     puts Log.color :magenta, "## Error"
@@ -284,7 +285,7 @@ else
   end
 end
 
-usage workflow, task and exit 0 if help
+usage workflow, task, nil, options[:abridge] and exit 0 if help
 
 name = options.delete(:jobname) 
 
