@@ -221,13 +221,13 @@ EOF
         if contain
           singularity_exec << %( -C -H "$CONTAINER_DIR" \
 -B /scratch/tmp \
+#{ group != user_group ? "-B /gpfs/projects/#{user_group}" : "" } \
+-B #{scratch_group_dir} \
+-B #{projects_group_dir} \
 -B "$SINGULARITY_RUBY_INLINE":"$CONTAINER_DIR/.ruby_inline":rw  \
 -B ~/git:"$CONTAINER_DIR/git":ro \
 #{Open.exists?('~/.rbbt/software/opt/')? '-B ~/.rbbt/software/opt/:"/opt/":ro' : '' } \
 -B ~/.rbbt:"$CONTAINER_DIR/home/":ro \
-#{ group != user_group ? "-B /gpfs/projects/#{user_group}" : "" } \
--B #{scratch_group_dir} \
--B #{projects_group_dir} \
 "$SINGULARITY_IMG")
           exec_cmd << ' TMPDIR="$CONTAINER_DIR/.rbbt/tmp" '
         else
