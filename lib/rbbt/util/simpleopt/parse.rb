@@ -23,12 +23,11 @@ module SOPT
       end
     end
 
-    while shortcuts.include?(short) and not shortcuts[short] == long
-      while shortcuts[short].index current * ""
-        next_letter = chars.shift
-        return nil if next_letter.nil?
-        current << next_letter
-      end
+    while shortcuts.include?(short) && shortcuts[short] != long 
+      next_letter = chars.shift
+      next_letter = chars.shift while %w(. - _).include?(next_letter)
+      return nil if next_letter.nil?
+      current << next_letter
       short = current * ""
     end
 

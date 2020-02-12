@@ -341,13 +341,21 @@ EOF
 
 # Write exit status to file
 echo $exit_status > #{fexit}
-if [ $sync_es == '0' ]; then 
+EOF
+      if sync
+        coda +=<<-EOF 
+if [ "$sync_es" == '0' ]; then 
   unset sync_es
   exit $exit_status
 else
   exit $sync_es
 fi
 EOF
+      else
+        coda +=<<-EOF 
+exit $exit_status
+EOF
+      end
 
       template = [header, env, prep, run, coda] * "\n"
 

@@ -673,7 +673,7 @@ class Step
   end
 
   def grace
-    until done? or result or error? or aborted? or streaming? or waiting?
+    until done? || result || error? || aborted? || streaming? || waiting? 
       sleep 1 
     end
     self

@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+require 'rbbt/workflow'
+
+$0 = "rbbt #{$previous_commands*" "} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Make a job forget all its dependencies and archive their meta-data
+
+$ #{$0} [options] <job_path>
+
+-h--help Print this help
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+path = ARGV[0]
+
+raise ParameterException, "No path given" if path.nil?
+step = Workflow.load_step path
+
+
+iif step.rec_dependencies
+
+step.archive_deps
+step.set_info :dependencies, []

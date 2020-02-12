@@ -15,6 +15,8 @@ module R
       sources = [:plot, :svg, options[:source]].flatten.compact
       options.delete :source
 
+      field_classes = options[:field_classes]
+
       fast = options[:fast]
 
       if fast
@@ -31,6 +33,7 @@ module R
           break
         end
         values = [values] unless Array === values
+
         field_classes = values.collect do |v| 
           v = v.first if Array === v
           case v
@@ -49,7 +52,8 @@ module R
           else
             ":NA"
           end
-        end
+        end if field_classes.nil?
+
         if field_classes.any?
           options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')'
         else
