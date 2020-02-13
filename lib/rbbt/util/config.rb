@@ -119,5 +119,34 @@ module Rbbt::Config
     value
   end
 
+  def self.with_config
+      saved_config = CACHE.dup
+      saved_got_keys = GOT_KEYS.dup
+    begin
+      yield
+    ensure
+      CACHE.replace(saved_config)
+      GOT_KEYS.replace(saved_got_keys)
+    end
+  end
+
+  def self.process_config(config)
+    if Misc.is_filename?(config) && File.exists?(config)
+      Rbbt::Config.load_file(config)
+    elsif Rbbt.etc.config_profile[config].exists?
+      Rbbt::Config.load_file(Rbbt.etc.config_profile[config].find)
+    else
+      key, value, *tokens = config.split(/\s/)
+      tokens = ['key:' << key << '::0'] if tokens.empty?
+      tokens = tokens.collect do |tok|
+        tok, _sep, prio = tok.partition("::")
+        prio = "0" if prio.nil? or prio.empty?
+        [tok, prio] * "::"
+      end
+      Rbbt::Config.set({key => value}, *tokens)
+    end
+  end
+
+
   self.load_config
 end
