@@ -48,7 +48,7 @@ if options[:workdir]
   Workflow.workdir = options[:workdir]
 end
 
-options[:Port] ||= options[:port]
+options[:Port] ||= options.delete :port
 options[:Host] ||= "0.0.0.0"
 options[:Bind] ||= "0.0.0.0"
 
