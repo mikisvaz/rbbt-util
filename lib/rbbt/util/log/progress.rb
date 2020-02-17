@@ -2,6 +2,16 @@ require 'rbbt/util/log'
 require 'rbbt/util/log/progress/util'
 require 'rbbt/util/log/progress/report'
 module Log
+
+  def self.no_bar=(value)
+    @@no_bar = value
+  end
+
+  def self.no_bar
+    @@no_bar = false unless defined?(@@no_bar)
+    @@no_bar || ENV["RBBT_NO_PROGRESS"] == "true"
+  end
+
   class ProgressBar
 
     attr_accessor :max, :ticks, :frequency, :depth, :desc, :file, :bytes
@@ -34,7 +44,7 @@ module Log
     end
 
     def tick(step = 1)
-      return if ENV["RBBT_NO_PROGRESS"] == "true"
+      return if Log.no_bar
       @ticks += step
 
       time = Time.now

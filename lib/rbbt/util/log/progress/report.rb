@@ -1,7 +1,7 @@
 module Log
   class ProgressBar
     def print(io, str)
-      return if ENV["RBBT_NO_PROGRESS"] == "true"
+      return if Log.no_bar
       LOG_MUTEX.synchronize do
         STDERR.print str
         Log.logfile.puts str unless Log.logfile.nil?

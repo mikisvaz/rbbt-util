@@ -69,6 +69,7 @@ module Rbbt::Config
     priorities = {}
     entries.each do |tokens, value|
       best_prio = nil
+      tokens = [tokens] unless Array === tokens
       tokens.each do |tok|
         tok, prio = token_priority tok
         best_prio = prio if best_prio.nil? or best_prio > prio
@@ -120,7 +121,10 @@ module Rbbt::Config
   end
 
   def self.with_config
-      saved_config = CACHE.dup
+      saved_config = {}
+      CACHE.each do |k,v|
+        saved_config[k] = v.dup
+      end
       saved_got_keys = GOT_KEYS.dup
     begin
       yield
