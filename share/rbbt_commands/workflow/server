@@ -117,7 +117,16 @@ TmpFile.with_file do |app_dir|
       `env RBBT_LOG=#{Log.severity.to_s} puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 20 -t 10:160 --preload`
     else
       options[:config] = config_ru_file
-      Rack::Server.start(options)
+
+			clean_options = {}
+			options.each do |k,v|
+        begin
+          clean_options[k.to_sym] = v
+        rescue
+        end
+      end
+
+      Rack::Server.start(clean_options)
     end
   end
 end
