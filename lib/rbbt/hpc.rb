@@ -531,7 +531,7 @@ EOF
     end
   end
 
-  def relay(job, options={})
+  def self.relay(job, options={})
     options = Misc.add_defaults options, :target => 'mn1', :search_path => 'user'
     done_deps = job.dependencies.select do |dep|
       dep.done? 
