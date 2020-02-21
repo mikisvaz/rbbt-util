@@ -411,7 +411,8 @@ class Step
 
           set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
 
-          set_info :config_keys, (Rbbt::Config::GOT_KEYS - config_keys_pre).uniq
+          config_keys = Rbbt::Config::GOT_KEYS[config_keys_pre.length..-1]
+          set_info :config_keys, config_keys
 
           if result.nil? && File.exists?(self.tmp_path) && ! File.exists?(self.path)
             Open.mv self.tmp_path, self.path

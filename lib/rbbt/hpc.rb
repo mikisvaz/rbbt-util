@@ -267,8 +267,6 @@ EOF
 # Save exit status
 exit_status=$?
 
-# Clean job.id, since we are done
-rm #{fjob}
 EOF
 
       # CODA
@@ -315,13 +313,13 @@ singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -v /dev/shm/sem
 
 
 # Clean container directory
-if [ $exit_status == '0' -a $sync_es == '0' ]; then 
+#if [ $exit_status == '0' -a $sync_es == '0' ]; then 
     singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean -f &>> #{fsync}
     singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv .rbbt/var/jobs &>> #{fsync}
     singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv tmp/ &>> #{fsync}
-else
-    echo "ERROR: Process failed or results could not sync correctly. Contain directory not purged" &>> #{fsync}
-fi
+#else
+#    echo "ERROR: Process failed or results could not sync correctly. Contain directory not purged" &>> #{fsync}
+#fi
 EOF
           else
             coda +=<<-EOF
