@@ -76,7 +76,7 @@ module Rbbt::Config
         next if prio > best_prio
         next unless tok == token
         priorities[prio] ||= []
-        priorities[prio] << value
+        priorities[prio].unshift value
       end
     end if entries
     priorities
@@ -111,7 +111,7 @@ module Rbbt::Config
       end
     end
 
-    value = priorities.empty? ? default : priorities.collect{|p| p }.sort_by{|p,v| p}.first.last.last
+    value = priorities.empty? ? default : priorities.collect{|p| p }.sort_by{|p,v| p}.first.last.first
     value = false if value == 'false'
 
     Log.debug "Value #{value.inspect} for config key '#{ key }': #{tokens * ", "}"

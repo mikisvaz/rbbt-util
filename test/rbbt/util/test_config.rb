@@ -30,5 +30,18 @@ class TestConfig < Test::Unit::TestCase
     assert_equal "valueA", Rbbt::Config.get('key', 'token')
     assert_equal "default", Rbbt::Config.get('key2', 'token', :default => 'default')
   end
+
+  def test_order
+    Rbbt::Config.add_entry 'key', 'V1', 'token1'
+    Rbbt::Config.add_entry 'key', 'V2', 'token2'
+    Rbbt::Config.add_entry 'key', 'V3', 'token2'
+
+    assert_equal "V3", Rbbt::Config.get('key', 'token2')
+    assert_equal "V1", Rbbt::Config.get('key', 'token1')
+    assert_equal "V3", Rbbt::Config.get('key', 'token2', 'token1')
+    assert_equal "V1", Rbbt::Config.get('key', 'token1', 'token2')
+  end
+
+
 end
 
