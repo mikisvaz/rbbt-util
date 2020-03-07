@@ -4,11 +4,23 @@ require 'rbbt/util/config'
 class TestConfig < Test::Unit::TestCase
   def setup
     Rbbt::Config.set({:cpus => 30}, :test_config, :test)
-    Rbbt::Config.set(:cpus , 5, "slow::2", :test)
+    Rbbt::Config.set(:cpus, 5, "slow::2", :test)
+    Rbbt::Config.set({:token => "token"}, "token", "key:token")
+    Rbbt::Config.set(:notoken, "no_token")
   end
 
   def test_simple
     assert_equal 30, Rbbt::Config.get(:cpus, :test_config)
+  end
+
+  def test_match
+    assert_equal({20 => ["token"]}, Rbbt::Config.match({["key:token"] => "token"}, "key:token"))
+  end
+
+  def test_simple_no_token
+    assert_equal "token", Rbbt::Config.get("token", "token")
+    assert_equal "token", Rbbt::Config.get("token")
+    assert_equal "no_token", Rbbt::Config.get("notoken")
   end
 
   def test_prio

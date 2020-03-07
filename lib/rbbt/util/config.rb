@@ -8,6 +8,8 @@ module Rbbt::Config
   GOT_KEYS=[]
 
   def self.add_entry(key, value, tokens)
+    tokens = [tokens] unless Array === tokens
+    tokens << "key:#{key}" unless tokens.include?("key:#{key}")
     CACHE[key.to_s] ||= [] 
     CACHE[key.to_s] << [tokens, value]
   end
@@ -17,7 +19,6 @@ module Rbbt::Config
     TSV.traverse file, :type => :array do |line|
       next if line =~ /^#/
       key, value, *tokens = line.split(/\s/)
-      tokens << "key:#{key}"
 
       self.add_entry(key, value, tokens) if key
     end
@@ -65,16 +66,18 @@ module Rbbt::Config
     [token, priority]
   end
 
-  def self.match(entries, token)
+  def self.match(entries, give_token)
     priorities = {}
     entries.each do |tokens, value|
       best_prio = nil
       tokens = [tokens] unless Array === tokens
       tokens.each do |tok|
         tok, prio = token_priority tok
+        next unless tok == give_token
+
         best_prio = prio if best_prio.nil? or best_prio > prio
         next if prio > best_prio
-        next unless tok == token
+
         priorities[prio] ||= []
         priorities[prio].unshift value
       end
