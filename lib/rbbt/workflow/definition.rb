@@ -64,6 +64,7 @@ module Workflow
   end
 
   FORGET_DEP_TASKS = ENV["RBBT_FORGET_DEP_TASKS"] == "true"
+  REMOVE_DEP_TASKS = ENV["RBBT_REMOVE_DEP_TASKS"] == "true"
   def dep_task(name, workflow, oname, *rest, &block)
     dep(workflow, oname, *rest, &block) 
     extension workflow.tasks[oname].extension if workflow.tasks.include?(oname) unless @extension
@@ -73,11 +74,18 @@ module Workflow
       set_info :result_type, dep.info[:result_type]
       forget = config :forget_dep_tasks, :forget_dep_tasks, :default => FORGET_DEP_TASKS
       if forget
+        remove = config :remove_dep_tasks, :remove_dep_tasks, :default => REMOVE_DEP_TASKS
         self.archive_deps
         self.dependencies = self.dependencies - [dep]
         Open.rm_rf self.files_dir if Open.exist? self.files_dir
         FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist? dep.files_dir
         Open.ln_h dep.path, self.tmp_path
+        case remove.to_s
+        when 'true'
+          dep.clean
+        when 'recursive'
+          dep.recursive_clean
+        end
       else
         Open.rm_rf self.files_dir 
         Open.link dep.files_dir, self.files_dir
