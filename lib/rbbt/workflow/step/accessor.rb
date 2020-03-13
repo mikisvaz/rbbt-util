@@ -1,6 +1,12 @@
 class Step
 
-  INFO_SERIALIAZER = Marshal
+  INFO_SERIALIAZER = begin
+                       if ENV["RBBT_INFO_SERIALIZER"]
+                         Kernel.const_get ENV["RBBT_INFO_SERIALIZER"]
+                       else
+                         Marshal
+                       end
+                     end
 
   def self.wait_for_jobs(jobs)
     jobs = [jobs] if Step === jobs

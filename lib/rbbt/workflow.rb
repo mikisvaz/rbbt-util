@@ -398,7 +398,7 @@ module Workflow
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
     overriden = has_overriden_inputs || dependencies.select{|dep| dep.overriden }.any?
 
-    if real_inputs.empty? and not Workflow::TAG == :inputs and not overriden 
+    if real_inputs.empty? && Workflow::TAG != :inputs && ! overriden 
       step_path = step_path taskname, jobname, [], [], task.extension
       input_values = task.take_input_values(inputs)
     else
