@@ -85,6 +85,19 @@ end
     return false
   end
 
+
+  def self.relative_link(source, target_dir)
+    path = "."
+    current = target_dir
+    while ! Misc.common_path current, source
+      current = File.dirname(current)
+      path = File.join(path, '..')
+      return nil if current == "/"
+    end
+
+    File.join(path, Misc.path_relative_to(current, source))
+  end
+
   # WARN: probably not thread safe...
   def self.in_dir(dir)
     old_pwd = FileUtils.pwd
