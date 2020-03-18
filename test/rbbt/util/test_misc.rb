@@ -626,5 +626,69 @@ EOF
       assert_match /^[0-9a-z]{10,}$/, Misc.file2md5(file)
     end
   end
+
+  def test_scan_version_text
+    txt =<<-EOF
+Program: bcftools (Tools for variant calling and manipulating VCFs and BCFs)
+Version: 1.10.2-dirty (using htslib 1.10.2-12-gd807564-dirty)
+
+Usage:   bcftools [--version|--version-only] [--help] <command> <argument>
+
+Commands:
+
+ -- Indexing
+    index        index VCF/BCF files
+
+ -- VCF/BCF manipulation
+    annotate     annotate and edit VCF/BCF files
+    concat       concatenate VCF/BCF files from the same set of samples
+    convert      convert VCF/BCF files to different formats and back
+    isec         intersections of VCF/BCF files
+    merge        merge VCF/BCF files files from non-overlapping sample sets
+    norm         left-align and normalize indels
+    plugin       user-defined plugins
+    query        transform VCF/BCF into user-defined formats
+    reheader     modify VCF/BCF header, change sample names
+    sort         sort VCF/BCF file
+    view         VCF/BCF conversion, view, subset and filter VCF/BCF files
+
+ -- VCF/BCF analysis
+    call         SNP/indel calling
+    consensus    create consensus sequence by applying VCF variants
+    cnv          HMM CNV calling
+    csq          call variation consequences
+    filter       filter VCF/BCF files using fixed thresholds
+    gtcheck      check sample concordance, detect sample swaps and contamination
+    mpileup      multi-way pileup producing genotype likelihoods
+    roh          identify runs of autozygosity (HMM)
+    stats        produce VCF/BCF stats
+
+ Most commands accept VCF, bgzipped VCF, and BCF with the file type detected
+ automatically even when streaming from a pipe. Indexed VCF and BCF will work
+ in all situations. Un-indexed VCF and BCF and streams will work in most but
+ not all situations.
+    EOF
+
+    assert_equal "1.10.2-dirty", Misc.scan_version_text(txt, "bcftools")
+
+    txt =<<-EOF
+The Genome Analysis Toolkit (GATK) v4.1.4.1
+HTSJDK Version: 2.21.0
+Picard Version: 2.21.2
+    EOF
+    assert_equal "4.1.4.1", Misc.scan_version_text(txt, "gatk")
+
+
+    txt =<<-EOF
+grep (GNU grep) 3.1
+Copyright (C) 2017 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Written by Mike Haertel and others, see <http://git.sv.gnu.org/cgit/grep.git/tree/AUTHORS>.
+    EOF
+    assert_equal "3.1", Misc.scan_version_text(txt, "grep")
+  end
 end
 

@@ -29,12 +29,28 @@ module CMD
           block.call
         end
       end
-      @@init_cmd_tool[tool] = true
+      version_txt = ""
+      %w(--version -version --help).each do |f|
+        begin
+          version_txt += CMD.cmd("#{tool} #{f}").read
+          break
+        rescue
+        end
+      end
+
+      version = Misc.scan_version_text(version_txt, tool)
+
+      @@init_cmd_tool[tool] = version || true
 
       return cmd if cmd
     end
 
     tool.to_s
+  end
+
+  def self.versions
+    return {} unless defined? @@init_cmd_tool
+    @@init_cmd_tool.select{|k,v| v =~ /\d+\./ }
   end
 
   def self.gzip_pipe(file)
@@ -88,7 +104,7 @@ module CMD
 
     log = true if log.nil?
     
-    if cmd.nil? and ! Symbol === tool 
+    if cmd.nil? && ! Symbol === tool 
       cmd = tool
     else
       tool = get_tool(tool)

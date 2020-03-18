@@ -398,4 +398,11 @@ module Misc
       nil
     end
   end
+
+  def self.scan_version_text(text, cmd = nil)
+    cmd = "NOCMDGIVE" if cmd.nil? || cmd.empty?
+    m = text.match(/(?:version.*?|#{cmd}.*?|v)((?:\d+\.)*\d+(?:-[a-z_]+)?)/i)
+    return nil if m.nil?
+    m[1]
+  end
 end

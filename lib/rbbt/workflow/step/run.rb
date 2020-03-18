@@ -420,6 +420,7 @@ class Step
           result
         end # END PERSIST
         log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec." unless stream or time_elapsed.nil?
+        set_info :versions, Rbbt.versions
 
         if no_load
           @result ||= result

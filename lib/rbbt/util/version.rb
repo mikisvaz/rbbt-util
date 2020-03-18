@@ -41,6 +41,8 @@ module Rbbt
       versions[name] = version
     end
     versions
+
+    versions.merge(CMD.versions)
   end
 
   Rbbt.add_version(__FILE__)
