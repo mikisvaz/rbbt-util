@@ -177,7 +177,7 @@ module Persist
       Misc.sensiblewrite(path, content, :lock => lockfile)
     when :binary
       content.force_encoding("ASCII-8BIT") if content.respond_to? :force_encoding
-      f = File.open(path, 'wb')
+      f = Open.open(path, :mode => 'wb')
       f.puts content
       f.close
       content
