@@ -78,10 +78,10 @@ module WorkflowRESTClient
 
   def init_remote_tasks
     task_exports = WorkflowRESTClient.get_json(url)
-    @asynchronous_exports = task_exports["asynchronous"].collect{|task| task.to_sym }
-    @synchronous_exports = task_exports["synchronous"].collect{|task| task.to_sym }
-    @exec_exports = task_exports["exec"].collect{|task| task.to_sym }
-    @stream_exports = task_exports["stream"].collect{|task| task.to_sym }
+    @asynchronous_exports = (task_exports["asynchronous"] || []).collect{|task| task.to_sym }
+    @synchronous_exports = (task_exports["synchronous"] || []).collect{|task| task.to_sym }
+    @exec_exports = (task_exports["exec"] || []).collect{|task| task.to_sym }
+    @stream_exports = (task_exports["stream"] || []).collect{|task| task.to_sym }
     @can_stream = task_exports["can_stream"]
   end
 
