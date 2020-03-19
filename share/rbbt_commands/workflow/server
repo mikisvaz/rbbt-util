@@ -111,7 +111,7 @@ TmpFile.with_file do |app_dir|
 
     case server
     when 'unicorn'
-      `env RBBT_LOG=#{Log.severity.to_s} unicorn -c #{ Rbbt.share['unicorn.rb'].find } '#{config_ru_file}' -p #{options[:port] || "2887"}`
+      `env RBBT_LOG=#{Log.severity.to_s} unicorn -c #{ Rbbt.share['unicorn.rb'].find } '#{config_ru_file}' -p #{options[:Port] || "2887"}`
     when 'puma_alt'
       #`puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 3 -t 8:32 --preload`
       `env RBBT_LOG=#{Log.severity.to_s} puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 20 -t 10:160 --preload`

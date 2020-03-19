@@ -85,7 +85,7 @@ Misc.in_dir(app_dir) do
 
   case server
   when 'passenger'
-    system ENV, "env RBBT_LOG=0 passenger start -R '#{config_ru_file}' -p #{options[:port] || "2887"}"
+    system ENV, "env RBBT_LOG=0 passenger start -R '#{config_ru_file}' -p #{options[:Port] || "2887"}"
   when 'puma_alt'
     system ENV, "puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 3 -t 8:32 --preload"
   else
