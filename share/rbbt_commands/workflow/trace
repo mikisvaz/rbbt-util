@@ -18,11 +18,12 @@ $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_c
 options = SOPT.setup <<EOF
 Examine the provenance of a job result
 
-$ rbbt workflow trace <job-result> <file.png>
+$ rbbt workflow trace <job-result>
 
 -h--help Help
 -w--width* Image Width
 -h--height* Image Height
+-p--plot Plot file
 -s--size* Image Size (Height and Width)
 -fg--fix_gap Remove execution gaps
 -pd--plot_data Print plot data
@@ -30,8 +31,8 @@ EOF
 
 SOPT.usage if options[:help]
 
-file = ARGV.shift || "/home/mvazque2/.rbbt/var/jobs/Sample/haplotype/NA12878"
-plot = ARGV.shift 
+files = ARGV
+plot = options[:plot]
 
 width, height, size = options.values_at :width, :height, :size
 
@@ -45,20 +46,22 @@ def get_step(file)
   Workflow.load_step file
 end
 
-step = get_step file
+jobs = []
+files.each do |file|
+  step = get_step file
 
+  jobs += step.rec_dependencies + [step]
 
-jobs = step.rec_dependencies + [step]
-
-step.info[:archived_info].each do |path,ainfo|
-  archived_step = Step.new path
-  class << archived_step
-    self
-  end.define_method :info do
-    ainfo
-  end
-  jobs << archived_step
-end if step.info[:archived_info]
+  step.info[:archived_info].each do |path,ainfo|
+    archived_step = Step.new path
+    class << archived_step
+      self
+    end.define_method :info do
+      ainfo
+    end
+    jobs << archived_step
+  end if step.info[:archived_info]
+end
 
 jobs = jobs.select{|job| job.info[:done]}.sort_by{|job| job.info[:started]}
 
