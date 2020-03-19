@@ -36,7 +36,9 @@ module Workflow
 
   def self.extended(base)
     self.workflows << base
-    base.libdir = Path.setup(Path.caller_lib_dir).tap{|p| p.resource = base}
+    libdir = Path.caller_lib_dir
+    return if libdir.nil?
+    base.libdir = Path.setup(libdir).tap{|p| p.resource = base}
   end
 
   def self.init_remote_tasks
