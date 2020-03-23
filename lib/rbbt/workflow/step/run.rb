@@ -361,7 +361,8 @@ class Step
                     merge_info({
                       :done => (done_time = Time.now),
                       :total_time_elapsed => (total_time_elapsed = done_time - issue_time),
-                      :time_elapsed => (time_elapsed = done_time - start_time)
+                      :time_elapsed => (time_elapsed = done_time - start_time),
+                      :versions => Rbbt.versions
                     })
                     log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
                   end
@@ -402,7 +403,8 @@ class Step
             merge_info({
               :done => (done_time = Time.now),
               :total_time_elapsed => (total_time_elapsed = done_time - issue_time),
-              :time_elapsed => (time_elapsed = done_time - start_time)
+              :time_elapsed => (time_elapsed = done_time - start_time),
+              :versions => Rbbt.versions
             })
             log :ending
             Step.purge_stream_cache
@@ -420,7 +422,6 @@ class Step
           result
         end # END PERSIST
         log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec." unless stream or time_elapsed.nil?
-        set_info :versions, Rbbt.versions
 
         if no_load
           @result ||= result
