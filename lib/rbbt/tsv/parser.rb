@@ -564,7 +564,7 @@ module TSV
       progress_monitor, monitor = monitor, nil if Log::ProgressBar === monitor
 
       # setup monitor
-      if monitor and (stream.respond_to?(:size) or (stream.respond_to?(:stat) and stream.stat.respond_to? :size and stream.respond_to?(:pos)))
+      if monitor && (stream.respond_to?(:size) || (stream.respond_to?(:stat) && stream.stat.file? && stream.stat.respond_to?(:size) && stream.respond_to?(:pos)))
         size = case
                when stream.respond_to?(:size)
                  stream.size
