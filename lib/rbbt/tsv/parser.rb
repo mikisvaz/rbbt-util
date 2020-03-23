@@ -265,6 +265,7 @@ module TSV
     end
 
     def add_to_data_merge_zipped(data, keys, values)
+      keys = [keys] unless Array === keys
       num = keys.length
 
       values = values.collect do |v|
