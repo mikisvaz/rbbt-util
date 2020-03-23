@@ -1,6 +1,6 @@
 class Step
 
-  INFO_SERIALIAZER = begin
+  INFO_SERIALIZER = begin
                        if ENV["RBBT_INFO_SERIALIZER"]
                          Kernel.const_get ENV["RBBT_INFO_SERIALIZER"]
                        else
@@ -59,7 +59,7 @@ class Step
   def self.step_info(path)
     begin
       Open.open(info_file(path), :mode => 'rb') do |f|
-        INFO_SERIALIAZER.load(f)
+        INFO_SERIALIZER.load(f)
       end
     rescue Exception
       Log.exception $!
@@ -178,7 +178,7 @@ class Step
                 info_lock.lock if check_lock and false
                 begin
                   Open.open(info_file, :mode => 'rb') do |file|
-                    INFO_SERIALIAZER.load(file) #|| {}
+                    INFO_SERIALIZER.load(file) #|| {}
                   end
                 ensure
                   info_lock.unlock if check_lock and false
@@ -194,7 +194,7 @@ class Step
       Log.debug{"Error loading info file: " + info_file}
       Log.exception $!
       Open.rm info_file
-      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump({:status => :error, :messages => ["Info file lost"]}))
+      Misc.sensiblewrite(info_file, INFO_SERIALIZER.dump({:status => :error, :messages => ["Info file lost"]}))
       raise $!
     end
   end
@@ -205,7 +205,7 @@ class Step
       i = {:status => :waiting, :pid => Process.pid, :path => path}
       i[:dependencies] = dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies
       @info_cache = i
-      Misc.sensiblewrite(info_file, INFO_SERIALIAZER.dump(i), :force => true, :lock => false)
+      Misc.sensiblewrite(info_file, INFO_SERIALIZER.dump(i), :force => true, :lock => false)
       @info_cache_time = Time.now
     end
   end
@@ -218,7 +218,7 @@ class Step
       i = info(false).dup
       i[key] = value 
       @info_cache = i
-      dump = INFO_SERIALIAZER.dump(i)
+      dump = INFO_SERIALIZER.dump(i)
       Misc.sensiblewrite(info_file, dump, :force => true, :lock => false)
       @info_cache_time = Time.now
       value
@@ -233,7 +233,7 @@ class Step
       i = info(false)
       i.merge! hash
       @info_cache = i
-      dump = INFO_SERIALIAZER.dump(i)
+      dump = INFO_SERIALIZER.dump(i)
       Misc.sensiblewrite(info_file, dump, :force => true, :lock => false)
       @info_cache_time = Time.now
       value
