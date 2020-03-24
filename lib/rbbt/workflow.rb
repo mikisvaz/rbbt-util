@@ -598,6 +598,9 @@ module Workflow
   end
 
   def self.load_step(path)
+    Path.setup(path) unless Path === path
+    path = path.find
+
     begin
       _load_step(path)
     ensure
