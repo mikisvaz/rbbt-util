@@ -1,4 +1,6 @@
 module WorkflowSSHClient
+  attr_accessor :override_dependencies
+
   def self.fix_hash(hash, fix_values = false)
     fixed = {}
     hash.each do |key, value|
@@ -107,7 +109,20 @@ module WorkflowSSHClient
     @input_id ||= "inputs-" << rand(100000).to_s
     @input_types = task_info(task)[:input_types]
 
-    WorkflowSSHClient.upload_inputs(@server, inputs, @input_types, @input_id)
+    if override_dependencies
+
+      if override_dependencies && override_dependencies.any?
+        override_dependencies.each do |od|
+          name, _sep, value = od.partition("=")
+          inputs[name] = value
+        end
+      end
+      iii inputs
+
+      WorkflowSSHClient.upload_inputs(@server, inputs, @input_types, @input_id)
+    else
+      WorkflowSSHClient.upload_inputs(@server, inputs, @input_types, @input_id)
+    end
 
     @name ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
       Misc.insist do
@@ -138,14 +153,41 @@ module WorkflowSSHClient
     end
   end
 
+  def load
+    load_res Open.open(path)
+  end
+
   def run(*args)
     produce(*args)
+    self.load unless args.first
   end
 
   def clean
     init_job
     SSHDriver.clean(@url, @input_id, @base_name) if done?
     _restart
+  end
+
+  def self.relay(workflow, task, jobname, inputs, server, options = {})
+    options = Misc.add_defaults options, :search_path => 'user'
+    search_path = options[:search_path]
+
+    job = workflow.job(task, jobname, inputs)
+
+    job.dependencies.each do |dep| 
+      dep.produce 
+    end
+
+    override_dependencies = job.dependencies.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
+
+    job.dependencies.each do |dep| 
+      Step.migrate(dep.path, search_path, :target => server)
+    end
+
+    remote = WorkflowRemoteClient.new("ssh://#{server}:#{workflow.to_s}", "#{workflow.to_s}")
+    rjob = remote.job(task, jobname, {})
+    rjob.override_dependencies = override_dependencies
+    rjob.run
   end
 
 end

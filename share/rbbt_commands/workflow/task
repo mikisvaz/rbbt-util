@@ -99,7 +99,7 @@ def fix_options(workflow, task, job_options)
                 end
               end
             when :array
-              if input_options[name] and input_options[name][:stream] and String === value and Misc.is_filename?(value) and not input_options[name][:nofile]
+              if input_options[name] && input_options[name][:stream] && String === value && Misc.is_filename?(value) && !! input_options[name][:nofile]
                 get_value_stream(value)
               elsif input_options[name] and input_options[name][:stream] and value == "-"
                 STDIN
@@ -399,7 +399,7 @@ begin
 
   if tasks = options.delete(:prepare)
     tasks = tasks.split(",")
-    prepare_cpus = (options[:prepare_cpus] || 1)
+    prepare_cpus = (options[:prepare_cpus] || 1)
     puts Step.prepare_dependencies(job, tasks,  prepare_cpus)
     exit 0
   end

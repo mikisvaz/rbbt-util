@@ -18,27 +18,26 @@ end
 
 class TestRemote < Test::Unit::TestCase
 
-  def _test_ssh
+  def test_ssh
     Log.severity = 0
-    client = WorkflowRemoteClient.new "ssh://localhost:Translation", "Translation"
+    client = WorkflowRemoteClient.new "ssh://turbo:Translation", "Translation"
     job = client.job("translate", "SSH-TEST", :genes => ["TP53","KRAS"])
-    iii job.url
-    puts job.run
+    assert_equal 2, job.run.select{|l| l =~ /ENSG/}.length
   end
 
   def test_rest
     Log.with_severity 0 do
 
       workflow_server(TestWFRest) do |client|
-        assert_equal "Hello World", client.job(:hi, nil, {}).run
-        assert_equal "Hello Miguel", client.job(:hi, nil, {:name => :Miguel}).run
-        assert_equal "Hello Miguel, nice to meet you", client.job(:intro, nil, {:name => :Miguel}).run
+        assert_equal "Hello World", client.job(:hi, nil, {}).run.chomp
+        assert_equal "Hello Miguel", client.job(:hi, nil, {:name => :Miguel}).run.chomp
+        assert_equal "Hello Miguel, nice to meet you", client.job(:intro, nil, {:name => :Miguel}).run.chomp
       end
 
       workflow_server(TestWFRest, :Port => 1902) do |client|
-        assert_equal "Hello World", client.job(:hi, nil, {}).run
-        assert_equal "Hello Miguel", client.job(:hi, nil, {:name => :Miguel}).run
-        assert_equal "Hello Miguel, nice to meet you", client.job(:intro, nil, {:name => :Miguel}).run
+        assert_equal "Hello World", client.job(:hi, nil, {}).run.chomp
+        assert_equal "Hello Miguel", client.job(:hi, nil, {:name => :Miguel}).run.chomp
+        assert_equal "Hello Miguel, nice to meet you", client.job(:intro, nil, {:name => :Miguel}).run.chomp
       end
     end
   end

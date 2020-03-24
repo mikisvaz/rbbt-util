@@ -1,5 +1,8 @@
 require 'rbbt/workflow/remote/ssh/driver'
 class Step
+
+  MAIN_RSYNC_ARGS="-avztAXHP"
+  
   def self.link_job(path, target_dir, task = nil, workflow = nil)
     Path.setup(target_dir)
 
@@ -40,7 +43,7 @@ class Step
 
       Misc.in_dir(tmpdir) do
         if File.directory?(target)
-          CMD.cmd_log("rsync -avztAXHP --copy-unsafe-links '#{ tmpdir }/' '#{ target }/'")
+          CMD.cmd_log("rsync #{MAIN_RSYNC_ARGS} --copy-unsafe-links '#{ tmpdir }/' '#{ target }/'")
         else
           CMD.cmd_log("tar cvhzf '#{target}'  ./*")
         end
@@ -111,7 +114,7 @@ class Step
 
       Misc.in_dir(tmpdir) do
         if File.directory?(target)
-          CMD.cmd_log("rsync -avztAXHP --copy-unsafe-links '#{ tmpdir }/' '#{ target }/'")
+          CMD.cmd_log("rsync #{MAIN_RSYNC_ARGS} --copy-unsafe-links '#{ tmpdir }/' '#{ target }/'")
         else
           CMD.cmd_log("tar cvhzf '#{target}'  ./*")
         end
@@ -214,7 +217,7 @@ puts resource[path].find(search_path)
       TmpFile.with_file(files_and_dirs.sort_by{|l| l.length}.to_a * "\n") do |tmp_include_file|
         test_str = options[:test] ? '-nv' : ''
 
-        cmd = "rsync -avztAXHP --progress #{test_str} --files-from='#{tmp_include_file}' #{source}/ #{target}/ #{other_rsync_args}"
+        cmd = "rsync #{MAIN_RSYNC_ARGS} --progress #{test_str} --files-from='#{tmp_include_file}' #{source}/ #{target}/ #{other_rsync_args}"
 
         cmd << " && rm -Rf #{source}" if options[:delete]
 

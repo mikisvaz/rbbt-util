@@ -258,7 +258,8 @@ class WorkflowRemoteClient
       stream = true if res.respond_to? :read
       join unless stream
       result_type ||= self.result_type
-      case result_type
+
+      case result_type.to_sym
       when :string
         stream ? res.read : res
       when :boolean
@@ -277,7 +278,6 @@ class WorkflowRemoteClient
         end
       when :array
         (stream ? res.read : res).split("\n")
-        res.split("\n")
       else
         json_text = if IO === res
                       res.read

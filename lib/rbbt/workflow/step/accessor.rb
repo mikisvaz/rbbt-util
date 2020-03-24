@@ -77,7 +77,8 @@ class Step
 
   def self.save_inputs(inputs, input_types, dir)
     inputs.each do |name,value|
-      type = input_types[name].to_s
+      type = input_types[name]
+      type = type.to_s if type
       path = File.join(dir, name.to_s)
 
       Log.debug "Saving job input #{name} (#{type}) into #{path}"
@@ -114,6 +115,11 @@ class Step
       next if options and ! options.include?(name)
       next if value.nil?
       inputs[name] = value
+    end
+
+    if options.include? 'override_dependencies'
+      inputs.merge!(:override_dependencies => open[:override_dependencies])
+      input_types = IndiferentHash.setup(input_types.merge(:override_dependencies => :array))
     end
     save_inputs(inputs, input_types, dir)
 
