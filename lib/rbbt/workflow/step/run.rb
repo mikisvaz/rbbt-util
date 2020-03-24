@@ -290,7 +290,7 @@ class Step
 
           @inputs = new_inputs if @inputs
 
-          if not task.inputs.nil?
+          if @inputs && ! task.inputs.nil?
             info_inputs = @inputs.collect do |i| 
               if Path === i 
                 i.to_s

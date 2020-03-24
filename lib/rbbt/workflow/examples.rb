@@ -72,7 +72,16 @@ module Workflow
         end
 
       end
-      IndiferentHash.setup(inputs)
+      inputs = IndiferentHash.setup(inputs)
+
+      dir.glob("*#*").each do |od|
+        name = File.basename(od)
+        value = Open.read(od)
+        Log.debug "Loading override dependency #{ name } as #{value}"
+        inputs[name] = value.chomp
+      end
+
+      inputs
     end
   end
 
