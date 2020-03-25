@@ -1,4 +1,3 @@
-require 'rbbt/workflow/remote/ssh/driver'
 class Step
 
   MAIN_RSYNC_ARGS="-avztAXHP"
@@ -132,7 +131,7 @@ class Step
     recursive = false if recursive.nil?
 
     paths = if options[:source]
-              SSHDriver.run(options[:source], <<-EOF).split("\n")
+              Misc.ssh_run(options[:source], <<-EOF).split("\n")
 require 'rbbt-util'
 require 'rbbt/workflow'
 
@@ -165,7 +164,7 @@ puts files * "\n"
 
 
     target = if options[:target] 
-               target = SSHDriver.run(options[:target], <<-EOF).split("\n").first
+               target = Misc.ssh_run(options[:target], <<-EOF).split("\n").first
 require 'rbbt-util'
 path = "var/jobs"
 resource = #{resource.to_s}
