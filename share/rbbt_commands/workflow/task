@@ -235,6 +235,7 @@ end
 Workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir_all))) if options[:workdir_all]
 
 workflow = Workflow.require_workflow workflow
+workflow.init_remote_tasks
 
 if clean_task
   ENV["RBBT_UPDATE"] = 'true'
@@ -363,7 +364,7 @@ begin
 
     result_type = job.result_type
 
-    res = JSON.parse(res.read) if (defined?(WorkflowRemoteClient) and WorkflowRemoteClient::RemoteStep === job) && %w(array float integer boolean).include?(result_type.to_s)
+    res = JSON.parse(res.read) if (defined?(RemoteStep) and RemoteStep === job) && %w(array float integer boolean).include?(result_type.to_s)
 
     case
     when res.respond_to?(:gets)
@@ -469,7 +470,7 @@ begin
       Log.clear_line 
     end
 
-    if Open.remote? job.path
+    if Open.remote?(job.path)
       out.puts job.path + Log.color(:blue, "?_format=raw")
     else
       out.puts job.path
@@ -550,7 +551,7 @@ when Step
     end
   else
     res.join
-    out.puts Open.read(res.path) if File.exist? res.path
+    out.puts Open.read(res.path) if Open.exist?(res.path) || Open.remote?(res.path) || Open.ssh?(res.path)
   end
 else
   if Array === res

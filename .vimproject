@@ -128,6 +128,21 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      provenance.rb
     }
 
+    remote_workflow.rb
+    remote_workflow=remote_workflow{
+     driver.rb
+     driver=driver{
+      rest.rb
+      ssh.rb
+     }
+
+     remote_step.rb
+     remote_step=remote_step{
+      rest.rb
+      ssh.rb
+     }
+    }
+
     remote=remote{
      client.rb
 

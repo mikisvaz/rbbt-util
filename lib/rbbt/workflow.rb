@@ -48,13 +48,13 @@ module Workflow
   end
 
   def self.require_remote_workflow(wf_name, url)
-    require 'rbbt/workflow/remote/client'
-    eval "Object::#{wf_name} = WorkflowRemoteClient.new '#{ url }', '#{wf_name}'"
+    require 'rbbt/workflow/remote_workflow'
+    eval "Object::#{wf_name} = RemoteWorkflow.new '#{ url }', '#{wf_name}'"
   end
 
   def self.require_remote_workflow(wf_name, url)
-    require 'rbbt/workflow/remote/client'
-    eval "Object::#{wf_name} = WorkflowRemoteClient.new '#{ url }', '#{wf_name}'"
+    require 'rbbt/workflow/remote_workflow'
+    eval "Object::#{wf_name} = RemoteWorkflow.new '#{ url }', '#{wf_name}'"
   end
 
   def self.load_workflow_libdir(filename)

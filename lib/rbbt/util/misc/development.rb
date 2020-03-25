@@ -415,4 +415,11 @@ def self.add_libdir(dir=nil)
       CMD.cmd("unzip '#{zip_file}' -d '#{dir}'")
     end
   end
+
+
+  def self.ssh_run(server, script)
+    Log.debug "Run ssh script in #{server}:\n#{script}"
+    CMD.cmd("ssh '#{server}' 'shopt -s expand_aliases; bash -l -c \"ruby\"' ", :in => script, :log => true).read
+  end
+
 end

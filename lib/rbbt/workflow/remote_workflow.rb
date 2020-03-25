@@ -1,14 +1,5 @@
-require 'rest_client'
-require 'json'
 require 'rbbt/workflow'
-require 'rbbt/workflow/step'
-require 'rbbt/util/misc'
-
-require 'rbbt/rest/client/get'
-require 'rbbt/rest/client/adaptor'
-require 'rbbt/rest/client/step'
-
-class WorkflowRESTClient 
+class RemoteWorkflow
   include Workflow
 
   attr_accessor :url, :name, :exec_exports, :synchronous_exports, :asynchronous_exports, :stream_exports
@@ -16,17 +7,26 @@ class WorkflowRESTClient
   def initialize(url, name)
     Log.debug{ "Loading remote workflow #{ name }: #{ url }" }
     @url, @name = url, name
+
+    rest = url.include?('ssh://') ? false : true
+
+    if rest
+      self.extend RemoteWorkflow::REST
+    else
+      self.extend RemoteWorkflow::SSH
+    end
+
     init_remote_tasks
   end
-  
+
   def to_s
     name
   end
 
-  def job(task, name, inputs)
+  def job(task, name = nil, inputs = {})
     task_info = task_info(task)
     fixed_inputs = {}
-    input_types = task_info[:input_types]
+    input_types = IndiferentHash.setup(task_info[:input_types])
 
     inputs.each do |k,v| 
       k = k.to_sym
@@ -44,7 +44,7 @@ class WorkflowRESTClient
     end
 
     stream_input = @can_stream ? task_info(task)[:input_options].select{|k,o| o[:stream] }.collect{|k,o| k }.first : nil
-    RemoteStep.new(url, task, name, fixed_inputs, task_info[:result_type], task_info[:result_description], @exec_exports.include?(task), @stream_exports.include?(task), stream_input)
+    RemoteStep.new(url, task, name, fixed_inputs, task_info[:input_types], task_info[:result_type], task_info[:result_description], @exec_exports.include?(task), @stream_exports.include?(task), stream_input)
   end
 
   def load_id(id)
@@ -56,3 +56,7 @@ class WorkflowRESTClient
     step
   end
 end
+
+require 'rbbt/workflow/remote_workflow/driver'
+require 'rbbt/workflow/remote_workflow/remote_step'
+
