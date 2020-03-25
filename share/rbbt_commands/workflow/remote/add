@@ -1,9 +1,35 @@
 #!/usr/bin/env ruby
 
-require 'rbbt'
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*" "} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Description
+
+$ #{$0} [options] <workflow> <url>
+
+Use - to read from STDIN
+
+-h--help Print this help
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
 
 workflow, url = ARGV
-url = File.join(url, workflow) unless url =~ /\/#{workflow}$/
+
+raise ParameterException unless workflow && url
+
+url = File.join(url, workflow) unless url =~ /[\/\:]#{workflow}\/?$/
 config_file = Rbbt.etc.remote_workflows
 remote_workflows = config_file.exists? ? config_file.yaml : {}
 remote_workflows[workflow] = url
