@@ -204,6 +204,7 @@ job.clean
 
     def tasks
       @tasks ||= Hash.new do |hash,task_name| 
+        raise Workflow::TaskNotFoundException, "Task #{task_name} not found in workflow #{self.to_s}" unless @task_info.include?(task_name)
         info = @task_info[task_name]
         task = Task.setup info do |*args|
           raise "This is a remote task" 
