@@ -235,7 +235,6 @@ end
 Workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir_all))) if options[:workdir_all]
 
 workflow = Workflow.require_workflow workflow
-workflow.init_remote_tasks
 
 if clean_task
   ENV["RBBT_UPDATE"] = 'true'
