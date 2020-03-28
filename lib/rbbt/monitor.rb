@@ -252,7 +252,7 @@ module Rbbt
             status = :done if Open.exists? job
             if status.nil? and f=~/\.info/
               info = begin
-                       Step::INFO_SERIALIAZER.load(Open.read(f, :mode => 'rb'))
+                       Step::INFO_SERIALIZER.load(Open.read(f, :mode => 'rb'))
                      rescue
                        {}
                      end

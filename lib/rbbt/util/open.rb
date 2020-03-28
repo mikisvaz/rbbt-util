@@ -772,7 +772,7 @@ module Open
       begin
         if File.symlink?(file) || File.stat(file).nlink > 1
           if File.exists?(file + '.info') && defined?(Step)
-            done = Step::INFO_SERIALIAZER.load(Open.open(file + '.info'))[:done]
+            done = Step::INFO_SERIALIZER.load(Open.open(file + '.info'))[:done]
             return done if done
           end
 
@@ -780,6 +780,7 @@ module Open
         end
         File.mtime(file)
       rescue
+        Log.exception $!
         nil
       end
     end
