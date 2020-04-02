@@ -47,7 +47,7 @@ class RemoteWorkflow
 
     def self.get_raw(url, params = {})
       params = params.merge({ :_format => 'raw' })
-      params = fix_params params
+      params = RemoteWorkflow.fix_params params
       res = RemoteWorkflow.capture_exception do
         Misc.insist(2, 0.5) do
           raise "No url" if url.nil?
@@ -83,7 +83,7 @@ class RemoteWorkflow
       params = params.merge({ :_format => 'jobname' })
       params = RemoteWorkflow.fix_params params
 
-      WorkflowRESTClient.__prepare_inputs_for_restclient(params)
+      RemoteWorkflow::REST.__prepare_inputs_for_restclient(params)
       name = RemoteWorkflow.capture_exception do
         RestClient.post(self.encode(url), params)
       end

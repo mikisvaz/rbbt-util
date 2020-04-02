@@ -686,13 +686,13 @@ module Workflow
   end
 
   def self.process_remote_tasks(remote_tasks)
-    require 'rbbt/workflow/remote/client'
+    require 'rbbt/workflow/remote_workflow'
     remote_tasks.each do |workflow, info|
       wf = Workflow.require_workflow workflow
       wf.remote_tasks ||= {}
       IndiferentHash.setup wf.remote_tasks
       info.each do |remote, tasks|
-        remote_wf = WorkflowRemoteClient.new remote, workflow
+        remote_wf = RemoteWorkflow.new remote, workflow
         tasks.each do |task|
           Log.debug "Add remote task #{task} in #{wf} using #{remote_wf.url}"
           wf.remote_tasks[task.to_sym] = remote_wf
