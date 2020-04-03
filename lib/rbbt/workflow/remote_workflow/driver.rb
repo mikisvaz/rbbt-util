@@ -5,7 +5,6 @@ class RemoteWorkflow
   def self.fix_hash(hash, fix_values = false)
     fixed = {}
     hash.each do |key, value|
-      value = value.load if Step === value
       fixed[key.to_sym] = case value
                           when TrueClass
                             value
