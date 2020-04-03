@@ -5,6 +5,7 @@ class RemoteWorkflow
   def self.fix_hash(hash, fix_values = false)
     fixed = {}
     hash.each do |key, value|
+      value = value.load if Step === value
       fixed[key.to_sym] = case value
                           when TrueClass
                             value
@@ -72,8 +73,12 @@ class RemoteWorkflow
     new_params
   end
 
+  def exported_tasks
+    @asynchronous_exports + @synchronous_exports + @exec_exports
+  end
+
   def load_tasks
-    (@asynchronous_exports + @synchronous_exports + @exec_exports).each{|name| tasks[name]}
+    exported_tasks.each{|name| tasks[name]}
   end
 
 end

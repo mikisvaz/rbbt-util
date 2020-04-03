@@ -23,12 +23,13 @@ class RemoteWorkflow
     name
   end
 
-  def job(task, name = nil, inputs = {})
+  def __job(task, name = nil, inputs = {})
     task_info = task_info(task)
     fixed_inputs = {}
     input_types = IndiferentHash.setup(task_info[:input_types])
 
     inputs.each do |k,v| 
+      v = v.load if Step === v
       k = k.to_sym
       if TSV === v
         fixed_inputs[k] = v.to_s
@@ -44,7 +45,9 @@ class RemoteWorkflow
     end
 
     stream_input = @can_stream ? task_info(task)[:input_options].select{|k,o| o[:stream] }.collect{|k,o| k }.first : nil
-    RemoteStep.new(url, task, name, fixed_inputs, task_info[:input_types], task_info[:result_type], task_info[:result_description], @exec_exports.include?(task), @stream_exports.include?(task), stream_input)
+    step = RemoteStep.new(url, task, name, fixed_inputs, task_info[:input_types], task_info[:result_type], task_info[:result_description], @exec_exports.include?(task), @stream_exports.include?(task), stream_input)
+    step.workflow = self
+    step
   end
 
   def load_id(id)

@@ -89,7 +89,7 @@ class RemoteStep
 
     def stream_job(task_url, task_params, stream_input, cache_type = :exec)
       require 'rbbt/util/misc/multipart_payload'
-      WorkflowRESTClient.capture_exception do
+      RemoteWorkflow.capture_exception do
         @streaming = true
 
         Log.debug{ "RestClient stream #{Process.pid}: #{ task_url } #{stream_input} #{cache_type} - #{Misc.fingerprint task_params}" }
@@ -101,7 +101,7 @@ class RemoteStep
                 @url = res.gets
                 @url.sub!(/\?.*/,'')
                 join
-                WorkflowRESTClient.get_raw(@url)
+                RemoteWorkflow.get_raw(@url)
                 @done = true
                 @streaming = false
               when /STREAM: (.*)/

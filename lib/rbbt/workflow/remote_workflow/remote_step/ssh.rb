@@ -30,24 +30,32 @@ class RemoteStep
           RemoteWorkflow::SSH.post_job(File.join(base_url, task.to_s), @input_id, @base_name)
         end
       end
-      if Open.remote? @name
+
+      if Open.remote?(@name)
         @url = @name
         @name = File.basename(@name)
       else
         @url = File.join(base_url, task.to_s, @name)
       end
+
       self
     end
 
     def path
       @server, @server_path = RemoteWorkflow::SSH.parse_url @base_url
-      "ssh://" + @server + ":" + @remote_path
+      init_job unless @name
+      if info[:path]
+        "ssh://" + @server + ":" + info[:path]
+      else
+        "ssh://" + @server + ":" + ["var/jobs", self.workflow.to_s, task_name.to_s, @name] * "/"
+      end
     end
 
     def produce(*args)
       input_types = {}
       init_job
       @remote_path = RemoteWorkflow::SSH.run_job(File.join(base_url, task.to_s), @input_id, @base_name)
+      @started = true
       while ! done?
         sleep 1
       end

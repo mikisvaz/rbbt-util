@@ -2,7 +2,7 @@
 
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
-require 'rbbt/workflow/remote/ssh/driver'
+require 'rbbt/workflow/remote_workflow'
 
 $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
@@ -43,7 +43,7 @@ search_path = 'user' if search_path.nil?
 resource = Rbbt
 
 path, real_paths, lpath = if options[:source]
-          lpath, *paths = SSHDriver.run(options[:source], <<-EOF).split("\n")
+          lpath, *paths = Misc.ssh_run(options[:source], <<-EOF).split("\n")
 require 'rbbt-util'
 path = "#{path}"
 if Open.exists?(path)
@@ -66,13 +66,13 @@ puts path.glob_all.collect{|p| File.directory?(p) ? p + "/" : p } * "\n"
         end
 
 target = if options[:target] 
-          target = SSHDriver.run(options[:target], <<-EOF).split("\n").first
+           target = Misc.ssh_run(options[:target], <<-EOF).split("\n").first
 require 'rbbt-util'
 path = "#{path}"
 resource = #{resource.to_s}
 search_path = "#{search_path}"
 puts resource[path].find(search_path)
-          EOF
+           EOF
          else
            resource[lpath].find(search_path)
          end

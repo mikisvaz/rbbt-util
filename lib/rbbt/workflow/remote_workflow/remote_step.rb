@@ -126,6 +126,7 @@ class RemoteStep < Step
   end
 
   def info(check_lock=false)
+    return {:status => :waiting } unless started?
     @done = @info && @info[:status] && (@info[:status].to_sym == :done || @info[:status].to_sym == :error)
 
     if !@done && (@last_info_time.nil? || (Time.now - @last_info_time) > 0.5)
@@ -142,6 +143,7 @@ class RemoteStep < Step
       info[:status] = info[:status].to_sym if String === info[:status]
       info
     end
+
     @info
   end
 
@@ -302,6 +304,11 @@ class RemoteStep < Step
     end
   end
 
+
+  def input_checks
+    []
+  end
+
   def _restart
     @done = nil
     @name = nil
@@ -318,11 +325,6 @@ class RemoteStep < Step
     @inputs = new_inputs
     @info = nil
   end
-
-  def input_checks
-    []
-  end
-
 end
 
 require 'rbbt/workflow/remote_workflow/remote_step/rest'

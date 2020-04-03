@@ -52,10 +52,10 @@ module Workflow
       @dependencies << block
     else
       if Module === dependency.first or 
-        (defined? WorkflowRESTClient and WorkflowRESTClient === dependency.first) or
+        (defined? RemoteWorkflow and RemoteWorkflow === dependency.first) or
         Hash === dependency.last
 
-        dependency = ([self] + dependency) unless Module === dependency.first or (defined? WorkflowRESTClient and WorkflowRESTClient === dependency.first)
+        dependency = ([self] + dependency) unless Module === dependency.first || (defined?(RemoteWorkflow) && RemoteWorkflow === dependency.first)
         @dependencies << dependency
       else
         @dependencies.concat dependency
