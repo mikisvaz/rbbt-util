@@ -214,10 +214,6 @@ job.clean
       end
     end
 
-    def load_tasks
-      @task_info.keys.each{|name| tasks[name]}
-    end
-
     def task_dependencies
       @task_dependencies ||= Hash.new do |hash,task| 
         hash[task] = if exported_tasks.include? task

@@ -72,4 +72,8 @@ class RemoteWorkflow
     new_params
   end
 
+  def load_tasks
+    (@asynchronous_exports + @synchronous_exports + @exec_exports).each{|name| tasks[name]}
+  end
+
 end

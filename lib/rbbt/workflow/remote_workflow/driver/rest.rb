@@ -219,7 +219,7 @@ class RemoteWorkflow
     end
 
     def init_remote_tasks
-      task_exports = RemoteWorkflow::REST.get_json(url)
+      task_exports = IndiferentHash.setup(RemoteWorkflow::REST.get_json(url))
       @asynchronous_exports = (task_exports["asynchronous"] || []).collect{|task| task.to_sym }
       @synchronous_exports = (task_exports["synchronous"] || []).collect{|task| task.to_sym }
       @exec_exports = (task_exports["exec"] || []).collect{|task| task.to_sym }
