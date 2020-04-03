@@ -778,6 +778,7 @@ module Open
 
           file = Pathname.new(file).realpath.to_s 
         end
+        return nil unless File.exists?(file)
         File.mtime(file)
       rescue
         Log.exception $!
