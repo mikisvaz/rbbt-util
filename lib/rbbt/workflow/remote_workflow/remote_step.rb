@@ -48,6 +48,7 @@ class RemoteStep < Step
         else
           if ! done?
             init_job 
+            produce
             join
           end
           self.load

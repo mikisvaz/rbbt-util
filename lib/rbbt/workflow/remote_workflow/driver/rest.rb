@@ -29,7 +29,7 @@ class RemoteWorkflow
 
     def self.clean_url(url, params = {})
       params = params.merge({ :_format => 'json', :update => 'clean' })
-      params = fix_params params
+      params = RemoteWorkflow.fix_params params
       res = RemoteWorkflow.capture_exception do
         Misc.insist(2, 0.5) do
           Log.debug{ "RestClient clean: #{ url } - #{Misc.fingerprint params}" }

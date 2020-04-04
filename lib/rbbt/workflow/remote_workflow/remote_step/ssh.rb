@@ -72,7 +72,7 @@ class RemoteStep
 
     def clean
       init_job
-      RemoteStep::SSH.clean(@url, @input_id, @base_name) if done?
+      RemoteWorkflow::SSH.clean(@url, @input_id, @base_name)
       _restart
     end
 
