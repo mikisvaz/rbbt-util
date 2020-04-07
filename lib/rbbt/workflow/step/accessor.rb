@@ -93,6 +93,8 @@ class Step
         else
           Open.write(path + '.read', value.to_s)
         end
+      when Step === v
+        v = v.produce.load 
       else
         Open.write(path, value.to_s)
       end

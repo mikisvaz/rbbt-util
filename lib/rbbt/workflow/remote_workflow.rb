@@ -29,7 +29,6 @@ class RemoteWorkflow
     input_types = IndiferentHash.setup(task_info[:input_types])
 
     inputs.each do |k,v| 
-      v = v.load if Step === v
       k = k.to_sym
       if TSV === v
         fixed_inputs[k] = v.to_s
