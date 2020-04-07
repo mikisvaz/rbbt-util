@@ -539,6 +539,9 @@ module Workflow
   end
 
   def self.__load_step(path)
+    if Open.remote?(path) || Open.ssh?(path)
+      return RemoteStep.new path
+    end
     step = Step.new path
     relocated = false
     step.dependencies = (step.info[:dependencies] || []).collect do |task,name,dep_path|
