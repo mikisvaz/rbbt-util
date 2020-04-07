@@ -540,12 +540,13 @@ module Workflow
 
   def self.__load_step(path)
     if Open.remote?(path) || Open.ssh?(path)
-      return RemoteStep.new path
+      require 'rbbt/workflow/remote_workflow'
+      return RemoteWorkflow.load_path path
     end
     step = Step.new path
     relocated = false
     step.dependencies = (step.info[:dependencies] || []).collect do |task,name,dep_path|
-      if Open.exists?(dep_path) || Open.exists?(dep_path + '.info')
+      if Open.exists?(dep_path) || Open.exists?(dep_path + '.info') || Open.remote?(dep_path) || Open.ssh?(dep_path)
         Workflow._load_step dep_path
       else
         new_path = relocate(path, dep_path)
@@ -559,6 +560,11 @@ module Workflow
   end
     
   def self.fast_load_step(path)
+    if Open.remote?(path) || Open.ssh?(path)
+      require 'rbbt/workflow/remote_workflow'
+      return RemoteWorkflow.load_path path
+    end
+
     step = Step.new path
     step.dependencies = nil
     class << step
@@ -618,7 +624,7 @@ module Workflow
              File.join(workdir, id)
            end
     task = task_for path
-    return remote_tasks[task].load_id(id) if remote_tasks and remote_tasks.include? task
+    return remote_tasks[task].load_id(id) if remote_tasks && remote_tasks.include?(task)
     return Workflow.load_step path
   end
 
@@ -630,7 +636,7 @@ module Workflow
              File.join(workdir, id)
            end
     task = task_for path
-    return remote_tasks[task].load_id(id) if remote_tasks and remote_tasks.include? task
+    return remote_tasks[task].load_id(id) if remote_tasks && remote_tasks.include?(task)
     return Workflow.fast_load_step path
   end
 

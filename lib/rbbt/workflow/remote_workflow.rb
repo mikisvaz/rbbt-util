@@ -57,6 +57,23 @@ class RemoteWorkflow
     step.result_description = task_info(task)[:result_description]
     step
   end
+
+  def self.load_path(job_url)
+    parts = job_url.split("/")
+    name = parts.pop.split("?").first
+    task = parts.pop
+    workflow = parts.last
+    url = parts * "/"
+
+    step = RemoteStep.new url, task, nil
+    step.name = name
+    step.workflow = workflow
+    step.started = true
+    step.result_type = step.info[:result_type]
+    step.result_description = step.info[:result_description]
+
+    step
+  end
 end
 
 require 'rbbt/workflow/remote_workflow/driver'

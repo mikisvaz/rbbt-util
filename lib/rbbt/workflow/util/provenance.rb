@@ -32,10 +32,10 @@ class Step
 
     path_mtime = begin
                    Open.mtime(path)
-                 rescue
+                 rescue Exception
                    nil
                  end
-    str = if not Open.remote?(path) and (Open.exists?(path) and $main_mtime and path_mtime and ($main_mtime - path_mtime) < -2)
+    str = if ! (Open.remote?(path) || Open.ssh?(path)) && (Open.exists?(path) && $main_mtime && path_mtime && ($main_mtime - path_mtime) < -2)
             prov_status_msg(status.to_s) << " " << [workflow, task, path].compact * " " << " (#{Log.color(:red, "Mtime out of sync") })"
           else
             prov_status_msg(status.to_s) << " " << [workflow, task, path].compact * " " 
@@ -71,7 +71,7 @@ class Step
     info[:task_name] = task
     path  = step.path
     status = info[:status] || :missing
-    status = "remote" if Open.remote?(path)
+    status = "remote" if Open.remote?(path) || Open.ssh?(path)
     name = info[:name] || File.basename(path)
     status = :unsync if status == :done and not Open.exist?(path)
     status = :notfound if status == :noinfo and not Open.exist?(path)

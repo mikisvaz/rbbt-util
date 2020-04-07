@@ -781,7 +781,6 @@ module Open
         return nil unless File.exists?(file)
         File.mtime(file)
       rescue
-        Log.exception $!
         nil
       end
     end

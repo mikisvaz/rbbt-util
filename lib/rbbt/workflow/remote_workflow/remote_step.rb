@@ -2,7 +2,7 @@ require 'rbbt/workflow'
 
 class RemoteStep < Step
 
-  attr_accessor :url, :base_url, :task, :base_name, :inputs, :input_types, :result_type, :result_description, :is_exec, :is_stream, :stream_input
+  attr_accessor :url, :base_url, :task, :base_name, :inputs, :input_types, :result_type, :result_description, :is_exec, :is_stream, :stream_input, :started
 
   def initialize(base_url, task = nil, base_name = nil, inputs = nil, input_types = nil, result_type = nil, result_description = nil, is_exec = false, is_stream = false, stream_input = nil)
     @base_url, @task, @base_name, @inputs, @input_types, @result_type, @result_description, @is_exec, @is_stream, @stream_input = base_url, task, base_name, inputs, input_types, result_type, result_description, is_exec, is_stream, stream_input
@@ -179,7 +179,7 @@ class RemoteStep < Step
   end
 
   def file(file)
-    @adaptor.get_raw(File.join(url, 'file', file))
+    @adaptor.get_raw(File.join(url, 'file', file.to_s))
   end
 
   def get_stream
