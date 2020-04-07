@@ -71,8 +71,9 @@ module Workflow
     @dep_tree ||= {}
     @dep_tree[name] ||= begin
                         dep_tree = {}
-                        self.rec_dependencies(name).each do |dep|
+                        self.task_dependencies[name].reverse.each do |dep|
                           dep = dep.first if Array === dep && dep.length == 1
+                          dep = dep.dependency if Proc === dep
 
                           workflow, task = case dep
                                            when Array
@@ -195,7 +196,8 @@ module Workflow
       #dependencies = self.rec_dependencies(task_name).collect{|dep_name| Array === dep_name ? dep_name.first.tasks[dep_name[1].to_sym] : self.tasks[dep_name.to_sym]}
       task.doc(self, self.rec_dependencies(task_name))
 
-      prov_tree = prov_tree(dep_tree(task_name))
+      dep_tree = {[self, task_name] => dep_tree(task_name)}
+      prov_tree = prov_tree(dep_tree)
       if prov_tree && ! prov_tree.empty?
 
         puts Log.color :magenta, "## DEPENDENCY GRAPH (abridged)"
