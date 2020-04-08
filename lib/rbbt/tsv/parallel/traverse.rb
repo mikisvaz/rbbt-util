@@ -80,7 +80,7 @@ module TSV
           begin
             callback.call yield(k,v,fields)
           rescue Exception
-            Log.exception $!
+            Log.warn "Traverse exception on element: #{Misc.fingerprint([k, v, fields])}"
             raise $!
           ensure
             bar.tick if bar
@@ -125,6 +125,9 @@ module TSV
         hash.each do |k,v|
           begin
             yield k,v 
+          rescue Exception
+            Log.warn "Traverse exception on element: #{Misc.fingerprint([k, v])}"
+            raise $!
           ensure
             bar.tick if bar
           end
@@ -149,6 +152,9 @@ module TSV
         array.each do |e|
           begin
             callback.call yield(e)
+          rescue Exception
+            Log.warn "Traverse exception on element: #{Misc.fingerprint(e)}"
+            raise $!
           ensure
             bar.tick if bar
           end
@@ -159,7 +165,7 @@ module TSV
           begin
             yield e
           rescue Exception
-            Log.exception $!
+            Log.warn "Traverse exception on element: #{Misc.fingerprint(e)}"
             raise $!
           ensure
             bar.tick if bar
@@ -187,6 +193,9 @@ module TSV
           e = queue.pop
           begin
             callback.call yield(e)
+          rescue Exception
+            Log.warn "Traverse exception on element: #{Misc.fingerprint(e)}"
+            raise $!
           ensure
             bar.tick if bar
           end
@@ -198,7 +207,7 @@ module TSV
           begin
             yield e
           rescue Exception
-            Log.exception $!
+            Log.warn "Traverse exception on element: #{Misc.fingerprint(e)}"
             raise $!
           ensure
             bar.tick if bar
@@ -214,6 +223,7 @@ module TSV
       join.call(error) if join
     end
   end
+
   def self.traverse_io_array(io, options = {}, &block)
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
     begin
@@ -239,6 +249,9 @@ module TSV
           end
           begin
             callback.call yield line.chomp
+          rescue Exception
+            Log.warn "Traverse exception on element: #{Misc.fingerprint(line)}"
+            raise $!
           ensure
             bar.tick if bar
           end
@@ -248,6 +261,9 @@ module TSV
         while line = io.gets
           begin
             yield line.chomp
+          rescue Exception
+            Log.warn "Traverse exception on element: #{Misc.fingerprint(line)}"
+            raise $!
           ensure
             bar.tick if bar
           end
@@ -284,9 +300,10 @@ module TSV
         begin
           TSV::Parser.traverse(io, options) do |k,v,f|
             begin
-              callback.call yield k, v,f
+              callback.call yield k, v, f
             rescue Exception
               exception = $!
+              Log.warn "Traverse exception on element: #{Misc.fingerprint([k, v, f])}"
               raise $!
             end
             bar.tick if bar
@@ -413,9 +430,9 @@ module TSV
     q = RbbtThreadQueue.new num
 
     if callback
-      block = Proc.new do |k,v,mutex|
-        v, mutex = nil, v if mutex.nil?
-        res = yield k, v, mutex
+      block = Proc.new do |*args|
+        mutex = args.pop
+        res = yield *args
         mutex.synchronize do
           callback.call res 
         end
