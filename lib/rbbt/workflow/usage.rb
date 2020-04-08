@@ -73,7 +73,7 @@ module Workflow
                         dep_tree = {}
                         self.task_dependencies[name].reverse.each do |dep|
                           dep = dep.first if Array === dep && dep.length == 1
-                          dep = dep.dependency if Proc === dep
+                          dep = dep.dependency if DependencyBlock === dep
 
                           workflow, task = case dep
                                            when Array
