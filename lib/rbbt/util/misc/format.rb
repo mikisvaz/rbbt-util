@@ -163,11 +163,10 @@ module Misc
 
   def self.fixutf8(string)
     return nil if string.nil?
-    return string if (string.respond_to? :valid_encoding? and string.valid_encoding?) or
-    (string.respond_to? :valid_encoding and string.valid_encoding)
+    return string if string.respond_to?(:encoding) && string.encoding == "UTF-8" && (string.respond_to?(:valid_encoding?) && string.valid_encoding?) ||
+                     (string.respond_to?(:valid_encoding) && string.valid_encoding)
 
     if string.respond_to?(:encode)
-      #string.encode("UTF-16BE", :invalid => :replace, :undef => :replace, :replace => "?").encode('UTF-8')
       string.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
     else
       require 'iconv'

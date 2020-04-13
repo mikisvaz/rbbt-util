@@ -214,6 +214,7 @@ module TSV
     end
 
     def add_to_data_flat_merge_double(data, keys, values)
+      data.write
       keys.each do |key|
         if data.include? key
           data[key] = data[key].concat values
@@ -538,7 +539,7 @@ module TSV
     end
 
     def traverse(options = {})
-      monitor, bar, grep, invert_grep, head = Misc.process_options options, :monitor, :bar, :grep, :invert_grep, :head
+      monitor, bar, grep, invert_grep, head, fixed_grep = Misc.process_options options, :monitor, :bar, :grep, :invert_grep, :head, :fixed_grep
       monitor = bar if bar and monitor.nil?
       raise "No block given in TSV::Parser#traverse" unless block_given?
 
@@ -551,10 +552,10 @@ module TSV
 
       if @tsv_grep
 
-        stream = Open.grep(stream, @tsv_grep, invert_grep)
+        stream = Open.grep(stream, @tsv_grep, invert_grep, fixed_grep)
         stream.no_fail = true
         begin
-          match = Open.grep(StringIO.new(line), @tsv_grep, invert_grep).read
+          match = Open.grep(StringIO.new(line), @tsv_grep, invert_grep, fixed_grep).read
           line = stream.gets if match.empty?
         rescue Exception
           Log.exception $!

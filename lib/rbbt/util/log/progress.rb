@@ -14,7 +14,12 @@ module Log
 
   class ProgressBar
 
+    class << self
+      attr_accessor :default_file
+    end
+
     attr_accessor :max, :ticks, :frequency, :depth, :desc, :file, :bytes
+
     def initialize(max = nil, options = {})
       options = Misc.add_defaults options, :depth => 0, :num_reports => 100, :io => STDERR, :severity => Log.severity, :frequency => 2
       depth, num_reports, desc, io, severity, file, bytes, frequency = Misc.process_options options, :depth, :num_reports, :desc, :io, :severity, :file, :bytes, :frequency
@@ -35,6 +40,10 @@ module Log
       return 0 if @ticks == 0
       return 100 if @max == 0
       (@ticks * 100) / @max
+    end
+
+    def file
+      @file || ProgressBar.default_file
     end
 
     def init

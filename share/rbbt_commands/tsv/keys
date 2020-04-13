@@ -1,0 +1,59 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+options = SOPT.setup <<EOF
+Read a TSV file and dump it
+
+$ rbbt tsv keys [options] <filename.tsv|->
+
+Use - to read from STDIN
+
+-k--key_field* Key field
+-h--help Print this help
+-tch--tokyocabinet File is a tokyocabinet hash database
+-tcb--tokyocabinet_bd File is a tokyocabinet B database
+
+EOF
+rbbt_usage and exit 0 if options[:help]
+
+file = ARGV.shift
+
+file = STDIN if file == '-'
+
+case
+when options[:tokyocabinet]
+  tsv = Persist.open_tokyocabinet(file, false)
+  tsv.keys.each do |k|
+    puts k
+  end
+  exit
+when options[:tokyocabinet_bd]
+  tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
+  tsv.keys.each do |k|
+    puts k
+  end
+  exit
+end
+
+parser = TSV::Parser.new TSV.get_stream(file), options.merge(:fields => [])
+
+options[:merge] = false if options[:merge] == "false"
+
+Thread.new do
+  line = parser.first_line
+  bar = Log::ProgressBar.new
+  while line 
+    bar.tick
+
+    line = Misc.fixutf8(line)
+    line = parser.process line
+    raise SKIP_LINE if line.empty?
+    parts = parser.chop_line line
+    key, values = parser.get_values parts
+    values = parser.cast_values values if parser.cast?
+    
+    puts key
+  end
+end

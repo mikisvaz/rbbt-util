@@ -127,7 +127,7 @@ module Log
     def save
       info = {:start => @start, :last_time => @last_time, :last_count => @last_count, :last_percent => @last_percent, :desc => @desc, :ticks => @ticks, :max => @max, :mean => @mean}
       info.delete_if{|k,v| v.nil?}
-      Open.write(@file, info.to_yaml)
+      Open.write(file, info.to_yaml)
     end
 
     def report(io = STDERR)
@@ -158,7 +158,7 @@ module Log
       @last_time = Time.now
       @last_count = ticks
       @last_percent = percent if max and max > 0
-      save if @file
+      save if file
     end
 
     def done(io = STDERR)
@@ -175,7 +175,7 @@ module Log
       done_msg << " - " << thr_msg 
       done_msg << Log.color(:magenta, " · " << desc)
       print(io, Log.up_lines(@depth) << done_msg << Log.down_lines(@depth)) 
-      Open.rm @file if @file and Open.exists? @file
+      Open.rm file if file and Open.exists? file
     end
 
     def error(io = STDERR)
@@ -192,7 +192,7 @@ module Log
       done_msg << " - " << thr_msg
       done_msg << Log.color(:magenta, " · " << desc)      
       print(io, Log.up_lines(@depth) << done_msg << Log.down_lines(@depth)) 
-      Open.rm @file if @file and Open.exists? @file
+      Open.rm file if file and Open.exists? file
     end
   end
 end

@@ -71,7 +71,7 @@ module Persist
       lock_filename = Persist.persistence_path(persistence_path + '.write', {:dir => TSV.lock_dir})
       #mutex.synchronize do
       Misc.lock(lock_filename, true) do
-        write if closed? or not write?
+        write if closed? || ! write?
         res = begin
                 yield
               rescue Exception
@@ -86,7 +86,7 @@ module Persist
     end
 
     def read_and_close
-      read if closed? or not read?
+      read if closed? || ! read?
       res = begin
               yield
             ensure
@@ -104,6 +104,11 @@ module Persist
 
 
     def range(*args)
+      super(*args) #- TSV::ENTRY_KEYS.to_a
+    end
+
+    def include?(*args)
+      read if closed?
       super(*args) #- TSV::ENTRY_KEYS.to_a
     end
   end

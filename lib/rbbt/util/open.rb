@@ -138,11 +138,15 @@ module Open
 
   # Grep
   
-  def self.grep(stream, grep, invert = false)
+  def self.grep(stream, grep, invert = false, fixed = nil)
     case 
     when Array === grep
       TmpFile.with_file(grep * "\n", false) do |f|
-        CMD.cmd("#{GREP_CMD} #{invert ? '-v' : ''} -", "-w" => true, "-F" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
+        if FalseClass === fixed
+          CMD.cmd("#{GREP_CMD} #{invert ? '-v' : ''} -", "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
+        else
+          CMD.cmd("#{GREP_CMD} #{invert ? '-v' : ''} -", "-w" => true, "-F" => true, "-f" => f, :in => stream, :pipe => true, :post => proc{FileUtils.rm f})
+        end
       end
     else
       CMD.cmd("#{GREP_CMD} #{invert ? '-v ' : ''} '#{grep}' -", :in => stream, :pipe => true, :post => proc{begin stream.force_close; rescue Exception; end if stream.respond_to?(:force_close)})
