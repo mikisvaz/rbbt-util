@@ -507,6 +507,7 @@ class Step
         ret = RbbtSemaphore.wait_semaphore(semaphore)
         raise SemaphoreInterrupted if ret == -1
       end
+
       begin
         begin
           @forked = true

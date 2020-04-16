@@ -73,9 +73,9 @@ module Filtered
 
     def save(ids)
       if persistence
-        persistence.write
-        persistence[self.key] = ids
-        persistence.read
+        persistence.write_and_close do
+          persistence[self.key] = ids
+        end
       else
         if @list.nil?
           @list = ids
@@ -103,7 +103,9 @@ module Filtered
         list
       else
         return nil if not persistence.include?(self.key)
-        persistence[self.key]
+        persistence.write_and_close do
+          persistence[self.key]
+        end
       end
     end
 
@@ -130,10 +132,13 @@ module Filtered
     def clean
       add_unsaved
       if persistence and persistence.include? self.key
-        restore = ! persistence.write?
-        persistence.write unless persistence.write?
-        persistence.delete self.key
-        persistence.read if restore
+        persistence.write_and_close do
+          persistence.delete self.key
+        end
+        #restore = ! persistence.write?
+        #persistence.write unless persistence.write?
+        #persistence.delete self.key
+        #persistence.read if restore
       else
         @list = nil
       end
@@ -142,7 +147,9 @@ module Filtered
     def reset
       add_unsaved
       if persistence
-        persistence.clear
+        persistence.write_and_close do
+          persistence.clear
+        end
       else
         @list = nil
       end
