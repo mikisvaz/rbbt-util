@@ -13,6 +13,7 @@ Use - to read from STDIN
 -k--key_field* Key field
 -f--fields* Fields
 -t--type* Type
+-s--sep* Separation character
 -m--merge Merge from multiple rows
 -h--help Print this help
 -tch--tokyocabinet File is a tokyocabinet hash database

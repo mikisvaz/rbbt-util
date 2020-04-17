@@ -14,6 +14,7 @@ Use - to read from STDIN
 -tch--tokyocabinet File is a tokyocabinet hash database
 -tcb--tokyocabinet_bd File is a tokyocabinet B database
 -f--fields* Fields to extract
+-s--sep* Separation character
 -hh--header_hash* Change the character used to mark the header line (defaults to #)
 -k--key_field* Use this field as key
 -h--help Print this help
@@ -46,7 +47,7 @@ fields = options[:fields]
 key_field = options[:key_field]
 fields = fields.split(/[,|]/, -1) unless fields.nil?
 
-parser = TSV::Parser.new tsv, :key_field => key_field,  :fields => fields, :type => options[:type], :header_hash => options[:header_hash]
+parser = TSV::Parser.new tsv, :key_field => key_field,  :fields => fields, :type => options[:type], :header_hash => options[:header_hash], :sep => options[:sep]
 fields ||= parser.fields
 
 TSV.traverse(parser) do |k,v|
