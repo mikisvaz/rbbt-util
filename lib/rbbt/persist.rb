@@ -402,6 +402,7 @@ module Persist
         subkey = name + ":"
 
         if String === repo
+          repo = repo.find if Path === repo
           repo = Persist.open_tokyocabinet(repo, false, :list, "BDB")
           repo.read_and_close do
             keys = repo.range subkey + 0.chr, true, subkey + 254.chr, true
