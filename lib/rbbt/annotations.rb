@@ -120,7 +120,7 @@ module Annotated
     if object.instance_variables.include?(:@annotation_values)
       hash = {}
       object.instance_variable_get(:@annotation_values).each{|k,v| hash[k] = v}
-      self.annotation_values.each{|k,v| hash[k] = v}
+      self.annotation_values.each{|k,v| hash[k] = v unless v.nil?}
 
       object.instance_variable_set(:@annotation_values, hash)
       object.instance_variable_set(:@shared_annotations,  false)
@@ -289,6 +289,7 @@ module Annotation
     object.instance_variable_set(:@annotation_types, nil)
 
     if Hash === (hash = values.last)
+      setup_positional(object, *values[0..-2]) if values.length > 1
       clean_and_setup_hash(object, hash)
     else
       setup_positional(object, *values)
