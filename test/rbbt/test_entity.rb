@@ -59,6 +59,19 @@ module ReversableString
   persist :reverse_text_ary_p_array, :array, :dir => TmpFile.tmp_file
 
   persist :annotation_list, :annotations, :dir => TmpFile.tmp_file
+
+
+  $processed_multiple = []
+  property :multiple_annotation_list => :multiple do |list|
+    $processed_multiple.concat list
+    res = {}
+    list.collect do |e|
+      e.chars.to_a.collect{|c| 
+        ReversableString.setup(c)
+      }
+    end
+  end
+  persist :multiple_annotation_list, :annotations, :dir => TmpFile.tmp_file
 end
 
 class TestEntity < Test::Unit::TestCase
@@ -174,6 +187,42 @@ class TestEntity < Test::Unit::TestCase
     assert_equal string.length, string.annotation_list.length
   end
 
+  def test_persist_multiple_annotations
+    string1 = 'aaabbbccc'
+    string2 = 'AAABBBCCC'
+    string3 = 'AAABBBCCC_3'
+    string4 = 'AAABBBCCC_4'
+
+    array = ReversableString.setup([string1, string2])
+    assert_equal [string1, string2].collect{|s| s.chars}, array.multiple_annotation_list
+
+    assert_equal string1.length, array[0].multiple_annotation_list.length
+    assert_equal $processed_multiple, [string1, string2]
+
+    array = ReversableString.setup([string2, string3])
+    assert_equal string2.length, array[0].multiple_annotation_list.length
+    assert_equal $processed_multiple, [string1, string2, string3]
+
+    array = ReversableString.setup([string2, string3])
+    assert_equal string2.length, array[0].multiple_annotation_list.length
+    assert_equal $processed_multiple, [string1, string2, string3]
+
+    $processed_multiple = []
+    array = ReversableString.setup([string2, string3, string4])
+    assert_equal string2.length, array[0].multiple_annotation_list.length
+    assert_equal $processed_multiple, [string4]
+
+    string1 = 'aaabbbccc'
+    string2 = 'AAABBBCCC'
+    string3 = 'AAABBBCCC_3'
+    string4 = 'AAABBBCCC_4'
+    $processed_multiple = []
+    array = ReversableString.setup([string2, string3, string4])
+    assert_equal string2.length, array[0].multiple_annotation_list.length
+    assert_equal $processed_multiple, [string4]
+
+  end
+
   def test_clean_annotations
 
     string = "test_string"
@@ -184,7 +233,7 @@ class TestEntity < Test::Unit::TestCase
   end
 
   def test_all_properties
-    puts ReversableString.setup("TEST").all_properties
-    puts ReversableString.all_properties
+    assert ReversableString.setup("TEST").all_properties.include?("reverse_text_ary")
+    assert_equal ReversableString.setup("TEST").all_properties, ReversableString.all_properties
   end
 end

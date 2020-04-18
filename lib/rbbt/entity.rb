@@ -5,6 +5,8 @@ module Entity
   
   UNPERSISTED_PREFIX = "entity_unpersisted_property_"
 
+  class MultipleEntity < Exception; end
+
   class DontPersist < Exception
     attr_accessor :payload
     def self.initialize(payload)
@@ -170,7 +172,7 @@ module Entity
         when :array, :array2single
           ary_name = "_ary_" << name
           define_method ary_name, &block 
-          
+
           define_method name do |*args|
             case
             when Array === self
@@ -188,6 +190,53 @@ module Entity
               Hash === res ? res[self] : res[0]
             end
           end
+        when :multiple
+          multi_name = "_multiple_" << name
+
+          define_method multi_name do
+            if self.instance_variable_get("@multiple_result")
+              return self.instance_variable_get("@multiple_result")
+            end
+            raise MultipleEntity, "Entity #{name} runs with multiple entities: #{self}"
+          end
+
+          define_method name do |*args|
+            obj = if Array === self
+                    self
+                  elsif self.respond_to?(:container) && Array === self.container
+                    self.container
+                  else
+                    self.make_list
+                  end
+
+            missing = []
+            obj.each do |e|
+              begin 
+                e.send(multi_name)
+              rescue MultipleEntity
+                missing << e
+              end
+            end
+
+            res = missing.any? ? block.call(missing) : nil
+            case res
+            when Array
+              missing.zip(res).each do |o,res|
+                o.instance_variable_set("@multiple_result", res)
+              end
+            when Hash
+              res.each do |o,res|
+                o.instance_variable_set("@multiple_result", res)
+              end
+            end
+
+            if Array === self
+              self.collect{|o| o.send(multi_name)}
+            else
+              self.send(multi_name)
+            end
+          end
+
         else 
           raise "Type not undestood in property: #{ type }"
         end
@@ -200,12 +249,16 @@ module Entity
         options ||= {}
         options = Misc.add_defaults options, :dir => Entity.entity_property_cache
 
+        orig_method_name = method_name
+        multi_name = "_multiple_" + method_name.to_s
+        method_name = multi_name if self.instance_methods.include?(multi_name.to_sym)
+
         orig_name = UNPERSISTED_PREFIX + method_name.to_s
         alias_method orig_name, method_name unless self.instance_methods.include? orig_name.to_sym
 
         define_method method_name do |*args|
           id = self.id
-          persist_name = __method__.to_s << ":" << (Array === id ? Misc.obj2digest(id) : id)
+          persist_name = orig_method_name.to_s << ":" << (Array === id ? Misc.obj2digest(id) : id)
 
           persist_options = options
           persist_options = persist_options.merge(:other => {:args => args}) if args and args.any?

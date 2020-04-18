@@ -1,7 +1,7 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
 require 'rbbt/annotations'
 
-class TestClass < Test::Unit::TestCase
+class TestAnnotation < Test::Unit::TestCase
   def test_marshal
     a = "STRING"
     a.extend Annotated

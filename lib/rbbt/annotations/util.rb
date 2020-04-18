@@ -115,19 +115,21 @@ module Annotated
 
     fields = case
 
-             when ((fields.compact.empty?) and not annotations.empty?)
+             when ((fields.compact.empty?) && ! annotations.empty?)
                fields = AnnotatedArray === annotations ? annotations.annotations : annotations.compact.first.annotations
                fields << :annotation_types
 
              when (fields == [:literal] and not annotations.compact.empty?)
                fields << :literal
 
-             when (fields == [:all] and Annotated === annotations)
-               fields = [:annotation_types] + annotations.annotations 
+             when (fields == [:all] && Annotated === annotations)
+               annotation_names = annotations.annotations
+               annotation_names += annotations.first.annotations if Annotated === annotations.first
+               fields = [:annotation_types] + annotation_names.uniq
                fields << :annotated_array if AnnotatedArray === annotations
                fields << :literal
 
-             when (fields == [:all] and not annotations.compact.empty?)
+             when (fields == [:all] && ! annotations.compact.empty?)
                raise "Input array must be annotated or its elements must be" if not Annotated === annotations.compact.first and not Array === annotations.compact.first
                raise "Input array must be annotated or its elements must be. No double arrays of singly annotated entities." if not Annotated === annotations.compact.first and Array === annotations.compact.first
                fields = [:annotation_types] + (Annotated === annotations ? 
@@ -157,12 +159,11 @@ module Annotated
       tsv = TSV.setup({}, :key_field => "ID", :fields => fields, :type => :list, :unnamed => true)
 
       annotations.compact.each_with_index do |annotation,i|
-        tsv[annotation.id + ":" << i.to_s] = annotation.tsv_values(*fields).dup
+        tsv[annotation.id + "#" << i.to_s] = annotation.tsv_values(*fields).dup
       end
 
     else
       raise "Annotations need to be an Array to create TSV"
-
     end
 
     tsv
