@@ -112,6 +112,8 @@ class TestEntity < Test::Unit::TestCase
     a = ["String1", "String2"]
     ReversableString.setup a
 
+    a.reverse_text_ary_p
+
     $count = 0
 
     assert_equal "2gnirtS", a.reverse_text_ary_p.last
