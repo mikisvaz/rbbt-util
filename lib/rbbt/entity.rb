@@ -247,7 +247,7 @@ module Entity
       def self.persist(method_name, type = nil, options = {})
         type = :memory if type.nil?
         options ||= {}
-        options = Misc.add_defaults options, :dir => Entity.entity_property_cache
+        options = Misc.add_defaults options, :dir => File.join(Entity.entity_property_cache, self.to_s, method_name.to_s)
 
         orig_method_name = method_name
         multi_name = "_multiple_" + method_name.to_s
