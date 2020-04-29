@@ -5,14 +5,15 @@ class KnowledgeBase
 
   def select_entities(name, entities, options = {})
     index = get_index(name, options)
+
     source_field = index.source_field
     target_field = index.target_field
 
     source_type = Entity.formats[source_field] 
     target_type = Entity.formats[target_field]
 
-    source_entities = entities[:source] || entities[source_field] || entities[Entity.formats[source_field].to_s] 
-    target_entities = entities[:target] || entities[target_field] || entities[Entity.formats[target_field].to_s]
+    source_entities = entities[:source] || entities[source_field] || entities[Entity.formats[source_field].to_s] || entities[:both]
+    target_entities = entities[:target] || entities[target_field] || entities[Entity.formats[target_field].to_s] || entities[:both]
 
     [source_entities, target_entities]
   end

@@ -416,7 +416,7 @@ begin
 
     job.fork
   else
-    job.produce
+    job.run(:stream)
     res = job
   end
 

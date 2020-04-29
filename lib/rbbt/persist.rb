@@ -407,7 +407,6 @@ module Persist
           repo.read_and_close do
             keys = repo.range subkey + 0.chr, true, subkey + 254.chr, true
           end
-          repo.close
         else
           repo.read_and_close do
             keys = repo.range subkey + 0.chr, true, subkey + 254.chr, true
@@ -461,13 +460,13 @@ module Persist
               entities.each_with_index do |e,i|
                 next if e.nil?
                 tsv_values = e.tsv_values("literal", "annotation_types", "JSON") 
-                repo[subkey + e.id << ":ANNOTATED_DOUBLE_ARRAY:" << i.to_s] = tsv_values
+                repo[subkey + "ANNOTATED_DOUBLE_ARRAY:" << i.to_s] = tsv_values
               end
             else
               entities.each_with_index do |e,i|
                 next if e.nil?
                 tsv_values = e.tsv_values("literal", "annotation_types", "JSON") 
-                repo[subkey + e.id << ":" << i.to_s] = tsv_values
+                repo[subkey + i.to_s] = tsv_values
               end
             end
           end

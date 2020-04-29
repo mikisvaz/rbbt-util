@@ -145,10 +145,9 @@ module Annotated
 
              end
 
-    fields = fields.collect{|f| f.to_s}
+    fields = fields.collect{|f| f.to_s}.uniq
 
     case
-
     when (Annotated === annotations and not (AnnotatedArray === annotations and annotations.double_array))
       tsv = TSV.setup({}, :key_field => "List", :fields => fields, :type => :list, :unnamed => true)
 

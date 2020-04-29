@@ -33,7 +33,29 @@ module Persist
     end
 
     def read?
-      ! write?
+      ! (write? || closed?)
+    end
+
+    def write(*args)
+      begin
+        super(*args)
+        @writable = true
+      rescue NoMethodError
+      end
+    end
+
+    def close(*args)
+      begin
+        super(*args)
+      rescue NoMethodError
+      end
+    end
+
+    def read(*args)
+      begin
+        super(*args)
+      rescue NoMethodError
+      end
     end
 
     def collect
@@ -53,16 +75,27 @@ module Persist
     end
 
     def lock
+      #return yield if @locked
       lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
       Misc.lock(lock_filename) do
-        yield
+        begin
+          @locked = true
+          yield
+        ensure
+          @locked = false
+        end
       end
     end
 
     def write_and_read
-      #lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
-      #mutex.synchronize do
-      #Misc.lock(lock_filename) do
+      if write?
+        begin
+          return yield
+        ensure
+          read
+        end
+      end
+
       lock do
         write true if closed? or not write?
         begin
@@ -71,14 +104,17 @@ module Persist
           read
         end
       end
-      #end
-      #end
     end
 
     def write_and_close
-      #lock_filename = Persist.persistence_path(persistence_path + '.write', {:dir => TSV.lock_dir})
-      #mutex.synchronize do
-      #Misc.lock(lock_filename, true) do
+      if write?
+        begin
+          return yield
+        ensure
+          close
+        end
+      end
+
       lock do
         write true if closed? || ! write?
         res = begin
@@ -91,11 +127,17 @@ module Persist
               end
         res
       end
-      #end
-      #end
     end
 
     def read_and_close
+      if read?
+        begin
+          return yield
+        ensure
+          close
+        end
+      end
+
       lock do
         read true if closed? || ! read?
         begin

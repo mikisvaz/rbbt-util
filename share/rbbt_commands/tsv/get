@@ -47,6 +47,28 @@ fields = options[:fields]
 key_field = options[:key_field]
 fields = fields.split(/[,|]/, -1) unless fields.nil?
 
+if TSV === tsv
+  v = tsv[key]
+  fields ||= tsv.fields
+  puts Log.color(:blue, "Key: #{ key }")
+  if fields
+    if fields.length == 1
+      if options[:lines]
+        puts (Array === v ? v.flatten*"\n" : v.to_s ) 
+      else
+        puts (Array === v ? v.flatten*"\t" : v.to_s ) 
+      end
+    else
+      fields.zip(v).each do |field,v|
+        puts "#{Log.color :magenta, field+":"} #{v}"
+      end
+    end
+  else
+    puts "#{Log.color :magenta, "value:"} #{v}"
+  end
+  exit
+end
+
 parser = TSV::Parser.new tsv, :key_field => key_field,  :fields => fields, :type => options[:type], :header_hash => options[:header_hash], :sep => options[:sep]
 fields ||= parser.fields
 
@@ -54,15 +76,19 @@ TSV.traverse(parser) do |k,v|
   next unless k.include? key
   k = k.first if Array === k
   puts Log.color(:blue, "Key: #{ k }")
-  if fields.length == 1
-    if options[:lines]
-      puts (Array === v ? v.flatten*"\n" : v.to_s ) 
+  if fields
+    if fields.length == 1
+      if options[:lines]
+        puts (Array === v ? v.flatten*"\n" : v.to_s ) 
+      else
+        puts (Array === v ? v.flatten*"\t" : v.to_s ) 
+      end
     else
-      puts (Array === v ? v.flatten*"\t" : v.to_s ) 
+      fields.zip(v).each do |field,v|
+        puts "#{Log.color :magenta, field+":"} #{v}"
+      end
     end
   else
-    fields.zip(v).each do |field,v|
-      puts "#{Log.color :magenta, field+":"} #{v}"
-    end
+    puts "#{Log.color :magenta, "value:"} #{Misc.fingerprint v}"
   end
 end

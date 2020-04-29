@@ -92,9 +92,9 @@ class TestKnowledgeBase < Test::Unit::TestCase
       assert downstream.length < downstream.follow(kb, :tfacts,false).flatten.length
 
       Misc.benchmark(50) do
-        downstream.follow(kb, :tfacts,false)
-        downstream.backtrack(kb, :tfacts,false)
-        downstream.expand(kb, :tfacts,false)
+        downstream.follow(kb, :tfacts, false)
+        downstream.backtrack(kb, :tfacts, false)
+        downstream.expand(kb, :tfacts, false)
       end
 
       Misc.benchmark(50) do

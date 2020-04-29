@@ -203,6 +203,8 @@ prepare_make(){
     local old_pwd="`expand_path $(pwd)`"
     cd "`build_dir`"
 
+    [ -f bootstrap ] && (./bootstrap || exit -1)
+
     [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd src
 
     if [ -f config/m4 ]; then

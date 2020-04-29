@@ -122,6 +122,7 @@ module TSV
         end
       else
         file.grace
+
         stream = file.get_stream
         if stream && ! stream.closed?
           stream

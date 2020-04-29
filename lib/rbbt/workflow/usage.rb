@@ -71,7 +71,7 @@ module Workflow
     @dep_tree ||= {}
     @dep_tree[name] ||= begin
                         dep_tree = {}
-                        self.task_dependencies[name].reverse.each do |dep|
+                        self.task_dependencies[name.to_sym].reverse.each do |dep|
                           dep = dep.first if Array === dep && dep.length == 1
                           dep = dep.dependency if DependencyBlock === dep
 
@@ -88,9 +88,22 @@ module Workflow
                           key = [workflow, task]
 
                           dep_tree[key] = workflow.dep_tree(task)
-                        end
+                        end if self.task_dependencies[name.to_sym]
                         dep_tree
                       end
+  end
+
+  def _prov_tasks(tree)
+    tasks = [] 
+    heap = [tree]
+    while heap.any?
+      t = heap.pop
+      t.each do |k,v|
+        tasks << k
+        heap << v
+      end
+    end
+    tasks
   end
 
   def prov_string(tree)
@@ -98,13 +111,15 @@ module Workflow
 
     last = nil
     seen = Set.new
-    tree.collect.to_a.flatten.select{|e| Symbol === e }.each do |task_name|
 
-      child = last && last.include?(task_name)
+    tasks = _prov_tasks(tree)
+    tasks.each do |workflow,task_name|
+
+      next if seen.include?([workflow,task_name])
+
+      child = last && last.include?([workflow, task_name])
       first = last.nil?
-      last = dep_tree(task_name).collect.to_a.flatten.select{|e| Symbol === e}
-
-      next if seen.include?(task_name)
+      last = _prov_tasks(workflow.dep_tree(task_name))
 
       if child
         description << "->" << task_name.to_s
@@ -113,6 +128,8 @@ module Workflow
       else
         description << ";" << task_name.to_s
       end
+      
+      seen << [workflow, task_name]
     end
     description
   end
@@ -177,7 +194,7 @@ module Workflow
         description = task.description || ""
         description = description.split("\n\n").first
 
-        next if abridge and ! final.include?(name)
+        next if abridge && ! final.include?(name)
         puts Misc.format_definition_list_item(name.to_s, description, Log.terminal_width, 20, :yellow)
 
         prov_string = prov_string(dep_tree(name))

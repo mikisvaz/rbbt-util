@@ -24,7 +24,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   EFFECT_TSV = TSV.open EFFECT, EFFECT_OPTIONS.dup 
 
-  KNOWLEDGE_BASE = KnowledgeBase.new '/tmp/kb.foo2', "Hsa"
+  KNOWLEDGE_BASE = KnowledgeBase.new Rbbt.tmp.test.kb_foo2, "Hsa"
   KNOWLEDGE_BASE.format = {"Gene" => "Ensembl Gene ID"}
 
   KNOWLEDGE_BASE.register :effects, EFFECT_TSV, EFFECT_OPTIONS.dup

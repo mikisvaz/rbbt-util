@@ -374,7 +374,7 @@ module TSV
       when (defined? Step and Step)
 
         obj.clean if obj.aborted? or obj.recoverable_error?
-        obj.run(true) unless obj.done? or obj.started?
+        obj.run(true) unless obj.done? || obj.started? || obj.result
 
         stream = obj.get_stream
 

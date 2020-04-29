@@ -194,13 +194,16 @@ module Entity
           multi_name = "_multiple_" << name
 
           define_method multi_name do
-            if self.instance_variable_get("@multiple_result")
-              return self.instance_variable_get("@multiple_result")
+            if self.instance_variable_get("@multiple_result_" + name.to_s)
+              return self.instance_variable_get("@multiple_result_" + name.to_s)
             end
-            raise MultipleEntity, "Entity #{name} runs with multiple entities: #{self}"
+            raise MultipleEntity, "Entity #{name} runs with multiple entities"
           end
 
           define_method name do |*args|
+            if self.instance_variable_get("@multiple_result_" + name.to_s)
+              return self.instance_variable_get("@multiple_result_" + name.to_s)
+            end
             obj = if Array === self
                     self
                   elsif self.respond_to?(:container) && Array === self.container
@@ -222,11 +225,11 @@ module Entity
             case res
             when Array
               missing.zip(res).each do |o,res|
-                o.instance_variable_set("@multiple_result", res)
+                o.instance_variable_set("@multiple_result_" + name.to_s, res)
               end
             when Hash
               res.each do |o,res|
-                o.instance_variable_set("@multiple_result", res)
+                o.instance_variable_set("@multiple_result_" + name.to_s, res)
               end
             end
 

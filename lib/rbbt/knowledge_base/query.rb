@@ -10,6 +10,7 @@ class KnowledgeBase
 
   def subset(name, entities, options = {}, &block)
     entities, options = options, entities if entities.nil? and Hash === options
+
     entities = case entities
                when :all
                  {:target => :all, :source => :all}
@@ -23,7 +24,15 @@ class KnowledgeBase
                  raise "Entities are not a Hash or an AnnotatedArray: #{Misc.fingerprint entities}"
                end
 
+    identify, identify_source, identify_target = entities.merge(options || {}).values_at :identify, :identify_source, :identify_target
+
     source, target = select_entities(name, entities, options)
+    
+    source = identify_source(name, source) if identify_source
+    target = identify_target(name, target) if identify_target
+
+    source = identify(name, source) if identify && !identify_source
+    target = identify(name, target) if identify && !identify_target
 
     return [] if source.nil? or target.nil?
     return [] if Array === target and target.empty?
