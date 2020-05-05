@@ -10,7 +10,8 @@ module TSV
 
     identifiers = Organism.identifiers(tsv.namespace) if identifiers.nil? and tsv.namespace
 
-    if not tsv.fields.include? format
+
+    if ! tsv.fields.include?(format)
       new = {}
       tsv.each do |k,v|
         if v === String or v === Array
@@ -31,6 +32,7 @@ module TSV
       else
         tsv = tsv.attach identifiers, :fields => [format], :persist_input => true
       end
+
 
       tsv = tsv.reorder(format, tsv.fields[0..-2])
 

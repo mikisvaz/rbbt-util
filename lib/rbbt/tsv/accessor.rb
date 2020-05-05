@@ -243,7 +243,7 @@ module TSV
   end
 
   def []=(key, value, clean = false)
-    return super(key, value) if clean or value.nil? or TSV::CleanSerializer == self.serializer_module 
+    return super(key, value) if clean || value.nil? || TSV::CleanSerializer == self.serializer_module 
     super(key, @serializer_module.dump(value))
   end
 
