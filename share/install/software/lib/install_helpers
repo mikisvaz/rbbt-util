@@ -71,7 +71,7 @@ get_pkg(){
     local url="$2"
 
     if [ ! -f "$OPT_SRC_DIR/$name.pkg" ]; then
-        wget "$url" -O "$OPT_SRC_DIR/$name.pkg"  || wget "$url" -O "$OPT_SRC_DIR/$name.pkg" --no-check-certificate
+      wget "$url" -O "$OPT_SRC_DIR/$name.pkg"  || wget "$url" -O "$OPT_SRC_DIR/$name.pkg" --no-check-certificate || (rm -f "$OPT_SRC_DIR/$name.pkg"; echo "Error downloading"; exit -1)
     fi
 }
 
@@ -85,7 +85,7 @@ uncompress_pkg(){
     mkdir -p "$OPT_BUILD_DIR"
     cd "$OPT_BUILD_DIR"
 
-    (tar xvfz $pkg || tar xvfJ $pkg || tar xvfj $pkg || unzip $pkg || echo "Error decompressing") 2> /dev/null
+    (tar xvfz $pkg || tar xvfJ $pkg || tar xvfj $pkg || unzip $pkg || (echo "Error decompressing" & cd & rmdir "$OPT_BUILD_DIR" & exit -1 ) ) 2> /dev/null
 
     cd "$old_pwd"
 }
@@ -207,6 +207,8 @@ prepare_make(){
 
     [ -d src -a ! -e CMakeLists.txt -a ! -e Makefile -a ! -e configure ] && cd src
 
+    [ -f bootstrap ] && (./bootstrap || exit -1)
+
     if [ -f config/m4 ]; then
         libtoolize --force
         aclocal
@@ -275,6 +277,8 @@ build_make(){
         setup "$name"
         clean_build
     fi
+
+    cd "$old_pwd"
 }
 
 buid_cmake(){
@@ -489,7 +493,7 @@ install_jar(){
     local url="$2"
 
     [ -d  "$OPT_DIR/$name/" ] || mkdir -p  "$OPT_DIR/$name/"
-    wget "$url" -O "$OPT_DIR/$name/$name.jar" --no-check-certificate
+    wget "$url" -O "$OPT_DIR/jars/$name.jar" || wget "$url" -O "$OPT_DIR/jars/$name.jar" --no-check-certificate || (rm "$OPT_DIR/jars/$name.jar"; exit -1)
     link "$OPT_DIR/$name/$name.jar" "$OPT_JAR_DIR/$name.jar" 
 }
 
