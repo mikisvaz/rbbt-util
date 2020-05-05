@@ -22,12 +22,6 @@ module Persist
       @closed
     end
 
-    def close
-      @closed = true
-      super
-      self
-    end
-
     def write?
       @writable
     end
@@ -47,8 +41,10 @@ module Persist
     def close(*args)
       begin
         super(*args)
+        @closed = true
       rescue NoMethodError
       end
+      self
     end
 
     def read(*args)
@@ -87,6 +83,16 @@ module Persist
       end
     end
 
+    def lock_and_close
+      lock do
+        begin
+          yield
+        ensure
+          close
+        end
+      end
+    end
+
     def write_and_read
       if write?
         begin
@@ -97,7 +103,7 @@ module Persist
       end
 
       lock do
-        write true if closed? or not write?
+        write(true) if closed? || !write?
         begin
           yield
         ensure
@@ -111,12 +117,12 @@ module Persist
         begin
           return yield
         ensure
-          close
+          close unless @locked
         end
       end
 
       lock do
-        write true if closed? || ! write?
+        write(true) if closed? || ! write?
         res = begin
                 yield
               rescue Exception
@@ -130,11 +136,12 @@ module Persist
     end
 
     def read_and_close
-      if read?
+      #return yield if @locked
+      if read? || write?
         begin
           return yield
         ensure
-          close
+          close unless @locked
         end
       end
 
@@ -161,8 +168,27 @@ module Persist
     end
 
     def include?(*args)
-      read if closed?
-      super(*args) #- TSV::ENTRY_KEYS.to_a
+      self.read_and_close do
+        super(*args) #- TSV::ENTRY_KEYS.to_a
+      end
+    end
+
+    def [](*args)
+      self.read_and_close do
+        super(*args) #- TSV::ENTRY_KEYS.to_a
+      end
+    end
+
+    def []=(*args)
+      self.write_and_close do
+        super(*args) #- TSV::ENTRY_KEYS.to_a
+      end
+    end
+
+    def keys(*args)
+      self.read_and_close do
+        super(*args) #- TSV::ENTRY_KEYS.to_a
+      end
     end
   end
 end

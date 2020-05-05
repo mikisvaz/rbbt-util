@@ -148,13 +148,13 @@ module Persist
 
         data.write_and_read do
           yield data
+
+          FileUtils.mv data.persistence_path, path if File.exist? data.persistence_path and not File.exist? path
+          tsv = CONNECTIONS[path] = CONNECTIONS.delete tmp_path
+          tsv.persistence_path = path
+
+          tsv.fix_io if tsv.respond_to? :fix_io
         end
-
-        FileUtils.mv data.persistence_path, path if File.exist? data.persistence_path and not File.exist? path
-        tsv = CONNECTIONS[path] = CONNECTIONS.delete tmp_path
-        tsv.persistence_path = path
-
-        tsv.fix_io if tsv.respond_to? :fix_io
 
         data
       rescue Exception
