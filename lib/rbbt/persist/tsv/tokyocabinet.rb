@@ -94,8 +94,8 @@ module Persist
     unless serializer == :clean
       TSV.setup database
       database.write_and_read do
-        database.serializer = serializer if serializer 
-      end
+        database.serializer = serializer
+      end if serializer && database.serializer != serializer
     end
 
     database

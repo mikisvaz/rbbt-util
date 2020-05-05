@@ -9,15 +9,6 @@ module Persist
       @mutex ||= Mutex.new
     end
 
-    def prefix(key)
-      range(key, 1, key + MAX_CHAR, 1)
-    end
-
-    def get_prefix(key)
-      keys = prefix(key)
-      select(:key => keys)
-    end
-
     def closed?
       @closed
     end
@@ -54,25 +45,14 @@ module Persist
       end
     end
 
-    def collect
-      res = []
-      each do |key, value|
-        res << if block_given?
-                 yield key, value
-        else
-          [key, value]
-        end
-      end
-      res
-    end
-
     def delete(key)
       out(key)
     end
 
     def lock
-      #return yield if @locked
+      return yield if @locked
       lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
+      Log.stack caller if $LOG
       Misc.lock(lock_filename) do
         begin
           @locked = true
@@ -155,16 +135,16 @@ module Persist
       end
     end
 
-
     def merge!(hash)
       hash.each do |key,values|
         self[key] = values
       end
     end
 
-
     def range(*args)
-      super(*args) #- TSV::ENTRY_KEYS.to_a
+      self.read_and_close do
+        super(*args)
+      end
     end
 
     def include?(*args)
@@ -187,7 +167,52 @@ module Persist
 
     def keys(*args)
       self.read_and_close do
-        super(*args) #- TSV::ENTRY_KEYS.to_a
+        super(*args)
+      end
+    end
+
+
+    def prefix(key)
+      self.read_and_close do
+        range(key, 1, key + MAX_CHAR, 1)
+      end
+    end
+
+    def get_prefix(key)
+      keys = prefix(key)
+      select(:key => keys)
+    end
+
+
+    def size(*args)
+      self.read_and_close do
+        super(*args)
+      end
+    end
+
+    def each(*args, &block)
+      self.read_and_close do
+        super(*args, &block)
+      end
+    end
+
+    def collect
+      res = []
+      each do |key, value|
+        res << if block_given?
+                 yield key, value
+        else
+          [key, value]
+        end
+      end
+      res
+    end
+
+    def values_at(*keys)
+      self.read_and_close do
+        keys.collect do |k|
+          self[k]
+        end
       end
     end
   end

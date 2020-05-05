@@ -366,11 +366,11 @@ module TSV
     keys.length
   end
 
-  def values_at(*keys)
-    keys.collect do |key|
-      self[key]
-    end
-  end
+  #def _values_at(*keys)
+  #  keys.collect do |key|
+  #    self[key]
+  #  end
+  #end
 
   def chunked_values_at(keys, max = 5000)
     Misc.ordered_divide(keys, max).inject([]) do |acc,c|
