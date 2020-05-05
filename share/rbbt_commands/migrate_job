@@ -3,7 +3,7 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
-require 'rbbt/workflow/remote/ssh/get'
+require 'rbbt/workflow/remote_workflow'
 
 $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
@@ -33,5 +33,7 @@ if options[:help]
 end
 
 path, search_path, _sep, *other = ARGV
+
+search_path = 'user' if search_path.nil?
 
 Step.migrate(path, search_path, options)
