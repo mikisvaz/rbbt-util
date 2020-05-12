@@ -125,6 +125,7 @@ class Step
   def self.migrate(path, search_path, options = {})
     resource=Rbbt
 
+    orig_path = path
     other_rsync_args = options[:rsync]
 
     recursive = options[:recursive]
@@ -154,6 +155,7 @@ puts files * "\n"
             else
               if File.exists?(path)
                 path = resource.identify(path)
+                raise "Resource #{resource} could not identify #{orig_path}" if path.nil?
               else
                 path = Path.setup(path)
               end
@@ -178,7 +180,7 @@ puts resource[path].find(search_path)
     subpath_files = {}
     paths.sort.each do |path|
       parts = path.split("/")
-      subpath = parts[0..-4] * "/"
+      subpath = parts[0..-4] * "/" + "/"
 
       if subpath_files.keys.any? && subpath.start_with?(subpath_files.keys.last)
         subpath = subpath_files.keys.last
@@ -190,6 +192,7 @@ puts resource[path].find(search_path)
       subpath_files[subpath] << source
     end
 
+    synced_files = []
     subpath_files.each do |subpath, files|
       if options[:target]
         CMD.cmd("ssh #{options[:target]} mkdir -p '#{File.dirname(target)}'")
@@ -204,11 +207,15 @@ puts resource[path].find(search_path)
       end
       target = [options[:target], target] * ":" if options[:target]
 
+      next if File.exists?(source) && File.exists?(target) && File.expand_path(source) == File.expand_path(target)
+
       files_and_dirs = Set.new( files )
       files.each do |file|
+        synced_files << File.join(subpath, file)
+
         parts = file.split("/")[0..-2].reject{|p| p.empty?}
         while parts.any?
-          files_and_dirs << parts * "/"
+          files_and_dirs <<  parts * "/"
           parts.pop
         end
       end
@@ -218,13 +225,32 @@ puts resource[path].find(search_path)
 
         cmd = "rsync #{MAIN_RSYNC_ARGS} --progress #{test_str} --files-from='#{tmp_include_file}' #{source}/ #{target}/ #{other_rsync_args}"
 
-        cmd << " && rm -Rf #{source}" if options[:delete]
-
+        #cmd << " && rm -Rf #{source}" if options[:delete]
         if options[:print]
           ppp Open.read(tmp_include_file)
           puts cmd 
         else
           CMD.cmd_log(cmd)
+        end
+      end
+    end
+
+    if options[:delete] && synced_files.any?
+      puts Log.color :magenta, "About to erase these files:"
+      synced_files.each do |p|
+        puts Log.color :red, p
+      end 
+
+      if options[:non_interactive]
+        response = 'yes'
+      else
+        puts Log.color :magenta, "Type 'yes' if you are sure:"
+        response = STDIN.gets.chomp
+      end
+
+      if response == 'yes'
+        synced_files.each do |p|
+          Open.rm p
         end
       end
     end

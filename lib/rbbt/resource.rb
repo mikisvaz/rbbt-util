@@ -170,10 +170,12 @@ module Resource
     if type and not File.exist?(final_path) or force
       Log.medium "Producing: #{ final_path }"
       lock_filename = Persist.persistence_path(final_path, {:dir => Resource.lock_dir})
+
       Misc.lock lock_filename do
         FileUtils.rm_rf final_path if force and File.exist? final_path
-        if not File.exist?(final_path) or force
-          (remote_server and get_from_server(path, final_path)) or
+
+        if ! File.exist?(final_path) || force 
+
           begin
             case type
             when :string
@@ -291,7 +293,7 @@ url='#{url}'
           rescue
             FileUtils.rm_rf final_path if File.exist? final_path
             raise $!
-          end
+          end unless (remote_server && get_from_server(path, final_path))
         end
       end
     end
@@ -304,11 +306,12 @@ url='#{url}'
     resource ||= Rbbt
     (Path::STANDARD_SEARCH + resource.search_order + resource.search_paths.keys).uniq.each do |name|
       pattern = resource.search_paths[name]
-      next if patterns.nil?
+      next if pattern.nil?
+      pattern = pattern.sub('{PWD}', Dir.pwd)
       if String ===  pattern and pattern.include?('{')
         regexp = "^" + pattern.gsub(/{([^}]+)}/,'(?<\1>[^/]+)') + "(?:/(?<REST>.*))?/?$"
         if m = path.match(regexp) 
-          if m["PKGDIR"] == resource.pkgdir
+          if ! m.named_captures.include?("PKGDIR") || m["PKGDIR"] == resource.pkgdir
             return self[m["TOPLEVEL"]][m["SUBPATH"]][m["REST"]]
           end
         end

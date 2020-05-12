@@ -35,6 +35,7 @@ module Workflow
                            input_use = rec_input_use(name)
                            input_defaults = rec_input_defaults(name)
                            input_options = rec_input_options(name)
+                           extension = task.extension
                            export = case
                                     when (synchronous_exports.include?(name.to_sym) or synchronous_exports.include?(name.to_s))
                                       :synchronous
@@ -60,7 +61,8 @@ module Workflow
                              :input_use => input_use,
                              :result_type => result_type,
                              :result_description => result_description,
-                             :dependencies => dependencies
+                             :dependencies => dependencies,
+                             :extension => extension
                            }
                          end
   end
