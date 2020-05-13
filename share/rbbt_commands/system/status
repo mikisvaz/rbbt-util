@@ -187,7 +187,7 @@ workflows.sort.each do |workflow,tasks|
         if info_fields and info_fields.any?
           info = begin
                    Open.open(i[:info_file]) do |f|
-                     Step::INFO_SERIALIAZER.load(f)
+                     Step::INFO_SERIALIZER.load(f)
                    end
                  rescue
                    {:status => :noinfo}
@@ -198,9 +198,10 @@ workflows.sort.each do |workflow,tasks|
       else
         info = begin
                  Open.open(i[:info_file]) do |f|
-                   Step::INFO_SERIALIAZER.load(f)
+                   Step::INFO_SERIALIZER.load(f)
                  end
                rescue
+                 Log.exception $!
                  {:status => :noinfo}
                end
         IndiferentHash.setup(info)
