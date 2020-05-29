@@ -199,7 +199,7 @@ module Path
                          next if res
                          next unless paths.include? w
                          path = find(w, caller_lib, paths)
-                         res = path if File.exist? path
+                         res = path if File.exist?(path)
                        end if res.nil?
 
                        (paths.keys - STANDARD_SEARCH - search_order).each do |w|
@@ -241,8 +241,8 @@ module Path
                          sub('{REMOVE}/', '').
                          sub('{REMOVE}', '')
 
-                       path = path + '.gz' if File.exist? path + '.gz'
-                       path = path + '.bgz' if File.exist? path + '.bgz'
+                       path = path + '.gz' if File.exist?(path + '.gz')
+                       path = path + '.bgz' if File.exist?(path + '.bgz')
 
                        self.annotate path
 

@@ -129,7 +129,7 @@ class RemoteStep
       end
     end
 
-    def _run_job(cache_type = :async)
+    def _run_job(cache_type = :asynchronous)
       get_streams
 
       task_url = URI.encode(File.join(base_url, task.to_s))
@@ -142,7 +142,13 @@ class RemoteStep
       else
         @adaptor.execute_job(base_url, task, task_params, cache_type)
       end
-
     end
+
+
+    def produce(*args)
+      @started = true
+      _run_job
+    end
+
   end
 end

@@ -137,13 +137,15 @@ class RemoteWorkflow
 
         post_thread = Thread.new(Thread.current) do |parent|
           bl = lambda do |rok|
-            if Net::HTTPOK === rok
+            if Net::HTTPOK === rok 
               _url = rok["RBBT-STREAMING-JOB-URL"]
               @url = File.join(task_url, File.basename(_url)) if _url
               rok.read_body do |c,_a, _b|
                 sin.write c
               end
               sin.close
+            elsif Net::HTTPSeeOther === rok
+              raise TryThis.new(rok)
             else
               err = StringIO.new
               rok.read_body do |c,_a, _b|
@@ -156,7 +158,7 @@ class RemoteWorkflow
                        err.rewind
                        err.read
                      end
-              ne = @adaptor.parse_exception text
+              ne = RemoteWorkflow.parse_exception text
               case ne
               when String
                 parent.raise e.class, ne
@@ -173,7 +175,11 @@ class RemoteWorkflow
           end
 
           Log.debug{ "RestClient execute: #{ task_url } - #{Misc.fingerprint task_params}" }
-          RestClient::Request.execute(:method => :post, :url => task_url, :payload => task_params, :block_response => bl)
+          begin
+            RestClient::Request.execute(:method => :post, :url => task_url, :payload => task_params, :block_response => bl)
+          rescue TryThis
+            RestClient::Request.execute(:method => :get, :url => $!.payload.header[:location], :block_response => bl)
+          end
         end
 
         # It seems like now response body are now decoded by Net::HTTP after 2.1

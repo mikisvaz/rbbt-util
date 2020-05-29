@@ -62,6 +62,18 @@ class TestRemoteWorkflow < Test::Unit::TestCase
     Log.with_severity 0 do
 
       remote_workflow_server(TestWFRest) do |client|
+        job = client.job(:hi, nil, {})
+        job.clean
+        job = client.job(:hi, nil, {})
+        assert ! job.done?
+        job.run
+        job.produce
+        job = client.job(:hi, nil, {})
+        assert job.done?
+        sleep 1
+      end
+
+      remote_workflow_server(TestWFRest) do |client|
         assert_equal "Hello World", client.job(:hi, nil, {}).run.chomp
         assert_equal "Hello Miguel", client.job(:hi, nil, {:name => :Miguel}).run.chomp
         assert_equal "Hello Miguel, nice to meet you", client.job(:intro, nil, {:name => :Miguel}).run.chomp
@@ -78,7 +90,7 @@ class TestRemoteWorkflow < Test::Unit::TestCase
 
   def _test_ssh
     Log.severity = 0
-    client = RemoteWorkflow.new "ssh://turbo:Translation", "Translation"
+    client = RemoteWorkflow.new "ssh://#{ENV["HOSTNAME"]}:Translation", "Translation"
     job = client.job("translate", "SSH-TEST-1", :genes => ["TP53","KRAS"])
     assert_equal 2, job.run.select{|l| l =~ /ENSG/}.length
   end

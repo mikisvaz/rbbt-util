@@ -15,6 +15,14 @@ end
 class Aborted < StandardError; end
 
 class TryAgain < StandardError; end
+
+class TryThis < StandardError
+  attr_accessor :payload
+  def initialize(payload = nil)
+    @payload = payload
+  end
+end
+
 class SemaphoreInterrupted < TryAgain; end
 class LockInterrupted < TryAgain; end
 

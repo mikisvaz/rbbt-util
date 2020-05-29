@@ -4,20 +4,21 @@ class FixWidthTable
   def initialize(filename, value_size = nil, range = nil, update = false, in_memory = true)
     @filename = filename
 
-    if update or %w(memory stringio).include?(filename.to_s.downcase) or not File.exist?(filename)
+    if update || %w(memory stringio).include?(filename.to_s.downcase) || ! File.exist?(filename)
       Log.debug "FixWidthTable create: #{ filename }"
       @value_size  = value_size
       @range       = range
       @record_size = @value_size + (@range ? 16 : 8)
       @write = true
 
-      if %w(memory stringio).include? filename.to_s.downcase
+      if %w(memory stringio).include?(filename.to_s.downcase)
         @filename = :memory
         @file     = StringIO.new
       else
         FileUtils.rm @filename if File.exist? @filename
         FileUtils.mkdir_p File.dirname(@filename) unless File.exist? @filename
-        @file = File.open(@filename, 'wb')
+        #@file = File.open(@filename, 'wb')
+        @file = File.open(@filename, 'w:ASCII-8BIT')
       end
 
       @file.write [value_size].pack("L")
@@ -25,9 +26,9 @@ class FixWidthTable
 
       @size = 0
     else
-      Log.debug "FixWidthTable up-to-date: #{ filename }"
+      Log.debug "FixWidthTable up-to-date: #{ filename } - (in_memory:#{in_memory})"
       if in_memory
-        @file        = StringIO.new(Open.read(@filename, :mode => 'r:ASCII-8BIT'), 'r')
+        @file        = Open.open(@filename, :mode => 'r:ASCII-ASCII'){|f| StringIO.new f.read}
       else
         @file        = File.open(@filename, 'r:ASCII-8BIT')
       end

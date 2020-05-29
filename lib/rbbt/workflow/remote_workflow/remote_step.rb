@@ -25,8 +25,13 @@ class RemoteStep < Step
   end
 
   def cache_file
-    digest = Misc.obj2digest([base_url, task, base_name, inputs])
-    Rbbt.var.cache.REST[[task, clean_name, digest] * "."].find
+    begin
+      digest = Misc.obj2digest([base_url, task, base_name, inputs])
+      Rbbt.var.cache.REST[[task, clean_name, digest].compact * "."].find
+    rescue
+      Log.exception $!
+      raise $!
+    end
   end
 
   def cache_files
@@ -61,7 +66,6 @@ class RemoteStep < Step
     return @result if no_load == :stream
     no_load ? Misc.add_GET_param(path, "_format", "raw") : @result
   end
-
 
   def self.get_streams(inputs, stream_input = nil)
     new_inputs = {}
@@ -240,6 +244,7 @@ class RemoteStep < Step
     return true if cache_files.any?
     init_job unless @url
     Log.debug{ "Joining RemoteStep: #{path}" }
+
     if IO === @result
       res = @result
       @result = nil
@@ -253,6 +258,7 @@ class RemoteStep < Step
       sleep 1 unless self.done? || self.aborted? || self.error?
       while not (self.done? || self.aborted? || self.error?)
         sleep 3
+        iif [self.done?, self.status, self.info]
       end
     end
 
