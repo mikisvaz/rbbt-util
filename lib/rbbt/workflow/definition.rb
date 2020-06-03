@@ -18,6 +18,7 @@ module Workflow
     :description        => "",
     :result_type        => nil,
     :result_description => "",
+    :resumable          => false,
     :extension          => nil)
 
 
@@ -31,6 +32,10 @@ module Workflow
 
   def extension(extension)
     @extension = extension
+  end
+
+  def resumable
+    @resumable = true
   end
 
   def returns(description)
@@ -118,6 +123,7 @@ module Workflow
       :input_descriptions => consume_input_descriptions,
       :required_inputs    => consume_required_inputs,
       :extension          => consume_extension,
+      :resumable          => consume_resumable,
       :input_options      => consume_input_options
     }
 

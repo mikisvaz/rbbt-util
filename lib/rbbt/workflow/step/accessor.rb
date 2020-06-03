@@ -612,6 +612,10 @@ class Step
     provenance
   end
 
+  def resumable?
+    task && task.resumable
+  end
+
   def config(key, *tokens)
     options = tokens.pop if Hash === tokens.last
     options ||= {}

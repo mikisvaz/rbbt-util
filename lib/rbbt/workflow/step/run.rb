@@ -610,7 +610,7 @@ class Step
   end
 
   def _clean_finished
-    if Open.exists? path and not status == :done
+    if Open.exists?(path) && status != :done
       Log.warn "Aborted job had finished. Removing result -- #{ path }"
       begin
         Open.rm path

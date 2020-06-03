@@ -40,8 +40,8 @@ module DepWorkflow
     end
   end
 
-  dep :task2
   dep :task5
+  dep :task2
   task :task6 => :array do
     s1 = TSV.get_stream step(:task2)
     s2 = TSV.get_stream step(:task5)
@@ -79,6 +79,26 @@ module ComputeWorkflow
     end
   end
 
+end
+
+module ResumeWorkflow
+  extend Workflow
+
+  resumable
+  task :resume => :string do
+    if file('foo').exists?
+      'done'
+    else
+      Open.mkdir files_dir
+      Open.touch(file('foo'))
+      raise 
+    end
+  end
+
+  dep :resume
+  task :reverse => :string do
+    step(:resume).load.reverse
+  end
 end
 
 class TestWorkflowDependency < Test::Unit::TestCase
@@ -152,13 +172,14 @@ class TestWorkflowDependency < Test::Unit::TestCase
     Log.severity = 0
     TmpFile.with_file(content) do |input_file|
       begin
-      job = DepWorkflow.job(:task6, "TEST", :input_file => input_file)
-      job.run(:stream)
-      io = TSV.get_stream job
-      while line = io.gets
-        last_line = line.strip
-      end
-      io.join
+        job = DepWorkflow.job(:task6, "TEST", :input_file => input_file)
+        job.recursive_clean
+        job.run(:stream)
+        io = TSV.get_stream job
+        while line = io.gets
+          last_line = line.strip
+        end
+        io.join
       rescue Exception
         job.abort
         raise $!
@@ -203,6 +224,17 @@ class TestWorkflowDependency < Test::Unit::TestCase
 
       assert_equal "Line #{size}\tTask1\tTask2", last_line
     end
+  end
+
+  def test_resume
+    Log.severity = 0
+    job = ResumeWorkflow.job(:reverse)
+    job.recursive_clean
+    assert_raise do
+      job.run
+    end
+    assert job.dependencies.first.file('foo').exists?
+    assert_equal 'done'.reverse, job.run
   end
 end
 

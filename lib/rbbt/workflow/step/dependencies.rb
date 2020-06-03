@@ -92,7 +92,7 @@ class Step
           (job.done? && job.dirty?)  || (job.error? && job.dirty?) ||
           (!(job.noinfo? || job.done? || job.error? || job.aborted? || job.running?))
 
-        job.clean 
+        job.clean unless job.resumable? && (job.updated? && ! job.dirty?)
         job.set_info :status, :cleaned
       end
 
@@ -144,14 +144,18 @@ class Step
 
       dependency.status_lock.synchronize do
         if dependency.aborted? || (dependency.error? && dependency.recoverable_error? && ! canfail_paths.include?(dependency.path) && ! already_failed.include?(dependency.path)) || (!Open.remote?(dependency.path) && dependency.missing?)
-          Log.warn "Cleaning dep. on exec #{Log.color :blue, dependency.path} (missing: #{dependency.missing?}; error #{dependency.error?})"
-          dependency.clean
-          already_failed << dependency.path
-          raise TryAgain
+          if dependency.resumable?
+            dependency.status = :resume
+          else
+            Log.warn "Cleaning dep. on exec #{Log.color :blue, dependency.path} (missing: #{dependency.missing?}; error #{dependency.error?})"
+            dependency.clean
+            already_failed << dependency.path
+            raise TryAgain
+          end
         end
       end
 
-      if ! (dependency.started? || dependency.error?)
+      if dependency.status == :resume || ! (dependency.started? || dependency.error?)
         log_dependency_exec(dependency, :starting)
         dependency.run(true)
         raise TryAgain
