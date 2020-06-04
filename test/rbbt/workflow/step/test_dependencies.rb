@@ -5,6 +5,27 @@ module DepWorkflow
   extend Workflow
 
   input :input_file, :file, "Input file", nil, :stream => true
+  task :s1 => :array do |input_file|
+    TSV.traverse input_file, :type => :array, :into => :stream, :bar => "Task1" do |line|
+      line + "\t" << "Task1"
+    end
+  end
+
+  dep :s1
+  task :s2 => :array do |input_file|
+    TSV.traverse step(:s1), :type => :array, :into => :stream, :bar => "Task2" do |line|
+      next [line.split("\t").first, Misc::SKIP_TAG] * "\t" if rand < 0.9
+      line + "\t" << "Task2"
+    end
+  end
+
+  dep :s1
+  dep :s2
+  task :s3 => :array do |input_file|
+    Misc.paste_streams(dependencies.reverse)
+  end
+
+  input :input_file, :file, "Input file", nil, :stream => true
   task :task1 => :array do |input_file|
     TSV.traverse input_file, :type => :array, :into => :stream, :bar => "Task1" do |line|
       line + "\t" << "Task1"
@@ -28,9 +49,7 @@ module DepWorkflow
   dep :task2
   dep :task3
   task :task4 => :array do
-    s1 = TSV.get_stream step(:task2)
-    s2 = TSV.get_stream step(:task3)
-    Misc.paste_streams([s1, s2])
+    Misc.paste_streams(dependencies)
   end
 
   dep :task4
@@ -40,12 +59,10 @@ module DepWorkflow
     end
   end
 
-  dep :task5
   dep :task2
+  dep :task5
   task :task6 => :array do
-    s1 = TSV.get_stream step(:task2)
-    s2 = TSV.get_stream step(:task5)
-    Misc.paste_streams([s1, s2])
+    Misc.paste_streams(dependencies)
   end
 
   input :stream_file, :file, "Streamed file", nil, :stream => true
@@ -134,8 +151,25 @@ class TestWorkflowDependency < Test::Unit::TestCase
     end
   end
 
+  def test_task3
+    size = 100000
+    content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
+    TmpFile.with_file(content) do |input_file|
+      job = DepWorkflow.job(:task3, "TEST", :input_file => input_file)
+      io = TSV.get_stream job.run(:stream)
+      last_line = nil
+      while line = io.gets
+        last_line = line.strip
+      end
+      io.join
+
+      assert_equal "Line #{size}\tTask1\tTask3", last_line
+    end
+  end
+
   def test_task4
-    size = 1000
+    size = 100000
+    Log.severity = 0
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
     last_line = nil
     TmpFile.with_file(content) do |input_file|
@@ -151,7 +185,7 @@ class TestWorkflowDependency < Test::Unit::TestCase
   end
   
   def test_task5
-    size = 1000
+    size = 10000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
     last_line = nil
     TmpFile.with_file(content) do |input_file|
@@ -165,9 +199,32 @@ class TestWorkflowDependency < Test::Unit::TestCase
     assert_equal "Line #{size}\tTask1\tTask2\tTask1\tTask3\tTask5", last_line
   end
   
+  def test_s3
+    size = 100000
+    content = (1..size).to_a.collect{|num| "Line #{num}" } * "\n"
+    last_line = nil
+    Log.severity = 0
+    TmpFile.with_file(content) do |input_file|
+      begin
+        job = DepWorkflow.job(:s3, "TEST", :input_file => input_file)
+        job.recursive_clean
+        job.run(:stream)
+        io = TSV.get_stream job
+        while line = io.gets
+          last_line = line.strip
+        end
+        io.join if io.respond_to? :join
+      rescue Exception
+        job.abort
+        raise $!
+      end
+    end
+    assert last_line.include? "Line #{size}"
+  end
+  
   def test_task6
     size = 100000
-    content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
+    content = (1..size).to_a.collect{|num| "Line #{num}" } * "\n"
     last_line = nil
     Log.severity = 0
     TmpFile.with_file(content) do |input_file|
@@ -189,7 +246,7 @@ class TestWorkflowDependency < Test::Unit::TestCase
   end
   
   def test_task8
-    size = 100000
+    size = 10000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
     last_line = nil
     Log.severity = 0

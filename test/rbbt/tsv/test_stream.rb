@@ -4,6 +4,7 @@ require 'rbbt/tsv/stream'
 require 'rbbt'
 
 class TestStream < Test::Unit::TestCase
+
   def test_collapse_stream
     text=<<-EOF
 #: :sep=" "
@@ -65,7 +66,7 @@ row3 AAA BBB CCC
 
     text2=<<-EOF
 #: :sep=" "
-#Row Labela Labelb 
+#Row Labela Labelb
 row1 a b
 row3 aaa bbb
 row2 aa bb
@@ -100,7 +101,7 @@ row1 A B C
 
     text2=<<-EOF
 #: :sep=" "
-#Row Labela Labelb 
+#Row Labela Labelb
 row2 aa bb
     EOF
 
@@ -132,7 +133,7 @@ row1 A B C
 
     text2=<<-EOF
 #: :sep=" "
-#Row Labela Labelb 
+#Row Labela Labelb
 row2 aa bb
     EOF
 

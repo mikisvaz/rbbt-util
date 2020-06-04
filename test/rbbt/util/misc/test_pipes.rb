@@ -285,7 +285,7 @@ line4
       begin
         Misc.consume_stream(sio, false, STDOUT)
       rescue
-        Log.exception $!
+        raise $!
       end
     end
   end

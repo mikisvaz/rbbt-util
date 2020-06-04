@@ -18,6 +18,8 @@ module Misc
 
   BLOCK_SIZE=1024 * 8
 
+  SKIP_TAG="[SKIP TAG]"
+
   PIPE_MUTEX = Mutex.new
 
   OPEN_PIPE_IN = []
@@ -29,7 +31,7 @@ module Misc
 
       [sout, sin]
     end
-    Log.debug{"Creating pipe #{[res.last.inspect,res.first.inspect] * " => "}"}
+    Log.debug{"Creating pipe #{[res.last.inspect, res.first.inspect] * " => "}"}
     res
   end
 
@@ -255,6 +257,11 @@ module Misc
     end
     tee1, *rest = Misc.tee_stream stream_dup, num + 1
     stream.reopen(tee1)
+
+    #ToDo: I can't explain why the @threads variable appears with the value of
+    # @filename
+    stream.instance_variable_set(:@threads, nil) if stream.instance_variables.include?(:@threads)
+
     tee1.annotate(stream)
     rest
   end
@@ -537,18 +544,29 @@ module Misc
     end
   end
 
+  def self.buffer_stream(stream)
+    sout, sin = Misc.pipe
+    Misc.consume_stream(stream, true, sin)
+    sout
+  end
+
   def self._paste_streams(streams, output, lines = nil, sep = "\t", header = nil, &block)
     output.puts header if header
     streams = streams.collect do |stream|
       if defined? Step and Step === stream
-        stream.get_stream || stream.join.path.open
+        io = stream.get_stream 
+        if io
+          buffer_stream(io)
+        else
+          stream.join.path.open
+        end
       else
         stream
       end
     end
 
     begin
-      done_streams = []
+
       lines ||= streams.collect{|s| s.gets }
       keys = []
       parts = []
@@ -564,6 +582,7 @@ module Misc
       end
       sizes = parts.collect{|p| p.nil? ? 0 : p.length }
       last_min = nil
+
       while lines.compact.any?
         if block_given?
           min = keys.compact.sort(&block).first
@@ -571,14 +590,23 @@ module Misc
           min = keys.compact.sort.first
         end
         str = []
+        threads = []
         keys.each_with_index do |key,i|
           case key
           when min
-            str << [parts[i] * sep]
+            if parts[i] == [SKIP_TAG]
+              str << [sep * (sizes[i]-1)] if sizes[i] > 0
+            else
+              str << [parts[i] * sep]
+            end
+
             line = lines[i] = streams[i].gets
-            if line.nil?
+
+            if line.nil? 
               keys[i] = nil
               parts[i] = nil
+              streams[i].close unless streams[i].closed?
+              streams[i].join if streams[i].respond_to?(:join) 
             else
               k, *p = line.chomp.split(sep, -1)
               keys[i] = k
@@ -589,10 +617,12 @@ module Misc
           end
         end
 
-        output.puts [min, str*sep] * sep
+        output.puts [min, str.flatten*sep] * sep
       end
+
       streams.each do |stream|
-        stream.join if stream.respond_to? :join
+        stream.close unless stream.closed?
+        stream.join if stream.respond_to?(:join) 
       end
     rescue 
       Log.exception $!

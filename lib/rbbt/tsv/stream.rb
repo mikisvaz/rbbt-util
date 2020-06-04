@@ -89,6 +89,7 @@ module TSV
         stream
       end
 
+      all_fields = fields
       key_field = key_fields.compact.first
       if same_fields
         fields = fields.first

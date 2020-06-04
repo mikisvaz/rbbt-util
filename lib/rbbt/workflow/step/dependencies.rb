@@ -366,7 +366,7 @@ class Step
       (step.dependencies + step.input_dependencies).each do |step_dep|
         next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and (step_dep.compute == :nodup or step_dep.compute == :ignore))
         dep_step[step_dep.path] ||= []
-        dep_step[step_dep.path] << step_dep
+        dep_step[step_dep.path] << step
       end
     end
 
