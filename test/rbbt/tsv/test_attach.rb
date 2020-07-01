@@ -213,8 +213,9 @@ row2    E
 
     tsv1 = tsv2 = nil
 
-    tsv1 = Rbbt.tmp.test.test1.data.tsv :double,  :sep => /\s+/
-    tsv2 = Rbbt.tmp.test.test2.data.tsv :double,  :sep => /\s+/
+    tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
+    tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
+    Log.tsv tsv2
 
     tsv2.identifiers = Rbbt.tmp.test.test2.identifiers.produce.find #.to_s
 

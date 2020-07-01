@@ -4,9 +4,20 @@ module TSV
     fields = other.fields - [key_field].concat(self.fields) if fields.nil?
 
     fields = [fields].compact unless Array === fields
+
+    common_fields = self.fields & fields
+
+    fields = fields - common_fields
+
     num_fields = fields.length
 
     field_positions = fields.collect{|field| other.identify_field field}
+
+    if common_fields.any?
+      common_field_positions = common_fields.collect{|field| self.identify_field field}
+      common_field_positions_other = common_fields.collect{|field| other.identify_field field}
+    end
+
     other.with_unnamed do
       with_unnamed do
         through do |key, values|
@@ -27,6 +38,12 @@ module TSV
               other_values = other[key] || [nil] * other.fields.length
               new_values = field_positions.collect do |pos|
                 pos == :key ? key : other_values[pos]
+              end
+
+              if common_fields.any?
+                common_field_positions.zip(common_field_positions_other).each do |p1,p2|
+                  current[p1] += other_values[p2]
+                end
               end
             end
 

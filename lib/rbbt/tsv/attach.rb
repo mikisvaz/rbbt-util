@@ -32,7 +32,8 @@ module TSV
     done = false
     Open.write(output) do |os|
       options.delete :sep if options[:sep] == "\t"
-      os.puts TSV.header_lines(key_field, fields, options) 
+      header_lines = TSV.header_lines(key_field, fields, options) 
+      os.puts header_lines unless header_lines.empty?
 
       while line
         key, *parts = line.sub("\n",'').split(sep, -1)
@@ -212,6 +213,35 @@ module TSV
     other_filename = other.respond_to?(:filename) ? other.filename : other.inspect
     Log.low("Attaching fields:#{Misc.fingerprint fields } from #{other_filename}.")
 
+    same_key = true
+    begin
+      case
+      when (Misc.match_fields(key_field, other.key_field) and same_key)
+        Log.debug "Attachment with same key: #{other.key_field}"
+        attach_same_key other, fields
+      when (not in_namespace and self.fields.select{|f| Misc.match_fields(f, other.key_field)}.any?)
+        Log.debug "Found other key field: #{other.key_field}"
+        attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
+      when (in_namespace and self.fields_in_namespace.select{|f| Misc.match_fields(f, other.key_field)}.any?)
+        Log.debug "Found other key field in #{in_namespace}: #{other.key_field}"
+        attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
+      else
+        index = TSV.find_traversal(self, other, options)
+        raise FieldNotFoundError, "Cannot traverse identifiers" if index.nil?
+        Log.debug "Attachment with index: #{other.key_field}"
+        attach_index other, index, fields
+      end
+    rescue Exception
+      if same_key
+        Log.warn "Could not translate identifiers with same_key"
+        same_key = false
+        retry
+      else
+        raise $!
+      end
+    end
+    Log.debug("Attachment of fields:#{Misc.fingerprint fields } from #{other.filename.inspect} finished.")
+
     if complete
       fill = TrueClass === complete ? nil : complete
       field_length = self.fields.length 
@@ -219,6 +249,9 @@ module TSV
       other_common_pos = common_fields.collect{|f| other.fields.index f}
       this_common_pos = common_fields.collect{|f| self.fields.index f}
       missing = other.keys - self.keys
+
+      other = other.to_list if other.type == :single
+
       case type
       when :single
         missing.each do |k|
@@ -248,35 +281,6 @@ module TSV
         end
       end
     end
-
-    same_key = true
-    begin
-      case
-      when (Misc.match_fields(key_field, other.key_field) and same_key)
-        Log.debug "Attachment with same key: #{other.key_field}"
-        attach_same_key other, fields
-      when (not in_namespace and self.fields.select{|f| Misc.match_fields(f, other.key_field)}.any?)
-        Log.debug "Found other key field: #{other.key_field}"
-        attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
-      when (in_namespace and self.fields_in_namespace.select{|f| Misc.match_fields(f, other.key_field)}.any?)
-        Log.debug "Found other key field in #{in_namespace}: #{other.key_field}"
-        attach_source_key other, other.key_field, :fields => fields, :one2one => one2one
-      else
-        index = TSV.find_traversal(self, other, options)
-        raise FieldNotFoundError, "Cannot traverse identifiers" if index.nil?
-        Log.debug "Attachment with index: #{other.key_field}"
-        attach_index other, index, fields
-      end
-    rescue Exception
-      if same_key
-        Log.warn "Could not translate identifiers with same_key"
-        same_key = false
-        retry
-      else
-        raise $!
-      end
-    end
-    Log.debug("Attachment of fields:#{Misc.fingerprint fields } from #{other.filename.inspect} finished.")
 
     self
   end

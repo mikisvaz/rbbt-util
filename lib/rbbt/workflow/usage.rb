@@ -88,7 +88,7 @@ module Workflow
                           key = [workflow, task]
 
                           dep_tree[key] = workflow.dep_tree(task)
-                        end if self.task_dependencies[name.to_sym]
+                        end if name && self.task_dependencies[name.to_sym]
                         dep_tree
                       end
   end
