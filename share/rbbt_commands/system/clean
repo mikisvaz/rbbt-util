@@ -97,7 +97,7 @@ TSV.traverse jobs do |file,i|
   else
     info = begin
              Open.open(i[:info_file]) do |f|
-               Step::INFO_SERIALIAZER.load(f)
+               Step::INFO_SERIALIZER.load(f)
              end
            rescue
              {:status => :noinfo}
@@ -134,7 +134,7 @@ TSV.traverse jobs do |file,i|
     end
   end
 
-  if (force and status !~ /done/) or 
+  if (force && status !~ /done/) or 
     status =~ /\b(old|dirty|nopid|error|missing|aborted|dead|sync)$/ or
     (status == "noinfo" and not done) or
     status == "" 
