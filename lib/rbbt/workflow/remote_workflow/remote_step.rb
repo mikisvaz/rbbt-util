@@ -143,7 +143,11 @@ class RemoteStep < Step
     @info = Persist.memory("RemoteSteps Info", :url => @url, :persist => true, :update => update) do
       @last_info_time = Time.now
       init_job unless @url
-      info = @adaptor.get_json(File.join(@url, 'info'))
+      info = begin
+               @adaptor.get_json(File.join(@url, 'info'))
+             rescue
+               {:status => :noinfo}
+             end
       info = RemoteWorkflow.fix_hash(info)
       info[:status] = info[:status].to_sym if String === info[:status]
       info
