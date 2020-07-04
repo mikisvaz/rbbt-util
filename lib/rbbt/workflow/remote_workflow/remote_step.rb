@@ -26,8 +26,8 @@ class RemoteStep < Step
 
   def cache_file
     begin
-      digest = Misc.obj2digest([base_url, task, base_name, inputs])
-      Rbbt.var.cache.REST[[task, clean_name, digest].compact * "."].find
+      digest = Misc.obj2digest([base_url, task.to_s, base_name, inputs])
+      Rbbt.var.cache.REST[task.to_s][[clean_name, digest].compact * "."].find
     rescue
       Log.exception $!
       raise $!
@@ -247,6 +247,7 @@ class RemoteStep < Step
   def join
     return true if cache_files.any?
     init_job unless @url
+    produce unless @started
     Log.debug{ "Joining RemoteStep: #{path}" }
 
     if IO === @result
@@ -262,7 +263,6 @@ class RemoteStep < Step
       sleep 1 unless self.done? || self.aborted? || self.error?
       while not (self.done? || self.aborted? || self.error?)
         sleep 3
-        iif [self.done?, self.status, self.info]
       end
     end
 

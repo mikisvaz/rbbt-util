@@ -137,14 +137,16 @@ class RemoteWorkflow
 
         post_thread = Thread.new(Thread.current) do |parent|
           bl = lambda do |rok|
-            if Net::HTTPOK === rok 
+            case rok
+            when Net::HTTPOK
               _url = rok["RBBT-STREAMING-JOB-URL"]
               @url = File.join(task_url, File.basename(_url)) if _url
               rok.read_body do |c,_a, _b|
                 sin.write c
               end
               sin.close
-            elsif Net::HTTPSeeOther === rok
+            when Net::HTTPRedirection, Net::HTTPAccepted
+              Thread.current.report_on_exception = false
               raise TryThis.new(rok)
             else
               err = StringIO.new
@@ -178,7 +180,8 @@ class RemoteWorkflow
           begin
             RestClient::Request.execute(:method => :post, :url => task_url, :payload => task_params, :block_response => bl)
           rescue TryThis
-            RestClient::Request.execute(:method => :get, :url => $!.payload.header[:location], :block_response => bl)
+            url = $!.payload["location"]
+            RestClient::Request.execute(:method => :get, :url => url, :block_response => bl)
           end
         end
 
