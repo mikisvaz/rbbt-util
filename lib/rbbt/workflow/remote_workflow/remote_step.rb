@@ -315,6 +315,10 @@ class RemoteStep < Step
     end
   end
 
+  def short_path
+    init_job unless @url
+    [@task, @name] * "/"
+  end
 
   def input_checks
     []

@@ -28,7 +28,7 @@ class FixWidthTable
     else
       Log.debug "FixWidthTable up-to-date: #{ filename } - (in_memory:#{in_memory})"
       if in_memory
-        @file        = Open.open(@filename, :mode => 'r:ASCII-ASCII'){|f| StringIO.new f.read}
+        @file        = Open.open(@filename, :mode => 'r:ASCII-8BIT'){|f| StringIO.new f.read}
       else
         @file        = File.open(@filename, 'r:ASCII-8BIT')
       end

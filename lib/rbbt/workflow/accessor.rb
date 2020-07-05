@@ -418,7 +418,7 @@ module Workflow
                        when :hash
                          clean_inputs = Annotated.purge(inputs)
                          clean_inputs = clean_inputs.collect{|i| Symbol === i ? i.to_s : i }
-                         deps_str = dependencies.collect{|d| Step === d ? d.short_path : d }
+                         deps_str = dependencies.collect{|d| Step === d || (defined?(RemoteStep) && RemoteStep === Step) ? d.short_path : d }
                          key_obj = {:inputs => clean_inputs, :dependencies => deps_str }
                          key_str = Misc.obj2str(key_obj)
                          hash_str = Misc.digest(key_str)

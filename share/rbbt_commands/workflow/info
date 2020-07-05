@@ -153,7 +153,7 @@ if recursive
     dep = deps.shift
     inputs = {} if inputs.nil?
     inputs = inputs.merge(dep.info[:inputs] || {})
-    deps = deps.concat dep.dependencies
+    deps = deps.concat dep.dependencies if dep.dependencies
   end
 
   inputs = inputs.merge step.archived_inputs
