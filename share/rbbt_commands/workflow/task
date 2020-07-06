@@ -337,6 +337,8 @@ if clean_task
       dep.clean 
       dep.set_info :status, :cleaned
     end
+
+    job.clean if job.task_name.to_s == clean_task.to_s
   end
 end
 
