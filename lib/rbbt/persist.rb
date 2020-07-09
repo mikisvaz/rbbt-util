@@ -365,12 +365,12 @@ module Persist
     type ||= :marshal
 
     persist_options ||= {}
-    if type == :memory and persist_options[:file] and persist_options[:persist] 
+    if type == :memory && persist_options[:file] && persist_options[:persist] 
       repo = persist_options[:repo] || Persist::MEMORY
       if persist_options[:persist] == :update || persist_options[:update]
         repo.delete persist_options[:file]
       end
-      return repo[persist_options[:file]] ||= yield 
+      return repo[persist_options[:file]] ||= yield
     end
 
     if FalseClass === persist_options[:persist]

@@ -17,14 +17,14 @@ module TmpFile
 
   # Creates a random file name, with the given suffix and a random number
   # up to +max+
-  def self.random_name(s = "tmp-", max = 10000000)
+  def self.random_name(s = "tmp-", max = 1_000_000_000)
     n = rand(max)
     s + n.to_s
   end
 
   # Creates a random filename in the temporary directory
-  def self.tmp_file(s = "tmp-", max=10000000, dir = TMPDIR)
-    File.expand_path(File.join(dir, random_name(s,max)))
+  def self.tmp_file(s = "tmp-", max=1_000_000_000, dir = TMPDIR)
+    File.expand_path(File.join(dir, random_name(s, max)))
   end
 
   def self.with_file(content = nil, erase = true, options = {})
@@ -33,7 +33,7 @@ module TmpFile
 
     prefix = options[:prefix] || "tmp-"
     tmpdir = options[:tmpdir] || TMPDIR
-    max = options[:max] || 10000000
+    max = options[:max] || 1_000_000_000
     tmpfile = tmp_file prefix, max, tmpdir
     if options[:extension]
       tmpfile += ".#{options[:extension]}"
