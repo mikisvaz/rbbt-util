@@ -10,9 +10,6 @@ require 'rbbt/workflow/util/provenance'
 
 module Workflow
 
-  STEP_CACHE = {}
-  LOAD_STEP_CACHE = {}
-
   class TaskNotFoundException < Exception 
     def initialize(workflow, task = nil)
       if task
@@ -264,11 +261,11 @@ module Workflow
   end
 
   def step_cache
-    @step_cache ||= Workflow::STEP_CACHE
+    Thread.current[:step_cache] ||= {}
   end
 
   def self.load_step_cache
-    @load_step_cache ||= Workflow::LOAD_STEP_CACHE
+    Thread.current[:load_step_cache] ||= {}
   end
 
 
