@@ -261,7 +261,7 @@ module Entity
 
         define_method method_name do |*args|
           id = self.id
-          persist_name = orig_method_name.to_s << ":" << (Array === id ? Misc.obj2digest(id) : id)
+          persist_name = orig_method_name.to_s + ":" << (Array === id ? Misc.obj2digest(id) : id)
 
           persist_options = options
           persist_options = persist_options.merge(:other => {:args => args}) if args and args.any?
