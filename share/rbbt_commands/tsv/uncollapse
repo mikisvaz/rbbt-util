@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+options = SOPT.setup <<EOF
+Read a TSV file and dump it
+
+$ rbbt tsv read [options] <filename.tsv|->
+
+Use - to read from STDIN
+
+-k--key_field* Key field
+-f--fields* Fields
+-t--type* Type
+-m--merge* Merge from multiple rows
+-h--help Print this help
+
+EOF
+rbbt_usage and exit 0 if options[:help]
+
+file = ARGV.shift
+
+file = STDIN if file == '-'
+
+tsv = TSV.open file, :merge => true, :type => :double
+
+
+puts tsv.to_unmerged_expanded_s
