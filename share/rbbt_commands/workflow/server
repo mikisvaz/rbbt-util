@@ -123,15 +123,11 @@ TmpFile.with_file do |app_dir|
     else
       options[:config] = config_ru_file
 
-			clean_options = {}
-			options.each do |k,v|
-        begin
-          clean_options[k.to_sym] = v
-        rescue
-        end
-      end
+      fixed_options = {}
+      options.each do |k,v| fixed_options[k.to_sym] = v end
+      options = fixed_options
 
-      Rack::Server.start(clean_options)
+      Rack::Server.start(options)
     end
   end
 end

@@ -84,6 +84,10 @@ Misc.in_dir(app_dir) do
     end
   end
 
+  fixed_options = {}
+  options.each do |k,v| fixed_options[k.to_sym] = v end
+  options = fixed_options
+
   case server
   when 'passenger'
     system ENV, "env RBBT_LOG=0 passenger start -R '#{config_ru_file}' -p #{options[:Port] || "2887"}"
