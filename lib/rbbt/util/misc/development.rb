@@ -292,14 +292,16 @@ def self.add_libdir(dir=nil)
     end
   end
 
-  def self.bootstrap(elems, num = :current, options = {}, &block)
+  def self.bootstrap(elems, num = nil, options = {}, &block)
     IndiferentHash.setup options
+
+    num = Rbbt::Config.get :cpus, :default_bootstrap_cpus, :bootstrap_cpus if num == :current || num == nil
     num = :current if num.nil?
     cpus = case num
            when :current
-            n = 10
-            n = elems.length / 2 if n > elems.length/2
-            n
+             n = Etc.nprocessors
+             n = elems.length / 2 if n > elems.length/2
+             n
            when String
              num.to_i
            when Integer
