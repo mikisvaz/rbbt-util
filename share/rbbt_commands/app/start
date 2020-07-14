@@ -15,6 +15,7 @@ $ rbbt app start [options] <app_name>
 -Ho--Host* Host name
 -B--Bind* Bind IP
 -p--port* TCP port
+-w--workers* Number of workers for cluster mode (puma)
 -s--server* Server type:  thin, webrick, unicorn, etc
 -f--finder Start server with finder functionality
 -fs--file_server Activate file serving for resources
@@ -88,6 +89,8 @@ Misc.in_dir(app_dir) do
   options.each do |k,v| fixed_options[k.to_sym] = v end
   options = fixed_options
 
+  options[:workers] = options[:workers].to_i if options[:workers]
+
   case server
   when 'passenger'
     system ENV, "env RBBT_LOG=0 passenger start -R '#{config_ru_file}' -p #{options[:Port] || "2887"}"
@@ -95,6 +98,7 @@ Misc.in_dir(app_dir) do
     system ENV, "puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 3 -t 8:32 --preload"
   else
     options[:config] = config_ru_file
+    options[:threads] = "8:8"
     Rack::Server.start(options)
   end
 end
