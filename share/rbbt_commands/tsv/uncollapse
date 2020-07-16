@@ -25,5 +25,4 @@ file = STDIN if file == '-'
 
 tsv = TSV.open file, :merge => true, :type => :double
 
-
 puts tsv.to_unmerged_expanded_s

@@ -295,13 +295,18 @@ def self.add_libdir(dir=nil)
   def self.bootstrap(elems, num = nil, options = {}, &block)
     IndiferentHash.setup options
 
-    num = Rbbt::Config.get :cpus, :default_bootstrap_cpus, :bootstrap_cpus if num == :current || num == nil
+    num = Rbbt::Config.get :cpus, :default_bootstrap_cpus, :bootstrap_cpus if num == :current || num == nil if defined?(Rbbt::Config)
     num = :current if num.nil?
     cpus = case num
            when :current
              n = Etc.nprocessors
              n = elems.length / 2 if n > elems.length/2
-             n
+
+             if $BOOTSTRAPPED_CURRENT && $BOOTSTRAPPED_CURRENT + n > Etc.nprocessors
+               1
+             else
+               n
+             end
            when String
              num.to_i
            when Integer
@@ -320,7 +325,12 @@ def self.add_libdir(dir=nil)
     respawn = options[:respawn] and options[:cpus] and options[:cpus].to_i > 1
 
     index = (0..elems.length-1).to_a.collect{|v| v.to_s }
+
     TSV.traverse index, options do |pos|
+      if num == :current
+        $BOOTSTRAPPED_CURRENT ||= n 
+        $BOOTSTRAPPED_CURRENT += 0 
+      end
       elem = elems[pos.to_i]
       elems.annotate elem if elems.respond_to? :annotate
       res = begin

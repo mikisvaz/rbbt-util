@@ -440,6 +440,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     read
     keys
     collapse
+    uncollapse
     values
     change_id
     attach

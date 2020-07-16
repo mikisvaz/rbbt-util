@@ -690,5 +690,30 @@ Written by Mike Haertel and others, see <http://git.sv.gnu.org/cgit/grep.git/tre
     EOF
     assert_equal "3.1", Misc.scan_version_text(txt, "grep")
   end
+
+  def test_bootstrap_current_only_once
+
+     
+    max = Etc.nprocessors * 10
+    TmpFile.with_file do |f|
+      RbbtSemaphore.with_semaphore(1) do |sem|
+        Misc.bootstrap (1..max).to_a do
+          Open.open(f, :mode => 'a') do |sin|
+            sin.puts Process.pid.to_s
+          end
+          Misc.bootstrap (1..10).to_a do
+            RbbtSemaphore.synchronize(sem) do
+              Open.open(f, :mode => 'a') do |sin|
+                sin.puts [Process.ppid.to_s, Process.pid.to_s] * ":"
+              end
+            end
+          end
+        end
+      end
+      assert_equal max * 10 + max, Open.read(f).split("\n").length
+      assert_equal Etc.nprocessors * 2, Open.read(f).split("\n").uniq.length
+    end
+
+  end
 end
 

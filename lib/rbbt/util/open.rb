@@ -94,7 +94,8 @@ module Open
              end
 
     begin
-      wget_options = options.merge( '-O' => '-')
+      wget_options = options.dup
+      wget_options = wget_options.merge( '-O' => '-') unless options.include?('--output-document')
       wget_options[:pipe] = pipe unless pipe.nil?
       wget_options[:stderr] = stderr unless stderr.nil?
 
@@ -823,5 +824,9 @@ module Open
 
   def self.broken_link?(path)
     File.symlink?(path) && ! File.exists?(File.readlink(path))
+  end
+
+  def self.download(url, path)
+    Open.wget(url, "--output-document" => path)
   end
 end

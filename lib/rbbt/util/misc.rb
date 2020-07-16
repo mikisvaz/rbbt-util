@@ -2,6 +2,7 @@ require 'lockfile'
 require 'digest/md5'
 require 'cgi'
 require 'zlib'
+require 'etc'
 require 'rubygems/package'
 
 require 'rbbt/util/tar'

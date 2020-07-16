@@ -727,6 +727,8 @@ module TSV
         Log.exception $!
         abort_stream(into, $!)
         raise $!
+      ensure
+        Log::ProgressBar.remove_bar(bar) if bar
       end
 
       into
