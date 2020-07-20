@@ -43,7 +43,11 @@ etc_dir = Rbbt.etc
 load_file etc_dir['app.d/pre.rb'].find 
 
 app.get '/' do
-  redirect to(File.join('/', wf.to_s))
+  begin
+    template_render('main', params, 'main', :cache_type => :asynchronous)
+  rescue TemplateMissing
+    redirect to(File.join('/', wf.to_s))
+  end
 end
 
 #{{{ BASE
