@@ -69,11 +69,11 @@ class TestTSV < Test::Unit::TestCase
   end
 
   def test_libdir
-    assert File.exist? TestResource[].share.Rlib["util.R"].find :lib
-    assert File.exist? TestResource[].share.Rlib["util.R"].find 
+    assert File.exist?(TestResource[].share.Rlib["util.R"].find(:lib))
+    assert File.exist?(TestResource[].share.Rlib["util.R"].find)
   end
 
-  def test_server
+  def __test_server
     require 'rbbt/sources/organism'
     TmpFile.with_file :extension => 'gz' do |tmp|
       Organism.get_from_server("Hsa/b37/known_sites/dbsnp_138.vcf.gz", tmp, 'http://rbbt.bsc.es')
