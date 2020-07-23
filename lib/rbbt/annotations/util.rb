@@ -74,7 +74,7 @@ module Annotated
 
     object = case
              when literal_pos
-               values[literal_pos]
+               values[literal_pos].tap{|o| o.force_encoding(Encoding.default_external)}
              else
                id.dup
              end
@@ -119,7 +119,7 @@ module Annotated
                fields = AnnotatedArray === annotations ? annotations.annotations : annotations.compact.first.annotations
                fields << :annotation_types
 
-             when (fields == [:literal] and not annotations.compact.empty?)
+             when (fields == [:literal] and ! annotations.compact.empty?)
                fields << :literal
 
              when (fields == [:all] && Annotated === annotations)
