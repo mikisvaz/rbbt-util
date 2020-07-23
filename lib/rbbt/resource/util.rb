@@ -1,6 +1,6 @@
 module Path
 
-  def self.caller_lib_dir(file = nil, relative_to = 'lib')
+  def self.caller_lib_dir(file = nil, relative_to = ['lib', 'bin'])
     file = caller.reject{|l| 
       l =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
       l =~ /rbbt\/resource\/path\.rb/ or
@@ -9,13 +9,14 @@ module Path
       l =~ /progress-monitor\.rb/ 
     }.first.sub(/\.rb[^\w].*/,'.rb') if file.nil?
 
+    relative_to = [relative_to] unless Array === relative_to
     file = File.expand_path(file)
-    return Path.setup(file) if File.exist? File.join(file, relative_to)
+    return Path.setup(file) if relative_to.select{|d| File.exist? File.join(file, d)}.any?
 
     while file != '/'
       dir = File.dirname file
 
-      return dir if File.exist? File.join(dir, relative_to)
+      return dir if relative_to.select{|d| File.exist? File.join(dir, d)}.any?
 
       file = File.dirname file
     end
