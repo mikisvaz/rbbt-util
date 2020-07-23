@@ -13,7 +13,7 @@ module Path
     string.resource = resource
     string.search_paths = search_paths
     string.search_order = search_order
-    string.libdir = libdir || Path.caller_lib_dir
+    string.libdir = libdir || Path.caller_lib_dir 
     string
   end
 
@@ -52,11 +52,11 @@ module Path
   def join(name)
     raise "Invalid path: #{ self }" if self.nil?
     new = if self.empty?
-            self.annotate name.to_s.dup
+            self.annotate name.to_s.dup.chomp
           else
-            self.annotate File.join(self, name.to_s)
+            self.annotate File.join(self, name.to_s.chomp)
           end
-    new.original = File.join(self.original, name.to_s) if self.original
+    new.original = File.join(self.original, name.to_s.chomp) if self.original
     new
   end
 
