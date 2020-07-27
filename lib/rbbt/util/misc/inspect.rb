@@ -290,7 +290,7 @@ module Misc
             if obj.exists?
               if obj.directory?
                 files = obj.glob("**/*")
-                "directory: #{files}"
+                "directory: #{Misc.fingerprint(files)}"
               else
                 "file: " << obj << "--" << mtime_str(obj)
               end

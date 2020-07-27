@@ -340,6 +340,11 @@ class RemoteStep < Step
     @inputs = new_inputs
     @info = nil
   end
+
+  def init_info(*args)
+    i = {:status => :waiting, :pid => Process.pid, :path => path}
+    i[:dependencies] = dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies
+  end
 end
 
 require 'rbbt/workflow/remote_workflow/remote_step/rest'

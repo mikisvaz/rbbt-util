@@ -76,7 +76,7 @@ module Path
       return [] unless self.exists? 
       found = self.find
       exp = File.join(found, pattern)
-      paths = Dir.glob(exp).collect{|f| Path.setup(f, self.resource, self.pkgdir)}
+      paths = Dir.glob(exp).collect{|f| self.annotate(f) }
 
       paths.each do |p|
         p.original = File.join(found.original, p.sub(/^#{found}/, ''))
