@@ -202,7 +202,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     stream = datafile_test('identifiers').open 
     dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
     dumper.init
-    TSV.traverse stream, :head => head, :into => dumper do |k,v|
+    TSV.traverse stream, :head => head, :into => dumper, :bar => true do |k,v|
       k = k.first
       [k,v]
     end
@@ -210,6 +210,26 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     res = TSV.open(dumper.stream)
 
     assert_equal head, res.size
+  end
+
+  def test_traverse_into_dumper_error_bar
+    require 'rbbt/sources/organism'
+
+    head = 2_000
+
+    stream = datafile_test('identifiers').open 
+    dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
+    dumper.init
+    TSV.traverse stream, :head => head, :into => dumper, :bar => true do |k,v|
+      k = k.first
+      raise 
+      [k,v]
+    end
+
+    assert_raise do 
+      res = TSV.open(dumper.stream)
+    end
+
   end
 
   def test_traverse_into_dumper_threads
