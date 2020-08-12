@@ -24,7 +24,7 @@ class Step
           Log.medium "Not duplicating stream #{stream_key}"
           STREAM_CACHE[stream_key] = stream
         when File
-          if Open.exists? current.path 
+          if Open.exists?(current.path)
             Log.medium "Reopening file #{stream_key}"
             Open.open(current.path)
           else
@@ -97,7 +97,7 @@ class Step
       end
 
       job.dup_inputs unless status == 'done' or job.started?
-      job.init_info unless status == 'noinfo' or status == 'done' or job.started?
+      job.init_info(status == 'noinfo') unless status == 'waiting' || status == 'done' || job.started?
 
       canfail = ComputeDependency === job && job.canfail?
     end
