@@ -316,22 +316,30 @@ module TSV
 
   def to_single
     new = {}
-    case type
-    when :double
+
+    if block_given?
       through do |k,v|
-        new[k] = v.first.first
+        new[k] = yield v
       end
-    when :flat
-      through do |k,v|
-        new[k] = v.first
-      end
-    when :single
-      return self
-    when :list
-      through do |k,v|
-        new[k] = v.first
+    else
+      case type
+      when :double
+        through do |k,v|
+          new[k] = v.first.first
+        end
+      when :flat
+        through do |k,v|
+          new[k] = v.first
+        end
+      when :single
+        return self
+      when :list
+        through do |k,v|
+          new[k] = v.first
+        end
       end
     end
+
     self.annotate(new)
     new.type = :single
     new.fields = [new.fields.first] if new.fields.length > 1
