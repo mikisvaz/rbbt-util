@@ -4,8 +4,13 @@ module Workflow
   Rbbt.claim Rbbt.software.opt.jar["wdltool.jar"], :url, "https://github.com/broadinstitute/wdltool/releases/download/0.14/wdltool-0.14.jar"
 
   def run_cromwell(file, work_dir, options = {})
+    cromwell_inputs_file = Misc.process_options options, :cromwell_inputs_file
     jar = Rbbt.software.opt.jar["cromwell.jar"].produce.find
-    CMD.cmd_log("java -jar '#{jar}' run '#{file}' --workflow-root='#{work_dir}'", options.merge("add_option_dashes" => true))
+    if cromwell_inputs_file
+      CMD.cmd_log("java -jar '#{jar}' run '#{file}' --workflow-root='#{work_dir}' -i #{cromwell_inputs_file}", options.merge("add_option_dashes" => true))
+    else
+      CMD.cmd_log("java -jar '#{jar}' run '#{file}' --workflow-root='#{work_dir}'", options.merge("add_option_dashes" => true))
+    end
   end
 
   def load_cromwell(file)
