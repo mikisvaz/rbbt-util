@@ -58,13 +58,13 @@ module TSV
 
     identifiers, persist_input, compact = Misc.process_options options, :identifiers, :persist, :compact
     identifiers = tsv.identifier_files.first if identifiers.nil?
-    identifiers = Organism.identifiers(tsv.namespace) if identifiers.nil? and tsv.namespace and Organism.identifiers(tsv.namespace).exists?
+    identifiers = Organism.identifiers(tsv.namespace) if defined?(Organism) && identifiers.nil? && tsv.namespace && Organism.identifiers(tsv.namespace).exists?
     identifiers.namespace ||= tsv.namespace
 
     fields = (identifiers and identifiers.all_fields.include?(field))? [field] : nil 
     #index = identifiers.index :target => format, :fields => fields, :persist => persist_input, :order => true
 
-    grep = Organism.blacklist_genes(tsv.namespace).list  if identifiers.namespace and Organism.blacklist_genes(tsv.namespace).exists?
+    grep = Organism.blacklist_genes(tsv.namespace).list  if defined?(Organism) && identifiers.namespace && Organism.blacklist_genes(tsv.namespace).exists?
     if fields.nil?
       index = identifiers.index(:data_tsv_grep => grep, :data_invert_grep => true, :target => format, :persist => true, :order => true, :unnamed => true, :data_persist => true)
     else

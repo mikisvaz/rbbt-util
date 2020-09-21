@@ -412,7 +412,9 @@ module Path
   end
 
   def replace_extension(new_extension = nil, multiple = false)
-    if multiple
+    if String === multiple
+      new_path = self.sub(/(\.[^\.\/]{1,5})(.#{multiple})?$/,'')
+    elsif multiple
       new_path = self.sub(/(\.[^\.\/]{1,5})+$/,'')
     else
       new_path = self.sub(/\.[^\.\/]{1,5}$/,'')
