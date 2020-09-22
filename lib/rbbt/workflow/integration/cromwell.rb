@@ -1,9 +1,9 @@
-module Workflow
+module Cromwell
 
   Rbbt.claim Rbbt.software.opt.jar["cromwell.jar"], :url, "https://github.com/broadinstitute/cromwell/releases/download/48/cromwell-48.jar"
   Rbbt.claim Rbbt.software.opt.jar["wdltool.jar"], :url, "https://github.com/broadinstitute/wdltool/releases/download/0.14/wdltool-0.14.jar"
 
-  def run_cromwell(file, work_dir, options = {})
+  def self.run_cromwell(file, work_dir, options = {})
     cromwell_inputs_file = Misc.process_options options, :cromwell_inputs_file
     jar = Rbbt.software.opt.jar["cromwell.jar"].produce.find
     if cromwell_inputs_file
@@ -12,7 +12,9 @@ module Workflow
       CMD.cmd_log("java -jar '#{jar}' run '#{file}' --workflow-root='#{work_dir}'", options.merge("add_option_dashes" => true))
     end
   end
+end
 
+module Workflow
   def load_cromwell(file)
     jar = Rbbt.software.opt.jar["wdltool.jar"].produce.find
     inputs = JSON.load(CMD.cmd("java -jar '#{jar}' inputs '#{file}'"))
