@@ -437,11 +437,13 @@ class Step
     rec_dependencies = self.rec_dependencies
     return [] if rec_dependencies.empty?
     canfail_paths = self.canfail_paths
+    dep = rec_dependencies.select{|d| d.task_name.to_s == 'contamination'}.first
+    iif [dep, dep.error?, dep.aborted?, dep.waiting?, ((dep.error? || dep.aborted? || dep.waiting?) && (! dep.recoverable_error? || canfail_paths.include?(dep.path)))] if dep
     dirty_files = rec_dependencies.reject{|dep|
       (defined?(WorkflowRemoteClient) && WorkflowRemoteClient::RemoteStep === dep) || 
         ! Open.exists?(dep.info_file) ||
         (dep.path && (Open.exists?(dep.path) || Open.remote?(dep.path))) || 
-        ((dep.error? || dep.aborted? || dep.waiting?) && (! dep.recoverable_error? || canfail_paths.include?(dep.path)))
+        ((dep.error? || dep.aborted?) && (! dep.recoverable_error? || canfail_paths.include?(dep.path)))
     }
   end
 
@@ -508,12 +510,12 @@ class Step
 
   def nopid?
     pid = info[:pid] || Open.exists?(pid_file)
-    ! pid && ! (status.nil? || status == :aborted || status == :done || status == :error)
+    ! pid && ! (status.nil? || status == :aborted || status == :done || status == :error || status == :cleaned)
   end
 
   def aborted?
     status = self.status
-    status == :aborted || ((status != :noinfo && status != :setup && status != :noinfo) && nopid?)
+    status == :aborted || ((status != :cleaned && status != :noinfo && status != :setup && status != :noinfo) && nopid?)
   end
 
   # {{{ INFO
