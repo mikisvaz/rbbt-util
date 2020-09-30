@@ -438,7 +438,6 @@ class Step
     return [] if rec_dependencies.empty?
     canfail_paths = self.canfail_paths
     dep = rec_dependencies.select{|d| d.task_name.to_s == 'contamination'}.first
-    iif [dep, dep.error?, dep.aborted?, dep.waiting?, ((dep.error? || dep.aborted? || dep.waiting?) && (! dep.recoverable_error? || canfail_paths.include?(dep.path)))] if dep
     dirty_files = rec_dependencies.reject{|dep|
       (defined?(WorkflowRemoteClient) && WorkflowRemoteClient::RemoteStep === dep) || 
         ! Open.exists?(dep.info_file) ||

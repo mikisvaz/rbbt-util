@@ -451,12 +451,15 @@ EOF
           out = CMD.cmd("tail -f '#{fout}'", :pipe => true) if File.exists?(fout) and not tail == :STDERR
           err = CMD.cmd("tail -f '#{ferr}'", :pipe => true) if File.exists?(ferr)
 
-          Misc.consume_stream(err, true, STDERR) if err
-          Misc.consume_stream(out, true, STDOUT) if out
+          terr = Misc.consume_stream(err, true, STDERR) if err
+          tout = Misc.consume_stream(out, true, STDOUT) if out
 
           sleep 3 while CMD.cmd("squeue --job #{job}").read.include? job.to_s
+        rescue Aborted
         ensure
           begin
+            terr.exit if terr
+            tout.exit if tout
             err.close if err
             err.join if err
           rescue Exception
