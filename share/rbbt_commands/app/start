@@ -54,9 +54,9 @@ app = ARGV.shift
 
 ENV["RServe-session"] = options[:RServe_session] || app
 
-app_dir = Rbbt.etc.app_dir.exists? ? Path.setup(Rbbt.etc.app_dir.read.strip) : Rbbt.apps.find
+app_dir = Rbbt.etc.app_dir.exists? ? Path.setup(Rbbt.etc.app_dir.read.strip) : Rbbt.apps
 
-app_dir = app_dir[app]
+app_dir = app_dir[app].find
 
 server = options[:server] || 'puma'
 Misc.in_dir(app_dir) do
