@@ -240,7 +240,7 @@ module Workflow
 
           inputs.each do |input, type, file|
             case type
-            when :tsv, :array, :text
+            when :tsv, :array, :text, :file
               lines = file.read.split("\n")
               head = lines[0..5].compact * "\n\n"
               head = head[0..500]

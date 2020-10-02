@@ -85,7 +85,11 @@ class RemoteWorkflow
 
       RemoteWorkflow::REST.__prepare_inputs_for_restclient(params)
       name = RemoteWorkflow.capture_exception do
-        RestClient.post(self.encode(url), params)
+        begin
+          RestClient.post(self.encode(url), params)
+        rescue RestClient::MovedPermanently, RestClient::Found, RestClient::TemporaryRedirect
+          raise RbbtException, "REST end-point moved to: #{$!.response.headers[:location]}"
+        end
       end
 
       Log.debug{ "RestClient jobname returned for #{ url } - #{Misc.fingerprint params}: #{name}" }
