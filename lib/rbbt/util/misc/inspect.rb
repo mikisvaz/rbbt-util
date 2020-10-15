@@ -292,7 +292,7 @@ module Misc
                 files = obj.glob("**/*")
                 "directory: #{Misc.fingerprint(files)}"
               else
-                "file: " << obj << "--" << mtime_str(obj)
+                "file: " << Open.realpath(obj) << "--" << mtime_str(obj)
               end
             else
               obj + " (file missing)"
