@@ -110,12 +110,14 @@ class Step
     task_info = workflow.task_info(task_name)
     input_types = task_info[:input_types]
     task_inputs = task_info[:inputs]
+    input_defaults = task_info[:input_defaults]
 
     inputs = {}
     job.recursive_inputs.zip(job.recursive_inputs.fields).each do |value,name|
       next unless task_inputs.include? name.to_sym
       next if options and ! options.include?(name)
       next if value.nil?
+      next if input_defaults[name] == value
       inputs[name] = value
     end
 
@@ -125,7 +127,7 @@ class Step
     end
     save_inputs(inputs, input_types, dir)
 
-    inputs.any?
+    inputs.keys
   end
 
   def name
