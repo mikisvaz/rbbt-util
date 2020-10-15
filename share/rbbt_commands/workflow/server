@@ -25,6 +25,7 @@ $ rbbt workflow server [options] <Workflow>
 --stream Activate streaming of workflow tasks
 -fs--file_server Activate file serving for resources
 -mj--monitor_jobs Monitor jobs (UNSAFE)
+-a--app_dir* Application execution directory
 --export_all Export all workflow tasks (use with caution!)
 --export* Export workflow tasks (asynchronous)
 --export_asynchronous* Export workflow tasks as asynchronous
@@ -74,6 +75,7 @@ sync_exports = options[:export_synchronous].split(/\s*,/) if options[:export_syn
 exec_exports = options[:export_exec].split(/\s*,/) if options[:export_exec]
 
 TmpFile.with_file do |app_dir|
+  app_dir = options[:app_dir] if options[:app_dir]
   Misc.in_dir(app_dir) do
     app_dir = Path.setup(app_dir.dup)
     Open.write(app_dir.etc.target_workflow.find, workflow)
