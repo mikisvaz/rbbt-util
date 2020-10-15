@@ -26,105 +26,106 @@ module Workflow
     raise "No '#{name}' task in '#{self.to_s}' Workflow" if task.nil?
     id = File.join(self.to_s, name.to_s)
     @task_info ||= {}
-    @task_info[id] ||= begin description = task.description
-                           result_description = task.result_description
-                           result_type = task.result_type
-                           inputs = rec_inputs(name).uniq
-                           input_types = rec_input_types(name)
-                           input_descriptions = rec_input_descriptions(name)
-                           input_use = rec_input_use(name)
-                           input_defaults = rec_input_defaults(name)
-                           input_options = rec_input_options(name)
-                           extension = task.extension
-                           export = case
-                                    when (synchronous_exports.include?(name.to_sym) or synchronous_exports.include?(name.to_s))
-                                      :synchronous
-                                    when (asynchronous_exports.include?(name.to_sym) or asynchronous_exports.include?(name.to_s))
-                                      :asynchronous
-                                    when (exec_exports.include?(name.to_sym) or exec_exports.include?(name.to_s))
-                                      :exec
-                                    when (stream_exports.include?(name.to_sym) or stream_exports.include?(name.to_s))
-                                      :stream
-                                    else
-                                      :none
-                                    end
+    @task_info[id] ||= begin 
+                         description = task.description
+                         result_description = task.result_description
+                         result_type = task.result_type
+                         inputs = rec_inputs(name).uniq
+                         input_types = rec_input_types(name)
+                         input_descriptions = rec_input_descriptions(name)
+                         input_use = rec_input_use(name)
+                         input_defaults = rec_input_defaults(name)
+                         input_options = rec_input_options(name)
+                         extension = task.extension
+                         export = case
+                                  when (synchronous_exports.include?(name.to_sym) or synchronous_exports.include?(name.to_s))
+                                    :synchronous
+                                  when (asynchronous_exports.include?(name.to_sym) or asynchronous_exports.include?(name.to_s))
+                                    :asynchronous
+                                  when (exec_exports.include?(name.to_sym) or exec_exports.include?(name.to_s))
+                                    :exec
+                                  when (stream_exports.include?(name.to_sym) or stream_exports.include?(name.to_s))
+                                    :stream
+                                  else
+                                    :none
+                                  end
 
-                           dependencies = task_dependencies[name].select{|dep| String === dep or Symbol === dep}
-                           info = { :id => id,
-                             :description => description,
-                             :export => export,
-                             :inputs => inputs,
-                             :input_types => input_types,
-                             :input_descriptions => input_descriptions,
-                             :input_defaults => input_defaults,
-                             :input_options => input_options,
-                             :input_use => input_use,
-                             :result_type => result_type,
-                             :result_description => result_description,
-                             :dependencies => dependencies,
-                             :extension => extension
-                           }
-                         end
+                         dependencies = task_dependencies[name].select{|dep| String === dep or Symbol === dep}
+                         { :id => id,
+                           :description => description,
+                           :export => export,
+                           :inputs => inputs,
+                           :input_types => input_types,
+                           :input_descriptions => input_descriptions,
+                           :input_defaults => input_defaults,
+                           :input_options => input_options,
+                           :input_use => input_use,
+                           :result_type => result_type,
+                           :result_description => result_description,
+                           :dependencies => dependencies,
+                           :extension => extension
+                         }
+                       end
   end
 
   def rec_dependencies(taskname)
     @rec_dependencies ||= {}
     @rec_dependencies[taskname] ||= begin
-                            if task_dependencies.include? taskname
+                                      if task_dependencies.include? taskname
 
-                              deps = task_dependencies[taskname]
+                                        deps = task_dependencies[taskname]
 
-                              #all_deps = deps.select{|dep| String === dep or Symbol === dep or Array === dep}
+                                        #all_deps = deps.select{|dep| String === dep or Symbol === dep or Array === dep}
 
-                              all_deps = []
-                              deps.each do |dep| 
-                                if DependencyBlock === dep
-                                  all_deps << dep.dependency if dep.dependency
-                                else
-                                  all_deps << dep unless Proc === dep
-                                end
+                                        all_deps = []
+                                        deps.each do |dep| 
+                                          if DependencyBlock === dep
+                                            all_deps << dep.dependency if dep.dependency
+                                          else
+                                            all_deps << dep unless Proc === dep
+                                          end
 
-                                begin
-                                  case dep
-                                  when Array
-                                    wf, t, o = dep
+                                          begin
+                                            case dep
+                                            when Array
+                                              wf, t, o = dep
 
-                                    wf.rec_dependencies(t.to_sym).each do |d|
-                                      if Array === d
-                                        new = d.dup
-                                      else
-                                        new = [dep.first, d]
-                                      end
+                                              wf.rec_dependencies(t.to_sym).each do |d|
+                                                if Array === d
+                                                  new = d.dup
+                                                else
+                                                  new = [dep.first, d]
+                                                end
 
-                                      if Hash === o and not o.empty? 
-                                        if Hash === new.last
-                                          hash = new.last.dup
-                                          o.each{|k,v| hash[k] ||= v}
-                                          new[new.length-1] = hash
-                                        else
-                                          new.push o.dup
+                                                if Hash === o and not o.empty? 
+                                                  if Hash === new.last
+                                                    hash = new.last.dup
+                                                    o.each{|k,v| hash[k] ||= v}
+                                                    new[new.length-1] = hash
+                                                  else
+                                                    new.push o.dup
+                                                  end
+                                                end
+
+                                                all_deps << new
+                                              end if wf && t
+
+                                            when String, Symbol
+                                              rec_deps = rec_dependencies(dep.to_sym)
+                                              all_deps.concat rec_deps
+                                            when DependencyBlock
+                                              dep = dep.dependency
+                                              raise TryAgain
+                                            end
+                                          rescue TryAgain
+                                            retry
+                                          end
                                         end
+                                        all_deps.uniq
+                                      else
+                                        []
                                       end
-
-                                      all_deps << new
-                                    end if wf && t
-
-                                  when String, Symbol
-                                    rec_deps = rec_dependencies(dep.to_sym)
-                                    all_deps.concat rec_deps
-                                  when DependencyBlock
-                                    dep = dep.dependency
-                                    raise TryAgain
-                                  end
-                                rescue TryAgain
-                                  retry
-                                end
-                              end
-                              all_deps.uniq
-                            else
-                              []
-                            end
-                          end
+                                    end
   end
 
   def task_from_dep(dep)
@@ -182,7 +183,7 @@ module Workflow
       acc
     }.tap{|h| IndiferentHash.setup(h)}
   end
-  
+
   def rec_input_use(taskname)
     task = task_from_dep(taskname)
     deps = rec_dependencies(taskname)
@@ -474,7 +475,7 @@ module Workflow
     else
       workdir_find = workdir
     end
- 
+
     workdir_find = File.expand_path(workdir_find)
     path = File.expand_path(path)
     dir = File.dirname(path)
