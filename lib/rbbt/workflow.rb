@@ -364,6 +364,7 @@ module Workflow
       raise ParameterException, "Inputs #{Misc.humanize_list(missing_inputs)} are required but were not provided or are nil"
     end
 
+    # jobname => true sets the value of the input to the name of the job
     if task.input_options
       jobname_input = task.input_options.select{|i,o| o[:jobname]}.collect{|i,o| i }.first
     else
