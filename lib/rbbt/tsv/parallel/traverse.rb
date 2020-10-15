@@ -377,6 +377,7 @@ module TSV
         obj.run(true) unless obj.done? || obj.started? || obj.result
 
         stream = obj.get_stream
+        options = {:type => :array}.merge(options) if obj.result_type == :array
 
         if stream
           traverse_obj(stream, options, &block)
