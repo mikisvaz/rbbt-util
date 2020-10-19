@@ -25,6 +25,7 @@ module Persist
   MEMORY = {} unless defined? MEMORY
   MAX_FILE_LENGTH = 150
 
+  # Return non-false if the first file is newer than the second file
   def self.newer?(path, file)
     return true if not Open.exists?(file)
     path = path.find if Path === path
