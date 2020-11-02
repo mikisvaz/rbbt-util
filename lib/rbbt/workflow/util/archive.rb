@@ -262,6 +262,7 @@ puts resource[path].find(search_path)
 
     job_files.each do |file|
       begin
+        Log.debug "Purging #{file}"
         Open.rm_rf file if Open.exists?(file)
       rescue
         Log.warn "Could not erase '#{file}': #{$!.message}"

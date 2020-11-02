@@ -113,7 +113,7 @@ end
   end
 
   def self.is_filename?(string)
-    return true if defined? PATH and Path === string
+    return true if defined? Path and Path === string
     return true if string.respond_to? :exists
     return true if String === string and string.length < 265 and File.exist?(string)
     return false

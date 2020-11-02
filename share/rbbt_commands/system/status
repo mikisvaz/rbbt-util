@@ -201,7 +201,7 @@ workflows.sort.each do |workflow,tasks|
                    Step::INFO_SERIALIZER.load(f)
                  end
                rescue
-                 Log.exception $!
+                 #Log.exception $!
                  {:status => :noinfo}
                end
         IndiferentHash.setup(info)

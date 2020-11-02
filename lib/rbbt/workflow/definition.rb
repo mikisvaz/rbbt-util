@@ -83,7 +83,7 @@ module Workflow
         self.archive_deps
         self.dependencies = self.dependencies - [dep]
         Open.rm_rf self.files_dir if Open.exist? self.files_dir
-        FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist? dep.files_dir
+        FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist?(dep.files_dir)
         Open.ln_h dep.path, self.tmp_path
         case remove.to_s
         when 'true'
@@ -92,8 +92,10 @@ module Workflow
           dep.recursive_clean
         end
       else
-        Open.rm_rf self.files_dir 
-        Open.link dep.files_dir, self.files_dir
+        if Open.exists?(dep.files_dir)
+          Open.rm_rf self.files_dir 
+          Open.link dep.files_dir, self.files_dir
+        end
         Open.link dep.path, self.path
       end
       nil

@@ -15,7 +15,7 @@ module Rbbt::Config
   end
 
   def self.load_file(file)
-    Log.debug "Loading file: #{ file }"
+    Log.debug "Loading config file: #{ file }"
     TSV.traverse file, :type => :array do |line|
       next if line =~ /^#/
       key, value, *tokens = line.strip.split(/\s/)
@@ -85,6 +85,7 @@ module Rbbt::Config
     priorities
   end
 
+  # For equal priorities the matching prioritizes tokens ealier in the list
   def self.get(key, *tokens)
     options = tokens.pop if Hash === tokens.last
     default = options.nil? ? nil : options[:default]

@@ -3,7 +3,6 @@
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
-require 'rbbt/workflow/remote/ssh/get'
 
 $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
@@ -14,8 +13,7 @@ Remove a job and its dependencies
 $ rbbt purge [options] <job_path> 
 
 -h--help Print this help
--t--test Do a verbose dry run
--r--relocate Include relocated dependencies
+-r--recursive Remove recursively
 
 EOF
 if options[:help]
@@ -31,4 +29,4 @@ path, search_path, _sep, *other = ARGV
 
 raise ParameterException, "No path given" if path.nil? 
 
-Step.purge(path, options[:relocate])
+Step.purge(path, options[:recursive])

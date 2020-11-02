@@ -84,6 +84,7 @@ class Step
   end
 
   def load_dependencies_from_info
+    relocated = nil
     @dependencies = (self.info[:dependencies] || []).collect do |task,name,dep_path|
       if Open.exists?(dep_path) || Open.exists?(dep_path + '.info')
         Workflow._load_step dep_path
@@ -419,8 +420,8 @@ class Step
       Misc.insist do
         Open.rm info_file if Open.exists?(info_file)
         Open.rm md5_file if Open.exists?(md5_file)
-        Open.rm path if (Open.exists?(path) or Open.broken_link?(path))
-        Open.rm_rf files_dir if Open.exists?(files_dir)
+        Open.rm path if (Open.exists?(path) || Open.broken_link?(path))
+        Open.rm_rf files_dir if Open.exists?(files_dir) || Open.broken_link?(files_dir)
         Open.rm pid_file if Open.exists?(pid_file)
         Open.rm tmp_path if Open.exists?(tmp_path)
       end
