@@ -624,6 +624,8 @@ module TSV
   def self.traverse(obj, options = {}, &block)
     into = options[:into]
 
+    into = options[:into] = Open.open(into, :mode => "w") if Misc.is_filename?(into)
+
     case into
     when :stream
       sout = Misc.open_pipe false, false do |sin|                                                                                                                                           
