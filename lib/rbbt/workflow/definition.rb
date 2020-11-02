@@ -81,6 +81,7 @@ module Workflow
       if forget
         remove = config :remove_dep_tasks, :remove_dep_tasks, :default => REMOVE_DEP_TASKS
         self.archive_deps
+        self.copy_files_dir
         self.dependencies = self.dependencies - [dep]
         Open.rm_rf self.files_dir if Open.exist? self.files_dir
         FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist?(dep.files_dir)

@@ -29,8 +29,6 @@ path = ARGV[0]
 raise ParameterException, "No path given" if path.nil?
 step = Workflow.load_step path
 
-
-iif step.rec_dependencies
-
 step.archive_deps
+step.copy_files_dir
 step.set_info :dependencies, []

@@ -397,7 +397,7 @@ module Open
     if dir_sub_path_source.nil? and dir_sub_path_target.nil?
       FileUtils.mkdir_p File.dirname(target) unless File.exist? File.dirname(target)
       tmp_target = File.join(File.dirname(target), '.tmp_mv.' + File.basename(target))
-      FileUtils.cp source, tmp_target
+      FileUtils.cp_r source, tmp_target
       FileUtils.mv tmp_target, target
       return
     end

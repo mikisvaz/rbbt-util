@@ -109,6 +109,14 @@ class Step
     @inputs || []
   end
 
+  def copy_files_dir
+    if File.symlink?(self.files_dir)
+      realpath = Open.realpath(self.files_dir)
+      Open.rm self.files_dir
+      Open.cp realpath, self.files_dir
+    end
+  end
+
   def archive_deps
     self.set_info :archived_info, archived_info
     self.set_info :archived_dependencies, info[:dependencies]
@@ -455,12 +463,15 @@ class Step
     return [] if dependencies.nil? or dependencies.empty?
 
     new_dependencies = []
+    archived_deps = self.info[:archived_info] ? self.info[:archived_info].keys : []
+
     dependencies.each{|step| 
       #next if self.done? && Open.exists?(info_file) && info[:dependencies] && info[:dependencies].select{|task,name,path| path == step.path }.empty?
-      next if seen.include? step
+      next if archived_deps.include? step.path
+      next if seen.include? step.path
       next if self.done? && need_run && ! updatable?
 
-      r = step.rec_dependencies(need_run, new_dependencies)
+      r = step.rec_dependencies(need_run, new_dependencies.collect{|d| d.path})
       new_dependencies.concat r
       new_dependencies << step
     }
