@@ -550,9 +550,17 @@ module TSV
         "\t" << ([""] * fields.length) * "\t" << "\n"
       end
     when Array
-      "\t" << values.collect{|v| Array === v ? v * "|" : v} * "\t" << "\n"
+      if fields.nil? or fields.empty?
+        "\n"
+      else
+        "\t" << values.collect{|v| Array === v ? v * "|" : v} * "\t" << "\n"
+      end
     else
-      "\t" << values.to_s << "\n"
+      if fields.nil? or fields.empty?
+        "\n"
+      else
+        "\t" << values.to_s << "\n"
+      end
     end
   end
 
