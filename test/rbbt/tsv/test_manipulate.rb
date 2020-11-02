@@ -4,7 +4,7 @@ require 'rbbt/tsv/manipulate'
 
 class TestTSVManipulate < Test::Unit::TestCase
 
-  def _test_zipped
+  def test_zipped
     content =<<-EOF
 #Id    ValueA    ValueB ValueC
 rowA    A|AA    B|BB  C|CC
@@ -114,6 +114,26 @@ row2 A B C
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(File.open(filename), :type => :double, :sep => /\s/)
       assert_equal [["a"],["c"]], tsv.reorder(:key, ["ValueA", "Comment"])["row1"]
+    end
+  end
+
+  def test_slice_empty
+    content =<<-EOF
+#ID ValueA ValueB Comment
+row1 a b c
+row2 A B C
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(File.open(filename), :type => :list, :sep => /\s/)
+      tsv = tsv.slice []
+      assert tsv.fields.empty?
+      TmpFile.with_file do |tmpfile|
+        iii tsv.to_s
+        Open.write(tmpfile, tsv.to_s)
+        tsv = TSV.open tmpfile
+        assert tsv.fields.empty?
+      end
     end
   end
 

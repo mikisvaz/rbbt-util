@@ -392,6 +392,20 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     assert_equal size, stream.read.split("\n").length
   end
 
+  def test_traverse_into_path
+    size = 100
+    array = (1..size).to_a.collect{|n| n.to_s}
+    TmpFile.with_file do |tmpfile|
+      Path.setup(tmpfile)
+      io = TSV.traverse array, :into => tmpfile do |e|
+        e
+      end
+      io.join
+      assert_equal size, Open.read(tmpfile).split("\n").length
+    end
+  end
+
+
   def test_traverse_progress
     size = 1000
     array = (1..size).to_a.collect{|n| n.to_s}
