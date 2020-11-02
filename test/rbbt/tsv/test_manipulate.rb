@@ -4,7 +4,7 @@ require 'rbbt/tsv/manipulate'
 
 class TestTSVManipulate < Test::Unit::TestCase
 
-  def test_zipped
+  def _test_zipped
     content =<<-EOF
 #Id    ValueA    ValueB ValueC
 rowA    A|AA    B|BB  C|CC

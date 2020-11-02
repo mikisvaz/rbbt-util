@@ -53,7 +53,8 @@ module Workflow
 
       IndiferentHash.setup(resources)
 
-      rules["default_resources"].each{|k,v| resources[k] ||= v } if rules["default_resources"]
+      default_resources = rules["default_resources"] || rules["defaults"]["resources"]
+      default_resources.each{|k,v| resources[k] ||= v } if default_resources
 
       resources
     end
