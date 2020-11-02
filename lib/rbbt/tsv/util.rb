@@ -184,7 +184,11 @@ module TSV
     str = "" 
     str << preamble.strip << "\n" if preamble and not preamble.empty?
     if fields
-      str << header_hash << (key_field || "ID").to_s << sep << (fields * sep) << "\n" 
+      if fields.empty?
+        str << header_hash << (key_field || "ID").to_s << "\n" 
+      else
+        str << header_hash << (key_field || "ID").to_s << sep << (fields * sep) << "\n" 
+      end
     end
 
     str
