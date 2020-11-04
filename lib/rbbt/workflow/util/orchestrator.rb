@@ -12,6 +12,7 @@ module Workflow
         workload.merge!(job_workload(dep))
         workload[job] += workload[dep]
         workload[job] << dep
+        workload[job].uniq!
       end
 
       job.input_dependencies.each do |dep|
@@ -19,6 +20,7 @@ module Workflow
         workload.merge!(job_workload(dep))
         workload[job] += workload[dep]
         workload[job] << dep
+        workload[job].uniq!
       end
 
       workload
@@ -32,7 +34,7 @@ module Workflow
       return IndiferentHash.setup(rules["defaults"]) unless rules[workflow][task_name]
 
       job_rules = IndiferentHash.setup(rules[workflow][task_name])
-      rules["defaults"].each{|k,v| job_rules[k] ||= v } if rules["defaults"]
+      rules["defaults"].each{|k,v| job_rules[k] = v if job_rules[k].nil? } if rules["defaults"]
       job_rules
     end
 
@@ -97,6 +99,7 @@ module Workflow
 
     def release_resources(job)
       if resources_used[job]
+        Log.debug "Orchestrator releasing resouces from #{job.path}"
         resources_used[job].each do |resource,value| 
           next if resource == 'size'
           resources_requested[resource] -= value.to_i
@@ -140,30 +143,51 @@ module Workflow
       end
     end
 
+    def erase_job_dependencies(job, rules, workload, top_level_jobs)
+      job.dependencies.each do |dep|
+        next if top_level_jobs.include? dep.path
+        next unless Orchestrator.job_rules(rules, dep)["erase"].to_s == 'true'
+
+        list = (workload.keys - [job]).collect{|pending| pending.dependencies}.flatten
+        next if list.include?(dep)
+
+        Log.high "Erasing #{dep.path} from #{job.path}"
+        job.archive_deps
+        job.copy_files_dir
+        job.dependencies = job.dependencies - [dep]
+        dep.clean
+      end
+    end
+
     def process(rules, jobs)
       begin
 
         workload = jobs.inject({}){|acc,job| acc.merge!(Orchestrator.job_workload(job)) }
 
-        while workload.values.flatten.any?
+        top_level_jobs = jobs.collect{|job| job.path }
+        while workload.any? 
 
           candidates = resources_used.keys + Orchestrator.candidates(workload, rules)
-          raise "No candidates" if candidates.empty?
+          raise "No candidates and no running jobs" if candidates.empty?
 
           candidates.each do |job|
             case 
             when (job.error? || job.aborted?)
-              if job.recoverable_error?
-                job.clean
-                raise TryAgain
-              else
-                next
+              begin
+                if job.recoverable_error?
+                  job.clean
+                  raise TryAgain
+                else
+                  next
+                end
+              ensure
+                Log.warn "Releases resources from failed job: #{job.path}"
+                release_resources(job)
               end
-              release_resources(job)
             when job.done?
               Log.debug "Orchestrator done #{job.path}"
               release_resources(job)
-              raise TryAgain
+              erase_job_dependencies(job, rules, workload, top_level_jobs)
 
             when job.running?
               next
@@ -180,6 +204,7 @@ module Workflow
             next if k.done?
             new_workload[k] = v.reject{|d| d.done? || (d.error? && ! d.recoverable_error?)}
           end
+          workload = new_workload
           sleep timer
         end
       rescue TryAgain
