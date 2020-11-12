@@ -7,7 +7,7 @@ module Bgzf
 
   def self.bgzip_cmd
     @@bgzip_cmd ||= begin
-                      path = `bash -c "type -p bgzips"`.strip
+                      path = `bash -c "type -p bgzip"`.strip
                       if path.empty?
                         Rbbt.claim Rbbt.software.opt.htslib, :install, Rbbt.share.install.software.HTSLIB.find(:lib)
                         Rbbt.software.opt.htslib.produce

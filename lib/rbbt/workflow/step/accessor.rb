@@ -121,7 +121,7 @@ class Step
       inputs[name] = value
     end
 
-    if options.include? 'override_dependencies'
+    if options && options.include?('override_dependencies')
       inputs.merge!(:override_dependencies => open[:override_dependencies])
       input_types = IndiferentHash.setup(input_types.merge(:override_dependencies => :array))
     end

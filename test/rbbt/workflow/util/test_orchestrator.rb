@@ -27,6 +27,11 @@ module TestWF
   task :d => :text do
     sleep(TestWF::MULT * (rand(10) + 2))
   end
+
+  dep :c
+  task :e => :text do
+    sleep(TestWF::MULT * (rand(10) + 2))
+  end
 end
 
 class TestClass < Test::Unit::TestCase
@@ -216,6 +221,51 @@ TestWF:
       assert job.step(:c).dependencies.empty?
       assert job.step(:c).info[:archived_info].keys.select{|k| k.include?("TestWF/a/")}.any?
       assert job.step(:c).info[:archived_info].keys.select{|k| k.include?("TestWF/b/")}.any?
+    end
+
+  end
+
+  def test_orchestrate_top_level_double_dep
+
+    jobs =[]
+
+    num = 10
+    num.times do |i|
+      jobs.concat %w(TEST1 TEST2).collect{|name| TestWF.job(:e, name + " #{i}") }
+      jobs.concat %w(TEST1 TEST2).collect{|name| TestWF.job(:d, name + " #{i}") }
+    end
+    jobs.each do |j| j.recursive_clean end
+
+    rules = YAML.load <<-EOF
+defaults:
+  erase: true
+  log: 4
+default_resources:
+  IO: 1
+TestWF:
+  a:
+    resources:
+      cpus: 7
+  b:
+    resources:
+      cpus: 2
+  c:
+    resources:
+      cpus: 10
+  d:
+    resources:
+      cpus: 15
+    EOF
+
+    orchestrator = Workflow::Orchestrator.new(TestWF::MULT, "cpus" => 30, "IO" => 4, "size" => 10 )
+    Log.with_severity 3 do
+      orchestrator.process(rules, jobs)
+    end
+
+    jobs.each do |job|
+      next unless job.task_name.to_s == 'd' || job.task_name.to_s == 'e'
+      assert job.info[:archived_info].keys.select{|k| k.include?("TestWF/c/")}.any?
+      assert job.info[:archived_info].keys.select{|k| k.include?("TestWF/c/")}.any?
     end
 
   end

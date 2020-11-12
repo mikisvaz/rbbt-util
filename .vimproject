@@ -289,12 +289,22 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     test_registry.rb
     }
    persist=persist{
+    tsv=tsv{
+     test_cdb.rb
+     test_kyotocabinet.rb
+     test_leveldb.rb
+     test_lmdb.rb
+     test_sharder.rb
+     test_tokyocabinet.rb
+     }
     test_tsv.rb
    }
    tsv=tsv{
     test_accessor.rb
     test_attach.rb
     test_change_id.rb
+    test_csv.rb
+    test_excel.rb
     test_field_index.rb
     test_filter.rb
     test_index.rb
@@ -318,15 +328,30 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     test_cmd.rb
     test_colorize.rb
     test_concurrency.rb
+    test_config.rb
     test_excel2tsv.rb
     test_filecache.rb
     test_log.rb
     test_misc.rb
     test_open.rb
+    test_python.rb
     test_semaphore.rb
     test_simpleDSL.rb
     test_simpleopt.rb
     test_tmpfile.rb
+    R=R{
+     test_eval.rb
+     test_model.rb
+     test_plot.rb
+    }
+    misc=misc{
+     test_bgzf.rb
+     test_format.rb
+     test_lock.rb
+     test_multipart_payload.rb
+     test_omics.rb
+     test_pipes.rb
+    }
     simpleopt=simpleopt{
      test_get.rb
      test_parse.rb

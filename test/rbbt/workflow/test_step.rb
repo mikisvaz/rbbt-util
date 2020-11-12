@@ -1,8 +1,10 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
+require 'rbbt/workflow'
 require 'rbbt/workflow/task'
 require 'rbbt/workflow/step'
 require 'rbbt/tsv'
 require 'rbbt'
+require 'rbbt-util'
 
 class TestStep < Test::Unit::TestCase
 
@@ -23,8 +25,9 @@ class TestStep < Test::Unit::TestCase
     str2 = "TEST2"
     TmpFile.with_file do |tmpfile|
 
-      task1  = Task.setup :result_type => nil do 
+      task1  = Task.setup :result_type => :string do 
         Open.write(tmpfile, str); 
+        "done"
       end
       step1 = Step.new tmpfile + 'step1', task1
 
@@ -50,9 +53,10 @@ class TestStep < Test::Unit::TestCase
   def __test_dependency_log_relay
     str = "TEST"
     TmpFile.with_file do |tmpfile|
-      task1  = Task.setup :result_type => nil, :name => :task1 do 
+      task1  = Task.setup :result_type => :string, :name => :task1 do 
         log(:starting_task1, "Starting Task1")
         Open.write(tmpfile, str); 
+        "done"
       end
       step1 = Step.new tmpfile + 'step1', task1
 
@@ -69,9 +73,10 @@ class TestStep < Test::Unit::TestCase
   def test_log_relay_step
     str = "TEST"
     TmpFile.with_file do |tmpfile|
-      task1  = Task.setup :result_type => nil, :name => :task1 do 
+      task1  = Task.setup :result_type => :string, :name => :task1 do 
         log(:starting_task1, "Starting Task1")
         Open.write(tmpfile, str); 
+        "done"
       end
       step1 = Step.new tmpfile + 'step1', task1
 

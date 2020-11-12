@@ -199,7 +199,6 @@ class TestEntity < Test::Unit::TestCase
 
 
     $processed_multiple = []
-    Log.severity = 0
 
     array = ReversableString.setup([string1, string2])
     assert_equal [string1, string2].collect{|s| s.chars}, array.multiple_annotation_list

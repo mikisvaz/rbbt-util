@@ -98,6 +98,7 @@ module CMD
     post       = options.delete(:post)
     log        = options.delete(:log)
     no_fail    = options.delete(:no_fail)
+    no_fail    = options.delete(:nofail) if no_fail.nil?
     no_wait    = options.delete(:no_wait)
 
     dont_close_in  = options.delete(:dont_close_in)

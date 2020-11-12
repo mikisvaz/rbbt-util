@@ -62,7 +62,7 @@ class TestKnowledgeBase < Test::Unit::TestCase
       kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
       kb.format = {"Gene" => "Ensembl Gene ID"}
 
-      kb.register :tfacts, TFacts.regulators, :source =>"=~Associated Gene Name"
+      kb.register :tfacts, TFactS.regulators, :source =>"=~Associated Gene Name"
 
       kb.get_index(:tfacts).reverse
     end
@@ -74,7 +74,7 @@ class TestKnowledgeBase < Test::Unit::TestCase
       kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
       kb.format = {"Gene" => "Ensembl Gene ID"}
 
-      kb.register :tfacts, TFacts.regulators, :source =>"=~Associated Gene Name"
+      kb.register :tfacts, TFactS.regulators, :source =>"=~Associated Gene Name"
 
       assert_equal "Ensembl Gene ID", kb.get_database(:tfacts).key_field
 
@@ -113,10 +113,9 @@ class TestKnowledgeBase < Test::Unit::TestCase
 
   def test_knowledge_base_reuse
     organism = Organism.default_code("Hsa")
-    Log.severity = 0
     TmpFile.with_file do |tmpdir|
       Path.setup(tmpdir)
-      Association.index(TFacts.regulators, :persist_file => tmpdir.tfacts, :format => {"Gene" => "Ensembl Gene ID"}, :namespace => Organism.default_code("Hsa"))
+      Association.index(TFactS.regulators, :persist_file => tmpdir.tfacts, :format => {"Gene" => "Ensembl Gene ID"}, :namespace => Organism.default_code("Hsa"))
 
       kb = KnowledgeBase.load(tmpdir)
       assert kb.identify_source('tfacts', "TP53") =~ /ENSG/

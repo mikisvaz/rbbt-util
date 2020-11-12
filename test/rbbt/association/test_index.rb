@@ -73,21 +73,21 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_flat
     require 'rbbt/sources/tfacts'
-    file = TFacts.regulators
+    file = TFactS.regulators
     tsv = Association.index(file,  :type => :flat, :source => "Transcription Factor Associated Gene Name=~Associated Gene Name", :merge => true)
     assert tsv.match("TP53").length > 10
   end
 
   def test_index_flat_to_matrix
     require 'rbbt/sources/tfacts'
-    file = TFacts.regulators
+    file = TFactS.regulators
     tsv = Association.index(file,  :type => :flat, :source => "Transcription Factor Associated Gene Name=~Associated Gene Name", :merge => true)
     assert(tsv.to_matrix(false))
   end
 
   def test_filter_no_block
     require 'rbbt/sources/tfacts'
-    file = TFacts.regulators
+    file = TFactS.regulators
     tsv = Association.index(EFFECT, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
     tsv.unnamed = false
     matches = tsv.filter :directed?
@@ -96,7 +96,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_filter_no_block_value
     require 'rbbt/sources/tfacts'
-    file = TFacts.regulators
+    file = TFactS.regulators
     tsv = Association.index(EFFECT, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
     tsv.unnamed = false
     matches = tsv.filter :Effect, "inhibition"
@@ -105,7 +105,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_filter_block_value_field
     require 'rbbt/sources/tfacts'
-    file = TFacts.regulators
+    file = TFactS.regulators
     tsv = Association.index(EFFECT, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
     tsv.unnamed = false
     matches = tsv.filter :Effect do |value|
@@ -116,7 +116,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_filter_block_no_value_field
     require 'rbbt/sources/tfacts'
-    file = TFacts.regulators
+    file = TFactS.regulators
     tsv = Association.index(EFFECT, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
     tsv.unnamed = false
     matches = tsv.filter do |key,values|

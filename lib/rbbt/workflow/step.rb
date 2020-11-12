@@ -154,6 +154,11 @@ class Step
     all_inputs
   end
 
+  def dependencies=(dependencies)
+    @dependencies = dependencies
+    set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
+  end
+
   def recursive_inputs
     if NamedArray === inputs
       i = {}

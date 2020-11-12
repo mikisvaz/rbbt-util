@@ -67,8 +67,10 @@ class Step
       next unless File.exists?(step.path)
       job_files << step.path
       job_files << step.info_file if File.exists?(step.info_file)
+      job_files << Step.md5_file(step.path) if File.exists?(Step.md5_file step.path)
       job_file_dir_content = Dir.glob(step.files_dir + '/**/*')
       job_files += job_file_dir_content
+      job_files << step.files_dir if File.exists?(step.files_dir)
       rec_dependencies = Set.new
 
       next unless recursive

@@ -88,7 +88,7 @@ class TestRemoteWorkflow < Test::Unit::TestCase
   end
 
 
-  def _test_ssh
+  def test_ssh
     Log.severity = 0
     client = RemoteWorkflow.new "ssh://#{ENV["HOSTNAME"]}:Translation", "Translation"
     job = client.job("translate", "SSH-TEST-1", :genes => ["TP53","KRAS"])

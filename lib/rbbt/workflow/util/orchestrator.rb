@@ -143,18 +143,25 @@ module Workflow
       end
     end
 
-    def erase_job_dependencies(job, rules, workload, top_level_jobs)
+    def erase_job_dependencies(job, rules, all_jobs, top_level_jobs)
       job.dependencies.each do |dep|
         next if top_level_jobs.include? dep.path
         next unless Orchestrator.job_rules(rules, dep)["erase"].to_s == 'true'
 
-        list = (workload.keys - [job]).collect{|pending| pending.dependencies}.flatten
-        next if list.include?(dep)
+        dep_path = dep.path
+        parents = all_jobs.select do |parent| 
+          paths = parent.info[:dependencies].nil? ? parent.dependencies.collect{|d| d.path } : parent.info[:dependencies].collect{|d| d.last }
+          paths.include? dep_path
+        end
 
-        Log.high "Erasing #{dep.path} from #{job.path}"
-        job.archive_deps
-        job.copy_files_dir
-        job.dependencies = job.dependencies - [dep]
+        next unless parents.reject{|parent| parent.done? }.empty?
+
+        parents.each do |parent|
+          Log.high "Erasing #{dep.path} from #{parent.path}"
+          parent.archive_deps
+          parent.copy_files_dir
+          parent.dependencies = parent.dependencies - [dep]
+        end
         dep.clean
       end
     end
@@ -162,7 +169,13 @@ module Workflow
     def process(rules, jobs)
       begin
 
-        workload = jobs.inject({}){|acc,job| acc.merge!(Orchestrator.job_workload(job)) }
+        workload = jobs.inject({}) do |acc,job| 
+          Orchestrator.job_workload(job).each do |j,d|
+            acc[j] = d unless acc.keys.collect{|k| k.path }.include? j.path
+          end
+          acc
+        end
+        all_jobs = workload.keys
 
         top_level_jobs = jobs.collect{|job| job.path }
         while workload.any? 
@@ -187,7 +200,7 @@ module Workflow
             when job.done?
               Log.debug "Orchestrator done #{job.path}"
               release_resources(job)
-              erase_job_dependencies(job, rules, workload, top_level_jobs)
+              erase_job_dependencies(job, rules, all_jobs, top_level_jobs)
 
             when job.running?
               next

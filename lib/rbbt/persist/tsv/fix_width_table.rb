@@ -52,7 +52,7 @@ module Persist
       if TSV::ENTRY_KEYS.include? key
         set_metadata(key, value)
       else
-        if range
+        if @range
           add_range_point key, value
         else
           add key, value
@@ -61,7 +61,7 @@ module Persist
     end
      
     def add(key, value)
-      key = pos_function.call(key) if pos_function and not (range and Array === key)
+      key = pos_function.call(key) if pos_function and not (@range and Array === key)
       super(key, value)
     end
 
@@ -85,8 +85,10 @@ module Persist
     end
 
     def each
+      read
       @size.times do |i|
-        yield i, value(i)
+        v = idx_value(i)
+        yield i, v
       end
     end
 

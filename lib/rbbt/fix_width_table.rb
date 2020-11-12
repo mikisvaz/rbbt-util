@@ -67,7 +67,7 @@ class FixWidthTable
 
   def format(pos, value)
     padding = value_size - value.length
-    if range
+    if @range
       (pos  + [padding, value + ("\0" * padding)]).pack("llll#{mask}")
     else
       [pos, padding, value + ("\0" * padding)].pack("ll#{mask}")
@@ -105,7 +105,7 @@ class FixWidthTable
 
   def idx_value(index)
     return nil if index < 0 or index >= size
-    @file.seek((range ? 17 : 9 ) + (record_size) * index, IO::SEEK_SET)
+    @file.seek((@range ? 17 : 9 ) + (record_size) * index, IO::SEEK_SET)
     padding = @file.read(4).unpack("l").first+1
     txt = @file.read(value_size)
     str = txt.unpack(mask).first
@@ -277,7 +277,8 @@ class FixWidthTable
 
   def [](pos)
     return [] if size == 0
-    if range
+    self.read
+    if @range
       get_range(pos)
     else
       get_point(pos)
@@ -286,7 +287,7 @@ class FixWidthTable
   
   def overlaps(pos, value = false)
     return [] if size == 0
-    idxs = if range
+    idxs = if @range
       get_range(pos, true)
     else
       get_point(pos, true)

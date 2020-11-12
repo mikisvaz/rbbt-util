@@ -117,7 +117,7 @@ module NamedArray
   #end
 
   def each(&block)
-    if defined?(Entity) and not @fields.nil? and not @fields.empty?
+    if defined?(Entity) && ! (@fields.nil? || @fields.empty?)
       i = 0
       super do |elem|
         field = @fields[i]

@@ -131,7 +131,6 @@ row2 AA BB CC
 row3 AAA BBB CCC
 row1 A B C
     EOF
-    Log.severity = 0
 
     text = text * 10000
     TmpFile.with_file(text) do |tmp|
@@ -159,7 +158,6 @@ row2 AA BB CC
 row3 AAA BBB CCC
 row1 A B C
     EOF
-    Log.severity = 0
 
     text = text * 10000
     num = 5
@@ -200,7 +198,6 @@ line3
 line1
     EOF
 
-    Log.severity = 0
     TmpFile.with_file(text1) do |file1|
       TmpFile.with_file(text2) do |file2|
         assert ! Misc.remove_lines(file1, file2, true).read.split("\n").include?("line1")
@@ -224,7 +221,6 @@ line1
 line5
     EOF
 
-    Log.severity = 0
     TmpFile.with_file(text1) do |file1|
       TmpFile.with_file(text2) do |file2|
         assert Misc.select_lines(file1, file2, true).read.split("\n").include?("line1")
@@ -258,7 +254,6 @@ line3
 line4
     EOF
 
-    Log.severity = 0
     TmpFile.with_file(text) do |file|
       io = Open.open(file)
       lines = Set.new

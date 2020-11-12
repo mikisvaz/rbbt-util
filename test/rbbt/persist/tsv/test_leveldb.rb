@@ -4,12 +4,6 @@ require 'rbbt/annotations'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
 
-module TestAnnotation
-  extend Annotation
-
-  self.annotation :test_annotation
-end
-
 class TestPersistTSVLevelDB < Test::Unit::TestCase
 
   if Persist.respond_to? :open_leveldb

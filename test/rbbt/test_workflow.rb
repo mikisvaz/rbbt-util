@@ -204,7 +204,6 @@ class TestWorkflow < Test::Unit::TestCase
 
   def test_update_on_input_dependency_update
     Open.repository_dirs << File.join(ENV["HOME"],".rbbt/tmp/test/workflow")
-    Log.severity = 0
     Misc.with_env "RBBT_UPDATE", "true" do
       send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
       send_input_dep_to_reverse_job.clean
@@ -376,21 +375,23 @@ class TestWorkflow < Test::Unit::TestCase
   def test_delete_dep
     job = TestWF.job(:t3).recursive_clean
     job.run
-    assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
-    job = TestWF.job(:t3)
-    job.step(:t1).clean
-    assert job.checks.select{|d| d.task_name.to_s == "t1" }.empty?
-    job = TestWF.job(:t3).recursive_clean
-    job.run
-    assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
-    job = TestWF.job(:t3)
-    sleep 1
-    Open.touch job.step(:t1).path
-    Misc.with_env "RBBT_UPDATE", "false" do
-      assert job.updated?
-    end
-    Misc.with_env "RBBT_UPDATE", "true" do
-      assert ! job.updated?
+    Misc.with_env "RBBT_UPDATE", 'true' do
+      assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
+      job = TestWF.job(:t3)
+      job.step(:t1).clean
+      assert job.checks.select{|d| d.task_name.to_s == "t1" }.empty?
+      job = TestWF.job(:t3).recursive_clean
+      job.run
+      assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
+      job = TestWF.job(:t3)
+      sleep 1
+      Open.touch job.step(:t1).path
+      Misc.with_env "RBBT_UPDATE", "false" do
+        assert job.updated?
+      end
+      Misc.with_env "RBBT_UPDATE", "true" do
+        assert ! job.updated?
+      end
     end
   end
 

@@ -52,7 +52,6 @@ module Persist
     def lock
       return yield if @locked
       lock_filename = Persist.persistence_path(persistence_path, {:dir => TSV.lock_dir})
-      Log.stack caller if $LOG
       Misc.lock(lock_filename) do
         begin
           @locked = true

@@ -185,7 +185,7 @@ END
     inputs[:input2] = "Input2"
     num = 50
     cpus = 1
-    Log.severity = 0
+
     Misc.bootstrap((0..num-1).to_a, cpus) do  |n|
       puts mutipart
       TmpFile.with_file(mutipart, false) do |tmpfile|

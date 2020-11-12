@@ -32,13 +32,17 @@ module TSV
           sep + ([""] * fields.length) * sep << "\n"
         end
       when Array
-        if fields.nil? or fields.empty?
+        if fields.nil? 
+          sep + (values.collect{|v| Array === v ? v * "|" : v} * sep) << "\n"
+        elsif fields.empty?
           "\n"
         else
           sep + (values.collect{|v| Array === v ? v * "|" : v} * sep) << "\n"
         end
       else
-        if fields.nil? or fields.empty?
+        if fields.nil?
+          sep + values.to_s + "\n"
+        elsif fields.empty?
           "\n"
         else
           sep + values.to_s << "\n"

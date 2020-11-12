@@ -9,6 +9,7 @@ class TestR < Test::Unit::TestCase
   def test_tsv_R
     tsv = TSV.setup({:a => 1, :b => 2})
     tsv2 = tsv.R <<-EOF
+str(data)
 data = data + 1
     EOF
     assert_equal "2", tsv2["a"].first

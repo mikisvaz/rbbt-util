@@ -48,7 +48,6 @@ if __FILE__ == $0
   TmpFile.with_file do |dir|
     Structure.workdir = dir
     Path.setup dir
-    Log.severity = 4
     TSV.traverse (0..size).to_a, :cpus => cpus, :type => :array, :bar => true do |i|
       begin
         v = rand(num).to_s

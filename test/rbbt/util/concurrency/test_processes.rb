@@ -7,7 +7,7 @@ require 'rbbt/util/concurrency/processes'
 class TestConcurrencyProcess < Test::Unit::TestCase
 
   def setup
-    Log.severity = 0
+    #Log.severity = 0
   end
 
   def test_process_throttle

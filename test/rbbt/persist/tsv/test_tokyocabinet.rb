@@ -4,7 +4,8 @@ require 'rbbt/annotations'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
 
-module TestAnnotation
+
+module TestAnnotationModule
   extend Annotation
 
   self.annotation :test_annotation
@@ -25,8 +26,8 @@ class TestPersistTSVTC < Test::Unit::TestCase
       entity1 = "Entity 1"
       entity2 = "Entity 2"
 
-      TestAnnotation.setup(entity1, :test_annotation => "1")
-      TestAnnotation.setup(entity2, :test_annotation => "2")
+      TestAnnotationModule.setup(entity1, :test_annotation => "1")
+      TestAnnotationModule.setup(entity2, :test_annotation => "2")
 
       annotations = [entity1, entity2]
 
@@ -56,9 +57,9 @@ class TestPersistTSVTC < Test::Unit::TestCase
       entity2 = "Entity 2"
       entity2bis = "Entity 2"
 
-      TestAnnotation.setup(entity1, :test_annotation => "1")
-      TestAnnotation.setup(entity2, :test_annotation => "2")
-      TestAnnotation.setup(entity2bis, :test_annotation => "2")
+      TestAnnotationModule.setup(entity1, :test_annotation => "1")
+      TestAnnotationModule.setup(entity2, :test_annotation => "2")
+      TestAnnotationModule.setup(entity2bis, :test_annotation => "2")
 
       annotations = [entity1, entity2, entity2bis]
 
@@ -105,8 +106,8 @@ class TestPersistTSVTC < Test::Unit::TestCase
       entity1 = "Entity 1"
       entity2 = "Entity 2"
 
-      TestAnnotation.setup(entity1, :test_annotation => "1")
-      TestAnnotation.setup(entity2, :test_annotation => "2")
+      TestAnnotationModule.setup(entity1, :test_annotation => "1")
+      TestAnnotationModule.setup(entity2, :test_annotation => "2")
 
       annotations = [entity1, entity2]
 
@@ -138,7 +139,7 @@ class TestPersistTSVTC < Test::Unit::TestCase
       entity2 = "Entity 2"
 
       annotations = [entity1, entity2]
-      TestAnnotation.setup(annotations, :test_annotation => "1")
+      TestAnnotationModule.setup(annotations, :test_annotation => "1")
       annotations.extend AnnotatedArray
 
       persisted_annotations = Persist.persist("Test", :annotations, :annotation_repo => repo) do
@@ -171,11 +172,11 @@ class TestPersistTSVTC < Test::Unit::TestCase
       entity2 = "Entity 2"
 
       annotations = [entity1, entity2]
-      TestAnnotation.setup(annotations, :test_annotation => "1")
+      TestAnnotationModule.setup(annotations, :test_annotation => "1")
       annotations.extend AnnotatedArray
 
       annotations_ary = [annotations]
-      TestAnnotation.setup(annotations_ary, :test_annotation => "1")
+      TestAnnotationModule.setup(annotations_ary, :test_annotation => "1")
       annotations_ary.extend AnnotatedArray
 
       persisted_annotations = Persist.persist("Test", :annotations, :annotation_repo => repo) do
@@ -210,9 +211,9 @@ class TestPersistTSVTC < Test::Unit::TestCase
       entity2 = "Entity 2"
       entity2bis = "Entity 2"
 
-      TestAnnotation.setup(entity1, :test_annotation => "1")
-      TestAnnotation.setup(entity2, :test_annotation => "2")
-      TestAnnotation.setup(entity2bis, :test_annotation => "2")
+      TestAnnotationModule.setup(entity1, :test_annotation => "1")
+      TestAnnotationModule.setup(entity2, :test_annotation => "2")
+      TestAnnotationModule.setup(entity2bis, :test_annotation => "2")
 
       annotations = [entity1, entity2, entity2bis]
 

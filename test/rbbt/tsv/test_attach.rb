@@ -630,10 +630,8 @@ E    B
     tsv1 = Rbbt.tmp.test.test1.data.tsv :double,  :sep => /\s+/
     tsv2 = Rbbt.tmp.test.test2.data.tsv :double,  :sep => /\s+/
 
-    Log.severity = 0
     tsv1.attach tsv2, :fields => ["ValueE"] #, :persist_input => true
     Log.tsv tsv1
-    ppp tsv1
     
   end
 end

@@ -5,7 +5,6 @@ require 'rbbt/util/R/plot'
 class TestRPlot < Test::Unit::TestCase
   def __test_ggplotgif
 
-    Log.severity = 0
     x = R.eval_a 'rnorm(100, 0, 1)'
     data = TSV.setup(x, "Num~#:type=:single#:cast=:to_f")
 
@@ -22,7 +21,6 @@ ggplot(data) + geom_density(bw=frame.value, aes(x=Val))
 
   def test_gif
 
-    Log.severity = 0
     x = R.eval_a 'rnorm(100, 0, 1)'
     data = TSV.setup(x, "Num~#:type=:single#:cast=:to_f")
 

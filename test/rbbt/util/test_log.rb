@@ -2,7 +2,7 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helpe
 require 'rbbt/util/log'
 
 class TestLog < Test::Unit::TestCase
-  def _test_get_level
+  def test_get_level
     assert_equal 0, Log.get_level(:debug)
     assert_equal 1, Log.get_level(:low)
     assert_equal 1, Log.get_level("LOW")
@@ -10,18 +10,17 @@ class TestLog < Test::Unit::TestCase
     assert_equal 0, Log.get_level(nil)
   end
 
-  def _test_color
+  def test_color
     assert Log.color(:green, "green")
   end
 
-  def _test_no_stderr
+  def test_no_stderr
     Log.ignore_stderr do
       STDERR.puts "NOPRINT"
     end
   end
 
-  def _test_trap_stderr
-    Log.severity = 0
+  def test_trap_stderr
     Log.trap_stderr do
       STDERR.puts "NOPRINT"
       STDERR.puts "NOPRINT"
@@ -40,7 +39,6 @@ class TestLog < Test::Unit::TestCase
   end
 
   def test_trap_std
-    Log.severity = 0
     Log.trap_std do
       STDERR.puts "NOPRINT STDERR"
       STDOUT.puts "NOPRINT STDOUT"

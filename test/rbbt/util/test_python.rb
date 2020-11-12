@@ -42,7 +42,6 @@ def python_test(a, b):
   end
 
   def test_run_log
-    Log.severity = 0
     TmpFile.with_file do |tmpdir|
       code =<<-EOF
 import sys
@@ -65,4 +64,21 @@ def python_print():
       end
     end
   end
+
+  def test_keras
+    defined = RbbtPython.run do
+      pyimport "keras.models", as: :km
+      defined?(km.Sequential)
+    end
+    assert defined
+  end
+
+  def test_keras_import
+    defined = RbbtPython.run do
+      pyfrom "keras.models", import: :Sequential
+      defined?(self::Sequential)
+    end
+    assert defined
+  end
+end
 

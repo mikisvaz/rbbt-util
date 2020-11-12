@@ -222,6 +222,17 @@ row2    aa|aa|AA|AA    b1|b2|B1|B2    Id1|Id1|Id2|Id2
     end
   end
 
+  def test_to_s_no_fields
+    file1 =<<-EOF
+row6 dd dd ee
+row1 a b c
+row2 A B C
+row3 1 2 3
+   EOF
+    tsv1 = TSV.open StringIO.new(file1), :sep => " "
+    assert tsv1.to_s(:sort, true).include?('dd')
+  end
+
   def test_to_s_unmerge_expand
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID

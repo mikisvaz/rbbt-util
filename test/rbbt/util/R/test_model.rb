@@ -1,4 +1,5 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../../..', 'test_helper.rb')
+require 'rbbt/util/R'
 require 'rbbt/util/R/model'
 
 class TestRModel < Test::Unit::TestCase
@@ -49,7 +50,7 @@ data = rbbt.model.inpute(data, CI ~ Dose, method=drm, classes='numeric', fct=LL.
     assert_equal result.size, result.column("CI").values.flatten.reject{|p| p.nil? or p.empty? or p == "NA"}.length
   end
 
-  def test_ab_surv_corr
+  def __test_ab_surv_corr
     require 'rbbt/workflow'
     Workflow.require_workflow "Miller"
 

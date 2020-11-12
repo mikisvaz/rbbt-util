@@ -475,7 +475,6 @@ eum fugiat quo voluptas nulla pariatur?"
   end
 
   def test_bootstrap
-    Log.severity = 0
     res = Misc.bootstrap((1..10).to_a, 2, :bar => "Test bootstrap ticks", :respawn => :always, :into => []) do |num|
       sleep 1 + rand(2)
       num
@@ -550,7 +549,6 @@ eum fugiat quo voluptas nulla pariatur?"
   end
 
   def __test_bench_log
-    Log.severity = 1
     Misc.benchmark(1000) do
       Log.info { "Hola" }
     end

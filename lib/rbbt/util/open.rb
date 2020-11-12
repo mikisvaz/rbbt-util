@@ -16,9 +16,9 @@ module Open
   GREP_CMD = begin
                if ENV["GREP_CMD"] 
                  ENV["GREP_CMD"]
-               elsif File.exists?('/bin/grep')
+               elsif File.exist?('/bin/grep')
                  "/bin/grep"
-               elsif File.exists?('/usr/bin/grep')
+               elsif File.exist?('/usr/bin/grep')
                  "/usr/bin/grep"
                else
                  "grep"
@@ -262,7 +262,7 @@ module Open
     if (dir_sub_path = find_repo_dir(file))
       remove_from_repo(*dir_sub_path)
     else
-      FileUtils.rm(file) if File.exists?(file) or Open.broken_link?(file)
+      FileUtils.rm(file) if File.exist?(file) or Open.broken_link?(file)
     end
   end
 
@@ -333,7 +333,7 @@ module Open
       nil
     else
       target = target.find if Path === target
-      if ! File.exists?(target)
+      if ! File.exist?(target)
         FileUtils.mkdir_p target
       end
     end
@@ -344,8 +344,8 @@ module Open
     target = target.find if Path === target
 
     target = File.join(target, File.basename(source)) if File.directory? target
-    FileUtils.mkdir_p File.dirname(target) unless File.exists?(File.dirname(target))
-    FileUtils.rm target if File.exists?(target)
+    FileUtils.mkdir_p File.dirname(target) unless File.exist?(File.dirname(target))
+    FileUtils.rm target if File.exist?(target)
     FileUtils.ln_s source, target
   end
 
@@ -353,8 +353,8 @@ module Open
     source = source.find if Path === source
     target = target.find if Path === target
 
-    FileUtils.mkdir_p File.dirname(target) unless File.exists?(File.dirname(target))
-    FileUtils.rm target if File.exists?(target)
+    FileUtils.mkdir_p File.dirname(target) unless File.exist?(File.dirname(target))
+    FileUtils.rm target if File.exist?(target)
     FileUtils.ln source, target
   end
 
@@ -362,8 +362,8 @@ module Open
     source = source.find if Path === source
     target = target.find if Path === target
 
-    FileUtils.mkdir_p File.dirname(target) unless File.exists?(File.dirname(target))
-    FileUtils.rm target if File.exists?(target)
+    FileUtils.mkdir_p File.dirname(target) unless File.exist?(File.dirname(target))
+    FileUtils.rm target if File.exist?(target)
     begin
       CMD.cmd("ln -L '#{ source }' '#{ target }'")
     rescue ProcessFailed
@@ -475,6 +475,7 @@ module Open
       File.exist?(file) #|| File.symlink?(file)
     end
   end
+
   class << self
     alias exist? exists?
   end
@@ -747,7 +748,7 @@ module Open
     if (dir_sub_path = find_repo_dir(path))
       writable_repo?(*dir_sub_path)
     else
-      if File.exists?(path)
+      if File.exist?(path)
         File.writable?(path)
       else
         File.writable?(File.dirname(File.expand_path(path)))
@@ -776,14 +777,14 @@ module Open
       file = file.find if Path === file
       begin
         if File.symlink?(file) || File.stat(file).nlink > 1
-          if File.exists?(file + '.info') && defined?(Step)
+          if File.exist?(file + '.info') && defined?(Step)
             done = Step::INFO_SERIALIZER.load(Open.open(file + '.info'))[:done]
             return done if done
           end
 
           file = Pathname.new(file).realpath.to_s 
         end
-        return nil unless File.exists?(file)
+        return nil unless File.exist?(file)
         File.mtime(file)
       rescue
         nil
@@ -793,7 +794,7 @@ module Open
 
   def self.update_mtime(path, target)
     if File.symlink?(target) || File.stat(target).nlink > 1
-      if File.exists?(target + '.info')
+      if File.exist?(target + '.info')
         target = target + '.info'
       else
         target = Pathname.new(target).realpath.to_s 
@@ -801,7 +802,7 @@ module Open
     end
 
     CMD.cmd("touch -r '#{path}' '#{target}'")
-    CMD.cmd("touch -r '#{path}.info' '#{target}'") if File.exists?(path + '.info')
+    CMD.cmd("touch -r '#{path}.info' '#{target}'") if File.exist?(path + '.info')
   end
 
   def self.atime(file)
@@ -823,7 +824,7 @@ module Open
   end
 
   def self.broken_link?(path)
-    File.symlink?(path) && ! File.exists?(File.readlink(path))
+    File.symlink?(path) && ! File.exist?(File.readlink(path))
   end
 
   def self.download(url, path)

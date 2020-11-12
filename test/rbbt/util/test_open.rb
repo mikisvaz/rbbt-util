@@ -169,7 +169,6 @@ class TestOpen < Test::Unit::TestCase
   end
 
   def test_write_stream_repo
-    Log.severity = 0
     TmpFile.with_file do |tmpdir|
       tmpdir = Rbbt.tmp.repo_dir.find
       repo = File.join(tmpdir, 'repo')

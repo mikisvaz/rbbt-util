@@ -38,7 +38,7 @@ module Entity
                                                    if value.to_s == k.to_s
                                                      found = k
                                                      break
-                                                   elsif value =~ /\(#{Regexp.quote k}\)/
+                                                   elsif value.to_s =~ /\(#{Regexp.quote k}\)/
                                                      found = k
                                                      break
                                                    end

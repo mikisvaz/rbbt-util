@@ -45,7 +45,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_flat
     require 'rbbt/sources/tfacts'
-    file = TFacts.regulators
+    file = TFactS.regulators
     KNOWLEDGE_BASE.register :tfacts, file,  :type => :flat, :source => "Transcription Factor Associated Gene Name=~Associated Gene Name", :merge => true
     assert KNOWLEDGE_BASE.subset(:tfacts, :source => ["TP53"], :target => :all).length > 10
   end

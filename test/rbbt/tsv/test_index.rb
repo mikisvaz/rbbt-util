@@ -29,7 +29,7 @@ row2    A    B    Id3
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(File.open(filename), :sep => /\s+/, :key_field => "OtherID", :persistence => false)
-      index = tsv.index(:case_insensitive => true, :persistence => true)
+      index = tsv.index(:persistence => true)
       assert index["row1"].include? "Id1"
       assert_equal "OtherID", index.fields.first
     end
@@ -45,9 +45,8 @@ row2    A    B    Id3
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(File.open(filename), :sep => /\s+/, :key_field => "OtherID", :persistence => false)
-      Log.tsv tsv
-      index = tsv.index(:case_insensitive => true, :persistence => false, :fields => ["Id"], :target => "ValueA")
-      Log.tsv index
+      index = tsv.index(:persistence => false, :fields => ["Id"], :target => "ValueA")
+      assert_equal "A", index["row2"] 
     end
 
   end
@@ -243,7 +242,7 @@ g:         ____
     EOF
     TmpFile.with_file(data) do |datafile|
       load_segment_data(datafile)
-      TmpFile.with_file(load_segment_data(datafile)) do |tsvfile|
+      TmpFile.with_file(load_segment_data(datafile).to_s) do |tsvfile|
         f = TSV.range_index(tsvfile, "Start", "End", :persistence => true)
 
         #assert_equal %w(), f[0].sort
@@ -286,8 +285,8 @@ f:             ___
 g:         ____
     EOF
     TmpFile.with_file(data) do |datafile|
-      TmpFile.with_file(load_segment_data(datafile)) do |tsvfile|
-        f = TSV.range_index(tsvfile, "Start", "End", :filters => [["field:Start", "3"]])
+      TmpFile.with_file(load_segment_data(datafile).to_s) do |tsvfile|
+        f = TSV.range_index(tsvfile, "Start", "End", :filters => [["field:Start", "3"]], :persist_update => true)
 
         assert_equal %w(), f[0].sort
         assert_equal %w(), f[1].sort
