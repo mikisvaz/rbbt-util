@@ -13,6 +13,8 @@ Make a job forget all its dependencies and archive their meta-data
 $ #{$0} [options] <job_path>
 
 -h--help Print this help
+-p--purge Purge dependencies
+-r--recursive_purge Purge dependencies recursively
 
 EOF
 if options[:help]
@@ -31,4 +33,11 @@ step = Workflow.load_step path
 
 step.archive_deps
 step.copy_files_dir
+dependencies = step.dependencies
 step.set_info :dependencies, []
+
+if options[:purge]
+  dependencies.each do |dependency|
+    Step.purge(dependency.path, options[:recursive_purge])
+  end
+end

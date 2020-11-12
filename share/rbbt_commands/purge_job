@@ -14,7 +14,6 @@ $ rbbt purge [options] <job_path>
 
 -h--help Print this help
 -r--recursive Remove recursively
-
 EOF
 if options[:help]
   if defined? rbbt_usage
