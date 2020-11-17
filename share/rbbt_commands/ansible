@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*" "} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Run ansible
+
+$ #{$0} [options] <rules.yml|->
+
+Use - to read from STDIN
+
+-h--help Print this help
+-dr--dry_run Only print the playbook
+-H--hosts* hosts to run it on
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+require 'rbbt/workflow/integration/ansible'
+
+playbook, task = ARGV
+playbook_file = Rbbt.share.ansible["test.yaml"].find if playbook.nil?
+
+dry_run = options.delete :dry_run
+
+if ! Misc.filename?(playbook_file)
+  playbook_file = Rbbt.share.ansible.glob(playbook + ".*").first
+end
+
+if ! Misc.filename?(playbook_file)
+  recipe = Rbbt.share.recipes.glob(playbook + ".*").first
+  playbook_file = Ansible.playbook recipe, task, options
+end
+
+
+if dry_run
+  if Hash === playbook_file
+    ppp playbook_file.to_yaml
+  else
+    ppp Log.color :magenta, playbook_file
+    ppp Open.read(playbook_file) 
+  end
+else
+  Ansible.play playbook_file
+end

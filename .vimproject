@@ -146,8 +146,12 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     }
 
     integration=integration{
-     nextflow.rb
      cromwell.rb
+     nextflow.rb
+     ansible.rb
+     ansible=ansible{
+      workflow.rb
+     }
     }
    }
 

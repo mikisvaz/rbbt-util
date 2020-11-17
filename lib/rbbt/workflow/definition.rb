@@ -44,6 +44,7 @@ module Workflow
 
   def dep(*dependency, &block)
     @dependencies ||= []
+    dependency = [tasks.keys.last] if dependency.empty?
     if block_given?
       if dependency.any?
 
@@ -129,7 +130,7 @@ module Workflow
       :resumable          => consume_resumable,
       :input_options      => consume_input_options
     }
-
+     
     task_info[:extension] = case task_info[:result_type].to_s
                             when "tsv"
                               "tsv"
