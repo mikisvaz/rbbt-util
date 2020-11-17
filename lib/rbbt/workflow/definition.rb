@@ -44,7 +44,7 @@ module Workflow
 
   def dep(*dependency, &block)
     @dependencies ||= []
-    dependency = [tasks.keys.last] if dependency.empty?
+    dependency = [tasks.keys.last] if dependency.empty? && ! block_given?
     if block_given?
       if dependency.any?
 

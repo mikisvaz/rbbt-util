@@ -402,21 +402,23 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   }
   rbbt_commands=rbbt_commands filter="*"{
    alias
+   ansible
+   check_bgzf
+   cmd
    color
    log
-   watch
-   cmd
-   rsync
    migrate
    migrate_job
    purge_job
+   rsync
+   watch
    system=system{
-    deleted_files
-    status
     clean
-    report
-    purge
+    deleted_files
     optimize
+    purge
+    report
+    status
    }
    conf=conf{
     web_user=web_user{
@@ -426,16 +428,18 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     }
    }
    resource=resource{
-    find
     exists
-    produce
+    find
     get
+    produce
+    read
    }
    workflow=workflow{
     archive
     archive_all
     cmd
     example
+    forget_deps
     info
     init
     install
@@ -445,9 +449,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     monitor
     prov
     server
+    slurm
     task
     trace
-    forget_deps
     remote=remote{
      add
      list
@@ -455,35 +459,35 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     }
    }
    app=app{
-    start
     install
+    start
     template
    }
    association=association{
     subset
    }
    tsv=tsv{
-    info
-    sort
-    unzip
-    zip
-    get
-    read
-    keys
-    collapse
-    uncollapse
-    values
-    change_id
-    attach
-    json
-    subset
-    slice
-    head
     assemble_pdf_table
+    attach
+    change_id
+    collapse
+    get
+    head
+    info
+    json
+    keys
     query
-    write_excel
+    read
     read_excel
+    slice
+    sort
+    subset
     transpose
+    uncollapse
+    unzip
+    values
+    write_excel
+    zip
    }
    stat=stat{
     abs
@@ -495,20 +499,19 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     pvalue.qqplot
    }
    study=study{
-    task
     maf2study
+    task
    }
    file_server=file_server{
-    list
     add
+    list
     remove
    }
    benchmark=benchmark{
     pthrough
-    tsv
     throughput
+    tsv
    }
-   check_bgzf
   }
   Rlib=Rlib{
    plot.R

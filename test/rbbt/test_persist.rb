@@ -72,4 +72,14 @@ class TestPersist < Test::Unit::TestCase
       stream.join
     end
   end
+
+  def test_newer
+    TmpFile.with_file("Test1") do |tmp1|
+      sleep 1
+      TmpFile.with_file("Test1") do |tmp2|
+        assert Persist.newer?(tmp1, tmp2)
+        assert ! Persist.newer?(tmp2, tmp1)
+      end
+    end
+  end
 end
