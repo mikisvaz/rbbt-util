@@ -100,6 +100,7 @@ module CMD
     no_fail    = options.delete(:no_fail)
     no_fail    = options.delete(:nofail) if no_fail.nil?
     no_wait    = options.delete(:no_wait)
+    xvfb       = options.delete(:xvfb)
 
     dont_close_in  = options.delete(:dont_close_in)
 
@@ -115,6 +116,14 @@ module CMD
         cmd = tool + ' ' + cmd
       end
 
+    end
+
+    case xvfb
+    when TrueClass
+      cmd = "xvfb-run --server-args='-screen 0 1024x768x24' --auto-servernum #{cmd}"
+    when String
+      cmd = "xvfb-run --server-args='#{xvfb}' --auto-servernum --server-num=1 #{cmd}"
+    when String
     end
 
     if stderr == true

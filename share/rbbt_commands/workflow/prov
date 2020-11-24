@@ -24,6 +24,7 @@ $ rbbt workflow prov <job-result>
 -i--inputs* List of inputs to print
 -if--info_fields* List of info fields to print
 -t--touch Update modification times to be consistent
+-e--expand_repeats Show all the dependency tree even if reapeated dependencies have already been seen before
 EOF
 
 SOPT.usage if options[:help]
@@ -130,6 +131,6 @@ if options[:plot]
   end
 
 else
-  puts Step.prov_report(step).strip
+  puts Step.prov_report(step, 0, nil, [], options[:expand_repeats]).strip
 end
 

@@ -156,7 +156,7 @@ class Step
 
   def dependencies=(dependencies)
     @dependencies = dependencies
-    set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
+    set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies
   end
 
   def recursive_inputs

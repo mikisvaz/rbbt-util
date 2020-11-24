@@ -49,27 +49,27 @@ def pid_msg(pid)
 end
 
 
-def status_msg(status)
-  color = case status.to_sym
-          when :error, :aborted, :missing, :dead, :broken
-            :red
-          when :streaming, :started
-            :cyan
-          when :done
-            :green
-          when :noinfo
-            :blue
-          when :dependencies, :waiting, :setup
-            :yellow
-          else
-            if status.to_s.index ">"
-              :cyan
-            else
-              :cyan
-            end
-          end
-  Log.color(color, status.to_s)
-end
+#def status_msg(status)
+#  color = case status.to_sym
+#          when :error, :aborted, :missing, :dead, :broken
+#            :red
+#          when :streaming, :started
+#            :cyan
+#          when :done
+#            :green
+#          when :noinfo, :notfound
+#            :blue
+#          when :dependencies, :waiting, :setup
+#            :yellow
+#          else
+#            if status.to_s.index ">"
+#              :cyan
+#            else
+#              :cyan
+#            end
+#          end
+#  Log.color(color, status.to_s)
+#end
 
 def input_msg(file, inputs)
 
@@ -218,7 +218,7 @@ workflows.sort.each do |workflow,tasks|
             status << Log.color(:red, " (dead)") 
           end
         end
-        str << " #{ status_msg status }"
+        str << " #{ Step.prov_status_msg status }"
         str << " (dirty)" if status == 'done' && Workflow.load_step(file).dirty?
 
         if inputs and inputs.any? 

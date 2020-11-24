@@ -188,7 +188,7 @@ class Step
                 info_lock.lock if check_lock and false
                 begin
                   Open.open(info_file, :mode => 'rb') do |file|
-                    INFO_SERIALIZER.load(file) #|| {}
+                    IndiferentHash.setup(INFO_SERIALIZER.load(file)) #|| {}
                   end
                 ensure
                   info_lock.unlock if check_lock and false
@@ -227,7 +227,7 @@ class Step
     Open.lock(info_file, :lock => info_lock) do
       i = info(false).dup
       i[key] = value 
-      @info_cache = i
+      @info_cache = IndiferentHash.setup(i)
       dump = INFO_SERIALIZER.dump(i)
       Misc.sensiblewrite(info_file, dump, :force => true, :lock => false)
       @info_cache_time = Time.now
@@ -242,7 +242,7 @@ class Step
     Open.lock(info_file, :lock => info_lock) do
       i = info(false)
       i.merge! hash
-      @info_cache = i
+      @info_cache = IndiferentHash.setup(i)
       dump = INFO_SERIALIZER.dump(i)
       Misc.sensiblewrite(info_file, dump, :force => true, :lock => false)
       @info_cache_time = Time.now
@@ -537,7 +537,7 @@ class Step
   end
 
   def file(name)
-    Path.setup(File.join(files_dir, name.to_s))
+    Path.setup(File.join(files_dir, name.to_s), workflow, self)
   end
 
   def save_file(name, content)

@@ -287,15 +287,19 @@ module Misc
           when Symbol 
             obj.to_s
           when (defined?(Path) and Path)
-            if obj.exists?
-              if obj.directory?
-                files = obj.glob("**/*")
-                "directory: #{Misc.fingerprint(files)}"
-              else
-                "file: " << Open.realpath(obj) << "--" << mtime_str(obj)
-              end
+            if Step === obj.resource
+              "Step file: " + obj
             else
-              obj + " (file missing)"
+              if obj.exists?
+                if obj.directory?
+                  files = obj.glob("**/*")
+                  "directory: #{Misc.fingerprint(files)}"
+                else
+                  "file: " << Open.realpath(obj) << "--" << mtime_str(obj)
+                end
+              else
+                obj + " (file missing)"
+              end
             end
           when String
             if Misc.is_filename?(obj) and ! %w(. ..).include?(obj)

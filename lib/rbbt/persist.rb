@@ -26,12 +26,17 @@ module Persist
   MAX_FILE_LENGTH = 150
 
   # Is 'file' newer than 'path'? return non-true if path is newer than file
-  def self.newer?(path, file)
+  def self.newer?(path, file, by_link = false)
     return true if not Open.exists?(file)
     path = path.find if Path === path
     file = file.find if Path === file
-    patht = Open.mtime(path)
-    filet = Open.mtime(file)
+    if by_link
+      patht = File.lstat(path).mtime
+      filet = File.lstat(file).mtime
+    else
+      patht = Open.mtime(path)
+      filet = Open.mtime(file)
+    end
     return true if patht.nil? || filet.nil?
     diff = patht - filet
     return diff if diff < 0

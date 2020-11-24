@@ -360,7 +360,7 @@ module Workflow
                      compute = options[:compute]
 
                      options = IndiferentHash.setup(options.dup)
-                     dep = dependency.call jobname, options.merge(_inputs), real_dependencies
+                     dep = dependency.call jobname, _inputs.merge(options), real_dependencies
 
                      dep = [dep] unless Array === dep
 

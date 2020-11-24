@@ -66,7 +66,7 @@ class Step
     str << "\n"
   end
 
-  def self.prov_report(step, offset = 0, task = nil, seen = [])
+  def self.prov_report(step, offset = 0, task = nil, seen = [], expand_repeats = false)
     info = step.info  || {}
     info[:task_name] = task
     path  = step.path
@@ -82,9 +82,13 @@ class Step
       new = ! seen.include?(path)
       if new
         seen << path
-        str << prov_report(dep, offset + 1, task, seen)
+        str << prov_report(dep, offset + 1, task, seen, expand_repeats)
       else
-        str << Log.color(:green, Log.uncolor(prov_report(dep, offset+1, task)))
+        if expand_repeats
+          str << Log.color(:green, Log.uncolor(prov_report(dep, offset+1, task)))
+        else
+          str << Log.color(:green, " " * (offset + 1) + Log.uncolor(prov_report_msg(status, name, path, info)))
+        end
       end
     end if step.dependencies
     str
