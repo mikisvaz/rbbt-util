@@ -112,13 +112,19 @@ module Resource
               end
             when Net::HTTPRedirection, Net::HTTPFound
               location = response['location']
-              Log.debug("Feching directory from: #{location}. Into: #{final_path}")
-              FileUtils.mkdir_p final_path unless File.exist? final_path
-              TmpFile.with_file do |tmp_dir|
-                Misc.in_dir tmp_dir do
-                  CMD.cmd('tar xvfz -', :in => Open.open(location, :nocache => true))
+              if location.include? 'get_directory'
+                Log.debug("Feching directory from: #{location}. Into: #{final_path}")
+                FileUtils.mkdir_p final_path unless File.exist? final_path
+                TmpFile.with_file do |tmp_dir|
+                  Misc.in_dir tmp_dir do
+                    CMD.cmd('tar xvfz -', :in => Open.open(location, :nocache => true))
+                  end
+                  FileUtils.mv tmp_dir, final_path
                 end
-                FileUtils.mv tmp_dir, final_path
+              else
+                Open.open(location, :nocache => true) do |s|
+                  Misc.sensiblewrite(final_path, s)
+                end
               end
             when Net::HTTPInternalServerError
               @server_missing_resource_cache << url
