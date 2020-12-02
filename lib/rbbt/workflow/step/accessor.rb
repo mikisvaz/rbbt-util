@@ -8,6 +8,16 @@ class Step
                        end
                      end
 
+  def self.serialize_info(info)
+    info = info.clean_version if IndiferentHash === info
+    INFO_SERIALIZER.dump(info)
+  end
+
+  def self.load_serialized_info(io)
+    IndiferentHash.setup(INFO_SERIALIZER.load(io))
+  end
+
+
   def self.wait_for_jobs(jobs)
     jobs = [jobs] if Step === jobs
     begin
@@ -59,7 +69,7 @@ class Step
   def self.step_info(path)
     begin
       Open.open(info_file(path), :mode => 'rb') do |f|
-        INFO_SERIALIZER.load(f)
+        self.load_serialized_info(f)
       end
     rescue Exception
       Log.exception $!
@@ -188,7 +198,7 @@ class Step
                 info_lock.lock if check_lock and false
                 begin
                   Open.open(info_file, :mode => 'rb') do |file|
-                    IndiferentHash.setup(INFO_SERIALIZER.load(file)) #|| {}
+                    Step.load_serialized_info(file)
                   end
                 ensure
                   info_lock.unlock if check_lock and false
@@ -204,7 +214,7 @@ class Step
       Log.debug{"Error loading info file: " + info_file}
       Log.exception $!
       Open.rm info_file
-      Misc.sensiblewrite(info_file, INFO_SERIALIZER.dump({:status => :error, :messages => ["Info file lost"]}))
+      Misc.sensiblewrite(info_file, Step.serialize_info({:status => :error, :messages => ["Info file lost"]}))
       raise $!
     end
   end
@@ -214,8 +224,8 @@ class Step
     Open.lock(info_file, :lock => info_lock) do
       i = {:status => :waiting, :pid => Process.pid, :path => path}
       i[:dependencies] = dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies
-      @info_cache = i
-      Misc.sensiblewrite(info_file, INFO_SERIALIZER.dump(i), :force => true, :lock => false)
+      Misc.sensiblewrite(info_file, Step.serialize_info(i), :force => true, :lock => false)
+      @info_cache = IndiferentHash.setup(i)
       @info_cache_time = Time.now
     end
   end
@@ -227,9 +237,9 @@ class Step
     Open.lock(info_file, :lock => info_lock) do
       i = info(false).dup
       i[key] = value 
+      dump = Step.serialize_info(i)
       @info_cache = IndiferentHash.setup(i)
-      dump = INFO_SERIALIZER.dump(i)
-      Misc.sensiblewrite(info_file, dump, :force => true, :lock => false)
+      Misc.sensiblewrite(info_file, dump, :force => true, :lock => false) if Open.exists?(info_file)
       @info_cache_time = Time.now
       value
     end
@@ -242,9 +252,9 @@ class Step
     Open.lock(info_file, :lock => info_lock) do
       i = info(false)
       i.merge! hash
+      dump = Step.serialize_info(i)
       @info_cache = IndiferentHash.setup(i)
-      dump = INFO_SERIALIZER.dump(i)
-      Misc.sensiblewrite(info_file, dump, :force => true, :lock => false)
+      Misc.sensiblewrite(info_file, dump, :force => true, :lock => false) if Open.exists?(info_file)
       @info_cache_time = Time.now
       value
     end

@@ -156,6 +156,15 @@ for this dependency
     Open.read(file).reverse
   end
 
+  task :create_file => :text do |file|
+    Open.write(file('a'), "A")
+    Open.write(file('b'), "B")
+    "DONE"
+  end
+
+  dep_task :reverse_step_file, TestWF, :reverse_file do |jobname, options, dependencies|
+    dep = dependencies.flatten.first
+  end
 
 end
 
@@ -437,6 +446,29 @@ class TestWorkflow < Test::Unit::TestCase
         dir = Path.setup(dir)
         Misc.untar targz, dir
         assert dir.glob("**/*").collect{|f| File.basename(f)}.include? job.name
+      end
+    end
+  end
+
+  def test_input_step_file_check
+    job = TestWF.job(:t3).recursive_clean
+    job.run
+    Misc.with_env "RBBT_UPDATE", 'true' do
+      assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
+      job = TestWF.job(:t3)
+      job.step(:t1).clean
+      assert job.checks.select{|d| d.task_name.to_s == "t1" }.empty?
+      job = TestWF.job(:t3).recursive_clean
+      job.run
+      assert job.checks.select{|d| d.task_name.to_s == "t1" }.any?
+      job = TestWF.job(:t3)
+      sleep 1
+      Open.touch job.step(:t1).path
+      Misc.with_env "RBBT_UPDATE", "false" do
+        assert job.updated?
+      end
+      Misc.with_env "RBBT_UPDATE", "true" do
+        assert ! job.updated?
       end
     end
   end

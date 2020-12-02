@@ -112,7 +112,7 @@ class Step
   end
 
   def updatable?
-    (ENV["RBBT_UPDATE_ALL_JOBS"] == 'true' || ( ENV["RBBT_UPDATE"] == "true" && Open.exists?(info_file)) && status != :noinfo && ! (relocated? && done?))
+    (ENV["RBBT_UPDATE_ALL_JOBS"] == 'true' || ( ENV["RBBT_UPDATE"] == "true" && Open.exists?(info_file)) && status != :noinfo && ! (relocated? && done?)) || (ENV["RBBT_UPDATE"] && ! (done? && ! Open.exists?(info_file)))
   end
 
   def dependency_checks
@@ -128,7 +128,7 @@ class Step
   end
 
   def input_checks
-    inputs.select{|i| Step === i }.
+    (inputs.select{|i| Step === i } + inputs.select{|i| Path === i && Step === i.resource}.collect{|i| i.resource}).
       select{|dependency| dependency.updatable? }
   end
 
@@ -154,25 +154,28 @@ class Step
     canfail_paths = self.canfail_paths
     this_mtime = Open.mtime(self.path) if Open.exists?(self.path)
 
-    checks.each do |dep| 
-      next unless dep.updatable?
-      dep_done = dep.done?
+    outdated_time = checks.select{|dep| dep.updatable? && dep.done? && Persist.newer?(path, dep.path) }
+    outdated_dep = checks.reject{|dep| dep.done? || (dep.error? && ! dep.recoverable_error? && canfail_paths.include?(dep.path)) }
 
-      begin
-        if this_mtime && dep_done && Open.exists?(dep.path) && (Open.mtime(dep.path) > this_mtime + 1)
-          outdated_time << dep
-        end
-      rescue
-      end
+    #checks.each do |dep| 
+    #  next unless dep.updatable?
+    #  dep_done = dep.done?
 
-      # Is this pointless? this would mean some dep got updated after a later
-      # dep but but before this one.
-      #if (! dep.done? && ! canfail_paths.include?(dep.path)) || ! dep.updated?
+    #  begin
+    #    if this_mtime && dep_done && Open.exists?(dep.path) && (Open.mtime(dep.path) > this_mtime + 1)
+    #      outdated_time << dep
+    #    end
+    #  rescue
+    #  end
 
-      if (! dep_done && ! canfail_paths.include?(dep.path))
-        outdated_dep << dep
-      end
-    end
+    #  # Is this pointless? this would mean some dep got updated after a later
+    #  # dep but but before this one.
+    #  #if (! dep.done? && ! canfail_paths.include?(dep.path)) || ! dep.updated?
+
+    #  if (! dep_done && ! canfail_paths.include?(dep.path))
+    #    outdated_dep << dep
+    #  end
+    #end
 
     Log.high "Some newer files found: #{Misc.fingerprint outdated_time}" if outdated_time.any?
     Log.high "Some outdated files found: #{Misc.fingerprint outdated_dep}" if outdated_dep.any?

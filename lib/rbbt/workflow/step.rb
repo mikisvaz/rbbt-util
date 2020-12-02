@@ -13,6 +13,8 @@ class Step
   attr_accessor :relocated
   attr_accessor :result, :mutex, :seen
 
+  RBBT_DEBUG_CLEAN = ENV["RBBT_DEBUG_CLEAN"] == 'true'
+
   class << self
     attr_accessor :lock_dir
     
@@ -454,6 +456,7 @@ class Step
     status << "not running" if ! done? && ! running? 
     status.unshift " " if status.any?
     Log.high "Cleaning step: #{path}#{status * " "}"
+    Log.stack caller if RBBT_DEBUG_CLEAN
     abort if ! done? && running?
     Step.clean(path)
     self

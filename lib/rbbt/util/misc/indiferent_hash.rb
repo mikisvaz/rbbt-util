@@ -61,6 +61,14 @@ module IndiferentHash
       super(key)
     end
   end
+
+  def clean_version
+    clean = {}
+    each do |k,v|
+      clean[k.to_s] = v unless clean.include? k.to_s
+    end
+    clean
+  end
 end
 
 module CaseInsensitiveHash

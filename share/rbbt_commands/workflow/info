@@ -17,6 +17,7 @@ $ rbbt workflow info <job-result>
 -a--all Print all info entries
 -r--recursive Print recursive input values
 -o--original Print original object
+-w--width* Screen width
 EOF
 
 SOPT.usage if options[:help]
@@ -24,6 +25,7 @@ SOPT.usage if options[:help]
 file = ARGV.shift
 all = options.delete :all
 recursive = options.delete :recursive
+width = (options.delete(:width) || 80).to_i
 
 def get_step(file)
   file = file.sub(/\.(info|files)/,'')
@@ -86,6 +88,7 @@ pid = info[:pid]
 exception = info[:exception]
 rest = info.keys - [:inputs, :dependencies, :status, :time_elapsed, :messages, :backtrace, :exception, :pid, :archived_info]
 
+
 puts Log.color(:magenta, "File") << ": " << step.path
 puts Log.color(:magenta, "Status") << ": " << status_msg(status) << ((step.aborted? || step.error?) && step.recoverable_error? ? " (recoverable)" : "" ) << (step.dirty? ? " (dirty)" : "")
 puts Log.color(:magenta, "Pid") << ": " << pid_msg(pid, status.to_s == "done")
@@ -96,14 +99,14 @@ if inputs and inputs.any?
   inputs.each do |input,value|
     case value
     when nil
-      puts Misc.format_definition_list_item("  " + input.to_s, 'nil', 80, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, 'nil', width, 20, :blue)
     when Array
-      puts Misc.format_definition_list_item("  " + input.to_s, (value.length > 6 ? value[0..5]*"\n" << "\n" << "..." : value * "\n" ), 80, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, (value.length > 6 ? value[0..5]*"\n" << "\n" << "..." : value * "\n" ), width, 20, :blue)
     when TrueClass, FalseClass
-      puts Misc.format_definition_list_item("  " + input.to_s, value.to_s, 80, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, value.to_s, width, 20, :blue)
     else
       text = value.to_s.split("\n")[0..5].compact * "\n\n"
-      puts Misc.format_definition_list_item("  " + input.to_s, text, 80, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, text, width, 20, :blue)
     end
   end
 end
@@ -162,16 +165,16 @@ if recursive
     inputs.each do |input,value|
       case value
       when nil
-        puts Misc.format_definition_list_item("  " << input.to_s, 'nil', 80, 20, :blue)
+        puts Misc.format_definition_list_item("  " << input.to_s, 'nil', width, 20, :blue)
       when Array
-        puts Misc.format_definition_list_item("  " << input.to_s, (value.length > 6 ? (value[0..5])*"\n\n" << "\n\n" << "..." : value * "\n\n" ), 80, 20, :blue).gsub("\n\n","\n")
+        puts Misc.format_definition_list_item("  " << input.to_s, (value.length > 6 ? (value[0..5])*"\n\n" << "\n\n" << "..." : value * "\n\n" ), width, 20, :blue).gsub("\n\n","\n")
       when TrueClass, FalseClass
-        puts Misc.format_definition_list_item("  " << input.to_s, value.to_s, 80, 20, :blue)
+        puts Misc.format_definition_list_item("  " << input.to_s, value.to_s, width, 20, :blue)
       else
-        lines = value.to_s.split("\n").collect{|l| l.length >= 60 ? l[0..45] + " ..." : l }
+        lines = value.to_s.split("\n").collect{|l| l.length >= width - 5 ? l[0..width - 5] + " ..." : l }
         text = lines[0..5].compact * "\n\n"
         text << "\n\n...\n\n" if lines.length > 6
-        puts Misc.format_definition_list_item("  " << input.to_s, text, 80, 20, :blue).gsub("\n\n","\n")
+        puts Misc.format_definition_list_item("  " << input.to_s, text, width, 20, :blue).gsub("\n\n","\n")
       end
     end
   end

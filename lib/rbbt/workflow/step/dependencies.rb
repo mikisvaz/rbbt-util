@@ -92,7 +92,13 @@ class Step
           (job.done? && job.dirty?)  || (job.error? && job.dirty?) ||
           (!(job.noinfo? || job.done? || job.error? || job.aborted? || job.running?))
 
-        job.clean unless job.resumable? && (job.updated? && ! job.dirty?)
+        if ! (job.resumable? && (job.updated? && ! job.dirty?))
+          Log.high "About to clean -- status: #{status}, present #{File.exists?(job.path)}, " +
+            %w(done? error? recoverable_error? noinfo? updated? dirty? aborted? running? resumable?).
+            collect{|v| [v, job.send(v)]*": "} * ", " if RBBT_DEBUG_CLEAN
+
+          job.clean
+        end
         job.set_info :status, :cleaned
       end
 
@@ -121,7 +127,7 @@ class Step
   end
 
   def input_dependencies
-    inputs.flatten.select{|i| Step === i}
+    (inputs.flatten.select{|i| Step === i} + inputs.flatten.select{|dep| Path === dep && Step === dep.resource}.collect{|dep| dep.resource})
   end
 
 

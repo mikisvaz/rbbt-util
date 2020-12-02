@@ -297,7 +297,7 @@ module Path
 
     raise "No resource defined to produce file: #{ self }" if resource.nil?
 
-    resource.produce self, force
+    resource.produce self, force if Resource === resource
 
     self
   end
