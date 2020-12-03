@@ -218,7 +218,7 @@ class Step
         no_load = :stream if no_load
 
         Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
-        result_type = @task.result_type
+        result_type = @task.result_type if @task
         result_type = info[:result_type] if result_type.nil?
         result = Persist.persist "Job", result_type, :file => path, :check => persist_checks, :no_load => no_load do 
           if Step === Step.log_relay_step and not self == Step.log_relay_step
