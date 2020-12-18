@@ -243,6 +243,7 @@ module TSV
     Log.debug("Attachment of fields:#{Misc.fingerprint fields } from #{other.filename.inspect} finished.")
 
     if complete
+      Log.warn "Attaching through index and completing empty rows; keys with wrong format may appear (#{other.key_field} insted of #{self.key_field})" if index
       fill = TrueClass === complete ? nil : complete
       field_length = self.fields.length 
       common_fields = (other.fields & self.fields)
@@ -255,11 +256,11 @@ module TSV
       case type
       when :single
         missing.each do |k|
-          self[k] = nil
+          self[k] = fill
         end
       when :list
         missing.each do |k|
-          values = [nil] * field_length
+          values = [fill] * field_length
           other_values = other[k]
           other_common_pos.zip(this_common_pos).each do |o,t|
             values[t] = other_values[o]
@@ -267,8 +268,9 @@ module TSV
           self[k] = values
         end
       when :double
+        fill = [] if fill.nil?
         missing.each do |k|
-          values = [[]] * field_length
+          values = [fill] * field_length
           other_values = other[k]
           other_common_pos.zip(this_common_pos).each do |o,t|
             values[t] = other_values[o]
@@ -276,8 +278,9 @@ module TSV
           self[k] = values
         end
       when :flat
+        fill = [] if fill.nil?
         missing.each do |k|
-          self[k] = []
+          self[k] = fill
         end
       end
     end

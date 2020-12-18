@@ -566,7 +566,7 @@ row2,CC
       tsv3.keys.each{|k| tsv3[k] = nil if tsv3[k] == ""}
     end
 
-    assert_equal tsv1.attach(tsv2, :complete => true).attach(tsv3, :complete => true)["row1"], [nil, "B", nil]
+    assert_equal [nil, "B", nil], tsv1.attach(tsv2, :complete => true).attach(tsv3, :complete => true)["row1"]
   end
 
   def test_attach_index_both_non_key
@@ -597,10 +597,10 @@ A    Id3
 
     tsv1 = tsv2 = nil
 
-    tsv1 = Rbbt.tmp.test.test1.data.tsv :double,  :sep => /\s+/
-    tsv2 = Rbbt.tmp.test.test2.data.tsv :double,  :sep => /\s+/
+    tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
+    tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
 
-    tsv2.identifiers = Rbbt.tmp.test.test2.identifiers.produce.find #.to_s
+    tsv2.identifiers = Rbbt.tmp.test.test2.identifiers.produce(true).produce.find #.to_s
 
     tsv1.attach tsv2, :fields => ["ValueE"] #, :persist_input => true
     Log.tsv tsv1
@@ -627,12 +627,92 @@ E    B
 
     tsv1 = tsv2 = nil
 
-    tsv1 = Rbbt.tmp.test.test1.data.tsv :double,  :sep => /\s+/
-    tsv2 = Rbbt.tmp.test.test2.data.tsv :double,  :sep => /\s+/
+    tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
+    tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
 
     tsv1.attach tsv2, :fields => ["ValueE"] #, :persist_input => true
     Log.tsv tsv1
     
+  end
+
+  def test_attach_complete
+    content1 =<<-EOF
+#: :sep=/\\s+/
+#Id    ValueA
+row1    a|aa|aaa
+row2    A
+    EOF
+
+    content2 =<<-EOF
+#: :sep=/\\s+/
+#Id    ValueB
+row1    b
+row3    C
+    EOF
+    Rbbt.claim Rbbt.tmp.test.test1.data, :string, content1
+    Rbbt.claim Rbbt.tmp.test.test2.data, :string, content2
+
+    tsv1 = tsv2 = nil
+
+    tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
+    tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
+
+    tsv1.attach tsv2, :complete => true
+    assert_equal [[], ["C"]], tsv1["row3"]
+
+    tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
+    tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
+
+    ppp tsv1.attach tsv2, :complete => ["AA"]
+    tsv1.attach tsv2, :complete => ["AA"]
+    assert_equal [["AA"], ["C"]], tsv1["row3"]
+  end
+
+  def test_attach_complete_identifiers
+    content1 =<<-EOF
+#: :sep=/\\s+/
+#Id    ValueA
+row1    a|aa|aaa
+row2    A
+    EOF
+
+    content2 =<<-EOF
+#: :sep=/\\s+/
+#Id2    ValueB
+ROW_1    b
+ROW_2    C
+    EOF
+
+    identifiers =<<-EOF
+#: :sep=/\\s+/
+#Id    Id2
+row1    ROW_1
+row2    ROW_2
+row3    ROW_3
+    EOF
+    Rbbt.claim Rbbt.tmp.test.test1.data, :string, content1
+    Rbbt.claim Rbbt.tmp.test.test2.data, :string, content2
+    Rbbt.claim Rbbt.tmp.test.identifiers.data, :string, identifiers
+
+    tsv1 = tsv2 = nil
+
+    tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
+    tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
+    ids = Rbbt.tmp.test.identifiers.data.produce(true).tsv :double,  :sep => /\s+/
+
+    tsv1.identifiers = ids
+
+    tsv1.attach tsv2
+    assert_equal [["A"], ["C"]], tsv1["row2"]
+
+    tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
+    tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
+    ids = Rbbt.tmp.test.identifiers.data.produce(true).tsv :double,  :sep => /\s+/
+
+    tsv1.identifiers = ids
+
+    tsv1.attach tsv2, :complete => true
+    assert_equal [["A"], ["C"]], tsv1["row2"]
   end
 end
 
