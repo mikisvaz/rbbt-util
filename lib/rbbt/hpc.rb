@@ -98,6 +98,8 @@ module Marenostrum
 #SBATCH --nodes="#{nodes}"
       EOF
 
+      prep  = ""
+
       if highmem
         header +=<<-EOF
 #SBATCH --constraint=highmem 
@@ -145,8 +147,6 @@ SINGULARITY_OPT_DIR="$PROJECTS_ROOT/singularity_opt/"
 SINGULARITY_RUBY_INLINE="$HOME/.singularity_ruby_inline"
 mkdir -p "$SINGULARITY_RUBY_INLINE"
         EOF
-
-        prep  = ""
 
         if contain
           scratch_group_dir = File.join('/gpfs/scratch/', group)
@@ -214,6 +214,8 @@ singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv .rbbt/var/
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean -f &>> #{fsync}
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -Rfv tmp/ &>> #{fsync}
 EOF
+            else
+              prep = ""
             end
           end
         end
