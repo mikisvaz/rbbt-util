@@ -12,6 +12,7 @@ class Step
   attr_accessor :exec
   attr_accessor :relocated
   attr_accessor :result, :mutex, :seen
+  attr_accessor :real_inputs, :original_task_name
 
   RBBT_DEBUG_CLEAN = ENV["RBBT_DEBUG_CLEAN"] == 'true'
 
@@ -145,11 +146,13 @@ class Step
     seen = []
     while path = deps.pop
       dep_info = archived_info[path]
-      dep_info[:inputs].each do |k,v|
-        all_inputs[k] = v unless all_inputs.include?(k)
-      end if dep_info[:inputs]
-      deps.concat(dep_info[:dependencies].collect{|p| p.last } - seen) if dep_info[:dependencies]
-      deps.concat(dep_info[:archived_dependencies].collect{|p| p.last } - seen) if dep_info[:archived_dependencies]
+      if dep_info
+        dep_info[:inputs].each do |k,v|
+          all_inputs[k] = v unless all_inputs.include?(k)
+        end if dep_info[:inputs]
+        deps.concat(dep_info[:dependencies].collect{|p| p.last } - seen) if dep_info[:dependencies]
+        deps.concat(dep_info[:archived_dependencies].collect{|p| p.last } - seen) if dep_info[:archived_dependencies]
+      end
       seen << path
     end
 

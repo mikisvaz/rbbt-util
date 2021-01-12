@@ -302,6 +302,7 @@ module Workflow
   def setup_override_dependency(dep, workflow, task_name)
     dep = Step === dep ? dep : Workflow.load_step(dep)
     dep.info[:name] = dep.name
+    dep.original_task_name ||= dep.task_name
     begin
       workflow = Kernel.const_get workflow if String === workflow
       dep.task = workflow.tasks[task_name] if dep.task.nil? && workflow.tasks.include?(task_name)
@@ -309,7 +310,7 @@ module Workflow
       Log.exception $!
     end
     dep.task_name = task_name
-    dep.overriden = true
+    dep.overriden = dep.original_task_name.to_sym
     dep
   end
 

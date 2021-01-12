@@ -26,15 +26,25 @@ module Workflow
       workload
     end
 
+    def self.workload(jobs)
+      jobs.inject({}) do |acc,job| 
+          Orchestrator.job_workload(job).each do |j,d|
+            acc[j] = d unless acc.keys.collect{|k| k.path }.include? j.path
+          end
+          acc
+        end
+    end
+
     def self.job_rules(rules, job)
       workflow = job.workflow.to_s
       task_name = job.task_name.to_s
+      defaults = rules["defaults"] || {}
 
-      return IndiferentHash.setup(rules["defaults"]) unless rules[workflow]
-      return IndiferentHash.setup(rules["defaults"]) unless rules[workflow][task_name]
+      return IndiferentHash.setup(defaults) unless rules[workflow]
+      return IndiferentHash.setup(defaults) unless rules[workflow][task_name]
 
       job_rules = IndiferentHash.setup(rules[workflow][task_name])
-      rules["defaults"].each{|k,v| job_rules[k] = v if job_rules[k].nil? } if rules["defaults"]
+      defaults.each{|k,v| job_rules[k] = v if job_rules[k].nil? } if defaults
       job_rules
     end
 
@@ -169,12 +179,7 @@ module Workflow
     def process(rules, jobs)
       begin
 
-        workload = jobs.inject({}) do |acc,job| 
-          Orchestrator.job_workload(job).each do |j,d|
-            acc[j] = d unless acc.keys.collect{|k| k.path }.include? j.path
-          end
-          acc
-        end
+        workload = Orchestrator.workload(jobs)
         all_jobs = workload.keys
 
         top_level_jobs = jobs.collect{|job| job.path }

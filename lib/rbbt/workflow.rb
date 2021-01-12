@@ -385,7 +385,7 @@ module Workflow
       next if default == v 
       next if (String === default and Symbol === v and v.to_s == default)
       next if (Symbol === default and String === v and v == default.to_s)
-      real_inputs[k] = v 
+      real_inputs[k.to_sym] = v 
     end
 
     jobname_input_value = inputs[jobname_input] || all_defaults[jobname_input]
@@ -410,6 +410,7 @@ module Workflow
     job.workflow = self
     job.clean_name = jobname
     job.overriden = overriden
+    job.real_inputs = real_inputs.keys
     job
   end
 

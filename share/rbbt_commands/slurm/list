@@ -1,0 +1,141 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+#$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+Queue a job in Marenostrum
+
+$ rbbt mnl [options] 
+
+-h--help Print this help
+-d--done Done jobs only
+-e--error Error jobs only
+-a--aborted SLURM aboted jobs
+-r--running Running jobs only
+-q--queued Queued jobs only
+-j--job* Job ids
+-s--search* Regular expression
+-t--tail* Show the last lines of the STDERR
+EOF
+
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+Log.severity = 4
+done, error, running, queued, aborted, jobid, search, tail = options.values_at :done, :error, :running, :queued, :aborted, :job, :search, :tail
+
+workdir = File.expand_path('~/rbbt-slurm')
+Path.setup(workdir)
+
+running_jobs = begin
+                   CMD.cmd('squeue').read.split("\n").collect{|l| l.to_i.to_s}
+               rescue
+                   Log.warn "Cannot determine if jobs are running, they will seem to be all alive (Job ID in green)"
+                   $norunningjobs = true
+                   []
+               end
+
+count = 0
+workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
+    dir = File.dirname(fcmd)
+
+    if m = Open.read(fcmd).match(/#CMD: (.*)/)
+        cmd = m[1]
+    else
+        cmd = nil
+    end
+
+    if m = Open.read(fcmd).match(/# Run command\n(.*?)\n/im)
+        exe = m[1]
+    else
+        exe = nil
+    end
+
+    if m = Open.read(fcmd).match(/^CONTAINER_DIR=(.*)/)
+        container_home = m[1]
+    else
+        container_home = nil
+    end
+
+
+    if File.exists?(fid = File.join(dir, 'job.id'))
+        id = Open.read(fid).chomp
+    else
+        id = nil
+    end
+
+    if File.exists?(fstatus = File.join(dir, 'exit.status'))
+        exit_status = Open.read(fstatus).to_i
+    else
+        exit_status = nil
+    end
+    
+    if File.exists?(fstatus = File.join(dir, 'job.status'))
+        nodes = Open.read(fstatus).split("\n").last.split(/\s+/).last.split(",")
+    else
+        nodes = []
+    end
+
+    if File.exists?(File.join(dir, 'std.out'))
+        outt = File.mtime File.join(dir, 'std.out')
+        errt = File.mtime File.join(dir, 'std.err')
+        time_diff = Time.now - [outt, errt].max
+    end
+
+    fdep = File.join(dir, 'dependencies.list')
+    deps = Open.read(fdep).split("\n") if File.exists?(fdep)
+
+    if done || error || aborted || running || queued || jobid || search
+      select = false
+      select = true if done && exit_status == 0
+      select = true if error && exit_status && exit_status != 0 
+      select = true if aborted && (exit_status.nil? && ! running_jobs.include?(id))
+      select = true if queued && deps && (running_jobs & deps).any?
+      select = true if running && (exit_status.nil? && running_jobs.include?(id)) && (!deps || (running_jobs & deps).empty?)
+      select = true if jobid && jobid.split(",").include?(id)
+      select = true if search && cmd.match(/#{search}/)
+      next unless select 
+    end
+
+
+    puts Log.color :blue, dir
+    puts Log.color(:magenta, "Creation: ") << File.mtime(File.join(dir, 'command.slurm')).to_s
+    puts Log.color(:magenta, "Done: ") << File.mtime(File.join(dir, 'exit.status')).to_s if File.exist?(File.join(dir, 'exit.status'))
+    puts Log.color(:magenta, "Exec: ") << (exe || "Missing")
+    puts Log.color(:magenta, "CMD: ") << (Log.color(:yellow, cmd) || "Missing")
+    puts Log.color(:magenta, "HOME: ") << Log.color(:yellow, container_home) if container_home
+    puts Log.color(:magenta, "Job ID: ") << (exit_status ? (exit_status == 0 ? Log.color(:green, "Done") : Log.color(:red, "Error")) :  (running_jobs.include?(id) || $norunningjobs ? Log.color(:green, id) : Log.color(:red, id) ))
+    puts Log.color(:magenta, "Dependencies: ") << deps * ", " if deps
+    puts Log.color(:magenta, "Nodes: ") << nodes * ", "
+    puts Log.color(:magenta, "Output: ") << File.exists?(File.join(dir, 'std.out')).to_s << (id.nil? ? "" : " (last update " + Misc.format_seconds(time_diff) + " ago)")
+
+    if tail && File.exists?(File.join(dir, 'std.err'))
+        if exit_status && exit_status != 0
+            puts Log.color(:magenta, "First error or exception found: ")
+            puts CMD.cmd("grep -i -w 'error\\|[a-z]*exception' #{File.join(dir, 'std.err')} -A #{tail.to_i} |head -n #{tail.to_i}", :no_fail => true).read
+        elsif exit_status
+            puts Log.color(:magenta, "Completed jobs: ")
+            puts CMD.cmd("grep -i -w 'Completed step' #{File.join(dir, 'std.err')} | grep -v 'Retrying dep.' | tail -n #{tail.to_i}", :no_fail => true).read
+        else
+            puts Log.color(:magenta, "Log tail: ")
+            puts CMD.cmd("tail -n #{tail.to_i} #{File.join(dir, 'std.err')}").read
+        end
+    end
+
+    count += 1
+
+end
+
+puts 
+puts "Found #{count} jobs"
+

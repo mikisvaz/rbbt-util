@@ -93,18 +93,18 @@ class Step
 
       Log.debug "Saving job input #{name} (#{type}) into #{path}"
       case
+      when Step === value
+        Open.link(value.path, path)
+      when type.to_s == "file"
+        if String === value && File.exists?(value)
+          Open.link(value, path)
+        else
+          Open.write(path + '.yaml', value.to_yaml)
+        end
       when Array === value
         Open.write(path, value * "\n")
       when IO === value
         Open.write(path, value)
-      when type == "file"
-        if String === value && File.exists?(value)
-          Open.link(value, path)
-        else
-          Open.write(path + '.read', value.to_s)
-        end
-      when Step === value
-        value = value.produce.load 
       else
         Open.write(path, value.to_s)
       end
@@ -114,7 +114,7 @@ class Step
   def self.save_job_inputs(job, dir, options = nil)
     options = IndiferentHash.setup options.dup if options
 
-    task_name = job.task_name
+    task_name = Symbol === job.overriden ? job.overriden : job.task_name
     workflow = job.workflow
     workflow = Kernel.const_get workflow if String === workflow
     task_info = workflow.task_info(task_name)
@@ -123,9 +123,11 @@ class Step
     input_defaults = task_info[:input_defaults]
 
     inputs = {}
+    real_inputs = job.real_inputs || job.info[:real_inputs]
     job.recursive_inputs.zip(job.recursive_inputs.fields).each do |value,name|
       next unless task_inputs.include? name.to_sym
-      next if options and ! options.include?(name)
+      next unless real_inputs.include? name.to_sym
+      next if options && ! options.include?(name)
       next if value.nil?
       next if input_defaults[name] == value
       inputs[name] = value
@@ -222,7 +224,7 @@ class Step
   def init_info(force = false)
     return nil if @exec || info_file.nil? || (Open.exists?(info_file) && ! force)
     Open.lock(info_file, :lock => info_lock) do
-      i = {:status => :waiting, :pid => Process.pid, :path => path}
+      i = {:status => :waiting, :pid => Process.pid, :path => path, :real_inputs => real_inputs}
       i[:dependencies] = dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies
       Misc.sensiblewrite(info_file, Step.serialize_info(i), :force => true, :lock => false)
       @info_cache = IndiferentHash.setup(i)
