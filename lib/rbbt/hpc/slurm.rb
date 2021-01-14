@@ -361,6 +361,7 @@ EOF
 
       slurm_basedir = options[:slurm_basedir]
       dependencies = options.delete :slurm_dependencies
+      dependencies = [] if dependencies.nil?
       Open.mkdir slurm_basedir
 
       dry_run = options.delete :dry_run
