@@ -16,6 +16,10 @@ end
 
 module Workflow
 
+  def self.job_path?(path)
+    path.split("/")[-4] == "jobs"
+  end
+
   def log(status, message = nil, &block)
     Step.log(status, message, nil, &block)
   end
@@ -301,8 +305,9 @@ module Workflow
 
   def setup_override_dependency(dep, workflow, task_name)
     dep = Step === dep ? dep : Workflow.load_step(dep)
+    dep.workflow = workflow
     dep.info[:name] = dep.name
-    dep.original_task_name ||= dep.task_name
+    dep.original_task_name ||= dep.task_name if dep.workflow
     begin
       workflow = Kernel.const_get workflow if String === workflow
       dep.task = workflow.tasks[task_name] if dep.task.nil? && workflow.tasks.include?(task_name)

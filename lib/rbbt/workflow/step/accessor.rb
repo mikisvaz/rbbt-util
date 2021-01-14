@@ -94,17 +94,21 @@ class Step
       Log.debug "Saving job input #{name} (#{type}) into #{path}"
       case
       when Step === value
-        Open.link(value.path, path)
+        Open.ln_s(value.path, path)
       when type.to_s == "file"
         if String === value && File.exists?(value)
-          Open.link(value, path)
+          Open.ln_s(value, path)
         else
           Open.write(path + '.yaml', value.to_yaml)
         end
       when Array === value
-        Open.write(path, value * "\n")
+        Open.write(path, value.collect{|v| Step === v ? v.path : v.to_s} * "\n")
       when IO === value
-        Open.write(path, value)
+        if value.filename && String === value.filename && File.exists?(value.filename)
+          Open.ln_s(value.filename, path)
+        else
+          Open.write(path, value)
+        end
       else
         Open.write(path, value.to_s)
       end
@@ -117,13 +121,17 @@ class Step
     task_name = Symbol === job.overriden ? job.overriden : job.task_name
     workflow = job.workflow
     workflow = Kernel.const_get workflow if String === workflow
-    task_info = workflow.task_info(task_name)
-    input_types = task_info[:input_types]
-    task_inputs = task_info[:inputs]
-    input_defaults = task_info[:input_defaults]
+    if workflow
+      task_info = workflow.task_info(task_name)
+      input_types = task_info[:input_types]
+      task_inputs = task_info[:inputs]
+      input_defaults = task_info[:input_defaults]
+    else
+      task_info = input_types = task_inputs = input_defaults = {}
+    end
 
     inputs = {}
-    real_inputs = job.real_inputs || job.info[:real_inputs]
+    real_inputs = job.real_inputs || job.info[:real_inputs]
     job.recursive_inputs.zip(job.recursive_inputs.fields).each do |value,name|
       next unless task_inputs.include? name.to_sym
       next unless real_inputs.include? name.to_sym

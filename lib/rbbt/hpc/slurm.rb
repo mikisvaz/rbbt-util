@@ -494,6 +494,7 @@ EOF
       dry_run          = options.delete :dry_run
       tail             = options.delete :tail
       dependencies     = options.delete :slurm_dependencies
+      options[:jobname] = job.clean_name
 
       workflow = job.workflow
 
@@ -517,7 +518,6 @@ EOF
         slurm_basedir = options[:slurm_basedir]
         inputs_dir = File.join(tmp_directory, 'inputs_dir')
         saved = Step.save_job_inputs(job, inputs_dir)
-
 
         if saved && saved.any?
           options[:inputs_dir] = inputs_dir

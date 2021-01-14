@@ -117,7 +117,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      run.rb
     }
 
-
     usage.rb
 
     soap.rb
@@ -243,7 +242,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
    hpc.rb
    hpc=hpc{
-    slurm.rb
     orchestrate.rb
    }
   }

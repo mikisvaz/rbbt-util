@@ -22,11 +22,14 @@ class Step
   end
 
   def self.prov_report_msg(status, name, path, info = nil)
-    parts = path.sub(/\{.*/,'').sub(/#{Regexp.quote(name)}$/,'').split "/"
+    parts = path.sub(/\{.*/,'').split "/"
 
+    parts.pop
+    
     task = Log.color(:yellow, parts.pop)
     workflow = Log.color(:magenta, parts.pop)
-    if status.to_s == 'noinfo' and parts.last != 'jobs'
+    #if status.to_s == 'noinfo' && parts.last != 'jobs'
+    if ! Workflow.job_path?(path)
       task, status, workflow = Log.color(:yellow, info[:task_name]), Log.color(:green, "file"), Log.color(:magenta, "-")
     end
 

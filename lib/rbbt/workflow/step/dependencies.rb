@@ -103,7 +103,7 @@ class Step
       end
 
       job.dup_inputs unless status == 'done' or job.started?
-      job.init_info(status == 'noinfo') unless status == 'waiting' || status == 'done' || job.started?
+      job.init_info(status == 'noinfo') unless status == 'waiting' || status == 'done' || job.started? || ! Workflow.job_path?(job.path)
 
       canfail = ComputeDependency === job && job.canfail?
     end
@@ -129,7 +129,6 @@ class Step
   def input_dependencies
     (inputs.flatten.select{|i| Step === i} + inputs.flatten.select{|dep| Path === dep && Step === dep.resource}.collect{|dep| dep.resource})
   end
-
 
   def execute_dependency(dependency, log = true)
     task_name = self.task_name

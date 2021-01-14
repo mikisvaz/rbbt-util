@@ -287,7 +287,9 @@ module Misc
           when Symbol 
             obj.to_s
           when (defined?(Path) and Path)
-            if Step === obj.resource
+            if defined?(Step) && Open.exists?(Step.info_file(obj))
+              obj2str(Workflow.load_step(obj))
+            elsif defined?(Step) && Step === obj.resource
               "Step file: " + obj
             else
               if obj.exists?
@@ -322,7 +324,11 @@ module Misc
             remove_long_items(obj)
           when File 
             if obj.respond_to? :filename and obj.filename
-              "<IO:" << obj.filename << "--" << mtime_str(obj.filename) << ">"
+              if defined?(Step) && Open.exists?(Step.info_file(obj.filename))
+                obj2str(Workflow.load_step(obj.filename))
+              else
+                "<IO:" << obj.filename << "--" << mtime_str(obj.filename) << ">"
+              end
             else
               "<IO:" << obj.path << "--" << mtime_str(obj.path) << ">"
             end
@@ -330,7 +336,11 @@ module Misc
             "<IO:" << obj.short_path << ">"
           when IO
             if obj.respond_to? :filename and obj.filename
-              "<IO:" << obj.filename << "--" << mtime_str(obj.filename) << ">"
+              if defined?(Step) && Open.exists?(Step.info_file(obj.filename))
+                obj2str(Workflow.load_step(obj.filename))
+              else
+                "<IO:" << obj.filename << "--" << mtime_str(obj.filename) << ">"
+              end
             else
 
               if obj.respond_to? :obj2str

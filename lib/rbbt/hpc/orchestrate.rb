@@ -3,6 +3,7 @@ module HPC
   module SLURM
     def self.orchestrate_job(job, options, seen = {})
       return if job.done?
+      return unless job.path.split("/")[-4] == "jobs"
       options.delete "recursive_clean"
       options.delete "tail"
       rules = YAML.load(Open.read(options[:rules])) if options[:rules]
