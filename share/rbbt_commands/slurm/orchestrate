@@ -25,7 +25,7 @@ $slurm_options = SOPT.get <<EOF
 -t--task_cpus* Tasks
 -W--workflows* Additional workflows
 -tm--time* Time
--R--rules* Orchestration rules
+-R--orchestration_rules* Orchestration rules
 -rmb--remove_slurm_basedir Remove the SLURM working directory (command, STDIN, exit status, ...)
 EOF
 
