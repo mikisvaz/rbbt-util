@@ -20,6 +20,7 @@ $ rbbt mnl [options]
 -j--job* Job ids
 -s--search* Regular expression
 -t--tail* Show the last lines of the STDERR
+-SBP--sbatch_parameters show sbatch parameters
 EOF
 
 if options[:help]
@@ -118,6 +119,11 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
     puts Log.color(:magenta, "Dependencies: ") << deps * ", " if deps
     puts Log.color(:magenta, "Nodes: ") << nodes * ", "
     puts Log.color(:magenta, "Output: ") << File.exists?(File.join(dir, 'std.out')).to_s << (id.nil? ? "" : " (last update " + Misc.format_seconds(time_diff) + " ago)")
+
+    if options[:sbatch_parameters]
+     puts Log.color(:magenta, "SBATCH parameters: ")
+     puts Log.color :blue, CMD.cmd('grep "^#SBATCH" |tail -n +6', :in => Open.read(fcmd)).read
+    end
 
     if tail && File.exists?(File.join(dir, 'std.err'))
         if exit_status && exit_status != 0
