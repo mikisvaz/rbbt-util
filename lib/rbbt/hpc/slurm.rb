@@ -58,11 +58,11 @@ module HPC
         when FalseClass 
           '--' << o << "=false"
         else
-          ['--' << o, "'#{v}'"] * " "
+          ['--' << o, "'#{v.to_s.gsub("'", '\'')}'"] * " "
         end
       end * " "
 
-      rbbt_cmd << " --config_keys='#{config_keys}'" if config_keys and not config_keys.empty?
+      rbbt_cmd << " --config_keys='#{config_keys.gsub("'", '\'')}'" if config_keys and not config_keys.empty?
 
       time = Misc.format_seconds Misc.timespan(time) unless time.include? ":"
 
@@ -246,7 +246,7 @@ EOF
         end
 
         if contain
-          rbbt_cmd << " " << %(--workdir_all='#{contain}')
+          rbbt_cmd << " " << %(--workdir_all='#{contain.gsub("'", '\'')}')
         end
       end
 
@@ -362,6 +362,10 @@ EOF
       slurm_basedir = options[:slurm_basedir]
       dependencies = options.delete :slurm_dependencies
       dependencies = [] if dependencies.nil?
+
+      canfail_dependencies = dependencies.select{|dep| dep =~ /^canfail:(\d+)/ }.collect{|dep| dep.partition(":").last}
+      dependencies = dependencies.reject{|dep| dep =~ /^canfail:(\d+)/ }
+
       Open.mkdir slurm_basedir
 
       dry_run = options.delete :dry_run
@@ -370,6 +374,7 @@ EOF
       ferr  = File.join(slurm_basedir, 'std.err')
       fjob  = File.join(slurm_basedir, 'job.id')
       fdep  = File.join(slurm_basedir, 'dependencies.list')
+      fcfdep  = File.join(slurm_basedir, 'canfail_dependencies.list')
       fexit = File.join(slurm_basedir, 'exit.status')
       fsync = File.join(slurm_basedir, 'sync.log')
       fcmd  = File.join(slurm_basedir, 'command.slurm')
@@ -401,9 +406,14 @@ EOF
           Open.rm fexit
           Open.rm fout
           Open.rm ferr
+
           Open.write(fdep, dependencies * "\n") if dependencies.any?
+          Open.write(fcfdep, canfail_dependencies * "\n") if canfail_dependencies.any?
+
           dep_str = dependencies.any? ? "--dependency=afterok:" + dependencies * ":" : ''
-          job = CMD.cmd("sbatch #{dep_str} '#{fcmd}'").read.scan(/\d+/).first.to_i
+          canfail_dep_str = canfail_dependencies.any? ? "--dependency=afterany:" + canfail_dependencies * ":" : ''
+
+          job = CMD.cmd("sbatch #{dep_str} #{canfail_dep_str} '#{fcmd}'").read.scan(/\d+/).first.to_i
           Log.debug "SBATCH job id: #{job}"
           Open.write(fjob, job.to_s)
           job
@@ -527,7 +537,7 @@ EOF
           cmd = ['workflow', 'task', workflow.to_s, task.to_s, '-pf', '--log', (options[:log] || Log.severity).to_s]
         end
 
-        cmd << "--override_deps='#{override_deps}'" if override_deps and not override_deps.empty?
+        cmd << "--override_deps='#{override_deps.gsub("'", '\'')}'" if override_deps and not override_deps.empty?
 
         template = self.template(cmd, options)
         jobid = self.issue_template(template, options.merge(:slurm_basedir => slurm_basedir, :dry_run => dry_run, :slurm_dependencies => dependencies))

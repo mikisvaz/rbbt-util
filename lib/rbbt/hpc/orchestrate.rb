@@ -60,9 +60,13 @@ module HPC
       return if job.done?
       return unless job.path.split("/")[-4] == "jobs"
       seen[:orchestration_target_job] ||= job
+
       options.delete "recursive_clean"
+      options.delete "clean_task"
+      options.delete "clean"
       options.delete "tail"
       options.delete "printfile"
+
       rules = YAML.load(Open.read(options[:orchestration_rules])) if options[:orchestration_rules]
       rules ||= {}
       IndiferentHash.setup(rules)
@@ -75,7 +79,13 @@ module HPC
         skip_dep = job_rules["chain_tasks"] &&
           job_rules["chain_tasks"][job.workflow.to_s] && job_rules["chain_tasks"][job.workflow.to_s].include?(job.task_name.to_s)  &&
           job_rules["chain_tasks"][dep.workflow.to_s] && job_rules["chain_tasks"][dep.workflow.to_s].include?(dep.task_name.to_s) 
-        seen[dep.path] ||= self.orchestrate_job(dep, options, skip_dep, seen)
+
+        deps = seen[dep.path] ||= self.orchestrate_job(dep, options, skip_dep, seen)
+        if job.canfail_paths.include? dep.path
+          [deps].flatten.collect{|id| ['canfail', id] * ":"}
+        else
+          deps
+        end
       end.flatten.compact.uniq
 
       skip = true if job_rules[:skip]

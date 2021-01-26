@@ -20,7 +20,7 @@ def usage(workflow = nil, task = nil, exception=nil, abridge = false)
   puts
   if workflow.nil?
     puts "No workflow specified. Use `rbbt workflow list` to list available workflows."
-    exit -1 
+    exit! -1 
   end
 
   if task.nil?
@@ -206,7 +206,7 @@ The `recursive_clean` cleans all the job dependency steps recursively.
 EOF
 
 workflow = ARGV.shift
-usage and exit -1 if workflow.nil?
+usage and exit! -1 if workflow.nil?
 
 task     = ARGV.shift
 
@@ -486,7 +486,7 @@ rescue ParameterException
   puts
   report_options saved_job_options
   puts
-  exit -1
+  exit! -1
 end
 
 if options.delete(:list_job_files)
@@ -538,7 +538,7 @@ when Step
         io.abort if io.respond_to? :abort
         io.join  if io.respond_to? :join
       ensure
-        exit -1
+        exit! -1
       end
     rescue Exception
       Log.exception $!
@@ -547,7 +547,7 @@ when Step
         io.abort if io.respond_to? :abort
         io.join  if io.respond_to? :join
       ensure
-        exit -1
+        exit! -1
       end
     end
   else

@@ -242,8 +242,8 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
    hpc.rb
    hpc=hpc{
-    orchestrate.rb
     slurm.rb
+    orchestrate.rb
    }
   }
  }
@@ -459,8 +459,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
    slurm=slurm{
     task
-    list
     orchestrate
+    list
+    clean
    }
    app=app{
     install

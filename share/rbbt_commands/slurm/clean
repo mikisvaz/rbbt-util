@@ -7,7 +7,7 @@ require 'rbbt/util/simpleopt'
 
 options = SOPT.setup <<EOF
 
-Queue a job in Marenostrum
+Clean error or aborted jobs
 
 $ rbbt mnl [options] 
 
@@ -15,12 +15,11 @@ $ rbbt mnl [options]
 -d--done Done jobs only
 -e--error Error jobs only
 -a--aborted SLURM aboted jobs
--r--running Running jobs only
--q--queued Queued jobs only
 -j--job* Job ids
 -s--search* Regular expression
 -t--tail* Show the last lines of the STDERR
 -SBP--sbatch_parameters show sbatch parameters
+-dr--dry_run Do not erase anything
 EOF
 
 if options[:help]
@@ -33,7 +32,7 @@ if options[:help]
 end
 
 Log.severity = 4
-done, error, running, queued, aborted, jobid, search, tail = options.values_at :done, :error, :running, :queued, :aborted, :job, :search, :tail
+done, error, aborted, jobid, search, tail, sbatch_parameters, dry_run = options.values_at :done, :error, :aborted, :job, :search, :tail, :sbatch_parameters, :dry_run
 
 workdir = File.expand_path('~/rbbt-slurm')
 Path.setup(workdir)
@@ -113,19 +112,18 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
  fcadep = File.join(dir, 'canfail_dependencies.list')
  cadeps = Open.read(fcadep).split("\n") if File.exists?(fcadep)
 
+ aborted = error = true if aborted.nil? && error.nil?
  if done || error || aborted || running || queued || jobid || search
    select = false
-   select = true if done && exit_status == 0
    select = true if error && exit_status && exit_status != 0 
    select = true if aborted && (exit_status.nil? && ! running_jobs.include?(id))
-   select = true if queued && deps && (running_jobs & deps).any?
-   select = true if running && (exit_status.nil? && running_jobs.include?(id)) && (!deps || (running_jobs & deps).empty?)
-   select = true if jobid && jobid.split(",").include?(id)
-   select = true if search && cmd.match(/#{search}/)
+   select = select && jobid.split(",").include?(id) if jobid 
+   select = select && cmd.match(/#{search}/) if search
    next unless select 
  end
 
 
+ puts Log.color(:yellow, "**ERASING**")
  puts Log.color :blue, dir
  puts Log.color(:magenta, "Creation: ") << File.mtime(File.join(dir, 'command.slurm')).to_s
  puts Log.color(:magenta, "Done: ") << File.mtime(File.join(dir, 'exit.status')).to_s if File.exist?(File.join(dir, 'exit.status'))
@@ -158,6 +156,7 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
 
  count += 1
 
+ Open.rm_rf dir unless dry_run
 end
 
 puts 
