@@ -25,7 +25,7 @@ $slurm_options = SOPT.get <<EOF
 -t--task_cpus* Tasks
 -W--workflows* Additional workflows
 -tm--time* Time
--R--orchestration_rules* Orchestration rules
+-OR--orchestration_rules* Orchestration rules
 -rmb--remove_slurm_basedir Remove the SLURM working directory (command, STDIN, exit status, ...)
 EOF
 
@@ -43,5 +43,5 @@ class Step
     end
 end
 
-ARGV.concat ["-W", $slurm_options[:workflows]] if $slurm_options[:workflows]
+ARGV.concat ["-W", $slurm_options[:workflows], '--detach'] if $slurm_options[:workflows]
 load Rbbt.share.rbbt_commands.workflow.task.find

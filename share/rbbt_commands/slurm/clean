@@ -115,7 +115,8 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
  aborted = error = true if aborted.nil? && error.nil?
  if done || error || aborted || running || queued || jobid || search
    select = false
-   select = true if error && exit_status && exit_status != 0 
+   select = true if done && exit_status && exit_status.to_i == 0 
+   select = true if error && exit_status && exit_status.to_i != 0 
    select = true if aborted && (exit_status.nil? && ! running_jobs.include?(id))
    select = select && jobid.split(",").include?(id) if jobid 
    select = select && cmd.match(/#{search}/) if search

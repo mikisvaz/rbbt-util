@@ -76,6 +76,7 @@ module HPC
       fjob = File.join(slurm_basedir, 'job.id')
       fexit = File.join(slurm_basedir, 'exit.status')
       fsync = File.join(slurm_basedir, 'sync.log')
+      fsyncexit = File.join(slurm_basedir, 'sync.status')
       fcmd = File.join(slurm_basedir, 'command.slurm')
 
       #{{{ GENERATE TEMPLATE
@@ -106,10 +107,6 @@ module HPC
 #SBATCH --exclusive 
         EOF
       end
-
-      header +=<<-EOF
-#CMD: #{rbbt_cmd}
-      EOF
 
       # ENV
       env = ""
@@ -246,7 +243,7 @@ EOF
         end
 
         if contain
-          rbbt_cmd << " " << %(--workdir_all='#{contain.gsub("'", '\'')}')
+          rbbt_cmd << " " << %(--workdir_all='#{contain.gsub("'", '\'')}/.rbbt/var/jobs')
         end
       end
 
@@ -255,6 +252,10 @@ EOF
 #{exec_cmd} \\
 #{rbbt_cmd}
 EOF
+
+      header +=<<-EOF
+#CMD: #{rbbt_cmd}
+      EOF
 
       run +=<<-EOF
 
@@ -273,10 +274,10 @@ EOF
           coda +=<<-EOF
 singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rbbt system clean all -q &>> #{fsync}
 EOF
-        else
-          coda +=<<-EOF
-rbbt system clean all -q &>> #{fsync}
-EOF
+#        else
+#          coda +=<<-EOF
+#rbbt system clean all -q &>> #{fsync}
+#EOF
         end
 
         if sync.include?("=>")
@@ -295,6 +296,7 @@ EOF
 mkdir -p "$(dirname '#{target}')"
 rsync -avztAXHP --copy-unsafe-links "#{source}/" "#{target}/" &>> #{fsync} 
 sync_es="$?" 
+echo $sync_es > #{fsyncexit}
 find '#{target}' -type l -ls | awk '$13 ~ /^#{target.gsub('/','\/')}/ { sub("#{source}", "#{target}", $13); print $11, $13 }' | while read A B; do rm $A; ln -s $B $A; done
 EOF
 
@@ -320,23 +322,24 @@ singularity exec -e -C -H "$CONTAINER_DIR" "$SINGULARITY_IMG" rm -v /dev/shm/sem
 EOF
           else
             coda +=<<-EOF
-#{exec_cmd} system clean
+##{exec_cmd} system clean
 if [ $exit_status == '0' -a $sync_es == '0' ]; then 
     rm -Rfv #{contain} &>> #{fsync}
 else
     echo "ERROR: Process failed or results could not sync correctly. Contain directory not purged" &>> #{fsync}
 fi
-unset sync_es
 EOF
 
           end
         end
       end
+
       coda +=<<-EOF
 
 # Write exit status to file
 echo $exit_status > #{fexit}
 EOF
+
       if sync
         coda +=<<-EOF 
 if [ "$sync_es" == '0' ]; then 
@@ -410,10 +413,18 @@ EOF
           Open.write(fdep, dependencies * "\n") if dependencies.any?
           Open.write(fcfdep, canfail_dependencies * "\n") if canfail_dependencies.any?
 
-          dep_str = dependencies.any? ? "--dependency=afterok:" + dependencies * ":" : ''
-          canfail_dep_str = canfail_dependencies.any? ? "--dependency=afterany:" + canfail_dependencies * ":" : ''
 
-          job = CMD.cmd("sbatch #{dep_str} #{canfail_dep_str} '#{fcmd}'").read.scan(/\d+/).first.to_i
+          dep_str = '--dependency='
+          normal_dep_str = dependencies.any? ? "afterok:" + dependencies * ":" : nil
+          canfail_dep_str = canfail_dependencies.any? ? "afterany:" + canfail_dependencies * ":" : nil
+
+          if normal_dep_str.nil? && canfail_dep_str.nil?
+            dep_str = ""
+          else
+            dep_str += [normal_dep_str, canfail_dep_str].compact * ","
+          end
+
+          job = CMD.cmd("sbatch #{dep_str} '#{fcmd}'").read.scan(/\d+/).first.to_i
           Log.debug "SBATCH job id: #{job}"
           Open.write(fjob, job.to_s)
           job
