@@ -232,7 +232,8 @@ else
   remote_workflows = {}
 end
 
-Workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir_all))) if options[:workdir_all]
+#Workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir_all))) if options[:workdir_all]
+Workflow.workdir.search_paths.merge!({:workdir => File.expand_path(options.delete(:workdir_all)), :default => :workdir }) if options[:workdir_all]
 
 workflow = Workflow.require_workflow workflow
 
@@ -550,6 +551,8 @@ when Step
         exit! -1
       end
     end
+  elsif detach
+    exit! 0
   else
     res.join
     out.puts Open.read(res.path) if Open.exist?(res.path) || Open.remote?(res.path) || Open.ssh?(res.path)

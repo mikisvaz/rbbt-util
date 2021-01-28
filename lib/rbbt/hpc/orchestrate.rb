@@ -66,6 +66,7 @@ module HPC
       options.delete "clean"
       options.delete "tail"
       options.delete "printfile"
+      options.delete "detach"
 
       rules = YAML.load(Open.read(options[:orchestration_rules])) if options[:orchestration_rules]
       rules ||= {}
