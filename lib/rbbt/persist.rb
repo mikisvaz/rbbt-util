@@ -110,6 +110,8 @@ module Persist
   def self.load_file(path, type)
     begin
       case (type || :marshal).to_sym
+      when :path
+        path
       when :nil
         nil
       when :boolean
@@ -167,6 +169,8 @@ module Persist
     end
 
     case (type || :marshal).to_sym
+    when :path
+      nil
     when :nil
       nil
     when :boolean
