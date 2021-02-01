@@ -447,7 +447,7 @@ class Step
     ensure 
       no_load = false unless IO === result
       Open.rm pid_file if Open.exist?(pid_file) unless no_load
-      set_info :pid, nil unless no_load
+      #set_info :pid, nil unless no_load
     end
   end
 
@@ -557,7 +557,7 @@ class Step
           RbbtSemaphore.post_semaphore(semaphore) if semaphore
           Kernel.exit! -1
         end
-        set_info :pid, nil
+        #set_info :pid, nil
       ensure
         RbbtSemaphore.post_semaphore(semaphore) if semaphore
       end
