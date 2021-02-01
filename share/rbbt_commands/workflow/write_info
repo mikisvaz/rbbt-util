@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+
+require 'rbbt/workflow'
+
+require 'rbbt-util'
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Examine the info of a job result
+
+$ rbbt workflow info <job-result> <key> <value>
+
+-h--help Help
+-f--force Write info even if key is already present
+-r--recursive Write info for all dependencies as well
+EOF
+
+SOPT.usage if options[:help]
+
+file, key, value = ARGV
+
+force, recursive = options.values_at :force, :recursive
+
+def get_step(file)
+  file = file.sub(/\.(info|files)/,'')
+  step = Workflow.load_step file
+  step
+end
+
+raise ParameterException if key.nil? || value.nil?
+
+step = get_step file
+
+step.set_info key, value if force || ! step.info.include?(key)
+
+step.rec_dependencies.each do |dep|
+  dep.set_info key, value if force || ! dep.info.include?(key)
+rescue
+  Log.warn "Could no set info #{key} for #{dep.path}"
+end if recursive

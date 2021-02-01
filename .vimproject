@@ -441,6 +441,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     example
     forget_deps
     info
+    write_info
     init
     install
     jobs

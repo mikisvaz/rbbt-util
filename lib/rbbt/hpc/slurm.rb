@@ -33,7 +33,8 @@ module HPC
       group = File.basename(File.dirname(ENV['HOME']))
 
       if contain_and_sync
-        contain = "/scratch/tmp/rbbt-#{user}" if contain.nil?
+        random_file = TmpFile.random_name
+        contain = "/scratch/tmp/rbbt-#{user}/#{random_file}" if contain.nil?
         sync = "~/.rbbt/var/jobs" if sync.nil?
         wipe_container = "post" if wipe_container.nil?
       end
@@ -252,6 +253,11 @@ EOF
 #{exec_cmd} \\
 #{rbbt_cmd}
 EOF
+      annotate_cmd =<<-EOF
+#{exec_cmd} \\
+workflow write_info "$step_path" slurm_job $SLURM_JOB_ID 
+EOF
+
 
       header +=<<-EOF
 #CMD: #{rbbt_cmd}
@@ -260,10 +266,13 @@ EOF
       run +=<<-EOF
 
 # Run command
-#{cmd}
+step_path=$(#{cmd})
 
 # Save exit status
 exit_status=$?
+
+# Annotate info with SLURM job_info
+#{annotate_cmd}
 
 EOF
 
@@ -543,9 +552,9 @@ EOF
 
         if saved && saved.any?
           options[:inputs_dir] = inputs_dir
-          cmd = ['workflow', 'task', workflow.to_s, task.to_s, '-pf', '--load_inputs', inputs_dir, '--log', (options[:log] || Log.severity).to_s]
+          cmd = ['workflow', 'task', workflow.to_s, task.to_s, '--printpath', '--load_inputs', inputs_dir, '--log', (options[:log] || Log.severity).to_s]
         else
-          cmd = ['workflow', 'task', workflow.to_s, task.to_s, '-pf', '--log', (options[:log] || Log.severity).to_s]
+          cmd = ['workflow', 'task', workflow.to_s, task.to_s, '--printpath', '--log', (options[:log] || Log.severity).to_s]
         end
 
         cmd << "--override_deps='#{override_deps.gsub("'", '\'')}'" if override_deps and not override_deps.empty?
