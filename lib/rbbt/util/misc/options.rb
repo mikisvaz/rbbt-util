@@ -242,48 +242,6 @@ module Misc
 
     return options
 
-    options = {}
-    string.split(/#/).each do |str|
-      if str.match(/(.*)=(.*)/)
-        option, value = $1, $2
-      else
-        option, value = str, true
-      end
-
-      option = option.sub(":",'').to_sym if option.chars.first == ':'
-      value  = value.sub(":",'').to_sym if String === value and value.chars.first == ':'
-
-      if value == true
-        options[option] = option.to_s.chars.first != '!' 
-      else
-        options[option] = Thread.start do
-          $SAFE = 0;
-          case 
-          when value =~ /^(?:true|T)$/i
-            true
-          when value =~ /^(?:false|F)$/i
-            false
-          when Symbol === value
-            value
-          when (String === value and value =~ /^\/(.*)\/$/)
-            Regexp.new /#{$1}/
-          else
-            begin
-              Kernel.const_get value
-            rescue
-              begin  
-                raise if value =~ /[a-z]/ and defined? value
-                eval(value) 
-              rescue Exception
-                value 
-              end
-            end
-          end
-        end.value
-      end
-    end
-
-    options
   end
 
 end
