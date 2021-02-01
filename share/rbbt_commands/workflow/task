@@ -203,6 +203,7 @@ The `recursive_clean` cleans all the job dependency steps recursively.
 -prec--prepare_cpus* Number of dependencies prepared in parallel
 -rwt--remote_workflow_tasks* Load a yaml file describing remote workflow tasks
 -od--override_deps* Override deps using 'Workflow#task=<path>' array_separated
+-PERF--procpath_performance* Measure performance using procpath
 EOF
 
 workflow = ARGV.shift
@@ -407,6 +408,13 @@ begin
     exit 0
   end
 
+  if options[:procpath_performance]
+    require 'rbbt/util/procpath'
+    job.fork
+    job.soft_grace
+    pid = job.info[:pid]
+    ProcPath.monitor(pid, options[:procpath_performance])
+  end
 
   if do_fork
     ENV["RBBT_NO_PROGRESS"] = "true"
@@ -422,7 +430,6 @@ begin
     job.run(:stream)
     res = job
   end
-
 
   if options.delete(:printpath)
     job.join

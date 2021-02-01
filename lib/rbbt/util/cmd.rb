@@ -245,7 +245,7 @@ module CMD
     end 
     io.join
 
-    nil
+    pid
   end
 
 end
