@@ -21,6 +21,8 @@ $ rbbt mnl [options]
 -s--search* Regular expression
 -t--tail* Show the last lines of the STDERR
 -SBP--sbatch_parameters show sbatch parameters
+-PERF--procpath_performance show Procpath performance summary
+-sacct--sacct_peformance show sacct performance summary
 EOF
 
 if options[:help]
@@ -140,8 +142,61 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
 
  if options[:sbatch_parameters]
    puts Log.color(:magenta, "SBATCH parameters: ")
-   puts Log.color :blue, CMD.cmd('grep "^#SBATCH" |tail -n +6', :in => Open.read(fcmd)).read.strip
+   text = CMD.cmd('grep "^#SBATCH" |tail -n +6', :in => Open.read(fcmd)).read.strip
+   lines = text.split("\n").collect{|line| header, _sep, value = line.partition(/\s+/); Log.color(:yellow, header + ": ") + value}
+   puts Log.color :yellow, lines * "\n"
  end
+
+ fprocpath = File.join(dir, 'procpath.sqlite3')
+ if options[:procpath_performance]  && Open.exists?(fprocpath)
+   puts Log.color(:magenta, "Procpath summary: ")
+   require 'rbbt/tsv/csv'
+   meta = TSV.csv(CMD.cmd("sqlite3 -header -csv #{fprocpath} 'select * from meta;' "))
+   perf = TSV.csv(CMD.cmd("sqlite3 -header -csv #{fprocpath} 'select * from record;' "))
+
+   page_size = meta["page_size"].first.to_f
+   clock_ticks = meta["clock_ticks"].first.to_f
+
+   cpu_average = {}
+   rss_average = {}
+   perf.through :key, ["ts", 'stat_pid', "stat_utime", "stat_stime", "stat_cutime", "stat_cstime", "stat_rss"] do |k, values|
+    time, stat_pid, ucpu, scpu, ccpu, cscpu, rss = values
+    time = time.to_f
+
+    cpu = Misc.sum([ucpu, scpu].collect{|v| v.to_f})
+    cpu_average[stat_pid] ||= {}
+    cpu_average[stat_pid][time] ||= []
+    cpu_average[stat_pid][time] << cpu.to_f
+    rss_average[time] ||= []
+    rss_average[time] << rss.to_f * page_size
+   end
+
+   ticks = 0
+   cpu_average.each do |stat_pid, cpu_average_pid|
+    start = cpu_average_pid.keys.sort.first
+    eend = cpu_average_pid.keys.sort.last
+    ticks += Misc.sum(cpu_average_pid[eend]) - Misc.sum(cpu_average_pid[start])
+   end
+   start = rss_average.keys.sort.first
+   eend = rss_average.keys.sort.last
+   time_elapsed = eend - start
+   puts Log.color(:yellow, "CPU average: ") + "%.2f" % ( ticks / clock_ticks / time_elapsed * 100).to_s
+   puts Log.color(:yellow, "RSS average: ") + "%.2f GB" % Misc.mean(rss_average.collect{|t,l| Misc.sum(l) / (1024 * 1024 * 1024)}).to_s 
+
+ end
+
+ if options[:sacct_peformance]
+   begin
+    tsv = TSV.open(CMD.cmd("sacct -j #{id} -o 'jobid,AveRSS,MaxRSS,MaxDiskRead,MaxDiskWrite' -P|grep 'JobID\\|\.batch'"), :header_hash => '', :sep => "|", :type => :list)
+    values = tsv[tsv.keys.first]
+    if values.compact.any?
+     puts Log.color(:magenta, "SACCT performance: ")
+     puts values.zip(values.fields).collect{|v,t| Log.color(:yellow, t + ": ")  + v.to_s } * "\n"
+    end
+   rescue
+   end
+ end
+
 
  if tail && File.exists?(File.join(dir, 'std.err'))
    if exit_status && exit_status != 0
