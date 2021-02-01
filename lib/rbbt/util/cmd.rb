@@ -217,7 +217,7 @@ module CMD
     end
   end
 
-  def self.cmd_log(*args)
+  def self.cmd_pid(*args)
     all_args = *args
 
     all_args << {} unless Hash === all_args.last
@@ -245,7 +245,12 @@ module CMD
     end 
     io.join
 
-    pid
+    nil
+  end
+
+  def self.cmd_log(*args)
+    cmd_pid(*args)
+    nil
   end
 
 end
