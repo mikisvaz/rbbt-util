@@ -13,7 +13,7 @@ module ProcPath
     Log.debug "ProcPath recording #{pid} in #{path} (#{Misc.fingerprint options})"
     procpath_thread = Thread.new do 
       begin
-        procpath_pid = CMD.cmd_log(:procpath, "record --database-file '#{path}' '$..children[?(@.stat.pid == #{pid})]'", cmd_options.merge(:nofail => true, :add_option_dashes => true))
+        procpath_pid = CMD.cmd_pid(:procpath, "record --database-file '#{path}' '$..children[?(@.stat.pid == #{pid})]'", cmd_options.merge(:nofail => true, :add_option_dashes => true))
       rescue Exception
         Log.exceptions $!
         Process.kill "INT", procpath_pid
@@ -36,7 +36,7 @@ module ProcPath
 
   def self.monitor(pid, path)
     database, options_str = path.split("#")
-    options = Misc.string2hash options_str
+    options = options_str.nil? ? {} : Misc.string2hash(options_str)
 
     database = File.expand_path database
     Log.low "ProcPath monitor #{pid} in #{database} (#{Misc.fingerprint options})"

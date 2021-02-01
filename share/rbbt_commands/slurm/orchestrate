@@ -21,6 +21,7 @@ $slurm_options = SOPT.get <<EOF
 -CS--contain_and_sync Contain and sync to default locations
 -ci--copy_image When using a container directory, copy image there
 -t--tail Tail the logs
+-SPERF--SLURM_procpath* Save Procpath performance for SLURM job; specify only options
 -q--queue* Queue
 -t--task_cpus* Tasks
 -W--workflows* Additional workflows

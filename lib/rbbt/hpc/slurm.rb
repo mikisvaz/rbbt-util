@@ -258,7 +258,6 @@ EOF
 workflow write_info --recursive --force=false --check_pid "$step_path" slurm_job $SLURM_JOB_ID 
 EOF
 
-
       header +=<<-EOF
 #CMD: #{rbbt_cmd}
       EOF
@@ -525,6 +524,7 @@ EOF
       dry_run          = options.delete :dry_run
       tail             = options.delete :tail
       dependencies     = options.delete :slurm_dependencies
+      procpath         = options.delete :SLURM_procpath
       options[:jobname] = job.clean_name
 
       workflow = job.workflow
@@ -558,6 +558,8 @@ EOF
         end
 
         cmd << "--override_deps='#{override_deps.gsub("'", '\'')}'" if override_deps and not override_deps.empty?
+
+        cmd << "--procpath_performance='#{tmp_directory}/procpath##{procpath.gsub(',', '#')}'" if procpath
 
         template = self.template(cmd, options)
         jobid = self.issue_template(template, options.merge(:slurm_basedir => slurm_basedir, :dry_run => dry_run, :slurm_dependencies => dependencies))
