@@ -86,7 +86,7 @@ messages = info[:messages]
 backtrace = info[:backtrace]
 pid = info[:pid]
 exception = info[:exception]
-rest = info.keys - [:inputs, :dependencies, :status, :time_elapsed, :messages, :backtrace, :exception, :pid, :archived_info]
+rest = info.keys - [:inputs, :dependencies, :status, :time_elapsed, :messages, :backtrace, :exception, :archived_info]
 
 
 puts Log.color(:magenta, "File") << ": " << step.path
