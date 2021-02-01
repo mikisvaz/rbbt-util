@@ -244,7 +244,7 @@ EOF
         end
 
         if contain
-          rbbt_cmd << " " << %(--workdir_all='#{contain.gsub("'", '\'')}/.rbbt/var/jobs')
+          rbbt_cmd << " " << %(--workdir_all='#{contain.gsub("'", '\'')}/workdir')
         end
       end
 
@@ -294,7 +294,7 @@ EOF
           sync = sync.strip
           source = File.join(File.expand_path(contain), source)
         else
-          source = File.join(File.expand_path(contain), '.rbbt/var/jobs')
+          source = File.join(File.expand_path(contain), 'workdir/var/jobs')
         end
 
         target = File.expand_path(sync)

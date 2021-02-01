@@ -131,8 +131,17 @@ module Persist
     end
 
     def read_lock
-      return yield if read?
+      read if closed?
+      if read?
+        begin
+          return yield
+        ensure
+          close
+        end
+      end
+
       lock do
+        close
         read true
         begin
           yield
@@ -141,14 +150,24 @@ module Persist
     end
 
     def write_lock
-      return yield if write?
+      write if closed?
+      if write?
+        begin
+          return yield
+        ensure
+          close
+        end
+      end
+
       lock do
+        close
         write true
         begin
           yield
         end
       end
     end
+
 
     def merge!(hash)
       hash.each do |key,values|
