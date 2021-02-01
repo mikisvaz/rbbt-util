@@ -57,7 +57,7 @@ module Task
       puts Log.color(:magenta, "Input select options")
       puts
       selects.collect{|p| p}.uniq.each do |input,options|
-        puts Log.color(:blue, input.to_s + ": ") << Misc.format_paragraph(options.collect{|o| o.to_s} * ", ") << "\n"
+        puts Log.color(:blue, input.to_s + ": ") << Misc.format_paragraph(options.collect{|o| Array === o ? o.first.to_s : o.to_s} * ", ") << "\n"
         puts unless Log.compact
       end
       puts
