@@ -104,9 +104,6 @@ module Persist
         write(true) if closed? || ! write?
         res = begin
                 yield
-              rescue Exception
-                Log.exception $!
-                raise $!
               ensure
                 close
               end
@@ -115,7 +112,6 @@ module Persist
     end
 
     def read_and_close
-      #return yield if @locked
       if read? || write?
         begin
           return yield
@@ -134,6 +130,26 @@ module Persist
       end
     end
 
+    def read_lock
+      return yield if read?
+      lock do
+        read true
+        begin
+          yield
+        end
+      end
+    end
+
+    def write_lock
+      return yield if write?
+      lock do
+        write true
+        begin
+          yield
+        end
+      end
+    end
+
     def merge!(hash)
       hash.each do |key,values|
         self[key] = values
@@ -141,38 +157,38 @@ module Persist
     end
 
     def range(*args)
-      self.read_and_close do
+      self.read_lock do
         super(*args)
       end
     end
 
     def include?(*args)
-      self.read_and_close do
+      self.read_lock do
         super(*args) #- TSV::ENTRY_KEYS.to_a
       end
     end
 
     def [](*args)
-      self.read_and_close do
+      self.read_lock do
         super(*args) #- TSV::ENTRY_KEYS.to_a
       end
     end
 
     def []=(*args)
-      self.write_and_close do
+      self.write_lock do
         super(*args) #- TSV::ENTRY_KEYS.to_a
       end
     end
 
     def keys(*args)
-      self.read_and_close do
+      self.read_lock do
         super(*args)
       end
     end
 
 
     def prefix(key)
-      self.read_and_close do
+      self.read_lock do
         range(key, 1, key + MAX_CHAR, 1)
       end
     end
@@ -184,13 +200,13 @@ module Persist
 
 
     def size(*args)
-      self.read_and_close do
+      self.read_lock do
         super(*args)
       end
     end
 
     def each(*args, &block)
-      self.read_and_close do
+      self.read_lock do
         super(*args, &block)
       end
     end
@@ -208,7 +224,7 @@ module Persist
     end
 
     def values_at(*keys)
-      self.read_and_close do
+      self.read_lock do
         keys.collect do |k|
           self[k]
         end
