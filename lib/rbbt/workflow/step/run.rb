@@ -373,7 +373,6 @@ class Step
                 Log.exception $!
               ensure
                 Step.purge_stream_cache
-                set_info :pid, nil
                 Open.rm pid_file if Open.exist?(pid_file)
               end
             end
@@ -388,7 +387,6 @@ class Step
                 _clean_finished
               rescue
                 stop_dependencies
-                set_info :pid, nil
                 Open.rm pid_file if Open.exist?(pid_file)
               end
             end

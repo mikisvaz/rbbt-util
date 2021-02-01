@@ -255,7 +255,7 @@ EOF
 EOF
       annotate_cmd =<<-EOF
 #{exec_cmd} \\
-workflow write_info "$step_path" slurm_job $SLURM_JOB_ID 
+workflow write_info --recursive --force=false "$step_path" slurm_job $SLURM_JOB_ID 
 EOF
 
 

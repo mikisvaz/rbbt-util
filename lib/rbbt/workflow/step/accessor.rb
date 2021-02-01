@@ -505,8 +505,8 @@ class Step
 
   def running? 
     return false if ! (started? || status == :ending)
-    pid = info[:pid]
-    return nil if pid.nil?
+    return nil unless Open.exist?(self.pid_file)
+    pid = Open.read(self.pid_file).to_i
 
     return false if done? or error? or aborted? 
 
@@ -530,8 +530,7 @@ class Step
   end
 
   def nopid?
-    pid = info[:pid] || Open.exists?(pid_file)
-    ! pid && ! (status.nil? || status == :aborted || status == :done || status == :error || status == :cleaned)
+    ! Open.exists?(pid_file) && ! (status.nil? || status == :aborted || status == :done || status == :error || status == :cleaned)
   end
 
   def aborted?

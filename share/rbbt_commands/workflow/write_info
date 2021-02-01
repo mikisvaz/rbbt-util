@@ -16,13 +16,14 @@ $ rbbt workflow info <job-result> <key> <value>
 -h--help Help
 -f--force Write info even if key is already present
 -r--recursive Write info for all dependencies as well
+-p--check_pid Check that recursive jobs where created by the same process
 EOF
 
 SOPT.usage if options[:help]
 
 file, key, value = ARGV
 
-force, recursive = options.values_at :force, :recursive
+force, recursive, check_pid = options.values_at :force, :recursive, :check_pid
 
 def get_step(file)
   file = file.sub(/\.(info|files)/,'')
@@ -32,12 +33,20 @@ end
 
 raise ParameterException if key.nil? || value.nil?
 
+if %w(DELETE nil).include? value
+  value = nil
+  force = true
+end
+
 step = get_step file
 
 step.set_info key, value if force || ! step.info.include?(key)
 
+pid = step.info[:pid]
+host = step.info[:pid_hostname]
+
 step.rec_dependencies.each do |dep|
-  dep.set_info key, value if force || ! dep.info.include?(key)
+  dep.set_info key, value if (force || ! dep.info.include?(key)) && (!check_pid || dep.info[:pid].to_s == pid and dep.info[:pid_hostname] == host)
 rescue
-  Log.warn "Could no set info #{key} for #{dep.path}"
+  Log.warn "Could no set info #{key} for #{dep.path}: #{$!.message}"
 end if recursive
