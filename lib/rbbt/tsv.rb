@@ -125,7 +125,7 @@ module TSV
       data.annotate h
     end
 
-    data.read 
+    data.read if data.respond_to? :persistence_path
 
     data
   end
