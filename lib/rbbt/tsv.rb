@@ -118,16 +118,13 @@ module TSV
     end
 
     if data.respond_to? :persistence_path
+      data.read
       data
     else
       h = data.dup
       data.clear
       data.annotate h
     end
-
-    data.read if data.respond_to? :persistence_path
-
-    data
   end
 
   def self.parse_header(stream, options = {})
