@@ -192,8 +192,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    persist=persist{
     tsv.rb
     tsv=tsv{
-     sharder.rb
      adapter.rb
+
+     sharder.rb
      tokyocabinet.rb
      fix_width_table.rb
      packed_index.rb

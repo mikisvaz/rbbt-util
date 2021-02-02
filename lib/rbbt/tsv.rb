@@ -113,8 +113,8 @@ module TSV
 
     data.entity_options = entity_options
 
-    if Path === source and data.identifiers
-      data.identifiers = Path.setup(data.identifiers, source.pkgdir, source.resource)
+    if Path === source && data.identifiers
+      Path.setup(data.identifiers, source.pkgdir, source.resource)
     end
 
     if data.respond_to? :persistence_path
@@ -124,6 +124,10 @@ module TSV
       data.clear
       data.annotate h
     end
+
+    data.read 
+
+    data
   end
 
   def self.parse_header(stream, options = {})
