@@ -83,7 +83,7 @@ module HPC
 
         deps = seen[dep.path] ||= self.orchestrate_job(dep, options, skip_dep, seen)
         if job.canfail_paths.include? dep.path
-          [deps].flatten.collect{|id| ['canfail', id] * ":"}
+          [deps].flatten.compact.collect{|id| ['canfail', id] * ":"}
         else
           deps
         end

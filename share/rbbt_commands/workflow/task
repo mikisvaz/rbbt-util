@@ -410,15 +410,19 @@ begin
 
   if options[:procpath_performance]
     require 'rbbt/util/procpath'
+    current_pid = job.info[:pid]
     job.fork
     job.soft_grace
-    pid = job.info[:pid]
-    begin
-     ProcPath.monitor(pid, options[:procpath_performance])
-    rescue Errno::ECHILD
-     Log.warn "Procpath didn't find process #{pid} to monitor. Maybe it finished already"
-    rescue
-     Log.warn "Procpath failed: #{$!.message}"
+    sleep 2 if job.info[:pid] == current_pid
+    if job.info[:pid] != current_pid
+      pid = job.info[:pid]
+      begin
+        ProcPath.monitor(pid, options[:procpath_performance])
+      rescue Errno::ECHILD
+        Log.warn "Procpath didn't find process #{pid} to monitor. Maybe it finished already"
+      rescue
+        Log.warn "Procpath failed: #{$!.message}"
+      end
     end
   end
 
