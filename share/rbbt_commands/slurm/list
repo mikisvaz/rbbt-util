@@ -71,7 +71,7 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
  end
 
  if m = Open.read(fcmd).match(/# Run command\n(.*?)\n/im)
-  exe = m[1]
+  exe = m[1].sub('step_path=$(','')
  else
   exe = nil
  end
