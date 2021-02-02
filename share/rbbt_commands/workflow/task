@@ -413,7 +413,13 @@ begin
     job.fork
     job.soft_grace
     pid = job.info[:pid]
-    ProcPath.monitor(pid, options[:procpath_performance])
+    begin
+     ProcPath.monitor(pid, options[:procpath_performance])
+    rescue Errno::ECHILD
+     Log.warn "Procpath didn't find process #{pid} to monitor. Maybe it finished already"
+    rescue
+     Log.warn "Procpath failed: #{$!.message}"
+    end
   end
 
   if do_fork

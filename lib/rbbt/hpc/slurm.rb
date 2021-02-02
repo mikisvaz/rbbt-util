@@ -525,7 +525,10 @@ EOF
       tail             = options.delete :tail
       dependencies     = options.delete :slurm_dependencies
       procpath         = options.delete :SLURM_procpath
+
       options[:jobname] = job.clean_name
+      log_level         = options.delete :log
+      log_level       ||= Log.severity
 
       workflow = job.workflow
 
@@ -550,16 +553,13 @@ EOF
         inputs_dir = File.join(tmp_directory, 'inputs_dir')
         saved = Step.save_job_inputs(job, inputs_dir)
 
-        if saved && saved.any?
-          options[:inputs_dir] = inputs_dir
-          cmd = ['workflow', 'task', workflow.to_s, task.to_s, '--printpath', '--load_inputs', inputs_dir, '--log', (options[:log] || Log.severity).to_s]
-        else
-          cmd = ['workflow', 'task', workflow.to_s, task.to_s, '--printpath', '--log', (options[:log] || Log.severity).to_s]
-        end
+        cmd = ['workflow', 'task', workflow.to_s, task.to_s, '--printpath', '--log', log_level.to_s]
+
+        cmd << "--procpath_performance='#{tmp_directory}/procpath##{procpath.gsub(',', '#')}'" if procpath
 
         cmd << "--override_deps='#{override_deps.gsub("'", '\'')}'" if override_deps and not override_deps.empty?
 
-        cmd << "--procpath_performance='#{tmp_directory}/procpath##{procpath.gsub(',', '#')}'" if procpath
+        cmd << "--load_inputs='#{inputs_dir}'" if saved && saved.any?
 
         template = self.template(cmd, options)
         jobid = self.issue_template(template, options.merge(:slurm_basedir => slurm_basedir, :dry_run => dry_run, :slurm_dependencies => dependencies))
