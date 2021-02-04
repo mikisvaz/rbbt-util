@@ -98,15 +98,24 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
  if File.exists?(fstatus = File.join(dir, 'job.status'))
   nodes = Open.read(fstatus).split("\n").last.split(/\s+/).last.split(",")
  elsif job_nodes[id]
-  nodes = job_nodes[id]
+  nodes = job_nodes[id].reject{|n| n.include? "("}
  else
   nodes = []
  end
 
+ if File.exists?(File.join(dir, 'exit.status'))
+   now = File.ctime(File.join(dir, 'exit.status'))
+ else
+   now = Time.now
+ end
+
  if File.exists?(File.join(dir, 'std.out'))
+  cerrt = File.ctime File.join(dir, 'std.err')
+  coutt = File.ctime File.join(dir, 'std.out')
   outt = File.mtime File.join(dir, 'std.out')
   errt = File.mtime File.join(dir, 'std.err')
-  time_diff = Time.now - [outt, errt].max
+  time_diff = now - [outt, errt].max
+  time_elapsed = now - [cerrt, coutt].min
  end
 
  fdep = File.join(dir, 'dependencies.list')
@@ -115,14 +124,19 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
  fcadep = File.join(dir, 'canfail_dependencies.list')
  cadeps = Open.read(fcadep).split("\n") if File.exists?(fcadep)
 
- if done || error || aborted || running || queued || jobid || search
+ if done || error || aborted || running || queued || jobid 
    select = false
    select = true if done && exit_status == 0
    select = true if error && exit_status && exit_status != 0 
    select = true if aborted && (exit_status.nil? && ! running_jobs.include?(id))
-   select = true if queued && deps && (running_jobs & deps).any?
-   select = true if running && (exit_status.nil? && running_jobs.include?(id)) && (!deps || (running_jobs & deps).empty?)
+   is_running =  exit_status.nil? && running_jobs.include?(id) && (!deps || (running_jobs & deps).empty?)
+   select = true if queued && deps && (running_jobs & deps).any? || queued && is_running && nodes.empty?
+   select = true if running && nodes.any? && (exit_status.nil? && running_jobs.include?(id)) && (!deps || (running_jobs & deps).empty?)
    select = true if jobid && jobid.split(",").include?(id)
+   select &= search && cmd.match(/#{search}/) if search
+   next unless select 
+ elsif search
+   select = false
    select = true if search && cmd.match(/#{search}/)
    next unless select 
  end
@@ -130,6 +144,7 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
 
  puts Log.color :blue, dir
  puts Log.color(:magenta, "Creation: ") << File.mtime(File.join(dir, 'command.slurm')).to_s
+ puts Log.color(:magenta, "Started: ") << File.ctime(File.join(dir, 'std.err')).to_s if File.exist?(File.join(dir, 'std.err'))
  puts Log.color(:magenta, "Done: ") << File.mtime(File.join(dir, 'exit.status')).to_s if File.exist?(File.join(dir, 'exit.status'))
  puts Log.color(:magenta, "Exec: ") << (exe || "Missing")
  puts Log.color(:magenta, "CMD: ") << (Log.color(:yellow, cmd) || "Missing")
@@ -138,7 +153,8 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
  puts Log.color(:magenta, "Dependencies: ") << deps * ", " if deps
  puts Log.color(:magenta, "Dependencies (can fail): ") << cadeps * ", " if cadeps
  puts Log.color(:magenta, "Nodes: ") << nodes * ", "
- puts Log.color(:magenta, "Output: ") << File.exists?(File.join(dir, 'std.out')).to_s << (id.nil? ? "" : " (last update " + Misc.format_seconds(time_diff) + " ago)")
+ puts Log.color(:magenta, "Time elapsed: ") << Misc.format_seconds(time_elapsed) if time_elapsed
+ puts Log.color(:magenta, "Output: ") << File.exists?(File.join(dir, 'std.out')).to_s << (id.nil? || File.exists?(File.join(dir, 'exit.status')) ? "" : " (last update " + Misc.format_seconds(time_diff) + " ago)")
 
  if options[:sbatch_parameters]
    puts Log.color(:magenta, "SBATCH parameters: ")
@@ -180,8 +196,11 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
    start = rss_average.keys.sort.first
    eend = rss_average.keys.sort.last
    time_elapsed = eend - start
+   ticks = 1 if ticks == 0
+   time_elapsed = 1 if time_elapsed == 0
    puts Log.color(:yellow, "CPU average: ") + "%.2f" % ( ticks / clock_ticks / time_elapsed * 100).to_s
    puts Log.color(:yellow, "RSS average: ") + "%.2f GB" % Misc.mean(rss_average.collect{|t,l| Misc.sum(l) / (1024 * 1024 * 1024)}).to_s 
+   puts Log.color(:yellow, "Time: ") + Misc.format_seconds((eend - start))
 
  end
 
