@@ -232,7 +232,7 @@ puts resource[path].find(search_path)
           ppp Open.read(tmp_include_file)
           puts cmd 
         else
-          CMD.cmd_log(cmd)
+          CMD.cmd_log(cmd, :log => Log::INFO)
         end
       end
     end

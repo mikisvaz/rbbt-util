@@ -190,7 +190,7 @@ module Workflow
       return Misc.string2const Misc.camel_case(wf_name)
     end
 
-    Log.info{"Loading workflow #{wf_name}"}
+    Log.high{"Loading workflow #{wf_name}"}
     require_local_workflow(wf_name) or 
     (Workflow.autoinstall and `rbbt workflow install #{Misc.snake_case(wf_name)} || rbbt workflow install #{wf_name}` and require_local_workflow(wf_name)) or raise("Workflow not found or could not be loaded: #{ wf_name }")
     begin
