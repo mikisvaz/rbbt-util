@@ -107,6 +107,6 @@ real_paths.each do |source|
     puts cmd 
     exit 0
   else
-    CMD.cmd_log(cmd)
+    CMD.cmd_log(cmd, :log => Log::INFO)
   end
 end
