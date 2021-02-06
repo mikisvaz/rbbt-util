@@ -748,7 +748,9 @@ module Open
     if (dir_sub_path = find_repo_dir(path))
       writable_repo?(*dir_sub_path)
     else
-      if File.exist?(path)
+      if File.symlink?(path)
+        File.writable?(File.dirname(path))
+      elsif File.exist?(path)
         File.writable?(path)
       else
         File.writable?(File.dirname(File.expand_path(path)))
