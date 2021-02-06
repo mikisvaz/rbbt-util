@@ -5,7 +5,10 @@ module HPC
     def self.job_rules(rules, job)
       workflow = job.workflow.to_s
       task_name = job.task_name.to_s
+      task_name = job.overriden.to_s if Symbol === job.overriden
+
       defaults = rules["defaults"] || {}
+      defaults.merge(rules[workflow]["defaults"] || {}) if rules[workflow]
 
       job_rules = IndiferentHash.setup(defaults.dup)
 

@@ -21,7 +21,7 @@ module HPC
       exclusive        = options.delete :exclusive
       highmem          = options.delete :highmem
 
-      queue            = options.delete(:queue) || 'bsc_ls'
+      queue            = options.delete(:queue) || Rbbt::Config.get('queue', :slurm_queue, :slurm, :SLURM, :default => 'bsc_ls')
       task_cpus        = options.delete(:task_cpus) || 1
       nodes            = options.delete(:nodes) || 1
       time             = options.delete(:time) || "0:00:10"
@@ -301,11 +301,15 @@ EOF
         coda +=<<-EOF
 
 # Sync data to target location
-mkdir -p "$(dirname '#{target}')"
-rsync -avztAXHP --copy-unsafe-links "#{source}/" "#{target}/" &>> #{fsync} 
-sync_es="$?" 
-echo $sync_es > #{fsyncexit}
-find '#{target}' -type l -ls | awk '$13 ~ /^#{target.gsub('/','\/')}/ { sub("#{source}", "#{target}", $13); print $11, $13 }' | while read A B; do rm $A; ln -s $B $A; done
+if [ $exit_status == '0' ]; then 
+  mkdir -p "$(dirname '#{target}')"
+  rsync -avztAXHP --copy-unsafe-links "#{source}/" "#{target}/" &>> #{fsync} 
+  sync_es="$?" 
+  echo $sync_es > #{fsyncexit}
+  find '#{target}' -type l -ls | awk '$13 ~ /^#{target.gsub('/','\/')}/ { sub("#{source}", "#{target}", $13); print $11, $13 }' | while read A B; do rm $A; ln -s $B $A; done
+else
+  sync_es="$exit_status" 
+fi
 EOF
 
         if  contain && (wipe_container == "post" || wipe_container == "both")
@@ -331,11 +335,11 @@ EOF
           else
             coda +=<<-EOF
 ##{exec_cmd} system clean
-if [ $exit_status == '0' -a $sync_es == '0' ]; then 
+#if [ $exit_status == '0' -a $sync_es == '0' ]; then 
     rm -Rfv #{contain} &>> #{fsync}
-else
-    echo "ERROR: Process failed or results could not sync correctly. Contain directory not purged" &>> #{fsync}
-fi
+#else
+#    echo "ERROR: Process failed or results could not sync correctly. Contain directory not purged" &>> #{fsync}
+#fi
 EOF
 
           end
