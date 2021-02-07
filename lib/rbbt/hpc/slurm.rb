@@ -24,7 +24,7 @@ module HPC
       queue            = options.delete(:queue) || Rbbt::Config.get('queue', :slurm_queue, :slurm, :SLURM, :default => 'bsc_ls')
       task_cpus        = options.delete(:task_cpus) || 1
       nodes            = options.delete(:nodes) || 1
-      time             = options.delete(:time) || "0:00:10"
+      time             = options.delete(:time) || "0:02:00"
 
       inputs_dir       = options.delete :inputs_dir
       config_keys      = options.delete :config_keys

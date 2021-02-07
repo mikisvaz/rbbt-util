@@ -53,7 +53,11 @@ module Workflow
           if file =~ /\.yaml/
             inputs[input.to_sym]  = YAML.load(Open.read(file))
           else
-            inputs[input.to_sym]  = Open.realpath(file)
+            if File.symlink?(file)
+              inputs[input.to_sym]  = File.readlink(file)
+            else
+              inputs[input.to_sym]  = Open.realpath(file)
+            end
           end
         when :text
           Log.debug "Reading #{ input } from #{file}"
