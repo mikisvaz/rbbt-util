@@ -168,6 +168,10 @@ class Step
     @task_name ||= task.name
   end
 
+  def task_signature
+    [workflow.to_s, task_name] * "#"
+  end
+
   # {{{ INFO
 
   def info_file

@@ -8,7 +8,7 @@ module HPC
       task_name = job.overriden.to_s if Symbol === job.overriden
 
       defaults = rules["defaults"] || {}
-      defaults.merge(rules[workflow]["defaults"] || {}) if rules[workflow]
+      defaults = defaults.merge(rules[workflow]["defaults"] || {}) if rules[workflow]
 
       job_rules = IndiferentHash.setup(defaults.dup)
 
@@ -53,50 +53,62 @@ module HPC
       job_rules
     end
 
-    def self.get_job_dependencies(job, job_rules)
+    def self.get_job_dependencies(job, job_rules = nil)
       deps = job.dependencies || []
       deps += job.input_dependencies || []
       deps
     end
 
-    def self.orchestrate_job(job, options, skip = false, seen = {}, chains = {})
-      return if job.done?
-      return unless job.path.split("/")[-4] == "jobs"
-      seen[:orchestration_target_job] ||= job
-
-      options.delete "recursive_clean"
-      options.delete "clean_task"
-      options.delete "clean"
-      options.delete "tail"
-      options.delete "printfile"
-      options.delete "detach"
-
-      rules = YAML.load(Open.read(options[:orchestration_rules])) if options[:orchestration_rules]
-      rules ||= {}
-      IndiferentHash.setup(rules)
-
+    def self.get_chains(job, rules, chains = {})
       job_rules = self.job_rules(rules, job)
+      job_deps = get_job_dependencies(job)
 
-      deps = get_job_dependencies(job, job_rules)
+      input_deps = []
+      job.rec_dependencies.each do |dep|
+        input_deps.concat dep.input_dependencies
+      end
 
-      chains[job.path] ||= []
-      dep_ids = deps.collect do |dep|
-        skip_dep = job_rules["chain_tasks"] &&
+      job_deps.each do |dep|
+        input_deps.concat dep.input_dependencies
+        get_chains(dep, rules, chains)
+      end
+
+      job_deps.select do |dep|
+        chained = job_rules["chain_tasks"] &&
           job_rules["chain_tasks"][job.workflow.to_s] && job_rules["chain_tasks"][job.workflow.to_s].include?(job.task_name.to_s)  &&
           job_rules["chain_tasks"][dep.workflow.to_s] && job_rules["chain_tasks"][dep.workflow.to_s].include?(dep.task_name.to_s) 
 
-          chains[job.path] << dep if skip_dep
+        dep_skip = ! input_deps.include?(dep) && self.job_rules(rules, dep)["skip"] 
+        chained || dep_skip
+      end.each do |dep|
+        chains[job] ||= [] 
+        chains[job] << dep 
+        chains[job].concat chains[dep] if chains[dep]
+      end
 
-        deps = seen[dep.path] ||= self.orchestrate_job(dep, options, skip_dep, seen, chains)
-        if job.canfail_paths.include? dep.path
-          [deps].flatten.compact.collect{|id| ['canfail', id] * ":"}
-        else
-          deps
-        end
-      end.flatten.compact.uniq
+      chains
+    end
 
-      skip = true if job_rules[:skip]
-      return dep_ids if skip and seen[:orchestration_target_job] != job
+    def self.workload(job, rules, chains, options, seen = nil)
+      if seen.nil?
+        seen = {} 
+        target_job = true
+      end
+
+      job_rules = self.job_rules(rules, job)
+      job_deps = get_job_dependencies(job)
+
+
+      chain = chains[job]
+      chain -= seen.keys if chain
+      dep_ids = job_deps.collect do |dep|
+        seen[dep] = nil if chain && chain.include?(dep) #&& ! job.input_dependencies.include?(dep) 
+        ids = workload(dep, rules, chains, options, seen)
+        seen[dep] = ids
+        ids
+      end.compact.flatten.uniq
+
+      return seen[job] || dep_ids if seen.include? job
 
       job_rules.delete :chain_tasks
       job_rules.delete :tasks
@@ -111,21 +123,34 @@ module HPC
         job_options[:config_keys] = job_options[:config_keys] ? config_keys + "," + job_options[:config_keys] : config_keys
       end
 
-      manifest = []
-      stack = [job]
-      while dep = stack.pop
-        manifest << dep
-        stack += chains[dep.path] if chains[dep.path]
-      end
 
-      job_options[:manifest] = manifest.uniq.collect{|dep| dep.workflow_short_path}
-
+      job_options[:manifest] = chain ? ([job] + chain).uniq.collect{|dep| dep.task_signature} : [job.task_signature]
       if options[:dry_run]
-        puts Log.color(:yellow, "Manifest: ") + Log.color(:blue, job_options[:manifest] * ", ") + " - tasks: #{job_options[:task_cpus] || 1} - time: #{job_options[:time]} - config: #{job_options[:config_keys]}"
-        []
+        puts Log.color(:magenta, "Manifest: ") + Log.color(:blue, job_options[:manifest] * ", ") + " - tasks: #{job_options[:task_cpus] || 1} - time: #{job_options[:time]} - config: #{job_options[:config_keys]}"
+        puts Log.color(:yellow, "Deps: ") + Log.color(:blue, job_options[:slurm_dependencies]*", ")
+        [job.task_signature]
       else
         run_job(job, job_options)
       end
     end
+
+
+    def self.orchestrate_job(job, options)
+      options.delete "recursive_clean"
+      options.delete "clean_task"
+      options.delete "clean"
+      options.delete "tail"
+      options.delete "printfile"
+      options.delete "detach"
+
+      rules = YAML.load(Open.read(options[:orchestration_rules])) if options[:orchestration_rules]
+      rules ||= {}
+      IndiferentHash.setup(rules)
+
+      chains = get_chains(job, rules)
+
+      workload(job, rules, chains, options)
+    end
+
   end
 end
