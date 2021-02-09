@@ -91,7 +91,14 @@ class Step
         if expand_repeats
           str << Log.color(:green, Log.uncolor(prov_report(dep, offset+1, task)))
         else
-          str << Log.color(:green, " " * (offset + 1) + Log.uncolor(prov_report_msg(dep.status, dep.info[:name], dep.path, dep.info)))
+          info = dep.info  || {}
+          status = info[:status] || :missing
+          status = "remote" if Open.remote?(path) || Open.ssh?(path)
+          name = info[:name] || File.basename(path)
+          status = :unsync if status == :done and not Open.exist?(path)
+          status = :notfound if status == :noinfo and not Open.exist?(path)
+
+          str << Log.color(status == :notfound ? :blue : :green, " " * (offset + 1) + Log.uncolor(prov_report_msg(status, name, path, info)))
         end
       end
     end if step.dependencies

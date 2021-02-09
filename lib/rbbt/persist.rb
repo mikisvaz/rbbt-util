@@ -349,7 +349,7 @@ module Persist
 
         Open.notify_write(path)
 
-        return path if persist_options[:no_load]
+        return path if persist_options[:no_load] || type == :path
 
         res
       end

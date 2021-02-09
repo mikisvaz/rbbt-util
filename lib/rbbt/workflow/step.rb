@@ -465,7 +465,10 @@ class Step
     self
   end
 
-  def rec_dependencies(need_run = false, seen = [])
+  #connected = true means that dependency searching ends when a result is done
+  #but dependencies are absent, meanining that the file could have been dropped
+  #in
+  def rec_dependencies(connected = false, seen = [])
 
     # A step result with no info_file means that it was manually
     # placed. In that case, do not consider its dependencies
@@ -480,9 +483,9 @@ class Step
       #next if self.done? && Open.exists?(info_file) && info[:dependencies] && info[:dependencies].select{|task,name,path| path == step.path }.empty?
       next if archived_deps.include? step.path
       next if seen.include? step.path
-      next if self.done? && need_run && ! updatable?
+      next if self.done? && connected && ! updatable?
 
-      r = step.rec_dependencies(need_run, new_dependencies.collect{|d| d.path})
+      r = step.rec_dependencies(connected, new_dependencies.collect{|d| d.path})
       new_dependencies.concat r
       new_dependencies << step
     }

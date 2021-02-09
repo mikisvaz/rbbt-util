@@ -456,7 +456,7 @@ class Step
   end
 
   def dirty_files
-    rec_dependencies = self.rec_dependencies
+    rec_dependencies = self.rec_dependencies(true)
     return [] if rec_dependencies.empty?
     canfail_paths = self.canfail_paths
 

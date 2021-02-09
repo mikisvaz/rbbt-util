@@ -218,7 +218,14 @@ module Path
 
                      else
                        where = where.to_sym
-                       raise "Did not recognize the 'where' tag: #{where}. Options: #{paths.keys}" unless paths.include? where
+
+                       if paths.include? where
+                         path = paths[where]
+                       elsif where.to_s.include?("/")
+                         path = where.to_s
+                       else
+                         raise "Did not recognize the 'where' tag: #{where}. Options: #{paths.keys}" unless paths.include? where
+                       end
 
                        if where == :lib 
                          libdir = @libdir || Path.caller_lib_dir(caller_lib) || "NOLIBDIR" 
@@ -227,7 +234,6 @@ module Path
                        end
 
                        pwd = FileUtils.pwd
-                       path = paths[where]
                        path = File.join(path, "{PATH}") unless path.include? "PATH}" or path.include? "{BASENAME}"
                        path = path.
                          sub('{PKGDIR}', pkgdir).

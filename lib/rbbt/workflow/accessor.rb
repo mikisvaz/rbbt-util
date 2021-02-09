@@ -382,8 +382,8 @@ module Workflow
                              else
                                task_info = d[:workflow].task_info(d[:task])
 
-                               inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
-                               d[:workflow]._job(d[:task], d[:jobname], inputs) 
+                               _inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
+                               d[:workflow]._job(d[:task], d[:jobname], _inputs) 
                              end
                        end
                        ComputeDependency.setup(d, compute) if compute
@@ -400,8 +400,8 @@ module Workflow
                          setup_override_dependency(value, dep[:workflow], dep[:task])
                        else
                          task_info = (dep[:task] && dep[:workflow]) ? dep[:workflow].task_info(dep[:task]) : nil
-                         inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, task_info)
-                         dep = dep[:workflow]._job(dep[:task], dep[:jobname], inputs)
+                         _inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, task_info)
+                         dep = dep[:workflow]._job(dep[:task], dep[:jobname], _inputs)
                        end
                      end
                    end

@@ -112,23 +112,27 @@ class Step
   end
 
   def updatable?
-    (ENV["RBBT_UPDATE_ALL_JOBS"] == 'true' || ( ENV["RBBT_UPDATE"] == "true" && Open.exists?(info_file)) && status != :noinfo && ! (relocated? && done?)) || (ENV["RBBT_UPDATE"] && ! (done? && ! Open.exists?(info_file)))
+    return true if ENV["RBBT_UPDATE_ALL_JOBS"] == 'true'
+    return false unless ENV["RBBT_UPDATE"] == "true"
+    return false unless Open.exists?(info_file)
+    return true if status != :noinfo && ! (relocated? && done?)
+    false
   end
 
   def dependency_checks
     return [] if ENV["RBBT_UPDATE"] != "true"
 
-    rec_dependencies.
+    rec_dependencies(true).
       reject{|dependency| (defined?(WorkflowRemoteClient) && WorkflowRemoteClient::RemoteStep === dependency) || Open.remote?(dependency.path) }.
       reject{|dependency| dependency.error? }.
       #select{|dependency| Open.exists?(dependency.path) || ((Open.exists?(dependency.info_file) && (dependency.status == :cleaned) || dependency.status == :waiting)) }.
-      select{|dependency| dependency.updatable? }.
+      #select{|dependency| dependency.updatable? }.
       collect{|dependency| Workflow.relocate_dependency(self, dependency)}
   end
 
   def input_checks
-    (inputs.select{|i| Step === i } + inputs.select{|i| Path === i && Step === i.resource}.collect{|i| i.resource}).
-      select{|dependency| dependency.updatable? }
+    (inputs.select{|i| Step === i } + inputs.select{|i| Path === i && Step === i.resource}.collect{|i| i.resource})
+      #select{|dependency| dependency.updatable? }
   end
 
   def checks
@@ -153,7 +157,8 @@ class Step
     canfail_paths = self.canfail_paths
     this_mtime = Open.mtime(self.path) if Open.exists?(self.path)
 
-    outdated_time = checks.select{|dep| dep.updatable? && dep.done? && Persist.newer?(path, dep.path) }
+    #outdated_time = checks.select{|dep| dep.updatable? && dep.done? && Persist.newer?(path, dep.path) }
+    outdated_time = checks.select{|dep| dep.done? && Persist.newer?(path, dep.path) }
     outdated_dep = checks.reject{|dep| dep.done? || (dep.error? && ! dep.recoverable_error? && canfail_paths.include?(dep.path)) }
 
     #checks.each do |dep| 
