@@ -315,6 +315,11 @@ class RemoteStep < Step
     end
   end
 
+  def workflow_short_path
+    init_job unless @url
+    [@base_url, @task, @name] * "/"
+  end
+
   def short_path
     init_job unless @url
     [@task, @name] * "/"

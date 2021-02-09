@@ -154,8 +154,14 @@ class Step
     @name ||= path.sub(/.*\/#{Regexp.quote task_name.to_s}\/(.*)/, '\1')
   end
 
+
   def short_path
     [task_name, name] * "/"
+  end
+
+  def workflow_short_path
+    return short_path unless workflow
+    workflow.to_s + "#" + short_path
   end
 
   def task_name

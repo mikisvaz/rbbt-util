@@ -70,6 +70,13 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
   cmd = nil
  end
 
+ if m = Open.read(fcmd).match(/#MANIFEST: (.*)/)
+  manifest = m[1]
+ else
+  manifest = nil
+ end
+
+
  if m = Open.read(fcmd).match(/# Run command\n(.*?)\n/im)
   exe = m[1].sub('step_path=$(','')
  else
@@ -145,6 +152,7 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
  puts Log.color :blue, dir
  puts Log.color(:magenta, "Creation: ") << File.mtime(File.join(dir, 'command.slurm')).to_s
  puts Log.color(:magenta, "Started: ") << File.ctime(File.join(dir, 'std.err')).to_s if File.exist?(File.join(dir, 'std.err'))
+ puts Log.color(:magenta, "Manifest: ") << Log.color(:yellow, manifest) 
  puts Log.color(:magenta, "Done: ") << File.mtime(File.join(dir, 'exit.status')).to_s if File.exist?(File.join(dir, 'exit.status'))
  puts Log.color(:magenta, "Exec: ") << (exe || "Missing")
  puts Log.color(:magenta, "CMD: ") << (Log.color(:yellow, cmd) || "Missing")

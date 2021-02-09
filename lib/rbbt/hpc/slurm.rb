@@ -21,6 +21,8 @@ module HPC
       exclusive        = options.delete :exclusive
       highmem          = options.delete :highmem
 
+      manifest         = options.delete :manifest
+
       queue            = options.delete(:queue) || Rbbt::Config.get('queue', :slurm_queue, :slurm, :SLURM, :default => 'bsc_ls')
       task_cpus        = options.delete(:task_cpus) || 1
       nodes            = options.delete(:nodes) || 1
@@ -257,6 +259,10 @@ EOF
 #{exec_cmd} \\
 workflow write_info --recursive --force=false --check_pid "$step_path" slurm_job $SLURM_JOB_ID 
 EOF
+
+      header +=<<-EOF if manifest
+#MANIFEST: #{manifest * ", "}
+      EOF
 
       header +=<<-EOF
 #CMD: #{rbbt_cmd}

@@ -59,7 +59,7 @@ module HPC
       deps
     end
 
-    def self.orchestrate_job(job, options, skip = false, seen = {})
+    def self.orchestrate_job(job, options, skip = false, seen = {}, chains = {})
       return if job.done?
       return unless job.path.split("/")[-4] == "jobs"
       seen[:orchestration_target_job] ||= job
@@ -79,12 +79,15 @@ module HPC
 
       deps = get_job_dependencies(job, job_rules)
 
+      chains[job.path] ||= []
       dep_ids = deps.collect do |dep|
         skip_dep = job_rules["chain_tasks"] &&
           job_rules["chain_tasks"][job.workflow.to_s] && job_rules["chain_tasks"][job.workflow.to_s].include?(job.task_name.to_s)  &&
           job_rules["chain_tasks"][dep.workflow.to_s] && job_rules["chain_tasks"][dep.workflow.to_s].include?(dep.task_name.to_s) 
 
-        deps = seen[dep.path] ||= self.orchestrate_job(dep, options, skip_dep, seen)
+          chains[job.path] << dep if skip_dep
+
+        deps = seen[dep.path] ||= self.orchestrate_job(dep, options, skip_dep, seen, chains)
         if job.canfail_paths.include? dep.path
           [deps].flatten.compact.collect{|id| ['canfail', id] * ":"}
         else
@@ -108,7 +111,21 @@ module HPC
         job_options[:config_keys] = job_options[:config_keys] ? config_keys + "," + job_options[:config_keys] : config_keys
       end
 
-      run_job(job, job_options)
+      manifest = []
+      stack = [job]
+      while dep = stack.pop
+        manifest << dep
+        stack += chains[dep.path] if chains[dep.path]
+      end
+
+      job_options[:manifest] = manifest.uniq.collect{|dep| dep.workflow_short_path}
+
+      if options[:dry_run]
+        puts Log.color(:yellow, "Manifest: ") + Log.color(:blue, job_options[:manifest] * ", ") + " - tasks: #{job_options[:task_cpus] || 1} - time: #{job_options[:time]} - config: #{job_options[:config_keys]}"
+        []
+      else
+        run_job(job, job_options)
+      end
     end
   end
 end
