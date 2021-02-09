@@ -21,7 +21,7 @@ module Task
 
     selects = []
     if inputs.any?
-      inputs.zip(input_types.values_at(*inputs)).select{|i,t| t.to_sym == :select and input_options[i][:select_options] }.each{|i,t| selects << [i, input_options[i][:select_options]]  }
+      inputs.zip(input_types.values_at(*inputs)).select{|i,t| t.to_sym == :select && input_options[i] && input_options[i][:select_options] }.each{|i,t| selects << [i, input_options[i][:select_options]]  }
       puts SOPT.input_doc(inputs, input_types, input_descriptions, input_defaults, true)
       puts
     end
