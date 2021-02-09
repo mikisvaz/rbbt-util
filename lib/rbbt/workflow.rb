@@ -379,7 +379,7 @@ module Workflow
     has_overriden_inputs = false
 
     inputs.each do |k,v|
-      has_overriden_inputs = true if String === k and k.include? "#"
+      #has_overriden_inputs = true if String === k and k.include? "#"
       next unless (task_inputs.include?(k.to_sym) or task_inputs.include?(k.to_s))
       default = all_defaults[k]
       next if default == v 
