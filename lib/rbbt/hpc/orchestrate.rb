@@ -59,6 +59,18 @@ module HPC
       deps
     end
 
+    def self.get_recursive_job_dependencies(job)
+      deps = get_job_dependencies(job) 
+      (deps + deps.collect{|dep| get_recursive_job_dependencies(dep) }).flatten
+    end
+
+    def self.piggyback(job, job_rules, job_deps)
+      return false unless job_rules["skip"]
+      final_deps = job_deps - job_deps.collect{|dep| get_recursive_job_dependencies(dep)}.flatten.uniq
+      return final_deps.first if final_deps.length == 1
+      return false
+    end
+
     def self.get_chains(job, rules, chains = {})
       job_rules = self.job_rules(rules, job)
       job_deps = get_job_dependencies(job)
@@ -78,7 +90,7 @@ module HPC
           job_rules["chain_tasks"][job.workflow.to_s] && job_rules["chain_tasks"][job.workflow.to_s].include?(job.task_name.to_s)  &&
           job_rules["chain_tasks"][dep.workflow.to_s] && job_rules["chain_tasks"][dep.workflow.to_s].include?(dep.task_name.to_s) 
 
-        dep_skip = ! input_deps.include?(dep) && self.job_rules(rules, dep)["skip"] 
+        dep_skip = dep.done? && ! input_deps.include?(dep) && self.job_rules(rules, dep)["skip"] 
         chained || dep_skip
       end.each do |dep|
         chains[job] ||= [] 
@@ -90,6 +102,7 @@ module HPC
     end
 
     def self.workload(job, rules, chains, options, seen = nil)
+      return [] if job.done?
       if seen.nil?
         seen = {} 
         target_job = true
@@ -101,14 +114,24 @@ module HPC
 
       chain = chains[job]
       chain -= seen.keys if chain
+      piggyback = piggyback(job, job_rules, job_deps)
       dep_ids = job_deps.collect do |dep|
         seen[dep] = nil if chain && chain.include?(dep) #&& ! job.input_dependencies.include?(dep) 
-        ids = workload(dep, rules, chains, options, seen)
+        next_options = IndiferentHash.setup(options.dup)
+        if piggyback and piggyback == dep
+          next_options[:piggyback] ||= []
+          next_options[:piggyback].push job
+          ids = workload(dep, rules, chains, next_options, seen)
+        else
+          next_options.delete :piggyback
+          ids = workload(dep, rules, chains, next_options, seen)
+        end
         seen[dep] = ids
         ids
       end.compact.flatten.uniq
 
-      return seen[job] || dep_ids if seen.include? job
+      return seen[job] || dep_ids if seen.include?(job) 
+      return seen[piggyback] if piggyback
 
       job_rules.delete :chain_tasks
       job_rules.delete :tasks
@@ -124,11 +147,26 @@ module HPC
       end
 
 
-      job_options[:manifest] = chain ? ([job] + chain).uniq.collect{|dep| dep.task_signature} : [job.task_signature]
+
+      if options[:piggyback]
+        manifest = options[:piggyback].uniq
+        manifest += [job]
+        manifest.concat chain if chain
+        job = options[:piggyback].first
+        job_options.delete :piggyback
+      else
+        manifest = [job]
+        manifest.concat chain if chain
+      end
+
+
+      job_options[:manifest] = manifest.collect{|j| j.workflow_short_path }
+
+
       if options[:dry_run]
         puts Log.color(:magenta, "Manifest: ") + Log.color(:blue, job_options[:manifest] * ", ") + " - tasks: #{job_options[:task_cpus] || 1} - time: #{job_options[:time]} - config: #{job_options[:config_keys]}"
         puts Log.color(:yellow, "Deps: ") + Log.color(:blue, job_options[:slurm_dependencies]*", ")
-        [job.task_signature]
+        job_options[:manifest].first
       else
         run_job(job, job_options)
       end
