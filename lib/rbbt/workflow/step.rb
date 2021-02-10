@@ -114,9 +114,13 @@ class Step
 
   def copy_files_dir
     if File.symlink?(self.files_dir)
-      realpath = Open.realpath(self.files_dir)
-      Open.rm self.files_dir
-      Open.cp realpath, self.files_dir
+      begin
+        realpath = Open.realpath(self.files_dir)
+        Open.rm self.files_dir
+        Open.cp realpath, self.files_dir
+      rescue
+        Log.warn "Copy files_dir for #{self.workflow_short_path}: " + $!.message
+      end
     end
   end
 
