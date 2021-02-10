@@ -484,7 +484,7 @@ rbbt.model.inpute <- function(data, formula, ...){
     data
 }
 
-rbbt.tsv.melt <- function(tsv, variable = NULL, value = NULL, key.field = NULL){
+rbbt.tsv.melt <- function(tsv, variable = NULL, value = NULL, key.field = NULL, ...){
     rbbt.require('reshape2')
     if (is.null(key.field)){ key.field = attributes(data)$key.field;}
     if (is.null(key.field)){ key.field = "ID" }
@@ -494,7 +494,7 @@ rbbt.tsv.melt <- function(tsv, variable = NULL, value = NULL, key.field = NULL){
 
     tsv[key.field] = rownames(tsv)
 
-    m <- melt(tsv)
+    m <- melt(tsv, id.vars=c(key.field), ...)
 
     names(m) <- c(key.field, variable, value)
 
@@ -782,6 +782,12 @@ rbbt.plot.venn <- function(data, a=NULL, category=NULL, fill=NULL, ...) {
     if (!exists("out")) 
         out <- "Oops"
     return(out)
+}
+
+rbbt.plot.upset <- function(data, variable = NULL, ...){
+  rbbt.require('UpSetR')
+  data[data == TRUE] = 1
+  return(upset(data, ...))
 }
 
 rbbt.plot.pca <- function(data, center = TRUE, scale. = TRUE, ...) {
