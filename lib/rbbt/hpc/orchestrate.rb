@@ -126,6 +126,9 @@ module HPC
           next_options.delete :piggyback
           ids = workload(dep, rules, chains, next_options, seen)
         end
+
+        ids = [ids].flatten.compact.collect{|id| ['canfail', id] * ":"} if job.canfail_paths.include? dep.path
+
         seen[dep] = ids
         ids
       end.compact.flatten.uniq
@@ -147,7 +150,6 @@ module HPC
       end
 
 
-
       if options[:piggyback]
         manifest = options[:piggyback].uniq
         manifest += [job]
@@ -159,9 +161,9 @@ module HPC
         manifest.concat chain if chain
       end
 
+      manifest.uniq!
 
       job_options[:manifest] = manifest.collect{|j| j.workflow_short_path }
-
 
       if options[:dry_run]
         puts Log.color(:magenta, "Manifest: ") + Log.color(:blue, job_options[:manifest] * ", ") + " - tasks: #{job_options[:task_cpus] || 1} - time: #{job_options[:time]} - config: #{job_options[:config_keys]}"
