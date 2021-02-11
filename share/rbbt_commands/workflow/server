@@ -16,6 +16,7 @@ $ rbbt workflow server [options] <Workflow>
 -B--Bind* Bind IP
 -p--port* TCP port
 -s--server* Server type:  thin, webrick, unicorn, etc
+-w--workers* Number of workers for cluster mode (puma)
 -so--server_options* Additional options for server (e.g. option1=value1;option2=value2)
 -f--finder Start server with finder functionality
 -RS--Rserve_session* Rserve session to use, otherwise start new one
