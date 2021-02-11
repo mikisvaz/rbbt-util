@@ -140,21 +140,30 @@ module HPC
       job_rules.delete :tasks
       job_rules.delete :workflow
       
-      config_keys = job_rules.delete(:config_keys)
 
       job_options = IndiferentHash.setup(options.merge(job_rules).merge(:slurm_dependencies => dep_ids))
       job_options.delete :orchestration_rules
+
+      config_keys = job_rules.delete(:config_keys)
       if config_keys
         config_keys.gsub!(/,\s+/,',') 
         job_options[:config_keys] = job_options[:config_keys] ? config_keys + "," + job_options[:config_keys] : config_keys
       end
 
-
       if options[:piggyback]
         manifest = options[:piggyback].uniq
         manifest += [job]
         manifest.concat chain if chain
+
         job = options[:piggyback].first
+
+        job_rules = self.job_rules(rules, job)
+        new_config_keys = self.job_rules(rules, job)[:config_keys]
+        if new_config_keys
+          new_config_keys = new_config_keys.gsub(/,\s+/,',') 
+          job_options[:config_keys] = job_options[:config_keys] ? new_config_keys + "," + job_options[:config_keys] : new_config_keys
+        end
+
         job_options.delete :piggyback
       else
         manifest = [job]
@@ -164,6 +173,8 @@ module HPC
       manifest.uniq!
 
       job_options[:manifest] = manifest.collect{|j| j.workflow_short_path }
+
+      job_options[:config_keys] = job_options[:config_keys].split(",").uniq * "," if job_options[:config_keys]
 
       if options[:dry_run]
         puts Log.color(:magenta, "Manifest: ") + Log.color(:blue, job_options[:manifest] * ", ") + " - tasks: #{job_options[:task_cpus] || 1} - time: #{job_options[:time]} - config: #{job_options[:config_keys]}"
