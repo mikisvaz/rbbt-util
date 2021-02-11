@@ -16,6 +16,7 @@ $ rbbt workflow server [options] <Workflow>
 -B--Bind* Bind IP
 -p--port* TCP port
 -s--server* Server type:  thin, webrick, unicorn, etc
+-so--server_options* Additional options for server (e.g. option1=value1;option2=value2)
 -f--finder Start server with finder functionality
 -RS--Rserve_session* Rserve session to use, otherwise start new one
 -wd--workdir* Change the working directory of the workflow
@@ -32,7 +33,6 @@ $ rbbt workflow server [options] <Workflow>
 --export_synchronous* Export workflow tasks as synchronous
 --export_exec* Export workflow tasks as exec
 --export_stream* Export workflow tasks as stream
---options* Additional options for server (e.g. option1=value1;option2=value2)
 EOF
 
 if options[:help]
@@ -108,20 +108,24 @@ TmpFile.with_file do |app_dir|
     config_ru_file = File.exist?('./workflow_config.ru') ? './workflow_config.ru' : Rbbt.share['workflow_config.ru'].find
 
 
-    if options[:options]
-      options[:options].split(";").each do |pair|
+    if options[:server_options]
+      options[:server_options].split(";").each do |pair|
         name, _sep, value = pair.partition("=")
         name = name[1..-1].to_sym if name[0] == ':'
+        value = value.to_i if value =~ /^\d+$/
+        value = true if value == "true"
+        value = false if value == "false"
         options[name] = value
       end
+      options.delete :server_options
     end
 
     case server
     when 'unicorn'
       `env RBBT_LOG=#{Log.severity.to_s} unicorn -c #{ Rbbt.share['unicorn.rb'].find } '#{config_ru_file}' -p #{options[:Port] || "2887"}`
-    when 'puma_alt'
+    when 'puma_production'
       #`puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 3 -t 8:32 --preload`
-      `env RBBT_LOG=#{Log.severity.to_s} puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 20 -t 10:160 --preload`
+      CMD.cmd_log("env RBBT_LOG=#{Log.severity.to_s} puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 20 -t 10:160 --preload")
     else
       options[:config] = config_ru_file
 
