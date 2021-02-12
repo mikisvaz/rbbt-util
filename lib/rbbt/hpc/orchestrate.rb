@@ -114,6 +114,7 @@ module HPC
 
       chain = chains[job]
       chain -= seen.keys if chain
+      chain = chain.reject{|dep| dep.done? } if chain
       piggyback = piggyback(job, job_rules, job_deps)
       dep_ids = job_deps.collect do |dep|
         seen[dep] = nil if chain && chain.include?(dep) #&& ! job.input_dependencies.include?(dep) 
