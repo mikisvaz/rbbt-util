@@ -51,7 +51,7 @@ class Step
     end
   end
 
-  def self.job_files_for_archive(files, recursive = false)
+  def self.job_files_for_archive(files, recursive = false, skip_overriden = false)
     job_files = Set.new
 
     jobs = files.collect do |file|  
@@ -65,6 +65,8 @@ class Step
 
     jobs.each do |step|
       next unless File.exists?(step.path)
+      next if skip_overriden && step.overriden
+
       job_files << step.path
       job_files << step.info_file if File.exists?(step.info_file)
       job_files << Step.md5_file(step.path) if File.exists?(Step.md5_file step.path)
@@ -258,9 +260,9 @@ puts resource[path].find(search_path)
     end
   end
 
-  def self.purge(path, recursive = false)
+  def self.purge(path, recursive = false, skip_overriden = true)
     path = [path] if String === path
-    job_files = job_files_for_archive path, recursive
+    job_files = job_files_for_archive path, recursive, skip_overriden
 
     job_files.each do |file|
       begin
