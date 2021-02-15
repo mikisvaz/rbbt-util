@@ -67,6 +67,7 @@ module HPC
     def self.piggyback(job, job_rules, job_deps)
       return false unless job_rules["skip"]
       final_deps = job_deps - job_deps.collect{|dep| get_recursive_job_dependencies(dep)}.flatten.uniq
+      final_deps = final_deps.reject{|dep| dep.done? && dep.status == :noinfo }
       return final_deps.first if final_deps.length == 1
       return false
     end
@@ -111,7 +112,6 @@ module HPC
       job_rules = self.job_rules(rules, job)
       job_deps = get_job_dependencies(job)
 
-
       chain = chains[job]
       chain -= seen.keys if chain
       chain = chain.reject{|dep| dep.done? } if chain
@@ -135,7 +135,7 @@ module HPC
       end.compact.flatten.uniq
 
       return seen[job] || dep_ids if seen.include?(job) 
-      return seen[piggyback] if piggyback
+      return seen[piggyback] if piggyback and seen.include? piggyback
 
       job_rules.delete :chain_tasks
       job_rules.delete :tasks
