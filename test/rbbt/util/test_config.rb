@@ -5,8 +5,9 @@ class TestConfig < Test::Unit::TestCase
   def setup
     Rbbt::Config.set({:cpus => 30}, :test_config, :test)
     Rbbt::Config.set(:cpus, 5, "slow::2", :test)
-    Rbbt::Config.set({:token => "token"}, "token", "key:token")
+    Rbbt::Config.set({:token => "token"}, "token")
     Rbbt::Config.set(:notoken, "no_token")
+    Rbbt::Config.set({:emptytoken => "empty"})
   end
 
   def test_simple
@@ -19,8 +20,12 @@ class TestConfig < Test::Unit::TestCase
 
   def test_simple_no_token
     assert_equal "token", Rbbt::Config.get("token", "token")
-    assert_equal "token", Rbbt::Config.get("token")
-    assert_equal "no_token", Rbbt::Config.get("notoken")
+    assert_equal "no_token", Rbbt::Config.get("notoken", "key:notoken")
+    assert_equal 'token', Rbbt::Config.get("token", "key:token")
+    assert_equal 'token', Rbbt::Config.get("token")
+    assert_equal nil, Rbbt::Config.get("token", "someotherthing")
+    assert_equal "default_token", Rbbt::Config.get("token", 'unknown', :default => 'default_token')
+    assert_equal 'empty', Rbbt::Config.get("emptytoken", 'key:emptytoken')
   end
 
   def test_prio
@@ -52,6 +57,11 @@ class TestConfig < Test::Unit::TestCase
     assert_equal "V1", Rbbt::Config.get('key', 'token1')
     assert_equal "V3", Rbbt::Config.get('key', 'token2', 'token1')
     assert_equal "V1", Rbbt::Config.get('key', 'token1', 'token2')
+  end
+
+  def test_default
+    Rbbt::Config.add_entry 'key', 'V1', 'token1'
+    assert_equal "V3", Rbbt::Config.get('key', 'token2', :default => 'V3')
   end
 
 

@@ -90,6 +90,8 @@ module Rbbt::Config
     options = tokens.pop if Hash === tokens.last
     default = options.nil? ? nil : options[:default]
 
+    tokens = ["key:" + key] if tokens.empty?
+
     tokens = tokens.flatten
     file, _sep, line = caller.reject{|l| 
       l =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
@@ -106,7 +108,6 @@ module Rbbt::Config
 
     entries = CACHE[key.to_s]
     priorities = {}
-    tokens = tokens + ["key:" << key.to_s]
     tokens.each do |token|
       token_prio = match entries, token.to_s
       token_prio.each do |prio, values|
@@ -145,7 +146,6 @@ module Rbbt::Config
       Rbbt::Config.load_file(Rbbt.etc.config_profile[config].find)
     else
       key, value, *tokens = config.split(/\s/)
-      tokens = ['key:' << key << '::0'] if tokens.empty?
       tokens = tokens.collect do |tok|
         tok, _sep, prio = tok.partition("::")
         prio = "0" if prio.nil? or prio.empty?

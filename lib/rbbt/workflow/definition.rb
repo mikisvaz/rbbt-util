@@ -79,9 +79,10 @@ module Workflow
       dep = dependencies.last.join
       raise dep.get_exception if dep.error?
       set_info :result_type, dep.info[:result_type]
-      forget = config :forget_dep_tasks, :forget_dep_tasks, :default => FORGET_DEP_TASKS
+      forget = config :forget_dep_tasks, "key:forget_dep_tasks", :default => FORGET_DEP_TASKS
       if forget
-        remove = config :remove_dep_tasks, :remove_dep_tasks, :default => REMOVE_DEP_TASKS
+        remove = config :remove_dep_tasks, "key:remove_dep_tasks", :default => REMOVE_DEP_TASKS
+
         self.archive_deps
         self.copy_files_dir
         self.dependencies = self.dependencies - [dep]
@@ -92,7 +93,10 @@ module Workflow
         when 'true'
           dep.clean
         when 'recursive'
-          dep.recursive_clean
+          dep.rec_dependencies.each do |d|
+            d.clean unless config(:remove_dep, d.task_signature, d.task_name, d.workflow.to_s, :default => true).to_s == 'false'
+          end
+          dep.clean unless config(:remove_dep, dep.task_signature, dep.task_name, dep.workflow.to_s, :default => true).to_s == 'false'
         end
       else
         if Open.exists?(dep.files_dir)
