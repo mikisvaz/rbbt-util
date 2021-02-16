@@ -105,7 +105,7 @@ module HPC
     def self.workload(job, rules, chains, options, seen = nil)
       return [] if job.done?
       if seen.nil?
-        seen = {} 
+        seen = {}
         target_job = true
       end
 
@@ -113,11 +113,11 @@ module HPC
       job_deps = get_job_dependencies(job)
 
       chain = chains[job]
-      chain -= seen.keys if chain
+      chain = chain.reject{|j| seen.include? j.path} if chain
       chain = chain.reject{|dep| dep.done? } if chain
       piggyback = piggyback(job, job_rules, job_deps)
       dep_ids = job_deps.collect do |dep|
-        seen[dep] = nil if chain && chain.include?(dep) #&& ! job.input_dependencies.include?(dep) 
+        seen[dep.path] ||= nil if chain && chain.include?(dep) #&& ! job.input_dependencies.include?(dep) 
         next_options = IndiferentHash.setup(options.dup)
         if piggyback and piggyback == dep
           next_options[:piggyback] ||= []
@@ -130,12 +130,15 @@ module HPC
 
         ids = [ids].flatten.compact.collect{|id| ['canfail', id] * ":"} if job.canfail_paths.include? dep.path
 
-        seen[dep] = ids
+        seen[dep.path] = ids
         ids
       end.compact.flatten.uniq
 
-      return seen[job] || dep_ids if seen.include?(job) 
-      return seen[piggyback] if piggyback and seen.include? piggyback
+      return seen[job.path] || dep_ids if seen.include?(job.path)
+
+      if piggyback and seen[piggyback.path]
+        return seen[job.path] = seen[piggyback.path] 
+      end
 
       job_rules.delete :chain_tasks
       job_rules.delete :tasks
@@ -173,7 +176,7 @@ module HPC
 
       manifest.uniq!
 
-      job_options[:manifest] = manifest.collect{|j| j.workflow_short_path }
+      job_options[:manifest] = manifest.collect{|j| j.task_signature }
 
       job_options[:config_keys] = job_options[:config_keys].split(",").uniq * "," if job_options[:config_keys]
 
