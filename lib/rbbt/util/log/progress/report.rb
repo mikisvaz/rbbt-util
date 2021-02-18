@@ -124,6 +124,29 @@ module Log
       str
     end
 
+    def load(info)
+      info.each do |key, value| 
+        case key.to_sym
+        when :start 
+          @start = value
+        when :last_time 
+          @last_time = value
+        when :last_count 
+          @last_count = value
+        when :last_percent 
+          @last_percent = value
+        when :desc 
+          @desc = value
+        when :ticks 
+          @ticks = value
+        when :max 
+          @max = value
+        when :mean 
+          @mean = value
+        end
+      end
+    end
+
     def save
       info = {:start => @start, :last_time => @last_time, :last_count => @last_count, :last_percent => @last_percent, :desc => @desc, :ticks => @ticks, :max => @max, :mean => @mean}
       info.delete_if{|k,v| v.nil?}
@@ -154,7 +177,7 @@ module Log
       bars << self unless BARS.include? self
 
       print(io, Log.up_lines(bars.length) << Log.color(:magenta, "···Progress\n") << Log.down_lines(bars.length+1)) if Log::ProgressBar.offset == 0
-      print(io, Log.up_lines(@depth) << report_msg << Log.down_lines(@depth)) 
+      print(io, Log.up_lines(@depth) << report_msg << "\n" << Log.down_lines(@depth - 1)) 
       @last_time = Time.now
       @last_count = ticks
       @last_percent = percent if max and max > 0
@@ -175,7 +198,10 @@ module Log
       done_msg << " - " << thr_msg 
       done_msg << Log.color(:magenta, " · " << desc)
       print(io, Log.up_lines(@depth) << done_msg << Log.down_lines(@depth)) 
-      Open.rm file if file and Open.exists? file
+
+      Open.rm file if file and Open.exists?(file)
+
+      @callback.call self if @callback
     end
 
     def error(io = STDERR)
@@ -192,7 +218,14 @@ module Log
       done_msg << " - " << thr_msg
       done_msg << Log.color(:magenta, " · " << desc)      
       print(io, Log.up_lines(@depth) << done_msg << Log.down_lines(@depth)) 
-      Open.rm file if file and Open.exists? file
+
+      Open.rm file if file and Open.exists?(file)
+
+      begin
+        @callback.call self
+      rescue
+        Log.debug "Callback failed for filed progress bar: #{$!.message}"
+      end if @callback
     end
   end
 end

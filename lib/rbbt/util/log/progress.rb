@@ -18,11 +18,11 @@ module Log
       attr_accessor :default_file
     end
 
-    attr_accessor :max, :ticks, :frequency, :depth, :desc, :file, :bytes
+    attr_accessor :max, :ticks, :frequency, :depth, :desc, :file, :bytes, :process, :callback
 
     def initialize(max = nil, options = {})
       options = Misc.add_defaults options, :depth => 0, :num_reports => 100, :io => STDERR, :severity => Log.severity, :frequency => 2
-      depth, num_reports, desc, io, severity, file, bytes, frequency = Misc.process_options options, :depth, :num_reports, :desc, :io, :severity, :file, :bytes, :frequency
+      depth, num_reports, desc, io, severity, file, bytes, frequency, process, callback = Misc.process_options options, :depth, :num_reports, :desc, :io, :severity, :file, :bytes, :frequency, :process, :callback
 
       @max = max
       @ticks = 0
@@ -34,6 +34,8 @@ module Log
       @desc = desc.nil? ? "" : desc.gsub(/\n/,' ')
       @file = file
       @bytes = bytes
+      @process = process
+      @callback = callback
     end
 
     def percent
@@ -79,6 +81,19 @@ module Log
     def pos(pos)
       step = pos - (@ticks || 0)
       tick(step)
+    end
+
+    def process(elem)
+      case res = @process.call(elem)
+      when FalseClass
+        nil
+      when TrueClass
+        tick
+      when Integer
+        pos(res)
+      when Float
+        pos(res * max)
+      end
     end
   end
 end

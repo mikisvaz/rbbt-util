@@ -101,6 +101,7 @@ module CMD
     no_fail    = options.delete(:nofail) if no_fail.nil?
     no_wait    = options.delete(:no_wait)
     xvfb       = options.delete(:xvfb)
+    bar        = options.delete(:progress_bar)
 
     dont_close_in  = options.delete(:dont_close_in)
 
@@ -183,6 +184,7 @@ module CMD
 
       err_thread = Thread.new do
         while line = serr.gets
+          bar.process(line) if bar
           sout.log = line
           Log.log "STDERR [#{pid}]: " +  line, stderr 
         end if Integer === stderr and log
@@ -220,6 +222,8 @@ module CMD
   def self.cmd_pid(*args)
     all_args = *args
 
+    bar = all_args.last[:progress_bar] if Hash === all_args.last
+
     all_args << {} unless Hash === all_args.last
 
     level = all_args.last[:log] || 0
@@ -233,17 +237,27 @@ module CMD
     io = cmd(*all_args)
     pid = io.pids.first
 
+    line = "" if bar
     while c = io.getc
       STDERR << c if Log.severity <= level
+      line << c if bar
       if c == "\n"
+        bar.process(line) if bar
         if pid
           Log.logn "STDOUT [#{pid}]: ", level
         else
           Log.logn "STDOUT: ", level
         end
+        line = "" if bar
       end
     end 
-    io.join
+    begin
+      io.join
+      bar.remove if bar
+    rescue
+      bar.remove(true) if bar
+      raise $!
+    end
 
     nil
   end

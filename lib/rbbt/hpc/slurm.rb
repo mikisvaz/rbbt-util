@@ -21,6 +21,8 @@ module HPC
       exclusive        = options.delete :exclusive
       highmem          = options.delete :highmem
 
+      slurm_step_path  = options.delete :slurm_step_path
+
       manifest         = options.delete :manifest
 
       queue            = options.delete(:queue) || Rbbt::Config.get('queue', :slurm_queue, :slurm, :SLURM, :default => 'bsc_ls')
@@ -262,6 +264,10 @@ EOF
 
       header +=<<-EOF if manifest
 #MANIFEST: #{manifest * ", "}
+      EOF
+
+      header +=<<-EOF if slurm_step_path
+#STEP_PATH: #{slurm_step_path}
       EOF
 
       header +=<<-EOF
@@ -536,7 +542,9 @@ EOF
       dependencies     = options.delete :slurm_dependencies
       procpath         = options.delete :SLURM_procpath
 
-      options[:jobname] = job.clean_name
+      options[:jobname]   = job.clean_name
+      options[:slurm_step_path] = job.path
+
       log_level         = options.delete :log
       log_level       ||= Log.severity
 

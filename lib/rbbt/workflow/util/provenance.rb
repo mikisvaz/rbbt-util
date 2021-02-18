@@ -1,23 +1,28 @@
 class Step
+
+  def self.status_color(status)
+    case status.to_sym
+    when :error, :aborted, :missing, :dead, :unsync
+      :red
+    when :streaming, :started
+      :cyan
+    when :done, :noinfo
+      :green
+    when :dependencies, :waiting, :setup
+      :yellow
+    when :notfound, :cleaned
+      :blue
+    else
+      if status.to_s.index ">"
+        :cyan
+      else
+        :cyan
+      end
+    end
+  end
+
   def self.prov_status_msg(status)
-    color = case status.to_sym
-            when :error, :aborted, :missing, :dead, :unsync
-              :red
-            when :streaming, :started
-              :cyan
-            when :done, :noinfo
-              :green
-            when :dependencies, :waiting, :setup
-              :yellow
-            when :notfound, :cleaned
-              :blue
-            else
-              if status.to_s.index ">"
-                :cyan
-              else
-                :cyan
-              end
-            end
+    color = status_color(status)
     Log.color(color, status.to_s)
   end
 
@@ -25,7 +30,7 @@ class Step
     parts = path.sub(/\{.*/,'').split "/"
 
     parts.pop
-    
+
     task = Log.color(:yellow, parts.pop)
     workflow = Log.color(:magenta, parts.pop)
     #if status.to_s == 'noinfo' && parts.last != 'jobs'
@@ -89,7 +94,7 @@ class Step
         str << prov_report(dep, offset + 1, task, seen, expand_repeats)
       else
         if expand_repeats
-          str << Log.color(:green, Log.uncolor(prov_report(dep, offset+1, task)))
+          str << Log.color(Step.status_color(dep.status), Log.uncolor(prov_report(dep, offset+1, task)))
         else
           info = dep.info  || {}
           status = info[:status] || :missing
@@ -98,7 +103,7 @@ class Step
           status = :unsync if status == :done and not Open.exist?(path)
           status = :notfound if status == :noinfo and not Open.exist?(path)
 
-          str << Log.color(status == :notfound ? :blue : :green, " " * (offset + 1) + Log.uncolor(prov_report_msg(status, name, path, info)))
+          str << Log.color(Step.status_color(status), " " * (offset + 1) + Log.uncolor(prov_report_msg(status, name, path, info)))
         end
       end
     end if step.dependencies

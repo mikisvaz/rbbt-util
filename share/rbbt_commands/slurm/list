@@ -20,6 +20,7 @@ $ rbbt mnl [options]
 -j--job* Job ids
 -s--search* Regular expression
 -t--tail* Show the last lines of the STDERR
+-p--progress Report progress of job and the dependencies
 -SBP--sbatch_parameters show sbatch parameters
 -PERF--procpath_performance show Procpath performance summary
 -sacct--sacct_peformance show sacct performance summary
@@ -34,8 +35,8 @@ if options[:help]
  exit 0
 end
 
-Log.severity = 4
-done, error, running, queued, aborted, jobid, search, tail = options.values_at :done, :error, :running, :queued, :aborted, :job, :search, :tail
+#Log.severity = 4
+done, error, running, queued, aborted, jobid, search, tail, progress = options.values_at :done, :error, :running, :queued, :aborted, :job, :search, :tail, :progress
 
 workdir = File.expand_path('~/rbbt-slurm')
 Path.setup(workdir)
@@ -228,13 +229,30 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
  if tail && File.exists?(File.join(dir, 'std.err'))
    if exit_status && exit_status != 0
      puts Log.color(:magenta, "First error or exception found: ")
-     puts CMD.cmd("grep -i -w 'error\\|[a-z]*exception' #{File.join(dir, 'std.err')} -A #{tail.to_i} |head -n #{tail.to_i}", :no_fail => true).read
+     puts CMD.cmd("grep -i -w 'error\\|[a-z]*exception' #{File.join(dir, 'std.err')} -A #{tail.to_i} | grep -v '^\\S\\[3.m' |head -n #{tail.to_i}", :no_fail => true).read
    elsif exit_status
      puts Log.color(:magenta, "Completed jobs: ")
-     puts CMD.cmd("grep -i -w 'Completed step' #{File.join(dir, 'std.err')} | grep -v 'Retrying dep.' | tail -n #{tail.to_i}", :no_fail => true).read
+     puts CMD.cmd("grep -i -w 'Completed step' #{File.join(dir, 'std.err')} | grep -v 'Retrying dep.' | grep -v '^\\S\\[3.m' | tail -n #{tail.to_i}", :no_fail => true).read
    else
      puts Log.color(:magenta, "Log tail: ")
-     puts CMD.cmd("tail -n #{tail.to_i} #{File.join(dir, 'std.err')}").read
+     puts CMD.cmd(" cat #{File.join(dir, 'std.err')} | grep -v '^\\S*\\[3.m'  | tail -n #{tail.to_i} ").read
+   end
+ end
+
+ if options[:progress] 
+   step_line = Open.read(fcmd).split("\n").select{|line| line =~ /^#STEP_PATH:/}.first
+   if step_line
+     require 'rbbt/workflow'
+     step_path = step_line.split(": ").last.strip
+     step = Step.new step_path
+     step.load_dependencies_from_info
+     (step.rec_dependencies + [step]).reverse.each do |j|
+       next if j.done? || ! j.running?
+       next unless j.file(:progress).exists?
+       bar = Log::ProgressBar.new 
+       bar.load(j.file(:progress).yaml)
+       puts Log.color(:magenta, "Progress: ") + bar.report_msg + " " + Log.color(:yellow, j.task_signature)
+     end
    end
  end
 
