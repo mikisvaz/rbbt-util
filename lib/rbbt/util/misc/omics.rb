@@ -312,11 +312,23 @@ module Misc
     end
   end
 
+  def self.sort_genomic_locations_by_contig(stream, contigs, sep = ":")
+    ext_stream = TSV.traverse stream, :type => :array, :into => :stream do |line|
+      chr = line.partition(sep).first
+      num = contigs.index chr
+      num.to_s + sep + line
+    end
+
+    TSV.traverse sort_stream(ext_stream, '#', "-k1,1n -k3,3n -t#{sep}"), :type => :array, :into => :stream do |line|
+      line.partition(sep).last
+    end
+  end
+  
   def self.sort_genomic_locations_strict(stream, sep = ":")
     sort_stream(stream, '#', "-k1,1V -k2,2n -t#{sep}")
   end
   
-  def self.sort_genomic_locations(stream)
+  def self.sort_genomic_locations(stream, sep = ":")
     sort_stream(stream, '#', "-k1,1 -k2,2n -t#{sep}")
   end
 
@@ -386,6 +398,7 @@ module Misc
       cmp
     end
   end
+
   def self.intersect_streams_cmp_chr(chr1, chr2)
     chr1 <=> chr2
   end
@@ -490,6 +503,52 @@ module Misc
 
         sharder
       end
+    end
+  end
+
+  def self.genomic_mutations_to_BED(mutations, chr_prefix = false, sort_order = :normal)
+    io = if Array === sort_order
+
+           case chr_prefix.to_s.downcase
+           when "remove"
+             sort_order = sort_order.collect{|chr| "chr" + chr }  unless sort_order.first.include?('chr')
+           when "true", "add"
+             sort_order = sort_order.collect{|chr| chr.sub('chr', '') }  if sort_order.first.include?('chr') 
+           end
+
+           sort_genomic_locations_by_contig(mutations, sort_order)
+
+         else
+
+           case sort_order.to_s
+           when 'strict'
+             sort_genomic_locations_strict(mutations)
+           else
+             sort_genomic_locations(mutations)
+           end
+
+         end
+
+    TSV.traverse io, :type => :array, :into => :stream do |mutation|
+      chr, pos, mut, *rest = mutation.split(":")
+      size = case mut
+             when nil
+               1
+             when /^\+(.*)/
+               1 + $1.length
+             when /^\-(.*)/
+               $1.length
+             else
+               mut.length
+             end
+
+      case chr_prefix.to_s.downcase
+      when "true", "add"
+        chr = "chr" + chr if ! chr.include?('chr')
+      when "remove"
+        chr = chr.sub("chr", '') if chr.include?('chr')
+      end
+      [chr, pos.to_i - 1, pos.to_i - 1 + size, mutation] * "\t"
     end
   end
 end

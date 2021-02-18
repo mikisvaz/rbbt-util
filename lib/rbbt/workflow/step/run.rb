@@ -623,6 +623,15 @@ class Step
         Log.warn "Exception removing result of aborted job: #{$!.message}"
       end
     end
+
+    if Open.exists?(tmp_path) && status != :done
+      Log.warn "Aborted job had finished. Removing tmp result -- #{ tmp_path }"
+      begin
+        Open.rm tmp_path
+      rescue Exception
+        Log.warn "Exception removing tmp result of aborted job: #{$!.message}"
+      end
+    end
   end
 
   def _abort

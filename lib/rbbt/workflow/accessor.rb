@@ -250,6 +250,8 @@ module Workflow
   end
 
   def assign_dep_inputs(_inputs, options, all_d, task_info)
+    IndiferentHash.setup(_inputs)
+
     options.each{|i,v|
       next if i == :compute or i == "compute"
       case v
@@ -259,13 +261,16 @@ module Workflow
         rec_dependency = all_d.flatten.select{|d| d.task_name.to_sym == v }.first
 
         if rec_dependency.nil?
-          if _inputs.include? v
-            _inputs[i] = _inputs.delete(v)
+          if _inputs.include?(v)
+            #_inputs[i] = _inputs.delete(v)
+            _inputs[i] = _inputs[v] unless _inputs.include? i #_inputs.delete(v)
           else
             _inputs[i] = v unless _inputs.include? i
           end
         else
           input_options = task_info[:input_options][i] || {}
+
+          #ToDo why was this always true?
           if input_options[:stream] or true
             #rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
             _inputs[i] = rec_dependency

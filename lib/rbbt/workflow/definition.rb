@@ -79,9 +79,9 @@ module Workflow
       dep = dependencies.last.join
       raise dep.get_exception if dep.error?
       set_info :result_type, dep.info[:result_type]
-      forget = config :forget_dep_tasks, "key:forget_dep_tasks", :default => FORGET_DEP_TASKS
+      forget = config :forget_dep_tasks, "forget_dep_tasks", "key:forget_dep_tasks", :default => FORGET_DEP_TASKS
       if forget
-        remove = config :remove_dep_tasks, "key:remove_dep_tasks", :default => REMOVE_DEP_TASKS
+        remove = config :remove_dep_tasks, "remove_dep_tasks", "key:remove_dep_tasks", :default => REMOVE_DEP_TASKS
 
         self.archive_deps
         self.copy_files_dir

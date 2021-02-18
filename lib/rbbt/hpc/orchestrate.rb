@@ -67,7 +67,7 @@ module HPC
     def self.piggyback(job, job_rules, job_deps)
       return false unless job_rules["skip"]
       final_deps = job_deps - job_deps.collect{|dep| get_recursive_job_dependencies(dep)}.flatten.uniq
-      final_deps = final_deps.reject{|dep| dep.done? && dep.status == :noinfo }
+      final_deps = final_deps.reject{|dep| dep.done? }
       return final_deps.first if final_deps.length == 1
       return false
     end
