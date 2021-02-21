@@ -271,6 +271,22 @@ module Misc
   end
 
 
+  def self.step_file?(path)
+    return true if defined?(Step) && Step === path.resource
+    return false unless path.include?('.files/')
+    parts = path.split("/")
+    job = parts.select{|p| p =~ /\.files$/}.first
+    if job
+      i = parts.index job
+      begin
+        workflow, task = parts.values_at i - 2, i - 1
+        return Kernel.const_get(workflow).tasks.include? task.to_sym
+      rescue
+      end
+    end
+    false
+  end
+
   def self.obj2str(obj)
     _obj = obj
     obj = Annotated.purge(obj) if Annotated === obj
@@ -289,7 +305,7 @@ module Misc
           when (defined?(Path) and Path)
             if defined?(Step) && Open.exists?(Step.info_file(obj))
               obj2str(Workflow.load_step(obj))
-            elsif defined?(Step) && Step === obj.resource
+            elsif step_file?(obj)
               "Step file: " + obj
             else
               if obj.exists?
