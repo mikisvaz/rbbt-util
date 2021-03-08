@@ -78,6 +78,7 @@ module TSV
     end
 
     def close_in
+      @in_stream.join if @in_stream.respond_to?(:join) && ! @in_stream.joined?
       @in_stream.close unless @in_stream.closed?
     end
 

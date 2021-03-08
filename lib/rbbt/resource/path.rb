@@ -3,7 +3,7 @@ require 'rbbt/util/misc/indiferent_hash'
 require 'yaml'
 
 module Path
-  attr_accessor :resource, :pkgdir, :original, :search_paths, :search_order, :libdir
+  attr_accessor :resource, :pkgdir, :original, :search_paths, :search_order, :libdir, :where
 
   def self.setup(string, pkgdir = nil, resource = nil, search_paths = nil, search_order = nil, libdir = nil)
     return string if string.nil?
@@ -99,6 +99,7 @@ module Path
 
       paths = paths.each do |p|
         p.original = File.join(found.original, p.sub(/^#{found}/, ''))
+        p.where = where
       end if found.original and pattern
 
       location_paths[where] = paths
@@ -256,6 +257,7 @@ module Path
                      end
 
                      res.original = self.original || self
+                     res.where = where
 
                      res
                    end

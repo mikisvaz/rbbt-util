@@ -294,20 +294,19 @@ module TSV
   end
 
 
-  def self.reorder_stream_tsv(stream, key_field, fields=nil, zipped = true)
+  def self.reorder_stream_tsv(stream, key_field, fields=nil, zipped = true, bar = nil)
     parser = TSV::Parser.new TSV.get_stream(stream), :key_field => key_field, :fields => fields
     dumper_options = parser.options
     dumper = TSV::Dumper.new dumper_options
     dumper.init 
     case parser.type
     when :single
-      TSV.traverse parser, :into => dumper do |keys,values|
+      TSV.traverse parser, :into => dumper, :bar => bar do |keys,values|
         key = keys.first
         [key, [values]]
       end
     when :double
-      TSV.traverse parser, :into => dumper do |keys,values|
-        raise [keys, values].inspect if keys.include? 'gain'
+      TSV.traverse parser, :into => dumper, :bar => bar do |keys,values|
         res = []
         keys.each_with_index do |key,i|
           vs = zipped ?  values.collect{|l| l.length == 1 ? l : [l[i]] } : values
@@ -317,12 +316,12 @@ module TSV
         res
       end
     when :list
-      TSV.traverse parser, :into => dumper do |keys,values|
+      TSV.traverse parser, :into => dumper, :bar => bar do |keys,values|
         key = keys === Array ? keys.first : keys
         [key, values]
       end
     when :flat
-      TSV.traverse parser, :into => dumper do |keys,values|
+      TSV.traverse parser, :into => dumper, :bar => bar do |keys,values|
         key = keys === Array ? keys.first : keys
         [key, values]
       end

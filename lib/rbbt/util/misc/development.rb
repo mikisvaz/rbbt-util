@@ -428,9 +428,9 @@ def self.add_libdir(dir=nil)
     end
   end
 
-
-  def self.ssh_run(server, script)
+  def self.ssh_run(server, script = nil, &block)
     Log.debug "Run ssh script in #{server}:\n#{script}"
+
     CMD.cmd("ssh '#{server}' 'shopt -s expand_aliases; bash -l -c \"ruby\"' ", :in => script, :log => true).read
   end
 

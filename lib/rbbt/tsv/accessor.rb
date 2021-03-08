@@ -713,8 +713,11 @@ module TSV
       break
     end
 
-    filename = Path === filename ? filename.find : (filename || "No filename")
-    filename + " [" + persistence_path + "]" if respond_to?(:persistence_path) and persistence_path
+    filename = @filename
+    filename = "No filename" if filename.nil? || filename.empty?
+    filename.find if Path === filename 
+    filename = File.basename(filename) + " [" + File.basename(persistence_path) + "]" if respond_to?(:persistence_path) and persistence_path
+
     with_unnamed do
       <<-EOF
 Filename = #{filename}

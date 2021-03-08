@@ -6,19 +6,6 @@ module Task
     puts "\n" << Misc.format_paragraph(description.strip)  << "\n" if description and not description.empty?
     puts
 
-    case
-    when (input_types.values & [:array]).any?
-      puts Log.color(:green, Misc.format_paragraph("Lists are specified as arguments using ',' or '|'. When specified as files the '\\n'
-      also works in addition to the others. You may use the '--array_separator' option
-      the change this default. Whenever a file is specified it may also accept STDIN using
-      the '-' character."))
-      puts
-
-    when (input_types.values & [:text, :tsv]).any?
-      puts Log.color(:green, Misc.format_paragraph("Whenever a file is specified it may also accept STDIN using the '-' character."))
-      puts
-    end
-
     selects = []
     if inputs.any?
       inputs.zip(input_types.values_at(*inputs)).select{|i,t| t.to_sym == :select && input_options[i] && input_options[i][:select_options] }.each{|i,t| selects << [i, input_options[i][:select_options]]  }
@@ -47,6 +34,19 @@ module Task
         puts SOPT.input_doc(new_inputs, task.input_types, task.input_descriptions, task.input_defaults, true)
         puts unless Log.compact
       end
+      puts
+    end
+
+    case
+    when (input_types.values & [:array]).any?
+      puts Log.color(:green, Misc.format_paragraph("Lists are specified as arguments using ',' or '|'. When specified as files the '\\n'
+      also works in addition to the others. You may use the '--array_separator' option
+      the change this default. Whenever a file is specified it may also accept STDIN using
+      the '-' character."))
+      puts
+
+    when (input_types.values & [:text, :tsv]).any?
+      puts Log.color(:green, Misc.format_paragraph("Whenever a file is specified it may also accept STDIN using the '-' character."))
       puts
     end
 

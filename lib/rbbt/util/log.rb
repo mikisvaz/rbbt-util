@@ -341,10 +341,31 @@ module Log
     end unless stack.nil?
   end
 
-  def self.tsv(tsv)
+  def self.tsv(tsv, example = false)
     STDERR.puts Log.color :magenta, "TSV log: " << Log.last_caller(caller).gsub('`',"'")
     STDERR.puts Log.color(:blue, "=> "<< Misc.fingerprint(tsv), true) 
     STDERR.puts Log.color(:cyan, "=> " << tsv.summary)
+    if example && ! tsv.empty?
+      key = case example
+            when TrueClass, :first, "first"
+              tsv.keys.first
+            when :random, "random"
+              tsv.keys.shuffle.first
+            else
+              example
+            end
+
+      values = tsv[key]
+      values = [values] if tsv.type == :flat || tsv.type == :single
+      if values.nil?
+        STDERR.puts Log.color(:blue, "Key (#{tsv.key_field}) not present: ") + key
+      else
+        STDERR.puts Log.color(:blue, "Key (#{tsv.key_field}): ") + key
+        tsv.fields.zip(values).each do |field,value|
+          STDERR.puts Log.color(:magenta, field + ": ") + (Array === value ? value * ", " : value.to_s)
+        end
+      end
+    end
   end
 
   def self.stack(stack)

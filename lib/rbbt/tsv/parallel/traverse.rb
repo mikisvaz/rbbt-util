@@ -610,7 +610,7 @@ module TSV
     thread = Thread.new do 
       begin
         traverse_run(obj, threads, cpus, options, &block)
-        into.close if into.respond_to?(:close) and not (into.respond_to? :closed? and into.closed?) 
+        into.close if into.respond_to?(:close) and not (into.respond_to?(:closed?) and into.closed?) 
       rescue Exception
         abort_stream obj
         abort_stream into

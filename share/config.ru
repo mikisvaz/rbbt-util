@@ -43,6 +43,9 @@ app_eval app, Rbbt.etc['app.d/remote_workflow_tasks.rb'].find_all
 #{{{ BASE
 app_eval app, Rbbt.etc['app.d/base.rb'].find
 
+#{{{ SINATRA
+load_file Rbbt.lib['sinatra.rb'].find_all
+
 #{{{ RESOURCES
 load_file Rbbt.etc['app.d/resources.rb'].find
 
@@ -69,9 +72,6 @@ load_file Rbbt.etc['app.d/preload.rb'].find_all
 
 #{{{ PRELOAD
 load_file Rbbt.etc['app.d/semaphores.rb'].find_all
-
-#{{{ SINATRA
-load_file Rbbt.lib['sinatra.rb'].find_all
 
 Entity.entity_list_cache     = Rbbt.var.sinatra.app[app_name].find.entity_lists
 Entity.entity_map_cache      = Rbbt.var.sinatra.app[app_name].find.entity_maps

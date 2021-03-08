@@ -20,7 +20,9 @@ class Test::Unit::TestCase
   def setup
     Random.new
 
-    Persist.cachedir = Rbbt.tmp.test.persistence.find :user if defined? Persist
+    if defined? Persist
+      Persist.cachedir = Rbbt.tmp.test.persistence.find(:user)
+    end
 
     Entity.entity_property_cache = Rbbt.tmp.test.entity_property.find(:user) if defined? Entity
   end
