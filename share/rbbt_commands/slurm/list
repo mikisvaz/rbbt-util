@@ -247,7 +247,7 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
      step = Step.new step_path
      step.load_dependencies_from_info
      (step.rec_dependencies + [step]).reverse.each do |j|
-       next if j.done? || ! j.running?
+       next if j.done? 
        next unless j.file(:progress).exists?
        bar = Log::ProgressBar.new 
        bar.load(j.file(:progress).yaml)
