@@ -99,7 +99,8 @@ class Step
         if String === value && File.exists?(value)
           Open.ln_s(value, path)
         else
-          Open.write(path + '.yaml', value.to_s.to_yaml)
+          value = "#{value}" if Path === value
+          Open.write(path + '.yaml', value.to_yaml)
         end
       when Array === value
         Open.write(path, value.collect{|v| Step === v ? v.path : v.to_s} * "\n")
@@ -122,15 +123,18 @@ class Step
     workflow = job.workflow
     workflow = Kernel.const_get workflow if String === workflow
     if workflow
-      task_info = workflow.task_info(task_name)
-      input_types = task_info[:input_types]
-      task_inputs = task_info[:inputs]
-      input_defaults = task_info[:input_defaults]
+      task_info = IndiferentHash.setup(workflow.task_info(task_name))
+      input_types = IndiferentHash.setup(task_info[:input_types])
+      task_inputs = IndiferentHash.setup(task_info[:inputs])
+      input_defaults = IndiferentHash.setup(task_info[:input_defaults])
     else
-      task_info = input_types = task_inputs = input_defaults = {}
+      task_info = IndiferentHash.setup({})
+      input_types = IndiferentHash.setup({})
+      task_inputs = IndiferentHash.setup({})
+      input_defaults = IndiferentHash.setup({})
     end
 
-    inputs = {}
+    inputs = IndiferentHash.setup({})
     real_inputs = job.real_inputs || job.info[:real_inputs]
     job.recursive_inputs.zip(job.recursive_inputs.fields).each do |value,name|
       next unless task_inputs.include? name.to_sym

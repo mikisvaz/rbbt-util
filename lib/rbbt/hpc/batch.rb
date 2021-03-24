@@ -11,8 +11,6 @@ module HPC
       env_cmd     = Misc.process_options options, :env_cmd
       development = Misc.process_options options, :development
 
-      job_cmd             = self.rbbt_job_exec_cmd(job, options)
-
       if options[:singularity]
 
         group, user, user_group, scratch_group_dir, projects_group_dir = options.values_at :group, :user, :user_group, :scratch_group_dir, :projects_group_dir
