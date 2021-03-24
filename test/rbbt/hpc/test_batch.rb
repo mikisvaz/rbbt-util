@@ -17,7 +17,7 @@ class TestSLURM < Test::Unit::TestCase
     end
   end
 
-  def test_template
+  def _test_template
     job = Sample.job(:mutect2, "small", :reference => "hg38")
 
     TmpFile.with_file do |batch_dir|
@@ -28,6 +28,27 @@ class TestSLURM < Test::Unit::TestCase
     end
   end
 
+  def _test_template_singularity
+    job = Sample.job(:mutect2, "small", :reference => "hg38")
+
+    TmpFile.with_file do |batch_dir|
+
+      template = HPC::BATCH.job_template(job, :batch_dir => batch_dir, :batch_modules => 'java', :singularity => true)
+      ppp template
+
+    end
+  end
+
+  def test_template_contain
+    job = Sample.job(:mutect2, "small", :reference => "hg38")
+
+    TmpFile.with_file do |batch_dir|
+
+      template = HPC::BATCH.job_template(job, :batch_dir => batch_dir, :batch_modules => 'java', :contain_and_sync => true, :wipe_container => 'force')
+      ppp template
+
+    end
+  end
   
 end
 

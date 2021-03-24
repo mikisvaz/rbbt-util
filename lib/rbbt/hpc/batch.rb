@@ -7,75 +7,27 @@ module HPC
   end
 
   module TemplateGeneration
-    def batch_options(job, options)
-      IndiferentHash.setup(options)
+    def exec_cmd(job, options = {})
+      env_cmd     = Misc.process_options options, :env_cmd
+      development = Misc.process_options options, :development
+      singularity = Misc.process_options options, :singularity
 
-      batch_options = IndiferentHash.setup({})
+      job_cmd             = self.rbbt_job_exec_cmd(job, options)
 
-      keys = [
-        :batch_dir,
-        :batch_modules,
-        :batch_name,
-        :contain,
-        :contain_and_sync,
-        :copy_image,
-        :drbbt,
-        :env_cmd,
-        :exclusive,
-        :highmem,
-        :manifest,
-        :nodes,
-        :queue,
-        :singularity,
-        :sync,
-        :task_cpus,
-        :time,
-        :user_group,
-        :wipe_container,
-        :workdir,
-      ]
-
-      keys.each do |key|
-        next if options[key].nil?
-        batch_options[key] = Misc.process_options options, key
+      if env_cmd
+        exec_cmd = %(env #{env_cmd} rbbt)
+      else
+        exec_cmd = %(rbbt)
       end
 
-      batch_dir = batch_options[:batch_dir]
+      exec_cmd << "--dev '#{development}'" if development
 
-      batch_name = File.basename(batch_dir)
-      inputs_dir = File.join(batch_dir, 'inputs_dir')
-      exec_cmd = exec_cmd(job, batch_options)
-      rbbt_cmd = rbbt_job_exec_cmd(job, options)
-
-      keys_from_config = [
-        :queue,
-        :highmem,
-        :exclusive,
-        :env_cmd,
-        :user_group,
-        :singularity
-      ]
-
-      keys_from_config.each do |key|
-        next unless batch_options.include? key
-        default_value = Rbbt::Config.get(key, "batch_#{key}", "batch")
-        next if default_value.nil? 
-        Misc.add_defaults batch_options, default_value
+      if singularity
+        singularity_cmd = %(singularity exec -e -B $SINGULARITY_OPT_DIR:/singularity_opt/ -B /apps/) 
+        exec_cmd = singularity_cmd + ' $SINGULARITY_IMG ' + exec_cmd
       end
 
-      Misc.add_defaults batch_options, 
-        :batch_name => batch_name,
-        :exec_cmd => exec_cmd,
-        :inputs_dir => inputs_dir, 
-        :queue => 'debug',
-        :nodes => 1, 
-        :rbbt_cmd => rbbt_cmd,
-        :step_path => job.path,
-        :task_cpus => 1,
-        :time => '2min', 
-        :workdir => Dir.pwd 
-
-      batch_options
+      exec_cmd
     end
 
     def rbbt_job_exec_cmd(job, options)
@@ -124,6 +76,110 @@ EOF
       header
     end
 
+    def batch_options(job, options)
+      IndiferentHash.setup(options)
+
+      batch_options = IndiferentHash.setup({})
+
+      keys = [
+        :batch_dir,
+        :batch_modules,
+        :batch_name,
+        :contain,
+        :contain_and_sync,
+        :copy_image,
+        :drbbt,
+        :env_cmd,
+        :exclusive,
+        :highmem,
+        :manifest,
+        :nodes,
+        :queue,
+        :singularity,
+        :sync,
+        :task_cpus,
+        :time,
+        :user_group,
+        :wipe_container,
+        :workdir,
+      ]
+
+      keys.each do |key|
+        next if options[key].nil?
+        batch_options[key] = Misc.process_options options, key
+      end
+
+      batch_dir = batch_options[:batch_dir]
+
+      batch_name = File.basename(batch_dir)
+      inputs_dir = File.join(batch_dir, 'inputs_dir')
+
+      keys_from_config = [
+        :queue,
+        :highmem,
+        :exclusive,
+        :env_cmd,
+        :user_group,
+        :singularity
+      ]
+
+      keys_from_config.each do |key|
+        next unless batch_options.include? key
+        default_value = Rbbt::Config.get(key, "batch_#{key}", "batch")
+        next if default_value.nil? 
+        Misc.add_defaults batch_options, default_value
+      end
+
+      user = batch_options[:user] ||= ENV['USER'] || `whoami`.strip
+      group = batch_options[:group] ||= File.basename(File.dirname(ENV['HOME']))
+
+      if batch_options[:contain_and_sync]
+        if batch_options[:contain].nil?
+          contain_base = Rbbt::Config.get(:contain_base_dir, :batch_contain, :batch, :default => "/scratch/tmp/rbbt-[USER]")
+          contain_base = contain_base.sub('[USER]', user)
+          random_file = TmpFile.random_name
+          batch_options[:contain] = File.join(contain_base, random_file)
+        end
+
+        batch_options[:sync] ||= "~/.rbbt/var/jobs" 
+        batch_options[:wipe_container] ||= 'post'
+      end
+
+      if batch_options[:contain] && ! batch_options[:singularity]
+        options[:workdir_all] = batch_options[:contain]
+      end
+
+      exec_cmd = exec_cmd(job, batch_options)
+      rbbt_cmd = rbbt_job_exec_cmd(job, options)
+
+      Misc.add_defaults batch_options, 
+        :batch_name => batch_name,
+        :exec_cmd => exec_cmd,
+        :inputs_dir => inputs_dir, 
+        :queue => 'debug',
+        :nodes => 1, 
+        :rbbt_cmd => rbbt_cmd,
+        :step_path => job.path,
+        :task_cpus => 1,
+        :time => '2min', 
+        :workdir => Dir.pwd 
+
+      batch_dir = batch_options[:batch_dir]
+
+      Misc.add_defaults batch_options,
+        :fout   => File.join(batch_dir, 'std.out'),
+        :ferr   => File.join(batch_dir, 'std.err'),
+        :fjob   => File.join(batch_dir, 'job.id'),
+        :fdep   => File.join(batch_dir, 'dependencies.list'),
+        :fcfdep => File.join(batch_dir, 'canfail_dependencies.list'),
+        :fexit  => File.join(batch_dir, 'exit.status'),
+        :fsync  => File.join(batch_dir, 'sync.log'),
+        :fsexit  => File.join(batch_dir, 'sync.status'),
+        :fcmd   => File.join(batch_dir, 'command.batch')
+
+      batch_options
+    end
+
     def meta_data(options)
       meta =<<-EOF
 #MANIFEST: #{(options[:manifest] || []) * ", "}
@@ -154,27 +210,50 @@ let MAX_MEMORY="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / 1024"
       EOF
     end
 
-    def prepare_environment(job, options = {})
+    def prepare_environment(options = {})
       modules = options[:batch_modules]
 
-      batch_system_variables + load_modules(modules)
-    end
+      prepare_environment = ""
 
-    def exec_cmd(job, options = {})
-      env_cmd     = Misc.process_options options, :env_cmd
-      development = Misc.process_options options, :development
+      functions = ""
 
-      job_cmd             = self.rbbt_job_exec_cmd(job, options)
+      if contain = options[:contain]
+        contain = File.expand_path(contain)
+        functions +=<<-EOF
+function batch_erase_contain_dir(){
+    rm -Rfv '#{contain}' 2>1 >> '#{options[:fsync]}'
+}
+        EOF
 
-      if env_cmd
-        exec_cmd = %(env #{env_cmd} rbbt)
-      else
-        exec_cmd = %(rbbt)
+        prepare_environment +=<<-EOF
+if ls -A '#{contain}' &> /dev/null ; then
+  empty_contain_dir="false"
+else
+  empty_contain_dir="true"
+fi
+        EOF
+
+        prepare_environment +=<<-EOF if options[:wipe_container] == 'force'
+batch_erase_contain_dir()
+        EOF
       end
 
-      exec_cmd << "--dev '#{development}'" if development
+      if sync = options[:sync]
+        source = File.join(options[:contain], 'var/jobs') || '~/.rbbt/var/jobs/'
+        source = File.expand_path(source)
+        sync = File.expand_path(sync)
+        functions +=<<-EOF
+function batch_sync_contain_dir(){
+  mkdir -p "$(dirname '#{sync}')"
+  rsync -avztAXHP --copy-unsafe-links "#{source}/" "#{sync}/" 2>1 >> '#{options[:fsync]}'
+  sync_es="$?" 
+  echo $sync_es > '#{options[:fsexit]}'
+  find '#{sync}' -type l -ls | awk '$13 ~ /^#{sync.gsub('/','\/')}/ { sub("#{source}", "#{sync}", $13); print $11, $13 }' | while read A B; do rm $A; ln -s $B $A; done
+}
+        EOF
+      end
 
-      exec_cmd
+      batch_system_variables + load_modules(modules) + "\n" + functions + "\n" + prepare_environment
     end
 
     def execute(options)
@@ -186,24 +265,65 @@ step_path=$(
 )
 exit_status=$?
 
-#{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_job $BATCH_JOB_ID
-#{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_system $BATCH_SYSTEM
+[[ -z $BATCH_JOB_ID ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_job $BATCH_JOB_ID
+[[ -z $BATCH_SYSTEM ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_system $BATCH_SYSTEM
       EOF
     end
 
     def sync_environment(options = {})
-      ""
+      sync_environment = ""
+
+      if options[:sync]
+        sync_environment +=<<-EOF
+if [ $exit_status == '0' ]; then 
+  batch_sync_contain_dir
+else
+  sync_es=$exit_status
+fi
+        EOF
+      end
+
+      sync_environment
     end
 
     def cleanup_environment(options = {})
-      ""
+      cleanup_environment = ""
+      if options[:sync]
+        if options[:wipe_container] == 'force'
+          cleanup_environment +=<<-EOF
+batch_erase_contain_dir
+          EOF
+        elsif options[:wipe_container] == 'post' || options[:wipe_container] == 'both'
+          cleanup_environment +=<<-EOF
+if [ $sync_es == '0' -a $empty_contain_dir == 'true' ]; then 
+  batch_erase_contain_dir
+fi
+          EOF
+        end
+      end
+      cleanup_environment
     end
 
-    def coda(batch_options)
-      <<-EOF
-echo $exit_status > #{File.join(batch_options[:batch_dir], 'exit.status')}
+    def coda(options)
+      coda =<<-EOF
+echo $exit_status > '#{options[:fexit]}'
+      EOF
+
+      if options[:sync]
+        coda +=<<-EOF
+if [ $sync_es == '0' ]; then
+  exit $exit_status
+else
+  exit $sync_es
+fi
+        EOF
+      else
+        coda +=<<-EOF
 exit $exit_status
-EOF
+        EOF
+      end
+
+      coda
     end
 
     def job_template(job, options = {})
@@ -213,6 +333,7 @@ EOF
 
       meta_data           = self.meta_data(batch_options)
 
+      iii batch_options
       prepare_environment = self.prepare_environment(batch_options)
 
       execute             = self.execute(batch_options)
@@ -236,6 +357,8 @@ EOF
 # #{Log.color :green, "3. Sync and cleanup environment"}
 #{sync_environment}
 #{cleanup_environment}
+
+# #{Log.color :green, "4. Exit"}
 #{coda}
       EOF
     end
