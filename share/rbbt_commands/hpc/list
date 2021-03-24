@@ -2,6 +2,7 @@
 
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
+require 'rbbt/hpc'
 
 #$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
@@ -9,7 +10,7 @@ options = SOPT.setup <<EOF
 
 Queue a job in Marenostrum
 
-$ rbbt mnl [options] 
+$ rbbt slurm list [options] 
 
 -h--help Print this help
 -d--done Done jobs only
@@ -21,9 +22,10 @@ $ rbbt mnl [options]
 -s--search* Regular expression
 -t--tail* Show the last lines of the STDERR
 -p--progress Report progress of job and the dependencies
--SBP--sbatch_parameters show sbatch parameters
--PERF--procpath_performance show Procpath performance summary
+-BP--batch_parameters show batch parameters
+-BPP--batch_procpath show Procpath performance summary
 -sacct--sacct_peformance show sacct performance summary
+-bs--batch_system* Batch system to use: auto, lsf, slurm (default is auto-detect)
 EOF
 
 if options[:help]
@@ -35,14 +37,48 @@ if options[:help]
  exit 0
 end
 
-#Log.severity = 4
+batch_system = options.delete :batch_system
+batch_system ||= 'auto'
+
+HPC::BATCH_MODULE = case batch_system.to_s.downcase
+               when 'slurm'
+                 HPC::SLURM
+               when 'lsf'
+                 HPC::LSF
+               when 'auto'
+                 case $previous_commands.last
+                 when 'slurm'
+                   HPC::SLURM
+                 when 'lsf'
+                   HPC::LSF
+                 else
+                   case Rbbt::Config.get(:batch_system, :batch, :batch_system, :hpc, :HPC, :BATCH).to_s.downcase
+                   when 'slurm'
+                     HPC::SLURM
+                   when 'lsf'
+                     HPC::LSF
+                   else
+                     case ENV["BATCH_SYSTEM"].to_s.downcase
+                     when 'slurm'
+                       HPC::SLURM
+                     when 'lsf'
+                       HPC::LSF
+                     end
+                   end
+                 end
+               end
+
+raise ParameterException.new("Could not detect batch_system: #{Misc.fingerprint batch_system}") if HPC::BATCH_MODULE.nil?
+
+batch_system = HPC::BATCH_MODULE.to_s.split("::").last.downcase
+
 done, error, running, queued, aborted, jobid, search, tail, progress = options.values_at :done, :error, :running, :queued, :aborted, :job, :search, :tail, :progress
 
-workdir = File.expand_path('~/rbbt-slurm')
+workdir = File.expand_path('~/rbbt-batch')
 Path.setup(workdir)
 
 running_jobs = begin
-                squeue_txt = CMD.cmd('squeue').read
+                squeue_txt = HPC::BATCH_MODULE.job_status
                 squeue_txt.split("\n").collect{|l| l.to_i.to_s}
                rescue
                 Log.warn "Cannot determine if jobs are running, they will seem to be all alive (Job ID in green)"
@@ -62,34 +98,47 @@ else
 end
 
 count = 0
-workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
+workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
  dir = File.dirname(fcmd)
+ command_txt = Open.read(fcmd)
 
- if m = Open.read(fcmd).match(/#CMD: (.*)/)
+ if m = command_txt.match(/#CMD: (.*)/)
   cmd = m[1]
  else
   cmd = nil
  end
 
- if m = Open.read(fcmd).match(/#MANIFEST: (.*)/)
+ if m = command_txt.match(/^BATCH_SYSTEM=(.*)/)
+  job_batch_system = m[1].downcase
+ else
+  job_batch_system = nil
+ end
+
+ different_system = job_batch_system != batch_system
+
+ if m = command_txt.match(/#MANIFEST: (.*)/)
   manifest = m[1]
  else
   manifest = nil
  end
 
+ if m = command_txt.match(/#STEP_PATH: (.*)/)
+  step_path = m[1]
+ else
+  step_path = nil
+ end
 
- if m = Open.read(fcmd).match(/# Run command\n(.*?)\n/im)
-  exe = m[1].sub('step_path=$(','')
+ if m = command_txt.match(/#EXEC_CMD: (.*)/)
+  exe = m[1]
  else
   exe = nil
  end
 
- if m = Open.read(fcmd).match(/^CONTAINER_DIR=(.*)/)
+ if m = command_txt.match(/^CONTAINER_DIR=(.*)/)
   container_home = m[1]
  else
   container_home = nil
  end
-
 
  if File.exists?(fid = File.join(dir, 'job.id'))
   id = Open.read(fid).chomp
@@ -104,11 +153,20 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
  end
 
  if File.exists?(fstatus = File.join(dir, 'job.status'))
-  nodes = Open.read(fstatus).split("\n").last.split(/\s+/).last.split(",")
+   fstatus_txt = Open.read(fstatus) 
+   begin
+     if job_batch_system == "lsf"
+       nodes = Open.read(fstatus).split("\n").last.split(/\s+/)[5].split(",")
+     else
+       nodes = Open.read(fstatus).split("\n").last.split(/\s+/).last.split(",")
+     end
+   rescue
+     nodes = []
+   end
  elsif job_nodes[id]
-  nodes = job_nodes[id].reject{|n| n.include? "("}
+   nodes = job_nodes[id].reject{|n| n.include? "("}
  else
-  nodes = []
+   nodes = []
  end
 
  if File.exists?(File.join(dir, 'exit.status'))
@@ -137,7 +195,7 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
    select = true if done && exit_status == 0
    select = true if error && exit_status && exit_status != 0 
    select = true if aborted && (exit_status.nil? && ! running_jobs.include?(id))
-   is_running =  exit_status.nil? && running_jobs.include?(id) && (!deps || (running_jobs & deps).empty?)
+   is_running =  exit_status.nil? && ( (running_jobs.include?(id) && (!deps || (running_jobs & deps).empty?)) || different_system )
    select = true if queued && deps && (running_jobs & deps).any? || queued && is_running && nodes.empty?
    select = true if running && nodes.any? && (exit_status.nil? && running_jobs.include?(id)) && (!deps || (running_jobs & deps).empty?)
    select = true if jobid && jobid.split(",").include?(id)
@@ -151,29 +209,39 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
 
 
  puts Log.color :blue, dir
- puts Log.color(:magenta, "Creation: ") << File.mtime(File.join(dir, 'command.slurm')).to_s
+ puts Log.color(:magenta, "Creation: ") << File.mtime(File.join(dir, 'command.batch')).to_s
  puts Log.color(:magenta, "Started: ") << File.ctime(File.join(dir, 'std.err')).to_s if File.exist?(File.join(dir, 'std.err'))
  puts Log.color(:magenta, "Manifest: ") << Log.color(:yellow, manifest) 
+ puts Log.color(:magenta, "Step path: ") << Log.color(:yellow, step_path)
  puts Log.color(:magenta, "Done: ") << File.mtime(File.join(dir, 'exit.status')).to_s if File.exist?(File.join(dir, 'exit.status'))
  puts Log.color(:magenta, "Exec: ") << (exe || "Missing")
  puts Log.color(:magenta, "CMD: ") << (Log.color(:yellow, cmd) || "Missing")
  puts Log.color(:magenta, "HOME: ") << Log.color(:yellow, container_home) if container_home
- puts Log.color(:magenta, "Job ID: ") << (exit_status ? (exit_status == 0 ? Log.color(:green, "Done") : Log.color(:red, "Error")) + " (#{ id })" :  (running_jobs.include?(id) || $norunningjobs ? Log.color(:green, id) : Log.color(:red, id) ))
+ if different_system
+   puts Log.color(:magenta, "Job ID (#{Log.color(:red, job_batch_system)}): ") << (exit_status ? (exit_status == 0 ? Log.color(:green, "Done") : Log.color(:red, "Error")) + " (#{ id })" :  Log.color(:green, id)  )
+ else
+   puts Log.color(:magenta, "Job ID: ") << (exit_status ? (exit_status == 0 ? Log.color(:green, "Done") : Log.color(:red, "Error")) + " (#{ id })" :  (running_jobs.include?(id) || $norunningjobs ? Log.color(:green, id) : Log.color(:red, id) ))
+ end
  puts Log.color(:magenta, "Dependencies: ") << deps * ", " if deps
  puts Log.color(:magenta, "Dependencies (can fail): ") << cadeps * ", " if cadeps
  puts Log.color(:magenta, "Nodes: ") << nodes * ", "
  puts Log.color(:magenta, "Time elapsed: ") << Misc.format_seconds(time_elapsed) if time_elapsed
  puts Log.color(:magenta, "Output: ") << File.exists?(File.join(dir, 'std.out')).to_s << (id.nil? || File.exists?(File.join(dir, 'exit.status')) ? "" : " (last update " + Misc.format_seconds(time_diff) + " ago)")
 
- if options[:sbatch_parameters]
-   puts Log.color(:magenta, "SBATCH parameters: ")
-   text = CMD.cmd('grep "^#SBATCH" |tail -n +6', :in => Open.read(fcmd)).read.strip
+ if options[:batch_parameters]
+   puts Log.color(:magenta, "BATCH parameters: ")
+   case job_batch_system 
+   when 'slurm'
+     text = CMD.cmd('grep "^#SBATCH" |tail -n +5', :in => Open.read(fcmd)).read.strip
+   when 'lsf'
+     text = CMD.cmd('grep "^#BSUB" |tail -n +5', :in => Open.read(fcmd)).read.strip
+   end
    lines = text.split("\n").collect{|line| header, _sep, value = line.partition(/\s+/); Log.color(:yellow, header + ": ") + value}
    puts Log.color :yellow, lines * "\n"
  end
 
  fprocpath = File.join(dir, 'procpath.sqlite3')
- if options[:procpath_performance]  && Open.exists?(fprocpath)
+ if options[:batch_procpath]  && Open.exists?(fprocpath)
    puts Log.color(:magenta, "Procpath summary: ")
    require 'rbbt/tsv/csv'
    meta = TSV.csv(CMD.cmd("sqlite3 -header -csv #{fprocpath} 'select * from meta;' "))
@@ -215,13 +283,15 @@ workdir.glob("**/command.slurm").sort_by{|f| File.mtime(f)}.each do |fcmd|
 
  if options[:sacct_peformance]
    begin
-    tsv = TSV.open(CMD.cmd("sacct -j #{id} -o 'jobid,AveRSS,MaxRSS,MaxDiskRead,MaxDiskWrite' -P|grep 'JobID\\|\.batch'"), :header_hash => '', :sep => "|", :type => :list)
-    values = tsv[tsv.keys.first]
-    if values.compact.any?
-     puts Log.color(:magenta, "SACCT performance: ")
-     puts values.zip(values.fields).collect{|v,t| Log.color(:yellow, t + ": ")  + v.to_s } * "\n"
-    end
+     raise "sacct not supported for LSF" unless batch_system == 'slurm' 
+     tsv = TSV.open(CMD.cmd("sacct -j #{id} -o 'jobid,AveRSS,MaxRSS,MaxDiskRead,MaxDiskWrite' -P|grep 'JobID\\|\.batch'"), :header_hash => '', :sep => "|", :type => :list)
+     values = tsv[tsv.keys.first]
+     if values.compact.any?
+       puts Log.color(:magenta, "SACCT performance: ")
+       puts values.zip(values.fields).collect{|v,t| Log.color(:yellow, t + ": ")  + v.to_s } * "\n"
+     end
    rescue
+     Log.warn $!.message
    end
  end
 

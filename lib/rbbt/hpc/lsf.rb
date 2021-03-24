@@ -1,21 +1,20 @@
 require 'rbbt/hpc/batch'
-require 'rbbt/hpc/orchestrate'
 
 module HPC
-  module SLURM 
+  module LSF 
     extend HPC::TemplateGeneration
     extend HPC::Orchestration
 
     def self.batch_system_variables
       <<-EOF
-let "MAX_MEMORY=$SLURM_MEM_PER_CPU * $SLURM_CPUS_PER_TASK" || let MAX_MEMORY="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / 1024"
-BATCH_JOB_ID=$SLURM_JOB_ID
-BATCH_SYSTEM=SLURM
+MAX_MEMORY=$LSB_MAX_MEM_RUSAGE || let MAX_MEMORY="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / 1024"
+BATCH_JOB_ID=$LSF_JOBID
+BATCH_SYSTEM=LSF
       EOF
     end
 
     def self.header(options = {})
-      options = options.dup
+      options        = options.dup
 
       queue          = Misc.process_options options, :queue
       task_cpus      = Misc.process_options options, :task_cpus
@@ -26,25 +25,27 @@ BATCH_SYSTEM=SLURM
 
       batch_dir  = Misc.process_options options, :batch_dir
       batch_name = Misc.process_options options, :batch_name
+      batch_name ||= File.basename(batch_dir)
 
       fout       = File.join(batch_dir, 'std.out')
       ferr       = File.join(batch_dir, 'std.err')
 
       time = Misc.format_seconds Misc.timespan(time) unless time.include? ":"
 
+      time = time.split(":").values_at(0, 1) * ":"
+
       header =<<-EOF
 #!/bin/bash
-#SBATCH --job-name="#{batch_name}"
-#SBATCH --workdir="#{workdir}"
-#SBATCH --output="#{fout}"
-#SBATCH --error="#{ferr}"
-#SBATCH --qos="#{queue}"
-#SBATCH --cpus-per-task="#{task_cpus}"
-#SBATCH --time="#{time}"
-#SBATCH --nodes="#{nodes}"
+#BSUB -J "#{batch_name}"
+#BSUB -cwd "#{workdir}"
+#BSUB -oo "#{fout}"
+#BSUB -eo "#{ferr}"
+#BSUB -q "#{queue}"
+#BSUB -n "#{task_cpus}"
+#BSUB -W "#{time}"
       EOF
 
-      header << "#SBATCH --exclusive" << "\n" if exclusive
+      header << "#BSUB -x" << "\n" if exclusive
 
       header
     end
@@ -62,7 +63,7 @@ BATCH_SYSTEM=SLURM
 
       return if Open.exists?(fexit)
 
-      STDERR.puts Log.color(:magenta, "Issuing SLURM file: #{fcmd}")
+      STDERR.puts Log.color(:magenta, "Issuing LSF file: #{fcmd}")
       STDERR.puts Open.read(fcmd)
 
       if File.exists?(fjob)
@@ -72,22 +73,24 @@ BATCH_SYSTEM=SLURM
         dependencies = Open.read(fdep).split("\n") if File.exists? fdep
         canfail_dependencies = Open.read(fcfdep).split("\n") if File.exists? fcfdep
 
-        normal_dep_str = dependencies && dependencies.any? ? "afterok:" + dependencies * ":" : nil
-        canfail_dep_str = canfail_dependencies && canfail_dependencies.any? ? "afterany:" + canfail_dependencies * ":" : nil
+        normal_dep_list = dependencies && dependencies.any? ? dependencies.collect{|d| "post_done(#{d})"} : []
+        canfail_dep_list = canfail_dependencies && canfail_dependencies.any? ? canfail_dependencies.collect{|d| "done(#{d})"} : []
 
-        if normal_dep_str.nil? && canfail_dep_str.nil?
-          dep_str = ""
+        dep_list = normal_dep_list + canfail_dep_list
+
+        if dep_list.any?
+          dep_str = '-w "' + dep_list * " && " + '"'
         else
-          dep_str = '--dependency=' + [normal_dep_str, canfail_dep_str].compact * ","
+          dep_str = ""
         end
 
-        cmd = "sbatch #{dep_str} '#{fcmd}'"
+        cmd = "bsub #{dep_str} < '#{fcmd}'"
 
         if File.exists?(fout)
           return
         elsif dry_run
-          STDERR.puts Log.color(:magenta, "To execute run: ") + Log.color(:blue, "sbatch '#{fcmd}'")
-          STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): ") + Log.color(:blue, "rbbt slurm tail '#{batch_dir}'")
+          STDERR.puts Log.color(:magenta, "To execute run: ") + Log.color(:blue, cmd)
+          STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): ") + Log.color(:blue, "rbbt lsf tail '#{batch_dir}'")
           raise HPC::SBATCH, batch_dir
         else
           Open.rm fsync
@@ -95,8 +98,9 @@ BATCH_SYSTEM=SLURM
           Open.rm fout
           Open.rm ferr
 
+
           job = CMD.cmd(cmd).read.scan(/\d+/).first.to_i
-          Log.debug "SBATCH job id: #{job}"
+          Log.debug "BSUB job id: #{job}"
           Open.write(fjob, job.to_s)
           job
         end
@@ -105,12 +109,11 @@ BATCH_SYSTEM=SLURM
 
     def self.job_status(job = nil)
       if job.nil?
-        CMD.cmd("squeue").read
+        CMD.cmd("bjobs -w").read
       else
-        CMD.cmd("squeue --job #{job}").read
+        CMD.cmd("bjobs -w #{job}").read
       end
     end
-
   end
 end
 

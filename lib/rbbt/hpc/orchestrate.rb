@@ -1,8 +1,8 @@
 require 'rbbt/workflow/util/orchestrator'
 module HPC
-  module SLURM
+  module Orchestration
 
-    def self.job_rules(rules, job)
+    def job_rules(rules, job)
       workflow = job.workflow.to_s
       task_name = job.task_name.to_s
       task_name = job.overriden.to_s if Symbol === job.overriden
@@ -53,18 +53,18 @@ module HPC
       job_rules
     end
 
-    def self.get_job_dependencies(job, job_rules = nil)
+    def get_job_dependencies(job, job_rules = nil)
       deps = job.dependencies || []
       deps += job.input_dependencies || []
       deps
     end
 
-    def self.get_recursive_job_dependencies(job)
+    def get_recursive_job_dependencies(job)
       deps = get_job_dependencies(job) 
       (deps + deps.collect{|dep| get_recursive_job_dependencies(dep) }).flatten
     end
 
-    def self.piggyback(job, job_rules, job_deps)
+    def piggyback(job, job_rules, job_deps)
       return false unless job_rules["skip"]
       final_deps = job_deps - job_deps.collect{|dep| get_recursive_job_dependencies(dep)}.flatten.uniq
       final_deps = final_deps.reject{|dep| dep.done? }
@@ -72,7 +72,7 @@ module HPC
       return false
     end
 
-    def self.get_chains(job, rules, chains = {})
+    def get_chains(job, rules, chains = {})
       job_rules = self.job_rules(rules, job)
       job_deps = get_job_dependencies(job)
 
@@ -102,7 +102,7 @@ module HPC
       chains
     end
 
-    def self.workload(job, rules, chains, options, seen = nil)
+    def workload(job, rules, chains, options, seen = nil)
       return [] if job.done?
       if seen.nil?
         seen = {}
@@ -145,7 +145,7 @@ module HPC
       job_rules.delete :workflow
       
 
-      job_options = IndiferentHash.setup(options.merge(job_rules).merge(:slurm_dependencies => dep_ids))
+      job_options = IndiferentHash.setup(options.merge(job_rules).merge(:batch_dependencies => dep_ids))
       job_options.delete :orchestration_rules
 
       config_keys = job_rules.delete(:config_keys)
@@ -182,7 +182,7 @@ module HPC
 
       if options[:dry_run]
         puts Log.color(:magenta, "Manifest: ") + Log.color(:blue, job_options[:manifest] * ", ") + " - tasks: #{job_options[:task_cpus] || 1} - time: #{job_options[:time]} - config: #{job_options[:config_keys]}"
-        puts Log.color(:yellow, "Deps: ") + Log.color(:blue, job_options[:slurm_dependencies]*", ")
+        puts Log.color(:yellow, "Deps: ") + Log.color(:blue, job_options[:batch_dependencies]*", ")
         job_options[:manifest].first
       else
         run_job(job, job_options)
@@ -190,13 +190,14 @@ module HPC
     end
 
 
-    def self.orchestrate_job(job, options)
+    def orchestrate_job(job, options)
       options.delete "recursive_clean"
       options.delete "clean_task"
       options.delete "clean"
       options.delete "tail"
-      options.delete "printfile"
+      options.delete "printpath"
       options.delete "detach"
+      options.delete "jobname"
 
       rules = YAML.load(Open.read(options[:orchestration_rules])) if options[:orchestration_rules]
       rules ||= {}

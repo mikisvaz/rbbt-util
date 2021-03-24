@@ -135,9 +135,14 @@ module Misc
     end
 
     new_options
+
+    options.replace new_options
   end
 
   def self.process_options(hash, *keys)
+    defaults = keys.pop if Hash === keys.last
+    hahs = Misc.add_defaults hash, defaults if defaults
+
     if keys.length == 1
       hash.include?(keys.first.to_sym) ? hash.delete(keys.first.to_sym) : hash.delete(keys.first.to_s) 
     else

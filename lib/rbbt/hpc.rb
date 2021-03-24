@@ -1,3 +1,6 @@
 require 'rbbt-util'
 require 'rbbt/util/cmd'
+require 'rbbt/hpc/batch'
+require 'rbbt/hpc/orchestrate'
 require 'rbbt/hpc/slurm'
+require 'rbbt/hpc/lsf'

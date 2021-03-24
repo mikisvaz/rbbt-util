@@ -99,7 +99,7 @@ class Step
         if String === value && File.exists?(value)
           Open.ln_s(value, path)
         else
-          Open.write(path + '.yaml', value.to_yaml)
+          Open.write(path + '.yaml', value.to_s.to_yaml)
         end
       when Array === value
         Open.write(path, value.collect{|v| Step === v ? v.path : v.to_s} * "\n")
