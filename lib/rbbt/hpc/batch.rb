@@ -10,9 +10,34 @@ module HPC
     def exec_cmd(job, options = {})
       env_cmd     = Misc.process_options options, :env_cmd
       development = Misc.process_options options, :development
-      singularity = Misc.process_options options, :singularity
 
       job_cmd             = self.rbbt_job_exec_cmd(job, options)
+
+      if options[:singularity]
+
+        group, user, user_group, scratch_group_dir, projects_group_dir = options.values_at :group, :user, :user_group, :scratch_group_dir, :projects_group_dir
+
+        singularity_img, singularity_opt_dir, singularity_ruby_inline = options.values_at :singularity_img, :singularity_opt_dir, :singularity_ruby_inline
+
+        singularity_cmd = %(singularity exec -e -B #{singularity_opt_dir}:/singularity_opt/ -B /apps/) 
+
+        if contain = options[:contain]
+          contain = File.expand_path(contain)
+          singularity_cmd << %( -C -H "#{contain}" \
+-B "#{options[:batch_dir]}" \
+-B /scratch/tmp \
+#{ group != user_group ? "-B /gpfs/projects/#{user_group}" : "" } \
+-B #{scratch_group_dir} \
+-B #{projects_group_dir} \
+-B "#{singularity_ruby_inline}":"#{contain}/.ruby_inline":rw  \
+-B ~/git:"#{contain}/git":ro \
+#{Open.exists?('~/.rbbt/software/opt/')? '-B ~/.rbbt/software/opt/:"/opt/":ro' : '' } \
+-B ~/.rbbt:"#{contain}/home/":ro)
+          singularity_cmd << " #{singularity_img} "
+        end
+        env_cmd ||= ""
+        env_cmd << " TMPDIR='#{contain}/.rbbt/tmp' "
+      end
 
       if env_cmd
         exec_cmd = %(env #{env_cmd} rbbt)
@@ -22,10 +47,7 @@ module HPC
 
       exec_cmd << "--dev '#{development}'" if development
 
-      if singularity
-        singularity_cmd = %(singularity exec -e -B $SINGULARITY_OPT_DIR:/singularity_opt/ -B /apps/) 
-        exec_cmd = singularity_cmd + ' $SINGULARITY_IMG ' + exec_cmd
-      end
+      exec_cmd = singularity_cmd  + exec_cmd if singularity_cmd
 
       exec_cmd
     end
@@ -120,6 +142,9 @@ EOF
         :exclusive,
         :env_cmd,
         :user_group,
+        :singularity_img,
+        :singularity_opt_dir,
+        :singularity_ruby_inline,
         :singularity
       ]
 
@@ -132,6 +157,8 @@ EOF
 
       user = batch_options[:user] ||= ENV['USER'] || `whoami`.strip
       group = batch_options[:group] ||= File.basename(File.dirname(ENV['HOME']))
+      batch_options[:scratch_group_dir] = File.join('/gpfs/scratch/', group)
+      batch_options[:projects_group_dir] = File.join('/gpfs/projects/', group)
 
       if batch_options[:contain_and_sync]
         if batch_options[:contain].nil?
@@ -149,20 +176,26 @@ EOF
         options[:workdir_all] = batch_options[:contain]
       end
 
+      Misc.add_defaults batch_options, 
+        :batch_name => batch_name,
+        :inputs_dir => inputs_dir, 
+        :queue => 'debug',
+        :nodes => 1, 
+        :step_path => job.path,
+        :task_cpus => 1,
+        :time => '2min', 
+        :env_cmd => '_JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m"',
+        :singularity_img => ENV["SINGULARITY_IMG"] || "~/rbbt.singularity.img",
+        :singularity_ruby_inline => ENV["SINGULARITY_RUBY_INLINE"] || "~/.singularity_ruby_inline",
+        :singularity_opt_dir => ENV["SINGULARITY_OPT_DIR"] || "~/singularity_opt",
+        :workdir => Dir.pwd 
+
       exec_cmd = exec_cmd(job, batch_options)
       rbbt_cmd = rbbt_job_exec_cmd(job, options)
 
       Misc.add_defaults batch_options, 
-        :batch_name => batch_name,
         :exec_cmd => exec_cmd,
-        :inputs_dir => inputs_dir, 
-        :queue => 'debug',
-        :nodes => 1, 
-        :rbbt_cmd => rbbt_cmd,
-        :step_path => job.path,
-        :task_cpus => 1,
-        :time => '2min', 
-        :workdir => Dir.pwd 
+        :rbbt_cmd => rbbt_cmd
 
       batch_dir = batch_options[:batch_dir]
 
@@ -239,7 +272,14 @@ batch_erase_contain_dir()
       end
 
       if sync = options[:sync]
-        source = File.join(options[:contain], 'var/jobs') || '~/.rbbt/var/jobs/'
+        source = if options[:singularity]
+                   File.join(options[:contain], '.rbbt/var/jobs')
+                 elsif options[:contain]
+                   File.join(options[:contain], 'var/jobs')
+                 else
+                   '~/.rbbt/var/jobs/'
+                 end
+
         source = File.expand_path(source)
         sync = File.expand_path(sync)
         functions +=<<-EOF
@@ -251,6 +291,48 @@ function batch_sync_contain_dir(){
   find '#{sync}' -type l -ls | awk '$13 ~ /^#{sync.gsub('/','\/')}/ { sub("#{source}", "#{sync}", $13); print $11, $13 }' | while read A B; do rm $A; ln -s $B $A; done
 }
         EOF
+      end
+
+      if options[:singularity]
+
+        group, user, user_group, scratch_group_dir, projects_group_dir = options.values_at :group, :user, :user_group, :scratch_group_dir, :projects_group_dir
+
+        singularity_img, singularity_opt_dir, singularity_ruby_inline = options.values_at :singularity_img, :singularity_opt_dir, :singularity_ruby_inline
+
+        prepare_environment +=<<-EOF
+# Load singularity modules
+module load intel/2018.1
+module load singularity
+mkdir -p "#{singularity_opt_dir}"
+        EOF
+
+        if contain
+
+          prepare_environment +=<<-EOF
+# Prepare container for singularity
+mkdir -p "#{contain}/.rbbt/etc/"
+
+for dir in .ruby_inline git home; do
+    mkdir -p "#{contain}/$dir"
+done
+
+for tmpd in persist_locks  produce_locks  R_sockets  sensiblewrite  sensiblewrite_locks  step_info_locks  tsv_open_locks; do
+    mkdir -p "#{contain}/.rbbt/tmp/$tmpd"
+done
+
+# Copy environment 
+cp ~/.rbbt/etc/environment #{contain}/.rbbt/etc/
+
+# Set search_paths
+echo "singularity: /singularity_opt/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" > #{contain}/.rbbt/etc/search_paths
+echo "rbbt_user: /home/rbbt/.rbbt/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
+echo "outside_home: #{contain}/home/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
+echo "group_projects: #{projects_group_dir}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
+echo "group_scratch: #{scratch_group_dir}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
+echo "user_projects: #{projects_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
+echo "user_scratch: #{scratch_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
+          EOF
+        end
       end
 
       batch_system_variables + load_modules(modules) + "\n" + functions + "\n" + prepare_environment
@@ -333,7 +415,6 @@ exit $exit_status
 
       meta_data           = self.meta_data(batch_options)
 
-      iii batch_options
       prepare_environment = self.prepare_environment(batch_options)
 
       execute             = self.execute(batch_options)
@@ -346,6 +427,8 @@ exit $exit_status
 
       <<-EOF
 #{header}
+
+# #{Log.color :green, "0. Meta-data"}
 #{meta_data}
 
 # #{Log.color :green, "1. Prepare environment"}
