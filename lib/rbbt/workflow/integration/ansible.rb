@@ -2,7 +2,7 @@ require_relative 'ansible/workflow'
 require 'rbbt/workflow/usage'
 
 module Ansible
-  def self.play(playbook, inventory = nil)
+  def self.play(playbook, inventory = nil, verbose = false)
     inventory = Rbbt.etc.ansible_inventory.find
     Log.with_severity 0 do
       TmpFile.with_file do |tmp|
@@ -10,7 +10,11 @@ module Ansible
           Open.write(tmp, [playbook].to_yaml)
           playbook = tmp
         end
-        CMD.cmd_log("ansible-playbook -i #{inventory} #{playbook}")
+        if verbose
+          CMD.cmd_log("ansible-playbook -i #{inventory} -v #{playbook}")
+        else
+          CMD.cmd_log("ansible-playbook -i #{inventory} #{playbook}")
+        end
       end
     end
   end
@@ -46,7 +50,7 @@ module Ansible
   def self.playbook(file, task = nil, options = {})
     task = 'default' if task.nil?
 
-    workflow = Workflow.require_workflow file
+    workflow = Workflow === file ? file : Workflow.require_workflow(file)
     task = workflow.tasks.keys.last if workflow.tasks[task].nil?
     workflow2playbook workflow, task, options
   end
