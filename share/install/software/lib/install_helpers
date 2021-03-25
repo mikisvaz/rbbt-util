@@ -147,6 +147,8 @@ get_git(){
           git pull origin master
           git rebase master
           git stash apply
+          git submodule init
+          git submodule update
         fi
     else
       if [ $version == 'none' ];then
@@ -154,6 +156,10 @@ get_git(){
       else
         git clone --recursive "$url" "$name" -b $version
       fi
+
+      cd "$name" 
+      git submodule init
+      git submodule update
     fi
 
     clean_build
