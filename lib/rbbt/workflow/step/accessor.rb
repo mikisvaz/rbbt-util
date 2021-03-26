@@ -99,6 +99,7 @@ class Step
         if String === value && File.exists?(value)
           Open.ln_s(value, path)
         else
+          value = value.collect{|v| v = "#{v}" if Path === v; v }if Array === value
           value = "#{value}" if Path === value
           Open.write(path + '.yaml', value.to_yaml)
         end

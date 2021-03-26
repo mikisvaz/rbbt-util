@@ -7,7 +7,8 @@ module HPC
 
     def self.batch_system_variables
       <<-EOF
-MAX_MEMORY=$LSB_MAX_MEM_RUSAGE || let MAX_MEMORY="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / 1024"
+[[ -z $LSB_MAX_MEM_RUSAGE ]] || MAX_MEMORY=$LSB_MAX_MEM_RUSAGE 
+[[ -z $MAX_MEMORY ]] && let MAX_MEMORY="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / 1024"
 BATCH_JOB_ID=$LSF_JOBID
 BATCH_SYSTEM=LSF
       EOF

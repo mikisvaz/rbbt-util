@@ -11,30 +11,35 @@ module HPC
       env_cmd     = Misc.process_options options, :env_cmd
       development = Misc.process_options options, :development
 
+      if contain = options[:contain]
+        contain = File.expand_path(contain)
+        env_cmd ||= ""
+        env_cmd << " TMPDIR='#{contain}/.rbbt/tmp' "
+      end
+
       if options[:singularity]
 
         group, user, user_group, scratch_group_dir, projects_group_dir = options.values_at :group, :user, :user_group, :scratch_group_dir, :projects_group_dir
 
         singularity_img, singularity_opt_dir, singularity_ruby_inline = options.values_at :singularity_img, :singularity_opt_dir, :singularity_ruby_inline
 
-        singularity_cmd = %(singularity exec -e -B #{singularity_opt_dir}:/singularity_opt/ -B /apps/) 
+        singularity_cmd = %(singularity exec -e -B #{singularity_opt_dir}:/singularity_opt/ -B "#{singularity_ruby_inline}":"/.singularity_ruby_inline":rw ) 
 
-        if contain = options[:contain]
-          contain = File.expand_path(contain)
+        if contain && options[:hardened]
           singularity_cmd << %( -C -H "#{contain}" \
+-B "/.singularity_ruby_inline":"#{contain}/.singularity_ruby_inline":rw 
 -B "#{options[:batch_dir]}" \
 -B /scratch/tmp \
 #{ group != user_group ? "-B /gpfs/projects/#{user_group}" : "" } \
 -B #{scratch_group_dir} \
 -B #{projects_group_dir} \
--B "#{singularity_ruby_inline}":"#{contain}/.ruby_inline":rw  \
+-B /apps/ \
 -B ~/git:"#{contain}/git":ro \
 #{Open.exists?('~/.rbbt/software/opt/')? '-B ~/.rbbt/software/opt/:"/opt/":ro' : '' } \
 -B ~/.rbbt:"#{contain}/home/":ro)
-          singularity_cmd << " #{singularity_img} "
         end
-        env_cmd ||= ""
-        env_cmd << " TMPDIR='#{contain}/.rbbt/tmp' "
+
+        singularity_cmd << " #{singularity_img} "
       end
 
       if env_cmd
@@ -170,7 +175,7 @@ EOF
         batch_options[:wipe_container] ||= 'post'
       end
 
-      if batch_options[:contain] && ! batch_options[:singularity]
+      if batch_options[:contain] && ! batch_options[:hardened]
         options[:workdir_all] = batch_options[:contain]
       end
 
@@ -304,7 +309,7 @@ module load singularity
 mkdir -p "#{singularity_opt_dir}"
         EOF
 
-        if contain
+        if contain && options[:hardened]
 
           prepare_environment +=<<-EOF
 # Prepare container for singularity
