@@ -33,7 +33,7 @@ end
 
 module Resource
   def set_software_env(software_dir)
-    software_dir.opt.find_all.collect{|d| File.dirname(d)}.reverse.each do |software_dir|
+    software_dir.opt.find_all.collect{|d| d.annotate(File.dirname(d)) }.reverse.each do |software_dir|
       next unless software_dir.exists?
       software_dir = File.expand_path(software_dir)
       opt_dir = File.join(software_dir, 'opt')
