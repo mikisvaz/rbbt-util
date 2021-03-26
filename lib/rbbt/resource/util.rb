@@ -33,9 +33,9 @@ end
 
 module Resource
   def set_software_env(software_dir)
-    software_dir.find_all.reverse.each do |software_dir|
+    software_dir.opt.find_all.reverse.each do |software_dir|
       next unless software_dir.exists?
-      software_dir = File.expand_path(software_dir)
+      software_dir = File.expand_path(File.dirname(software_dir))
       opt_dir = File.join(software_dir, 'opt')
       bin_dir = File.join(opt_dir, 'bin')
 
