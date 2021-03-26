@@ -10,6 +10,14 @@ module CMD
     TOOLS[tool] = [claim, test, block, cmd]
   end
 
+  def self.conda(tool, env = nil, channel = 'bioconda')
+    if env
+      CMD.cmd("bash -l -c '(conda activate #{env} && conda install #{tool} -c #{channel})'")      
+    else
+      CMD.cmd("bash -l -c 'conda install #{tool} -c #{channel}'")      
+    end
+  end
+
   def self.get_tool(tool)
     return tool.to_s unless TOOLS[tool]
 
