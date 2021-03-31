@@ -121,6 +121,9 @@ EOF
         :nodes,
         :queue,
         :singularity,
+        :singularity_img,
+        :singularity_opt_dir,
+        :singularity_ruby_inline,
         :sync,
         :task_cpus,
         :time,
@@ -162,6 +165,8 @@ EOF
       group = batch_options[:group] ||= File.basename(File.dirname(ENV['HOME']))
       batch_options[:scratch_group_dir] = File.join('/gpfs/scratch/', group)
       batch_options[:projects_group_dir] = File.join('/gpfs/projects/', group)
+
+      batch_options[:singularity] = true if batch_options[:singularity_img]
 
       if batch_options[:contain_and_sync]
         if batch_options[:contain].nil?

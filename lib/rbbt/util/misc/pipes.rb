@@ -35,10 +35,11 @@ module Misc
     res
   end
 
-  def self.with_fifo(path = nil, &block)
+  def self.with_fifo(path = nil, clean = true, &block)
     begin
       erase = path.nil?
       path = TmpFile.tmp_file if path.nil?
+      File.rm path if clean && File.exists?(path)
       File.mkfifo path
       yield path
     ensure

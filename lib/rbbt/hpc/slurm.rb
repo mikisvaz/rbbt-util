@@ -23,6 +23,7 @@ BATCH_SYSTEM=SLURM
       nodes          = Misc.process_options options, :nodes
       workdir        = Misc.process_options options, :workdir
       exclusive      = Misc.process_options options, :exclusive
+      highmem        = Misc.process_options options, :highmem
 
       batch_dir  = Misc.process_options options, :batch_dir
       batch_name = Misc.process_options options, :batch_name
@@ -45,6 +46,7 @@ BATCH_SYSTEM=SLURM
       EOF
 
       header << "#SBATCH --exclusive" << "\n" if exclusive
+      header << "#SBATCH --constraint=highmem" << "\n" if highmem
 
       header
     end

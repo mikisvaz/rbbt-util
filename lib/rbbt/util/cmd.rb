@@ -38,15 +38,17 @@ module CMD
         end
       end
       version_txt = ""
-      %w(--version -version --help).each do |f|
+      version = nil
+      ["--version", "-version", "--help", ""].each do |f|
         begin
-          version_txt += CMD.cmd("#{tool} #{f}").read
-          break
+          version_txt += CMD.cmd("#{tool} #{f} 2>&1", :nofail => true).read
+          ppp version_txt
+          version = Misc.scan_version_text(version_txt, tool)
+          break if version
         rescue
+          Log.exception $!
         end
       end
-
-      version = Misc.scan_version_text(version_txt, tool)
 
       @@init_cmd_tool[tool] = version || true
 
@@ -75,7 +77,8 @@ module CMD
     string = ""
     options.each do |option, value|
       raise "Invalid option key: #{option.inspect}" if option.to_s !~ /^[a-z_0-9\-=]+$/i
-      raise "Invalid option value: #{value.inspect}" if value.to_s.include? "'"
+      #raise "Invalid option value: #{value.inspect}" if value.to_s.include? "'"
+      value = value.gsub("'","\\'") if value.to_s.include? "'"
 
       option = "--" << option.to_s if add_dashes and option.to_s[0] != '-'
 

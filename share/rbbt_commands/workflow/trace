@@ -23,7 +23,7 @@ $ rbbt workflow trace <job-result>
 -h--help Help
 -w--width* Image Width
 -h--height* Image Height
--p--plot Plot file
+-p--plot* Plot file
 -s--size* Image Size (Height and Width)
 -fg--fix_gap Remove execution gaps
 -pd--plot_data Print plot data

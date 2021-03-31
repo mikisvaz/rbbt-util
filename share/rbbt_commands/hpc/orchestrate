@@ -12,6 +12,7 @@ $slurm_options = SOPT.get <<EOF
 -cj--clean_job Clean job
 --drbbt* Use development version of rbbt 
 -sing--singularity Use Singularity
+-si--singularity_img* Singularity image to use
 -ug--user_group* Use alternative user group for group project directory
 -c--contain* Contain in directory (using Singularity)
 -s--sync* Contain in directory and sync jobs

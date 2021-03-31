@@ -431,8 +431,20 @@ module Misc
 
   def self.scan_version_text(text, cmd = nil)
     cmd = "NOCMDGIVE" if cmd.nil? || cmd.empty?
+    text.split("\n").each do |line|
+      next unless line =~ /\W#{cmd}\W/i
+      m = line.match(/(v(?:\d+\.)*\d+(?:-[a-z_]+)?)/i)
+      return m[1] if m
+      m = line.match(/((?:\d+\.)*\d+(?:-[a-z_]+)?v)/i)
+      return m[1] if m
+      next unless line =~ /\Wversion\W/i
+      m = line.match(/((?:\d+\.)*\d+(?:-[a-z_]+)?)/i)
+      return m[1] if m
+    end
     m = text.match(/(?:version.*?|#{cmd}.*?|#{cmd.to_s.split(/[-_.]/).first}.*?|v)((?:\d+\.)*\d+(?:-[a-z_]+)?)/i)
-    return nil if m.nil?
-    m[1]
+    return m[1] if m
+    m = text.match(/(?:#{cmd}.*(v.*|.*v))/i)
+    return m[1] if m
+    nil
   end
 end
