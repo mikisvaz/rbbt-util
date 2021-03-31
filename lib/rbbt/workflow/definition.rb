@@ -76,8 +76,10 @@ module Workflow
     extension workflow.tasks[oname].extension if workflow.tasks.include?(oname) unless @extension
     task name do
       raise RbbtException, "dependency not found in dep_task" if dependencies.empty?
-      dep = dependencies.last.join
+      dep = dependencies.last
+      dep.join
       raise dep.get_exception if dep.error?
+      raise Aborted, "Aborted dependency #{dep.path}" if dep.aborted?
       set_info :result_type, dep.info[:result_type]
       forget = config :forget_dep_tasks, "forget_dep_tasks", "key:forget_dep_tasks", :default => FORGET_DEP_TASKS
       if forget
@@ -103,7 +105,11 @@ module Workflow
           Open.rm_rf self.files_dir 
           Open.link dep.files_dir, self.files_dir
         end
-        Open.link dep.path, self.path
+        if defined?(RemoteStep) && RemoteStep === dep
+          Open.write(self.tmp_path, Open.read(dep.path))
+        else
+          Open.link dep.path, self.path
+        end
       end
       nil
     end

@@ -215,7 +215,7 @@ module Workflow
 
       dep_tree = {[self, task_name] => dep_tree(task_name)}
       prov_tree = prov_tree(dep_tree)
-      if prov_tree && ! prov_tree.empty?
+      if prov_tree && ! prov_tree.empty? && prov_tree.split("\n").length > 2
 
         puts Log.color :magenta, "## DEPENDENCY GRAPH (abridged)"
         puts

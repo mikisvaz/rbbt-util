@@ -368,7 +368,7 @@ class Step
   end
 
   def self.log_progress(status, options = {}, path = nil, &block)
-    options = Misc.add_defaults options, :severity => Log::INFO, :file => path
+    options = Misc.add_defaults options, :severity => Log::INFO, :file => (@exec ? nil : path)
     max = Misc.process_options options, :max
     Log::ProgressBar.with_bar(max, options) do |bar|
       begin
@@ -394,7 +394,7 @@ class Step
     options = {} if options.nil?
 
     max = options[:max]
-    Log::ProgressBar.new_bar(max, {:desc => msg, :file => file(:progress)}.merge(options))
+    Log::ProgressBar.new_bar(max, {:desc => msg, :file => (@exec ? nil : file(:progress))}.merge(options))
   end
 
   def self.log(status, message, path, &block)
