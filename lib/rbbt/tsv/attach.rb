@@ -189,6 +189,7 @@ module TSV
     other.each do |k,v|
       self.zip_new k, v
     end
+    self
   end
 
   

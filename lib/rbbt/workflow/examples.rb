@@ -54,7 +54,8 @@ module Workflow
             inputs[input.to_sym]  = YAML.load(Open.read(file))
           else
             if File.symlink?(file)
-              inputs[input.to_sym]  = File.readlink(file)
+              link_target = File.expand_path(File.readlink(file), File.dirname(file))
+              inputs[input.to_sym]  = link_target
             else
               inputs[input.to_sym]  = Open.realpath(file)
             end
