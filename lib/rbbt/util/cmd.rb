@@ -42,7 +42,6 @@ module CMD
       ["--version", "-version", "--help", ""].each do |f|
         begin
           version_txt += CMD.cmd("#{tool} #{f} 2>&1", :nofail => true).read
-          ppp version_txt
           version = Misc.scan_version_text(version_txt, tool)
           break if version
         rescue

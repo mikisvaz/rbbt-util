@@ -20,7 +20,7 @@ class RemoteWorkflow
 
     def self.encode(url)
       begin
-        URI.encode(url)
+        URI::DEFAULT_PARSER.escape(url)
       rescue
         Log.warn $!.message
         url

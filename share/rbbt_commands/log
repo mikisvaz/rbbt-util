@@ -31,7 +31,9 @@ if ARGV.empty?
     puts Rbbt.etc.log_severity.find + ' does not exist'                                                                                                                                  
   end                                                                                                                                                                                      
 else
-  Open.write(Rbbt.etc.log_severity, ARGV[0].upcase)
+  level = ARGV[0]
+  level = %w(DEBUG LOW MEDIUM HIGH INFO WARN ERROR NONE)[level.to_i] if level =~ /^\d+$/
+  Open.write(Rbbt.etc.log_severity, level.upcase)
 end
 
 

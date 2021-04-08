@@ -346,15 +346,18 @@ module Open
     target = File.join(target, File.basename(source)) if File.directory? target
     FileUtils.mkdir_p File.dirname(target) unless File.exist?(File.dirname(target))
     FileUtils.rm target if File.exist?(target)
+    FileUtils.rm target if File.symlink?(target)
     FileUtils.ln_s source, target
   end
 
   def self.ln(source, target, options = {})
     source = source.find if Path === source
     target = target.find if Path === target
+    source = File.realpath(source) if File.symlink?(source)
 
     FileUtils.mkdir_p File.dirname(target) unless File.exist?(File.dirname(target))
     FileUtils.rm target if File.exist?(target)
+    FileUtils.rm target if File.symlink?(target)
     FileUtils.ln source, target
   end
 
