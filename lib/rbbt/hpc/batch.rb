@@ -74,7 +74,7 @@ module HPC
           [name, dep.path] * "="  
         end * ","
 
-        options[:override_deps] = override_deps
+        options[:override_deps] = override_deps unless override_deps.empty?
       end
 
       # Save inputs into inputs_dir
@@ -216,6 +216,7 @@ EOF
         :fexit  => File.join(batch_dir, 'exit.status'),
         :fsync  => File.join(batch_dir, 'sync.log'),
         :fsexit  => File.join(batch_dir, 'sync.status'),
+        :fenv  => File.join(batch_dir, 'env.vars'),
         :fcmd   => File.join(batch_dir, 'command.batch')
 
       batch_options
@@ -228,6 +229,7 @@ EOF
 #EXEC_CMD: #{options[:exec_cmd]}
 #CMD: #{options[:rbbt_cmd]}
 #STEP_PATH: #{options[:step_path]}
+env > #{options[:fenv]}
       EOF
 
       meta = meta.split("\n").reject{|line| line =~ /: $/} * "\n"
