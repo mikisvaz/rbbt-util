@@ -229,7 +229,6 @@ EOF
 #EXEC_CMD: #{options[:exec_cmd]}
 #CMD: #{options[:rbbt_cmd]}
 #STEP_PATH: #{options[:step_path]}
-env > #{options[:fenv]}
       EOF
 
       meta = meta.split("\n").reject{|line| line =~ /: $/} * "\n"
@@ -443,6 +442,7 @@ exit $exit_status
 
 # #{Log.color :green, "1. Prepare environment"}
 #{prepare_environment}
+env > #{batch_options[:fenv]}
 
 # #{Log.color :green, "2. Execute"}
 #{execute} 
