@@ -6,6 +6,36 @@ module HPC
     end
   end
 
+  def self.batch_system(batch_system = 'auto')
+    case batch_system.to_s.downcase
+    when 'slurm'
+      HPC::SLURM
+    when 'lsf'
+      HPC::LSF
+    when 'auto'
+      case $previous_commands.last
+      when 'slurm'
+        HPC::SLURM
+      when 'lsf'
+        HPC::LSF
+      else
+        case Rbbt::Config.get(:batch_system, :batch, :batch_system, :hpc, :HPC, :BATCH).to_s.downcase
+        when 'slurm'
+          HPC::SLURM
+        when 'lsf'
+          HPC::LSF
+        else
+          case ENV["BATCH_SYSTEM"].to_s.downcase
+          when 'slurm'
+            HPC::SLURM
+          when 'lsf'
+            HPC::LSF
+          end
+        end
+      end
+    end
+  end
+
   module TemplateGeneration
     def exec_cmd(job, options = {})
       env_cmd     = Misc.process_options options, :env_cmd
@@ -30,12 +60,12 @@ module HPC
 -B "/.singularity_ruby_inline":"#{contain}/.singularity_ruby_inline":rw 
 -B "#{options[:batch_dir]}" \
 -B /scratch/tmp \
-#{ group != user_group ? "-B /gpfs/projects/#{user_group}" : "" } \
+          #{ group != user_group ? "-B /gpfs/projects/#{user_group}" : "" } \
 -B #{scratch_group_dir} \
 -B #{projects_group_dir} \
 -B /apps/ \
 -B ~/git:"#{contain}/git":ro \
-#{Open.exists?('~/.rbbt/software/opt/')? '-B ~/.rbbt/software/opt/:"/opt/":ro' : '' } \
+          #{Open.exists?('~/.rbbt/software/opt/')? '-B ~/.rbbt/software/opt/:"/opt/":ro' : '' } \
 -B ~/.rbbt:"#{contain}/home/":ro)
         end
 

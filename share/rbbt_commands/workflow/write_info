@@ -46,7 +46,21 @@ pid = step.info[:pid]
 host = step.info[:pid_hostname]
 
 step.rec_dependencies.each do |dep|
-  dep.set_info key, value if (force || ! dep.info.include?(key)) && (!check_pid || dep.info[:pid].to_s == pid and dep.info[:pid_hostname] == host)
-rescue
-  Log.warn "Could no set info #{key} for #{dep.path}: #{$!.message}"
+  begin
+    dep.set_info key, value if (force || ! dep.info.include?(key)) && (!check_pid || dep.info[:pid].to_s == pid and dep.info[:pid_hostname] == host)
+  rescue
+    Log.warn "Could no set info #{key} for #{dep.path}: #{$!.message}"
+  end
 end if recursive
+
+if recursive && step.info[:archived_info]
+  ad = step.info[:archived_info]
+  ad.each do |d,info|
+    begin
+      info[key] = value if (force || ! info.include?(key)) && (!check_pid || info[:pid].to_s == pid and info[:pid_hostname] == host)
+    rescue
+      Log.warn "Could no set info #{key} for archived_dep #{info[:path]}: #{$!.message}"
+    end 
+  end
+  step.set_info :archived_info, ad
+end

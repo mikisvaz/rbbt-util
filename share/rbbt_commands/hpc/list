@@ -40,33 +40,7 @@ end
 batch_system = options.delete :batch_system
 batch_system ||= 'auto'
 
-HPC::BATCH_MODULE = case batch_system.to_s.downcase
-               when 'slurm'
-                 HPC::SLURM
-               when 'lsf'
-                 HPC::LSF
-               when 'auto'
-                 case $previous_commands.last
-                 when 'slurm'
-                   HPC::SLURM
-                 when 'lsf'
-                   HPC::LSF
-                 else
-                   case Rbbt::Config.get(:batch_system, :batch, :batch_system, :hpc, :HPC, :BATCH).to_s.downcase
-                   when 'slurm'
-                     HPC::SLURM
-                   when 'lsf'
-                     HPC::LSF
-                   else
-                     case ENV["BATCH_SYSTEM"].to_s.downcase
-                     when 'slurm'
-                       HPC::SLURM
-                     when 'lsf'
-                       HPC::LSF
-                     end
-                   end
-                 end
-               end
+HPC::BATCH_MODULE = HPC.batch_system batch_system
 
 raise ParameterException.new("Could not detect batch_system: #{Misc.fingerprint batch_system}") if HPC::BATCH_MODULE.nil?
 
@@ -108,7 +82,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
   cmd = nil
  end
 
- if m = command_txt.match(/^BATCH_SYSTEM=(.*)/)
+ if m = command_txt.match(/^export BATCH_SYSTEM=(.*)/)
   job_batch_system = m[1].downcase
  else
   job_batch_system = nil
@@ -235,6 +209,8 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
      text = CMD.cmd('grep "^#SBATCH" |tail -n +5', :in => Open.read(fcmd)).read.strip
    when 'lsf'
      text = CMD.cmd('grep "^#BSUB" |tail -n +5', :in => Open.read(fcmd)).read.strip
+   else
+     text = ""
    end
    lines = text.split("\n").collect{|line| header, _sep, value = line.partition(/\s+/); Log.color(:yellow, header + ": ") + value}
    puts Log.color :yellow, lines * "\n"

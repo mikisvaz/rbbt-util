@@ -145,6 +145,8 @@ module HPC
       job_rules.delete :workflow
       
 
+      option_config_keys = options[:config_keys]
+
       job_options = IndiferentHash.setup(options.merge(job_rules).merge(:batch_dependencies => dep_ids))
       job_options.delete :orchestration_rules
 
@@ -152,6 +154,11 @@ module HPC
       if config_keys
         config_keys.gsub!(/,\s+/,',') 
         job_options[:config_keys] = job_options[:config_keys] ? config_keys + "," + job_options[:config_keys] : config_keys
+      end
+
+      if option_config_keys
+        option_config_keys = option_config_keys.gsub(/,\s+/,',') 
+        job_options[:config_keys] = job_options[:config_keys] ? job_options[:config_keys] + "," + option_config_keys : option_config_keys
       end
 
       if options[:piggyback]
@@ -165,7 +172,7 @@ module HPC
         new_config_keys = self.job_rules(rules, job)[:config_keys]
         if new_config_keys
           new_config_keys = new_config_keys.gsub(/,\s+/,',') 
-          job_options[:config_keys] = job_options[:config_keys] ? new_config_keys + "," + job_options[:config_keys] : new_config_keys
+          job_options[:config_keys] = job_options[:config_keys] ? job_options[:config_keys] + "," + new_config_keys : new_config_keys
         end
 
         job_options.delete :piggyback
