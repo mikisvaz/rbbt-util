@@ -458,6 +458,10 @@ class Step
   end
 
   def clean
+    if ! Open.exists?(info_file)
+      Log.high "Refusing to clean step with no .info file: #{path}"
+      return self
+    end
     status = []
     status << "dirty" if done? && dirty?
     status << "not running" if ! done? && ! running? 
