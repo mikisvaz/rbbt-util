@@ -1,6 +1,6 @@
 class Step
 
-  MAIN_RSYNC_ARGS="-avztAXHP"
+  MAIN_RSYNC_ARGS="-avztAXHP --copy-links"
   
   def self.link_job(path, target_dir, task = nil, workflow = nil)
     Path.setup(target_dir)

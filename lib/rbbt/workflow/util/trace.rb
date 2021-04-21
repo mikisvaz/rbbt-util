@@ -200,10 +200,10 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
 
     raise "No jobs to process" if data.size == 0
 
-    plot, size, width, height = options.values_at :plot, :width, :height
+    plot, size, width, height = options.values_at :plot, :size, :width, :height
 
     size = 800 if size.nil?
-    width = size * 2 if width.nil?
+    width = size.to_i * 2 if width.nil?
     height = size  if height.nil?
 
     plot_trace_job_times(data, plot, width, height) if plot

@@ -97,6 +97,7 @@ class Step
         Open.ln_s(value.path, path)
       when type.to_s == "file"
         if String === value && File.exists?(value)
+          value = File.expand_path(value)
           Open.ln_s(value, path)
         else
           value = value.collect{|v| v = "#{v}" if Path === v; v }if Array === value
