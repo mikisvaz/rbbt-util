@@ -70,8 +70,8 @@ module Workflow
 
     start = data.column("Start.second").values.flatten.collect{|v| v.to_f}.min
     eend = data.column("End.second").values.flatten.collect{|v| v.to_f}.max
-    total = eend - start
-    Log.info "Total time elapsed: #{total} seconds"
+    total = eend - start unless eend.nil? || start.nil?
+    Log.info "Total time elapsed: #{total} seconds" if total
 
     data
   end
@@ -178,7 +178,6 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
     jobs = []
     seed_jobs.each do |step|
       jobs += step.rec_dependencies + [step]
-
       step.info[:archived_info].each do |path,ainfo|
         archived_step = Step.new path
         class << archived_step
@@ -188,9 +187,10 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
         end
         jobs << archived_step
       end if step.info[:archived_info]
+
     end
 
-    jobs = jobs.uniq.sort_by{|job| t = job.info[:done]; t || Open.mtime(job.path) || 0 }
+    jobs = jobs.uniq.sort_by{|job| t = job.info[:started]; t || Open.mtime(job.path) || Time.now }
 
     data = trace_job_times(jobs, options[:fix_gap])
 

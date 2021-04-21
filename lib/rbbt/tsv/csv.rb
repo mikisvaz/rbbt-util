@@ -8,6 +8,7 @@ module TSV
     noheaders = ! headers
 
     type = options.delete :type
+    cast = options.delete :cast
     merge = options.delete :merge
     key_field = options.delete :key_field
     fields = options.delete :fields
@@ -45,6 +46,10 @@ module TSV
         key, values = ["row-#{i}", row]
       else
         key, *values = row
+      end
+      
+      if cast
+        values = values.collect{|v| v.send cast }
       end
 
       case type
