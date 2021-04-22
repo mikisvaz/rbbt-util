@@ -8,9 +8,11 @@ $0 = "rbbt #{$previous_commands*" "} #{ File.basename(__FILE__) }" if $previous_
 
 options = SOPT.setup <<EOF
 
-Make a job forget all its dependencies and archive their meta-data
+Make a job forget its dependencies and archive their meta-data
 
-$ #{$0} [options] <job_path>
+$ #{$0} [options] <job_path> [<task_name>|<workflow>#<task_name>] ...
+
+Specific dependencies can be specified as . Otherwise, all are forgoten.
 
 -h--help Print this help
 -p--purge Purge dependencies
@@ -26,7 +28,7 @@ if options[:help]
   exit 0
 end
 
-path = ARGV[0]
+path, *remove = ARGV
 
 raise ParameterException, "No path given" if path.nil?
 step = Workflow.load_step path
@@ -34,10 +36,20 @@ step = Workflow.load_step path
 step.archive_deps
 step.copy_files_dir
 dependencies = step.dependencies
-step.set_info :dependencies, []
 
-if options[:purge]
+if remove && remove.any?
+ remove_paths = dependencies.select do |dep|
+  remove.include?(dep.task_name) || remove.include?([dep.workflow.to_s, dep.task_name] * "#")
+ end.collect{|dep| dep.path } 
+else
+ remove_paths = dependencies.collect{|dep| dep.path }
+end
+
+step.set_info :dependencies, step.info[:dependencies].reject{|info| remove_paths.include? info.last}
+
+if options[:purge] || options[:recursive_purge]
   dependencies.each do |dependency|
+    next unless remove_paths.include? dependency.path
     Step.purge(dependency.path, options[:recursive_purge])
   end
 end

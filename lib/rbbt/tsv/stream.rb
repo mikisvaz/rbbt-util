@@ -56,6 +56,7 @@ module TSV
       preambles     = []
 
       streams = streams.collect do |stream|
+
         parser = TSV::Parser.new stream, options.dup
         sfields = parser.fields
 

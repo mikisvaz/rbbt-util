@@ -40,7 +40,7 @@ module TSV
       # Process fields line
 
       preamble << line if line
-      while line and (TrueClass === @header_hash or (String === @header_hash and Misc.fixutf8(line) =~ /^#{@header_hash}/ ))
+      while line && (TrueClass === @header_hash || ((String === @header_hash && @header_hash != "") && Misc.fixutf8(line) =~ /^#{@header_hash}/ ))
         @fields = line.split(@sep, -1)
         @key_field = @fields.shift
         @key_field = @key_field[(0 + header_hash.length)..-1] if String === @header_hash
