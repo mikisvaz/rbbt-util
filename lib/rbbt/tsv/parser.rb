@@ -40,7 +40,7 @@ module TSV
       # Process fields line
 
       preamble << line if line
-      while line && (TrueClass === @header_hash || ((String === @header_hash && @header_hash != "") && Misc.fixutf8(line) =~ /^#{@header_hash}/ ))
+      while line && (TrueClass === @header_hash || (String === @header_hash && Misc.fixutf8(line) =~ /^#{@header_hash}/ ))
         @fields = line.split(@sep, -1)
         @key_field = @fields.shift
         @key_field = @key_field[(0 + header_hash.length)..-1] if String === @header_hash
@@ -49,7 +49,7 @@ module TSV
         line = (@header_hash != "" ?  stream.gets : nil)
         line = Misc.fixutf8 line.chomp if line
         preamble << line if line
-        @header_hash = false if TrueClass === @header_hash
+        @header_hash = false if TrueClass === @header_hash || @header_hash == ""
       end
 
       @preamble = preamble[0..-3] * "\n"

@@ -43,7 +43,7 @@ module Misc
       File.mkfifo path
       yield path
     ensure
-      FileUtils.rm path if erase
+      FileUtils.rm path if erase && File.exists?(path)
     end
   end
   
