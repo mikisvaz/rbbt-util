@@ -8,7 +8,7 @@ module HPC
     def self.batch_system_variables
       <<-EOF
 let TOTAL_PROCESORS="$(cat /proc/cpuinfo|grep ^processor |wc -l)"
-let MAX_MEMORY_DEFAULT="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / ( (1024 * $TOTAL_PROCESORS) / $SLURM_CPUS_PER_TASK )"
+let MAX_MEMORY_DEFAULT="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / ( (1024 * $TOTAL_PROCESORS) / $LSB_MAX_NUM_PROCESSORS )"
 [ ! -z $LSB_MAX_MEM_RUSAGE ] && let MAX_MEMORY="$LSB_MAX_MEM_RUSAGE" || MAX_MEMORY="$MAX_MEMORY_DEFAULT"
 export MAX_MEMORY_DEFAULT
 export MAX_MEMORY

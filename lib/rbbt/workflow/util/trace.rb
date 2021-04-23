@@ -180,11 +180,17 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
       jobs += step.rec_dependencies + [step]
       step.info[:archived_info].each do |path,ainfo|
         archived_step = Step.new path
-        class << archived_step
-          self
-        end.define_method :info do
+
+        archived_step.define_singleton_method :info do
           ainfo
         end
+
+        #class << archived_step
+        #  self
+        #end.define_method :info do
+        #  ainfo
+        #end
+
         jobs << archived_step
       end if step.info[:archived_info]
 
