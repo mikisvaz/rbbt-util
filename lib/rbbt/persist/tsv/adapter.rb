@@ -132,7 +132,7 @@ module Persist
 
     def read_lock
       read if closed?
-      if read?
+      if read? || write?
         return yield
       end
 
