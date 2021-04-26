@@ -45,10 +45,25 @@ module Workflow
   end
 
   def load_documentation
-    @documentation = Workflow.parse_workflow_doc documentation_markdown
+    return if @documentation
+    @documentation ||= Workflow.parse_workflow_doc documentation_markdown
     @documentation[:tasks].each do |task, description|
-      raise "Documentation for #{ task }, but not a #{ self.to_s } task" unless tasks.include? task.to_sym
-      tasks[task.to_sym].description = description
+      if task.include? "#"
+        workflow, task = task.split("#")
+        workflow = begin
+                     Kernel.const_get workflow
+                   rescue
+                     next
+                   end
+      else
+        workflow = self
+      end
+
+      if workflow.tasks.include? task.to_sym
+        workflow.tasks[task.to_sym].description = description
+      else
+        Log.low "Documentation for #{ task }, but not a #{ workflow.to_s } task" 
+      end
     end
   end
 

@@ -187,17 +187,21 @@ module Workflow
       clean_name = wf_name.sub(/::.*/,'')  
       Log.info{"Looking for '#{wf_name}' in '#{clean_name}'"}
       require_workflow clean_name
-      return Misc.string2const Misc.camel_case(wf_name)
+      workflow = Misc.string2const Misc.camel_case(wf_name)
+      workflow.load_documentation
+      return workflow
     end
 
     Log.high{"Loading workflow #{wf_name}"}
     require_local_workflow(wf_name) or 
     (Workflow.autoinstall and `rbbt workflow install #{Misc.snake_case(wf_name)} || rbbt workflow install #{wf_name}` and require_local_workflow(wf_name)) or raise("Workflow not found or could not be loaded: #{ wf_name }")
-    begin
-      Misc.string2const Misc.camel_case(wf_name)
-    rescue
-      Workflow.workflows.last || true
-    end
+    workflow = begin
+                 Misc.string2const Misc.camel_case(wf_name)
+               rescue
+                 Workflow.workflows.last || true
+               end
+    workflow.load_documentation
+    workflow
   end
 
   attr_accessor :description
