@@ -6,6 +6,7 @@ require 'set'
 
  
 module Resource
+  class ResourceNotFound < RbbtException; end
 
   class << self
     attr_accessor :lock_dir
@@ -154,16 +155,14 @@ module Resource
       rake_dir, content = rake_for(path)
       rake_dir = Path.setup(rake_dir.dup, self.pkgdir, self)
     else
-      begin
-        if path !~ /\.(gz|bgz)$/
-          begin
-            produce(path.annotate(path + '.gz'), force)
-          rescue
-            produce(path.annotate(path + '.bgz'), force)
-          end
+      if path !~ /\.(gz|bgz)$/
+        begin
+          produce(path.annotate(path + '.gz'), force)
+        rescue ResourceNotFound
+          produce(path.annotate(path + '.bgz'), force)
         end
-      rescue
-        raise "Resource is missing and does not seem to be claimed: #{ self } -- #{ path } "
+      else
+        raise ResourceNotFound, "Resource is missing and does not seem to be claimed: #{ self } -- #{ path } "
       end
     end
 

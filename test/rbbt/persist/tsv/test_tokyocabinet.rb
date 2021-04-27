@@ -51,7 +51,7 @@ class TestPersistTSVTC < Test::Unit::TestCase
     end
   end
 
-  def test_annotation_persist_with_repeitions
+  def test_annotation_persist_with_repetitions
     TmpFile.with_file do |tmp|
       entity1 = "Entity 1"
       entity2 = "Entity 2"

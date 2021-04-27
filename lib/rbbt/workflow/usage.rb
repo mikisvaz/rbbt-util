@@ -122,7 +122,7 @@ module Workflow
       last = _prov_tasks(workflow.dep_tree(task_name))
 
       if child
-        description << "->" << task_name.to_s
+        description << "-> " << task_name.to_s
       elsif first
         description << "" << task_name.to_s
       else
@@ -198,7 +198,7 @@ module Workflow
         puts Misc.format_definition_list_item(name.to_s, description, Log.terminal_width, 20, :yellow)
 
         prov_string = prov_string(dep_tree(name))
-        puts Log.color :blue, " ->" + prov_string if prov_string && ! prov_string.empty?
+        puts Misc.format_paragraph Log.color(:blue, "-> " + prov_string) if prov_string && ! prov_string.empty?
       end
 
     else
