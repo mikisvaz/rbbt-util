@@ -173,7 +173,7 @@ module Resource
     end
 
     if type and not File.exist?(final_path) or force
-      Log.medium "Producing: #{ final_path }"
+      Log.medium "Producing: (#{self.to_s}) #{ final_path }"
       lock_filename = Persist.persistence_path(final_path, {:dir => Resource.lock_dir})
 
       Misc.lock lock_filename do

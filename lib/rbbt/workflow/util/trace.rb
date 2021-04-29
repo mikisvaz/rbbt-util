@@ -10,6 +10,9 @@ module Workflow
       started = job.info[:started]
       ddone = job.info[:done]
 
+      started = Time.parse started if String === started
+      ddone = Time.parse ddone if String === ddone
+
       code = [job.workflow, job.task_name].compact.collect{|s| s.to_s} * " · "
       code = job.name + " - " + code
 
@@ -140,7 +143,13 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
       info = tasks_info[task] ||= IndiferentHash.setup({})
       dep_info = IndiferentHash.setup(dep.info)
 
-      time = dep_info[:done] - dep_info[:started]
+      ddone = dep_info[:done]
+      started = dep_info[:started]
+
+      started = Time.parse started if String === started
+      ddone = Time.parse ddone if String === ddone
+
+      time = ddone - started
       info[:time] ||= []
       info[:time] << time
 
@@ -196,7 +205,7 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
 
     end
 
-    jobs = jobs.uniq.sort_by{|job| t = job.info[:started]; t || Open.mtime(job.path) || Time.now }
+    jobs = jobs.uniq.sort_by{|job| t = job.info[:started] || Open.mtime(job.path) || Time.now; Time === t ? t : Time.parse(t) }
 
     data = trace_job_times(jobs, options[:fix_gap])
 
