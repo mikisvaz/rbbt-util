@@ -159,7 +159,11 @@ module Resource
         begin
           produce(path.annotate(path + '.gz'), force)
         rescue ResourceNotFound
-          produce(path.annotate(path + '.bgz'), force)
+          begin
+            produce(path.annotate(path + '.bgz'), force)
+          rescue ResourceNotFound
+            raise ResourceNotFound, "Resource is missing and does not seem to be claimed: #{ self } -- #{ path } "
+          end
         end
       else
         raise ResourceNotFound, "Resource is missing and does not seem to be claimed: #{ self } -- #{ path } "

@@ -600,6 +600,17 @@ module Workflow
         true
       end
     end
+
+    if ! Open.exists?(step.info_file)
+      begin
+        workflow = step.path.split("/")[-3]
+        task_name = step.path.split("/")[-2]
+        workflow = Kernel.const_get workflow
+        step.task = workflow.tasks[task_name.to_sym]
+      rescue
+        Log.exception $!
+      end
+    end
     step
   end
 
