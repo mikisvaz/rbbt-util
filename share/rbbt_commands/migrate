@@ -2,7 +2,7 @@
 
 require 'rbbt-util'
 require 'rbbt/util/simpleopt'
-require 'rbbt/workflow/remote_workflow'
+require 'rbbt/util/migrate'
 
 $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
@@ -30,83 +30,10 @@ if options[:help]
   exit 0
 end
 
-#excludes = %w(.save .crap .source tmp filecache open-remote workflows apps software jobs PCAWG)
-excludes = %w(.save .crap .source tmp filecache open-remote)
-excludes += (options[:exclude] || "").split(/,\s*/)
-excludes_str = excludes.collect{|s| "--exclude '#{s}'" } * " "
-
-test_str = options[:test] ? '-nv' : ''
-
 path, search_path, _sep, *other = ARGV
 
 search_path = 'user' if search_path.nil?
-resource = Rbbt
 
-path, real_paths, lpath = if options[:source]
-          lpath, *paths = Misc.ssh_run(options[:source], <<-EOF).split("\n")
-require 'rbbt-util'
-path = "#{path}"
-if Open.exists?(path)
-  path = #{resource.to_s}.identify(path)
-else
-  path = Path.setup(path)
-end
-puts path
-puts path.glob_all.collect{|p| File.directory?(p) ? p + "/" : p } * "\n"
-          EOF
-          [path, paths.collect{|p| [options[:source], p] * ":"}, lpath]
-        else
-          if File.exists?(path)
+options[:other] = other
 
-            path = resource.identify(path)
-          else
-            path = Path.setup(path)
-          end
-          [path, path.glob_all, path]
-        end
-
-target = if options[:target] 
-           target = Misc.ssh_run(options[:target], <<-EOF).split("\n").first
-require 'rbbt-util'
-path = "#{path}"
-resource = #{resource.to_s}
-search_path = "#{search_path}"
-puts resource[path].find(search_path)
-           EOF
-         else
-           resource[lpath].find(search_path)
-         end
-
-real_paths.each do |source|
-
-
-  if File.directory?(source) || source =~ /\/$/
-    source += "/" unless source[-1] == "/"
-    target += "/" unless target[-1] == "/"
-  end
-
-  next if source == target
-
-  if options[:target]
-    CMD.cmd("ssh #{options[:target]} mkdir -p '#{File.dirname(target)}'")
-  else
-    Open.mkdir File.dirname(target)
-  end
-
-  if options[:target]
-   target_path = [options[:target], "'" + target + "'"] * ":" 
-  else
-   target_path = "'" + target + "'"
-  end
-
-  cmd = "rsync -avztAXHP --copy-unsafe-links #{test_str} #{excludes_str} '#{source}' #{target_path} #{other * " "}"
-
-  cmd << " && rm -Rf #{source}" if options[:delete]
-
-  if options[:print]
-    puts cmd 
-    exit 0
-  else
-    CMD.cmd_log(cmd, :log => Log::INFO)
-  end
-end
+Rbbt.migrate(path, search_path, options)

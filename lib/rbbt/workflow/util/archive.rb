@@ -1,3 +1,4 @@
+require 'rbbt/util/migrate'
 class Step
 
   MAIN_RSYNC_ARGS="-avztAXHP --copy-links"
@@ -126,63 +127,48 @@ class Step
     end
   end
 
-  def self.migrate(path, search_path, options = {})
-    resource=Rbbt
-
-    orig_path = path
-    other_rsync_args = options[:rsync]
-
-    recursive = options[:recursive]
+  def self.migrate_source_paths(path, resource = Rbbt, source = nil, recursive = true)
     recursive = false if recursive.nil?
-
-    paths = if options[:source]
-              Misc.ssh_run(options[:source], <<-EOF).split("\n")
+    if source
+      lpath, *paths = Misc.ssh_run(source, <<-EOF).split("\n")
 require 'rbbt-util'
 require 'rbbt/workflow'
 
-path = "#{path}"
 recursive = #{ recursive.to_s }
+path = "#{path}"
 
-if File.exists?(path)
+if Open.exists?(path)
   path = #{resource.to_s}.identify(path)
 else
   path = Path.setup(path)
 end
 
-files = path.glob_all
-
+files = path.glob_all.collect{|p| File.directory?(p) ? p + "/" : p }
 files = Step.job_files_for_archive(files, recursive)
 
+puts path
 puts files * "\n"
-              EOF
+      EOF
 
-            else
-              if File.exists?(path)
-                path = resource.identify(path)
-                raise "Resource #{resource} could not identify #{orig_path}" if path.nil?
-              else
-                path = Path.setup(path)
-              end
-              files = path.glob_all
-              files = Step.job_files_for_archive(files, recursive)
-              files
-            end
+      [path, paths.collect{|p| [source, p] * ":"}, lpath]
+    else
+      path = Path.setup(path.dup)
+      files = path.glob_all
+      files = Step.job_files_for_archive(files, recursive)
 
+      [path, files, path]
+    end
+  end
 
-    target = if options[:target] 
-               target = Misc.ssh_run(options[:target], <<-EOF).split("\n").first
-require 'rbbt-util'
-path = "var/jobs"
-resource = #{resource.to_s}
-search_path = "#{search_path}"
-puts resource[path].find(search_path)
-               EOF
-             else
-               resource['var/jobs'].find(search_path)
-             end
+  def self.migrate(path, search_path, options = {})
+    search_path = 'user' if search_path.nil?
+
+    resource = Rbbt
+
+    path, real_paths, lpath = self.migrate_source_paths(path, resource, options[:source], options[:recursive])
 
     subpath_files = {}
-    paths.sort.each do |path|
+    real_paths.sort.each do |path|
       parts = path.split("/")
       subpath = parts[0..-4] * "/" + "/"
 
@@ -190,73 +176,16 @@ puts resource[path].find(search_path)
         subpath = subpath_files.keys.last
       end
 
-      source = path[subpath.length..-1]
+      source = path.chars[subpath.length..-1] * ""
 
       subpath_files[subpath] ||= []
       subpath_files[subpath] << source
     end
 
-    synced_files = []
+    target = Rbbt.migrate_target_path('var/jobs', search_path, resource, options[:target])
+
     subpath_files.each do |subpath, files|
-      if options[:target]
-        CMD.cmd("ssh #{options[:target]} mkdir -p '#{File.dirname(target)}'")
-      else
-        Open.mkdir File.dirname(target)
-      end
-
-      if options[:source]
-        source = [options[:source], subpath] * ":"
-      else
-        source = subpath
-      end
-      target = [options[:target], target] * ":" if options[:target]
-
-      next if File.exists?(source) && File.exists?(target) && File.expand_path(source) == File.expand_path(target)
-
-      files_and_dirs = Set.new( files )
-      files.each do |file|
-        synced_files << File.join(subpath, file)
-
-        parts = file.split("/")[0..-2].reject{|p| p.empty?}
-        while parts.any?
-          files_and_dirs <<  parts * "/"
-          parts.pop
-        end
-      end
-
-      TmpFile.with_file(files_and_dirs.sort_by{|l| l.length}.to_a * "\n") do |tmp_include_file|
-        test_str = options[:test] ? '-nv' : ''
-
-        cmd = "rsync #{MAIN_RSYNC_ARGS} --progress #{test_str} --files-from='#{tmp_include_file}' #{source}/ #{target}/ #{other_rsync_args}"
-
-        #cmd << " && rm -Rf #{source}" if options[:delete]
-        if options[:print]
-          ppp Open.read(tmp_include_file)
-          puts cmd 
-        else
-          CMD.cmd_log(cmd, :log => Log::INFO)
-        end
-      end
-    end
-
-    if options[:delete] && synced_files.any?
-      puts Log.color :magenta, "About to erase these files:"
-      synced_files.each do |p|
-        puts Log.color :red, p
-      end 
-
-      if options[:non_interactive]
-        response = 'yes'
-      else
-        puts Log.color :magenta, "Type 'yes' if you are sure:"
-        response = STDIN.gets.chomp
-      end
-
-      if response == 'yes'
-        synced_files.each do |p|
-          Open.rm p
-        end
-      end
+      Rbbt.migrate_files([subpath], target, options.merge(:files => files))
     end
   end
 

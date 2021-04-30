@@ -248,16 +248,26 @@ module CMD
     pid = io.pids.first
 
     line = "" if bar
+    starting = true
     while c = io.getc
-      STDERR << c if Log.severity <= level
-      line << c if bar
-      if c == "\n"
-        bar.process(line) if bar
+      if starting
         if pid
           Log.logn "STDOUT [#{pid}]: ", level
         else
           Log.logn "STDOUT: ", level
         end
+        starting = false
+      end
+      STDERR << c if Log.severity <= level
+      line << c if bar
+      if c == "\n"
+        bar.process(line) if bar
+        starting = true
+        #if pid
+        #  Log.logn "STDOUT [#{pid}]: ", level
+        #else
+        #  Log.logn "STDOUT: ", level
+        #end
         line = "" if bar
       end
     end 

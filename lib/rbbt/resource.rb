@@ -313,7 +313,10 @@ url='#{url}'
   def identify(path)
     path = File.expand_path(path)
     resource ||= Rbbt
-    (Path::STANDARD_SEARCH + resource.search_order + resource.search_paths.keys).uniq.each do |name|
+    locations = (Path::STANDARD_SEARCH + resource.search_order + resource.search_paths.keys)
+    locations -= [:current, "current"]
+    locations << :current
+    locations.uniq.each do |name|
       pattern = resource.search_paths[name]
       next if pattern.nil?
       pattern = pattern.sub('{PWD}', Dir.pwd)
