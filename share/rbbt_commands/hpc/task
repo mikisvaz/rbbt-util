@@ -24,8 +24,10 @@ $slurm_options = SOPT.get <<EOF
 -BPP--batch_procpath* Save Procpath performance for batch job; specify only options
 -q--queue* Queue
 -t--task_cpus* Tasks
--W--workflows* Additional workflows
 -tm--time* Time
+-lin--licenses* SLURM licenses
+-cons--constraint* SLURM constraint
+-W--workflows* Additional workflows
 -rmb--remove_batch_dir Remove the batch working directory (command, STDIN, exit status, ...)
 -bs--batch_system* Batch system to use: auto, lsf, slurm (default is auto-detect)
 EOF

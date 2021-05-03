@@ -28,6 +28,8 @@ export BATCH_SYSTEM=SLURM
       workdir        = Misc.process_options options, :workdir
       exclusive      = Misc.process_options options, :exclusive
       highmem        = Misc.process_options options, :highmem
+      licenses       = Misc.process_options options, :licenses
+      constraint     = Misc.process_options options, :constraint
 
       batch_dir  = Misc.process_options options, :batch_dir
       batch_name = Misc.process_options options, :batch_name
@@ -51,6 +53,8 @@ export BATCH_SYSTEM=SLURM
 
       header << "#SBATCH --exclusive" << "\n" if exclusive
       header << "#SBATCH --constraint=highmem" << "\n" if highmem
+      header << "#SBATCH --licenses=#{licenses}" << "\n" if licenses
+      header << "#SBATCH --constraint=#{constraint}" << "\n" if constraint
 
       header
     end

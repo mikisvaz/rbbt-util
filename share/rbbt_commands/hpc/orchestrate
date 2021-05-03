@@ -25,8 +25,10 @@ $slurm_options = SOPT.get <<EOF
 -BPP--batch_procpath* Save Procpath performance for batch job; specify only options
 -q--queue* Queue
 -t--task_cpus* Tasks
--W--workflows* Additional workflows
 -tm--time* Time
+-lin--licenses* SLURM licenses
+-cons--constraint* SLURM constraint
+-W--workflows* Additional workflows
 -OR--orchestration_rules* Orchestration rules
 -rmb--remove_batch_basedir Remove the SLURM working directory (command, STDIN, exit status, ...)
 EOF
