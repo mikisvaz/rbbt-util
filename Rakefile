@@ -7,7 +7,7 @@ begin
     gem.name = "rbbt-util"
     gem.summary = %Q{Utilities for the Ruby Bioinformatics Toolkit (rbbt)}
     gem.description = %Q{Utilities for handling tsv files, caches, etc}
-    gem.email = "miguel.vazquez@cnio.es"
+    gem.email = "miguel.vazquez.g@bsc.es"
     gem.homepage = "http://github.com/mikisvaz/rbbt-util"
     gem.authors = ["Miguel Vazquez"]
     gem.files = Dir['lib/**/*.rb', 'share/**/*.rb', 'share/**/Rakefile','share/rbbt_commands/**/*', 'share/*.ru', 'share/Rlib/*.R', 'share/color/*', 'share/install/software/*', 'share/install/software/lib/install_helpers', 'LICENSE', 'bin/rbbt_commands/*', 'etc/app.d/*']
