@@ -148,11 +148,7 @@ module Persist
     def write_lock
       write if closed?
       if write?
-        begin
-          return yield
-        ensure
-          close
-        end
+        return yield
       end
 
       lock do
