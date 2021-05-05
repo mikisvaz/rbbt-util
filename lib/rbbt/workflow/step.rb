@@ -36,8 +36,8 @@ class Step
 
   def overriden
     if @overriden.nil? 
-      return [] if dependencies.nil?
-      dependencies.select{|dep| dep.overriden }.any?
+      return false if dependencies.nil?
+      @overriden = dependencies.select{|dep| dep.overriden }.any?
     else
       @overriden
     end
