@@ -347,6 +347,8 @@ module Workflow
 
     inputs = IndiferentHash.setup(inputs)
 
+    not_overriden = inputs[:not_overriden]
+
     Workflow.resolve_locals(inputs)
 
     task_info = task_info(taskname)
@@ -400,7 +402,11 @@ module Workflow
     jobname = DEFAULT_NAME if jobname.nil? or jobname.empty?
 
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
-    overriden = has_overriden_inputs || dependencies.select{|dep| dep.overriden }.any?
+
+    overriden_deps = dependencies.select{|d| d.overriden }
+    true_overriden_deps = overriden_deps.select{|d| TrueClass === d.overriden }
+
+    overriden = has_overriden_inputs || overriden_deps.any?
 
     if real_inputs.empty? && Workflow::TAG != :inputs && ! overriden 
       step_path = step_path taskname, jobname, [], [], task.extension
@@ -413,7 +419,13 @@ module Workflow
     job = get_job_step step_path, task, input_values, dependencies
     job.workflow = self
     job.clean_name = jobname
-    job.overriden = overriden
+
+    if not_overriden 
+      job.overriden = has_overriden_inputs || true_overriden_deps.any?
+    else
+      job.overriden = has_overriden_inputs || overriden_deps.any?
+    end
+
     job.real_inputs = real_inputs.keys
     job
   end
