@@ -95,7 +95,7 @@ module HPC
 
       task = Symbol === job.overriden ? job.overriden : job.task_name
 
-      if job.overriden
+      if job.overriden || job.dependencies.select{|d| d.overriden }
         override_deps = job.rec_dependencies.
           select{|dep| Symbol === dep.overriden }.
           collect do |dep| 
