@@ -87,65 +87,67 @@ module Resource
       lock_filename = nil # it seems like this was locked already.
 
       Misc.lock lock_filename do
-        uri = URI(url)
+        begin
+          uri = URI(url)
 
-        http = Net::HTTP.new(uri.host, uri.port)
+          http = Net::HTTP.new(uri.host, uri.port)
 
-        if uri.scheme == "https"
-          http.use_ssl = true
-          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-          http.instance_variable_set("@ssl_options", OpenSSL::SSL::OP_NO_SSLv2 + OpenSSL::SSL::OP_NO_SSLv3 + OpenSSL::SSL::OP_NO_COMPRESSION)
-        end
-
-        timeout = 60 * 10
-        http.read_timeout = timeout
-        http.open_timeout = timeout
-        request = Net::HTTP::Get.new(uri.request_uri)
-        http.request request do |response|
-          filename = if response["Content-Disposition"] 
-                       response["Content-Disposition"].split(";").select{|f| f.include? "filename"}.collect{|f| f.split("=").last.gsub('"','')}.first
-                     else
-                       nil
-                     end
-
-          if filename && filename =~ /\.b?gz$/ && final_path !~ /\.b?gz$/
-            extension = filename.split(".").last
-            final_path += '.' + extension
+          if uri.scheme == "https"
+            http.use_ssl = true
+            http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+            http.instance_variable_set("@ssl_options", OpenSSL::SSL::OP_NO_SSLv2 + OpenSSL::SSL::OP_NO_SSLv3 + OpenSSL::SSL::OP_NO_COMPRESSION)
           end
-          case response
-          when Net::HTTPSuccess, Net::HTTPOK
-            Misc.sensiblewrite(final_path) do |file|
-              response.read_body do |chunk|
-                file.write chunk
-              end
+
+          timeout = 60 * 10
+          http.read_timeout = timeout
+          http.open_timeout = timeout
+          request = Net::HTTP::Get.new(uri.request_uri)
+          http.request request do |response|
+            filename = if response["Content-Disposition"] 
+                         response["Content-Disposition"].split(";").select{|f| f.include? "filename"}.collect{|f| f.split("=").last.gsub('"','')}.first
+                       else
+                         nil
+                       end
+
+            if filename && filename =~ /\.b?gz$/ && final_path !~ /\.b?gz$/
+              extension = filename.split(".").last
+              final_path += '.' + extension
             end
-          when Net::HTTPRedirection, Net::HTTPFound
-            location = response['location']
-            if location.include? 'get_directory'
-              Log.debug("Feching directory from: #{location}. Into: #{final_path}")
-              FileUtils.mkdir_p final_path unless File.exist? final_path
-              TmpFile.with_file do |tmp_dir|
-                Misc.in_dir tmp_dir do
-                  CMD.cmd('tar xvfz -', :in => Open.open(location, :nocache => true))
+            case response
+            when Net::HTTPSuccess, Net::HTTPOK
+              Misc.sensiblewrite(final_path) do |file|
+                response.read_body do |chunk|
+                  file.write chunk
                 end
-                FileUtils.mv tmp_dir, final_path
               end
+            when Net::HTTPRedirection, Net::HTTPFound
+              location = response['location']
+              if location.include? 'get_directory'
+                Log.debug("Feching directory from: #{location}. Into: #{final_path}")
+                FileUtils.mkdir_p final_path unless File.exist? final_path
+                TmpFile.with_file do |tmp_dir|
+                  Misc.in_dir tmp_dir do
+                    CMD.cmd('tar xvfz -', :in => Open.open(location, :nocache => true))
+                  end
+                  FileUtils.mv tmp_dir, final_path
+                end
+              else
+                url = location
+                raise TryAgain
+                #Open.open(location, :nocache => true) do |s|
+                #  Misc.sensiblewrite(final_path, s)
+                #end
+              end
+            when Net::HTTPInternalServerError
+              @server_missing_resource_cache << url
+              raise "Resource Not Found"
             else
-              url = location
-              raise TryAgain
-              #Open.open(location, :nocache => true) do |s|
-              #  Misc.sensiblewrite(final_path, s)
-              #end
+              raise "Response not understood: #{response.inspect}"
             end
-          when Net::HTTPInternalServerError
-            @server_missing_resource_cache << url
-            raise "Resource Not Found"
-          else
-            raise "Response not understood: #{response.inspect}"
           end
+        rescue TryAgain
+          retry
         end
-      rescue TryAgain
-        retry
       end
     rescue
       Log.warn "Could not retrieve (#{self.to_s}) #{ path } from #{ remote_server }"
