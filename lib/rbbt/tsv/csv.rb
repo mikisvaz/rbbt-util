@@ -28,10 +28,10 @@ module TSV
             if Misc.is_filename?(obj)
               CSV.read obj, options
             else
-              CSV.new obj, options
+              CSV.new obj, **options
             end
           else
-            CSV.new obj, options
+            CSV.new obj, **options
           end
 
     tsv = if noheaders
