@@ -206,9 +206,9 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
    puts Log.color(:magenta, "BATCH parameters: ")
    case job_batch_system 
    when 'slurm'
-     text = CMD.cmd('grep "^#SBATCH" |tail -n +5', :in => Open.read(fcmd)).read.strip
+     text = CMD.cmd('grep "^#SBATCH" ', :in => Open.read(fcmd)).read.strip
    when 'lsf'
-     text = CMD.cmd('grep "^#BSUB" |tail -n +5', :in => Open.read(fcmd)).read.strip
+     text = CMD.cmd('grep "^#BSUB" ', :in => Open.read(fcmd)).read.strip
    else
      text = ""
    end

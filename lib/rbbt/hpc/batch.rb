@@ -102,7 +102,7 @@ module HPC
 
           name = [dep.workflow.to_s, dep.task_name] * "#"
           [name, dep.path] * "="  
-        end * ","
+        end.uniq * ","
 
         options[:override_deps] = override_deps unless override_deps.empty?
       end
@@ -156,10 +156,15 @@ EOF
         :singularity_ruby_inline,
         :sync,
         :task_cpus,
+        :mem,
+        :mem_per_cpu,
+        :licenses,
+        :contraints,
         :time,
         :user_group,
         :wipe_container,
         :workdir,
+        :purge_deps
       ]
 
       keys.each do |key|
@@ -380,7 +385,7 @@ echo "user_scratch: #{scratch_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" 
     def execute(options)
       exec_cmd, job_cmd = options.values_at :exec_cmd, :rbbt_cmd
 
-      <<-EOF
+      script=<<-EOF
 step_path=$( 
       #{exec_cmd} #{job_cmd} --printpath
 )
@@ -389,6 +394,8 @@ exit_status=$?
 [[ -z $BATCH_JOB_ID ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_job $BATCH_JOB_ID
 [[ -z $BATCH_SYSTEM ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_system $BATCH_SYSTEM
       EOF
+
+      script
     end
 
     def sync_environment(options = {})
@@ -409,6 +416,11 @@ fi
 
     def cleanup_environment(options = {})
       cleanup_environment = ""
+
+      cleanup_environment +=<<-EOF if options[:purge_deps]
+#{options[:exec_cmd]} workflow forget_deps --purge --recursive_purge "$step_path" 2>1 >> '#{options[:fsync]}' 
+      EOF
+
       if options[:sync]
         if options[:wipe_container] == 'force'
           cleanup_environment +=<<-EOF

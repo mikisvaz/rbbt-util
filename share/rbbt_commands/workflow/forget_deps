@@ -38,11 +38,11 @@ step.copy_files_dir
 dependencies = step.dependencies
 
 if remove && remove.any?
- remove_paths = dependencies.select do |dep|
-  remove.include?(dep.task_name) || remove.include?([dep.workflow.to_s, dep.task_name] * "#")
- end.collect{|dep| dep.path } 
+  remove_paths = dependencies.select do |dep|
+    remove.include?(dep.task_name) || remove.include?([dep.workflow.to_s, dep.task_name] * "#")
+  end.collect{|dep| dep.path } 
 else
- remove_paths = dependencies.collect{|dep| dep.path }
+  remove_paths = dependencies.collect{|dep| dep.path }
 end
 
 step.set_info :dependencies, step.info[:dependencies].reject{|info| remove_paths.include? info.last}
@@ -50,6 +50,7 @@ step.set_info :dependencies, step.info[:dependencies].reject{|info| remove_paths
 if options[:purge] || options[:recursive_purge]
   dependencies.each do |dependency|
     next unless remove_paths.include? dependency.path
+    next unless Open.exists?(dependency.info_file)
     Step.purge(dependency.path, options[:recursive_purge])
   end
 end

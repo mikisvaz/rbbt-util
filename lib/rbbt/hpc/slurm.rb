@@ -31,6 +31,9 @@ export BATCH_SYSTEM=SLURM
       licenses       = Misc.process_options options, :licenses
       constraint     = Misc.process_options options, :constraint
 
+      mem            = Misc.process_options options, :mem
+      mem_per_cpu    = Misc.process_options options, :mem_per_cpu
+
       batch_dir  = Misc.process_options options, :batch_dir
       batch_name = Misc.process_options options, :batch_name
 
@@ -39,22 +42,34 @@ export BATCH_SYSTEM=SLURM
 
       time = Misc.format_seconds Misc.timespan(time) unless time.include? ":"
 
+      sbatch_params = {"job-name" => batch_name,
+                       "output" => fout,
+                       "error" => ferr,
+                       "cpus-per-task" => task_cpus,
+                       "nodes" => nodes,
+                       "time" => time,
+                       "exclusive" => exclusive,
+                       "licenses" => licenses,
+                       "mem" => mem,
+                       "mem-per-cpu" => mem_per_cpu,
+      }
+
       header =<<-EOF
 #!/bin/bash
-#SBATCH --job-name="#{batch_name}"
-#SBATCH --workdir="#{workdir}"
-#SBATCH --output="#{fout}"
-#SBATCH --error="#{ferr}"
-#SBATCH --qos="#{queue}"
-#SBATCH --cpus-per-task="#{task_cpus}"
-#SBATCH --time="#{time}"
-#SBATCH --nodes="#{nodes}"
       EOF
 
-      header << "#SBATCH --exclusive" << "\n" if exclusive
-      header << "#SBATCH --constraint=highmem" << "\n" if highmem
-      header << "#SBATCH --licenses=#{licenses}" << "\n" if licenses
-      header << "#SBATCH --constraint=#{constraint}" << "\n" if constraint
+      sbatch_params.each do |name,value|
+        next if value.nil? || value == ""
+        if TrueClass === value
+          header << "#SBATCH --#{name}"
+        elsif Array === value
+          value.each do |v|
+            header << "#SBATCH --#{name}=\"#{v}\""
+          end
+        else
+          header << "#SBATCH --#{name}=\"#{value}\""
+        end
+      end
 
       header
     end

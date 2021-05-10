@@ -19,6 +19,7 @@ $slurm_options = SOPT.get <<EOF
 -e--exclusive Make exclusive use of the node
 -hm--highmem Make use of highmem cores
 -wc--wipe_container* Wipe the jobs from the contain directory
+-pd--purge_deps Purge job dependencies
 -CS--contain_and_sync Contain and sync to default locations
 -ci--copy_image When using a container directory, copy image there
 -t--tail Tail the logs
@@ -26,6 +27,8 @@ $slurm_options = SOPT.get <<EOF
 -q--queue* Queue
 -t--task_cpus* Tasks
 -tm--time* Time
+-m--mem* SLURM minimum memory
+-mcpu--mem_per_cpu* SLURM minimum memory per CPU
 -lin--licenses* SLURM licenses
 -cons--constraint* SLURM constraint
 -W--workflows* Additional workflows

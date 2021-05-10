@@ -477,7 +477,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     tail
     list
     clean
-    trace
    }
    app=app{
     install
