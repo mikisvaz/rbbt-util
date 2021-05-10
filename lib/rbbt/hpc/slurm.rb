@@ -61,13 +61,13 @@ export BATCH_SYSTEM=SLURM
       sbatch_params.each do |name,value|
         next if value.nil? || value == ""
         if TrueClass === value
-          header << "#SBATCH --#{name}"
+          header << "#SBATCH --#{name}" << "\n"
         elsif Array === value
           value.each do |v|
-            header << "#SBATCH --#{name}=\"#{v}\""
+            header << "#SBATCH --#{name}=\"#{v}\"" << "\n"
           end
         else
-          header << "#SBATCH --#{name}=\"#{value}\""
+          header << "#SBATCH --#{name}=\"#{value}\"" << "\n"
         end
       end
 
