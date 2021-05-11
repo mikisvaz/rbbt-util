@@ -95,11 +95,12 @@ module HPC
 
       task = Symbol === job.overriden ? job.overriden : job.task_name
 
-      if job.overriden || job.dependencies.select{|d| Symbol === d.overriden }.any?
-        override_deps = job.rec_dependencies.
-          select{|dep| Symbol === dep.overriden }.
+      if job.overriden?
+        #override_deps = job.rec_dependencies.
+        #  select{|dep| Symbol === dep.overriden }.
+        
+        override_deps = job.overriden_deps.
           collect do |dep| 
-
           name = [dep.workflow.to_s, dep.task_name] * "#"
           [name, dep.path] * "="  
         end.uniq * ","
@@ -418,7 +419,9 @@ fi
       cleanup_environment = ""
 
       cleanup_environment +=<<-EOF if options[:purge_deps]
-#{options[:exec_cmd]} workflow forget_deps --purge --recursive_purge "$step_path" 2>1 >> '#{options[:fsync]}' 
+if [ $exit_status == '0' ]; then 
+  #{options[:exec_cmd]} workflow forget_deps --purge --recursive_purge "$step_path" 2>1 >> '#{options[:fsync]}' 
+fi
       EOF
 
       if options[:sync]

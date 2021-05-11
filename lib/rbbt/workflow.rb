@@ -347,7 +347,10 @@ module Workflow
 
     inputs = IndiferentHash.setup(inputs)
 
-    not_overriden = inputs[:not_overriden]
+    not_overriden = inputs.delete :not_overriden 
+    if not_overriden
+      inputs[:not_overriden] = :not_overriden_dep
+    end
 
     Workflow.resolve_locals(inputs)
 
@@ -420,10 +423,13 @@ module Workflow
     job.workflow = self
     job.clean_name = jobname
 
-    if not_overriden 
+    case not_overriden 
+    when TrueClass
       job.overriden = has_overriden_inputs || true_overriden_deps.any?
+    when :not_overriden_dep
+      job.overriden = true if has_overriden_inputs || true_overriden_deps.any?
     else
-      job.overriden = has_overriden_inputs || overriden_deps.any?
+      job.overriden = true if has_overriden_inputs || overriden_deps.any?
     end
 
     job.real_inputs = real_inputs.keys

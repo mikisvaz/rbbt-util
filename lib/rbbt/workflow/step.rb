@@ -34,13 +34,40 @@ class Step
                     end
   end
 
+
+  def overriden?
+    return true if @overriden
+    return true if dependencies.select{|dep| dep.overriden? }.any?
+    info[:archived_info].each do |f,i|
+      return true if i[:overriden] || i["overriden"]
+    end if info[:archived_info]
+    return false
+  end
+
   def overriden
-    if @overriden.nil? 
-      return false if dependencies.nil?
-      @overriden = dependencies.select{|dep| dep.overriden }.any?
-    else
-      @overriden
+    @overriden
+    #if @overriden.nil? 
+    #  return false if dependencies.nil?
+    #  dependencies.select{|dep| dep.overriden? }.any?
+    #else
+    #  @overriden
+    #end
+  end
+
+  def overriden_deps
+    ord = []
+    deps = dependencies.dup
+    while dep = deps.shift
+      case dep.overriden
+      when FalseClass
+        next
+      when Symbol
+        ord << dep
+      else
+        deps += dep.dependencies
+      end
     end
+    ord
   end
 
   def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil, clean_name = nil)
@@ -134,7 +161,11 @@ class Step
 
     archived_info = {}
     dependencies.each do |dep|
-      archived_info[dep.path] = dep.info
+      if Symbol === dep.overriden
+        archived_info[dep.path] = dep.overriden
+      else
+        archived_info[dep.path] = dep.info
+      end
       archived_info.merge!(dep.archived_info)
     end if dependencies
 
