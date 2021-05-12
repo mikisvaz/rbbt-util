@@ -192,25 +192,48 @@ module CMD
 
       ConcurrentStream.setup sout, :pids => pids, :autojoin => no_wait, :no_fail => no_fail 
 
-      err_thread = Thread.new do
-        while line = serr.gets
-          bar.process(line) if bar
-          sout.log = line
-          Log.log "STDERR [#{pid}]: " +  line, stderr 
-        end if Integer === stderr and log
-        serr.close
+      if (Integer === stderr and log) || bar
+        err_thread = Thread.new do
+          while line = serr.gets
+            bar.process(line) if bar
+            sout.log = line
+            Log.log "STDERR [#{pid}]: " +  line, stderr if log
+          end 
+          serr.close
+        end
+      else
+        Misc.consume_stream(serr, true)
+        err_thread = nil
       end
 
       sout.threads = [in_thread, err_thread, wait_thr].compact
 
       sout
     else
-      err = ""
-      err_thread = Thread.new do
-        while not serr.eof?
-          err << serr.gets if Integer === stderr
+
+      if bar
+        err = ""
+        err_thread = Thread.new do
+          while not serr.eof?
+            line = serr.gets 
+            bar.process(line) 
+            err << line if Integer === stderr and log
+          end
+          serr.close
         end
-        serr.close
+      elsif log and Integer === stderr
+        err = ""
+        err_thread = Thread.new do
+          while not serr.eof?
+            err << serr.gets 
+          end
+          serr.close
+        end
+      else
+        Misc.consume_stream(serr, true)
+        #serr.close 
+        err_thread = nil
+        err = ""
       end
 
       ConcurrentStream.setup sout, :pids => pids, :threads => [in_thread, err_thread].compact, :autojoin => no_wait, :no_fail => no_fail 
@@ -220,7 +243,11 @@ module CMD
 
       status = wait_thr.value
       if not status.success? and not no_fail
-        raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{status.exitstatus}.\n#{err}"
+        if err.eny?
+          raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{status.exitstatus}.\n#{err}"
+        else
+          raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{status.exitstatus}"
+        end
       else
         Log.log err, stderr if Integer === stderr and log
       end
@@ -263,11 +290,6 @@ module CMD
       if c == "\n"
         bar.process(line) if bar
         starting = true
-        #if pid
-        #  Log.logn "STDOUT [#{pid}]: ", level
-        #else
-        #  Log.logn "STDOUT: ", level
-        #end
         line = "" if bar
       end
     end 
