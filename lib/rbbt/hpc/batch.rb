@@ -384,7 +384,7 @@ echo "user_scratch: #{scratch_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" 
     end
 
     def execute(options)
-      exec_cmd, job_cmd = options.values_at :exec_cmd, :rbbt_cmd
+      exec_cmd, job_cmd, task_cpus = options.values_at :exec_cmd, :rbbt_cmd, :task_cpus
 
       script=<<-EOF
 step_path=$( 
@@ -394,6 +394,7 @@ exit_status=$?
 
 [[ -z $BATCH_JOB_ID ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_job $BATCH_JOB_ID
 [[ -z $BATCH_SYSTEM ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_system $BATCH_SYSTEM
+#{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_cpus #{task_cpus}
       EOF
 
       script

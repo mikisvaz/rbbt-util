@@ -102,6 +102,7 @@ end
 
 if options[:config_keys]
   options[:config_keys].split(",").each do |config|
+    config = config.strip
     Rbbt::Config.process_config config
   end
 end
