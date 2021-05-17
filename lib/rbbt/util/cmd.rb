@@ -243,7 +243,7 @@ module CMD
 
       status = wait_thr.value
       if not status.success? and not no_fail
-        if err.eny?
+        if !err.empty?
           raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{status.exitstatus}.\n#{err}"
         else
           raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{status.exitstatus}"

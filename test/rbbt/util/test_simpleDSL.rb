@@ -35,12 +35,12 @@ class TestDSL < Test::Unit::TestCase
 
   def test_config
     config = <<-EOC
-  action1("Hello")
-  action2("Good bye")
+  action1 "Hello"  
+  action2 "Good bye" 
     EOC
 
     begin
-      assert(@parser.config(:action) == config)
+      assert_equal config.split("\n").collect{|l| l.strip}, @parser.config(:action).split("\n").collect{|l| l.strip}
     rescue SimpleDSL::NoRuby2Ruby
     end
   end

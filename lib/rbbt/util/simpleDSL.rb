@@ -38,13 +38,13 @@ module SimpleDSL
     hook_method(method)
 
     # Execute
+    @config ||= {}
     if actions.is_a? Proc
       begin
-        require 'parse_tree_extensions'
-        require 'parse_tree'
-        require 'ruby2ruby'
-        @config[@@method_name] = actions.to_ruby.collect[1..-2].join
+        require 'method_source'
+        @config[@@method_name] = actions.source.split("\n")[1..-2] * "\n"
       rescue Exception
+        Log.exception $!
         @config[@@method_name] = NoRuby2Ruby.new "The gem ruby2ruby is not installed. It will not work on ruby 1.9."
       end
       
