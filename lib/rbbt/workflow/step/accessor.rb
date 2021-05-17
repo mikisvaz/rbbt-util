@@ -551,7 +551,7 @@ class Step
 
   def aborted?
     status = self.status
-    status == :aborted || ((status != :dependencies && status != :cleaned && status != :noinfo && status != :setup && status != :noinfo) && nopid?)
+    status == :aborted || ((status != :ending && status != :dependencies && status != :cleaned && status != :noinfo && status != :setup && status != :noinfo) && nopid?)
   end
 
   # {{{ INFO
