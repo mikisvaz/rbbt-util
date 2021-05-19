@@ -173,7 +173,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
    select = true if queued && deps && (running_jobs & deps).any? || queued && is_running && nodes.empty?
    select = true if running && nodes.any? && (exit_status.nil? && running_jobs.include?(id)) && (!deps || (running_jobs & deps).empty?)
    select = true if jobid && jobid.split(",").include?(id)
-   select = select && cmd.match(/#{search}/) if search
+   select = select && step_path.match(/#{search}/) if search
    next unless select 
  elsif search
    select = false
@@ -292,13 +292,17 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
      step_path = step_line.split(": ").last.strip
      step = Step.new step_path
      step.load_dependencies_from_info
+     has_bar = false
      (step.rec_dependencies + [step]).reverse.each do |j|
        next if j.done? 
-       next unless j.file(:progress).exists?
-       bar = Log::ProgressBar.new 
-       bar.load(j.file(:progress).yaml)
-       puts Log.color(:magenta, "Progress: ") + bar.report_msg + " " + Log.color(:yellow, j.task_signature)
+       if j.file(:progress).exists?
+        bar = Log::ProgressBar.new 
+        bar.load(j.file(:progress).yaml)
+        puts Log.color(:magenta, "Progress: ") + bar.report_msg + " " + Log.color(:yellow, j.task_signature)
+        has_bar = true
+       end
      end
+     puts Log.color(:magenta, "Progress: ") + Log.color(:yellow, step.task_signature) + " #{step.status}" unless has_bar
    end
  end
 

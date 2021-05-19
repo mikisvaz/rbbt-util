@@ -161,7 +161,7 @@ class Step
 
     archived_info = {}
     dependencies.each do |dep|
-      if Symbol === dep.overriden
+      if Symbol === dep.overriden && ! Open.exists?(dep.info_file)
         archived_info[dep.path] = dep.overriden
       else
         archived_info[dep.path] = dep.info

@@ -188,6 +188,7 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
     seed_jobs.each do |step|
       jobs += step.rec_dependencies + [step]
       step.info[:archived_info].each do |path,ainfo|
+        next unless Hash === ainfo
         archived_step = Step.new path
 
         archived_step.define_singleton_method :info do
@@ -205,7 +206,7 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
 
     end
 
-    jobs = jobs.uniq.sort_by{|job| t = job.info[:started] || Open.mtime(job.path) || Time.now; Time === t ? t : Time.parse(t) }
+    jobs = jobs.uniq.sort_by{|job| [job, job.info]; t = job.info[:started] || Open.mtime(job.path) || Time.now; Time === t ? t : Time.parse(t) }
 
     data = trace_job_times(jobs, options[:fix_gap])
 

@@ -302,7 +302,7 @@ module Workflow
         workflow, task = m.values_at 1, 2
         workflow = self.to_s if workflow.empty?
         override_dependencies[workflow] ||= IndiferentHash.setup({})
-        override_dependencies[workflow][task] = value.dup
+        override_dependencies[workflow][task] = value
       end
     end
     override_dependencies

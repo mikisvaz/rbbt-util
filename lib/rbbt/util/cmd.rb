@@ -202,8 +202,7 @@ module CMD
           serr.close
         end
       else
-        Misc.consume_stream(serr, true)
-        err_thread = nil
+        err_thread = Misc.consume_stream(serr, true)
       end
 
       sout.threads = [in_thread, err_thread, wait_thr].compact
