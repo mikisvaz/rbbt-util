@@ -12,32 +12,35 @@ module Log
     attr_accessor :history, :mean_max, :max_history
     def thr_msg
       if @history.nil?
-        @history ||= [[@ticks, Time.now] ]
+        @history ||= [[0, @start], [@ticks, Time.now] ]
       elsif @last_ticks != @ticks
         @history << [@ticks, Time.now]
-        max_history ||= case 
-                      when @ticks > 20
-                        count = @ticks - @last_count
-                        count = 1 if count == 0
-                        if @max
-                          times = @max / count
-                          num = times / 20
-                          num = 2 if num < 2
-                        else
-                          num = 10
+        max_history ||= begin
+                          max_history = case 
+                                        when @ticks > 20
+                                          count = @ticks - @last_count
+                                          count = 1 if count == 0
+                                          if @max
+                                            times = @max / count
+                                            num = times / 20
+                                            num = 2 if num < 2
+                                          else
+                                            num = 10
+                                          end
+                                          count * num
+                                        else
+                                          20
+                                        end
+                          max_history = 30 if max_history > 30
+                          max_history
                         end
-                        count * num
-                      else
-                        20
-                      end
-        max_history = 30 if max_history > 30
         @history.shift if @history.length > max_history
       end
 
       @last_ticks = @ticks
 
       @mean_max ||= 0
-      if @history.length > 2
+      if @history.length > 3
 
         sticks, stime = @history.first
         ssticks, sstime = @history[-3]

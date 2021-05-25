@@ -296,10 +296,10 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
      (step.rec_dependencies + [step]).reverse.each do |j|
        next if j.done? 
        if j.file(:progress).exists?
-        bar = Log::ProgressBar.new 
-        bar.load(j.file(:progress).yaml)
-        puts Log.color(:magenta, "Progress: ") + bar.report_msg + " " + Log.color(:yellow, j.task_signature)
-        has_bar = true
+         bar = Log::ProgressBar.new 
+         bar.load(j.file(:progress).yaml)
+         puts Log.color(:magenta, "Progress: ") + bar.report_msg + " " + Log.color(:yellow, j.task_signature)
+         has_bar = true
        end
      end
      puts Log.color(:magenta, "Progress: ") + Log.color(:yellow, step.task_signature) + " #{step.status}" unless has_bar
