@@ -2,6 +2,7 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helpe
 require 'rbbt/util/python'
 
 class TestPython < Test::Unit::TestCase
+
   def test_python
     TmpFile.with_file do |tmpdir|
       code =<<-EOF
@@ -67,7 +68,7 @@ def python_print():
 
   def test_keras
     defined = RbbtPython.run do
-      pyimport "keras.models", as: :km
+      pyimport "tensorflow.keras.models", as: :km
       defined?(km.Sequential)
     end
     assert defined
@@ -75,7 +76,7 @@ def python_print():
 
   def test_keras_import
     defined = RbbtPython.run do
-      pyfrom "keras.models", import: :Sequential
+      pyfrom "tensorflow.keras.models", import: :Sequential
       defined?(self::Sequential)
     end
     assert defined

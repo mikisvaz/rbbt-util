@@ -3,10 +3,17 @@ require 'pycall/import'
 
 module RbbtPython
   extend PyCall::Import
+
+  def self.exec(script)
+    PyCall.exec(script)
+  end
+
   def self.run(mod = nil, imports = nil, &block)
     if mod
-      if imports
+      if Array === imports
         pyfrom mod, :import => imports
+      elsif Hash === imports
+        pyimport mod, imports
       else
         pyimport mod 
       end
@@ -17,8 +24,10 @@ module RbbtPython
 
   def self.run_log(mod = nil, imports = nil, severity = 0, severity_err = nil, &block)
     if mod
-      if imports
+      if Array === imports
         pyfrom mod, :import => imports
+      elsif Hash === imports
+        pyimport mod, imports
       else
         pyimport mod 
       end
@@ -31,8 +40,10 @@ module RbbtPython
 
   def self.run_log_stderr(mod = nil, imports = nil, severity = 0, &block)
     if mod
-      if imports
+      if Array === imports
         pyfrom mod, :import => imports
+      elsif Hash === imports
+        pyimport mod, imports
       else
         pyimport mod 
       end
@@ -49,4 +60,14 @@ module RbbtPython
     end
   end
 
+  def self.add_paths(paths)
+    self.run 'sys' do
+      paths.each do |path|
+        sys.path.append path
+      end
+    end
+  end
+
+  RbbtPython.add_paths Rbbt.python.find_all
+  RbbtPython.pyimport "rbbt"
 end

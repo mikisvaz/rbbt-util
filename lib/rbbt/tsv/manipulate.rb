@@ -174,6 +174,8 @@ module TSV
         if Hash === @monitor
           desc = @monitor[:desc] if @monitor.include? :desc 
           step = @monitor[:step] if @monitor.include? :step 
+        elsif String === @monitor
+          desc = @monitor
         end
         progress_monitor = Log::ProgressBar.new_bar(size, :desc => desc)
       end

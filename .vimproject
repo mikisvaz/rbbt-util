@@ -130,6 +130,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      provenance.rb
      orchestrator.rb
      trace.rb
+     data.rb
     }
 
     remote_workflow.rb
@@ -380,6 +381,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      }
    }
   }
+ }
+ python=python{
+  rbbt.py
  }
  integration_test=integration_test{
   test_bed.rb

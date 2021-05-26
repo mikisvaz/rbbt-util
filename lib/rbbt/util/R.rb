@@ -41,7 +41,7 @@ source('#{UTIL}');
 
     if monitor
       #io = CMD.cmd('R --no-save --quiet', options.merge(:in => cmd, :pipe => true, :log => true))
-      io = CMD.cmd('R --no-save --quiet', options.merge(:in => cmd, :pipe => true, :log => true, :xvfb => true))
+      io = CMD.cmd('R --no-save --quiet', options.merge(:in => cmd, :pipe => true, :log => true, :xvfb => options[:xvfb]))
       while line = io.gets
         case monitor
         when Proc
@@ -52,7 +52,7 @@ source('#{UTIL}');
       end
       nil
     else
-      CMD.cmd('R --no-save --slave --quiet', options.merge(:in => cmd, :xvfb => true))
+      CMD.cmd('R --no-save --slave --quiet', options.merge(:in => cmd, :xvfb => options[:xvfb]))
     end
   end
 

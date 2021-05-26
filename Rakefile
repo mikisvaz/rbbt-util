@@ -10,7 +10,7 @@ begin
     gem.email = "miguel.vazquez.g@bsc.es"
     gem.homepage = "http://github.com/mikisvaz/rbbt-util"
     gem.authors = ["Miguel Vazquez"]
-    gem.files = Dir['lib/**/*.rb', 'share/**/*.rb', 'share/**/Rakefile', 'share/rbbt_commands/slurm/*', 'share/rbbt_commands/lsf/*', 'share/rbbt_commands/**/*', 'share/*.ru', 'share/Rlib/*.R', 'share/color/*', 'share/install/software/*', 'share/install/software/lib/install_helpers', 'LICENSE', 'bin/rbbt_commands/*', 'etc/app.d/*']
+    gem.files = Dir['lib/**/*.rb', 'share/**/*.rb', 'share/**/Rakefile', 'share/rbbt_commands/slurm/*', 'share/rbbt_commands/lsf/*', 'share/rbbt_commands/**/*', 'share/*.ru', 'share/Rlib/*.R', 'share/color/*', 'share/install/software/*', 'share/install/software/lib/install_helpers', 'LICENSE', 'bin/rbbt_commands/*', 'etc/app.d/*', 'python/*']
     gem.executables = ['rbbt_query.rb', 'rbbt_exec.rb', 'rbbt_Rutil.rb', 'rbbt', 'rbbt_dangling_locks.rb']
     gem.test_files = Dir['test/**/test_*.rb']
 

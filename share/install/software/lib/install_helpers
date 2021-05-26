@@ -499,7 +499,7 @@ install_jar(){
     local url="$2"
 
     [ -d  "$OPT_DIR/$name/" ] || mkdir -p  "$OPT_DIR/$name/"
-    wget "$url" -O "$OPT_DIR/jars/$name.jar" || wget "$url" -O "$OPT_DIR/jars/$name.jar" --no-check-certificate || (rm "$OPT_DIR/jars/$name.jar"; exit -1)
+    wget "$url" -O "$OPT_DIR/$name/$name.jar" || wget "$url" -O "$OPT_DIR/$name/$name.jar" --no-check-certificate || (rm "$OPT_DIR/$name/$name.jar"; exit -1)
     link "$OPT_DIR/$name/$name.jar" "$OPT_JAR_DIR/$name.jar" 
 }
 
