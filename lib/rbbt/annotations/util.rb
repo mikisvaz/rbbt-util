@@ -152,6 +152,7 @@ module Annotated
       tsv = TSV.setup({}, :key_field => "List", :fields => fields, :type => :list, :unnamed => true)
 
       annot_id = annotations.id
+      annot_id = annot_id * "," if Array === annot_id
       tsv[annot_id] = annotations.tsv_values(*fields).dup
 
     when Array === annotations 

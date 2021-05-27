@@ -8,6 +8,33 @@ module RbbtPython
     PyCall.exec(script)
   end
 
+  def self.iterate(iterator, options = {})
+    bar = options[:bar]
+
+    case bar
+    when TrueClass
+      bar = Log::ProgressBar.new nil, :desc => "RbbtPython iterate"
+    when String
+      bar = Log::ProgressBar.new nil, :desc => bar
+    end
+    while true
+      begin
+        yield iterator.__next__
+        bar.tick if bar
+      rescue PyCall::PyError
+        if $!.type.to_s == "<class 'StopIteration'>"
+          break
+        else
+          raise $!
+        end
+      rescue
+        bar.error if bar
+      end
+    end
+    bar.done if bar
+    nil
+  end
+
   def self.run(mod = nil, imports = nil, &block)
     if mod
       if Array === imports

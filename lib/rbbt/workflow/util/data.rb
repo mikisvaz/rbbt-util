@@ -23,7 +23,11 @@ module Workflow
         task_info = workflow.task_info(oname)
         dir_options = Workflow.load_inputs(data_dir.options, task_info[:inputs], task_info[:input_types])
         data_options = block.call data_dir, dir_options, task_info
-        {:inputs => data_options.merge(options)}
+        if data_options.include?(:inputs)
+          data_options
+        else
+          {:inputs => data_options.merge(options)}
+        end
       end
     end
   end

@@ -5,14 +5,23 @@ module TestDataWF
   extend Workflow
   extend Workflow::Data
 
+  input :salutation, :string
+  task :salute_luis => :string do |name,salutation|
+    "Hi Luis: #{salutation}"
+  end
+
   input :name, :string
   input :salutation, :string
   task :salute => :string do |name,salutation|
     "Hi #{name}: #{salutation}"
   end
 
-  data_task :salute_data, TestDataWF, :salute do |directory,options|
+  data_task :salute_data, TestDataWF, :salute, :salutation => :placeholder do |directory,options|
     options.merge({:salutation => directory.salutation.read})
+  end
+
+  data_task :salute_data2, TestDataWF, :salute, :salutation => :placeholder do |directory,options|
+    {:task => :salute_luis, :inputs => options.merge({:salutation => directory.salutation.read})}
   end
 end
 
@@ -28,7 +37,11 @@ class TestWorkflowData < Test::Unit::TestCase
 
       job = TestDataWF.job(:salute_data, "TestDir")
       job.recursive_clean.run
-      ppp job.run
+      assert job.run.include? "Miguel"
+
+      job = TestDataWF.job(:salute_data2, "TestDir")
+      job.recursive_clean.run
+      assert job.run.include? "Luis"
     end
   end
 end
