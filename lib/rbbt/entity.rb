@@ -197,7 +197,7 @@ module Entity
             if self.instance_variable_get("@multiple_result_" + name.to_s)
               return self.instance_variable_get("@multiple_result_" + name.to_s)
             end
-            raise MultipleEntity, "Entity #{name} runs with multiple entities"
+            raise MultipleEntity, "Entity property #{name} runs with multiple entities"
           end
 
           define_method name do |*args|
@@ -225,10 +225,12 @@ module Entity
             case res
             when Array
               missing.zip(res).each do |o,res|
+                raise "Multiple function #{name} result nil for element #{o}" if res.nil?
                 o.instance_variable_set("@multiple_result_" + name.to_s, res)
               end
             when Hash
               res.each do |o,res|
+                raise "Multiple function #{name} result nil for element #{o}" if res.nil?
                 o.instance_variable_set("@multiple_result_" + name.to_s, res)
               end
             end
@@ -254,7 +256,10 @@ module Entity
 
         orig_method_name = method_name
         multi_name = "_multiple_" + method_name.to_s
+        single_name = "_single_" + method_name.to_s
+
         method_name = multi_name if self.instance_methods.include?(multi_name.to_sym)
+        method_name = single_name if self.instance_methods.include?(single_name.to_sym)
 
         orig_name = UNPERSISTED_PREFIX + method_name.to_s
         alias_method orig_name, method_name unless self.instance_methods.include? orig_name.to_sym

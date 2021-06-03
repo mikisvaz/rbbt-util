@@ -17,6 +17,7 @@ module RbbtPython
     when String
       bar = Log::ProgressBar.new nil, :desc => bar
     end
+
     while true
       begin
         yield iterator.__next__
@@ -29,10 +30,21 @@ module RbbtPython
         end
       rescue
         bar.error if bar
+        raise $!
       end
     end
-    bar.done if bar
+
+    Log::ProgressBar.remove_bar bar if bar
     nil
+  end
+
+  def self.collect(iterator, options = {}, &block)
+    acc = []
+    self.iterate(iterator, options) do |elem|
+      res = block.call elem
+      acc << res
+    end
+    acc
   end
 
   def self.run(mod = nil, imports = nil, &block)

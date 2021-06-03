@@ -97,12 +97,11 @@ module TSV
         end
       end
       rescue
-        Log.exception $!
         error = true
         raise $!
       ensure
         join.call(error) if join
-        Log::ProgressBar.remove_bar(bar) if bar
+        Log::ProgressBar.remove_bar(bar, error) if bar
       end
   end
 
@@ -138,7 +137,7 @@ module TSV
       raise $!
     ensure
       join.call(error) if join
-      Log::ProgressBar.remove_bar(bar) if bar
+      Log::ProgressBar.remove_bar(bar, error) if bar
     end
   end
 
@@ -178,7 +177,7 @@ module TSV
       raise $!
     ensure
       join.call(error) if join
-      Log::ProgressBar.remove_bar(bar) if bar
+      Log::ProgressBar.remove_bar(bar, error) if bar
     end
   end
 
@@ -220,7 +219,7 @@ module TSV
       raise $!
     ensure
       join.call(error) if join
-      Log::ProgressBar.remove_bar(bar) if bar
+      Log::ProgressBar.remove_bar(bar, error) if bar
     end
   end
 
@@ -274,7 +273,7 @@ module TSV
       raise $!
     ensure
       join.call(error) if join
-      Log::ProgressBar.remove_bar(bar) if bar
+      Log::ProgressBar.remove_bar(bar, error) if bar
     end
   end
 
@@ -319,7 +318,7 @@ module TSV
       raise $!
     ensure
       join.call(error) if join
-      Log::ProgressBar.remove_bar(bar) if bar
+      Log::ProgressBar.remove_bar(bar, error) if bar
     end
   end
 
@@ -491,9 +490,7 @@ module TSV
       q.join
       raise $!
     ensure
-      if bar
-        Log::ProgressBar.remove_bar(bar, error)
-      end
+      Log::ProgressBar.remove_bar(bar, error) if bar
     end
   end
 

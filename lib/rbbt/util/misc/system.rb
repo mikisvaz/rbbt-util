@@ -112,10 +112,10 @@ end
     res
   end
 
-  def self.is_filename?(string)
+  def self.is_filename?(string, need_to_exists = true)
     return true if defined? Path and Path === string
     return true if string.respond_to? :exists
-    return true if String === string and string.length < 265 and File.exist?(string)
+    return true if String === string and string.length < 265 and (File.exist?(string) || ! need_to_exists)
     return false
   end
 
