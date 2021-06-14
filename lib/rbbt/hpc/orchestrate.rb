@@ -97,6 +97,7 @@ module HPC
         chains[job] ||= [] 
         chains[job] << dep 
         chains[job].concat chains[dep] if chains[dep]
+        chains[job].uniq!
       end
 
       chains
