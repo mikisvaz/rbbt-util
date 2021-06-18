@@ -32,6 +32,7 @@ $slurm_options = SOPT.get <<EOF
 -cons--constraint* SLURM constraint
 -W--workflows* Additional workflows
 -rmb--remove_batch_dir Remove the batch working directory (command, STDIN, exit status, ...)
+-lmod--lua_modules* Lua Modules to load 
 -bs--batch_system* Batch system to use: auto, lsf, slurm (default is auto-detect)
 EOF
 

@@ -32,8 +32,10 @@ $slurm_options = SOPT.get <<EOF
 -lin--licenses* SLURM licenses
 -cons--constraint* SLURM constraint
 -W--workflows* Additional workflows
--OR--orchestration_rules* Orchestration rules
 -rmb--remove_batch_basedir Remove the SLURM working directory (command, STDIN, exit status, ...)
+-lmod--lua_modules* Lua Modules to load 
+-bs--batch_system* Batch system to use: auto, lsf, slurm (default is auto-detect)
+-OR--orchestration_rules* Orchestration rules
 EOF
 
 batch_system = $slurm_options.delete :batch_system

@@ -139,7 +139,7 @@ EOF
 
       keys = [
         :batch_dir,
-        :batch_modules,
+        :lua_modules,
         :batch_name,
         :contain,
         :contain_and_sync,
@@ -289,7 +289,7 @@ let MAX_MEMORY="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / 1024"
     end
 
     def prepare_environment(options = {})
-      modules = options[:batch_modules]
+      modules = options[:lua_modules]
 
       prepare_environment = ""
 

@@ -511,9 +511,9 @@ module Misc
 
            case chr_prefix.to_s.downcase
            when "remove"
-             sort_order = sort_order.collect{|chr| "chr" + chr }  unless sort_order.first.include?('chr')
-           when "true", "add"
              sort_order = sort_order.collect{|chr| chr.sub('chr', '') }  if sort_order.first.include?('chr') 
+           when "true", "add"
+             sort_order = sort_order.collect{|chr| "chr" + chr }  unless sort_order.first.include?('chr')
            end
 
            sort_genomic_locations_by_contig(mutations, sort_order)
