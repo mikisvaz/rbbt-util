@@ -30,6 +30,7 @@ export BATCH_SYSTEM=SLURM
       highmem        = Misc.process_options options, :highmem
       licenses       = Misc.process_options options, :licenses
       constraint     = Misc.process_options options, :constraint
+      gres           = Misc.process_options options, :gres
 
       mem            = Misc.process_options options, :mem
       mem_per_cpu    = Misc.process_options options, :mem_per_cpu
@@ -50,6 +51,7 @@ export BATCH_SYSTEM=SLURM
                        "time" => time,
                        "exclusive" => exclusive,
                        "licenses" => licenses,
+                       "gres" => gres,
                        "mem" => mem,
                        "mem-per-cpu" => mem_per_cpu,
       }

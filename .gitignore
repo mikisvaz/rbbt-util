@@ -2,6 +2,7 @@ pkg
 sandbox
 integration_test/data
 python/__pycache__/
+python/*.pyc
 tmp
 _site
 *.save

@@ -27,6 +27,7 @@ $slurm_options = SOPT.get <<EOF
 -t--task_cpus* Tasks
 -tm--time* Time
 -m--mem* SLURM minimum memory
+--gres* SLURM Generic resources
 -mcpu--mem_per_cpu* SLURM minimum memory per CPU
 -lin--licenses* SLURM licenses
 -cons--constraint* SLURM constraint

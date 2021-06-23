@@ -157,6 +157,7 @@ EOF
         :singularity_ruby_inline,
         :sync,
         :task_cpus,
+        :gres,
         :mem,
         :mem_per_cpu,
         :licenses,
