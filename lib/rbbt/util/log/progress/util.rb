@@ -80,10 +80,11 @@ module Log
 
     def self.with_bar(max, options = {})
       bar = new_bar(max, options)
+      res = nil
       begin
         error = false
-        yield bar
         keep = false
+        yield bar
       rescue KeepBar
         keep = true
       rescue
