@@ -73,7 +73,7 @@ module Workflow
   REMOVE_DEP_TASKS = ENV["RBBT_REMOVE_DEP_TASKS"] == "true"
   def dep_task(name, workflow, oname, *rest, &block)
     dep(workflow, oname, *rest, &block) 
-    extension workflow.tasks[oname].extension if workflow.tasks.include?(oname) unless @extension
+    extension :dep_task unless @extension
     returns workflow.tasks[oname].result_description if workflow.tasks.include?(oname) unless @result_description 
     task name do
       raise RbbtException, "dependency not found in dep_task" if dependencies.empty?

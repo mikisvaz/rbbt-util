@@ -26,7 +26,7 @@ class Step
     Log.color(color, status.to_s)
   end
 
-  def self.prov_report_msg(status, name, path, info = nil)
+  def self.prov_report_msg(status, name, path, info, input = nil)
     parts = path.sub(/\{.*/,'').split "/"
 
     parts.pop
@@ -43,10 +43,17 @@ class Step
                  rescue Exception
                    nil
                  end
+
+    if input.nil? || input.empty?
+      input_str = nil
+    else
+      input_str = Log.color(:magenta, "-> ") + input.collect{|dep,name| Log.color(:yellow, dep.task_name.to_s) + ":" + Log.color(:yellow, name) }.uniq * " "
+    end
+
     str = if ! (Open.remote?(path) || Open.ssh?(path)) && (Open.exists?(path) && $main_mtime && path_mtime && ($main_mtime - path_mtime) < -2)
-            prov_status_msg(status.to_s) << " " << [workflow, task, path].compact * " " << " (#{Log.color(:red, "Mtime out of sync") })"
+            prov_status_msg(status.to_s) << " " << [workflow, task, path, input_str].compact * " " << " (#{Log.color(:red, "Mtime out of sync") })"
           else
-            prov_status_msg(status.to_s) << " " << [workflow, task, path].compact * " " 
+            prov_status_msg(status.to_s) << " " << [workflow, task, path, input_str].compact * " " 
           end
 
     if $inputs and $inputs.any? 
@@ -74,7 +81,7 @@ class Step
     str << "\n"
   end
 
-  def self.prov_report(step, offset = 0, task = nil, seen = [], expand_repeats = false)
+  def self.prov_report(step, offset = 0, task = nil, seen = [], expand_repeats = false, input = nil)
     info = step.info  || {}
     info[:task_name] = task
     path  = step.path
@@ -85,13 +92,25 @@ class Step
     status = :notfound if status == :noinfo and not Open.exist?(path)
 
     str = " " * offset
-    str << prov_report_msg(status, name, path, info)
+    str << prov_report_msg(status, name, path, info, input)
+
+    input_dependencies = {}
+    step.dependencies.each do |dep|
+      if dep.input_dependencies.any?
+        dep.input_dependencies.each do |id|
+          input_name = dep.inputs.fields.zip(dep.inputs).select{|f,d| d == id || String === d && d.start_with?(id.files_dir) }.first.first
+          input_dependencies[id] ||= []
+          input_dependencies[id] << [dep, input_name]
+        end
+      end
+    end
+
     step.dependencies.reverse.each do |dep|
       path = dep.path
       new = ! seen.include?(path)
       if new
         seen << path
-        str << prov_report(dep, offset + 1, task, seen, expand_repeats)
+        str << prov_report(dep, offset + 1, task, seen, expand_repeats, input_dependencies[dep])
       else
         if expand_repeats
           str << Log.color(Step.status_color(dep.status), Log.uncolor(prov_report(dep, offset+1, task)))
@@ -103,7 +122,7 @@ class Step
           status = :unsync if status == :done and not Open.exist?(path)
           status = :notfound if status == :noinfo and not Open.exist?(path)
 
-          str << Log.color(Step.status_color(status), " " * (offset + 1) + Log.uncolor(prov_report_msg(status, name, path, info)))
+          str << Log.color(Step.status_color(status), " " * (offset + 1) + Log.uncolor(prov_report_msg(status, name, path, info, input_dependencies[dep])))
         end
       end
     end if step.dependencies

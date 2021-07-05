@@ -389,7 +389,7 @@ module TSV
       when Set
         traverse_array(obj.to_a, options, &block)
       when String
-        if Open.remote? obj or Misc.is_filename? obj
+        if Open.remote?(obj) or Misc.is_filename?(obj)
           Open.open(obj) do |s|
             traverse_obj(s, options, &block)
           end

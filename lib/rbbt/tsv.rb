@@ -98,6 +98,11 @@ module TSV
         stream = get_stream source, options.merge(open_options)
         parse stream, data, options.merge(:tsv_grep => tsv_grep)
 
+        if ! open_options[:noclose]
+          stream.close unless stream.closed?
+          stream.join if stream.respond_to?(:join)
+        end
+
         data.filename = filename.to_s unless filename.nil?
 
         if data.identifiers.nil? and Path === filename and filename.identifier_file_path

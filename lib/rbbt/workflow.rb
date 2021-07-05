@@ -411,12 +411,22 @@ module Workflow
 
     overriden = has_overriden_inputs || overriden_deps.any?
 
+    extension = task.extension
+
+    if extension == :dep_task
+      extension = nil
+      if dependencies.any?
+        dep_basename = File.basename(dependencies.last.path)
+        extension = dep_path.split(".").last if dep_basename.include?('.')
+      end
+    end
+
     if real_inputs.empty? && Workflow::TAG != :inputs && ! overriden 
-      step_path = step_path taskname, jobname, [], [], task.extension
+      step_path = step_path taskname, jobname, [], [], extension
       input_values = task.take_input_values(inputs)
     else
       input_values = task.take_input_values(inputs)
-      step_path = step_path taskname, jobname, input_values, dependencies, task.extension
+      step_path = step_path taskname, jobname, input_values, dependencies, extension
     end
 
     job = get_job_step step_path, task, input_values, dependencies
