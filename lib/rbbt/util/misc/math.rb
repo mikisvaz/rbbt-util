@@ -12,21 +12,11 @@ module Misc
   end
 
   def self.max(list)
-    max = nil
-    list.each do |v|
-      next if v.nil?
-      max = v if max.nil? or v > max
-    end
-    max
+    list.compact.max
   end
 
   def self.min(list)
-    min = nil
-    list.each do |v|
-      next if v.nil?
-      min = v if min.nil? or v < min
-    end
-    min
+    list.compact.min
   end
 
   def self.std_num_vector(v, min, max)
@@ -39,7 +29,7 @@ module Misc
   end
 
   def self.sum(list)
-    list.compact.inject(0.0){|acc,e| acc += e}
+    list.compact.inject(0.0, :+)
   end
 
   def self.mean(list)
@@ -76,9 +66,8 @@ module Misc
   end
 
   def self.counts(array)
-    counts = {}
+    counts = Hash.new 0
     array.each do |e|
-      counts[e] ||= 0
       counts[e] += 1
     end
 
