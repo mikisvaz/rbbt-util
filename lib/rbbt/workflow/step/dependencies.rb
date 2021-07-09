@@ -127,7 +127,7 @@ class Step
   end
 
   def input_dependencies
-    (inputs.flatten.select{|i| Step === i} + inputs.flatten.select{|dep| Path === dep && Step === dep.resource}.collect{|dep| dep.resource})
+    (recursive_inputs.flatten.select{|i| Step === i } + recursive_inputs.flatten.select{|dep| Path === dep && Step === dep.resource }.collect{|dep| dep.resource })
   end
 
   def execute_dependency(dependency, log = true)

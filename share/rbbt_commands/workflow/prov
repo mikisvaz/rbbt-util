@@ -131,6 +131,6 @@ if options[:plot]
   end
 
 else
-  puts Step.prov_report(step, 0, nil, [], options[:expand_repeats]).strip
+  puts Step.prov_report(step, 0, nil, [], options[:expand_repeats])
 end
 

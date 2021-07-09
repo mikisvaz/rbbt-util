@@ -7,7 +7,7 @@ module ComputeDependency
     dep.extend ComputeDependency
     dep.compute = value
   end
-  
+
   def canfail?
     compute == :canfail || (Array === compute && compute.include?(:canfail))
   end
@@ -72,63 +72,59 @@ module Workflow
                        end
   end
 
-  def rec_dependencies(taskname)
+  def rec_dependencies(taskname, seen = [])
     @rec_dependencies ||= {}
+    @rec_dependencies[taskname] ||= [] unless task_dependencies.include?(taskname)
     @rec_dependencies[taskname] ||= begin
-                                      if task_dependencies.include? taskname
 
-                                        deps = task_dependencies[taskname]
+                                      deps = task_dependencies[taskname]
 
-                                        #all_deps = deps.select{|dep| String === dep or Symbol === dep or Array === dep}
-
-                                        all_deps = []
-                                        deps.each do |dep| 
-                                          if DependencyBlock === dep
-                                            all_deps << dep.dependency if dep.dependency
-                                          else
-                                            all_deps << dep unless Proc === dep
-                                          end
-
-                                          begin
-                                            case dep
-                                            when Array
-                                              wf, t, o = dep
-
-                                              wf.rec_dependencies(t.to_sym).each do |d|
-                                                if Array === d
-                                                  new = d.dup
-                                                else
-                                                  new = [dep.first, d]
-                                                end
-
-                                                if Hash === o and not o.empty? 
-                                                  if Hash === new.last
-                                                    hash = new.last.dup
-                                                    o.each{|k,v| hash[k] ||= v}
-                                                    new[new.length-1] = hash
-                                                  else
-                                                    new.push o.dup
-                                                  end
-                                                end
-
-                                                all_deps << new
-                                              end if wf && t
-
-                                            when String, Symbol
-                                              rec_deps = rec_dependencies(dep.to_sym)
-                                              all_deps.concat rec_deps
-                                            when DependencyBlock
-                                              dep = dep.dependency
-                                              raise TryAgain
-                                            end
-                                          rescue TryAgain
-                                            retry
-                                          end
+                                      all_deps = []
+                                      deps.each do |dep| 
+                                        next if seen.include?(dep)
+                                        if DependencyBlock === dep
+                                          all_deps << dep.dependency if dep.dependency
+                                        else
+                                          all_deps << dep unless Proc === dep
                                         end
-                                        all_deps.uniq
-                                      else
-                                        []
+
+                                        begin
+                                          case dep
+                                          when Array
+                                            wf, t, o = dep
+
+                                            wf.rec_dependencies(t.to_sym, seen + [dep]).each do |d|
+                                              if Array === d
+                                                new = d.dup
+                                              else
+                                                new = [dep.first, d]
+                                              end
+
+                                              if Hash === o and not o.empty? 
+                                                if Hash === new.last
+                                                  hash = new.last.dup
+                                                  o.each{|k,v| hash[k] ||= v}
+                                                  new[new.length-1] = hash
+                                                else
+                                                  new.push o.dup
+                                                end
+                                              end
+
+                                              all_deps << new
+                                            end if wf && t
+
+                                          when String, Symbol
+                                            rec_deps = rec_dependencies(dep.to_sym, seen + [dep])
+                                            all_deps.concat rec_deps
+                                          when DependencyBlock
+                                            dep = dep.dependency
+                                            raise TryAgain
+                                          end
+                                        rescue TryAgain
+                                          retry
+                                        end
                                       end
+                                      all_deps.uniq
                                     end
   end
 
@@ -367,34 +363,39 @@ module Workflow
                      orig_dep = dependency.dependency 
                      wf, task_name, options = orig_dep
 
-                     options = {} if options.nil?
-                     compute = options[:compute]
+                     if override_dependencies[wf.to_s] && value = override_dependencies[wf.to_s][task_name]
+                       dep = setup_override_dependency(value, wf, task_name)
+                     else
 
-                     options = IndiferentHash.setup(options.dup)
-                     dep = dependency.call jobname, _inputs.merge(options), real_dependencies
+                       options = {} if options.nil?
+                       compute = options[:compute]
 
-                     dep = [dep] unless Array === dep
+                       options = IndiferentHash.setup(options.dup)
+                       dep = dependency.call jobname, _inputs.merge(options), real_dependencies
 
-                     new_=[]
-                     dep.each{|d| 
-                       next if d.nil?
-                       if Hash === d
-                         d[:workflow] ||= wf 
-                         d[:task] ||= task_name
-                         _override_dependencies = override_dependencies.merge(override_dependencies(d[:inputs] || {}))
-                         d = if _override_dependencies[d[:workflow].to_s] && value = _override_dependencies[d[:workflow].to_s][d[:task]]
-                               setup_override_dependency(value, d[:workflow], d[:task])
-                             else
-                               task_info = d[:workflow].task_info(d[:task])
+                       dep = [dep] unless Array === dep
 
-                               _inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
-                               d[:workflow]._job(d[:task], d[:jobname], _inputs) 
-                             end
-                       end
-                       ComputeDependency.setup(d, compute) if compute
-                       new_ << d
-                     }
-                     dep = new_
+                       new_=[]
+                       dep.each{|d| 
+                         next if d.nil?
+                         if Hash === d
+                           d[:workflow] ||= wf 
+                           d[:task] ||= task_name
+                           _override_dependencies = override_dependencies.merge(override_dependencies(d[:inputs] || {}))
+                           d = if _override_dependencies[d[:workflow].to_s] && value = _override_dependencies[d[:workflow].to_s][d[:task]]
+                                 setup_override_dependency(value, d[:workflow], d[:task])
+                               else
+                                 task_info = d[:workflow].task_info(d[:task])
+
+                                 _inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
+                                 d[:workflow]._job(d[:task], d[:jobname], _inputs) 
+                               end
+                         end
+                         ComputeDependency.setup(d, compute) if compute
+                         new_ << d
+                       }
+                       dep = new_
+                     end
                    else
                      _inputs = IndiferentHash.setup(_inputs.dup)
                      dep = dependency.call jobname, _inputs, real_dependencies
@@ -430,7 +431,7 @@ module Workflow
                        when :hash
                          clean_inputs = Annotated.purge(inputs)
                          clean_inputs = clean_inputs.collect{|i| Symbol === i ? i.to_s : i }
-                         deps_str = dependencies.collect{|d| (Step === d || (defined?(RemoteStep) && RemoteStep === Step)) ? "Step: " << d.short_path : d }
+                         deps_str = dependencies.collect{|d| (Step === d || (defined?(RemoteStep) && RemoteStep === Step)) ? "Step: " << (d.overriden? ? d.path : d.short_path) : d }
                          key_obj = {:inputs => clean_inputs, :dependencies => deps_str }
                          key_str = Misc.obj2str(key_obj)
                          hash_str = Misc.digest(key_str)

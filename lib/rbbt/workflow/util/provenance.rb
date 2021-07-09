@@ -91,21 +91,28 @@ class Step
     status = :unsync if status == :done and not Open.exist?(path)
     status = :notfound if status == :noinfo and not Open.exist?(path)
 
-    str = " " * offset
-    str << prov_report_msg(status, name, path, info, input)
+
+    this_step_msg = prov_report_msg(status, name, path, info, input)
 
     input_dependencies = {}
     step.dependencies.each do |dep|
       if dep.input_dependencies.any?
         dep.input_dependencies.each do |id|
-          input_name = dep.inputs.fields.zip(dep.inputs).select{|f,d| d == id || String === d && d.start_with?(id.files_dir) }.first.first
+          input_name = dep.recursive_inputs.fields.zip(dep.recursive_inputs).select{|f,d| 
+            d == id || (String === d && d.start_with?(id.files_dir)) || (Array === d && d.include?(id))
+          }.first.first
           input_dependencies[id] ||= []
           input_dependencies[id] << [dep, input_name]
         end
       end
     end
 
-    step.dependencies.reverse.each do |dep|
+    str = ""
+    str = " " * offset + this_step_msg if ENV["RBBT_ORIGINAL_STACK"] == 'true'
+
+    step.dependencies.dup.tap{|l| 
+      l.reverse! if ENV["RBBT_ORIGINAL_STACK"] == 'true'
+    }.each do |dep|
       path = dep.path
       new = ! seen.include?(path)
       if new
@@ -126,6 +133,9 @@ class Step
         end
       end
     end if step.dependencies
+
+    str += (" " * offset) + this_step_msg unless ENV["RBBT_ORIGINAL_STACK"] == 'true'
+
     str
   end
 end

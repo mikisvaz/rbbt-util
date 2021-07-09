@@ -16,6 +16,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
  lib=lib{
   rbbt.rb
   rbbt-util.rb
+
   rbbt=rbbt{
    monitor.rb
    util=util{
@@ -115,6 +116,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
     step.rb
     step=step{
+     clean.rb
      accessor.rb
      prepare.rb
      dependencies.rb

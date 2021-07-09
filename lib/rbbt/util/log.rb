@@ -322,8 +322,13 @@ module Log
 
   def self.exception(e)
     stack = caller
-    error([e.class.to_s, e.message].compact * ": " )
-    error("BACKTRACE [#{Process.pid}]: " << Log.last_caller(stack) << "\n" + color_stack(e.backtrace)*"\n")
+    if ENV["RBBT_ORIGINAL_STACK"] == 'true'
+      error([e.class.to_s, e.message].compact * ": " )
+      error("BACKTRACE [#{Process.pid}]: " << Log.last_caller(stack) << "\n" + color_stack(e.backtrace)*"\n")
+    else
+      error("BACKTRACE [#{Process.pid}]: " << Log.last_caller(stack) << "\n" + color_stack(e.backtrace.reverse)*"\n")
+      error([e.class.to_s, e.message].compact * ": " )
+    end
   end
 
   def self.deprecated(m)
@@ -370,10 +375,16 @@ module Log
 
   def self.stack(stack)
     LOG_MUTEX.synchronize do
-
-      STDERR.puts Log.color :magenta, "Stack trace [#{Process.pid}]: " << Log.last_caller(caller)
+      if ENV["RBBT_ORIGINAL_STACK"] == 'true'
+        STDERR.puts Log.color :magenta, "Stack trace [#{Process.pid}]: " << Log.last_caller(caller)
       color_stack(stack).each do |line|
         STDERR.puts line
+      end
+      else
+        STDERR.puts Log.color :magenta, "Stack trace [#{Process.pid}]: " << Log.last_caller(caller)
+        color_stack(stack.reverse).each do |line|
+          STDERR.puts line
+        end
       end
     end
   end

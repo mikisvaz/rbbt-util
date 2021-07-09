@@ -417,7 +417,7 @@ module Workflow
       extension = nil
       if dependencies.any?
         dep_basename = File.basename(dependencies.last.path)
-        extension = dep_path.split(".").last if dep_basename.include?('.')
+        extension = dep_basename.split(".").last if dep_basename.include?('.')
       end
     end
 

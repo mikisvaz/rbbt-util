@@ -332,7 +332,7 @@ module TSV
     Log.low{"Traversing #{name} #{Log.color :green, "->"} #{stream_name(options[:into])}"}
     begin
       case obj
-      when (defined? FastContainers and FastContainers::PriorityQueue)
+      when (defined? FastContainers && FastContainers::PriorityQueue === obj)
         traverse_priority_queue(obj, options, &block)
       when TSV
         traverse_tsv(obj, options, &block)

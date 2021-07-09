@@ -26,6 +26,7 @@ class Step
       threads = jobs.collect do |j| 
         Thread.new do
           begin
+            j.soft_grace
             j.join unless j.done?
           rescue Exception
             Log.error "Exception waiting for job: #{Log.color :blue, j.path}"
@@ -551,7 +552,7 @@ class Step
 
   def aborted?
     status = self.status
-    status == :aborted || ((status != :ending && status != :dependencies && status != :cleaned && status != :noinfo && status != :setup && status != :noinfo) && nopid?)
+    status == :aborted || ((status != :ending && status != :dependencies && status != :cleaned && status != :noinfo && status != :setup && status != :noinfo && status != :waiting) && nopid?)
   end
 
   # {{{ INFO
@@ -648,10 +649,6 @@ class Step
       provenance[dep.path] = dep.provenance_paths if Open.exists? dep.path
     end
     provenance
-  end
-
-  def resumable?
-    task && task.resumable
   end
 
   def config(key, *tokens)

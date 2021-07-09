@@ -67,11 +67,13 @@ end
 
 module Workflow
 
-  def dep_tree(name)
+  def dep_tree(name, seen = [])
     @dep_tree ||= {}
     @dep_tree[name] ||= begin
                         dep_tree = {}
                         self.task_dependencies[name.to_sym].reverse.each do |dep|
+                          next if seen.include? dep
+                          seen << dep
                           dep = dep.first if Array === dep && dep.length == 1
                           dep = dep.dependency if DependencyBlock === dep
 
@@ -87,7 +89,7 @@ module Workflow
 
                           key = [workflow, task]
 
-                          dep_tree[key] = workflow.dep_tree(task)
+                          dep_tree[key] = workflow.dep_tree(task, seen)
                         end if name && self.task_dependencies[name.to_sym]
                         dep_tree
                       end
