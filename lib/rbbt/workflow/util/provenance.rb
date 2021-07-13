@@ -47,6 +47,8 @@ class Step
     if input.nil? || input.empty?
       input_str = nil
     else
+      input = input.reject{|dep,name| (input & dep.dependencies.collect{|d| [d,name]}).any? }
+      input = input.reject{|dep,name| (input & dep.input_dependencies.collect{|d| [d,name]}).any? }
       input_str = Log.color(:magenta, "-> ") + input.collect{|dep,name| Log.color(:yellow, dep.task_name.to_s) + ":" + Log.color(:yellow, name) }.uniq * " "
     end
 
