@@ -77,6 +77,7 @@ module Workflow
     returns workflow.tasks[oname].result_description if workflow.tasks.include?(oname) unless @result_description 
     task name do
       raise RbbtException, "dependency not found in dep_task" if dependencies.empty?
+      Step.wait_for_jobs dependencies
       dep = dependencies.last
       dep.join
       raise dep.get_exception if dep.error?

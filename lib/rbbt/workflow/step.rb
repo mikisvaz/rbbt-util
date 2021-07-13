@@ -214,7 +214,7 @@ class Step
 
       dep.inputs.zip(dep.inputs.fields).each do |v,f|
         if i.include?(f) && i[f] != v
-          Log.debug "Conflict in #{ f }: #{[Misc.fingerprint(i[f]), Misc.fingerprint(v)] * " <-> "}"
+          Log.debug "Variable '#{f}' reused with different values: #{[Misc.fingerprint(i[f]), Misc.fingerprint(v)] * " <-> "}"
         else 
           i[f] = v
         end

@@ -207,7 +207,7 @@ class Step
     if dup and step.streaming? and not step.result.nil?
       if dep_step[step.path] and dep_step[step.path].length > 1
         stream = step.result
-        other_steps = dep_step[step.path]
+        other_steps = dep_step[step.path].uniq
         return unless other_steps.length > 1
         log_dependency_exec(step, "duplicating #{other_steps.length}") 
         copies = Misc.tee_stream_thread_multiple(stream, other_steps.length)
@@ -369,6 +369,7 @@ class Step
       end
       next unless step.dependencies and step.dependencies.any?
       (step.dependencies + step.input_dependencies).each do |step_dep|
+        next unless step.dependencies.include?(step_dep)
         next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and (step_dep.compute == :nodup or step_dep.compute == :ignore))
         dep_step[step_dep.path] ||= []
         dep_step[step_dep.path] << step
