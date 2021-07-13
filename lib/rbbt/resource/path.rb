@@ -159,6 +159,12 @@ module Path
   end
 
   def find(where = nil, caller_lib = nil, paths = nil)
+
+    if located?
+      self.original ||= self
+      return self
+    end
+
     @path ||= {}
     rsearch_paths = (resource and resource.respond_to?(:search_paths)) ? resource.search_paths : nil 
     key_elems = [where, caller_lib, rsearch_paths, paths]
@@ -166,12 +172,6 @@ module Path
     self.sub!('~/', Etc.getpwuid.dir + '/') if self.include? "~"
 
     return @path[key] if @path[key]
-
-    if located?
-      @path[key] = self
-      self.original ||= self
-      return self
-    end
 
     @path[key] ||= begin
                      paths = [paths, rsearch_paths, self.search_paths, SEARCH_PATHS].reverse.compact.inject({}){|acc,h| acc.merge! h; acc }

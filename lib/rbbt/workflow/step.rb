@@ -5,6 +5,7 @@ require 'rbbt/util/semaphore'
 require 'rbbt/workflow/step/accessor'
 require 'rbbt/workflow/step/prepare'
 require 'rbbt/workflow/step/status'
+require 'rbbt/workflow/step/info'
 
 class Step
   attr_accessor :clean_name, :path, :task, :workflow, :inputs, :dependencies, :bindings
@@ -36,41 +37,6 @@ class Step
   end
 
 
-  def overriden?
-    return true if @overriden
-    return true if dependencies.select{|dep| dep.overriden? }.any?
-    info[:archived_info].each do |f,i|
-      return true if i[:overriden] || i["overriden"]
-    end if info[:archived_info]
-    return false
-  end
-
-  def overriden
-    @overriden
-    #if @overriden.nil? 
-    #  return false if dependencies.nil?
-    #  dependencies.select{|dep| dep.overriden? }.any?
-    #else
-    #  @overriden
-    #end
-  end
-
-  def overriden_deps
-    ord = []
-    deps = dependencies.dup
-    while dep = deps.shift
-      case dep.overriden
-      when FalseClass
-        next
-      when Symbol
-        ord << dep
-      else
-        deps += dep.dependencies
-      end
-    end
-    ord
-  end
-
   def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil, clean_name = nil)
     path = Path.setup(Misc.sanitize_filename(path)) if String === path
     path = path.call if Proc === path
@@ -100,35 +66,6 @@ class Step
   end
 
 
-  def load_inputs_from_info
-    if info[:inputs]
-      info_inputs = info[:inputs]
-      if task && task.respond_to?(:inputs) && task.inputs
-        IndiferentHash.setup info_inputs
-        @inputs = NamedArray.setup info_inputs.values_at(*task.inputs.collect{|name| name.to_s}), task.inputs
-      else
-        @inputs = NamedArray.setup info_inputs.values, info_inputs.keys
-      end
-    else
-      nil
-    end
-  end
-
-  def load_dependencies_from_info
-    relocated = nil
-    @dependencies = (self.info[:dependencies] || []).collect do |task,name,dep_path|
-      if Open.exists?(dep_path) || Open.exists?(dep_path + '.info')
-        Workflow._load_step dep_path
-      else
-        next if FalseClass === relocated
-        new_path = Workflow.relocate(path, dep_path)
-        relocated = true if Open.exists?(new_path) || Open.exists?(new_path + '.info')
-        Workflow._load_step new_path
-      end
-    end.compact
-    @relocated = relocated
-  end
-
 
   def inputs
     return @inputs if NamedArray === @inputs
@@ -152,54 +89,6 @@ class Step
     end
   end
 
-  def archive_deps
-    self.set_info :archived_info, archived_info
-    self.set_info :archived_dependencies, info[:dependencies]
-  end
-
-  def archived_info
-    return info[:archived_info] if info[:archived_info]
-
-    archived_info = {}
-    dependencies.each do |dep|
-      if Symbol === dep.overriden && ! Open.exists?(dep.info_file)
-        archived_info[dep.path] = dep.overriden
-      else
-        archived_info[dep.path] = dep.info
-      end
-      archived_info.merge!(dep.archived_info)
-    end if dependencies
-
-    archived_info
-  end
-
-  def archived_inputs
-    return {} unless info[:archived_dependencies]
-    archived_info = self.archived_info
-
-    all_inputs = IndiferentHash.setup({})
-    deps = info[:archived_dependencies].collect{|p| p.last}
-    seen = []
-    while path = deps.pop
-      dep_info = archived_info[path]
-      if dep_info
-        dep_info[:inputs].each do |k,v|
-          all_inputs[k] = v unless all_inputs.include?(k)
-        end if dep_info[:inputs]
-        deps.concat(dep_info[:dependencies].collect{|p| p.last } - seen) if dep_info[:dependencies]
-        deps.concat(dep_info[:archived_dependencies].collect{|p| p.last } - seen) if dep_info[:archived_dependencies]
-      end
-      seen << path
-    end
-
-    all_inputs
-  end
-
-  def dependencies=(dependencies)
-    @dependencies = dependencies
-    set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies
-  end
-
   def recursive_inputs
     if NamedArray === inputs
       i = {}
@@ -214,7 +103,8 @@ class Step
 
       dep.inputs.zip(dep.inputs.fields).each do |v,f|
         if i.include?(f) && i[f] != v
-          Log.debug "Variable '#{f}' reused with different values: #{[Misc.fingerprint(i[f]), Misc.fingerprint(v)] * " <-> "}"
+          next
+          #Log.debug "Variable '#{f}' reused with different values: #{[Misc.fingerprint(i[f]), Misc.fingerprint(v)] * " <-> "}"
         else 
           i[f] = v
         end
@@ -473,7 +363,11 @@ class Step
     return [] if dependencies.nil? or dependencies.empty?
 
     new_dependencies = []
-    archived_deps = self.info[:archived_info] ? self.info[:archived_info].keys : []
+    if self.overriden?
+      archived_deps = []
+    else
+      archived_deps = self.info[:archived_info] ? self.info[:archived_info].keys : []
+    end
 
     dependencies.each{|step| 
       #next if self.done? && Open.exists?(info_file) && info[:dependencies] && info[:dependencies].select{|task,name,path| path == step.path }.empty?
@@ -485,6 +379,7 @@ class Step
       new_dependencies.concat r
       new_dependencies << step
     }
+
     new_dependencies.uniq
   end
 

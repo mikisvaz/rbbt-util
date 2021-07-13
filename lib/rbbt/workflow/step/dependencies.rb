@@ -1,4 +1,3 @@
-
 class Step
 
   STREAM_CACHE = {}
@@ -127,7 +126,7 @@ class Step
   end
 
   def input_dependencies
-    (recursive_inputs.flatten.select{|i| Step === i } + recursive_inputs.flatten.select{|dep| Path === dep && Step === dep.resource }.collect{|dep| dep.resource })
+    @input_dependencies ||= (recursive_inputs.flatten.select{|i| Step === i } + recursive_inputs.flatten.select{|dep| Path === dep && Step === dep.resource }.collect{|dep| dep.resource })
   end
 
   def execute_dependency(dependency, log = true)
@@ -482,6 +481,46 @@ class Step
       dep.abort if dep.running?
     end
     kill_children
+  end
+
+  def overriden?
+    return true if @overriden
+    return true if dependencies.select{|dep| dep.overriden? }.any?
+    info[:archived_info].each do |f,i|
+      return true if i[:overriden] || i["overriden"]
+    end if info[:archived_info]
+    return false
+  end
+
+  def overriden
+    @overriden
+    #if @overriden.nil? 
+    #  return false if dependencies.nil?
+    #  dependencies.select{|dep| dep.overriden? }.any?
+    #else
+    #  @overriden
+    #end
+  end
+
+  def overriden_deps
+    ord = []
+    deps = dependencies.dup
+    while dep = deps.shift
+      case dep.overriden
+      when FalseClass
+        next
+      when Symbol
+        ord << dep
+      else
+        deps += dep.dependencies
+      end
+    end
+    ord
+  end
+
+  def dependencies=(dependencies)
+    @dependencies = dependencies
+    set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies
   end
 
 end

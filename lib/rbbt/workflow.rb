@@ -1,4 +1,5 @@
 require 'rbbt/workflow/definition'
+require 'rbbt/workflow/dependencies'
 require 'rbbt/workflow/task'
 require 'rbbt/workflow/step'
 require 'rbbt/workflow/accessor'
@@ -228,6 +229,47 @@ module Workflow
                   end
   end
 
+  TAG = ENV["RBBT_INPUT_JOBNAME"] == "true" ? :inputs : :hash
+  DEBUG_JOB_HASH = ENV["RBBT_DEBUG_JOB_HASH"] == 'true'
+  def step_path(taskname, jobname, inputs, dependencies, extension = nil)
+    raise "Jobname makes an invalid path: #{ jobname }" if jobname.include? '..'
+    if inputs.length > 0 or dependencies.any?
+      tagged_jobname = case TAG
+                       when :hash
+                         clean_inputs = Annotated.purge(inputs)
+                         clean_inputs = clean_inputs.collect{|i| Symbol === i ? i.to_s : i }
+                         deps_str = dependencies.collect{|d| (Step === d || (defined?(RemoteStep) && RemoteStep === Step)) ? "Step: " << (d.overriden? ? d.path : d.short_path) : d }
+                         key_obj = {:inputs => clean_inputs, :dependencies => deps_str }
+                         key_str = Misc.obj2str(key_obj)
+                         hash_str = Misc.digest(key_str)
+                         Log.debug "Hash for '#{[taskname, jobname] * "/"}' #{hash_str} for #{key_str}" if DEBUG_JOB_HASH
+                         jobname + '_' << hash_str
+                       when :inputs
+                         all_inputs = {}
+                         inputs.zip(self.task_info(taskname)[:inputs]) do |i,f|
+                           all_inputs[f] = i
+                         end
+                         dependencies.each do |dep|
+                           ri = dep.recursive_inputs
+                           ri.zip(ri.fields).each do |i,f|
+                             all_inputs[f] = i
+                           end
+                         end
+
+                         all_inputs.any? ? jobname + '_' << Misc.obj2str(all_inputs) : jobname
+                       else
+                         jobname
+                       end
+    else
+      tagged_jobname = jobname
+    end
+
+    if extension and not extension.empty?
+      tagged_jobname = tagged_jobname + ('.' << extension.to_s)
+    end
+
+    workdir[taskname][tagged_jobname].find
+  end
   def import_task(workflow, orig, new)
     orig_task = workflow.tasks[orig]
     new_task = orig_task.dup

@@ -240,6 +240,7 @@ module Open
   end
 
   def self.find_repo_dir(file)
+    return nil
     self.repository_dirs.each do |dir|
       dir = dir + '/' unless dir.chars[-1] == "/"
 

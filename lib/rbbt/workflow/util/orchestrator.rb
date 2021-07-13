@@ -81,7 +81,7 @@ module Workflow
     def self.candidates(workload, rules)
       if rules.empty?
         candidates = workload.select{|k,v| v.empty? }.
-          collect{|k,v| k}.
+          collect{|k,v| k }.
           reject{|k| k.done? }
       else
         candidates = workload. #select{|k,v| Orchestrator.job_rules(rules, k) }.
