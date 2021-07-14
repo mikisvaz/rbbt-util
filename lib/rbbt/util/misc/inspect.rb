@@ -320,7 +320,9 @@ module Misc
               end
             end
           when String
-            if Misc.is_filename?(obj, false) and ! %w(. ..).include?(obj) and ! Path === obj
+            good_filename = Misc.is_filename?(obj, false) && ! %w(. ..).include?(obj) && %w(. /).include?(obj[0])
+            is_path = Path === obj
+            if good_filename && ! is_path
               obj2str Path.setup(obj.dup)
             else
               obj = obj.chomp if String === obj
