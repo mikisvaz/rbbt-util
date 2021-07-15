@@ -77,15 +77,15 @@ module Workflow
     returns workflow.tasks[oname].result_description if workflow.tasks.include?(oname) unless @result_description 
     task name do
       raise RbbtException, "dependency not found in dep_task" if dependencies.empty?
-      Step.wait_for_jobs dependencies
+      Step.wait_for_jobs dependencies.select{|d| d.streaming? }
       dep = dependencies.last
       dep.join
       raise dep.get_exception if dep.error?
       raise Aborted, "Aborted dependency #{dep.path}" if dep.aborted?
       set_info :result_type, dep.info[:result_type]
-      forget = config :forget_dep_tasks, "forget_dep_tasks", "key:forget_dep_tasks", :default => FORGET_DEP_TASKS
+      forget = config :forget_dep_tasks, "forget_dep_tasks", :default => FORGET_DEP_TASKS
       if forget
-        remove = config :remove_dep_tasks, "remove_dep_tasks", "key:remove_dep_tasks", :default => REMOVE_DEP_TASKS
+        remove = config :remove_dep_tasks, "remove_dep_tasks", :default => REMOVE_DEP_TASKS
 
         self.archive_deps
         self.copy_files_dir
@@ -93,6 +93,7 @@ module Workflow
         Open.rm_rf self.files_dir if Open.exist? self.files_dir
         FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist?(dep.files_dir)
         Open.ln_h dep.path, self.tmp_path
+
         case remove.to_s
         when 'true'
           dep.clean
