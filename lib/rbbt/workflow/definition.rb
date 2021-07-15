@@ -98,11 +98,12 @@ module Workflow
         when 'true'
           dep.clean
         when 'recursive'
-          dep.rec_dependencies.each do |d|
+          (dep.dependencies + dep.rec_dependencies).uniq.each do |d|
+            next if d.overriden
             d.clean unless config(:remove_dep, d.task_signature, d.task_name, d.workflow.to_s, :default => true).to_s == 'false'
           end
           dep.clean unless config(:remove_dep, dep.task_signature, dep.task_name, dep.workflow.to_s, :default => true).to_s == 'false'
-        end
+        end unless dep.overriden
       else
         if Open.exists?(dep.files_dir)
           Open.rm_rf self.files_dir 

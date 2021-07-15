@@ -206,7 +206,7 @@ class Step
     if dup and step.streaming? and not step.result.nil?
       if dep_step[step.path] and dep_step[step.path].length > 1
         stream = step.result
-        other_steps = dep_step[step.path].uniq
+        other_steps = dep_step[step.path].uniq.reject{|d| d.overriden }
         return unless other_steps.length > 1
         log_dependency_exec(step, "duplicating #{other_steps.length}") 
         copies = Misc.tee_stream_thread_multiple(stream, other_steps.length)
@@ -521,6 +521,38 @@ class Step
   def dependencies=(dependencies)
     @dependencies = dependencies
     set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies
+  end
+
+  #connected = true means that dependency searching ends when a result is done
+  #but dependencies are absent, meanining that the file could have been dropped
+  #in
+  def rec_dependencies(connected = false, seen = [])
+
+    # A step result with no info_file means that it was manually
+    # placed. In that case, do not consider its dependencies
+    return [] if ! (defined? WorkflowRemoteClient && WorkflowRemoteClient::RemoteStep === self) && ! Open.exists?(self.info_file) && Open.exists?(self.path.to_s) 
+
+    return [] if dependencies.nil? or dependencies.empty?
+
+    new_dependencies = []
+    if self.overriden?
+      archived_deps = []
+    else
+      archived_deps = self.info[:archived_info] ? self.info[:archived_info].keys : []
+    end
+
+    dependencies.each{|step| 
+      #next if self.done? && Open.exists?(info_file) && info[:dependencies] && info[:dependencies].select{|task,name,path| path == step.path }.empty?
+      next if archived_deps.include? step.path
+      next if seen.include? step.path
+      next if self.done? && connected && ! updatable?
+
+      r = step.rec_dependencies(connected, new_dependencies.collect{|d| d.path})
+      new_dependencies.concat r
+      new_dependencies << step
+    }
+
+    new_dependencies.uniq
   end
 
 end
