@@ -44,6 +44,7 @@ export BATCH_SYSTEM=SLURM
       time = Misc.format_seconds Misc.timespan(time) unless time.include? ":"
 
       sbatch_params = {"job-name" => batch_name,
+                       "qos" => queue,
                        "output" => fout,
                        "error" => ferr,
                        "cpus-per-task" => task_cpus,
