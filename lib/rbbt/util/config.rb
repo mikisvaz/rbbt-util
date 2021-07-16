@@ -122,7 +122,12 @@ module Rbbt::Config
     Log.debug "Value #{value.inspect} for config key '#{ key }': #{tokens * ", "}"
     GOT_KEYS << [key, value, tokens]
 
-    value
+    if String === value && m = value.match(/^env:(.*)/)
+      variable = m.captures.first
+      ENV[variable]
+    else
+      value
+    end
   end
 
   def self.with_config
