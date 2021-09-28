@@ -172,50 +172,6 @@ module Workflow
     }.tap{|h| IndiferentHash.setup(h)}
   end
 
-  def assign_dep_inputs(_inputs, options, all_d, task_info)
-    IndiferentHash.setup(_inputs)
-
-    options.each{|i,v|
-      next if i == :compute or i == "compute"
-      case v
-      when :compute
-        compute = v
-      when Symbol
-        rec_dependency = all_d.flatten.select{|d| d.task_name.to_sym == v }.first
-
-        if rec_dependency.nil?
-          if _inputs.include?(v)
-            #_inputs[i] = _inputs.delete(v)
-            _inputs[i] = _inputs[v] unless _inputs.include? i #_inputs.delete(v)
-          else
-            _inputs[i] = v unless _inputs.include? i
-          end
-        else
-          input_options = task_info[:input_options][i] || {}
-
-          #ToDo why was this always true?
-          if input_options[:stream] or true
-            #rec_dependency.run(true).grace unless rec_dependency.done? or rec_dependency.running?
-            _inputs[i] = rec_dependency
-          else
-            rec_dependency.abort if rec_dependency.streaming? and not rec_dependency.running?
-            rec_dependency.clean if rec_dependency.error? or rec_dependency.aborted?
-            if rec_dependency.streaming? and rec_dependency.running?
-              _inputs[i] = rec_dependency.join.load
-            else
-              rec_dependency.run(true)
-              rec_dependency.join
-              _inputs[i] = rec_dependency.load
-            end
-          end
-        end
-      else
-        _inputs[i] = v
-      end
-    } if options
-
-    _inputs
-  end
 
   def task_from_dep(dep)
     task = case dep

@@ -179,6 +179,10 @@ class Step
                      end
   end
 
+  def result_type=(type)
+    @result_type = type
+  end
+
   def result_description
     @result_description ||= if @task.nil?
                        info[:result_description]

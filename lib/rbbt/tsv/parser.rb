@@ -133,7 +133,7 @@ module TSV
                  []
                else
                  parts.values_at *field_positions
-               end.collect{|value| value.nil? ? [] : value.split(@sep2, -1) }
+               end.collect{|value| (value.empty? || value.nil?) ? [nil] : value.split(@sep2, -1) }
       [keys, values]
     end
 
