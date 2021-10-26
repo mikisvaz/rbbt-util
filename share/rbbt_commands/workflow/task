@@ -572,7 +572,9 @@ when Step
     exit! 0
   else
     res.join
-    out.puts Open.read(res.path) if Open.exist?(res.path) || Open.remote?(res.path) || Open.ssh?(res.path)
+    Open.open(res.path, :mode => 'rb') do |io|
+      Misc.consume_stream(io, false, out)
+    end if Open.exist?(res.path) || Open.remote?(res.path) || Open.ssh?(res.path)
   end
 else
   if Array === res
