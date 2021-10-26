@@ -12,6 +12,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   rbbt_dangling_locks.rb
   rbbt_exec.rb
   rbbt_query.rb
+  rbbt_find.rb
  }
  lib=lib{
   rbbt.rb
