@@ -45,14 +45,10 @@ module Workflow
     load_remote_tasks(Rbbt.root.etc.remote_tasks.find) if Rbbt.root.etc.remote_tasks.exists?
   end
 
-  def self.require_remote_workflow(wf_name, url)
-    require 'rbbt/workflow/remote_workflow'
-    eval "Object::#{wf_name} = RemoteWorkflow.new '#{ url }', '#{wf_name}'"
-  end
 
   def self.require_remote_workflow(wf_name, url)
     require 'rbbt/workflow/remote_workflow'
-    eval "Object::#{wf_name} = RemoteWorkflow.new '#{ url }', '#{wf_name}'"
+    eval "Object::#{wf_name.split("+").first} = RemoteWorkflow.new '#{ url }', '#{wf_name}'"
   end
 
   def self.load_workflow_libdir(filename)
@@ -134,9 +130,10 @@ module Workflow
   end
 
   def self.require_local_workflow(wf_name)
+
     filename = local_workflow_filename(wf_name)
 
-    if filename and File.exist? filename
+    if filename and File.exist?(filename)
       load_workflow_file filename
     else
       return false
@@ -144,15 +141,6 @@ module Workflow
   end
 
   def self.require_workflow(wf_name, force_local=false)
-    if wf_name.include? "+"
-      first = nil
-      wf_name.split("+").each do |wf_sub_name|
-        wf = Workflow.require_workflow(wf_sub_name, force_local)
-        first ||= wf
-      end
-      return first
-    end
-
     Workflow.init_remote_tasks
     # Already loaded
     begin
@@ -203,14 +191,23 @@ module Workflow
     end
 
     Log.high{"Loading workflow #{wf_name}"}
-    require_local_workflow(wf_name) or 
-    (Workflow.autoinstall and `rbbt workflow install #{Misc.snake_case(wf_name)} || rbbt workflow install #{wf_name}` and require_local_workflow(wf_name)) or raise("Workflow not found or could not be loaded: #{ wf_name }")
-    workflow = begin
-                 Misc.string2const Misc.camel_case(wf_name)
-               rescue
-                 Workflow.workflows.last || true
-               end
-    workflow.load_documentation
+
+    first = nil
+    wf_name.split("+").each do |wf_name|
+      require_local_workflow(wf_name) or 
+        (Workflow.autoinstall and `rbbt workflow install #{Misc.snake_case(wf_name)} || rbbt workflow install #{wf_name}` and require_local_workflow(wf_name)) or raise("Workflow not found or could not be loaded: #{ wf_name }")
+
+      workflow = begin
+                   Misc.string2const Misc.camel_case(wf_name.split("+").first)
+                 rescue
+                   Workflow.workflows.last || true
+                 end
+      workflow.load_documentation
+
+      first ||= workflow
+    end
+    return first
+
     workflow
   end
 
