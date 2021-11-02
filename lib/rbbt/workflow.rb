@@ -144,6 +144,15 @@ module Workflow
   end
 
   def self.require_workflow(wf_name, force_local=false)
+    if wf_name.include? "+"
+      first = nil
+      wf_name.split("+").each do |wf_sub_name|
+        wf = Workflow.require_workflow(wf_sub_name, force_local)
+        first ||= wf
+      end
+      return first
+    end
+
     Workflow.init_remote_tasks
     # Already loaded
     begin

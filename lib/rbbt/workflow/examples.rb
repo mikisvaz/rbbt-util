@@ -48,7 +48,7 @@ module Workflow
 
 
         case input_types[input]
-        when :file
+        when :file, :binary
           Log.debug "Pointing #{ input } to #{file}"
           if file =~ /\.yaml/
             inputs[input.to_sym]  = YAML.load(Open.read(file))
