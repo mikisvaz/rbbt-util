@@ -287,8 +287,8 @@ else
     puts
     puts $!.message
     puts
-    
-    exit 0
+
+    exit -1
   end
 end
 

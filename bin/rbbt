@@ -262,9 +262,8 @@ rescue ParameterException
   puts
   exit_status = -1
   exit exit_status
-rescue SystemExit
-rescue CmdStop
-  exit_status = $!.exit_status
+rescue SystemExit,CmdStop
+  exit_status = $!.status
   exit exit_status
 rescue Exception
   Log.exception $!
