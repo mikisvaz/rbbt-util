@@ -51,6 +51,7 @@ export BATCH_SYSTEM=SLURM
                        "nodes" => nodes,
                        "time" => time,
                        "exclusive" => exclusive,
+                       "highmem" => highmem,
                        "licenses" => licenses,
                        "gres" => gres,
                        "mem" => mem,
