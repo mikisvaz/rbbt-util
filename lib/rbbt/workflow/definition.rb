@@ -76,7 +76,7 @@ module Workflow
     extension :dep_task unless @extension
     returns workflow.tasks[oname].result_description if workflow.tasks.include?(oname) unless @result_description 
     task name do
-      raise RbbtException, "dependency not found in dep_task" if dependencies.empty?
+      raise RbbtException, "dep_task does not have any dependencies" if dependencies.empty?
       Step.wait_for_jobs dependencies.select{|d| d.streaming? }
       dep = dependencies.last
       dep.join
