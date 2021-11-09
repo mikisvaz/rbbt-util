@@ -356,6 +356,7 @@ module TSV
     elems.sort_by{|k,v| v}.collect{|k,v| k}
   end
 
+
   def select(method = nil, invert = false, &block)
     new = TSV.setup({}, :key_field => key_field, :fields => fields, :type => type, :filename => filename, :identifiers => identifiers)
 

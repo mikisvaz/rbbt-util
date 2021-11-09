@@ -17,6 +17,7 @@ Use - to read from STDIN
 -w--workflows Workflow to load
 -s--search_path* Workflow to load
 -l--list List contents of resolved directories
+-n--nocolor Don't color output
 EOF
 if options[:help]
   if defined? rbbt_usage
@@ -41,6 +42,7 @@ end if subpath && subpath =~ /^[A-Z][a-zA-Z]+$/
 path = subpath ? Path.setup(subpath)[path] : Path.setup(path)
 
 search_path = options[:search_path].to_sym if options.include? :search_path
+nocolor = options[:nocolor]
 
 found = if search_path
           [path.find(search_path)]
@@ -52,12 +54,21 @@ found.each do |path|
   if options[:list] && File.directory?(path)
     puts Log.color :blue, path
     path.glob("*").each do |subpath|
-      color = File.directory?(subpath) ? :blue : nil
-      puts " " << Log.color(color, subpath)
+      if nocolor
+        puts subpath
+      else
+        color = File.directory?(subpath) ? :blue : nil
+        puts " " << Log.color(color, subpath)
+      end
     end
   else
-    color = File.exists?(path) ? (File.directory?(path) ? :blue : nil) : :red
-    puts Log.color color, path
+    if nocolor
+      puts path
+    else
+      color = File.exists?(path) ? (File.directory?(path) ? :blue : nil) : :red
+      puts Log.color color, path
+    end
+
   end
 end
 
