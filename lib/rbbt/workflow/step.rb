@@ -6,6 +6,7 @@ require 'rbbt/workflow/step/accessor'
 require 'rbbt/workflow/step/prepare'
 require 'rbbt/workflow/step/status'
 require 'rbbt/workflow/step/info'
+require 'rbbt/workflow/step/save_load_inputs'
 
 class Step
   attr_accessor :clean_name, :path, :task, :workflow, :inputs, :dependencies, :bindings
