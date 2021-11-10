@@ -22,7 +22,7 @@ Use - to read from STDIN
 -h--help Print this help
 -s--sheet* Sheet to extract
 -skip--skip_rows* Initial rows to skip
-
+-o--original Dump the rows without parsing them into TSV
 EOF
 if options[:help]
   if defined? rbbt_usage
@@ -39,5 +39,5 @@ raise ParameterException, "No excel file given" if excelfile.nil?
 
 options[:zipped] ||= true if options[:merge]
 require 'rbbt/tsv/excel'
-puts TSV.excel(excelfile, options).to_s
+puts TSV.excel(excelfile, options.merge(:text => options[:original]))
 
