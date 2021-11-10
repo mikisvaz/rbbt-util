@@ -2,7 +2,7 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helpe
 require 'rbbt/tsv/excel'
 
 class TestExcel < Test::Unit::TestCase
-  def _test_xls
+  def test_xls
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -19,7 +19,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_xlsx
+  def test_xlsx
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -36,7 +36,7 @@ row2    A    B    Id3
     end
   end
 
-  def _test_excel
+  def test_excel
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -63,7 +63,7 @@ row2    A    B    Id3
     end
   end
   
-  def _test_excel_sheets
+  def test_excel_sheets
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -130,6 +130,40 @@ row2    A    B    Id3
 
         new = TSV.excel(excelfile, :merge => true)
         assert_equal %w(a aa), new["row1"]["ValueA"]
+      end
+    end
+  end
+
+  def test_excel_multi_sheets
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv1 = TSV.open(filename, :sep => /\s+/)
+      tsv2 = tsv1.annotate(tsv1.dup)
+      tsv3 = tsv1.annotate(tsv1.dup)
+
+      tsv2["row2"] = [["AA"], ["BB"], ["Id4"]]
+      tsv3["row2"] = [["AAA"], ["BBB"], ["Id5"]]
+
+      TmpFile.with_file(nil, false, :extension => 'xlsx') do |excelfile|
+        tsv1.xlsx(excelfile, :sheet => "S1")
+        tsv2.xlsx(excelfile, :sheet => "S2", :add_sheet => true)
+        workbook = RubyXL::Parser.parse excelfile
+
+        assert_equal %w(S1 S2), workbook.worksheets.collect{|s| s.sheet_name} 
+
+        new = TSV.excel(excelfile, :sheet => "S1")
+        assert_equal %w(row1 row2), new.keys.sort
+        assert_equal %w(A), new["row2"]["ValueA"]
+
+        new = TSV.excel(excelfile, :sheet => "S2")
+        assert_equal %w(row1 row2), new.keys.sort
+        assert_equal %w(AA), new["row2"]["ValueA"]
+
       end
     end
   end

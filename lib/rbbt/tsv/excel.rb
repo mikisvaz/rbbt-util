@@ -177,7 +177,7 @@ module TSV
 
       sheet ||= "0"
       workbook = RubyXL::Parser.parse file
-      if sheet &&  sheet =~ /^\d+$/
+      if sheet && sheet =~ /^\d+$/
         sheet = workbook.worksheets.collect{|s| s.sheet_name }[sheet.to_i]
       end
       sheet_name = sheet
@@ -185,7 +185,9 @@ module TSV
 
       TmpFile.with_file :extension => Misc.sanitize_filename(sheet_name.to_s) do |filename|
 
-        sheet    = sheet ? workbook[sheet] : workbook.worksheets.first
+        sheet    = sheet_name ? workbook[sheet_name] : workbook.worksheets.first
+
+        raise "No sheet #{sheet_name} found" if sheet.nil?
 
         rows = []
 
@@ -217,21 +219,27 @@ module TSV
     end
 
     def self.write(tsv, file, options = {})
-      sheet = Misc.process_options options, :sheet
+      sheet, add_sheet = Misc.process_options options, :sheet, :add_sheet
 
       fields, rows = TSV._excel_data(tsv, options)
 
-      book = RubyXL::Workbook.new
-      sheet1 = book.worksheets.first
-      sheet1.sheet_name = sheet if sheet
+      if Open.exists?(file) && add_sheet
+        book = RubyXL::Parser.parse file
+        sheet1 = book.add_worksheet(sheet)
+      else
+        book = RubyXL::Workbook.new
+        sheet1 = book.worksheets.first
+        sheet1.sheet_name = sheet if sheet
+      end
 
       fields.each_with_index do |e,i|
         sheet1.add_cell(0, i, e)
-      end
+      end if fields
 
       rows.each_with_index do |cells,i|
+        i += 1 if fields
         cells.each_with_index do |e,j|
-          sheet1.add_cell(i+1, j, e)
+          sheet1.add_cell(i, j, e)
         end
       end
 
