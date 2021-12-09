@@ -82,13 +82,13 @@ module Workflow
 end
 
 class Step
-  def self.save_inputs(inputs, input_types, dir)
+  def self.save_inputs(inputs, input_types, input_options, dir)
     inputs.each do |name,value|
       type = input_types[name]
       type = type.to_s if type
       path = File.join(dir, name.to_s)
 
-      path = path + '.as_io' if IO === value || Step === value
+      path = path + '.as_io' if (IO === value || Step === value) && ! (input_options[name] && input_options[name][:nofile])
       Log.debug "Saving job input #{name} (#{type}) into #{path}"
 
       case
@@ -128,12 +128,14 @@ class Step
     if workflow
       task_info = IndiferentHash.setup(workflow.task_info(task_name))
       input_types = IndiferentHash.setup(task_info[:input_types])
+      input_options = IndiferentHash.setup(task_info[:input_options])
       task_inputs = IndiferentHash.setup(task_info[:inputs])
       input_defaults = IndiferentHash.setup(task_info[:input_defaults])
     else
       task_info = IndiferentHash.setup({})
       input_types = IndiferentHash.setup({})
       task_inputs = IndiferentHash.setup({})
+      task_options = IndiferentHash.setup({})
       input_defaults = IndiferentHash.setup({})
     end
 
@@ -152,7 +154,8 @@ class Step
       inputs.merge!(:override_dependencies => open[:override_dependencies])
       input_types = IndiferentHash.setup(input_types.merge(:override_dependencies => :array))
     end
-    save_inputs(inputs, input_types, dir)
+
+    save_inputs(inputs, input_types, input_options, dir)
 
     inputs.keys
   end

@@ -122,6 +122,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      info.rb
      prepare.rb
      run.rb
+     save_load_inputs.rb
      status.rb
     }
 

@@ -104,7 +104,7 @@ def fix_options(workflow, task, job_options)
               elsif input_options[name] and input_options[name][:stream] and value == "-"
                 STDIN
               else
-                if Array === value
+                if Array === value || IO === value
                   value
                 else
                   array_separator = $array_separator
@@ -136,6 +136,8 @@ def fix_options(workflow, task, job_options)
                 when '-'
                   TSV.open(STDIN, :unnamed => true, :sep => $field_separator, :sep2 => ($array_separator || "|"))
                 when (Misc.is_filename?(value) and String)
+                  TSV.open(value, :unnamed => true, :sep => $field_separator, :sep2 => ($array_separator || "|"))
+                when IO
                   TSV.open(value, :unnamed => true, :sep => $field_separator, :sep2 => ($array_separator || "|"))
                 else
                   TSV.open(StringIO.new(value), :unnamed => true, :sep => $field_separator, :sep2 => ($array_separator || "|"))
