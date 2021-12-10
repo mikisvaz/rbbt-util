@@ -90,11 +90,11 @@ module Task
 
       maps = (Array === dep and Hash === dep.last) ? dep.last.keys : []
       raise "Dependency task not found: #{dep}" if task.nil?
-      next if seen.include? [wf, task.name]
+      next if seen.include? [wf, task.name, maps]
 
       task.workflow = wf if wf
 
-      seen << [wf, task.name]
+      seen << [wf, task.name, maps]
       new_inputs = task.inputs - maps
       next unless new_inputs.any?
       if task_inputs[task].nil?
