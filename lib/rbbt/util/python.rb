@@ -52,7 +52,7 @@ module RbbtPython
       if Array === imports
         pyfrom mod, :import => imports
       elsif Hash === imports
-        pyimport mod, imports
+        pyimport mod, **imports
       else
         pyimport mod 
       end
