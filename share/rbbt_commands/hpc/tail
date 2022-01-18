@@ -13,19 +13,6 @@ Queue a job in Marenostrum
 $ rbbt slurm tail <directory> [options] 
 
 -h--help Print this help
--d--done Done jobs only
--e--error Error jobs only
--a--aborted SLURM aboted jobs
--r--running Running jobs only
--q--queued Queued jobs only
--j--job* Job ids
--s--search* Regular expression
--t--tail* Show the last lines of the STDERR
--p--progress Report progress of job and the dependencies
--SBP--sbatch_parameters show sbatch parameters
--PERF--procpath_performance show Procpath performance summary
--sacct--sacct_peformance show sacct performance summary
--bs--batch_system* Batch system to use: auto, lsf, slurm (default is auto-detect)
 EOF
 
 if options[:help]
