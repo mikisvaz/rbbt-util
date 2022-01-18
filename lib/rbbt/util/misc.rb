@@ -70,6 +70,11 @@ module Misc
   end
 
   def self.timespan(str, default = "s")
+    if str.include?(":")
+      seconds, minutes, hours = str.split(":").reverse
+      return seconds.to_i + minutes.to_i * 60 + hours.to_i * 60 * 60
+    end
+
     tokens = {
       "s" => (1),
       "sec" => (1),
