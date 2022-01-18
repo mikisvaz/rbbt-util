@@ -322,7 +322,7 @@ class Step
   def load
     res = begin
             @result = nil if IO === @result && @result.closed?
-            if @result && @path != @result
+            if @result && @path != @result &&  ! StreamArray === @result
               res = @result
             else
               join if not done?

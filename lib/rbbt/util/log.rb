@@ -108,8 +108,9 @@ module Log
 
 
   def self._ignore_stderr
-    backup_stderr = STDERR.dup
-    File.open('/dev/null', 'w') do |f|
+    begin
+      File.open('/dev/null', 'w') do |f|
+        backup_stderr = STDERR.dup
         STDERR.reopen(f)
         begin
           yield
@@ -117,6 +118,9 @@ module Log
           STDERR.reopen backup_stderr
           backup_stderr.close
         end
+      end
+    rescue Errno::ENOENT
+      yield
     end
   end
 

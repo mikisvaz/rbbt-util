@@ -254,7 +254,12 @@ class Step
     when :bootstrap
       cpus = rest.nil? ? nil : rest.first 
 
-      cpus = config('dep_cpus', 'bootstrap', :default => [5, list.length / 2].min) if cpus.nil? || cpus.to_i == 0
+      if cpus.nil? 
+        keys = ['bootstrap'] + list.collect{|d| [d.task_name, d.task_signature] }.flatten.uniq
+        cpus = config('dep_cpus', *keys, :default => [5, list.length / 2].min)
+      elsif Symbol === cpus
+        cpus = config('dep_cpus', cpus, :default => [5, list.length / 2].min)
+      end
 
       respawn = rest && rest.include?(:respawn)
       respawn = false if rest && rest.include?(:norespawn)
@@ -369,7 +374,8 @@ class Step
       next unless step.dependencies and step.dependencies.any?
       (step.dependencies + step.input_dependencies).each do |step_dep|
         next unless step.dependencies.include?(step_dep)
-        next if step_dep.done? or step_dep.running? or (ComputeDependency === step_dep and (step_dep.compute == :nodup or step_dep.compute == :ignore))
+        next if step_dep.done? or step_dep.running? or 
+          (ComputeDependency === step_dep and (step_dep.compute == :nodup or step_dep.compute == :ignore))
         dep_step[step_dep.path] ||= []
         dep_step[step_dep.path] << step
       end

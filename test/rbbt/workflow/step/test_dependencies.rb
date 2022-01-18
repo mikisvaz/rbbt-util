@@ -203,20 +203,21 @@ class TestWorkflowDependency < Test::Unit::TestCase
     size = 100000
     content = (1..size).to_a.collect{|num| "Line #{num}" } * "\n"
     last_line = nil
-    Log.severity = 0
-    TmpFile.with_file(content) do |input_file|
-      begin
-        job = DepWorkflow.job(:s3, "TEST", :input_file => input_file)
-        job.recursive_clean
-        job.run(:stream)
-        io = TSV.get_stream job
-        while line = io.gets
-          last_line = line.strip
+    Log.with_severity 0 do
+      TmpFile.with_file(content) do |input_file|
+        begin
+          job = DepWorkflow.job(:s3, "TEST", :input_file => input_file)
+          job.recursive_clean
+          job.run(:stream)
+          io = TSV.get_stream job
+          while line = io.gets
+            last_line = line.strip
+          end
+          io.join if io.respond_to? :join
+        rescue Exception
+          job.abort
+          raise $!
         end
-        io.join if io.respond_to? :join
-      rescue Exception
-        job.abort
-        raise $!
       end
     end
     assert last_line.include? "Line #{size}"
