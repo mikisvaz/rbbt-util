@@ -70,6 +70,12 @@ TestWFC:
     log: 4
   EOF
 
+  def test_defaults
+    rules = HPC::Orchestration.task_specific_rules RULES, "TestWFA", :a1
+    assert_equal "first_queue" , rules[:queue]
+  end
+
+
   def test_task_options
     rules = HPC::Orchestration.task_specific_rules RULES, "TestWFA", :a1
     assert_equal 10, rules[:cpus]

@@ -56,10 +56,11 @@ module HPC
     end
 
     def self.task_specific_rules(rules, workflow, task)
+      defaults = rules[:defaults] || {}
       workflow = workflow.to_s
       task = task.to_s
-      return {} if rules[workflow].nil?
-      workflow_rules = workflow_rules(rules, workflow)
+      return defaults if rules[workflow].nil?
+      workflow_rules = merge_rules(workflow_rules(rules, workflow), defaults)
       return IndiferentHash.setup(workflow_rules.dup) if rules[workflow][task].nil?
       merge_rules(rules[workflow][task], workflow_rules)
     end
