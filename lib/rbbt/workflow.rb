@@ -244,7 +244,7 @@ module Workflow
                        when :hash
                          clean_inputs = Annotated.purge(inputs)
                          clean_inputs = clean_inputs.collect{|i| Symbol === i ? i.to_s : i }
-                         deps_str = dependencies.collect{|d| (Step === d || (defined?(RemoteStep) && RemoteStep === Step)) ? "Step: " << (d.overriden? ? d.path : d.short_path) : d }
+                         deps_str = dependencies.collect{|d| (Step === d || (defined?(RemoteStep) && RemoteStep === Step)) ? "Step: " << (Symbol === d.overriden ? d.path : d.short_path) : d }
                          key_obj = {:inputs => clean_inputs, :dependencies => deps_str }
                          key_str = Misc.obj2str(key_obj)
                          hash_str = Misc.digest(key_str)
@@ -465,7 +465,14 @@ module Workflow
       extension = nil
       if dependencies.any?
         dep_basename = File.basename(dependencies.last.path)
-        extension = dep_basename.split(".").last if dep_basename.include?('.')
+        if dep_basename.include? "."
+          parts = dep_basename.split(".")
+          extension = [parts.pop]
+          while parts.last.length <= 4
+            extension << parts.pop
+          end
+          extension = extension.reverse * "."
+        end
       end
     end
 
