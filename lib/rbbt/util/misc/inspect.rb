@@ -280,8 +280,11 @@ module Misc
       i = parts.index job
       begin
         workflow, task = parts.values_at i - 2, i - 1
-        return Kernel.const_get(workflow).tasks.include? task.to_sym
+        Workflow.require_workflow workflow
+        #return Kernel.const_get(workflow).tasks.include? task.to_sym
+        return true
       rescue
+        Log.exception $!
       end
     end
     false
