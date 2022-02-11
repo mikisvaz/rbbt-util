@@ -78,7 +78,7 @@ module Persist
     end
   end
 
-  def self.persist_tsv(source, filename, options = {}, persist_options = {}, &block)
+  def self.persist_tsv(source, filename = nil, options = {}, persist_options = {}, &block)
     persist_options[:prefix] ||= "TSV"
 
     if data = persist_options[:data]
