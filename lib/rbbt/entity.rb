@@ -164,7 +164,9 @@ module Entity
           define_method single_name, &block 
           define_method name do |*args|
             if Array === self
-              self.collect{|e| e.send(single_name, *args)}
+              res = self.collect{|e| e.send(single_name, *args)}
+              res.first.annotate(res) if Annotated === res.first && type == :single2array
+              res
             else
               self.send(single_name, *args)
             end
