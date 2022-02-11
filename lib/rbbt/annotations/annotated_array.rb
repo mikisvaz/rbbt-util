@@ -94,6 +94,10 @@ module AnnotatedArray
     end
   end
 
+  def +(other)
+    self.annotate super(other)
+  end
+
 
   def reject
     res = []
