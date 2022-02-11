@@ -220,6 +220,35 @@ module Annotated
   def marshal_dump
     Annotated.purge(self).to_sym.to_s
   end
+
+  def self.to_hash(e)
+    hash = {}
+    if Array === e && AnntatedArray === e
+      hash[:literal] = Annotated.purge(e)
+      hash[:info] = e.info
+    elsif Array === e
+      hash = e.collect do |_e|
+        _hash = {}
+        _hash[:literal] = _e
+        _hash[:info] = _e.info
+        _hash
+      end
+    else
+      hash[:literal] = e
+      hash[:info] = e.info
+    end
+    hash
+  end
+
+  def self.load_hash(hash)
+    literal = hash[:literal]
+    info = hash[:info]
+    info[:annotation_types].each do |type|
+      type = Kernel.const_get(type) if String === type
+      type.setup(literal, info) 
+    end
+    literal
+  end
 end
 
 class String
