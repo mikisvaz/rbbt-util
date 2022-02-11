@@ -49,6 +49,7 @@ puts resource[path].find(search_path)
     test_str = options[:test] ? '-nv' : ''
 
     real_paths.each do |source_path|
+      Log.medium "Migrating #{source_path} #{options[:files].length} files to #{target} - #{Misc.fingerprint(options[:files])}}"
       if File.directory?(source_path) || source_path =~ /\/$/
         source_path += "/" unless source_path[-1] == "/"
         target += "/" unless target[-1] == "/"
@@ -76,8 +77,12 @@ puts resource[path].find(search_path)
           files_from_str = ""
         end
 
-        cmd = "rsync -avztAXHP --copy-unsafe-links #{test_str} #{files_from_str} #{excludes_str} '#{source_path}' #{target_path} #{other * " "}"
+        #cmd = "rsync -avztAXHP --copy-unsafe-links #{test_str} #{files_from_str} #{excludes_str} '#{source_path}' #{target_path} #{other * " "}"
+         
+        # rsync_args = "-avztAXHP --copy-unsafe-links"
+        rsync_args = "-avztAHP --copy-unsafe-links"
 
+        cmd = "rsync #{rsync_args} #{test_str} #{files_from_str} #{excludes_str} '#{source_path}' #{target_path} #{other * " "}"
 
         cmd << " && rm -Rf #{source_path}" if options[:delete] && ! options[:files]
 
