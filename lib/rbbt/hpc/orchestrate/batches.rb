@@ -18,12 +18,24 @@ module HPC
 
     def self.job_workload(job)
       workload = []
+      path_jobs = {}
+
+      path_jobs[job.path] = job
+
       heap = []
-      heap << job
-      while job = heap.pop
+      heap << job.path
+      while job_path = heap.pop
+        job = path_jobs[job_path]
         next if job.done?
         workload << job
-        heap.concat job_dependencies(job)
+
+        deps =  job_dependencies(job)
+
+        deps.each do  |d|
+          path_jobs[d.path] ||= d
+        end
+
+        heap.concat deps.collect(&:path)
         heap.uniq!
       end
       workload.uniq
@@ -69,7 +81,7 @@ module HPC
         jobs = batch[:jobs]
         all_deps = jobs.collect{|d| job_dependencies(d) }.flatten.uniq
         deps = all_deps.collect do |d|
-          (batches - [batch]).select{|batch| batch[:jobs].include? d }
+          (batches - [batch]).select{|batch| batch[:jobs].collect(&:path).include? d.path }
         end.flatten.uniq
         batch[:deps] = deps
       end
@@ -130,7 +142,7 @@ module HPC
     def self.job_batches(rules, job)
       job_chains = self.job_chains(rules, job)
 
-      workload = job_workload(job)
+      workload = job_workload(job).uniq
 
       batches = chain_batches(rules, job_chains, workload)
       batches = add_batch_deps(batches)

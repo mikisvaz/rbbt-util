@@ -24,7 +24,11 @@ module Workflow
 
         type = :io if file.split(".").last == 'as_io'
 
+        type = :path if file.split(".").last == 'as_path'
+
         case type
+        when :path
+          inputs[input.to_sym]  = Open.realpath(Open.read(file).strip)
         when :io
           inputs[input.to_sym] = Open.open(Open.realpath(file))
         when :file, :binary
@@ -96,12 +100,21 @@ class Step
         Open.write(path, value.to_s)
       when Step === value
         Open.ln_s(value.path, path)
+      when type.to_s == "binary"
+        if String === value && File.exists?(value)
+          value = File.expand_path(value)
+          Open.ln_s(value, path)
+        elsif String === value && Misc.is_filename?(value, false)
+          Open.write(path + '.as_path' , value)
+        else
+          Open.write(path, value, :mode => 'wb')
+        end
       when type.to_s == "file"
         if String === value && File.exists?(value)
           value = File.expand_path(value)
           Open.ln_s(value, path)
         else
-          value = value.collect{|v| v = "#{v}" if Path === v; v }if Array === value
+          value = value.collect{|v| v = "#{v}" if Path === v; v } if Array === value
           value = "#{value}" if Path === value
           Open.write(path + '.yaml', value.to_yaml)
         end
