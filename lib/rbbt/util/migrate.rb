@@ -49,7 +49,7 @@ puts resource[path].find(search_path)
     test_str = options[:test] ? '-nv' : ''
 
     real_paths.each do |source_path|
-      Log.medium "Migrating #{source_path} #{options[:files].length} files to #{target} - #{Misc.fingerprint(options[:files])}}"
+      Log.medium "Migrating #{source_path} #{options[:files].length} files to #{target} - #{Misc.fingerprint(options[:files])}}" if options[:files]
       if File.directory?(source_path) || source_path =~ /\/$/
         source_path += "/" unless source_path[-1] == "/"
         target += "/" unless target[-1] == "/"
