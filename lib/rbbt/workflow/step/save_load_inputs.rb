@@ -26,7 +26,11 @@ module Workflow
 
         type = :path if file.split(".").last == 'as_path'
 
+        type = :nofile if file.split(".").last == 'nofile'
+
         case type
+        when :nofile
+          inputs[input.to_sym]  = Open.realpath(file)
         when :path
           inputs[input.to_sym]  = Open.realpath(Open.read(file).strip)
         when :io
