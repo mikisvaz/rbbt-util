@@ -65,7 +65,10 @@ module Workflow
 
       IndiferentHash.setup(resources)
 
-      default_resources = rules["default_resources"] || rules["defaults"]["resources"]
+      default_resources = rules["default_resources"] 
+      default_resources ||= rules["defaults"]["resources"] if rules["defaults"]
+      default_resources ||= {}
+
       default_resources.each{|k,v| resources[k] ||= v } if default_resources
 
       resources
@@ -96,6 +99,10 @@ module Workflow
       candidates = sort_candidates candidates, rules
 
       candidates
+    end
+
+    def self.process(*args)
+      self.new.process(*args)
     end
 
     attr_accessor :available_resources, :resources_requested, :resources_used, :timer
@@ -176,7 +183,9 @@ module Workflow
       end
     end
 
-    def process(rules, jobs)
+    def process(rules, jobs = nil)
+      jobs, rules = rules, {} if jobs.nil?
+      jobs = [jobs] if Step === jobs
       begin
 
         workload = Orchestrator.workload(jobs)
