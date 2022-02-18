@@ -101,7 +101,7 @@ class Step
     seen = []
     while path = deps.pop
       dep_info = archived_info[path]
-      if dep_info
+      if Hash === dep_info
         dep_info[:inputs].each do |k,v|
           all_inputs[k] = v unless all_inputs.include?(k)
         end if dep_info[:inputs]
