@@ -205,7 +205,8 @@ class RbbtProcessQueue
     end
 
     @queue.close_read
-    Log.info "Cpu process (#{num_processes}) started with master: #{@master_pid}"
+    Log.info "Cpu process #{@master_pid} with #{num_processes} workers."
+    Log.low "Signal #{@master_pid} USR1/USR2 (#10/#12) to increase/decrease workers."
   end
 
   def init(&block)
