@@ -462,4 +462,8 @@ module Path
       Path.setup relative_file , @pkgdir, @resource
     end
   end
+
+  def clean_annotations
+    "" << self.to_s
+  end
 end
