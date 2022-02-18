@@ -111,6 +111,31 @@ module Persist
       end
     end
 
+    def with_read(&block)
+      if read? || write?
+        return yield
+      else
+        read_and_close &block
+      end
+    end
+
+    def with_write(&block)
+      if write?
+        return yield
+      else
+        if self.read?
+          self.write_and_read do
+            return yield
+          end
+        else
+          self.write_and_close do
+            return yield
+          end
+        end
+      end
+    end
+
+
     def read_and_close
       if read? || write?
         begin

@@ -423,6 +423,8 @@ module Persist
           end
         end
 
+        repo.read
+
         case
         when (keys.length == 1 and keys.first == subkey + 'NIL')
           nil
@@ -430,19 +432,19 @@ module Persist
           []
         when (keys.length == 1 and keys.first =~ /:SINGLE$/)
           key = keys.first
-          values = repo.read_and_close do
+          values = repo.with_read do
             repo[key]
           end
           Annotated.load_tsv_values(key, values, "literal", "annotation_types", "JSON")
         when (keys.any? and not keys.first =~ /ANNOTATED_DOUBLE_ARRAY/)
-          repo.read_and_close do
+          repo.with_read do
             keys.sort_by{|k| k.split(":").last.to_i}.collect{|key|
               v = repo[key]
               Annotated.load_tsv_values(key, v, "literal", "annotation_types", "JSON")
             }
           end
         when (keys.any? and keys.first =~ /ANNOTATED_DOUBLE_ARRAY/)
-          repo.read_and_close do
+          repo.with_read do
 
             res = keys.sort_by{|k| k.split(":").last.to_i}.collect{|key|
               v = repo[key]
@@ -457,7 +459,7 @@ module Persist
         else
           entities = yield
 
-          repo.write_and_close do 
+          repo.write_and_read do 
             case
             when entities.nil?
               repo[subkey + "NIL"] = nil
