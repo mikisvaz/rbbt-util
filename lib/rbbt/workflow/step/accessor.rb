@@ -44,7 +44,7 @@ class Step
   end
 
   def self.files_dir(path)
-    path.nil? ? nil : path + '.files'
+    path.nil? ? nil : Path.setup(path + '.files')
   end
 
   def self.info_file(path)
@@ -154,8 +154,12 @@ class Step
     value = Annotated.purge value if defined? Annotated
     Open.lock(info_file, :lock => info_lock) do
       i = info(false).dup
+      value = Annotated.purge(value)
+
       i[key] = value 
+
       dump = Step.serialize_info(i)
+
       @info_cache = IndiferentHash.setup(i)
       Misc.sensiblewrite(info_file, dump, :force => true, :lock => false) if Open.exists?(info_file)
       @info_cache_time = Time.now
