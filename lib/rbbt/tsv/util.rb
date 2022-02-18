@@ -297,6 +297,8 @@ module TSV
     when :double
       if field.nil?
         through do |k,v| new[k] = v.first end
+      elsif field == :all
+        through do |k,v| new[k] = v.flatten.compact end
       else
         pos = identify_field field
         through do |k,v| new[k] = v[pos] end
@@ -313,7 +315,16 @@ module TSV
       end
     end
     self.annotate(new)
-    new.fields = new.fields[0..0] if new.fields
+    if new.fields
+      case field
+      when nil
+        new.fields = new.fields[0..0]
+      when :all
+        new.fields = [new.fields * "+"]
+      else
+        new.fields = [field]
+      end
+    end
     new.type = :flat
     new
   end
