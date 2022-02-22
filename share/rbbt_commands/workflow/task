@@ -191,7 +191,7 @@ The `recursive_clean` cleans all the job dependency steps recursively.
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely
 -uaj--update_all_jobs Consider all dependencies when checking for updates, even when they have no info files
 --fork Run job asyncronously and monitor progress. It monitors detached processes as well
---orchestrate Run the job through the orchestrator
+--orchestrate* Run the job through the orchestrator
 --detach Run job asyncronously and detach process
 --exec Run job with no persistence
 -O--output* Save job result into file
@@ -441,7 +441,17 @@ begin
     job.fork
   elsif options[:orchestrate]
     require 'rbbt/workflow/util/orchestrator'
-    Workflow::Orchestrator.process job
+    rules = case options[:orchestrate]
+            when 'none', 'open', 'default'
+              nil
+            else
+              YAML.parse(Open.read(options[:orchestrate]))
+            end
+    if rules
+      Workflow::Orchestrator.process rules, job
+    else
+      Workflow::Orchestrator.process job
+    end unless job.done?
   else
     job.run(:stream)
     res = job
@@ -577,10 +587,10 @@ when Step
   elsif detach
     exit! 0
   else
+    res.join
     if %w(float integer string boolean).include?(res.result_type.to_s)
       out.puts res.load
     else
-      res.join
       Open.open(res.path, :mode => 'rb') do |io|
         Misc.consume_stream(io, false, out)
       end if Open.exist?(res.path) || Open.remote?(res.path) || Open.ssh?(res.path)

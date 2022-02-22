@@ -71,6 +71,7 @@ module Workflow
 
       default_resources.each{|k,v| resources[k] ||= v } if default_resources
 
+      resources = {:cpus => 1} if resources.empty?
       resources
     end
 
@@ -107,7 +108,8 @@ module Workflow
 
     attr_accessor :available_resources, :resources_requested, :resources_used, :timer
 
-    def initialize(timer = 5, available_resources = {})
+    def initialize(timer = 5, available_resources = nil)
+      available_resources  = {:cpus => Etc.nprocessors } if available_resources.nil?
       @timer               = timer
       @available_resources = IndiferentHash.setup(available_resources)
       @resources_requested = IndiferentHash.setup({})
@@ -155,7 +157,7 @@ module Workflow
         log = job_rules[:log] if job_rules 
         log = Log.severity if log.nil?
         Log.with_severity log do
-          job.produce(false, true)
+          job.produce(false, :nowait)
         end
       end
     end
@@ -202,6 +204,7 @@ module Workflow
             when (job.error? || job.aborted?)
               begin
                 if job.recoverable_error?
+                  iif [:CLEAN, job, job.status, job.info[:exception]]
                   job.clean
                   raise TryAgain
                 else
@@ -228,8 +231,9 @@ module Workflow
 
           new_workload = {}
           workload.each do |k,v|
-            next if k.done?
-            new_workload[k] = v.reject{|d| d.done? || (d.error? && ! d.recoverable_error?)}
+            next if k.done? || k.error? || k.aborted?
+            #new_workload[k] = v.reject{|d| d.done? || ((d.error? || d.aborted?) && ! d.recoverable_error?)}
+            new_workload[k] = v.reject{|d| d.done? || d.error? || d.aborted?}
           end
           workload = new_workload
           sleep timer

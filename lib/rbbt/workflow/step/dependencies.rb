@@ -107,7 +107,26 @@ class Step
       canfail = ComputeDependency === job && job.canfail?
     end
 
-    raise DependencyError, job if job.error? and not canfail
+    raise_dependency_error(job) if job.error? and not canfail
+  end
+
+  def self.raise_dependency_error(job)
+    begin
+      if job.get_exception
+        klass = job.get_exception.class
+      else
+        klass = Kernel.const_get(info[:exception][:class])
+      end
+    rescue
+      Log.exception $!
+      raise DependencyError, job 
+    end
+
+    if (klass <= RbbtException)
+      raise DependencyRbbtException, job 
+    else
+      raise DependencyError, job 
+    end
   end
 
   def log_dependency_exec(dependency, action)
@@ -169,7 +188,7 @@ class Step
 
       if dependency.error?
         log_dependency_exec(dependency, :error)
-        raise DependencyError, [dependency.path, dependency.messages.last] * ": " if dependency.error?
+        raise_dependency_error dependency 
       end
 
       if dependency.streaming?
@@ -368,7 +387,7 @@ class Step
       seen_paths << step.path
       begin
         Step.prepare_for_execution(step) unless step == self
-      rescue DependencyError
+      rescue DependencyError, DependencyRbbtException
         raise $! unless canfail_paths.include? step.path
       end
       next unless step.dependencies and step.dependencies.any?

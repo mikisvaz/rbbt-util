@@ -437,7 +437,7 @@ class Step
         end
       end # END SYNC
       res
-    rescue DependencyError
+    rescue DependencyError, DependencyRbbtException
       exception $!
     rescue LockInterrupted
       raise $!
@@ -484,7 +484,7 @@ class Step
     if dofork
       fork(true) unless started?
 
-      join unless done?
+      join unless done? or dofork == :nowait
     else
       run(true) unless started?
 
@@ -496,6 +496,7 @@ class Step
 
   def fork(no_load = false, semaphore = nil)
     raise "Can not fork: Step is waiting for proces #{@pid} to finish" if not @pid.nil? and not Process.pid == @pid and Misc.pid_exists?(@pid) and not done? and info[:forked]
+    Log.debug "Fork to run #{self.path}"
     sout, sin = Misc.pipe if no_load == :stream
     @pid = Process.fork do
       Signal.trap(:TERM) do

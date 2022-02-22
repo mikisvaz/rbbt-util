@@ -26,7 +26,29 @@ module HPC
         raise "No batch without unmet dependencies" if top.nil?
         batches.delete top
         job_options = options.merge(top[:rules])
-        job_options.merge!(:batch_dependencies => top[:deps].nil? ? [] : top[:deps].collect{|d| batch_ids[d] })
+
+        if top[:deps].nil?
+          batch_dependencies = [] 
+        else 
+          top_jobs = top[:jobs]
+
+          batch_dependencies = top[:deps].collect{|d| 
+            target = d[:top_level]
+            canfail = false
+
+            top_jobs.each do |job|
+              canfail = true if job.canfail_paths.include?(target.path)
+            end
+
+            if canfail
+              'canfail:' + batch_ids[d].to_s
+            else
+              batch_ids[d].to_s
+            end
+          }
+        end
+
+        job_options.merge!(:batch_dependencies => batch_dependencies )
         job_options.merge!(:manifest => top[:jobs].collect{|d| d.task_signature })
 
         if options[:dry_run]

@@ -423,7 +423,7 @@ module Workflow
 
     # jobname => true sets the value of the input to the name of the job
     if task.input_options
-      jobname_input = task.input_options.select{|i,o| o[:jobname]}.collect{|i,o| i }.first
+      jobname_input = task.input_options.select{|i,o| o[:jobname] }.collect{|i,o| i }.first
     else
       jobname_input = nil 
     end
@@ -476,13 +476,13 @@ module Workflow
       end
     end
 
+    input_values = task.take_input_values(inputs)
     if real_inputs.empty? && Workflow::TAG != :inputs && ! overriden 
       step_path = step_path taskname, jobname, [], [], extension
-      input_values = task.take_input_values(inputs)
     else
-      input_values = task.take_input_values(inputs)
       step_path = step_path taskname, jobname, input_values, dependencies, extension
     end
+
 
     job = get_job_step step_path, task, input_values, dependencies
     job.workflow = self
@@ -502,8 +502,6 @@ module Workflow
   end
 
   def _job(taskname, jobname = nil, inputs = {})
-
-    _inputs = IndiferentHash.setup(inputs.dup)
 
     task_info = task_info(taskname)
     task_inputs = task_info[:inputs]

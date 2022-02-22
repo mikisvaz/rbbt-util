@@ -80,6 +80,13 @@ module HPC
       batches.each do |batch|
         jobs = batch[:jobs]
         all_deps = jobs.collect{|d| job_dependencies(d) }.flatten.uniq
+
+        minimum = all_deps
+        all_deps.each do |dep|
+          minimum -= job_dependencies(dep)
+        end
+
+        all_deps = minimum
         deps = all_deps.collect do |d|
           (batches - [batch]).select{|batch| batch[:jobs].collect(&:path).include? d.path }
         end.flatten.uniq
