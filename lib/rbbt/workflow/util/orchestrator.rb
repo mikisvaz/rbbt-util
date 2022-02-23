@@ -84,7 +84,8 @@ module Workflow
 
     def self.candidates(workload, rules)
       if rules.empty?
-        candidates = workload.select{|k,v| v.empty? }.
+        candidates = workload.
+          select{|k,v| v.empty? }.
           collect{|k,v| k }.
           reject{|k| k.done? }
       else
@@ -204,7 +205,6 @@ module Workflow
             when (job.error? || job.aborted?)
               begin
                 if job.recoverable_error?
-                  iif [:CLEAN, job, job.status, job.info[:exception]]
                   job.clean
                   raise TryAgain
                 else
