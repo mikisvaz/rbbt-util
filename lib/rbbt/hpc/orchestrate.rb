@@ -14,8 +14,14 @@ module HPC
       options.delete "detach"
       options.delete "jobname"
 
-      rules = YAML.load(Open.read(options[:orchestration_rules])) if options[:orchestration_rules]
-      rules ||= {}
+      if options[:orchestration_rules]
+        rules = YAML.load(Open.read(options[:orchestration_rules]))
+      elsif Rbbt.etc.slurm["default.yaml"].exists?
+        rules = YAML.load(Open.read(Rbbt.etc.slurm["default.yaml"]))
+      else
+        rules = {}
+      end
+
       IndiferentHash.setup(rules)
 
       batches = HPC::Orchestration.job_batches(rules, job)
