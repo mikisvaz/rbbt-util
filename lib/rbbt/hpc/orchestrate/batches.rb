@@ -11,7 +11,7 @@ module HPC
         iii :END_BATCHES
       else
         n = batch.dup
-        n[:deps] = n[:deps].collect{|b| b[:top_level] }
+        n[:deps] = n[:deps].collect{|b| b[:top_level] } if n[:deps]
         iif n
       end
     end
@@ -79,14 +79,14 @@ module HPC
 
       batches.each do |batch|
         jobs = batch[:jobs]
-        all_deps = jobs.collect{|d| job_dependencies(d) }.flatten.uniq
+        all_deps = jobs.collect{|d| job_dependencies(d) }.flatten.uniq - jobs
 
         minimum = all_deps
         all_deps.each do |dep|
           minimum -= job_dependencies(dep)
         end
 
-        all_deps = minimum
+        all_deps = minimum 
         deps = all_deps.collect do |d|
           (batches - [batch]).select{|batch| batch[:jobs].collect(&:path).include? d.path }
         end.flatten.uniq
