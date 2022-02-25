@@ -48,6 +48,7 @@ module Workflow
     task name => result do 
       work = file('work')
       profile = config :profile, :nextflow
+      config_file = config :config, :nextflow
 
       new_inputs = inputs.zip(inputs.fields).collect do |v,f|
         if String === v && m = v.match(/^JOB_FILE:(.*)/)
@@ -62,11 +63,19 @@ module Workflow
       inputs.replace new_inputs
 
       Misc.in_dir file('stage') do
-        if profile
-          cmd("nextflow run -work-dir #{work} -ansi-log false  -profile #{profile} #{file}", inputs.to_hash.merge('add_option_dashes' => true))
-        else
-          cmd("nextflow run -work-dir #{work} -ansi-log false #{file}", inputs.to_hash.merge('add_option_dashes' => true))
-        end
+
+        cmd = "nextflow "
+
+        cmd += " -C #{config_file}" if config_file
+
+        cmd += " run"
+
+        cmd += " -work-dir #{work} -ansi-log false"
+
+        cmd += " -profile #{profile}" if profile
+
+
+        cmd("#{cmd} #{file}", inputs.to_hash.merge('add_option_dashes' => true))
       end
 
       output_file = file(output).glob.first if output
