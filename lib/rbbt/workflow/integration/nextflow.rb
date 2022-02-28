@@ -4,7 +4,7 @@ module Workflow
   end
 
   def self.nextflow_includes(file)
-    Open.read(file).scan(/^include\s*{\s*(.*?)(?:\s*as.*?)?}\s*from\s+"(.*?)"(?:\s*params.*)?/).collect{|p| p}.uniq
+    Open.read(file).scan(/^include\s*{\s*([^\s]*?)\s+.*?}\s*from\s+["'](.*?)["'](?:\s*params.*)?/).collect{|p| p}.uniq
   end
 
   def self.nextflow_recursive_params(file)
@@ -50,18 +50,27 @@ module Workflow
       profile = config :profile, :nextflow
       config_file = config :config, :nextflow
 
-      new_inputs = inputs.zip(inputs.fields).collect do |v,f|
-        if String === v && m = v.match(/^JOB_FILE:(.*)/)
-          file(m[1]) 
-        elsif v.nil?
-          Rbbt::Config.get(['nextflow', f] * "_", 'default', f)
+      nextflow_inputs = {}
+
+      inputs.zip(inputs.fields).collect do |v,f|
+        v = if String === v && m = v.match(/^JOB_FILE:(.*)/)
+              file(m[1]) 
+            elsif v.nil?
+              Rbbt::Config.get(['nextflow', f] * "_", 'default', f)
+            else
+              v
+            end
+
+        if f.to_s.include?("-") 
+          p,_sep, section = f.to_s.partition("-")
+          name = [section, p] * "."
         else
-          v
+          name = f
         end
+          
+        nextflow_inputs[name] = v
       end
       
-      inputs.replace new_inputs
-
       Misc.in_dir file('stage') do
 
         cmd = "nextflow "
@@ -75,7 +84,7 @@ module Workflow
         cmd += " -profile #{profile}" if profile
 
 
-        cmd("#{cmd} #{file}", inputs.to_hash.merge('add_option_dashes' => true))
+        cmd("#{cmd} #{file}", nextflow_inputs.merge('add_option_dashes' => true))
       end
 
       output_file = file(output).glob.first if output

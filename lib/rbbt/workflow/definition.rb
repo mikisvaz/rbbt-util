@@ -92,7 +92,12 @@ module Workflow
         self.dependencies = self.dependencies - [dep]
         Open.rm_rf self.files_dir if Open.exist? self.files_dir
         FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist?(dep.files_dir)
-        Open.ln_h dep.path, self.tmp_path
+
+        if dep.overriden
+          Open.link dep.path, self.tmp_path
+        else
+          Open.ln_h dep.path, self.tmp_path
+        end
 
         case remove.to_s
         when 'true'

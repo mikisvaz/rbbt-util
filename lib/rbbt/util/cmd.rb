@@ -75,7 +75,7 @@ module CMD
 
     string = ""
     options.each do |option, value|
-      raise "Invalid option key: #{option.inspect}" if option.to_s !~ /^[a-z_0-9\-=]+$/i
+      raise "Invalid option key: #{option.inspect}" if option.to_s !~ /^[a-z_0-9\-=.]+$/i
       #raise "Invalid option value: #{value.inspect}" if value.to_s.include? "'"
       value = value.gsub("'","\\'") if value.to_s.include? "'"
 
