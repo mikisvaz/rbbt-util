@@ -270,6 +270,7 @@ source "$INSTALL_HELPER_FILE"
                               git = content[:git]
                               src = content[:src]
                               url = content[:url]
+                              jar = content[:jar]
                               extra = content[:extra]
                               commands = content[:commands]
                               if git
@@ -289,6 +290,16 @@ name='#{name}'
 url='#{src}'
 
 install_src "$name" "$url" #{extra}
+
+#{commands}
+                                EOF
+                              elsif jar
+                                <<-EOF
+
+name='#{name}'
+url='#{jar}'
+
+install_jar "$name" "$url" #{extra}
 
 #{commands}
                                 EOF
