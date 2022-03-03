@@ -10,7 +10,7 @@ options = SOPT.setup <<EOF
 
 Queue a job in Marenostrum
 
-$ rbbt slurm tail <directory> [options] 
+$ rbbt slurm tail <directory|jobid> [options] 
 
 -h--help Print this help
 EOF
@@ -35,7 +35,18 @@ directory = ARGV.shift
 
 raise ParameterException if directory.nil?
 
-directory = File.dirname(directory) unless File.directory?(directory)
+if directory =~ /^[0-9]*$/
+  workdir = File.expand_path('~/rbbt-batch')
+  Path.setup(workdir)
+
+  workdir.glob("**/job.id").each do |file|
+    next unless directory == Open.read(file).strip
+    directory = File.dirname(file)
+    break
+  end
+end
+
+raise ParameterException, "Could not identify job #{directory}" unless File.exists?(directory)
 
 require 'rbbt/hpc/slurm'
 
