@@ -50,4 +50,13 @@ raise ParameterException, "Could not identify job #{directory}" unless File.exis
 
 require 'rbbt/hpc/slurm'
 
+command_txt = Open.read(File.join(directory, 'command.batch'))
+if m = command_txt.match(/#STEP_PATH: (.*)/)
+  step_path = m[1]
+else
+  step_path = nil
+end
+
+puts Log.color(:magenta, "Step path: ") + step_path if step_path
+
 HPC::BATCH_MODULE.follow_job directory, true
