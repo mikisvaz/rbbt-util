@@ -32,6 +32,8 @@ export BATCH_SYSTEM=SLURM
       constraint     = Misc.process_options options, :constraint
       gres           = Misc.process_options options, :gres
 
+      constraint     = [constraint, "highmem"].compact * "&" if highmem
+
       mem            = Misc.process_options options, :mem
       mem_per_cpu    = Misc.process_options options, :mem_per_cpu
 
@@ -50,13 +52,14 @@ export BATCH_SYSTEM=SLURM
                        "cpus-per-task" => task_cpus,
                        "nodes" => nodes,
                        "time" => time,
+                       "constraint" => constraint,
                        "exclusive" => exclusive,
-                       "highmem" => highmem,
                        "licenses" => licenses,
                        "gres" => gres,
                        "mem" => mem,
                        "mem-per-cpu" => mem_per_cpu,
       }
+
 
       header =<<-EOF
 #!/bin/bash

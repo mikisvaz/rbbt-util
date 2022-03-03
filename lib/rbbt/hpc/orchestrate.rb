@@ -31,7 +31,8 @@ module HPC
         top = batches.select{|b| b[:deps].nil? || (b[:deps] - batch_ids.keys).empty? }.first
         raise "No batch without unmet dependencies" if top.nil?
         batches.delete top
-        job_options = options.merge(top[:rules])
+
+        job_options = HPC::Orchestration.merge_rules(options, top[:rules])
 
         if top[:deps].nil?
           batch_dependencies = [] 
