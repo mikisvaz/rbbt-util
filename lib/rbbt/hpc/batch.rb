@@ -538,10 +538,13 @@ env > #{batch_options[:fenv]}
       workflow = job.workflow
       task_name = job.task_name
 
+      workflows_to_load = job.rec_dependencies.select{|d| Step === d}.collect{|d| d.workflow }.compact.collect(&:to_s) - [workflow.to_s]
+
       TmpFile.with_file(nil, remove_batch_dir, :tmpdir => batch_base_dir, :prefix => "#{system}_rbbt_job-#{workflow.to_s}-#{task_name}-") do |batch_dir|
         Misc.add_defaults options, 
           :batch_dir => batch_dir, 
-          :inputs_dir => File.join(batch_dir, "inputs_dir")
+          :inputs_dir => File.join(batch_dir, "inputs_dir"),
+          :workflows => workflows_to_load * ","
 
         options[:procpath_performance] ||= File.join(batch_dir, "procpath##{procpath.gsub(',', '#')}") if procpath
 
