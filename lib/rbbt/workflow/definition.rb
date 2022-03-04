@@ -93,22 +93,22 @@ module Workflow
         Open.rm_rf self.files_dir if Open.exist? self.files_dir
         FileUtils.cp_r dep.files_dir, self.files_dir if Open.exist?(dep.files_dir)
 
-        if dep.overriden
+        if dep.overriden || ! Workflow.job_path?(dep.path)
           Open.link dep.path, self.tmp_path
         else
           Open.ln_h dep.path, self.tmp_path
-        end
 
-        case remove.to_s
-        when 'true'
-          dep.clean
-        when 'recursive'
-          (dep.dependencies + dep.rec_dependencies).uniq.each do |d|
-            next if d.overriden
-            d.clean unless config(:remove_dep, d.task_signature, d.task_name, d.workflow.to_s, :default => true).to_s == 'false'
-          end
-          dep.clean unless config(:remove_dep, dep.task_signature, dep.task_name, dep.workflow.to_s, :default => true).to_s == 'false'
-        end unless dep.overriden
+          case remove.to_s
+          when 'true'
+            dep.clean
+          when 'recursive'
+            (dep.dependencies + dep.rec_dependencies).uniq.each do |d|
+              next if d.overriden
+              d.clean unless config(:remove_dep, d.task_signature, d.task_name, d.workflow.to_s, :default => true).to_s == 'false'
+            end
+            dep.clean unless config(:remove_dep, dep.task_signature, dep.task_name, dep.workflow.to_s, :default => true).to_s == 'false'
+          end 
+        end
       else
         if Open.exists?(dep.files_dir)
           Open.rm_rf self.files_dir 
