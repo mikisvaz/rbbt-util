@@ -21,6 +21,7 @@ $ rbbt slurm list [options]
 -j--job* Job ids
 -s--search* Regular expression
 -t--tail* Show the last lines of the STDERR
+-l--long Show more entries
 -p--progress Report progress of job and the dependencies
 -BP--batch_parameters show batch parameters
 -BPP--batch_procpath show Procpath performance summary
@@ -39,6 +40,8 @@ end
 
 batch_system = options.delete :batch_system
 batch_system ||= 'auto'
+
+long = options.delete :long
 
 HPC::BATCH_MODULE = HPC.batch_system batch_system
 
@@ -183,24 +186,24 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
 
 
  puts Log.color :blue, dir
- puts Log.color(:magenta, "Creation: ") << File.mtime(File.join(dir, 'command.batch')).to_s
- puts Log.color(:magenta, "Started: ") << File.ctime(File.join(dir, 'std.err')).to_s if File.exist?(File.join(dir, 'std.err'))
- puts Log.color(:magenta, "Manifest: ") << Log.color(:yellow, manifest) 
+ puts Log.color(:magenta, "Creation: ") << File.mtime(File.join(dir, 'command.batch')).to_s if long
+ puts Log.color(:magenta, "Started: ") << File.ctime(File.join(dir, 'std.err')).to_s if File.exist?(File.join(dir, 'std.err')) && long
+ puts Log.color(:magenta, "Manifest: ") << Log.color(:yellow, manifest) if long
  puts Log.color(:magenta, "Step path: ") << Log.color(:yellow, step_path)
  puts Log.color(:magenta, "Done: ") << File.mtime(File.join(dir, 'exit.status')).to_s if File.exist?(File.join(dir, 'exit.status'))
- puts Log.color(:magenta, "Exec: ") << (exe || "Missing")
- puts Log.color(:magenta, "CMD: ") << (Log.color(:yellow, cmd) || "Missing")
- puts Log.color(:magenta, "HOME: ") << Log.color(:yellow, container_home) if container_home
+ puts Log.color(:magenta, "Exec: ") << (exe || "Missing") if long
+ puts Log.color(:magenta, "CMD: ") << (Log.color(:yellow, cmd) || "Missing") if long
+ puts Log.color(:magenta, "HOME: ") << Log.color(:yellow, container_home) if container_home && long
  if different_system
    puts Log.color(:magenta, "Job ID (#{Log.color(:red, job_batch_system)}): ") << (exit_status ? (exit_status == 0 ? Log.color(:green, "Done") : Log.color(:red, "Error")) + " (#{ id })" :  Log.color(:green, id)  )
  else
    puts Log.color(:magenta, "Job ID: ") << (exit_status ? (exit_status == 0 ? Log.color(:green, "Done") : Log.color(:red, "Error")) + " (#{ id })" :  (running_jobs.include?(id) || $norunningjobs ? Log.color(:green, id) : Log.color(:red, id) ))
- end
+ end 
  puts Log.color(:magenta, "Dependencies: ") << deps * ", " if deps
  puts Log.color(:magenta, "Dependencies (can fail): ") << cadeps * ", " if cadeps
- puts Log.color(:magenta, "Nodes: ") << nodes * ", "
+ puts Log.color(:magenta, "Nodes: ") << nodes * ", " if long
  puts Log.color(:magenta, "Time elapsed: ") << Misc.format_seconds(time_elapsed) if time_elapsed
- puts Log.color(:magenta, "Output: ") << File.exists?(File.join(dir, 'std.out')).to_s << (id.nil? || File.exists?(File.join(dir, 'exit.status')) ? "" : " (last update " + Misc.format_seconds(time_diff) + " ago)")
+ puts Log.color(:magenta, "Output: ") << File.exists?(File.join(dir, 'std.out')).to_s << (id.nil? || File.exists?(File.join(dir, 'exit.status')) ? "" : " (last update " + Misc.format_seconds(time_diff) + " ago)") if long
 
  if options[:batch_parameters]
    puts Log.color(:magenta, "BATCH parameters: ")
@@ -281,7 +284,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
      puts CMD.cmd("grep -i -w 'Completed step' #{File.join(dir, 'std.err')} | grep -v 'Retrying dep.' | tail -n #{tail.to_i}", :no_fail => true).read
    else
      puts Log.color(:magenta, "Log tail: ")
-     puts CMD.cmd(" cat #{File.join(dir, 'std.err')} | grep -v '^[^\\s:]*\\[3.m'  | tail -n #{tail.to_i} ").read
+     puts CMD.cmd(" cat #{File.join(dir, 'std.err')} | grep -v '^[^\\s:]*\\[3.m'  | grep -v -e '^[[:space:]]*$' | tail -n #{tail.to_i} ").read
    end
  end
 
