@@ -38,3 +38,4 @@ geom_entity <- function (real.geom = NULL, mapping = NULL, data = NULL, stat = "
     rg
 }
 
+rbbt.ggplot2.rotate_x_labels <- function(){ theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) }

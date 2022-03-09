@@ -5,10 +5,10 @@ module Workflow
 
     def self.job_workload(job)
       workload = {job => []}
-      return workload if job.done?
+      return workload if job.done? && ! job.dirty?
 
       job.dependencies.each do |dep|
-        next if dep.done?
+        next if dep.done? && ! job.dirty?
         workload.merge!(job_workload(dep))
         workload[job] += workload[dep]
         workload[job] << dep
@@ -16,7 +16,7 @@ module Workflow
       end
 
       job.input_dependencies.each do |dep|
-        next if dep.done?
+        next if dep.done? && ! job.dirty?
         workload.merge!(job_workload(dep))
         workload[job] += workload[dep]
         workload[job] << dep
