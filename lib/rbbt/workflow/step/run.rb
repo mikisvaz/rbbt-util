@@ -181,8 +181,8 @@ class Step
     #  end
     #end
 
-    Log.high "Some newer files found: #{Misc.fingerprint outdated_time}" if outdated_time.any?
-    Log.high "Some outdated files found: #{Misc.fingerprint outdated_dep}" if outdated_dep.any?
+    Log.medium "Some newer files found: #{Misc.fingerprint outdated_time}" if outdated_time.any?
+    Log.medium "Some outdated files found: #{Misc.fingerprint outdated_dep}" if outdated_dep.any?
 
     outdated_time + outdated_dep
   end

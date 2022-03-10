@@ -1,4 +1,6 @@
 module Rbbt 
+
+  prepare_for_execution(job)
   def self.migrate_source_paths(path, resource = Rbbt, source = nil)
     if source
       lpath, *paths = Misc.ssh_run(source, <<-EOF).split("\n")
@@ -44,6 +46,8 @@ puts resource[path].find(search_path)
     excludes += (options[:exclude] || "").split(/,\s*/)
     excludes_str = excludes.collect{|s| "--exclude '#{s}'" } * " "
 
+    hard_link = options[:hard_link]
+
     other = options[:other] || []
 
     test_str = options[:test] ? '-nv' : ''
@@ -81,6 +85,8 @@ puts resource[path].find(search_path)
          
         # rsync_args = "-avztAXHP --copy-unsafe-links"
         rsync_args = "-avztAHP --copy-unsafe-links"
+
+        rsync_args << " --link-dest '#{source_path}'" if hard_link && ! options[:source]
 
         cmd = "rsync #{rsync_args} #{test_str} #{files_from_str} #{excludes_str} '#{source_path}' #{target_path} #{other * " "}"
 

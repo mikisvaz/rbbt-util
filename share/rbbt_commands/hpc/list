@@ -284,7 +284,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
      puts CMD.cmd("grep -i -w 'Completed step' #{File.join(dir, 'std.err')} | grep -v 'Retrying dep.' | tail -n #{tail.to_i}", :no_fail => true).read
    else
      puts Log.color(:magenta, "Log tail: ")
-     puts CMD.cmd(" cat #{File.join(dir, 'std.err')} | grep -v '^[^\\s:]*\\[3.m'  | grep -v -e '^[[:space:]]*$' | tail -n #{tail.to_i} ").read
+     puts CMD.cmd(" cat #{File.join(dir, 'std.err')} | grep -v '^[^\\s:]*\\[3.m'  | grep -v -e '^[[:space:]]*$' | grep -v  \"\\(STDOUT\\|STDERR\\):[[:space:]]*$\" | tail -n #{tail.to_i} ").read
    end
  end
 

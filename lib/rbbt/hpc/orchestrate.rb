@@ -5,6 +5,19 @@ require 'rbbt/hpc/orchestrate/batches'
 module HPC
   module Orchestration
 
+    def prepare_for_execution(job)
+      rec_dependencies = job.rec_dependencies(true)
+
+      return if rec_dependencies.empty?
+
+      all_deps = rec_dependencies + [job]
+
+      all_deps.each do |dep|
+        Step.prepare_for_execution(dep)
+      end
+
+    end
+
     def orchestrate_job(job, options)
       options.delete "recursive_clean"
       options.delete "clean_task"
@@ -13,6 +26,9 @@ module HPC
       options.delete "printpath"
       options.delete "detach"
       options.delete "jobname"
+
+      Log.high "Prepare for exec"
+      prepare_for_execution(job)
 
       if options[:orchestration_rules]
         rules = YAML.load(Open.read(options[:orchestration_rules]))
@@ -24,6 +40,7 @@ module HPC
 
       IndiferentHash.setup(rules)
 
+      Log.high "Compute batches"
       batches = HPC::Orchestration.job_batches(rules, job)
 
       batch_ids = {}
