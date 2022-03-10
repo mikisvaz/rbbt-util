@@ -544,7 +544,7 @@ env > #{batch_options[:fenv]}
         Misc.add_defaults options, 
           :batch_dir => batch_dir, 
           :inputs_dir => File.join(batch_dir, "inputs_dir"),
-          :workflows => workflows_to_load * ","
+          :workflows => workflows_to_load.uniq * ","
 
         options[:procpath_performance] ||= File.join(batch_dir, "procpath##{procpath.gsub(',', '#')}") if procpath
 
