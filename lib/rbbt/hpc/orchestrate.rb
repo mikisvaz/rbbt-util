@@ -79,7 +79,7 @@ module HPC
           puts Log.color(:magenta, "Manifest: ") + Log.color(:blue, job_options[:manifest] * ", ") + " - tasks: #{job_options[:task_cpus] || 1} - time: #{job_options[:time]} - config: #{job_options[:config_keys]}"
           puts Log.color(:magenta, "Deps: ") + Log.color(:blue, job_options[:batch_dependencies]*", ")
           puts Log.color(:yellow, "Path: ") + top[:top_level].path
-          puts Log.color(:yellow, "Options: ") + Misc.fingerprint(job_options)
+          puts Log.color(:yellow, "Options: ") + job_options.inspect
           batch_ids[top] = top[:top_level].task_signature
         else
           id = run_job(top[:top_level], job_options)

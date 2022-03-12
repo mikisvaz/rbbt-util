@@ -22,6 +22,7 @@ $ rbbt slurm list [options]
 -s--search* Regular expression
 -t--tail* Show the last lines of the STDERR
 -l--long Show more entries
+-c--compressed Show compressed information about entries
 -p--progress Report progress of job and the dependencies
 -BP--batch_parameters show batch parameters
 -BPP--batch_procpath show Procpath performance summary
@@ -185,6 +186,33 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
  end
 
 
+ if options[:compressed] 
+   status = exit_status ? (exit_status == 0 ? Log.color(:green, "Done") : Log.color(:red, "Error")) :  Log.color(:green, id)  
+   prog_rep = []
+   if options[:progress] 
+     step_line = Open.read(fcmd).split("\n").select{|line| line =~ /^#STEP_PATH:/}.first
+     if step_line
+       require 'rbbt/workflow'
+       step_path = step_line.split(": ").last.strip
+       step = Step.new step_path
+       step.load_dependencies_from_info
+       has_bar = false
+       (step.rec_dependencies + [step]).reverse.each do |j|
+         next if j.done? 
+         if j.file(:progress).exists?
+           bar = Log::ProgressBar.new 
+           bar.load(j.file(:progress).yaml)
+           prog_rep << bar.report_msg.split("·")[0..1]
+         end
+       end
+     end
+   end
+   workflow, task, name = step_path.split("/")[-3..-1]
+   job_str = [Log.color(:yellow, workflow), Log.color(:magenta, task), name] * "/"
+   puts [job_str, status, prog_rep ].flatten * " "
+   next
+ end
+
  puts Log.color :blue, dir
  puts Log.color(:magenta, "Creation: ") << File.mtime(File.join(dir, 'command.batch')).to_s if long
  puts Log.color(:magenta, "Started: ") << File.ctime(File.join(dir, 'std.err')).to_s if File.exist?(File.join(dir, 'std.err')) && long
@@ -232,22 +260,22 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
    cpu_average = {}
    rss_average = {}
    perf.through :key, ["ts", 'stat_pid', "stat_utime", "stat_stime", "stat_cutime", "stat_cstime", "stat_rss"] do |k, values|
-    time, stat_pid, ucpu, scpu, ccpu, cscpu, rss = values
-    time = time.to_f
+     time, stat_pid, ucpu, scpu, ccpu, cscpu, rss = values
+     time = time.to_f
 
-    cpu = Misc.sum([ucpu, scpu].collect{|v| v.to_f})
-    cpu_average[stat_pid] ||= {}
-    cpu_average[stat_pid][time] ||= []
-    cpu_average[stat_pid][time] << cpu.to_f
-    rss_average[time] ||= []
-    rss_average[time] << rss.to_f * page_size
+     cpu = Misc.sum([ucpu, scpu].collect{|v| v.to_f})
+     cpu_average[stat_pid] ||= {}
+     cpu_average[stat_pid][time] ||= []
+     cpu_average[stat_pid][time] << cpu.to_f
+     rss_average[time] ||= []
+     rss_average[time] << rss.to_f * page_size
    end
 
    ticks = 0
    cpu_average.each do |stat_pid, cpu_average_pid|
-    start = cpu_average_pid.keys.sort.first
-    eend = cpu_average_pid.keys.sort.last
-    ticks += Misc.sum(cpu_average_pid[eend]) - Misc.sum(cpu_average_pid[start])
+     start = cpu_average_pid.keys.sort.first
+     eend = cpu_average_pid.keys.sort.last
+     ticks += Misc.sum(cpu_average_pid[eend]) - Misc.sum(cpu_average_pid[start])
    end
    start = rss_average.keys.sort.first
    eend = rss_average.keys.sort.last
