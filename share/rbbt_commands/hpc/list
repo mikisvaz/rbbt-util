@@ -186,8 +186,15 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
  end
 
 
+ count += 1
+
  if options[:compressed] 
    status = exit_status ? (exit_status == 0 ? Log.color(:green, "Done") : Log.color(:red, "Error")) :  Log.color(:green, id)  
+   if different_system
+     status = exit_status ? (exit_status == 0 ? Log.color(:green, "Done") : Log.color(:red, "Error")) + " (#{ id })" :  Log.color(:green, id)  
+   else
+     status = exit_status ? (exit_status == 0 ? Log.color(:green, "Done") : Log.color(:red, "Error")) + " (#{ id })" :  (running_jobs.include?(id) || $norunningjobs ? Log.color(:green, id) : Log.color(:red, id) )
+   end 
    prog_rep = []
    if options[:progress] 
      step_line = Open.read(fcmd).split("\n").select{|line| line =~ /^#STEP_PATH:/}.first
@@ -336,8 +343,6 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
      puts Log.color(:magenta, "Progress: ") + Log.color(:yellow, step.task_signature) + " #{step.status}" unless has_bar
    end
  end
-
- count += 1
 
 end
 
