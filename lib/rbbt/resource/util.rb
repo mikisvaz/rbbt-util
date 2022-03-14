@@ -1,13 +1,26 @@
 module Path
 
   def self.caller_lib_dir(file = nil, relative_to = ['lib', 'bin'])
-    file = caller.reject{|l| 
-      l =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
-      l =~ /rbbt\/resource\/path\.rb/ or
-      l =~ /rbbt\/persist.rb/ or
-      l =~ /rbbt\/util\/misc\.rb/ or
-      l =~ /progress-monitor\.rb/ 
-    }.first.sub(/\.rb[^\w].*/,'.rb') if file.nil?
+    #file = caller.reject{|l| 
+    #  l =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
+    #  l =~ /rbbt\/resource\/path\.rb/ or
+    #  l =~ /rbbt\/persist.rb/ or
+    #  l =~ /rbbt\/util\/misc\.rb/ or
+    #  l =~ /progress-monitor\.rb/ 
+    #}.first.sub(/\.rb[^\w].*/,'.rb') if file.nil?
+    
+    
+    if file.nil?
+      caller_dup = caller.dup
+      while file = caller_dup.shift
+        break unless file =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
+          file =~ /rbbt\/resource\/path\.rb/ or
+          file =~ /rbbt\/persist.rb/ or
+          file =~ /rbbt\/util\/misc\.rb/ or
+          file =~ /progress-monitor\.rb/ 
+      end
+      file = file.sub(/\.rb[^\w].*/,'.rb')
+    end
 
     relative_to = [relative_to] unless Array === relative_to
     file = File.expand_path(file)
