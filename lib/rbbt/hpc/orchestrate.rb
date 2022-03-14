@@ -13,7 +13,11 @@ module HPC
       all_deps = rec_dependencies + [job]
 
       all_deps.each do |dep|
-        Step.prepare_for_execution(dep)
+        begin
+          Step.prepare_for_execution(dep)
+        rescue RbbtException
+          next
+        end
       end
 
     end
@@ -40,8 +44,8 @@ module HPC
 
       IndiferentHash.setup(rules)
 
-      Log.high "Compute batches"
       batches = HPC::Orchestration.job_batches(rules, job)
+      Log.high "Compute #{batches.length} batches"
 
       batch_ids = {}
       while batches.any?
