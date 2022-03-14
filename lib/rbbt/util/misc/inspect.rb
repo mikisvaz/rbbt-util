@@ -80,7 +80,7 @@ module Misc
       end
     when (defined? TSV and TSV)
       obj.with_unnamed do
-        "TSV:{"<< fingerprint(obj.all_fields|| []).inspect << ";" << fingerprint(obj.keys).inspect << "}"
+        "TSV:{"<< fingerprint(obj.all_fields|| []) << ";" << fingerprint(obj.keys) << "}"
       end
     when Hash
       if obj.length > 10
@@ -297,14 +297,14 @@ module Misc
     str = case obj
           when nil
             'nil'
+          when Symbol 
+            obj.to_s
           when TrueClass
             'true'
           when FalseClass
             'false'
           when Hash
             "{"<< obj.collect{|k,v| obj2str(k) + '=>' << obj2str(v)}*"," << "}"
-          when Symbol 
-            obj.to_s
           when (defined?(Path) and Path)
             if defined?(Step) && Open.exists?(Step.info_file(obj))
               obj2str(Workflow.load_step(obj))
@@ -324,9 +324,10 @@ module Misc
             end
           when String
             good_filename = Misc.is_filename?(obj, false) && ! %w(. ..).include?(obj) && %w(. /).include?(obj[0])
-            is_path = Path === obj
-            if good_filename && ! is_path
-              obj2str Path.setup(obj.dup)
+            if good_filename 
+              obj = obj.dup
+              obj.extend Path
+              obj2str obj
             else
               obj = obj.chomp if String === obj
               if obj.length > HASH2MD5_MAX_STRING_LENGTH
@@ -339,7 +340,7 @@ module Misc
             if obj.length > HASH2MD5_MAX_ARRAY_LENGTH
               "[" << sample_large_obj(obj, HASH2MD5_MAX_ARRAY_LENGTH).collect{|v| obj2str(v)} * "," << "]"
             else
-              "[" << obj.collect{|v| obj2str(v)} * "," << "]"
+              "[" << obj.collect{|v| obj2str(v) } * "," << "]"
             end
           when TSV::Parser
             remove_long_items(obj)
