@@ -185,6 +185,10 @@ compile(){
     local name=$1; shift
     local extra="$@"
 
+    if [ -f bootstrap ]; then
+      ./bootstrap
+    fi
+
     if [ -f Makefile -o -f makefile ]; then
         make -j 4 || exit -1
         make install || echo "No install"
