@@ -94,8 +94,8 @@ export BATCH_SYSTEM=SLURM
 
       return if Open.exists?(fexit)
 
-      STDERR.puts Log.color(:magenta, "Issuing SLURM file: #{fcmd}")
-      STDERR.puts Open.read(fcmd)
+      Log.info "Issuing SLURM file: #{fcmd}"
+      Log.debug Open.read(fcmd)
 
       if File.exists?(fjob)
         job = Open.read(fjob).to_i

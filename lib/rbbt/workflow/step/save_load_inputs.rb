@@ -1,4 +1,5 @@
 module Workflow
+
   def self.load_inputs(dir, input_names, input_types)
     inputs = {}
     if File.exists?(dir) && ! File.directory?(dir)

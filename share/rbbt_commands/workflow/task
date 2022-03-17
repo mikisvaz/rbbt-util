@@ -148,6 +148,7 @@ def fix_options(workflow, task, job_options)
             else
               value
             end
+
     job_options_cleaned[name] = value
   end
 

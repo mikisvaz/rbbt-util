@@ -141,7 +141,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
    rescue
      nodes = []
    end
- elsif job_nodes[id]
+ elsif job_nodes && job_nodes[id]
    nodes = job_nodes[id].reject{|n| n.include? "("}
  else
    nodes = []
@@ -340,7 +340,10 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
          has_bar = true
        end
      end
-     puts Log.color(:magenta, "Progress: ") + Log.color(:yellow, step.task_signature) + " #{step.status}" unless has_bar
+     step_status = step.status
+     step_status = Log.color :red, step_status if step_status.to_s == 'cleaned'
+     step_status = Log.color :green, step_status if step_status.to_s == 'done'
+     puts Log.color(:magenta, "Progress: ") + Log.color(:yellow, step.task_signature) + " #{step_status}" unless has_bar
    end
  end
 
