@@ -25,7 +25,13 @@ module Workflow
 
         type = :io if file.split(".").last == 'as_io'
 
+        type = :step if file.split(".").last == 'as_step'
+
+        type = :step_file if file.split(".").last == 'as_step_file'
+
         type = :path if file.split(".").last == 'as_path'
+
+        type = :filename if file.split(".").last == 'as_filename'
 
         type = :nofile if file.split(".").last == 'nofile'
 
@@ -33,9 +39,17 @@ module Workflow
         when :nofile
           inputs[input.to_sym]  = Open.realpath(file)
         when :path
-          inputs[input.to_sym]  = Open.realpath(Open.read(file).strip)
+          inputs[input.to_sym]  = Open.read(file).strip
         when :io
           inputs[input.to_sym] = Open.open(Open.realpath(file))
+        when :step
+          inputs[input.to_sym] = Workflow.load_step(Open.read(file).strip)
+        when :step_file
+          path = Open.read(file).strip
+          path.extend Path
+          step_path = path.match(/(.*)\.files/)[1]
+          path.resource = Step.new step_path
+          inputs[input.to_sym] = path
         when :file, :binary
           Log.debug "Pointing #{ input } to #{file}"
           if file =~ /\.yaml/
@@ -88,52 +102,124 @@ module Workflow
     job(task_name, jobname, inputs)
   end
 
+  #def self.load_inputs_old(dir, input_names, input_types)
+  #  inputs = {}
+  #  if File.exists?(dir) && ! File.directory?(dir)
+  #    Log.debug "Loading inputs from #{dir}, not a directory trying as tar.gz"
+  #    tarfile = dir
+  #    digest = CMD.cmd("md5sum '#{tarfile}'").read.split(" ").first
+  #    tmpdir = Rbbt.tmp.input_bundle[digest].find
+  #    Misc.untar(tarfile, tmpdir) unless File.exists? tmpdir
+  #    files = tmpdir.glob("*")
+  #    if files.length == 1 && File.directory?(files.first)
+  #      tmpdir = files.first
+  #    end
+  #    load_inputs(tmpdir, input_names, input_types)
+  #  else
+  #    dir = Path.setup(dir.dup)
+  #    input_names.each do |input|
+  #      file = dir[input].find
+  #      file = dir.glob(input.to_s + ".*").reject{|f| f =~ /\.md5$/}.first if file.nil? or not (File.symlink?(file) || file.exists?)
+  #      Log.debug "Trying #{ input }: #{file}"
+  #      next unless file and (File.symlink?(file) || file.exists?)
+
+  #      type = input_types[input]
+
+  #      type = :io if file.split(".").last == 'as_io'
+
+  #      type = :path if file.split(".").last == 'as_path'
+
+  #      type = :filename if file.split(".").last == 'as_filename'
+
+  #      type = :nofile if file.split(".").last == 'nofile'
+
+  #      case type
+  #      when :nofile
+  #        inputs[input.to_sym]  = Open.realpath(file)
+  #      when :path
+  #        inputs[input.to_sym]  = Open.realpath(Open.read(file).strip)
+  #      when :io
+  #        inputs[input.to_sym] = Open.open(Open.realpath(file))
+  #      when :file, :binary
+  #        Log.debug "Pointing #{ input } to #{file}"
+  #        if file =~ /\.yaml/
+  #          inputs[input.to_sym]  = YAML.load(Open.read(file))
+  #        else
+  #          if File.symlink?(file)
+  #            link_target = File.expand_path(File.readlink(file), File.dirname(file))
+  #            inputs[input.to_sym]  = link_target
+  #          else
+  #            inputs[input.to_sym]  = Open.realpath(file)
+  #          end
+  #        end
+  #      when :text
+  #        Log.debug "Reading #{ input } from #{file}"
+  #        inputs[input.to_sym]  = Open.read(file)
+  #      when :array
+  #        Log.debug "Reading array #{ input } from #{file}"
+  #        inputs[input.to_sym]  = Open.read(file).split("\n")
+  #      when :tsv
+  #        Log.debug "Opening tsv #{ input } from #{file}"
+  #        inputs[input.to_sym]  = TSV.open(file)
+  #      when :boolean
+  #        inputs[input.to_sym]  = (file.read.strip == 'true')
+  #      else
+  #        Log.debug "Loading #{ input } from #{file}"
+  #        inputs[input.to_sym]  = file.read.strip
+  #      end
+
+  #    end
+  #    inputs = IndiferentHash.setup(inputs)
+
+  #    dir.glob("*#*").each do |od|
+  #      name = File.basename(od)
+  #      value = Open.read(od)
+  #      Log.debug "Loading override dependency #{ name } as #{value}"
+  #      inputs[name] = value.chomp
+  #    end
+
+  #    inputs
+  #  end
+  #end
 end
 
 class Step
+  def self.save_input(name, value, type, dir)
+    path = File.join(dir, name.to_s)
+
+
+    case value
+    when Path
+      if Step === value.resource
+        path = path + '.as_step_file'
+      else
+        path = path + '.as_path'
+      end
+    when String
+      if Misc.is_filename?(value, false)
+        value = value.dup
+        value.extend Path
+        return save_input(name, value, type, dir)
+      end
+    when IO
+      path = path + '.as_io'
+    when Step
+      value = value.path
+      path = path + '.as_step'
+    when Array
+      value = value * "\n"
+    end
+
+    Log.debug "Saving job input #{name} (#{type}) into #{path}"
+    Open.write(path, value.to_s)
+  end
+
   def self.save_inputs(inputs, input_types, input_options, dir)
     inputs.each do |name,value|
       type = input_types[name]
       type = type.to_s if type
-      path = File.join(dir, name.to_s)
 
-      path = path + '.as_io' if (IO === value || Step === value) && ! (input_options[name] && input_options[name][:nofile])
-      Log.debug "Saving job input #{name} (#{type}) into #{path}"
-
-      case
-      when IO === value
-        Open.write(path, value.to_s)
-      when Step === value
-        Open.ln_s(value.path, path)
-      when type.to_s == "binary"
-        if String === value && File.exists?(value)
-          value = File.expand_path(value)
-          Open.ln_s(value, path)
-        elsif String === value && Misc.is_filename?(value, false)
-          Open.write(path + '.as_path' , value)
-        else
-          Open.write(path, value, :mode => 'wb')
-        end
-      when type.to_s == "file"
-        if String === value && File.exists?(value)
-          value = File.expand_path(value)
-          Open.ln_s(value, path)
-        else
-          value = value.collect{|v| v = "#{v}" if Path === v; v } if Array === value
-          value = "#{value}" if Path === value
-          Open.write(path + '.yaml', value.to_yaml)
-        end
-      when Array === value
-        Open.write(path, value.collect{|v| Step === v ? v.path : v.to_s} * "\n")
-      when IO === value
-        if value.filename && String === value.filename && File.exists?(value.filename)
-          Open.ln_s(value.filename, path)
-        else
-          Open.write(path, value)
-        end
-      else
-        Open.write(path, value.to_s)
-      end
+      save_input(name, value, type, dir)
     end.any?
   end
 
@@ -177,4 +263,60 @@ class Step
 
     inputs.keys
   end
+
+  #def self.save_inputs_old(inputs, input_types, input_options, dir)
+  #  inputs.each do |name,value|
+  #    type = input_types[name]
+  #    type = type.to_s if type
+  #    path = File.join(dir, name.to_s)
+
+  #    if (IO === value || Step === value) && ! (input_options[name] && input_options[name][:nofile])
+  #      path = path + '.as_io' 
+  #    elsif Misc.is_filename?(value, false)
+  #      path = path + '.as_filename'
+  #    end
+
+  #    Log.debug "Saving job input #{name} (#{type}) into #{path}"
+
+  #    case
+  #    when IO === value
+  #      Open.write(path, value.to_s)
+  #    when Step === value
+  #      Open.ln_s(value.path, path)
+  #    when type.to_s == "binary"
+  #      if String === value && File.exists?(value)
+  #        value = File.expand_path(value)
+  #        Open.ln_s(value, path)
+  #      elsif String === value && Misc.is_filename?(value, false)
+  #        Open.write(path + '.as_path' , value)
+  #      else
+  #        Open.write(path, value, :mode => 'wb')
+  #      end
+  #    when TSV === value
+  #      Open.write(path, value.to_s)
+  #    when Array === value
+  #      Open.write(path, value.collect{|v| Step === v ? v.path : v.to_s} * "\n")
+  #    when %w(file tsv array).include?(type.to_s)
+  #      if String === value && File.exists?(value)
+  #        value = File.expand_path(value)
+  #        Open.ln_s(value, path)
+  #      elsif String === value && Misc.is_filename?(value, false)
+  #        Open.write(path + '.as_path' , value)
+  #      else
+  #        value = value.collect{|v| v = "#{v}" if Path === v; v } if Array === value
+  #        value = "#{value}" if Path === value
+  #        Open.write(path + '.yaml', value.to_yaml)
+  #      end
+  #    when IO === value
+  #      if value.filename && String === value.filename && File.exists?(value.filename)
+  #        Open.ln_s(value.filename, path)
+  #      else
+  #        Open.write(path, value)
+  #      end
+  #    else
+  #      Open.write(path, value.to_s)
+  #    end
+  #  end.any?
+  #end
+
 end
