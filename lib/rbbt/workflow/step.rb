@@ -376,9 +376,9 @@ class Step
                        }
                        raise "Dependency step not found: #{ name }" if deps.empty?
                        if (deps & self.dependencies).any?
-                         (deps & self.dependencies).first
+                         (deps & self.dependencies).last
                        else
-                         deps.first
+                         deps.last
                        end
                      end
   end

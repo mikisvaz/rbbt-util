@@ -30,6 +30,7 @@ module HPC
       options.delete "printpath"
       options.delete "detach"
       options.delete "jobname"
+      options.delete "load_inputs"
 
       Log.high "Prepare for exec"
       prepare_for_execution(job)
