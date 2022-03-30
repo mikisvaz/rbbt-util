@@ -60,5 +60,6 @@ class Step
     end
 end
 
-ARGV.concat ["-W", $slurm_options[:workflows], '--detach'] if $slurm_options[:workflows]
+ARGV.concat ['--detach']
+ARGV.concat ["-W", $slurm_options[:workflows]] if $slurm_options[:workflows]
 load Rbbt.share.rbbt_commands.workflow.task.find

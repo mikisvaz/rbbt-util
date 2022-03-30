@@ -57,6 +57,7 @@ else
   step_path = nil
 end
 
+puts Log.color(:magenta, "Directory: ") + directory if directory
 puts Log.color(:magenta, "Step path: ") + step_path if step_path
 
 HPC::BATCH_MODULE.follow_job directory, true
