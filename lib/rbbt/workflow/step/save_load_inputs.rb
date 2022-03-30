@@ -21,15 +21,21 @@ module Workflow
         Log.debug "Trying #{ input }: #{file}"
         next unless file and (File.symlink?(file) || file.exists?)
 
-        type = input_types[input]
+        type = orig_type = input_types[input]
 
         type = :io if file.split(".").last == 'as_io'
 
         type = :step if file.split(".").last == 'as_step'
 
+        type = :step_array if file.split(".").last == 'as_step_array'
+
         type = :step_file if file.split(".").last == 'as_step_file'
 
+        type = :step_file_array if file.split(".").last == 'as_step_file_array'
+
         type = :path if file.split(".").last == 'as_path'
+
+        type = :path_array if file.split(".").last == 'as_path_array'
 
         type = :filename if file.split(".").last == 'as_filename'
 
@@ -38,18 +44,32 @@ module Workflow
         case type
         when :nofile
           inputs[input.to_sym]  = Open.realpath(file)
+        when :path_array
+          inputs[input.to_sym]  = Open.read(file).strip.split("\n")
         when :path
-          inputs[input.to_sym]  = Open.read(file).strip
+          inputs[input.to_sym]  = Open.read(file).strip.split("\n").first
         when :io
-          inputs[input.to_sym] = Open.open(Open.realpath(file))
+          inputs[input.to_sym] = Open.open(Open.realpath(file)).split("\n")
+        when :step_array
+          steps = Open.read(file).strip.split("\n").collect{|path| Workflow.load_step(path) }
+          inputs[input.to_sym] = steps
         when :step
-          inputs[input.to_sym] = Workflow.load_step(Open.read(file).strip)
+          steps = Open.read(file).strip.split("\n").collect{|path| Workflow.load_step(path) }
+          inputs[input.to_sym] = steps.first
         when :step_file
           path = Open.read(file).strip
           path.extend Path
           step_path = path.match(/(.*)\.files/)[1]
           path.resource = Step.new step_path
           inputs[input.to_sym] = path
+        when :step_file_array
+          paths = Open.read(file).split("\n")
+          paths.each do |path| 
+            path.extend Path
+            step_path = path.match(/(.*)\.files/)[1]
+            path.resource = Step.new step_path
+          end
+          inputs[input.to_sym] = paths
         when :file, :binary
           Log.debug "Pointing #{ input } to #{file}"
           if file =~ /\.yaml/
@@ -187,7 +207,6 @@ class Step
   def self.save_input(name, value, type, dir)
     path = File.join(dir, name.to_s)
 
-
     case value
     when Path
       if Step === value.resource
@@ -207,6 +226,24 @@ class Step
       value = value.path
       path = path + '.as_step'
     when Array
+      case value.first
+      when Path
+        if Step === value.first.resource
+          path = path + '.as_step_file_array'
+        else
+          path = path + '.as_path_array'
+        end
+      when String
+        if Misc.is_filename?(value.first, false)
+          path = path + '.as_path'
+        end
+      when IO
+        path = path + '.as_io'
+      when Step
+        path = path + '.as_step_array'
+        value = value.collect{|s| s.path }
+      end
+
       value = value * "\n"
     end
 
