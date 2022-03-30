@@ -125,8 +125,10 @@ module HPC
           next if batch[:deps].nil?
 
           if batch[:deps].any?
+            batch_dep_jobs = batch[:top_level].rec_dependencies
             target = batch[:deps].select do |target|
-              (batch[:deps] - [target] - target[:deps]).empty?
+              batch_dep_jobs.include?(target[:top_level]) && # Don't piggyback batches that are an input dependency, only real dependencies
+                (batch[:deps] - [target] - target[:deps]).empty?
             end.first
             next if target.nil?
             target[:jobs] = batch[:jobs] + target[:jobs]
