@@ -25,6 +25,8 @@ module Workflow
 
         type = :io if file.split(".").last == 'as_io'
 
+        type = :io_array if file.split(".").last == 'as_io_array'
+
         type = :step if file.split(".").last == 'as_step'
 
         type = :step_array if file.split(".").last == 'as_step_array'
@@ -50,6 +52,8 @@ module Workflow
           inputs[input.to_sym]  = Open.read(file).strip.split("\n").first
         when :io
           inputs[input.to_sym] = Open.open(Open.realpath(file)).split("\n")
+        when :io
+          inputs[input.to_sym] = Open.realpath(file).split("\n").collect{|f| Open.open(f)}
         when :step_array
           steps = Open.read(file).strip.split("\n").collect{|path| Workflow.load_step(path) }
           inputs[input.to_sym] = steps
@@ -235,10 +239,10 @@ class Step
         end
       when String
         if Misc.is_filename?(value.first, false)
-          path = path + '.as_path'
+          path = path + '.as_path_array'
         end
       when IO
-        path = path + '.as_io'
+        path = path + '.as_io_array'
       when Step
         path = path + '.as_step_array'
         value = value.collect{|s| s.path }
