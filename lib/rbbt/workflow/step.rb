@@ -15,7 +15,7 @@ class Step
   attr_accessor :exec
   attr_accessor :relocated
   attr_accessor :result, :mutex, :seen
-  attr_accessor :real_inputs, :original_task_name
+  attr_accessor :real_inputs, :original_task_name, :original_workflow
 
   RBBT_DEBUG_CLEAN = ENV["RBBT_DEBUG_CLEAN"] == 'true'
 

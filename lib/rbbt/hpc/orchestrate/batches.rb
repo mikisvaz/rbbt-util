@@ -101,7 +101,9 @@ module HPC
 
       batches.each do |batch|
         job_rules = batch[:jobs].inject(nil) do |acc,job|
-          task_rules = task_specific_rules(rules, job.workflow, job.task_name)
+          workflow = job.original_workflow || job.workflow
+          task_name = job.original_task_name || job.task_name
+          task_rules = task_specific_rules(rules, workflow, task_name)
           acc = accumulate_rules(acc, task_rules.dup)
         end
 
@@ -120,6 +122,7 @@ module HPC
         end
 
         batches.each do |batch|
+          next if batch[:top_level].overriden?
           next unless batch[:rules][:skip]
           batch[:rules].delete :skip
           next if batch[:deps].nil?

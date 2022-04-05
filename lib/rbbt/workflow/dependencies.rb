@@ -72,9 +72,12 @@ module Workflow
   def setup_override_dependency(dep, workflow, task_name)
     return [] if dep == :skip || dep == 'skip'
     dep = Step === dep ? dep.dup : Workflow.load_step(dep)
+
+    dep.original_workflow ||= dep.workflow if dep.workflow
+    dep.original_task_name ||= dep.task_name if dep.workflow
+
     dep.workflow = workflow
     dep.info[:name] = dep.name
-    dep.original_task_name ||= dep.task_name if dep.workflow
 
 
     begin

@@ -355,7 +355,7 @@ module Misc
               "<IO:" << obj.path << "--" << mtime_str(obj.path) << ">"
             end
           when (defined? Step and Step)
-            "<IO:" << obj.short_path << ">"
+            "<IO:" << obj.short_path_real << ">"
           when IO
             if obj.respond_to? :filename and obj.filename
               if defined?(Step) && Open.exists?(Step.info_file(obj.filename))

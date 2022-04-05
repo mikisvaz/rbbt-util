@@ -88,8 +88,8 @@ module HPC
     def rbbt_job_exec_cmd(job, options)
 
       jobname  = job.clean_name
-      workflow = job.workflow
-      task     = job.task_name
+      workflow = job.original_workflow || job.workflow
+      task     = job.original_task_name || job.task_name
 
       Misc.add_defaults options, :jobname => jobname
 
@@ -535,8 +535,8 @@ env > #{batch_options[:fenv]}
         :batch_base_dir, :clean_batch_job, :remove_batch_dir, :batch_procpath, :tail, :batch_dependencies, :dry_run,
         :batch_base_dir => File.expand_path(File.join('~/rbbt-batch')) 
 
-      workflow = job.workflow
-      task_name = job.task_name
+      workflow = job.original_workflow ||job.workflow
+      task_name = job.original_task_name || job.task_name
 
       workflows_to_load = job.rec_dependencies.select{|d| Step === d}.collect{|d| d.workflow }.compact.collect(&:to_s) - [workflow.to_s]
 

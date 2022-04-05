@@ -263,8 +263,8 @@ class Step
   def self.save_job_inputs(job, dir, options = nil)
     options = IndiferentHash.setup options.dup if options
 
-    task_name = Symbol === job.overriden ? job.overriden : job.task_name
-    workflow = job.workflow
+    task_name = job.original_task_name || job.task_name
+    workflow = job.original_workflow || job.workflow
     workflow = Kernel.const_get workflow if String === workflow
     if workflow
       task_info = IndiferentHash.setup(workflow.task_info(task_name))

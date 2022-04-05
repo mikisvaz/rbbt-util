@@ -96,6 +96,10 @@ class Step
     [task_name, name] * "/"
   end
 
+  def short_path_real
+    [(Symbol === overriden ? overriden : task_name).to_s, name] * "/"
+  end
+
   def workflow_short_path
     return short_path unless workflow
     workflow.to_s + "#" + short_path
