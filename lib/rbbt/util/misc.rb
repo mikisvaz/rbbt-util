@@ -20,6 +20,7 @@ require 'rbbt/util/misc/options'
 require 'rbbt/util/misc/system'
 require 'rbbt/util/misc/objects'
 require 'rbbt/util/misc/manipulation'
+require 'rbbt/util/misc/communication'
 
 require 'to_regexp'
 

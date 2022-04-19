@@ -385,32 +385,6 @@ def self.add_libdir(dir=nil)
     `ps -o rss -p #{pid || $$}`.strip.split.last.to_i
   end
 
-  PUSHBULLET_KEY=begin
-                   if ENV["PUSHBULLET_KEY"]
-                     ENV["PUSHBULLET_KEY"]
-                   else
-                     config_api = File.join(ENV['HOME'], 'config/apps/pushbullet/apikey')
-                     if File.exist? config_api
-                       File.read(config_api).strip
-                     else
-                       nil
-                     end
-                   end
-                 end
-
-  def self.notify(description, event='notification', key = nil)
-    if PUSHBULLET_KEY.nil? and key.nil?
-      Log.warn "Could not notify, no PUSHBULLET_KEY"
-      return
-    end
-
-    Thread.new do
-      application = 'rbbt'
-      event ||= 'notification'
-      key ||= PUSHBULLET_KEY
-      `curl -s --header "Authorization: Bearer #{key}" -X POST https://api.pushbullet.com/v2/pushes --header 'Content-Type: application/json' --data-binary '{"type": "note", "title": "#{event}", "body": "#{description}"}'`
-    end
-  end
 
   def self.unzip_in_dir(file, dir)
     raise "Target is not a directory: #{file}" if File.exist?(dir) and not File.directory?(dir)

@@ -16,25 +16,6 @@ module Misc
     end
   end
 
-  def self.send_email(from, to, subject, message, options = {})
-    IndiferentHash.setup(options)
-    options = Misc.add_defaults options, :from_alias => nil, :to_alias => nil, :server => 'localhost', :port => 25, :user => nil, :pass => nil, :auth => :login
-
-    server, port, user, pass, from_alias, to_alias, auth = Misc.process_options options, :server, :port, :user, :pass, :from_alias, :to_alias, :auth
-
-    msg = <<-END_OF_MESSAGE
-From: #{from_alias} <#{from}>
-To: #{to_alias} <#{to}>
-Subject: #{subject}
-
-#{message}
-END_OF_MESSAGE
-
-Net::SMTP.start(server, port, server, user, pass, auth) do |smtp|
-  smtp.send_message msg, from, to
-end
-  end
-
   def self.env_add(var, value, sep = ":", prepend = true)
     ENV[var] ||= ""
     return if ENV[var] =~ /(#{sep}|^)#{Regexp.quote value}(#{sep}|$)/

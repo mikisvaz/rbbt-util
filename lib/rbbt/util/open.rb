@@ -678,7 +678,14 @@ module Open
       if Open.exists? notification_file
         key = Open.read(notification_file).strip
         key = nil if key.empty?
-        Misc.notify("Wrote " << file, nil, key)
+        if key.include?("@")
+          to = from = key
+          subject = "Wrote " << file
+          message = "Content attached"
+          Misc.send_email(from, to, subject, message, :files => [file])
+        else
+          Misc.notify("Wrote " << file, nil, key)
+        end
         Open.rm notification_file
       end
     rescue
