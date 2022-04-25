@@ -74,7 +74,10 @@ module Workflow
     dep = Step === dep ? dep.dup : Workflow.load_step(dep)
 
     dep.original_workflow ||= dep.workflow if dep.workflow
-    dep.original_task_name ||= dep.task_name if dep.workflow
+    dep.original_task_name ||= dep.task_name if dep.task_name
+
+    dep.original_task_name ||= dep.path.split("/")[-3]
+    dep.original_task_name ||= dep.path.split("/")[-2]
 
     dep.workflow = workflow
     dep.info[:name] = dep.name
