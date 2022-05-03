@@ -25,6 +25,8 @@ module Task
           selects << [i, task.input_options[i][:select_options]] 
         end
 
+        next if new_inputs.empty?
+
         if task.workflow and task.workflow != workflow
           puts "  #{Log.color :yellow, ["[#{task.workflow.to_s}]", task.name.to_s] *" "}:"
         else
