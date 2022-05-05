@@ -155,6 +155,8 @@ module Resource
       FileUtils.rm_rf final_path if File.exist? final_path
       return false
     end
+
+    final_path
   end
 
   def produce(path, force = false)
@@ -326,10 +328,14 @@ url='#{url}'
           rescue
             FileUtils.rm_rf final_path if File.exist? final_path
             raise $!
-          end unless (remote_server && get_from_server(path, final_path))
+          end unless (remote_server && final_path = get_from_server(path, final_path))
         end
       end
     end
+
+    # After producing a file, make sure we recheck all locations, the file
+    # might have appeared with '.gz' extension for instance
+    path.instance_variable_set("@path", {})
 
     path
   end
