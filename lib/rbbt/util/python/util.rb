@@ -1,0 +1,33 @@
+module RbbtPython
+  def self.py2ruby_a(array)
+    PyCall::List.(array).to_a
+  end
+
+  class << self
+    alias to_a py2ruby_a 
+  end
+
+
+  def self.tsv2df(tsv)
+    df = nil
+    RbbtPython.run 'pandas' do
+      df = pandas.DataFrame.new(tsv.values, columns: tsv.fields, index: tsv.keys)
+      df.columns.name = tsv.key_field
+    end
+    df
+  end
+
+  def self.df2tsv(tuple, options = {})
+    options = Misc.add_defaults options, :type => :list
+    tsv = TSV.setup({}, options)
+    tsv.key_field = tuple.columns.name
+    tsv.fields = py2ruby_a(tuple.columns.values)
+    keys = tuple.index.values
+    PyCall.len(tuple.index).times do |i|
+      k = keys[i]
+      tsv[k] = py2ruby_a(tuple.values[i])
+    end
+    tsv
+  end
+
+end
