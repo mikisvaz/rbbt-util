@@ -328,7 +328,7 @@ url='#{url}'
           rescue
             FileUtils.rm_rf final_path if File.exist? final_path
             raise $!
-          end unless (remote_server && final_path = get_from_server(path, final_path))
+          end unless (remote_server && get_from_server(path, final_path))
         end
       end
     end
