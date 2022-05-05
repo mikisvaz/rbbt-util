@@ -21,16 +21,18 @@ export BATCH_SYSTEM=SLURM
     def self.header(options = {})
       options = options.dup
 
-      queue          = Misc.process_options options, :queue
-      task_cpus      = Misc.process_options options, :task_cpus
-      time           = Misc.process_options options, :time
-      nodes          = Misc.process_options options, :nodes
-      workdir        = Misc.process_options options, :workdir
-      exclusive      = Misc.process_options options, :exclusive
-      highmem        = Misc.process_options options, :highmem
-      licenses       = Misc.process_options options, :licenses
-      constraint     = Misc.process_options options, :constraint
-      gres           = Misc.process_options options, :gres
+      queue      = Misc.process_options options, :queue
+      account    = Misc.process_options options, :account
+      partition  = Misc.process_options options, :partition
+      task_cpus  = Misc.process_options options, :task_cpus
+      time       = Misc.process_options options, :time
+      nodes      = Misc.process_options options, :nodes
+      workdir    = Misc.process_options options, :workdir
+      exclusive  = Misc.process_options options, :exclusive
+      highmem    = Misc.process_options options, :highmem
+      licenses   = Misc.process_options options, :licenses
+      constraint = Misc.process_options options, :constraint
+      gres       = Misc.process_options options, :gres
 
       constraint     = [constraint, "highmem"].compact * "&" if highmem
 
@@ -47,6 +49,8 @@ export BATCH_SYSTEM=SLURM
 
       sbatch_params = {"job-name" => batch_name,
                        "qos" => queue,
+                       "account" => account,
+                       "partition" => partition,
                        "output" => fout,
                        "error" => ferr,
                        "cpus-per-task" => task_cpus,

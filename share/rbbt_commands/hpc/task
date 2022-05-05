@@ -24,6 +24,8 @@ $slurm_options = SOPT.get <<EOF
 -t--tail Tail the logs
 -BPP--batch_procpath* Save Procpath performance for batch job; specify only options
 -q--queue* Queue
+-a--account* Account
+-p--partition* Partition
 -t--task_cpus* Tasks
 -tm--time* Time
 -m--mem* SLURM minimum memory
