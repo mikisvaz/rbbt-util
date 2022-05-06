@@ -125,6 +125,8 @@ module Workflow
       first = last.nil?
       last = _prov_tasks(workflow.dep_tree(task_name))
 
+      break if child
+
       if child
         description << "-> " << task_name.to_s
       elsif first
