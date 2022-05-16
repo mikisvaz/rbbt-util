@@ -145,7 +145,11 @@ class Step
   end
 
   def input_dependencies
-    @input_dependencies ||= (recursive_inputs.flatten.select{|i| Step === i } + recursive_inputs.flatten.select{|dep| Path === dep && Step === dep.resource }.collect{|dep| dep.resource })
+    @input_dependencies ||= (recursive_inputs.flatten.select{|i| Step === i } + 
+                             recursive_inputs.flatten.
+                              select{|dep| Path === dep && Step === dep.resource }.
+                              select{|dep| ! dep.resource.started? }. # Ignore input_deps already started
+                              collect{|dep| dep.resource })
   end
 
   def execute_dependency(dependency, log = true)
