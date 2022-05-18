@@ -203,33 +203,48 @@ module Misc
 
 
   def self.translate_dna_mutation_hgvs2rbbt(cds)
-    change = case
-             when cds =~ />/
-               cds.split(">").last
-             when cds =~ /del/
-               deletion = cds.split("del").last.chomp
+    change = begin
                case
-               when deletion =~ /^\d+$/
-                 "-" * deletion.to_i
-               when deletion =~ /^[ACTG]+$/i
-                 "-" * deletion.length
+               when cds =~ />/
+                 cds.split(">").last
+               when cds =~ /delins/
+                 del, ins = cds.split("delins")
+                 start, eend = del.split("_")
+                 del_size = eend.to_i - start.to_i + 1
+                 if ins =~ /^[ACTG]+$/i
+                   ("-" * del_size) + ins
+                 else
+                   Log.debug "Unknown delins: #{ cds }"
+                   "?(" << cds << ")"
+                 end
+               when cds =~ /del/
+                 deletion = cds.split("del").last.chomp
+                 case
+                 when deletion =~ /^\d+$/
+                   "-" * deletion.to_i
+                 when deletion =~ /^[ACTG]+$/i
+                   "-" * deletion.length
+                 else
+                   Log.debug "Unknown deletion: #{ cds }"
+                   "?(" << cds << ")"
+                 end
+               when cds =~ /ins/
+                 insertion = cds.split("ins").last
+                 case
+                 when insertion =~ /^\d+$/
+                   "+" + "N" * insertion.to_i
+                 when insertion =~ /^[NACTG]+$/i
+                   "+" + insertion
+                 else
+                   Log.debug "Unknown insertion: #{cds }"
+                   "?(" << cds << ")"
+                 end
                else
-                 Log.debug "Unknown deletion: #{ deletion }"
-                 deletion
+                 Log.debug "Unknown change: #{cds}"
+                 "?(" << cds << ")"
                end
-             when cds =~ /ins/
-               insertion = cds.split("ins").last
-               case
-               when insertion =~ /^\d+$/
-                 "+" + "N" * insertion.to_i
-               when insertion =~ /^[NACTG]+$/i
-                 "+" + insertion
-               else
-                 Log.debug "Unknown insertion: #{insertion }"
-                 insertion
-               end
-             else
-               Log.debug "Unknown change: #{cds}"
+             rescue
+               Log.debug "Error processing change: #{cds}"
                "?(" << cds << ")"
              end
     change
@@ -323,11 +338,11 @@ module Misc
       line.partition(sep).last
     end
   end
-  
+
   def self.sort_genomic_locations_strict(stream, sep = ":")
     sort_stream(stream, '#', "-k1,1V -k2,2n -t#{sep}")
   end
-  
+
   def self.sort_genomic_locations(stream, sep = ":")
     sort_stream(stream, '#', "-k1,1 -k2,2n -t#{sep}")
   end
@@ -483,7 +498,7 @@ module Misc
           sin << [chr, start, eend, id] * "\t" << "\n"
         end
       end
-      
+
       TmpFile.with_file do |tmpfile|
         Misc.consume_stream(nio, false, tmpfile)
 
