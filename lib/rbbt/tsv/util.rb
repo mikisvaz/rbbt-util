@@ -1,11 +1,38 @@
 require 'rbbt/resource/path'
 module TSV
 
+  def self.stream_column(file, column)
+    header = TSV.parse_header(file)
+    pos = header.fields.index(column) + 1
+    sep2 = header.options[:sep2] || "|"
+    case header.type.to_s
+    when nil, "double"
+      TSV.traverse file, :type => :array, :into => :stream do |line|
+        next if line =~ /^#/
+        line.split("\t")[pos].gsub(sep2, "\n")
+      end
+    when "single"
+      TSV.traverse file, :type => :array, :into => :stream do |line|
+        next if line =~ /^#/
+        line.split("\t")[1]
+      end
+    when "flat"
+      TSV.traverse file, :type => :array, :into => :stream do |line|
+        next if line =~ /^#/
+        line.split("\t")[1..-1] * "\n"
+      end
+    when 'list'
+      TSV.traverse file, :type => :array, :into => :stream do |line|
+        next if line =~ /^#/
+        line.split("\t")[pos]
+      end
+    end
+  end
+
   def self.guess_id(identifier_file, values, options = {})
     field_matches = TSV.field_match_counts(identifier_file, values, options)
     field_matches.sort_by{|field, count| count.to_i}.last
   end
-
 
   def self.field_match_counts(file, values, options = {})
     options = Misc.add_defaults options, :persist_prefix => "Field_Matches"
