@@ -94,10 +94,10 @@ module Misc
   end
 
   def self.is_filename?(string, need_to_exists = true)
-    return false if string.nil? or string.include? "\n"
+    return false if string.nil?
     return true if defined? Path and Path === string
     return true if string.respond_to? :exists
-    return true if String === string and string.split("/").select{|p| p.length > 265}.empty? and (! need_to_exists || File.exist?(string))
+    return true if String === string and ! string.include?("\n") and string.split("/").select{|p| p.length > 265}.empty? and (! need_to_exists || File.exist?(string))
     return false
   end
 
