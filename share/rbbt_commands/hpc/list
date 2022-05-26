@@ -205,6 +205,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
        step.load_dependencies_from_info
        has_bar = false
        (step.rec_dependencies + [step]).reverse.each do |j|
+         next if options[:compressed] && j != step
          next if j.done? 
          if j.file(:progress).exists?
            bar = Log::ProgressBar.new 
