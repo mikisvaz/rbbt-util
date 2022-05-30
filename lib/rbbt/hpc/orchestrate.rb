@@ -49,6 +49,8 @@ module HPC
       Log.high "Compute #{batches.length} batches"
 
       batch_ids = {}
+      last_id = nil
+      last_dir = nil
       while batches.any?
         top = batches.select{|b| b[:deps].nil? || (b[:deps] - batch_ids.keys).empty? }.first
         raise "No batch without unmet dependencies" if top.nil?
@@ -87,10 +89,12 @@ module HPC
           puts Log.color(:yellow, "Options: ") + job_options.inspect
           batch_ids[top] = top[:top_level].task_signature
         else
-          id = run_job(top[:top_level], job_options)
-          batch_ids[top] = id
+          id, dir = run_job(top[:top_level], job_options)
+          last_id = batch_ids[top] = id
+          last_dir = dir
         end
       end
+      [last_id, last_dir]
     end
 
   end

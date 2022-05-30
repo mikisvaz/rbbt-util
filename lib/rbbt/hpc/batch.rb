@@ -555,7 +555,7 @@ env > #{batch_options[:fenv]}
 
         batch_job = run_template(batch_dir, dry_run)
 
-        return batch_job unless tail
+        return [batch_job, batch_dir] unless tail
 
         t_monitor = Thread.new do
           self.follow_job(batch_dir, :STDERR)
@@ -570,8 +570,8 @@ env > #{batch_options[:fenv]}
           Open.ln path + '.info', job.path + '.info'  if Open.exists?(path + '.info')
           Open.ln path + '.files', job.path + '.files' if Open.exists?(path + '.files')
         end
-        batch_job
- 
+
+        [batch_job, batch_dir]
       end
     end
 

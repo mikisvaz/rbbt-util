@@ -100,11 +100,13 @@ class Step
     step.dependencies.each do |dep|
       if dep.input_dependencies.any?
         dep.input_dependencies.each do |id|
-          input_name = dep.recursive_inputs.fields.zip(dep.recursive_inputs).select{|f,d| 
+          input_name, _dep = dep.recursive_inputs.fields.zip(dep.recursive_inputs).select{|f,d| 
             d == id || (String === d && d.start_with?(id.files_dir)) || (Array === d && d.include?(id))
-          }.last.first
-          input_dependencies[id] ||= []
-          input_dependencies[id] << [dep, input_name]
+          }.last
+          if input_name
+            input_dependencies[id] ||= []
+            input_dependencies[id] << [dep, input_name]
+          end
         end
       end
     end

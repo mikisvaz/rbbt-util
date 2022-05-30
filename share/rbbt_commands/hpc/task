@@ -47,17 +47,18 @@ HPC::BATCH_MODULE = HPC.batch_system batch_system
 raise ParameterException.new("Could not detect batch_system: #{Misc.fingerprint batch_system}") if HPC::BATCH_MODULE.nil?
 
 class Step
-    def run(*args)
-        if done?
-            self.load
-        else
-            begin
-                Log.debug "Issuing SLURM job for #{self.path}"
-                HPC::BATCH_MODULE.run_job(self, SOPT::GOT_OPTIONS.merge($slurm_options)) 
-            rescue HPC::SBATCH
-            end
-        end
+
+  def run(*args)
+    if done?
+      self.load
+    else
+      begin
+        Log.debug "Issuing SLURM job for #{self.path}"
+        HPC::BATCH_MODULE.run_job(self, SOPT::GOT_OPTIONS.merge($slurm_options)) 
+      rescue HPC::SBATCH
+      end
     end
+  end
 end
 
 ARGV.concat ["-W", $slurm_options[:workflows]] if $slurm_options[:workflows]
