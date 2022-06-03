@@ -414,7 +414,7 @@ module Workflow
     end if task.required_inputs
 
     if missing_inputs.length == 1
-      raise ParameterException, "Input #{missing_inputs.first} is required but was not provided or is nil"
+      raise ParameterException, "Input '#{missing_inputs.first}' is required but was not provided or is nil"
     end
 
     if missing_inputs.length > 1

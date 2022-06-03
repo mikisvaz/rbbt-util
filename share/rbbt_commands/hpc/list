@@ -356,5 +356,5 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
 end
 
 puts 
-puts "Found #{count} jobs"
+puts Log.color :clear, "Found #{count} jobs"
 

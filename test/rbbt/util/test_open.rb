@@ -186,6 +186,6 @@ class TestOpen < Test::Unit::TestCase
     end
 
   end
-  
+
 end
 

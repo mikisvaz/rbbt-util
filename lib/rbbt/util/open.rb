@@ -748,6 +748,7 @@ module Open
           raise $!
         end
         content.close
+        content.join if content.respond_to? :join
       end
     end
 

@@ -92,7 +92,6 @@ module Misc
       ConcurrentStream.setup sout, :pids => [pid]
     else
 
-
       ConcurrentStream.setup sin, :pair => sout
       ConcurrentStream.setup sout, :pair => sin
 
@@ -780,6 +779,15 @@ module Misc
 
     stream.annotate out if stream.respond_to? :annotate
     ConcurrentStream.setup out, :threads => monitor_thread
+  end
+
+  def self.open_gz_pipe
+    sout = Misc.open_pipe do |sin|
+      yield sin
+      sin.close
+    end
+
+    Open.gzip(sout)
   end
 
 end

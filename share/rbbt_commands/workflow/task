@@ -469,7 +469,7 @@ begin
   end
 
   if options.delete(:printpath)
-    job.join
+    job.join if job.running?
     raise job.messages.last if (job.error? || job.aborted?) && job.messages
     if Open.remote? job.path
       puts job.url + Log.color(:blue, "?_format=raw")

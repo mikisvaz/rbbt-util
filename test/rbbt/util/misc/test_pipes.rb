@@ -284,4 +284,41 @@ line4
       end
     end
   end
+
+  def test_gz_pipe
+    text =<<-EOF
+line1
+line2
+line3
+line4
+    EOF
+
+    TmpFile.with_file nil, :extension => 'txt.gz' do |file|
+      sout = Misc.open_gz_pipe do |sin|
+        text.split("\n").each do |line|
+          sin.puts line
+        end
+      end
+
+      Open.mkdir File.basename(file)
+      thr1 = Misc.consume_stream(sout, true, file)
+      thr1.join
+      assert Open.gzip?(file)
+      assert_equal text, Open.read(file)
+    end
+  end
+
+  def test_open_pipe_error
+    sout = Misc.open_pipe do |sin|
+      10.times do |i|
+        sin.puts "line #{i}"
+      end
+      raise
+    end
+
+    TmpFile.with_file do |tmp|
+      #Misc.consume_stream(sout, false, tmp)
+      Open.write(tmp, sout)
+    end
+  end
 end
