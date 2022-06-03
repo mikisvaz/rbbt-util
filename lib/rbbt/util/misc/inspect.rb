@@ -56,7 +56,8 @@ module Misc
       ":" << obj.to_s
     when String
       if obj.length > 100
-        "'" << obj.slice(0,30) << "<...#{obj.length}...>" << obj.slice(-10,30)<< "'"
+        digest = Misc.digest(obj)
+        "'" << obj.slice(0,30) << "<...#{obj.length} - #{digest[0..4]}...>" << obj.slice(-10,30)<< "'"
       else 
         "'" << obj << "'"
       end
