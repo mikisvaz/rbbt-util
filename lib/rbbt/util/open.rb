@@ -678,7 +678,7 @@ module Open
       if Open.exists? notification_file
         key = Open.read(notification_file).strip
         key = nil if key.empty?
-        if key.include?("@")
+        if key && key.include?("@")
           to = from = key
           subject = "Wrote " << file
           message = "Content attached"

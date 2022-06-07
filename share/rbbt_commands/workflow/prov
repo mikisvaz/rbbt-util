@@ -36,7 +36,7 @@ file = ARGV.shift
 
 $seen = []
 def get_step(file)
-  file = File.expand_path(file)
+  file = File.expand_path(file) if File.exists?(file)
   file = file.sub(/\.(info|files)$/,'')
   $seen << file
   Workflow.load_step file

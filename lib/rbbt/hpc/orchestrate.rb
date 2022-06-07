@@ -31,6 +31,7 @@ module HPC
       options.delete "detach"
       options.delete "jobname"
       options.delete "load_inputs"
+      options.delete "provenance"
 
       Log.high "Prepare for exec"
       prepare_for_execution(job)

@@ -542,7 +542,16 @@ module Workflow
     step_path = step_path.call if Proc === step_path
     persist = input_values.nil? ? false : true
     persist = false
+
+    if ! (Path === step_path ? step_path.find : File.exists?(step_path)) && step_path.split("/").length == 3 && File.exists?(new_path = Rbbt.var.jobs[step_path].find)
+      step_path = new_path
+    end
+    
     key = Path === step_path ? step_path.find : step_path
+
+    if ! File.exists?(step_path) && step_path.split("/").length == 3 && File.exists?(new_path = Rbbt.var.jobs[step_path].find)
+      step_path = new_path
+    end
 
     step = Step.new step_path, task, input_values, dependencies
 
@@ -703,7 +712,15 @@ module Workflow
 
   def self.load_step(path)
     path = Path.setup(path.dup) unless Path === path
-    path = path.find
+
+    if ! (Path === path ? path.exists? : File.exists?(path)) && path.split("/").length == 3 
+      new_path = Rbbt.var.jobs[path]
+      if new_path.exists? || new_path.set_extension('info').exists?
+        path = new_path
+      end
+    end
+
+    path = path.find if Path === path
 
     begin
       _load_step(path)
