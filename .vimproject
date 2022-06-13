@@ -19,7 +19,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   rbbt-util.rb
 
   rbbt=rbbt{
-   monitor.rb
    util=util{
     misc.rb
     misc=misc{
@@ -108,6 +107,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     migrate.rb
    }
 
+   monitor.rb
    workflow.rb
    workflow=workflow{
     annotate.rb
@@ -167,6 +167,26 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
       workflow.rb
      }
     }
+   }
+
+   hpc.rb
+   hpc=hpc{
+    old=old{
+     slurm.rb
+    }
+
+    batch.rb
+    slurm.rb
+    lsf.rb
+
+    orchestrate.rb
+    orchestrate=orchestrate{
+     rules.rb
+     chains.rb
+     batches.rb
+    }
+    orchestrate.old.rb
+    trace.rb
    }
 
    tsv.rb
@@ -257,25 +277,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     traverse.rb
    }
 
-   hpc.rb
-   hpc=hpc{
-    old=old{
-     slurm.rb
-    }
-
-    batch.rb
-    slurm.rb
-    lsf.rb
-
-    orchestrate.rb
-    orchestrate=orchestrate{
-     rules.rb
-     chains.rb
-     batches.rb
-    }
-    orchestrate.old.rb
-    trace.rb
-   }
   }
  }
  test=test {
