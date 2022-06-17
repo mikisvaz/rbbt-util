@@ -598,14 +598,14 @@ when Step
   elsif detach
     exit! 0
   else
-    res.join
+      res.join if res.running?
     if %w(float integer string boolean).include?(res.result_type.to_s)
       out.puts res.load
     else
       Open.open(res.path, :mode => 'rb') do |io|
         Misc.consume_stream(io, false, out)
       end if Open.exist?(res.path) || Open.remote?(res.path) || Open.ssh?(res.path)
-    end
+    end if res.done?
   end
 else
   if Array === res
