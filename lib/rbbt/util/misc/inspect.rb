@@ -298,6 +298,8 @@ module Misc
     str = case obj
           when nil
             'nil'
+          when Numeric
+            obj.to_f
           when Symbol 
             obj.to_s
           when TrueClass

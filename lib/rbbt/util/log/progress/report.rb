@@ -65,11 +65,17 @@ module Log
 
       thr = 0.0000001 if thr == 0
       
-      if mean.nil? or mean.to_i > 1
+      if mean.nil? or mean.to_i > 2
         str = "#{ Log.color :blue, thr.to_i.to_s } per sec."
         #str << " #{ Log.color :yellow, mean.to_i.to_s } avg. #{Log.color :yellow, @mean_max.to_i.to_s} max." if @mean_max > 0
       else
-        str = "#{ Log.color :blue, (1/thr).ceil.to_s } secs each"
+        if 1.0/thr < 1
+          str = "#{ Log.color :blue, (1.0/thr).round(2).to_s } secs each"
+        elsif 1.0/thr < 2
+          str = "#{ Log.color :blue, (1.0/thr).round(1).to_s } secs each"
+        else
+          str = "#{ Log.color :blue, (1/thr).ceil.to_s } secs each"
+        end
         #str << " #{ Log.color :yellow, (1/mean).ceil.to_s } avg. #{Log.color :yellow, (1/@mean_max).ceil.to_s} min." if @mean_max > 0
       end
 
@@ -184,6 +190,7 @@ module Log
       @last_time = Time.now
       @last_count = ticks
       @last_percent = percent if max and max > 0
+      Log::LAST.replace "progress"
       save if file
     end
 

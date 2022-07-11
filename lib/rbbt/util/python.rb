@@ -4,6 +4,30 @@ require 'pycall/import'
 module RbbtPython
   extend PyCall::Import
 
+
+  def self.add_path(path)
+    self.run 'sys' do
+      sys.path.append path
+    end
+  end
+
+  def self.add_paths(paths)
+    self.run 'sys' do
+      paths.each do |path|
+        sys.path.append path
+      end
+    end
+  end
+
+  def self.init_rbbt
+    if ! defined?(@@__init_rbbt) || ! @@__init_rbbt 
+      Log.debug "Loading python 'rbbt' module into pycall RbbtPython module"
+      RbbtPython.add_paths(Rbbt.python.find_all)
+      RbbtPython.pyimport("rbbt")
+      @@__init_rbbt = true
+    end
+  end
+
   def self.exec(script)
     PyCall.exec(script)
   end
@@ -92,21 +116,4 @@ module RbbtPython
       module_eval(&block)
     end
   end
-
-  def self.add_path(path)
-    self.run 'sys' do
-      sys.path.append path
-    end
-  end
-
-  def self.add_paths(paths)
-    self.run 'sys' do
-      paths.each do |path|
-        sys.path.append path
-      end
-    end
-  end
-
-  RbbtPython.add_paths Rbbt.python.find_all
-  RbbtPython.pyimport "rbbt"
 end

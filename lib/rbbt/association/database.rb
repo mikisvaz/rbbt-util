@@ -86,6 +86,8 @@ module Association
     info_fields = field_pos.collect{|f| f == :key ? :key : all_fields[f]}
     options = options.merge({:key_field => source_field, :fields =>  info_fields})
 
+    fields = field_headers if fields.nil?
+
     data = options[:data] || {}
     TmpFile.with_file do |tmpfile|
       tmp_data = Persist.open_database(tmpfile, true, :double, "HDB")

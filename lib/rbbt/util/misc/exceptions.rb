@@ -1,7 +1,8 @@
 class RbbtException < StandardError; end
 class ParameterException < RbbtException; end
-class FieldNotFoundError < RbbtException;end
-class ClosedStream < RbbtException; end
+
+class FieldNotFoundError < StandardError;end
+class ClosedStream < StandardError; end
 
 class ProcessFailed < StandardError; 
   def initialize(pid = Process.pid)
@@ -26,7 +27,7 @@ end
 class SemaphoreInterrupted < TryAgain; end
 class LockInterrupted < TryAgain; end
 
-class RemoteServerError < RbbtException; end
+class RemoteServerError < StandardError; end
 
 class DependencyError < Aborted
   def initialize(msg)

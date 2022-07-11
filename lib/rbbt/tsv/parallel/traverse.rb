@@ -696,7 +696,7 @@ module TSV
 
       options[:join] = Proc.new do |error|
         error = false if error.nil?
-        Log::ProgressBar.remove_bar(bar, error)
+        Log::ProgressBar.remove_bar(bar, error) if bar
       end if bar
 
       options[:callback] = Proc.new do |e|

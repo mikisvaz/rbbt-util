@@ -22,7 +22,7 @@ module NamedArray
   def self.setup(array, fields, key = nil, entity_options = nil, entity_templates = nil)
     return array if array.nil?
     array.extend NamedArray unless NamedArray === array
-    array.fields = Annotated.purge fields
+    array.fields = Annotated === fields ? Annotated.purge(fields) : fields
     array.key = key
     array.entity_options = entity_options unless entity_options.nil?
     array.entity_templates = entity_templates unless entity_templates.nil?

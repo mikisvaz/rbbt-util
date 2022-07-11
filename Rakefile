@@ -26,6 +26,7 @@ begin
     gem.add_dependency('rest-client')
     gem.add_dependency('to_regexp')
     gem.add_dependency('nakayoshi_fork')
+    gem.add_dependency('method_source')
     #gem.add_dependency('narray')
     #gem.add_dependency('sass-css-importer')
     #gem.add_dependency('simplews')

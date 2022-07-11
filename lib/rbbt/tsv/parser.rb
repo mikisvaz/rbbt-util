@@ -650,7 +650,7 @@ module TSV
           end
         end
       ensure
-        Log::ProgressBar.remove_bar(progress_monitor)
+        Log::ProgressBar.remove_bar(progress_monitor) if progress_monitor
         stream.close unless stream.closed?
         stream.join if stream.respond_to? :join and not stream.joined?
       end

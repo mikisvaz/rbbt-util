@@ -24,7 +24,7 @@ module Association
       options = options.dup
       data.serializer = :double if data.respond_to? :serializer
 
-      tsv = Association.database(file, options.merge(:persist => true, :unnamed => true, :data => data, :type => :double))
+      tsv = Association.database(file, options.merge(:unnamed => true, :data => data, :type => :double))
 
       data
     end

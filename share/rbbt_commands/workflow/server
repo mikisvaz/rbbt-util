@@ -114,7 +114,7 @@ TmpFile.with_file do |app_dir|
         name, _sep, value = pair.partition("=")
         name = name[1..-1].to_sym if name[0] == ':'
         value = value.to_i if value =~ /^\d+$/
-        value = true if value == "true"
+        value = true if value.nil? || value == "true"
         value = false if value == "false"
         options[name] = value
       end

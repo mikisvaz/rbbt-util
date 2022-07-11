@@ -88,8 +88,28 @@ class TestMiscOmics < Test::Unit::TestCase
       index = Misc.index_BED(io, dir)
       assert_equal ["2:2"], index["2:220:230"]
     end
+  end
 
+  def test_sort_genomic_locations
+    mutations =<<-EOF.split("\n").shuffle
+1:100:A
+1:20:A
+1:300:A
+2:100:A
+2:20:A
+2:300:A
+10:100:A
+10:20:A
+10:300:A
+    EOF
+    sorted =  Misc.sort_mutation_stream(StringIO.new(mutations * "\n")).read.split("\n")
+    strict_sorted = Misc.sort_mutation_stream_strict(StringIO.new(mutations * "\n")).read.split("\n")
 
-
+    assert sorted.index("1:20:A") < sorted.index("1:100:A")
+    assert sorted.index("1:300:A") < sorted.index("10:300:A")
+    assert sorted.index("10:300:A") < sorted.index("2:300:A")
+    assert strict_sorted.index("1:20:A") < strict_sorted.index("1:100:A")
+    assert strict_sorted.index("1:300:A") < strict_sorted.index("10:300:A")
+    assert strict_sorted.index("2:300:A") < strict_sorted.index("10:300:A")
   end
 end

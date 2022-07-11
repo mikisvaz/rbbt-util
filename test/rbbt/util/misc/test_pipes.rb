@@ -107,6 +107,23 @@ row1 A B C
     assert_equal %w(## ## ## #Row row1 row2 row3), sorted.read.split("\n").collect{|l| l.split(" ").first}
   end
 
+  def test_sort_long_stream
+    text =<<-EOF
+##
+##
+##
+#Row LabelA LabelB LabelC
+row2 AA BB CC
+row3 AAA BBB CCC
+row1 A B C
+    EOF
+
+    s = StringIO.new text + (text.split("\n")[-3..-1] * "\n" + "\n") * 10000
+    sorted = Misc.sort_stream(s)
+    assert_equal %w(## ## ## #Row row2 row3 row1), text.split("\n").collect{|l| l.split(" ").first}
+    assert_equal %w(## ## ## #Row row1 row2 row3), sorted.read.split("\n").collect{|l| l.split(" ").first}
+  end
+
   def test_sort_stream2
     text =<<-EOF
 ##
@@ -318,7 +335,9 @@ line4
 
     TmpFile.with_file do |tmp|
       #Misc.consume_stream(sout, false, tmp)
-      Open.write(tmp, sout)
+      assert_raise do
+        Open.write(tmp, sout)
+      end
     end
   end
 end

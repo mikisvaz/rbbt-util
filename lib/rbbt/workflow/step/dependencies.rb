@@ -230,7 +230,14 @@ class Step
       if dep_step[step.path] and dep_step[step.path].length > 1
         stream = step.result
         other_steps = dep_step[step.path].uniq.reject{|d| d.overriden }
+
+        other_steps = other_steps.collect{|d|
+          deps_using_step_input = d.rec_dependencies.select{|d| d.inputs.include? step  }
+          deps_using_step_input.any? ? deps_using_step_input : d
+        }.flatten.uniq
+
         return unless other_steps.length > 1
+
         log_dependency_exec(step, "duplicating #{other_steps.length}") 
         copies = Misc.tee_stream_thread_multiple(stream, other_steps.length)
         copies.extend StreamArray
@@ -370,7 +377,6 @@ class Step
   end
 
   def run_dependencies
-    dep_step = {}
 
     rec_dependencies = self.rec_dependencies(true) + input_dependencies
 
@@ -385,23 +391,30 @@ class Step
 
     canfail_paths = self.canfail_paths
 
+    dep_step = {}
     seen_paths = Set.new
     all_deps.uniq.each do |step|
       next if seen_paths.include? step.path
       seen_paths << step.path
+
       begin
         Step.prepare_for_execution(step) unless step == self
       rescue DependencyError, DependencyRbbtException
         raise $! unless canfail_paths.include? step.path
       end
+
       next unless step.dependencies and step.dependencies.any?
-      (step.dependencies + step.input_dependencies).each do |step_dep|
+
+      # ToDo is this really necessary
+      #(step.dependencies + step.input_dependencies).each do |step_dep|
+      step.dependencies.each do |step_dep|
         next unless step.dependencies.include?(step_dep)
         next if step_dep.done? or step_dep.running? or 
           (ComputeDependency === step_dep and (step_dep.compute == :nodup or step_dep.compute == :ignore))
         dep_step[step_dep.path] ||= []
         dep_step[step_dep.path] << step
       end
+
     end
 
     produced = []
