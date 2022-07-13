@@ -420,7 +420,7 @@ module Misc
           end
 
           Open.touch path if Open.exists? path
-          content.join if content.respond_to? :join and not (content.respond_to?(:joined?) and content.joined?)
+          content.join if content.respond_to?(:join) and not Path === content and not (content.respond_to?(:joined?) && content.joined?)
 
           Open.notify_write(path) 
         rescue Aborted

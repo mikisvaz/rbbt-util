@@ -4,6 +4,11 @@ require 'pycall/import'
 module RbbtPython
   extend PyCall::Import
 
+  def self.script(text, options = {})
+    Log.debug "Running python script:\n#{text.dup}"
+    text = StringIO.new text unless IO === text
+    CMD.cmd_log(:python, options.merge(:in => text))
+  end
 
   def self.add_path(path)
     self.run 'sys' do
@@ -87,7 +92,9 @@ module RbbtPython
 
   def self.run_log(mod = nil, imports = nil, severity = 0, severity_err = nil, &block)
     if mod
-      if Array === imports
+      if imports == "*" || imports == ["*"]
+        pyfrom mod
+      elsif Array === imports
         pyfrom mod, :import => imports
       elsif Hash === imports
         pyimport mod, imports

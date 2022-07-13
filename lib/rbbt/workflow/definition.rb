@@ -22,8 +22,13 @@ module Workflow
     :extension          => nil)
 
 
-  def helper(name, &block)
-    helpers[name] = block
+  def helper(name, *args, &block)
+    if block_given?
+      helpers[name] = block
+    else
+      raise RbbtException, "helper #{name} unkown in #{self} workflow" unless helpers[name]
+      helpers[name].call(*args)
+    end
   end
 
   def desc(description)

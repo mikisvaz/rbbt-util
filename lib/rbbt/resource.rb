@@ -346,9 +346,12 @@ url='#{url}'
     locations = (Path::STANDARD_SEARCH + resource.search_order + resource.search_paths.keys)
     locations -= [:current, "current"]
     locations << :current
+    search_paths = IndiferentHash.setup(resource.search_paths)
     locations.uniq.each do |name|
-      pattern = resource.search_paths[name]
+      pattern = search_paths[name]
+      pattern = resource.search_paths[pattern] while Symbol === pattern
       next if pattern.nil?
+
       pattern = pattern.sub('{PWD}', Dir.pwd)
       if String ===  pattern and pattern.include?('{')
         regexp = "^" + pattern.gsub(/{([^}]+)}/,'(?<\1>[^/]+)') + "(?:/(?<REST>.*))?/?$"
