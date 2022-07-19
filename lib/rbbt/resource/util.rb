@@ -123,8 +123,8 @@ module Resource
 
 
   def rake_for(path)
-    @rake_dirs.reject{|dir, content|
-      !Misc.common_path(dir, path)
+    @rake_dirs.select{|dir, content|
+      Misc.common_path(dir, path)
     }.sort_by{|dir, content|
       dir.length
     }.last
@@ -137,12 +137,17 @@ module Resource
   def run_rake(path, rakefile, rake_dir)
     task = Misc.path_relative_to rake_dir, path
     rakefile = rakefile.produce if rakefile.respond_to? :produce
+    rakefile = rakefile.find if rakefile.respond_to? :find
 
     rake_dir = rake_dir.find(:user) if rake_dir.respond_to? :find
 
     begin
       require 'rbbt/resource/rake'
-      Rake.run(rakefile, rake_dir, task)
+      if Proc === rakefile
+        Rake.run(nil, rake_dir, task, &rakefile)
+      else
+        Rake.run(rakefile, rake_dir, task)
+      end
     rescue Rake::TaskNotFound
       raise $! if rake_dir.nil? or rake_dir.empty? or rake_dir == "/" or rake_dir == "./"
       task = File.join(File.basename(rake_dir), task)

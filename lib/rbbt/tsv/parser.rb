@@ -8,7 +8,9 @@ module TSV
 
     def all_fields
       all = [key_field] + fields
-      NamedArray.setup all, all
+      # ToDo: What was this for?
+      #NamedArray.setup all, all
+      all
     end
 
     def parse_header(stream)
@@ -550,12 +552,12 @@ module TSV
       line = self.rescue_first_line
       line = stream.gets if line.nil?
 
-      if @tsv_grep
+      if @tsv_grep || grep
 
-        stream = Open.grep(stream, @tsv_grep, invert_grep, fixed_grep)
+        stream = Open.grep(stream, @tsv_grep || grep, invert_grep, fixed_grep)
         stream.no_fail = true
         begin
-          match = Open.grep(StringIO.new(line), @tsv_grep, invert_grep, fixed_grep).read
+          match = Open.grep(StringIO.new(line), @tsv_grep || grep, invert_grep, fixed_grep).read
           line = stream.gets if match.empty?
         rescue Exception
           Log.exception $!

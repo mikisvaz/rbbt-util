@@ -72,7 +72,9 @@ module Misc
     when File
       "<File:" + obj.path + ">"
     when NamedArray
-      "[<NamedArray: fields=#{fingerprint obj.fields} -- values=#{fingerprint obj[0..-1]}]"
+      fields = obj.fields
+      fields = fields.collect if NamedArray === fields
+      "[<NamedArray: fields=#{fingerprint fields} -- values=#{fingerprint obj[0..-1]}]"
     when Array
       if (length = obj.length) > 10
         "[#{length}--" <<  (obj.values_at(0,1, length / 2, -2, -1).collect{|e| fingerprint(e)} * ",") << "]"

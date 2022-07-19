@@ -1,5 +1,6 @@
 require 'rbbt-util'
 require 'pycall/import'
+require 'rbbt/util/python/util'
 
 module RbbtPython
   extend PyCall::Import

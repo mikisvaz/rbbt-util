@@ -232,12 +232,16 @@ rbbt.tsv2tibble <- function(data){
   as_tibble(data, rownames=attr(data, 'key.field'))
 }
 
-rbbt.tsv.write <- function(filename, data, key.field = NULL, extra_headers = NULL, eol="\n", ...){
+rbbt.tsv.write <- function(filename, data, key.field = NULL, extra_headers = NULL, eol="\n", type = 'list', names = NULL, ...){
 
   if (is.null(key.field)){ key.field = attributes(data)$key.field;}
   if (is.null(key.field)){ key.field = "ID";}
 
   f = file(filename, 'wb');
+
+  if (is.null(extra_headers)){
+    extra_headers = paste(":type",type,sep="=")
+  }
 
   if (!is.null(extra_headers)){
       extra_headers = paste("#: ", extra_headers, "\n", sep="");
@@ -245,7 +249,9 @@ rbbt.tsv.write <- function(filename, data, key.field = NULL, extra_headers = NUL
   }
 
   header = paste("#", key.field, sep="");
-  for (name in colnames(data)){ header = paste(header, name, sep="\t");}
+  if (is.null(names)){ names = colnames(data)}
+  if (is.null(names)){ names = names(data)}
+  for (name in names){ header = paste(header, name, sep="\t");}
   header = paste(header, "\n", sep="");
   cat(header, file=f);
   

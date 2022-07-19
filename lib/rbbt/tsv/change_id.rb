@@ -89,7 +89,7 @@ module TSV
           tsv[k] = v
         end
       end
-      
+
       tsv.fields = tsv.fields.collect{|f| f == field ? format : f}
     end
 

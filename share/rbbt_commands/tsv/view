@@ -1,0 +1,76 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*" "} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+
+View TSV nicer
+
+$ #{$0} [options] <filename.tsv|->
+
+Use - to read from STDIN
+
+-h--help Print this help
+
+EOF
+if options[:help]
+  if defined? rbbt_usage
+    rbbt_usage 
+  else
+    puts SOPT.doc
+  end
+  exit 0
+end
+
+
+file = ARGV.shift
+
+file = STDIN if file == '-'
+
+case
+when options[:tokyocabinet]
+  tsv = Persist.open_tokyocabinet(file, false)
+when options[:tokyocabinet_bd]
+  tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
+else
+  if String === file
+    file = file.dup
+    Path.setup(File.expand_path(file))
+  end
+  tsv = file
+end
+
+tsv = TSV.open(tsv) if IO === tsv
+
+
+begin
+  Workflow.require_workflow "Genomics"
+  tsv = Genomics.job(:names, nil, :tsv => tsv).run
+rescue
+end
+
+puts [Log.highlight(Log.color(:magenta, tsv.key_field)), Log.color(:yellow, tsv.fields * "\t")] * "\t"
+TSV.traverse tsv do |k,values,fields|
+  fvalues = values.zip(fields).collect do |v,field|
+    if String === v
+      v = v.to_f.round(2) if v =~ /^-?\d+\.\d+$/
+      v = v.to_i if v =~ /^-?\d+$/
+    end
+
+    if Numeric === v
+      if field =~ /p.?value/i
+        v = v.round(4)
+        v < 0.05 ? Log.color(:cyan, v.to_s) : v
+      else
+        v = v.round(2)
+        v < 0 ? Log.color(:red, v.to_s) : Log.color(:green, v.to_s)
+      end
+    else
+      v
+    end
+  end
+  puts [Log.color(:magenta, k), fvalues] * "\t"
+end

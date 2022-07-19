@@ -17,9 +17,18 @@ module TestResource
 file 'foo' do |t|
   Open.write(t.name, "TEST")
 end
+
+rule /.*/ do |t|
+  Open.write(t.name, "bar")
+end
   EOF
 
-  claim tmp.test.work.footest, :rake, tmp.test.rakefiles.foo
+  claim tmp.test.work.footest, :rake, TestResource.tmp.test.rakefiles.foo
+
+  claim tmp.test.work.file_proc, :file_proc do |file,filename|
+    Open.write(filename, file)
+    nil
+  end
 end
 
 class TestTSV < Test::Unit::TestCase
@@ -33,10 +42,11 @@ class TestTSV < Test::Unit::TestCase
     assert TSV === TestResource.tmp.test.test_tsv.tsv
   end
 
-  def __test_rake
-    TestResource.tmp.test.work.footest.foo.read == "TEST"
-    assert TestResource.tmp.test.work.footest.foo.read == "TEST"
+  def test_rake
+    assert_equal TestResource.tmp.test.work.footest.foo.read, "TEST"
+    assert_equal TestResource.tmp.test.work.footest.bar.read, "bar"
   end
+
 
   def test_proc
     assert TestResource.tmp.test.proc.read == "PROC TEST"

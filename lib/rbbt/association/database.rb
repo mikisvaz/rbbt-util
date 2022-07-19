@@ -162,6 +162,10 @@ module Association
 
     data ||= {}
     tsv = nil
+    if data.respond_to?(:close) && data.respond_to?(:write)
+      data.close
+      data.write
+    end
     TmpFile.with_file do |tmpfile|
       tmp_data = Persist.open_database(tmpfile, true, open_options[:type], "HDB")
 

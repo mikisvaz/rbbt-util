@@ -59,7 +59,7 @@ module Resource
 
   def claim(path, type, content = nil, &block)
     if type == :rake
-      @rake_dirs[path] = content
+      @rake_dirs[path] = content || block
     else
       @resources[path] = [type, content || block]
 

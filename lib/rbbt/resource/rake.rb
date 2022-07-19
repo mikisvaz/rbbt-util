@@ -1,7 +1,7 @@
 require 'rake'
 module Rake
   class TaskNotFound < StandardError; end
-  def self.run(rakefile, dir, task)
+  def self.run(rakefile, dir, task, &block)
     old_pwd = FileUtils.pwd
 
     Rake::FileTask.module_eval do
@@ -32,9 +32,15 @@ module Rake
     t = nil
     pid = Process.fork{
       if block_given?
-        yield
+        TOPLEVEL_BINDING.receiver.instance_exec &block
       else
-        load rakefile
+        if Misc.is_filename? rakefile
+          load rakefile
+        else
+          TmpFile.with_file(rakefile) do |tmpfile|
+            load tmpfile
+          end
+        end
       end
 
       raise TaskNotFound if Rake::Task[task].nil?
