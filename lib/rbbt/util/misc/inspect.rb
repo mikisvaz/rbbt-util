@@ -301,7 +301,7 @@ module Misc
           when nil
             'nil'
           when Numeric
-            obj.to_f
+            Float === obj && obj % 1 == 0 ? obj.to_i.to_s : obj.to_s
           when Symbol 
             obj.to_s
           when TrueClass

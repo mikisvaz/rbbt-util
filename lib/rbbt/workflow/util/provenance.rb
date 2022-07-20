@@ -109,7 +109,7 @@ class Step
           end
         end
       end
-    end
+    end if step.dependencies
 
     str = ""
     str = " " * offset + this_step_msg if ENV["RBBT_ORIGINAL_STACK"] == 'true'

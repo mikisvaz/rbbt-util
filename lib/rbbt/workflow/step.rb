@@ -363,7 +363,7 @@ class Step
   def recursive_clean
     dependencies.each do |step| 
       step.recursive_clean 
-    end
+    end if dependencies
     clean if Open.exists?(self.info_file)
     self
   end

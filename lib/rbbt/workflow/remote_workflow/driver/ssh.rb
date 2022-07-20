@@ -148,6 +148,11 @@ job.clean
     def self.upload_inputs(server, inputs, input_types, input_id)
       TmpFile.with_file do |dir|
         if Step.save_inputs(inputs, input_types, dir)
+          Dir.glob(File.join(dir, "*.as_step")).each do |file|
+            path = Open.read(file).strip
+            new = Step.migrate(path, :user, :target => server)
+            Open.write(file, new)
+          end
           CMD.cmd("ssh '#{server}' mkdir -p .rbbt/tmp/tmp-ssh_job_inputs/; scp -r '#{dir}' #{server}:.rbbt/tmp/tmp-ssh_job_inputs/#{input_id}")
         end
       end

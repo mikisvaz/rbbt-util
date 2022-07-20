@@ -3,6 +3,7 @@ class RemoteStep
     attr_accessor :override_dependencies
 
     def init_job(cache_type = nil, other_params = {})
+      return self if @url
       cache_type = :asynchronous if cache_type.nil? and not @is_exec
       cache_type = :exec if cache_type.nil?
       @last_info_time = nil
@@ -10,19 +11,16 @@ class RemoteStep
       @server, @server_path = RemoteWorkflow::SSH.parse_url base_url
       @input_id ||= "inputs-" << rand(100000).to_s
 
-      if override_dependencies
-
-        if override_dependencies && override_dependencies.any?
-          override_dependencies.each do |od|
-            name, _sep, value = od.partition("=")
-            inputs[name] = value
-          end
+      if override_dependencies && override_dependencies.any?
+        override_dependencies.each do |od|
+          name, _sep, value = od.partition("=")
+          inputs[name] = value
         end
-
-        RemoteWorkflow::SSH.upload_inputs(@server, inputs, @input_types, @input_id)
-      else
-        RemoteWorkflow::SSH.upload_inputs(@server, inputs, @input_types, @input_id)
       end
+
+      inputs.select{|i| Step === i }.each{|i| i.produce }
+
+      RemoteWorkflow::SSH.upload_inputs(@server, inputs, @input_types, @input_id)
 
       @name ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
         Misc.insist do

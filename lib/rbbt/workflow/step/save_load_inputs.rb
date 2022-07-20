@@ -51,8 +51,8 @@ module Workflow
         when :path
           inputs[input.to_sym]  = Open.read(file).strip.split("\n").first
         when :io
-          inputs[input.to_sym] = Open.open(Open.realpath(file)).split("\n")
-        when :io
+          inputs[input.to_sym] = Open.open(Open.realpath(file))
+        when :io_array
           inputs[input.to_sym] = Open.realpath(file).split("\n").collect{|f| Open.open(f)}
         when :step_array
           steps = Open.read(file).strip.split("\n").collect{|path| Workflow.load_step(path) }
@@ -97,6 +97,10 @@ module Workflow
           inputs[input.to_sym]  = TSV.open(file)
         when :boolean
           inputs[input.to_sym]  = (file.read.strip == 'true')
+        when :integer
+          inputs[input.to_sym]  = file.read.to_i
+        when :float
+          inputs[input.to_sym]  = file.read.to_f
         else
           Log.debug "Loading #{ input } from #{file}"
           inputs[input.to_sym]  = file.read.strip
@@ -172,10 +176,17 @@ class Step
     end
 
     Log.debug "Saving job input #{name} (#{type}) into #{path}"
-    Open.write(path, value.to_s)
+
+    if value.respond_to? :filename
+      Open.write(path, value.filename)
+    elsif IO === value
+      Open.write(path, value)
+    else
+      Open.write(path, value.to_s)
+    end
   end
 
-  def self.save_inputs(inputs, input_types, input_options, dir)
+  def self.save_inputs(inputs, input_types, dir)
     inputs.each do |name,value|
       type = input_types[name]
       type = type.to_s if type
@@ -220,7 +231,7 @@ class Step
       input_types = IndiferentHash.setup(input_types.merge(:override_dependencies => :array))
     end
 
-    save_inputs(inputs, input_types, input_options, dir)
+    save_inputs(inputs, input_types, dir)
 
     inputs.keys
   end

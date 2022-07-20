@@ -184,9 +184,13 @@ puts files * "\n"
 
     target = Rbbt.migrate_target_path('var/jobs', search_path, resource, options[:target])
 
+    target_path = File.join(target, *path.split("/")[-3..-1])
+
     subpath_files.each do |subpath, files|
       Rbbt.migrate_files([subpath], target, options.merge(:files => files))
     end
+
+    target_path
   end
 
   def self.purge(path, recursive = false, skip_overriden = true)
