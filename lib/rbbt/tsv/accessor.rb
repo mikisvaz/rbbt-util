@@ -16,6 +16,9 @@ module TSV
 
   def annotate(tsv)
     TSV.setup(tsv, info)
+    tsv.entity_options = self.entity_options
+    tsv.entity_templates = self.entity_templates
+    tsv
   end
 
   def entity_options
