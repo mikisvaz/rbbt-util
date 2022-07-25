@@ -522,7 +522,7 @@ module Open
   # Questions
 
   def self.remote?(file)
-    !! (file =~ /^(?:https?|ftp):\/\//)
+    !! (file =~ /^(?:https?|ftp|ssh):\/\//)
   end
 
   def self.ssh?(file)

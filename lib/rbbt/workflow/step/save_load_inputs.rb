@@ -177,7 +177,7 @@ class Step
 
     Log.debug "Saving job input #{name} (#{type}) into #{path}"
 
-    if value.respond_to? :filename
+    if IO === value && value.respond_to?(:filename) && value.filename
       Open.write(path, value.filename)
     elsif IO === value
       Open.write(path, value)
