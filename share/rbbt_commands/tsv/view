@@ -47,6 +47,7 @@ tsv = TSV.open(tsv) if IO === tsv
 
 
 begin
+  require 'rbbt/workflow'
   Workflow.require_workflow "Genomics"
   tsv = Genomics.job(:names, nil, :tsv => tsv).run
 rescue

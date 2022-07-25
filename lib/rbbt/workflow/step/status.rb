@@ -75,6 +75,7 @@ class Step
 
   def dirty?
     return true if Open.exists?(pid_file) && ! ( Open.exists?(info_file) || done? )
+    return true if done? && ! (status == :done || status == :noinfo)
     return false unless done? || status == :done
     return false unless ENV["RBBT_UPDATE"] == "true"
 

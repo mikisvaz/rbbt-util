@@ -18,7 +18,24 @@ class RemoteWorkflow
       end
     end
 
+    def self.escape_url(url)
+      base, _sep, query = url.partition("?")
+      protocol, path = base.split("://") 
+      path = protocol if path.nil?
+      path = path.split("/").collect{|p| CGI.escape(p) }* "/"
+      base = protocol ? [protocol, path] * "://" : path
+
+      if query && ! query.empty?
+        query = query.split("&").collect{|e| e.split("=").collect{|pe| CGI.escape(pe) } * "=" } * "&"
+        [base, query] * "?"
+      else
+        base
+      end
+    end
+
     def self.encode(url)
+      # ToDo: Check this
+      return escape_url(url)
       begin
         URI::DEFAULT_PARSER.escape(url)
       rescue
@@ -135,7 +152,7 @@ class RemoteWorkflow
 
     def self.execute_job(base_url, task, task_params, cache_type)
       RemoteWorkflow.capture_exception do
-        task_url = URI.encode(File.join(base_url, task.to_s))
+        task_url = self.escape_url(File.join(base_url, task.to_s))
 
         sout, sin = Misc.pipe
 

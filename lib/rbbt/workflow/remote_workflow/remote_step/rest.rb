@@ -132,7 +132,7 @@ class RemoteStep
     def _run_job(cache_type = :asynchronous)
       get_streams
 
-      task_url = URI.encode(File.join(base_url, task.to_s))
+      task_url = RemoteWorkflow::REST.escape_url(File.join(base_url, task.to_s))
       @adaptor.__prepare_inputs_for_restclient(inputs)
       task_params = inputs.merge(:_cache_type => cache_type, :jobname => base_name, :_format => [:string, :boolean, :tsv, :annotations].include?(result_type) ? :raw : :json)
 
@@ -147,6 +147,7 @@ class RemoteStep
 
     def produce(*args)
       @started = true
+      init_job
       _run_job
     end
 

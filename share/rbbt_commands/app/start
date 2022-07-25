@@ -96,6 +96,8 @@ Misc.in_dir(app_dir) do
     system ENV, "env RBBT_LOG=0 passenger start -R '#{config_ru_file}' -p #{options[:Port] || "2887"}"
   when 'puma_alt'
     system ENV, "puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 3 -t 8:32 --preload"
+  when 'puma_production'
+    CMD.cmd_log("env RBBT_LOG=#{Log.severity.to_s} puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 20 -t 10:160 --preload")
   else
     options[:config] = config_ru_file
     options[:threads] = "8:8"

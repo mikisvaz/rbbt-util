@@ -135,20 +135,25 @@ def self.add_libdir(dir=nil)
   end
 
   def self.insist(times = 4, sleep = nil, msg = nil)
-    if Array === times
-      sleep_array = times
-      times = sleep_array.length
-      sleep = sleep_array.shift
-    end
+    sleep_array = nil
+
     try = 0
-
-    if sleep.nil?
-      sleep_array = ([0] + [0.001, 0.01, 0.1, 0.5] * (times / 3)).sort[0..times-1]
-      sleep = sleep_array.shift
-    end
-
     begin
-      yield
+      begin
+        yield
+      rescue Exception
+        if Array === times
+          sleep_array = times
+          times = sleep_array.length
+          sleep = sleep_array.shift
+        end
+
+        if sleep.nil?
+          sleep_array = ([0] + [0.001, 0.01, 0.1, 0.5] * (times / 3)).sort[0..times-1]
+          sleep = sleep_array.shift
+        end
+        raise $!
+      end
     rescue TryAgain
       sleep sleep
       retry
