@@ -527,13 +527,21 @@ module TSV
         self.unnamed = old_unnamed
 
       when String === method
-        with_unnamed do
-          through :key, key do |key, values|
-            values = [values] if type == :single
-            new[key] = self[key] if invert ^ (values.flatten.select{|v| v == method}.length > 0)
+        if method =~ /^([<>]=?)(.*)/
+          with_unnamed do
+            through :key, key do |key, values|
+              value = Array === values ? values.flatten.first : values
+              new[key] = self[key] if value.to_f.send($1, $2.to_f)
+            end
+          end
+        else
+          with_unnamed do
+            through :key, key do |key, values|
+              values = [values] if type == :single
+              new[key] = self[key] if invert ^ (values.flatten.select{|v| v == method}.length > 0)
+            end
           end
         end
-
       when Numeric === method
         with_unnamed do
           through :key, key do |key, values|

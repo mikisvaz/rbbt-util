@@ -28,7 +28,7 @@ end
 
 file = ARGV.shift
 
-file = STDIN if file == '-'
+file = STDIN if file == '-' || file.nil?
 
 case
 when options[:tokyocabinet]
