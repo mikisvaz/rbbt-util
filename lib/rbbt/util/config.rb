@@ -125,6 +125,8 @@ module Rbbt::Config
     if String === value && m = value.match(/^env:(.*)/)
       variable = m.captures.first
       ENV[variable]
+    elsif value == 'nil'
+      nil
     else
       value
     end
