@@ -38,12 +38,12 @@ when options[:tokyocabinet_bd]
 else
   if String === file
     file = file.dup
-    Path.setup(File.expand_path(file))
+    file = Path.setup(File.expand_path(file))
   end
   tsv = file
 end
 
-tsv = TSV.open(tsv) if IO === tsv
+tsv = TSV.open(tsv) if IO === tsv || Path === tsv
 
 
 begin
