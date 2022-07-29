@@ -52,7 +52,7 @@ class TestEntityIdentifiers < Test::Unit::TestCase
     tsv.key_field = key_field
     tsv.fields = [description_field, gene_field]
     descriptions = tsv.slice(description_field)
-    Open.write(description_file, descriptions.to_single.to_s) #unless File.exists? description_file
+    Open.write(description_file, descriptions.to_single.to_s) #unless File.exist? description_file
     values = tsv.slice(gene_field)
     values.identifiers = description_file
 

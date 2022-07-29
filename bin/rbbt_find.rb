@@ -65,7 +65,7 @@ found.each do |path|
     if nocolor
       puts path
     else
-      color = File.exists?(path) ? (File.directory?(path) ? :blue : nil) : :red
+      color = File.exist?(path) ? (File.directory?(path) ? :blue : nil) : :red
       puts Log.color color, path
     end
 
