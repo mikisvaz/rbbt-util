@@ -36,14 +36,14 @@ file = ARGV.shift
 
 $seen = []
 def get_step(file)
-  file = File.expand_path(file) if File.exists?(file)
+  file = File.expand_path(file) if File.exist?(file)
   file = file.sub(/\.(info|files)$/,'')
   $seen << file
   Workflow.load_step file
 end
 
 def touch(step)
-  return unless File.exists?(step.path)
+  return unless File.exist?(step.path)
   step.dependencies.each do |dep|
     next unless Open.exists?(dep.path)
     if Open.mtime(dep.path) > Open.mtime(step.path) + 1

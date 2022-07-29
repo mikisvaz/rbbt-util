@@ -31,8 +31,8 @@ module Persist
     path = path.find if Path === path
     file = file.find if Path === file
     if by_link
-      patht = File.exists?(path) ? File.lstat(path).mtime : nil
-      filet = File.exists?(file) ? File.lstat(file).mtime : nil
+      patht = File.exist?(path) ? File.lstat(path).mtime : nil
+      filet = File.exist?(file) ? File.lstat(file).mtime : nil
     else
       patht = Open.mtime(path)
       filet = Open.mtime(file)

@@ -13,7 +13,7 @@ module Workflow
     nextflow_includes(file).inject(params) do |params,info|
       name_str, included_file = info
       included_file = File.join(dir, included_file)
-      included_file += '.nf' unless File.exists?(included_file) || ! File.exists?(included_file + '.nf')
+      included_file += '.nf' unless File.exist?(included_file) || ! File.exist?(included_file + '.nf')
       name_str.split(";").each do |name|
         name = name.strip
         include_params = nextflow_recursive_params(included_file).collect{|p| [p,name] * "-"}
@@ -32,7 +32,7 @@ module Workflow
       result = :text
     end
 
-    file = file + '.nf' unless File.exists?(file) || ! File.exists?(file + '.nf')
+    file = file + '.nf' unless File.exist?(file) || ! File.exist?(file + '.nf')
     file = File.expand_path(file)
     name ||= File.basename(file).sub(/\.nf$/,'').gsub(/\s/,'_')
     params = Workflow.nextflow_recursive_params(file)

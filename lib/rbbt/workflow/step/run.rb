@@ -421,7 +421,7 @@ class Step
           config_keys = Rbbt::Config::GOT_KEYS[config_keys_pre.length..-1]
           set_info :config_keys, config_keys.uniq
 
-          if result.nil? && File.exists?(self.tmp_path) && ! File.exists?(self.path)
+          if result.nil? && File.exist?(self.tmp_path) && ! File.exist?(self.path)
             Open.mv self.tmp_path, self.path
           end
           result

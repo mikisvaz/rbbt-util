@@ -145,7 +145,7 @@ module Rbbt::Config
   end
 
   def self.process_config(config)
-    if Misc.is_filename?(config) && File.exists?(config)
+    if Misc.is_filename?(config) && File.exist?(config)
       Rbbt::Config.load_file(config)
     elsif Rbbt.etc.config_profile[config].exists?
       Rbbt::Config.load_file(Rbbt.etc.config_profile[config].find)

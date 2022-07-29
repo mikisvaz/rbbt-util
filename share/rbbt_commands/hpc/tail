@@ -46,7 +46,7 @@ if directory =~ /^[0-9]*$/
   end
 end
 
-raise ParameterException, "Could not identify job #{directory}" unless File.exists?(directory)
+raise ParameterException, "Could not identify job #{directory}" unless File.exist?(directory)
 
 require 'rbbt/hpc/slurm'
 

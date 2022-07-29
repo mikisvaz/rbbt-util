@@ -92,7 +92,7 @@ class Step
           (!(job.noinfo? || job.done? || job.error? || job.aborted? || job.running?))
 
         if ! (job.resumable? && (job.updated? && ! job.dirty?))
-          Log.high "About to clean -- status: #{status}, present #{File.exists?(job.path)}, " +
+          Log.high "About to clean -- status: #{status}, present #{File.exist?(job.path)}, " +
             %w(done? error? recoverable_error? noinfo? updated? dirty? aborted? running? resumable?).
             collect{|v| [v, job.send(v)]*": "} * ", " if RBBT_DEBUG_CLEAN
 

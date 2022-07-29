@@ -16,7 +16,7 @@ module Persist
       end
 
       dir = File.dirname(File.expand_path(path))
-      File.mkdir(dir) unless File.exists?(dir)
+      File.mkdir(dir) unless File.exist?(dir)
 
       tokyocabinet_class = TokyoCabinet::HDB if tokyocabinet_class == "HDB" or tokyocabinet_class.nil?
       tokyocabinet_class = TokyoCabinet::BDB if tokyocabinet_class == "BDB"

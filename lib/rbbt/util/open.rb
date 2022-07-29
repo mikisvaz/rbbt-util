@@ -389,8 +389,8 @@ module Open
   #  source = source.find if Path === source
   #  target = target.find if Path === target
 
-  #  FileUtils.mkdir_p File.dirname(target) unless File.exists?(File.dirname(target))
-  #  FileUtils.rm target if File.exists?(target)
+  #  FileUtils.mkdir_p File.dirname(target) unless File.exist?(File.dirname(target))
+  #  FileUtils.rm target if File.exist?(target)
   #  FileUtils.cp source, target
   #end
 

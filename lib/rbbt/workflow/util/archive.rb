@@ -13,9 +13,9 @@ class Step
     return if target_dir[workflow][task][name].exists? || File.symlink?(target_dir[workflow][task][name].find)
     Log.debug "Linking #{ path }"
     FileUtils.mkdir_p target_dir[workflow][task] unless target_dir[workflow][task].exists?
-    FileUtils.ln_s path, target_dir[workflow][task][name].find if File.exists?(path)
-    FileUtils.ln_s path + '.files', target_dir[workflow][task][name].find + '.files' if File.exists?(path + '.files')
-    FileUtils.ln_s path + '.info', target_dir[workflow][task][name].find + '.info' if File.exists?(path + '.info')
+    FileUtils.ln_s path, target_dir[workflow][task][name].find if File.exist?(path)
+    FileUtils.ln_s path + '.files', target_dir[workflow][task][name].find + '.files' if File.exist?(path + '.files')
+    FileUtils.ln_s path + '.info', target_dir[workflow][task][name].find + '.info' if File.exist?(path + '.info')
   end
 
   def archive(target = nil)
@@ -65,15 +65,15 @@ class Step
     end.uniq
 
     jobs.each do |step|
-      next unless File.exists?(step.path)
+      next unless File.exist?(step.path)
       next if skip_overriden && step.overriden
 
       job_files << step.path
-      job_files << step.info_file if File.exists?(step.info_file)
-      job_files << Step.md5_file(step.path) if File.exists?(Step.md5_file step.path)
+      job_files << step.info_file if File.exist?(step.info_file)
+      job_files << Step.md5_file(step.path) if File.exist?(Step.md5_file step.path)
       job_file_dir_content = Dir.glob(step.files_dir + '/**/*')
       job_files += job_file_dir_content
-      job_files << step.files_dir if File.exists?(step.files_dir)
+      job_files << step.files_dir if File.exist?(step.files_dir)
       rec_dependencies = Set.new
 
       next unless recursive
@@ -99,7 +99,7 @@ class Step
         dep = Workflow.load_step path
         job_files << dep.path
         job_files << dep.files_dir if Dir.glob(dep.files_dir + '/*').any?
-        job_files << dep.info_file if File.exists?(dep.info_file)
+        job_files << dep.info_file if File.exist?(dep.info_file)
       end
     end
 

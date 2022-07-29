@@ -2,12 +2,12 @@ module Workflow
 
   def self.load_inputs(dir, input_names, input_types)
     inputs = {}
-    if File.exists?(dir) && ! File.directory?(dir)
+    if File.exist?(dir) && ! File.directory?(dir)
       Log.debug "Loading inputs from #{dir}, not a directory trying as tar.gz"
       tarfile = dir
       digest = CMD.cmd("md5sum '#{tarfile}'").read.split(" ").first
       tmpdir = Rbbt.tmp.input_bundle[digest].find
-      Misc.untar(tarfile, tmpdir) unless File.exists? tmpdir
+      Misc.untar(tarfile, tmpdir) unless File.exist? tmpdir
       files = tmpdir.glob("*")
       if files.length == 1 && File.directory?(files.first)
         tmpdir = files.first
@@ -256,7 +256,7 @@ class Step
   #    when Step === value
   #      Open.ln_s(value.path, path)
   #    when type.to_s == "binary"
-  #      if String === value && File.exists?(value)
+  #      if String === value && File.exist?(value)
   #        value = File.expand_path(value)
   #        Open.ln_s(value, path)
   #      elsif String === value && Misc.is_filename?(value, false)
@@ -269,7 +269,7 @@ class Step
   #    when Array === value
   #      Open.write(path, value.collect{|v| Step === v ? v.path : v.to_s} * "\n")
   #    when %w(file tsv array).include?(type.to_s)
-  #      if String === value && File.exists?(value)
+  #      if String === value && File.exist?(value)
   #        value = File.expand_path(value)
   #        Open.ln_s(value, path)
   #      elsif String === value && Misc.is_filename?(value, false)
@@ -280,7 +280,7 @@ class Step
   #        Open.write(path + '.yaml', value.to_yaml)
   #      end
   #    when IO === value
-  #      if value.filename && String === value.filename && File.exists?(value.filename)
+  #      if value.filename && String === value.filename && File.exist?(value.filename)
   #        Open.ln_s(value.filename, path)
   #      else
   #        Open.write(path, value)

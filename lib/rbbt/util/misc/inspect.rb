@@ -266,7 +266,7 @@ module Misc
 
   def self.mtime_str(path)
     path = path.find if Path === path
-    if File.exists? path
+    if File.exist? path
       "mtime: " << File.mtime(path).to_s
     else
       "mtime: not present"
@@ -416,7 +416,7 @@ module Misc
   end
 
   def self.file2md5(file)
-    if File.exists?(file + '.md5')
+    if File.exist?(file + '.md5')
       Open.read(file + '.md5')
     else
       md5 = CMD.cmd("md5sum '#{file}'").read.strip.split(" ").first

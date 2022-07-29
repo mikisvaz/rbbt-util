@@ -70,12 +70,12 @@ export BATCH_SYSTEM=LSF
       STDERR.puts Log.color(:magenta, "Issuing LSF file: #{fcmd}")
       STDERR.puts Open.read(fcmd)
 
-      if File.exists?(fjob)
+      if File.exist?(fjob)
         job = Open.read(fjob).to_i
       else
 
-        dependencies = Open.read(fdep).split("\n") if File.exists? fdep
-        canfail_dependencies = Open.read(fcfdep).split("\n") if File.exists? fcfdep
+        dependencies = Open.read(fdep).split("\n") if File.exist? fdep
+        canfail_dependencies = Open.read(fcfdep).split("\n") if File.exist? fcfdep
 
         normal_dep_list = dependencies && dependencies.any? ? dependencies.collect{|d| "post_done(#{d})"} : []
         canfail_dep_list = canfail_dependencies && canfail_dependencies.any? ? canfail_dependencies.collect{|d| "done(#{d})"} : []
@@ -90,7 +90,7 @@ export BATCH_SYSTEM=LSF
 
         cmd = "bsub #{dep_str} < '#{fcmd}'"
 
-        if File.exists?(fout)
+        if File.exist?(fout)
           return
         elsif dry_run
           STDERR.puts Log.color(:magenta, "To execute run: ") + Log.color(:blue, cmd)

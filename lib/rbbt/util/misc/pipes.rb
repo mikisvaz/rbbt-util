@@ -39,11 +39,11 @@ module Misc
     begin
       erase = path.nil?
       path = TmpFile.tmp_file if path.nil?
-      File.rm path if clean && File.exists?(path)
+      File.rm path if clean && File.exist?(path)
       File.mkfifo path
       yield path
     ensure
-      FileUtils.rm path if erase && File.exists?(path)
+      FileUtils.rm path if erase && File.exist?(path)
     end
   end
   
@@ -340,11 +340,11 @@ module Misc
         Log.medium "Consume stream aborted #{Misc.fingerprint io}"
         io.abort if io.respond_to? :abort
         #io.close unless io.closed?
-        FileUtils.rm into_path if into_path and File.exists? into_path
+        FileUtils.rm into_path if into_path and File.exist? into_path
       rescue Exception
         Log.medium "Exception consuming stream: #{Misc.fingerprint io}: #{$!.message}"
         io.abort $! if io.respond_to? :abort
-        FileUtils.rm into_path if into_path and File.exists? into_path
+        FileUtils.rm into_path if into_path and File.exist? into_path
         raise $!
       end
     end

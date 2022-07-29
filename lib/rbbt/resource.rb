@@ -233,7 +233,7 @@ module Resource
             when :install
               Log.debug "Installing software: #{path}"
 
-              $set_software_env = false unless File.exists? path
+              $set_software_env = false unless File.exist? path
               
               software_dir = path.resource.root.software.find :user
               helper_file = File.expand_path(Rbbt.share.install.software.lib.install_helpers.find(:lib, caller_lib_dir(__FILE__)))

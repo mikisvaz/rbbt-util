@@ -118,19 +118,19 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
   container_home = nil
  end
 
- if File.exists?(fid = File.join(dir, 'job.id'))
+ if File.exist?(fid = File.join(dir, 'job.id'))
   id = Open.read(fid).chomp
  else
   id = nil
  end
 
- if File.exists?(fstatus = File.join(dir, 'exit.status'))
+ if File.exist?(fstatus = File.join(dir, 'exit.status'))
   exit_status = Open.read(fstatus).to_i
  else
   exit_status = nil
  end
 
- if File.exists?(fstatus = File.join(dir, 'job.status'))
+ if File.exist?(fstatus = File.join(dir, 'job.status'))
    fstatus_txt = Open.read(fstatus) 
    begin
      if job_batch_system == "lsf"
@@ -147,13 +147,13 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
    nodes = []
  end
 
- if File.exists?(File.join(dir, 'exit.status'))
+ if File.exist?(File.join(dir, 'exit.status'))
    now = File.ctime(File.join(dir, 'exit.status'))
  else
    now = Time.now
  end
 
- if File.exists?(File.join(dir, 'std.out'))
+ if File.exist?(File.join(dir, 'std.out'))
   cerrt = File.ctime File.join(dir, 'std.err')
   coutt = File.ctime File.join(dir, 'std.out')
   outt = File.mtime File.join(dir, 'std.out')
@@ -163,10 +163,10 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
  end
 
  fdep = File.join(dir, 'dependencies.list')
- deps = Open.read(fdep).split("\n") if File.exists?(fdep)
+ deps = Open.read(fdep).split("\n") if File.exist?(fdep)
 
  fcadep = File.join(dir, 'canfail_dependencies.list')
- cadeps = Open.read(fcadep).split("\n") if File.exists?(fcadep)
+ cadeps = Open.read(fcadep).split("\n") if File.exist?(fcadep)
 
  if done || error || aborted || running || queued || jobid 
    select = false
@@ -244,7 +244,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
  puts Log.color(:magenta, "Dependencies (can fail): ") << cadeps * ", " if cadeps
  puts Log.color(:magenta, "Nodes: ") << nodes * ", " if long
  puts Log.color(:magenta, "Time elapsed: ") << Misc.format_seconds(time_elapsed) if time_elapsed
- puts Log.color(:magenta, "Output: ") << File.exists?(File.join(dir, 'std.out')).to_s << (id.nil? || File.exists?(File.join(dir, 'exit.status')) ? "" : " (last update " + Misc.format_seconds(time_diff) + " ago)") if long
+ puts Log.color(:magenta, "Output: ") << File.exist?(File.join(dir, 'std.out')).to_s << (id.nil? || File.exist?(File.join(dir, 'exit.status')) ? "" : " (last update " + Misc.format_seconds(time_diff) + " ago)") if long
 
  if options[:batch_parameters]
    puts Log.color(:magenta, "BATCH parameters: ")
@@ -316,7 +316,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
  end
 
 
- if tail && File.exists?(File.join(dir, 'std.err'))
+ if tail && File.exist?(File.join(dir, 'std.err'))
    if exit_status && exit_status != 0
      puts Log.color(:magenta, "First error or exception found: ")
      puts CMD.cmd("grep -i -w 'error\\|[a-z]*exception' #{File.join(dir, 'std.err')} -A #{tail.to_i} |head -n #{tail.to_i}", :no_fail => true).read

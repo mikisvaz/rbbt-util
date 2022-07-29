@@ -93,7 +93,7 @@ module Misc
   # directory
   def self.untar(io, destination)
     io = io.find if Path === io
-    if String === io and File.exists?(io)
+    if String === io and File.exist?(io)
       Open.open(io) do |f|
         untar(f, destination)
       end

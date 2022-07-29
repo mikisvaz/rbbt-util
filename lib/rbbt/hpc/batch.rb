@@ -514,7 +514,7 @@ env > #{batch_options[:fenv]}
 
       %w(std.out std.err job.id job.status dependencies.list canfail_dependencies.list exit.status sync.log inputs_dir).each do |filename|
         path = File.join(batch_dir, filename)
-        Open.rm_rf path if File.exists? path
+        Open.rm_rf path if File.exist? path
       end if clean_batch_job
 
       batch_dependencies = [] if batch_dependencies.nil?
@@ -584,14 +584,14 @@ env > #{batch_options[:fenv]}
 
       job = Open.read(fjob).strip if Open.exists?(fjob)
 
-      if job && ! File.exists?(fexit)
+      if job && ! File.exist?(fexit)
         begin
           status_txt = job_status(job)
           STDERR.puts Log.color(:magenta, "Status [#{job.to_i}]:")
           STDERR.puts status_txt
           lines = status_txt.split("\n").length
         rescue
-          if ! File.exists?(fexit)
+          if ! File.exist?(fexit)
             STDERR.puts Log.color(:magenta, "Job #{job.to_i} not done and not running. STDERR:")
             STDERR.puts Open.read(ferr)
           end
@@ -599,7 +599,7 @@ env > #{batch_options[:fenv]}
         end
       end
 
-      if File.exists?(fexit)
+      if File.exist?(fexit)
         exit_status = Open.read(fexit)
         if exit_status.to_i == 0
           STDERR.puts Log.color(:magenta, "Job #{job} done with exit_status 0. STDOUT:")
@@ -613,7 +613,7 @@ env > #{batch_options[:fenv]}
 
       if tail
         Log.severity = 10
-        while ! File.exists? fout
+        while ! File.exist? fout
           if job
             STDERR.puts
             Log.clear_line(STDERR)
@@ -638,8 +638,8 @@ env > #{batch_options[:fenv]}
         begin
           status_txt = job_status(job)
           Open.write(fstatus, status_txt) unless status_txt.nil? || status_txt.empty?
-          out = CMD.cmd("tail -f '#{fout}'", :pipe => true) if File.exists?(fout) and not tail == :STDERR
-          err = CMD.cmd("tail -f '#{ferr}'", :pipe => true) if File.exists?(ferr)
+          out = CMD.cmd("tail -f '#{fout}'", :pipe => true) if File.exist?(fout) and not tail == :STDERR
+          err = CMD.cmd("tail -f '#{ferr}'", :pipe => true) if File.exist?(ferr)
 
           terr = Misc.consume_stream(err, true, STDERR) if err
           tout = Misc.consume_stream(out, true, STDOUT) if out

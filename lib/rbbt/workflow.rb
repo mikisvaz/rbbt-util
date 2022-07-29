@@ -543,13 +543,13 @@ module Workflow
     persist = input_values.nil? ? false : true
     persist = false
 
-    if ! (Path === step_path ? step_path.find : File.exists?(step_path)) && step_path.split("/").length == 3 && File.exists?(new_path = Rbbt.var.jobs[step_path].find)
+    if ! (Path === step_path ? step_path.find : File.exist?(step_path)) && step_path.split("/").length == 3 && File.exist?(new_path = Rbbt.var.jobs[step_path].find)
       step_path = new_path
     end
     
     key = Path === step_path ? step_path.find : step_path
 
-    if ! File.exists?(step_path) && step_path.split("/").length == 3 && File.exists?(new_path = Rbbt.var.jobs[step_path].find)
+    if ! File.exist?(step_path) && step_path.split("/").length == 3 && File.exist?(new_path = Rbbt.var.jobs[step_path].find)
       step_path = new_path
     end
 
@@ -602,7 +602,7 @@ module Workflow
       pother = other.split(/\/+/)
       end_part = pother[-3..-1] * "/"
       new_path = prefix + "/" << end_part
-      if File.exists? new_path
+      if File.exist? new_path
         new_path 
       else
         Rbbt.var.jobs[end_part].find
@@ -615,7 +615,7 @@ module Workflow
     pother = other.split(/\/+/)
     end_part = pother[-3..-1] * "/"
     new_path = preal[0..-4] * "/" << "/" << end_part
-    return new_path if File.exists?(new_path) || File.exists?(new_path + '.info')
+    return new_path if File.exist?(new_path) || File.exist?(new_path + '.info')
     Rbbt.var.jobs[end_part].find
   end
 
@@ -713,7 +713,7 @@ module Workflow
   def self.load_step(path)
     path = Path.setup(path.dup) unless Path === path
 
-    if ! (Path === path ? path.exists? : File.exists?(path)) && path.split("/").length == 3 
+    if ! (Path === path ? path.exists? : File.exist?(path)) && path.split("/").length == 3 
       new_path = Rbbt.var.jobs[path]
       if new_path.exists? || new_path.set_extension('info').exists?
         path = new_path
