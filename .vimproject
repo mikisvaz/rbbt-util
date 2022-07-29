@@ -524,6 +524,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     slice
     sort
     subset
+    select
     transpose
     uncollapse
     unzip

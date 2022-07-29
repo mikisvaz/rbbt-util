@@ -49,6 +49,9 @@ module Log
     end
 
     def init
+      @ticks, @bytes = 0
+      @last_time = @last_count = @last_percent = nil
+      @history, @mean_max, @max_history = nil
       @start = @last_time = Time.now
       @last_count = 0
       report
