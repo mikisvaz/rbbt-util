@@ -413,4 +413,15 @@ def self.add_libdir(dir=nil)
     CMD.cmd("ssh '#{server}' 'shopt -s expand_aliases; bash -l -c \"ruby\"' ", :in => script, :log => true).read
   end
 
+  def self.timeout_insist(time, msg = nil, &block)
+    Misc.insist do
+      begin
+        Timeout.timeout(time, TryAgain, msg, &block)
+      rescue TryAgain
+        Log.low "Timeout detected after #{time} seconds"
+        raise $!
+      end
+    end
+  end
+
 end

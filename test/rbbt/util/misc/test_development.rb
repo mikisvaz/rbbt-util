@@ -7,5 +7,16 @@ class TestMiscDevelopment < Test::Unit::TestCase
       puts "hola"
     end
   end
+
+  def __test_timeout
+    Misc.timeout_insist(2) do
+      puts "Start"
+      3.times do
+        puts "ping"
+        sleep rand(4)
+        puts "pong"
+      end
+    end
+  end
 end
 
