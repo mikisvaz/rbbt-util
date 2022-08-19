@@ -27,10 +27,11 @@ module Misc
       params.merge!(:format => _format) unless _format.nil? or (params.include?(:format) and not ((f = params[:format]).nil? or (String === f and f.empty?)))
 
       mod = Entity === field ? field : Entity.formats[field]
-      entity = mod.setup(
-        ((entity.frozen? and not entity.nil?) ? entity.dup : ((Array === entity and dup_array) ? entity.collect{|e| e.nil? ? e : e.dup} : entity) ),
-        params
-      ) 
+
+      entity = entity.dup
+      entity = (entity.frozen? and not entity.nil?) ? entity.dup : ((Array === entity and dup_array) ? entity.collect{|e| e.nil? ? e : e.dup} : entity) 
+
+      entity = mod.setup(entity, params)
     end
 
     entity

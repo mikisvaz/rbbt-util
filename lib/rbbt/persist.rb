@@ -359,6 +359,12 @@ module Persist
       Log.exception $!
       sleep 1 + rand(2)
       retry
+    rescue TryAgain
+      begin
+        Open.rm path 
+      rescue
+      end if Open.exists? path 
+      raise $!
     rescue Exception
       Log.medium "Error in persist: #{path}#{Open.exists?(path) ? Log.color(:red, " Erasing") : ""}"
 

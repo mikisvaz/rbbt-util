@@ -5,7 +5,7 @@ module Entity
   
   UNPERSISTED_PREFIX = "entity_unpersisted_property_"
 
-  class MultipleEntity < Exception; end
+  class MultipleEntity < TryAgain; end
 
   class DontPersist < Exception
     attr_accessor :payload
@@ -120,9 +120,9 @@ module Entity
         coder.scalar = clean_annotations
       end
 
-      def marshal_dump
-        clean_annotations
-      end
+      #def marshal_dump
+      #  clean_annotations
+      #end
 
       def consolidate
         self.inject(nil){|acc,e| 
@@ -203,9 +203,11 @@ module Entity
           end
 
           define_method name do |*args|
+
             if self.instance_variable_get("@multiple_result_" + name.to_s)
               return self.instance_variable_get("@multiple_result_" + name.to_s)
             end
+
             obj = if Array === self
                     self
                   elsif self.respond_to?(:container) && Array === self.container
@@ -217,7 +219,8 @@ module Entity
             missing = []
             obj.each do |e|
               begin 
-                e.send(multi_name)
+                res = e.send(multi_name)
+                e.instance_variable_set("@multiple_result_" + name.to_s, res)
               rescue MultipleEntity
                 missing << e
               end
@@ -227,20 +230,26 @@ module Entity
             case res
             when Array
               missing.zip(res).each do |o,res|
-                raise "Multiple function #{name} result nil for element #{o}" if res.nil?
+                raise "Multiple function '#{name}' result 'nil' for element '#{o}'" if res.nil?
                 o.instance_variable_set("@multiple_result_" + name.to_s, res)
+                o.send(multi_name)
               end
             when Hash
               res.each do |o,res|
-                raise "Multiple function #{name} result nil for element #{o}" if res.nil?
+                raise "Multiple function '#{name}' result 'nil' for element '#{o}'" if res.nil?
                 o.instance_variable_set("@multiple_result_" + name.to_s, res)
+                o.send(multi_name)
               end
             end
 
             if Array === self
-              self.collect{|o| o.send(multi_name)}
+              res = self.collect{|o| o.send(multi_name)}
+              self.instance_variable_set("@multiple_result_" + name.to_s, res)
+              res
             else
-              self.send(multi_name)
+              res = self.send(multi_name)
+              self.instance_variable_set("@multiple_result_" + name.to_s, res)
+              res
             end
           end
 

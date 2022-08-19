@@ -217,46 +217,66 @@ module Annotated
     end
   end
 
-  def marshal_dump
-    Annotated.purge(self).to_sym.to_s
-  end
-
   def self.to_hash(e)
     hash = {}
-    if Array === e && AnntatedArray === e
+    if Array === e && AnnotatedArray === e
       hash[:literal] = Annotated.purge(e)
       hash[:info] = e.info
     elsif Array === e
       hash = e.collect do |_e|
         _hash = {}
-        _hash[:literal] = _e
-        _hash[:info] = _e.info
+        _hash[:literal] = _e.dup
+        _hash[:info] = _e.info if _e.respond_to?(:info)
         _hash
       end
     else
-      hash[:literal] = e
+      hash[:literal] = e.dup
       hash[:info] = e.info
     end
     hash
   end
 
   def self.load_hash(hash)
-    literal = hash[:literal]
-    info = hash[:info]
-    info[:annotation_types].each do |type|
-      type = Kernel.const_get(type) if String === type
-      type.setup(literal, info) 
+    if Array === hash
+      hash.collect{|h| load_hash(h) }
+    else
+      literal = hash[:literal]
+      info = hash[:info]
+      info[:annotation_types].each do |type|
+        type = Kernel.const_get(type) if String === type
+        type.setup(literal, info) 
+      end
+      literal
     end
-    literal
+  end
+
+  def marshal_dump
+    Annotated.to_hash(self)
   end
 end
 
 class String
-  def marshal_load(str)
-    self.replace str
+  def marshal_load(hash)
+    if Hash === hash
+      e = Annotated.load_hash(hash)
+      self.replace e
+      e.annotate(self)
+      self
+    else
+      self.replace hash
+    end
   end
 end
 
-
-
-
+class Array
+  def marshal_load(hash)
+    if Hash === hash
+      e = Annotated.load_hash(hash)
+      self.replace e
+      e.annotate(self)
+      self
+    else
+      self.replace hash
+    end
+  end
+end

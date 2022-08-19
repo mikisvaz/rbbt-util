@@ -369,13 +369,14 @@ module TSV
   def select(method = nil, invert = false, &block)
     new = TSV.setup({}, :key_field => key_field, :fields => fields, :type => type, :filename => filename, :identifiers => identifiers)
 
-    new.key_field = key_field
-    new.fields    = fields.dup unless fields.nil?
-    new.type      = type
-    new.filename  = filename
-    new.namespace = namespace
-    new.entity_options = entity_options
-    new.entity_templates = entity_templates
+    self.annotate(new)
+    #new.key_field = key_field
+    #new.fields    = fields.dup unless fields.nil?
+    #new.type      = type
+    #new.filename  = filename
+    #new.namespace = namespace
+    #new.entity_options = entity_options
+    #new.entity_templates = entity_templates
     
     case
     when (method.nil? and block_given?)

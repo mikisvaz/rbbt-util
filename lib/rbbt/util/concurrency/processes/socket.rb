@@ -29,6 +29,10 @@ class RbbtProcessQueue
 
     def dump(obj, stream)
       case obj
+      when Annotated
+        payload = @serializer.dump(obj)
+        size_head = [payload.bytesize,"S"].pack 'La'
+        str = size_head << payload
       when String
         payload = obj
         size_head = [payload.bytesize,"C"].pack 'La'
@@ -90,7 +94,7 @@ class RbbtProcessQueue
     def push(obj)
       RbbtSemaphore.synchronize(@write_sem) do
         multiple = MultipleResult === obj
-        obj = Annotated.purge(obj)
+        #obj = Annotated.purge(obj)
         obj.extend MultipleResult if multiple
         self.dump(obj, @swrite)
       end

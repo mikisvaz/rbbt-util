@@ -61,8 +61,8 @@ module AnnotatedArray
 
         value = annotate(value)
 
-        value.container       = self
-        value.container_index = pos
+        value.container       = self if value.respond_to?(:container)
+        value.container_index = pos if value.respond_to?(:container_index)
 
         pos += 1
 

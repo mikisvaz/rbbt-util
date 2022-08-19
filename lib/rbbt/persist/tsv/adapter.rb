@@ -193,8 +193,12 @@ module Persist
     end
 
     def range(*args)
-      self.read_lock do
-        super(*args)
+      begin
+        self.read_lock do
+          super(*args)
+        end
+      rescue
+        []
       end
     end
 
