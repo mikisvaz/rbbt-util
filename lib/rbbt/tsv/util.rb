@@ -388,9 +388,6 @@ module TSV
     new
   end
 
-  def marshal_dump
-    [info, to_hash]
-  end
 
   def to_onehot(boolean = false)
     all_values = values.flatten.uniq.collect{|v| v.to_s}.sort
@@ -405,10 +402,3 @@ module TSV
   end
 end
 
-class Hash
-  def marshal_load(array)
-    info, to_hash = array
-    self.merge! to_hash
-    TSV.setup(self)
-  end
-end

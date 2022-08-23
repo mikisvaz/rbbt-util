@@ -120,10 +120,6 @@ module Entity
         coder.scalar = clean_annotations
       end
 
-      #def marshal_dump
-      #  clean_annotations
-      #end
-
       def consolidate
         self.inject(nil){|acc,e| 
           if acc.nil?

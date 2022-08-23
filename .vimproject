@@ -197,6 +197,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
     accessor.rb
     util.rb
+    marshal.rb
     serializers.rb
     manipulate.rb
     index.rb
@@ -229,6 +230,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
      sharder.rb
      tokyocabinet.rb
+     tokyocabinet=tokyocabinet{
+      marshal.rb
+     }
      fix_width_table.rb
      packed_index.rb
      kyotocabinet.rb

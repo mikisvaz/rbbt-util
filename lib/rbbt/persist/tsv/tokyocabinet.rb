@@ -101,3 +101,5 @@ module Persist
     database
   end
 end
+
+require 'rbbt/persist/tsv/tokyocabinet/marshal'
