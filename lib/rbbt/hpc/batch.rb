@@ -51,9 +51,15 @@ module HPC
 
         group, user, user_group, scratch_group_dir, projects_group_dir = options.values_at :group, :user, :user_group, :scratch_group_dir, :projects_group_dir
 
-        singularity_img, singularity_opt_dir, singularity_ruby_inline = options.values_at :singularity_img, :singularity_opt_dir, :singularity_ruby_inline
+        singularity_img, singularity_opt_dir, singularity_ruby_inline, singularity_mounts = options.values_at :singularity_img, :singularity_opt_dir, :singularity_ruby_inline, :singularity_mounts
 
-        singularity_cmd = %(singularity exec -e -B #{singularity_opt_dir}:/singularity_opt/ -B "#{singularity_ruby_inline}":"/.singularity_ruby_inline":rw ) 
+        singularity_cmd = %(singularity exec -e -B "#{File.expand_path singularity_opt_dir}":/singularity_opt/ -B "#{File.expand_path singularity_ruby_inline}":"/.singularity_ruby_inline":rw ) 
+
+        if singularity_mounts
+          singularity_mounts.split(",").each do |mount|
+            singularity_cmd += "-B #{ mount } "
+          end
+        end
 
         if contain && options[:hardened]
           singularity_cmd << %( -C -H "#{contain}" \
@@ -150,6 +156,7 @@ EOF
         :mem_per_cpu,
         :gres,
         :lua_modules,
+        :conda,
         :contraints,
         :licenses,
         :batch_dir,
@@ -167,6 +174,7 @@ EOF
         :purge_deps,
         :singularity,
         :singularity_img,
+        :singularity_mounts,
         :singularity_opt_dir,
         :singularity_ruby_inline
       ]
@@ -188,6 +196,7 @@ EOF
         :env_cmd,
         :user_group,
         :singularity_img,
+        :singularity_mounts,
         :singularity_opt_dir,
         :singularity_ruby_inline,
         :singularity
@@ -284,6 +293,20 @@ EOF
       str
     end
 
+    def load_conda(env = nil)
+      return "" if env.nil? || env.empty?
+
+      <<-EOF
+if ! type conda | grep function &> /dev/null; then
+    if [ ! -z $CONDA_EXE ]; then
+            source "$(dirname $(dirname $CONDA_EXE))/etc/profile.d/conda.sh" &> /dev/null
+    fi
+fi
+conda activate #{ env }
+      EOF
+    end
+
+
     def batch_system_variables
       <<-EOF
 let MAX_MEMORY="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / 1024"
@@ -292,6 +315,7 @@ let MAX_MEMORY="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / 1024"
 
     def prepare_environment(options = {})
       modules = options[:lua_modules]
+      conda = options[:conda]
 
       prepare_environment = ""
 
@@ -382,7 +406,7 @@ echo "user_scratch: #{scratch_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" 
         end
       end
 
-      batch_system_variables + load_modules(modules) + "\n" + functions + "\n" + prepare_environment
+      batch_system_variables + load_modules(modules) + "\n" + load_conda(conda) + "\n"  + functions + "\n" + prepare_environment
     end
 
     def execute(options)

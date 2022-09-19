@@ -138,7 +138,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
  fcadep = File.join(dir, 'canfail_dependencies.list')
  cadeps = Open.read(fcadep).split("\n") if File.exist?(fcadep)
 
- aborted = error = true if aborted.nil? && error.nil?
+ aborted = error = true if ! done && aborted.nil? && error.nil?
  #if done || error || aborted || running || queued || jobid || search
  #  select = false
  #  select = true if done && exit_status && exit_status.to_i == 0 

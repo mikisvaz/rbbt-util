@@ -19,8 +19,9 @@ module RbbtPython
 
   def self.df2tsv(tuple, options = {})
     options = Misc.add_defaults options, :type => :list
+    IndiferentHash.setup options
     tsv = TSV.setup({}, options)
-    tsv.key_field = tuple.columns.name
+    tsv.key_field = options[:key_field] || tuple.columns.name
     tsv.fields = py2ruby_a(tuple.columns.values)
     keys = tuple.index.values
     PyCall.len(tuple.index).times do |i|

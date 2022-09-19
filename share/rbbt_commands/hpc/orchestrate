@@ -13,6 +13,7 @@ $slurm_options = SOPT.get <<EOF
 --drbbt* Use development version of rbbt 
 -sing--singularity Use Singularity
 -si--singularity_img* Singularity image to use
+-sm--singularity_mounts* Singularity image to use
 -ug--user_group* Use alternative user group for group project directory
 -c--contain* Contain in directory (using Singularity)
 -s--sync* Contain in directory and sync jobs
@@ -36,8 +37,9 @@ $slurm_options = SOPT.get <<EOF
 -cons--constraint* SLURM constraint
 -W--workflows* Additional workflows
 -rmb--remove_batch_basedir Remove the SLURM working directory (command, STDIN, exit status, ...)
--lmod--lua_modules* Lua Modules to load 
 -bs--batch_system* Batch system to use: auto, lsf, slurm (default is auto-detect)
+-lmod--lua_modules* Lua Modules to load 
+-co--conda* Conda environment to use
 -OR--orchestration_rules* Orchestration rules
 EOF
 
