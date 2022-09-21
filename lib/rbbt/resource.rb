@@ -204,6 +204,10 @@ module Resource
             case type
             when :string
               Misc.sensiblewrite(final_path, content)
+            when :csv
+              require 'rbbt/tsv/csv'
+              tsv = TSV.csv content
+              Misc.sensiblewrite(final_path, tsv.to_s)
             when :url
               options = {}
               options[:noz] = true if Open.gzip?(final_path) || Open.bgzip?(final_path) || Open.zip?(final_path)
