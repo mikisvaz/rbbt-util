@@ -71,6 +71,9 @@ module Misc
   end
 
   def self.timespan(str, default = "s")
+
+    return - timespan(str[1..-1], default) if str[0] == "-"
+    
     if str.include?(":")
       seconds, minutes, hours = str.split(":").reverse
       return seconds.to_i + minutes.to_i * 60 + hours.to_i * 60 * 60
@@ -86,7 +89,7 @@ module Misc
       "h" => (60 * 60),
       "d" => (60 * 60 * 24),
       "w" => (60 * 60 * 24 * 7),
-      "mo" => (60 * 60 * 24 * 30),
+      "mo" => (60 * 60 * 24 * 31),
       "y" => (60 * 60 * 24 * 365),
     }
 

@@ -610,6 +610,8 @@ EOF
     assert_equal 60*60*24, Misc.timespan('1d')
     assert_equal 60*60*24, Misc.timespan('1d')
     assert_equal 60*60*24, Misc.timespan('24:00:00')
+
+    assert_equal Misc.timespan('1min'), - Misc.timespan('-1min')
   end
 
   def test_remove_long_items

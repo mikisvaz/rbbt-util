@@ -39,3 +39,9 @@ geom_entity <- function (real.geom = NULL, mapping = NULL, data = NULL, stat = "
 }
 
 rbbt.ggplot2.rotate_x_labels <- function(){ theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) }
+
+rbbt.ggplot2.theme <- function(plot){
+
+    plot + theme_classic() + scale_y_continuous(labels=scales::comma) + scale_x_continuous(labels=scales::comma) + rbbt.ggplot2.rotate_x_labels()
+
+}

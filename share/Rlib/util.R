@@ -812,7 +812,7 @@ rbbt.plot.text_scatter <- function(formula, data) {
 rbbt.install.CRAN <- function(pkg){
     cat("Try CRAN install:", pkg, "\n")
     res = FALSE
-    tryCatch({ install.packages(pkg); library(pkg); res = TRUE; }, error = function(e){ str(e); warning(paste("Could not install CRAN ", pkg)); res = FALSE })
+    tryCatch({ install.packages(pkg); library(pkg, character.only=T); res = TRUE; }, error = function(e){ str(e); warning(paste("Could not install CRAN ", pkg)); res = FALSE })
     return(res)
 }
 
