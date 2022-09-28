@@ -25,7 +25,9 @@ module TSV
           when Path
             CSV.read obj.find.open, options
           when String
-            if Misc.is_filename?(obj)
+            if Open.remote?(obj)
+              CSV.read Open.open(obj), options
+            elsif Misc.is_filename?(obj)
               CSV.read obj, options
             else
               CSV.new obj, **options

@@ -206,7 +206,7 @@ module Resource
               Misc.sensiblewrite(final_path, content)
             when :csv
               require 'rbbt/tsv/csv'
-              tsv = TSV.csv content
+              tsv = TSV.csv Open.open(content)
               Misc.sensiblewrite(final_path, tsv.to_s)
             when :url
               options = {}

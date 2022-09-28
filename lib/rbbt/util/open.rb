@@ -640,12 +640,16 @@ module Open
     io
   end
 
-  def self.download(url, file)
+  def self.download_old(url, file)
     Open.open(url, :mode => 'rb', :noz => true) do |sin|
       Open.open(file, :mode => 'wb') do |sout|
         Misc.consume_stream(sin, false, sout)
       end
     end
+  end
+
+  def self.download(url, path)
+    Open.wget(url, "--output-document" => path, :pipe => false)
   end
 
   def self.can_open?(file)
@@ -841,7 +845,4 @@ module Open
     File.symlink?(path) && ! File.exist?(File.readlink(path))
   end
 
-  def self.download(url, path)
-    Open.wget(url, "--output-document" => path)
-  end
 end

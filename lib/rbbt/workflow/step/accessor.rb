@@ -203,7 +203,7 @@ class Step
     files
   end
 
-  def file(name)
+  def file(name=nil)
     Path.setup(File.join(files_dir, name.to_s), workflow, self)
   end
 

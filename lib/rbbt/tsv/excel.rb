@@ -266,7 +266,7 @@ module TSV
 
   def self.xls(filename, options ={})
     if Open.remote? filename
-      TmpFile.with_file do |tmp|
+      TmpFile.with_file nil, :extension => 'xls' do |tmp|
         Open.download(filename, tmp)
         TSV::XLS.read(tmp, options)
       end
@@ -278,7 +278,7 @@ module TSV
   def self.xlsx(filename, options ={})
     if Open.remote? filename
 
-      TmpFile.with_file do |tmp|
+      TmpFile.with_file nil, :extension => 'xlsx' do |tmp|
         Open.download(filename, tmp)
         TSV::XLSX.read(tmp, options)
       end
