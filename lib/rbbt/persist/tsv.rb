@@ -146,9 +146,22 @@ module Persist
           data.serializer = :type 
         end
 
-        data.write_and_read do
-          yield data
+        if persist_options[:persist] == :preload
+          tmp_tsv = yield({})
+          tmp_tsv.annotate data
+          data.serializer = tmp_tsv.type
+          data.write_and_read do
+            tmp_tsv.each do |k,v|
+              data[k] = v
+            end
+          end
+        else
+          data.write_and_read do
+            yield data
+          end
+        end
 
+        data.write_and_read do
           FileUtils.mv data.persistence_path, path if File.exist? data.persistence_path and not File.exist? path
           tsv = CONNECTIONS[path] = CONNECTIONS.delete tmp_path
           tsv.persistence_path = path
@@ -165,6 +178,7 @@ module Persist
       end
     end
   end
+
 end
 
 require 'rbbt/persist/tsv/sharder'

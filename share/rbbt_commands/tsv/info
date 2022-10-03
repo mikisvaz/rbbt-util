@@ -18,6 +18,7 @@ Display summary information. Works with Tokyocabinet HDB and BDB as well.
 -hh--header_hash* Change the character used to mark the header line (defaults to #)
 -k--key_field* Change the key field
 -f--fields* Change the fields to load
+-fp--fingerprint Fingerprint values
 -s--sep* Change the fields separator (default TAB)
 -h--help Help
 EOF
@@ -70,7 +71,11 @@ else
   
   puts "Rows: #{Log.color :blue, rows}" 
   parts = []
-  header.first_line.split(header.sep, -1).each_with_index{|p,i| parts << (Log.color(:cyan, "(#{i}) ") << p.strip) }
+  header.first_line.split(header.sep, -1).each_with_index do |p,i| 
+   p.strip!
+   p = Misc.fingerprint p.split("|") if %w(double flat).include?(header.options[:type].to_s) && options[:fingerprint]
+   parts << (Log.color(:cyan, "(#{i}) ") << p.strip) 
+  end
   puts parts * "\t"
   puts
 end

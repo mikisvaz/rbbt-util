@@ -360,7 +360,7 @@ module TSV
     new = TSV.setup({}, :key_field => key_field, :fields => fields, :type => type, :filename => filename, :identifiers => identifiers)
     self.with_unnamed do
       keys.each do |k|
-        new[k] = self[k]
+        new[k] = self[k] if self.include?(k)
       end
     end
     new
