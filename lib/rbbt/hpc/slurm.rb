@@ -10,7 +10,9 @@ module HPC
       <<-EOF
 let TOTAL_PROCESORS="$(cat /proc/cpuinfo|grep ^processor |wc -l)"
 let MAX_MEMORY_DEFAULT="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / ( (1024 * $TOTAL_PROCESORS) / $SLURM_CPUS_PER_TASK )"
-[ ! -z $SLURM_MEM_PER_CPU ] && let MAX_MEMORY="$SLURM_MEM_PER_CPU * $SLURM_CPUS_PER_TASK" || MAX_MEMORY="$MAX_MEMORY_DEFAULT"
+MAX_MEMORY="$MAX_MEMORY_DEFAULT"
+[ ! -z $SLURM_MEM_PER_CPU ] && let MAX_MEMORY="$SLURM_MEM_PER_CPU * $SLURM_CPUS_PER_TASK" 
+[ ! -z $SLURM_MEM_PER_NODE ] && MAX_MEMORY="$SLURM_MEM_PER_NODE"
 export MAX_MEMORY_DEFAULT
 export MAX_MEMORY
 export BATCH_JOB_ID=$SLURM_JOB_ID

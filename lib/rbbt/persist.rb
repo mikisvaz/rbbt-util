@@ -84,6 +84,8 @@ module Persist
       perfile = prefix.to_s + ":" + file.to_s.gsub(/\//, '>') 
     end
 
+    perfile.sub!(/\.b?gz$/,'')
+
     if options.include? :filters
       options[:filters].each do |match,value|
         perfile = perfile + "&F[#{match}=#{Misc.digest(value.inspect)}]"

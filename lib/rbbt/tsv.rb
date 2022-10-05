@@ -137,12 +137,12 @@ module TSV
     case
     when Path === stream 
       stream.open do |f|
-        f.no_fail = false if ConcurrentStream === f
+        f.no_fail = true if ConcurrentStream === f
         Parser.new f, options
       end
     when (String === stream and stream.length < 300 and (Open.exists? stream or Open.remote? stream))
       Open.open(stream) do |f|
-        f.no_fail = false if ConcurrentStream === f
+        f.no_fail = true if ConcurrentStream === f
         Parser.new f, options
       end
     else

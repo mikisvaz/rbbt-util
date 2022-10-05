@@ -39,17 +39,17 @@ module Misc
   end
 
   def self.sum(list)
-    list.compact.inject(0.0){|acc,e| acc += e}
+    list.compact.inject(0.0){|acc,e| acc += e }
   end
 
   def self.mean(list)
-    sum(list).to_f / list.compact.length
+    sum(list.compact.collect{|v| v.to_f } ) / list.compact.length
   end
 
   def self.median(array)
     sorted = array.sort
     len = sorted.length
-    (sorted[(len - 1) / 2] + sorted[len / 2]) / 2.0
+    (sorted[(len - 1) / 2] + sorted[len / 2]).to_f / 2
   end
 
   def self.variance(list)

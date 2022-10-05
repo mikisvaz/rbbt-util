@@ -163,6 +163,7 @@ module CMD
 
     if in_content.respond_to?(:read)
       in_thread = Thread.new(Thread.current) do |parent|
+        Thread.current.report_on_exception = false if no_fail
         begin
           begin
             while c = in_content.readpartial(Misc::BLOCK_SIZE)
@@ -177,7 +178,7 @@ module CMD
             in_content.join if in_content.respond_to? :join 
           end
         rescue
-          Log.error "Error in CMD  [#{pid}] #{cmd}: #{$!.message}"
+          Log.error "Error in CMD  [#{pid}] #{cmd}: #{$!.message}" unless no_fail
           raise $!
         end
       end
