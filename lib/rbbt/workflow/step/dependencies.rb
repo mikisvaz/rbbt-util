@@ -493,7 +493,7 @@ class Step
       begin Exception
         execute_and_dup(step, dep_step) 
       rescue 
-        raise $! unless canfail_paths.include? step.path
+        raise $! unless canfail_paths.include?(step.path)
       end
     end
 

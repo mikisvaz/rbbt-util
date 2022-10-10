@@ -377,7 +377,7 @@ module TSV
         return self
       when :list
         through do |k,v|
-          new[k] = v.first
+          new[k] = v.nil? ? nil : v.first
         end
       end
     end

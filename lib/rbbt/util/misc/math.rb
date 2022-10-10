@@ -35,7 +35,7 @@ module Misc
     v_range = v_max - v_min
     range = max.to_f - min.to_f
 
-    v.collect{|e| min + range * (e.to_f - v_min) / v_range } 
+    v.collect{|e| (e.nil? || e.nan?) ? e : min + range * (e.to_f - v_min) / v_range } 
   end
 
   def self.sum(list)
