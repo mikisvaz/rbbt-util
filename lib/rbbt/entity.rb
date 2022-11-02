@@ -158,23 +158,23 @@ module Entity
         when :single, :single2array
           single_name = "_single_" << name
           define_method single_name, &block 
-          define_method name do |*args|
+          define_method name do |*args, &block|
             if Array === self
               res = self.collect{|e| e.send(single_name, *args)}
               res.first.annotate(res) if Annotated === res.first && type == :single2array
               res
             else
-              self.send(single_name, *args)
+              self.send(single_name, *args, &block)
             end
           end
         when :array, :array2single
           ary_name = "_ary_" << name
           define_method ary_name, &block 
 
-          define_method name do |*args|
+          define_method name do |*args, &block|
             case
             when Array === self
-              self.send(ary_name, *args)
+              self.send(ary_name, *args, &block)
             when (Array === self.container and not self.container_index.nil? and self.container.respond_to? ary_name)
               cache_code = Misc.hash2md5({:name => ary_name, :args => args})
               res = (self.container._ary_property_cache[cache_code] ||=  self.container.send(name, *args))
@@ -184,7 +184,7 @@ module Entity
                 res[self.container_index]
               end
             else
-              res = self.make_list.send(ary_name, *args)
+              res = self.make_list.send(ary_name, *args, &block)
               Hash === res ? res[self] : res[0]
             end
           end

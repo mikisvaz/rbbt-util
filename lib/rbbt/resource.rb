@@ -71,6 +71,10 @@ module Resource
     end
   end
 
+  def claims
+    resources.keys.collect{|path| path.sub(subdir, '').sub(/^\//,'') }
+  end
+
   attr_accessor :server_missing_resource_cache
   def get_from_server(path, final_path, remote_server = nil)
     remote_server ||= self.remote_server

@@ -23,7 +23,7 @@ class KnowledgeBase
     entity_options = self.entity_options
     IndiferentHash.setup entity_options if entity_options and not IndiferentHash === entity_options
     options = entity_options[type.to_s] || entity_options[Entity.formats[type.to_s].to_s] || {}
-    options[:format] = @format[type] if @format.include? :type
+    options[:format] = @format[type] if Hash === @format && @format.include?(type)
     namespace = self.namespace
     namespace = db_namespace(database_name) if namespace.nil? and database_name
     options = {:organism => namespace}.merge(options)

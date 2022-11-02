@@ -87,5 +87,25 @@ class TestProgress < Test::Unit::TestCase
     end
   end
 
+  def test_file
+    size = 10000
+
+    TmpFile.with_file do |file|
+
+      Log::ProgressBar.with_bar(size, :desc => "Bar 1", :file => file) do |bar|
+        bar.init
+        nums = []
+        100.times do
+          nums << rand(size)
+        end
+        nums.sort.each do |num|
+          bar.pos num
+          sleep 0.1
+        end
+        bar.tick
+      end
+    end
+  end
+
 end
 

@@ -354,7 +354,7 @@ module Path
 
   def yaml
     self.open do |f|
-      YAML.load f
+      YAML.unsafe_load f
     end
   end
 

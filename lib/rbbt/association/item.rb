@@ -136,7 +136,8 @@ module AssociationItem
   end
 
   property :filter => :array do |*args,&block|
-    keys = tsv.with_unnamed do tsv.select(*args,&block).keys end
+    block = args.pop if Proc === args.last
+    keys = tsv.with_unnamed do tsv.select(*args, &block).keys end
     keys = self.annotate keys
     keys
   end
