@@ -372,8 +372,7 @@ function batch_sync_contain_dir(){
 
         prepare_environment +=<<-EOF
 # Load singularity modules
-module load intel/2018.1
-module load singularity
+command -v singularity &> /dev/null || module load singularity
 mkdir -p "#{singularity_opt_dir}"
         EOF
 
