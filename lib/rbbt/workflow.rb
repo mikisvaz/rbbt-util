@@ -244,7 +244,7 @@ module Workflow
                        when :hash
                          clean_inputs = Annotated.purge(inputs)
                          clean_inputs = clean_inputs.collect{|i| Symbol === i ? i.to_s : i }
-                         deps_str = dependencies.collect{|d| (Step === d || (defined?(RemoteStep) && RemoteStep === Step)) ? "Step: " << (Symbol === d.overriden ? d.path : d.short_path) : d }
+                         deps_str = dependencies.collect{|d| (Step === d || (defined?(RemoteStep) && RemoteStep === d)) ? "Step: " << (Symbol === d.overriden ? d.path : d.short_path) : d }
                          key_obj = {:inputs => clean_inputs, :dependencies => deps_str }
                          key_str = Misc.obj2str(key_obj)
                          hash_str = Misc.digest(key_str)
@@ -454,7 +454,7 @@ module Workflow
 
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
 
-    overriden_deps = dependencies.select{|d| d.overriden }
+    overriden_deps = dependencies.select{|d| d.overriden || d.name != d.clean_name }
     true_overriden_deps = overriden_deps.select{|d| TrueClass === d.overriden }
 
     overriden = has_overriden_inputs || overriden_deps.any?
@@ -543,7 +543,10 @@ module Workflow
     persist = input_values.nil? ? false : true
     persist = false
 
-    if ! (Path === step_path ? step_path.find : File.exist?(step_path)) && step_path.split("/").length == 3 && File.exist?(new_path = Rbbt.var.jobs[step_path].find)
+    if ! (Path === step_path ? step_path.find : File.exist?(step_path)) && 
+        step_path.split("/").length == 3 && 
+        File.exist?(new_path = Rbbt.var.jobs[step_path].find)
+
       step_path = new_path
     end
     

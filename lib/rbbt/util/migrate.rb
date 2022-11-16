@@ -84,7 +84,7 @@ puts resource[path].find(search_path)
         #cmd = "rsync -avztAXHP --copy-unsafe-links #{test_str} #{files_from_str} #{excludes_str} '#{source_path}' #{target_path} #{other * " "}"
          
         # rsync_args = "-avztAXHP --copy-unsafe-links"
-        rsync_args = "-avztAHP --copy-unsafe-links"
+        rsync_args = "-avztHP --copy-unsafe-links"
 
         rsync_args << " --link-dest '#{source_path}'" if hard_link && ! options[:source]
 
