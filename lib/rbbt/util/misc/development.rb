@@ -417,10 +417,40 @@ def self.add_libdir(dir=nil)
     end
   end
 
-  def self.ssh_run(server, script = nil, &block)
+  def self.ssh_run(server, script = nil)
     Log.debug "Run ssh script in #{server}:\n#{script}"
 
     CMD.cmd("ssh '#{server}' 'shopt -s expand_aliases; bash -l -c \"ruby\"' ", :in => script, :log => true).read
+  end
+
+  def self.ssh_connection(server, reset = false)
+    @@ssh_connections ||= {}
+    @@ssh_connections.delete server if reset
+    @@ssh_connections[server] ||= begin
+                                    require 'pty'
+                                    master, slave = PTY.open
+                                    read, write = Misc.pipe
+                                    pid = spawn("ssh '#{server}' 'shopt -s expand_aliases; bash -l' ", :in => read, :out => slave, :err => STDERR.fileno)
+                                    read.close
+                                    slave.close
+                                    [write, master, pid]
+                                  end
+  end
+
+  def self.ssh_run(server, script = nil)
+    Log.debug "Run ssh script in #{server}:\n#{script}"
+
+    write, master, pid = ssh_connection(server)
+    write, master = ssh_connection(server, true) if PTY.check pid
+    write.puts "echo '#{script.gsub("'", '"') + "\n" + 'puts "\nCMD_OUT_END"'}' | ruby "
+    lines = []
+    while true
+      line = master.gets
+      break if line.strip == "CMD_OUT_END"
+      lines << line.strip unless line.strip.empty?
+    end
+    lines * "\n"
+
   end
 
   def self.timeout_insist(time, msg = nil, &block)

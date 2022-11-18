@@ -161,6 +161,13 @@ puts files * "\n"
   end
 
   def self.migrate(path, search_path, options = {})
+    if Step === path
+      if options[:source]
+        path = Rbbt.identify(path.path)
+      else
+        path = path.path
+      end
+    end
     search_path = 'user' if search_path.nil?
 
     resource = Rbbt

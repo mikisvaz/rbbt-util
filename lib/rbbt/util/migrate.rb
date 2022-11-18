@@ -96,7 +96,7 @@ puts resource[path].find(search_path)
           puts cmd 
           exit 0
         else
-          CMD.cmd_log(cmd, :log => Log::INFO)
+          CMD.cmd_log(cmd, :log => Log::HIGH)
 
           if options[:delete] && options[:files]
             remove_files = options[:files].collect{|f| File.join(source_path, f) }

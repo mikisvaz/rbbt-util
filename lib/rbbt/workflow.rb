@@ -45,6 +45,13 @@ module Workflow
     load_remote_tasks(Rbbt.root.etc.remote_tasks.find) if Rbbt.root.etc.remote_tasks.exists?
   end
 
+  def self.init_relay_tasks
+    return if defined? @@init_relay_tasks and @@init_relay_tasks
+    @@init_relay_tasks = true
+    load_relay_tasks(Rbbt.root.etc.relay_tasks.find) if Rbbt.root.etc.relay_tasks.exists?
+  end
+
+
 
   def self.require_remote_workflow(wf_name, url)
     require 'rbbt/workflow/remote_workflow'
@@ -142,6 +149,7 @@ module Workflow
 
   def self.require_workflow(wf_name, force_local=false)
     Workflow.init_remote_tasks
+    Workflow.init_relay_tasks
     # Already loaded
     begin
       workflow = Misc.string2const wf_name
@@ -219,6 +227,7 @@ module Workflow
   attr_accessor :step_cache
   attr_accessor :load_step_cache
   attr_accessor :remote_tasks
+  attr_accessor :relay_tasks
 
   #{{{ ATTR DEFAULTS
   
@@ -831,4 +840,28 @@ module Workflow
     Workflow.process_remote_tasks(remote_workflow_tasks)
   end
 
+  def self.process_relay_tasks(relay_tasks)
+    require 'rbbt/workflow/remote_workflow'
+    relay_tasks.each do |workflow, servers|
+      wf = Workflow.require_workflow workflow
+      wf.relay_tasks ||= {}
+      IndiferentHash.setup wf.relay_tasks
+      servers.each do |server, tasks|
+        case tasks
+        when Array
+          tasks.each do |task|
+            wf.relay_tasks[task.to_sym] = [server, {:migrate => :true}]
+          end
+        else
+          wf.relay_tasks[tasks.to_sym] = [server, {:migrate => :true}]
+        end
+      end
+    end
+  end
+
+  def self.load_relay_tasks(filename)
+    yaml_text = Open.read(filename)
+    relay_workflow_tasks = YAML.load(yaml_text)
+    Workflow.process_relay_tasks(relay_workflow_tasks)
+  end
 end

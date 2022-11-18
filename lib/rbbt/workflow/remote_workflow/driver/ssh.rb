@@ -106,9 +106,9 @@ STDOUT.write res
       script += job_script(inputs_id, jobname)
       script +=<<-EOF
 job.init_info
-STDOUT.write job.name
+STDOUT.write job.path
       EOF
-      @name = Misc.ssh_run(server, script)
+      Misc.ssh_run(server, script)
     end
 
     def self.run_job(url, input_id, jobname = nil)
@@ -117,6 +117,7 @@ STDOUT.write job.name
       script = path_script(path)
       script += job_script(input_id, jobname)
       script +=<<-EOF
+ENV["RBBT_UPDATE"]="#{(ENV["RBBT_UPDATE"] || false).to_s}"
 job.produce
 STDOUT.write job.path
       EOF
@@ -153,31 +154,67 @@ job.clean
             new = Step.migrate(path, :user, :target => server)
             Open.write(file, new)
           end
-          CMD.cmd("ssh '#{server}' mkdir -p .rbbt/tmp/tmp-ssh_job_inputs/; scp -r '#{dir}' #{server}:.rbbt/tmp/tmp-ssh_job_inputs/#{input_id}")
+          CMD.cmd_log("ssh '#{server}' mkdir -p .rbbt/tmp/tmp-ssh_job_inputs/; scp -r '#{dir}' #{server}:.rbbt/tmp/tmp-ssh_job_inputs/#{input_id}")
         end
       end
     end
 
-    def self.relay(workflow, task, jobname, inputs, server, options = {})
-      options = Misc.add_defaults options, :search_path => 'user'
-      search_path = options[:search_path]
+    #def self.relay_old(workflow, task, jobname, inputs, server, options = {})
+    #  options = Misc.add_defaults options, :search_path => 'user'
+    #  search_path = options[:search_path]
 
-      job = workflow.job(task, jobname, inputs)
+    #  job = workflow.job(task, jobname, inputs)
 
-      job.dependencies.each do |dep| 
-        dep.produce 
-      end
+    #  job.dependencies.each do |dep| 
+    #    dep.produce 
+    #  end
 
-      override_dependencies = job.dependencies.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
+    #  override_dependencies = job.dependencies.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
 
-      job.dependencies.each do |dep| 
+    #  job.dependencies.each do |dep| 
+    #    Step.migrate(dep.path, search_path, :target => server)
+    #  end
+
+    #  remote = RemoteWorkflow.new("ssh://#{server}:#{workflow.to_s}", "#{workflow.to_s}")
+    #  rjob = remote.job(task, jobname, {})
+    #  rjob.override_dependencies = override_dependencies
+    #  rjob.run
+    #end
+
+    def self.relay_job(job, server, options = {})
+      migrate, produce, produce_dependencies, search_path = Misc.process_options options.dup,
+        :migrate, :produce, :produce_dependencies, :search_path
+
+      search_path ||= 'user'
+
+      produce = true if migrate
+
+      workflow_name = job.workflow.to_s
+      inputs = job.inputs.to_hash
+      job.dependencies.each do |dep|
+        dep.produce if options[:produce_dependencies]
+        next unless dep.done?
+
         Step.migrate(dep.path, search_path, :target => server)
       end
 
-      remote = RemoteWorkflow.new("ssh://#{server}:#{workflow.to_s}", "#{workflow.to_s}")
-      rjob = remote.job(task, jobname, {})
+      remote_workflow = RemoteWorkflow.new("ssh://#{server}:#{job.workflow.to_s}", "#{job.workflow.to_s}")
+      rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
+
+      override_dependencies = job.dependencies.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
       rjob.override_dependencies = override_dependencies
-      rjob.run
+
+      if options[:migrate]
+        rjob.produce
+        Step.migrate(Rbbt.identify(job.path), 'user', :source => server) 
+      end
+
+      rjob
+    end
+
+    def self.relay(workflow, task, jobname, inputs, server, options = {})
+      job = workflow.job(task, jobname, inputs)
+      relay_job(job, server, options)
     end
 
     def workflow_description

@@ -22,12 +22,13 @@ class RemoteStep
 
       RemoteWorkflow::SSH.upload_inputs(@server, inputs, @input_types, @input_id)
 
-      @name ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
+      @remote_path ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
         Misc.insist do
           input_types = {}
           RemoteWorkflow::SSH.post_job(File.join(base_url, task.to_s), @input_id, @base_name)
         end
       end
+      @name = @remote_path.split("/").last
 
       if Open.remote?(@name)
         @url = @name
@@ -41,9 +42,10 @@ class RemoteStep
 
     def path
       @server, @server_path = RemoteWorkflow::SSH.parse_url @base_url
-      init_job unless @name
       if info[:path]
         "ssh://" + @server + ":" + info[:path]
+      elsif @remote_path
+        "ssh://" + @server + ":" + @remote_path
       else
         "ssh://" + @server + ":" + ["var/jobs", self.workflow.to_s, task_name.to_s, @name] * "/"
       end
