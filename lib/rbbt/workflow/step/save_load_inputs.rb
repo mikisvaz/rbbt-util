@@ -111,6 +111,7 @@ module Workflow
 
       dir.glob("*#*").each do |od|
         name = File.basename(od)
+        name.sub!(/\.as_path$/,'')
         value = Open.read(od)
         Log.debug "Loading override dependency #{ name } as #{value}"
         inputs[name] = value.chomp

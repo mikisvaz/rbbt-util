@@ -463,7 +463,7 @@ module Workflow
 
     dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
 
-    overriden_deps = dependencies.select{|d| d.overriden || d.name != d.clean_name }
+    overriden_deps = dependencies.select{|d| d.overriden }
     true_overriden_deps = overriden_deps.select{|d| TrueClass === d.overriden }
 
     overriden = has_overriden_inputs || overriden_deps.any?
@@ -650,7 +650,7 @@ module Workflow
     end
     step = Step.new path
     relocated = false
-    step.dependencies = (step.info[:dependencies] || []).collect do |task,name,dep_path|
+    dependencies = (step.info[:dependencies] || []).collect do |task,name,dep_path|
       if Open.exists?(dep_path) || Open.exists?(dep_path + '.info') || Open.remote?(dep_path) || Open.ssh?(dep_path)
         Workflow._load_step dep_path
       else
@@ -659,6 +659,7 @@ module Workflow
         Workflow._load_step new_path
       end
     end
+    step.instance_variable_set("@dependencies", dependencies)
     step.relocated = relocated
     step.load_inputs_from_info
     step

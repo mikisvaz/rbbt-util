@@ -216,7 +216,7 @@ class Step
   def run(no_load = false)
     result = nil
 
-    if workflow.relay_tasks && workflow.relay_tasks.include?(task_name)
+    if Workflow === workflow && workflow.relay_tasks && workflow.relay_tasks.include?(task_name)
       server, options = workflow.relay_tasks[task_name]
       options[:migrate] = true
       return RemoteWorkflow::SSH.relay_job(self, server, options) 

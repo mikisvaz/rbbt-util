@@ -59,6 +59,7 @@ class RemoteStep
       while ! done?
         sleep 1
       end
+      self
     end
 
     def load

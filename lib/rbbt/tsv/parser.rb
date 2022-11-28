@@ -516,7 +516,7 @@ module TSV
       data.extend TSV unless TSV === data
       data.type = @type
       data.key_field = @key_field
-      data.fields = @fields
+      data.fields = @fields.nil? ? nil : @fields.dup
       data.namespace = @namespace
       data.filename = @filename
       data.identifiers = @identifiers
