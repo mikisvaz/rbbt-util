@@ -106,7 +106,7 @@ options = SOPT.get <<EOF
 -as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default:
 -cl--clean Clean the last step of the job so that it gets recomputed:
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely:
--n--name* Job name to use. The name 'Default' is used by default:
+-n--name* Job name to use. The name '#{Workflow::DEFAULT_NAME}' is used by default:
 -pn--printname Print the name of the job and exit without starting it:
 -rw--require_workflow* Workflows to require, separated by commas
 EOF
@@ -155,7 +155,7 @@ end
 
 usage workflow, task if help
 
-name = options.delete(:name) || "Default"
+name = options.delete(:name) || Workflow::DEFAULT_NAME
 
 # get job args
 sopt_option_string = SOPT_options(workflow, task)
