@@ -96,7 +96,12 @@ module Workflow
           Log.debug "Opening tsv #{ input } from #{file}"
           inputs[input.to_sym]  = TSV.open(file)
         when :boolean
-          inputs[input.to_sym]  = (file.read.strip == 'true')
+          case file.read.strip.downcase
+          when 'true'
+            inputs[input.to_sym]  = true
+          when 'false'
+            inputs[input.to_sym]  = false
+          end
         when :integer
           inputs[input.to_sym]  = file.read.to_i
         when :float
