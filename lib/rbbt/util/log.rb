@@ -131,6 +131,30 @@ module Log
     end
   end
 
+  def self._ignore_stdout
+    begin
+      File.open('/dev/null', 'w') do |f|
+        backup_stdout = STDOUT.dup
+        STDOUT.reopen(f)
+        begin
+          yield
+        ensure
+          STDOUT.reopen backup_stdout
+          backup_stdout.close
+        end
+      end
+    rescue Errno::ENOENT
+      yield
+    end
+  end
+
+
+  def self.ignore_stdout(&block)
+    LOG_MUTEX.synchronize do
+      _ignore_stdout &block
+    end
+  end
+
   def self.get_level(level)
     case level
     when Numeric
