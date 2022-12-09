@@ -577,20 +577,20 @@ class Step
 
     return [] if dependencies.nil? or dependencies.empty?
 
-    new_dependencies = []
     if self.overriden?
       archived_deps = []
     else
       archived_deps = self.info[:archived_info] ? self.info[:archived_info].keys : []
     end
 
+    new_dependencies = []
     dependencies.each{|step| 
       #next if self.done? && Open.exists?(info_file) && info[:dependencies] && info[:dependencies].select{|task,name,path| path == step.path }.empty?
       next if archived_deps.include? step.path
-      next if seen.include? step.path
+      next if seen.include? step
       next if self.done? && connected && ! updatable?
 
-      r = step.rec_dependencies(connected, new_dependencies.collect{|d| d.path})
+      r = step.rec_dependencies(connected, new_dependencies)
       new_dependencies.concat r
       new_dependencies << step
     }
