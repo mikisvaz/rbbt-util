@@ -185,9 +185,17 @@ rbbt.tsv <- function(filename, sep = "\t", comment.char ="#", row.names=1, check
   }
 
   columns = rbbt.tsv.columns(filename, sep, comment.char=comment.char)
+  if (! is.null(comment.char))
+      columns[1] = substring(columns[1],length(comment.char) + 1)
+
   if (! is.null(columns)){
-      names(data) <- columns[2:length(columns)];
-      attributes(data)$key.field = substring(columns[1],2);
+      #names(data) <- columns[2:length(columns)];
+      if (! is.null(row.names)){
+          names(data) <- columns[c(-row.names)];
+      }else{
+          names(data) <- columns
+      }
+      attributes(data)$key.field = columns[1];
   }
 
   return(data);
