@@ -37,6 +37,8 @@ when options[:tokyocabinet_bd]
   exit
 end
 
+options[:fields] = options[:fields].split(/,\s*/) if options[:fields]
+
 parser = TSV::Parser.new TSV.get_stream(file), options
 
 dumper = TSV::Dumper.new parser.options.merge(:sep => "\t", :sep2 => '|')
