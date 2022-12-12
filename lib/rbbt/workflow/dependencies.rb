@@ -73,8 +73,10 @@ module Workflow
     return [] if dep == :skip || dep == 'skip'
 
     if not Step === dep
-      located = Open.exists?(dep)
+      located = Open.exists?(dep) || Open.exists?(dep + '.info')
       dep = Workflow.load_step(dep)
+    else
+      located = true
     end
 
     dep.original_workflow ||= dep.workflow if dep.workflow

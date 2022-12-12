@@ -503,7 +503,7 @@ module Workflow
     when :not_overriden_dep
       job.overriden = true if has_overriden_inputs || true_overriden_deps.any?
     else
-      job.overriden = true if has_overriden_inputs || overriden_deps.any?
+      job.overriden = true if has_overriden_inputs || true_overriden_deps.any?
     end
 
     job.real_inputs = real_inputs.keys

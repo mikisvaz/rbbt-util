@@ -527,7 +527,7 @@ class Step
 
   def overriden?
     return true if @overriden
-    return true if dependencies && dependencies.select{|dep| dep.overriden? }.any?
+    return true if dependencies && dependencies.select{|dep| TrueClass === dep.overriden }.any?
     info[:archived_info].each do |f,i|
       next if Symbol === i
       return true if i[:overriden] || i["overriden"]
