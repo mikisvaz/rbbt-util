@@ -61,7 +61,8 @@ class Step
     else
       begin
         Log.debug "Issuing SLURM job for #{self.path}"
-        @batch_job_id, @batch_job_dir = HPC::BATCH_MODULE.orchestrate_job(self, SOPT::GOT_OPTIONS.merge($slurm_options)) 
+        #@batch_job_id, @batch_job_dir = HPC::BATCH_MODULE.orchestrate_job(self, SOPT::GOT_OPTIONS.merge($slurm_options)) 
+        @batch_job_id, @batch_job_dir = HPC::BATCH_MODULE.orchestrate_job(self, $slurm_options) 
         if no_load
           self
         else
