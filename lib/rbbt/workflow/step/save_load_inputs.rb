@@ -31,6 +31,8 @@ module Workflow
 
         type = :step_array if file.split(".").last == 'as_step_array'
 
+        type = :number_array if file.split(".").last == 'as_number_array'
+
         type = :step_file if file.split(".").last == 'as_step_file'
 
         type = :step_file_array if file.split(".").last == 'as_step_file_array'
@@ -57,6 +59,9 @@ module Workflow
         when :step_array
           steps = Open.read(file).strip.split("\n").collect{|path| Workflow.load_step(path) }
           inputs[input.to_sym] = steps
+        when :number_array
+          numbers = Open.read(file).strip.split("\n").collect{|num| num.to_f }
+          inputs[input.to_sym] = numbers
         when :step
           steps = Open.read(file).strip.split("\n").collect{|path| Workflow.load_step(path) }
           inputs[input.to_sym] = steps.first
@@ -176,6 +181,8 @@ class Step
       when Step
         path = path + '.as_step_array'
         value = value.collect{|s| s.path }
+      when Numeric
+        path = path + '.as_number_array'
       end
 
       value = value * "\n"
