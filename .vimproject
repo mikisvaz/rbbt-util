@@ -173,6 +173,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     old=old{
      slurm.rb
     }
+    orchestrate.old.rb
 
     batch.rb
     slurm.rb
@@ -184,7 +185,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      chains.rb
      batches.rb
     }
-    orchestrate.old.rb
     trace.rb
    }
 
