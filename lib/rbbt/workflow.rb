@@ -437,8 +437,8 @@ module Workflow
       jobname_input = nil 
     end
 
-    if jobname_input && jobname && inputs[jobname_input].nil?
-      inputs[jobname_input] = jobname
+    if jobname_input && inputs[jobname_input].nil?
+      inputs[jobname_input] = jobname || DEFAULT_NAME
     end
 
     real_inputs = {}
