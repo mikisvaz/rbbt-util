@@ -166,6 +166,33 @@ for this dependency
     dep = dependencies.flatten.first
   end
 
+  task :overr_orig => :string do
+    "over"
+  end
+
+  task :overr_alt => :string do
+    "alt"
+  end
+
+  dep :overr_orig
+  task :overr_target => :string do
+    step(:overr_orig).load.reverse
+  end
+
+  dep :overr_alt, :not_overriden => true
+  dep :overr_target, "TestWF#overr_orig" => :overr_alt, :not_overriden => true
+  task :overr_action => :string do
+    step(:overr_target).load.upcase
+  end
+
+
+  dep :overr_alt, :not_overriden => true
+  dep :overr_target, "TestWF#overr_orig" => :overr_alt
+  task :overr_action2 => :string do
+    step(:overr_target).load.upcase
+  end
+
+
 end
 
 TestWF.workdir = Rbbt.tmp.test.jobs.TestWF
@@ -419,7 +446,7 @@ class TestWorkflow < Test::Unit::TestCase
       TmpFile.with_file do |dir|
         Path.setup(dir)
         Step.save_job_inputs(job, dir)
-        assert_equal Dir.glob(dir + "/*"), [dir.file.find]
+        assert_equal Dir.glob(dir + "/*"), [dir.file.find + '.as_path']
       end
     end
 
@@ -427,7 +454,7 @@ class TestWorkflow < Test::Unit::TestCase
     TmpFile.with_file do |dir|
       Path.setup(dir)
       Step.save_job_inputs(job, dir)
-      assert_equal Dir.glob(dir + "/*"), [dir.file.find + '.yaml']
+      assert_equal Dir.glob(dir + "/*"), [dir.file.find + '.as_path']
       inputs  = Workflow.load_inputs(dir, [:file], :file => :file)
       assert_equal inputs, {:file => 'code'}
     end
@@ -471,5 +498,19 @@ class TestWorkflow < Test::Unit::TestCase
         assert ! job.updated?
       end
     end
+  end
+
+  def test_overriden
+    job = TestWF.job(:overr_action)
+    job.recursive_clean
+    assert_equal "TLA", job.run
+
+    assert Symbol === job.step(:overr_orig).overriden
+    assert TrueClass === job.step(:overr_target).overriden
+    assert ! job.overriden
+
+    job = TestWF.job(:overr_action2)
+    assert_equal "TLA", job.run
+    assert job.overriden
   end
 end

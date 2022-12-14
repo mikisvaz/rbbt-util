@@ -285,6 +285,7 @@ module Workflow
 
     workdir[taskname][tagged_jobname].find
   end
+
   def import_task(workflow, orig, new)
     orig_task = workflow.tasks[orig]
     new_task = orig_task.dup
@@ -442,10 +443,8 @@ module Workflow
     end
 
     real_inputs = {}
-    has_overriden_inputs = false
 
     inputs.each do |k,v|
-      #has_overriden_inputs = true if String === k and k.include? "#"
       next unless (task_inputs.include?(k.to_sym) or task_inputs.include?(k.to_s))
       default = all_defaults[k]
       next if default == v 
@@ -461,12 +460,10 @@ module Workflow
 
     jobname = DEFAULT_NAME if jobname.nil? or jobname.empty?
 
-    dependencies = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
+    dependencies, overriden = real_dependencies(task, jobname, defaults.merge(inputs), task_dependencies[taskname] || [])
 
-    overriden_deps = dependencies.select{|d| d.overriden }
-    true_overriden_deps = overriden_deps.select{|d| TrueClass === d.overriden }
-
-    overriden = has_overriden_inputs || overriden_deps.any?
+    #overriden_deps        = dependencies.select{|d| Symbol === d.overriden }
+    #overriden_target_deps = overriden_deps.select{|d| TrueClass === d.overriden }
 
     extension = task.extension
 
@@ -492,19 +489,20 @@ module Workflow
       step_path = step_path taskname, jobname, input_values, dependencies, extension
     end
 
-
     job = get_job_step step_path, task, input_values, dependencies
     job.workflow = self
+    job.overriden ||= overriden 
     job.clean_name = jobname
 
-    case not_overriden 
-    when TrueClass
-      job.overriden = has_overriden_inputs || true_overriden_deps.any?
-    when :not_overriden_dep
-      job.overriden = true if has_overriden_inputs || true_overriden_deps.any?
-    else
-      job.overriden = true if has_overriden_inputs || true_overriden_deps.any?
-    end
+    #iif [job, not_overriden]
+    #case not_overriden 
+    #when TrueClass
+    #  job.overriden = false
+    #when :not_overriden_dep
+    #  job.overriden = true if overriden_target_deps.any?
+    #else
+    #  job.overriden = true if overriden_deps.any?
+    #end
 
     job.real_inputs = real_inputs.keys
     job

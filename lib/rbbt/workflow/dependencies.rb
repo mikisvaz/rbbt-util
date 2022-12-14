@@ -72,12 +72,7 @@ module Workflow
   def setup_override_dependency(dep, workflow, task_name)
     return [] if dep == :skip || dep == 'skip'
 
-    if not Step === dep
-      located = Open.exists?(dep) || Open.exists?(dep + '.info')
-      dep = Workflow.load_step(dep)
-    else
-      located = true
-    end
+    dep = Workflow.load_step(dep) if not Step === dep
 
     dep.original_workflow ||= dep.workflow if dep.workflow
     dep.original_task_name ||= dep.task_name if dep.task_name
@@ -88,7 +83,6 @@ module Workflow
     dep.workflow = workflow
     dep.info[:name] = dep.name
 
-
     begin
       workflow = Kernel.const_get workflow if String === workflow
       dep.task = workflow.tasks[task_name] if dep.task.nil? && workflow.tasks.include?(task_name)
@@ -97,11 +91,15 @@ module Workflow
     end
 
     dep.task_name = task_name
-    dep.overriden = dep.original_task_name.to_sym if dep.original_task_name && located
+    dep.overriden = dep.original_task_name.to_sym if dep.original_task_name 
 
     dep.extend step_module
 
     dep
+  end
+
+  def unlocated_override?(dep)
+    String === dep && ! (Open.exists?(dep) || Open.exists?(dep + '.info'))
   end
 
   def assign_dep_inputs(_inputs, options, all_d, task_info)
@@ -155,6 +153,7 @@ module Workflow
 
     override_dependencies = override_dependencies(inputs)
 
+    overriden = false
     dependencies.each do |dependency|
       _inputs = IndiferentHash.setup(inputs.dup)
       jobname = orig_jobname
@@ -165,6 +164,7 @@ module Workflow
                    workflow, dep_task, options = dependency
 
                    if override_dependencies[workflow.to_s] && value = override_dependencies[workflow.to_s][dep_task]
+                     overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
                      setup_override_dependency(value, workflow, dep_task)
                    else
 
@@ -177,15 +177,23 @@ module Workflow
 
                      job = workflow._job(dep_task, jobname, _inputs)
                      ComputeDependency.setup(job, compute) if compute
+
+                     overriden = true if TrueClass === job.overriden && (options.nil? || ! options[:not_overriden])
+
                      job
                    end
                  when Step
-                   dependency
+                   job = dependency
+                   overriden = true if TrueClass === job.overriden && (options.nil? || ! options[:not_overriden])
+                   job
                  when Symbol
                    if override_dependencies[self.to_s] && value = override_dependencies[self.to_s][dependency]
+                     overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
                      setup_override_dependency(value, self, dependency)
                    else
-                     _job(dependency, jobname, _inputs)
+                     job = _job(dependency, jobname, _inputs)
+                     overriden = true if TrueClass === job.overriden && (options.nil? || ! options[:not_overriden])
+                     job
                    end
                  when Proc
                    if DependencyBlock === dependency
@@ -193,6 +201,7 @@ module Workflow
                      wf, task_name, options = orig_dep
 
                      if override_dependencies[wf.to_s] && value = override_dependencies[wf.to_s][task_name]
+                       overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
                        dep = setup_override_dependency(value, wf, task_name)
                      else
 
@@ -208,16 +217,20 @@ module Workflow
                        dep.each{|d| 
                          next if d.nil?
                          if Hash === d
+                           d = d.merge(options)
                            d[:workflow] ||= wf 
                            d[:task] ||= task_name
                            _override_dependencies = override_dependencies.merge(override_dependencies(d[:inputs] || {}))
                            d = if _override_dependencies[d[:workflow].to_s] && value = _override_dependencies[d[:workflow].to_s][d[:task]]
+                                 overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
                                  setup_override_dependency(value, d[:workflow], d[:task])
                                else
                                  task_info = d[:workflow].task_info(d[:task])
 
                                  _inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
-                                 d[:workflow]._job(d[:task], d[:jobname], _inputs) 
+                                 job = d[:workflow]._job(d[:task], d[:jobname], _inputs) 
+                                 overriden = true if TrueClass === job.overriden && (d.nil? || ! d[:not_overriden])
+                                 job
                                end
                          end
                          ComputeDependency.setup(d, compute) if compute
@@ -232,11 +245,15 @@ module Workflow
                        dep[:workflow] ||= wf || self
                        _override_dependencies = override_dependencies.merge(override_dependencies(dep[:inputs] || {}))
                        if _override_dependencies[dep[:workflow].to_s] && value = _override_dependencies[dep[:workflow].to_s][dep[:task]]
+                         overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
                          setup_override_dependency(value, dep[:workflow], dep[:task])
                        else
                          task_info = (dep[:task] && dep[:workflow]) ? dep[:workflow].task_info(dep[:task]) : nil
                          _inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, task_info)
-                         dep = dep[:workflow]._job(dep[:task], dep[:jobname], _inputs)
+                         job = dep[:workflow]._job(dep[:task], dep[:jobname], _inputs)
+                         job = d[:workflow]._job(d[:task], d[:jobname], _inputs) 
+                         overriden = true if TrueClass === job.overriden && (d.nil? || ! d[:not_overriden])
+                         job
                        end
                      end
                    end
@@ -248,6 +265,6 @@ module Workflow
 
       real_dependencies << real_dep
     end
-    real_dependencies.flatten.compact
+    [real_dependencies.flatten.compact, overriden]
   end
 end
