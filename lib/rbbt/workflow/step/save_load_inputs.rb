@@ -82,7 +82,7 @@ module Workflow
         when :file, :binary
           Log.debug "Pointing #{ input } to #{file}"
           if file =~ /\.yaml/
-            inputs[input.to_sym]  = YAML.load(Open.read(file))
+            inputs[input.to_sym]  = Misc.load_yaml(file)
           else
             if File.symlink?(file)
               link_target = File.expand_path(File.readlink(file), File.dirname(file))

@@ -206,7 +206,7 @@ module HPC
       options.delete "detach"
       options.delete "jobname"
 
-      rules = YAML.load(Open.read(options[:orchestration_rules])) if options[:orchestration_rules]
+      rules = Misc.load_yaml(options[:orchestration_rules]) if options[:orchestration_rules]
       rules ||= {}
       IndiferentHash.setup(rules)
 

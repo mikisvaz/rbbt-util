@@ -22,6 +22,8 @@ require 'rbbt/util/misc/objects'
 require 'rbbt/util/misc/manipulation'
 require 'rbbt/util/misc/communication'
 
+require 'rbbt/util/misc/serialize'
+
 require 'to_regexp'
 
 module MultipleResult; end

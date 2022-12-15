@@ -64,14 +64,14 @@ module Rbbt
         lock_info[f].merge!(file_time(f))
         if File.size(f) > 0
           info = Open.open(f) do |s|
-            YAML.load(s)
+            Misc.load_yaml(s)
           end
           IndiferentHash.setup(info)
           lock_info[f][:pid] = info[:pid]
           lock_info[f][:ppid] = info[:ppid]
         end
       rescue Exception
-        #Log.exception $!
+        Log.exception $!
       end
     end
     lock_info
@@ -272,7 +272,7 @@ module Rbbt
   def self.load_lock(lock)
     begin
       info = Misc.insist 3 do
-        YAML.load(Open.read(lock))
+        Misc.load_yaml(lock)
       end
       info.values_at "pid", "ppid", "time"
     rescue Exception

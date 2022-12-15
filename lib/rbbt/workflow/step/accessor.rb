@@ -253,7 +253,7 @@ class Step
       #Open.read(file(name)).split /\n|,\s*/
       Open.read(file(name)).split "\n"
     when :yaml
-      YAML.load(Open.open(file(name)))
+      Misc.load_yaml(file(name))
     when :marshal
       Marshal.load(Open.open(file(name)))
     else

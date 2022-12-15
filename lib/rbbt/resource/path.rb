@@ -150,7 +150,7 @@ module Path
   search_path_file = File.join(ENV['HOME'], '.rbbt/etc/search_paths')
   if File.exist?(search_path_file)
     begin
-      YAML.load(File.open(search_path_file)).each do |where, location|
+      Misc.load_yaml(search_path_file).each do |where, location|
         SEARCH_PATHS[where.to_sym] = location
       end
     rescue

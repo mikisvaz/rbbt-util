@@ -37,9 +37,9 @@ module HPC
       prepare_for_execution(job)
 
       if options[:orchestration_rules]
-        rules = YAML.load(Open.read(options[:orchestration_rules]))
+        rules = Misc.load_yaml(options[:orchestration_rules])
       elsif Rbbt.etc.slurm["default.yaml"].exists?
-        rules = YAML.load(Open.read(Rbbt.etc.slurm["default.yaml"]))
+        rules = Misc.load_yaml(Rbbt.etc.slurm["default.yaml"])
       else
         rules = {}
       end

@@ -834,8 +834,7 @@ module Workflow
   end
 
   def self.load_remote_tasks(filename)
-    yaml_text = Open.read(filename)
-    remote_workflow_tasks = YAML.load(yaml_text)
+    remote_workflow_tasks = Misc.load_yaml(filename)
     Workflow.process_remote_tasks(remote_workflow_tasks)
   end
 
@@ -859,8 +858,7 @@ module Workflow
   end
 
   def self.load_relay_tasks(filename)
-    yaml_text = Open.read(filename)
-    relay_workflow_tasks = YAML.load(yaml_text)
+    remote_workflow_tasks = Misc.load_yaml(filename)
     Workflow.process_relay_tasks(relay_workflow_tasks)
   end
 end

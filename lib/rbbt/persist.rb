@@ -148,9 +148,7 @@ module Persist
           JSON.parse(stream.read)
         end
       when :yaml
-        Open.open(path) do |stream|
-          YAML.load(stream)
-        end
+        Misc.load_yaml(path)
       when :float
         Open.read(path).to_f
       when :integer
