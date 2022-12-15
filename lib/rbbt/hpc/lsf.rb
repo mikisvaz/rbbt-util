@@ -5,6 +5,10 @@ module HPC
     extend HPC::TemplateGeneration
     extend HPC::Orchestration
 
+    def self.batch_system
+      "LSF"
+    end
+
     def self.batch_system_variables
       <<-EOF
 let TOTAL_PROCESORS="$(cat /proc/cpuinfo|grep ^processor |wc -l)"
@@ -13,7 +17,7 @@ let MAX_MEMORY_DEFAULT="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / 
 export MAX_MEMORY_DEFAULT
 export MAX_MEMORY
 export BATCH_JOB_ID=$LSF_JOBID
-export BATCH_SYSTEM=LSF
+export BATCH_SYSTEM=#{batch_system}
       EOF
     end
 

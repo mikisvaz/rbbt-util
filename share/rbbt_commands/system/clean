@@ -46,7 +46,7 @@ if locks.any?
   puts
   puts Log.color(:magenta, "Locks:")
   locks.each do |file,info|
-    if force or (info[:pid] and not Misc.pid_exists? info[:pid])
+    if force or (info[:pid] && ! Misc.pid_exists?(info[:pid]))
       puts "  Removing #{ file }"
       File.unlink file 
     end

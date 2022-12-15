@@ -15,7 +15,7 @@ class Step
       raise "DO NOT CLEAN" 
     end
 
-    if (Open.exists?(path) or Open.broken_link?(path)) or Open.exists?(pid_file) or Open.exists?(info_file) or Open.exists?(files_dir) or Open.broken_link?(files_dir)
+    if (Open.exists?(path) or Open.broken_link?(path)) or Open.exists?(pid_file) or Open.exists?(info_file) or Open.exists?(files_dir) or Open.broken_link?(files_dir) or Open.exists?(pid_file)
 
       @result = nil
       @pid = nil

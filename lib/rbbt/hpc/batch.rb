@@ -560,6 +560,16 @@ env > #{batch_options[:fenv]}
     def run_job(job, options = {})
       system = self.to_s.split("::").last
 
+      if (batch_job = job.info[:batch_job]) && job_queued(batch_job)
+        Log.info "Job #{job.short_path} already queued in #{batch_job}"
+        return batch_job 
+      end
+
+      if job.running?
+        Log.info "Job #{job.short_path} already running in #{job.info[:pid]}"
+        return job.info[:batch_job]
+      end
+
       batch_base_dir, clean_batch_job, remove_batch_dir, procpath, tail, batch_dependencies, dry_run = Misc.process_options options, 
         :batch_base_dir, :clean_batch_job, :remove_batch_dir, :batch_procpath, :tail, :batch_dependencies, :dry_run,
         :batch_base_dir => File.expand_path(File.join('~/rbbt-batch')) 
@@ -583,6 +593,8 @@ env > #{batch_options[:fenv]}
 
         batch_job = run_template(batch_dir, dry_run)
 
+        hold_dependencies(job, batch_job) unless dry_run
+
         return [batch_job, batch_dir] unless tail
 
         t_monitor = Thread.new do
@@ -600,6 +612,17 @@ env > #{batch_options[:fenv]}
         end
 
         [batch_job, batch_dir]
+      end
+    end
+
+    def hold_dependencies(job, batch_job)
+      job.set_info :batch_job, batch_job
+      job.set_info :batch_system, self.batch_system
+      job.dependencies.each do |dep|
+        next unless dep.waiting?
+        next if (dep_batch_job = dep.info[:batch_job]) && job_queued(dep_batch_job)
+
+        hold_dependencies(dep, batch_job)
       end
     end
 
@@ -672,7 +695,7 @@ env > #{batch_options[:fenv]}
           terr = Misc.consume_stream(err, true, STDERR) if err
           tout = Misc.consume_stream(out, true, STDOUT) if out
 
-          sleep 3 while job_status(job).include? job.to_s
+          sleep 3 while job_queued(job)
         rescue Aborted
         ensure
           begin
@@ -690,6 +713,10 @@ env > #{batch_options[:fenv]}
           end
         end
       end
+    end
+
+    def job_queued(job)
+      job_status(job).split(/\s+/).include?(job.to_s)
     end
 
     def wait_for_job(batch_dir, time = 1)

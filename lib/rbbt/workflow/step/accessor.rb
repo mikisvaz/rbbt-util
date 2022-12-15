@@ -143,8 +143,12 @@ class Step
 
   def init_info(force = false)
     return nil if @exec || info_file.nil? || (Open.exists?(info_file) && ! force)
+    batch_job = info[:batch_job] if Open.exists?(info_file)
+    batch_system = info[:batch_system] if Open.exists?(info_file)
     Open.lock(info_file, :lock => info_lock) do
       i = {:status => :waiting, :pid => Process.pid, :path => path, :real_inputs => real_inputs, :overriden => overriden}
+      i[:batch_job] = batch_job if batch_job
+      i[:batch_system] = batch_system if batch_system
       i[:dependencies] = dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]} if dependencies
       Misc.sensiblewrite(info_file, Step.serialize_info(i), :force => true, :lock => false)
       @info_cache = IndiferentHash.setup(i)
