@@ -1,6 +1,12 @@
 class RbbtException < StandardError; end
 class ParameterException < RbbtException; end
 
+class MissingParameterException < ParameterException
+  def initialize(parameter)
+    super("Missing parameter '#{parameter}'")
+  end
+end
+
 class FieldNotFoundError < StandardError;end
 class ClosedStream < StandardError; end
 

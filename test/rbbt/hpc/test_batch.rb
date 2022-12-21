@@ -6,7 +6,7 @@ Workflow.require_workflow "Sample"
 Workflow.require_workflow "HTS"
 class TestSLURM < Test::Unit::TestCase
 
-  def _test_batch_options
+  def test_batch_options
     job = Sample.job(:mutect2, "small", :reference => "hg38")
 
     TmpFile.with_file do |batch_dir|
@@ -17,7 +17,7 @@ class TestSLURM < Test::Unit::TestCase
     end
   end
 
-  def _test_template
+  def test_template
     job = Sample.job(:mutect2, "small", :reference => "hg38")
 
     TmpFile.with_file do |batch_dir|
@@ -28,7 +28,7 @@ class TestSLURM < Test::Unit::TestCase
     end
   end
 
-  def _test_template_singularity
+  def test_template_singularity
     job = Sample.job(:mutect2, "small", :reference => "hg38")
 
     TmpFile.with_file do |batch_dir|
@@ -39,7 +39,7 @@ class TestSLURM < Test::Unit::TestCase
     end
   end
 
-  def _test_template_contain
+  def test_template_contain
     job = Sample.job(:mutect2, "small", :reference => "hg38")
 
     TmpFile.with_file do |batch_dir|

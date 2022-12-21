@@ -378,7 +378,7 @@ function batch_sync_contain_dir(){
         prepare_environment +=<<-EOF
 # Load singularity modules
 command -v singularity &> /dev/null || module load singularity
-mkdir -p "#{singularity_opt_dir}"
+mkdir -p "#{File.expand_path singularity_opt_dir}"
         EOF
 
         if contain && options[:hardened]

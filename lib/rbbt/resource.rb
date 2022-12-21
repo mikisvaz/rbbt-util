@@ -90,6 +90,7 @@ module Resource
       
       lock_filename = nil # it seems like this was locked already.
 
+      Log.low "Downloading #{path} from #{url} file server"
       Misc.lock lock_filename do
         begin
           uri = URI(url)
