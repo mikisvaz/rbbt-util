@@ -112,6 +112,7 @@ module CMD
     no_wait    = options.delete(:no_wait)
     xvfb       = options.delete(:xvfb)
     bar        = options.delete(:progress_bar)
+    save_stderr = options.delete(:save_stderr)
 
     dont_close_in  = options.delete(:dont_close_in)
 
@@ -154,7 +155,7 @@ module CMD
                                   Open3.popen3(ENV, cmd)
                                 rescue
                                   Log.warn $!.message
-                                  raise ProcessFailed, cmd unless no_fail
+                                  raise ProcessFailed, nil, cmd unless no_fail
                                   return
                                 end
     pid = wait_thr.pid
@@ -198,6 +199,7 @@ module CMD
           while line = serr.gets
             bar.process(line) if bar
             sout.log = line
+            sout.std_err << line if save_stderr
             Log.log "STDERR [#{pid}]: " +  line, stderr if log
           end 
           serr.close
@@ -244,9 +246,9 @@ module CMD
       status = wait_thr.value
       if not status.success? and not no_fail
         if !err.empty?
-          raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{status.exitstatus}.\n#{err}"
+          raise ProcessFailed.new pid, "#{cmd} failed with error status #{status.exitstatus}.\n#{err}"
         else
-          raise ProcessFailed.new "Command [#{pid}] #{cmd} failed with error status #{status.exitstatus}"
+          raise ProcessFailed.new pid, "#{cmd} failed with error status #{status.exitstatus}"
         end
       else
         Log.log err, stderr if Integer === stderr and log

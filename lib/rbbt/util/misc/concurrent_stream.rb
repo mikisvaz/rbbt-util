@@ -7,7 +7,7 @@ module AbortedStream
 end
 
 module ConcurrentStream
-  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :aborted, :autojoin, :lockfile, :no_fail, :pair, :thread, :stream_exception, :log
+  attr_accessor :threads, :pids, :callback, :abort_callback, :filename, :joined, :aborted, :autojoin, :lockfile, :no_fail, :pair, :thread, :stream_exception, :log, :std_err
 
   def self.setup(stream, options = {}, &block)
     
@@ -20,6 +20,7 @@ module ConcurrentStream
     stream.pids.concat(Array === pids ? pids : [pids]) unless pids.nil? or pids.empty?
     stream.autojoin = autojoin unless autojoin.nil?
     stream.no_fail = no_fail unless no_fail.nil?
+    stream.std_err = ""
 
     stream.pair = pair unless pair.nil?
 
@@ -81,12 +82,16 @@ module ConcurrentStream
         begin
           t.join
           if Process::Status === t.value
-            if log
-              raise ProcessFailed.new "Error joining process #{t.pid} in #{self.filename || self.inspect}. Last log line: #{log}" if ! (t.value.success? || no_fail)
-            else
-              raise ProcessFailed.new "Error joining process #{t.pid} in #{self.filename || self.inspect}" if ! (t.value.success? || no_fail)
+            if ! (t.value.success? || no_fail)
+
+              if log
+                msg = "Error joining #{self.filename || self.inspect}. Last log line: #{log}"
+              else
+                msg = "Error joining #{self.filename || self.inspect}"
+              end
+
+              raise ConcurrentStreamProcessFailed.new t.pid, msg, self
             end
-            raise ProcessFailed.new "Error joining process #{t.pid} in #{self.filename || self.inspect}. Last log line: #{log}" if ! (t.value.success? || no_fail)
           end
         rescue Exception
           if no_fail
@@ -106,11 +111,7 @@ module ConcurrentStream
       @pids.each do |pid| 
         begin
           Process.waitpid(pid, Process::WUNTRACED)
-          if log
-            stream_raise_exception ProcessFailed.new "Error joining process #{pid} in #{self.filename || self.inspect}. Last log line: #{log}" unless $?.success? or no_fail
-          else
-            stream_raise_exception ProcessFailed.new "Error joining process #{pid} in #{self.filename || self.inspect}" unless $?.success? or no_fail
-          end
+          stream_raise_exception ConcurrentStreamProcessFailed.new(pid, "Error in waitpid", self) unless $?.success? or no_fail
         rescue Errno::ECHILD
         end
       end 

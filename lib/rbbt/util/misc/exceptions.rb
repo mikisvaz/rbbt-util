@@ -11,12 +11,29 @@ class FieldNotFoundError < StandardError;end
 class ClosedStream < StandardError; end
 
 class ProcessFailed < StandardError; 
-  def initialize(pid = Process.pid)
+  attr_accessor :pid, :msg
+  def initialize(pid = Process.pid, msg = nil)
     @pid = pid
-    @msg = "Process #{@pid} failed"
-    super(@msg)
+    @msg = msg
+    if @pid
+      if @msg
+        message = "Process #{@pid} failed - #{@msg}"
+      else
+        message = "Process #{@pid} failed"
+      end
+    else
+      message = "Failed to run #{@msg}"
+    end
+    super(message)
   end
+end
 
+class ConcurrentStreamProcessFailed < ProcessFailed
+  attr_accessor :concurrent_stream
+  def initialize(pid = Process.pid, msg = nil, concurrent_stream = nil)
+    super(pid, msg)
+    @concurrent_stream = concurrent_stream
+  end
 end
 
 class Aborted < StandardError; end
