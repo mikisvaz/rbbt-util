@@ -85,7 +85,7 @@ uncompress_pkg(){
     mkdir -p "$OPT_BUILD_DIR"
     cd "$OPT_BUILD_DIR"
 
-    (tar xvfz $pkg || tar xvfJ $pkg || tar xvfj $pkg || unzip $pkg || (echo "Error decompressing" & cd & rmdir "$OPT_BUILD_DIR" & exit -1 ) ) 2> /dev/null
+    (tar xvfz $pkg || tar xvfJ $pkg || tar xvfj $pkg || unzip $pkg || (echo "Error decompressing" & cd & exit -1 ) ) 2> /dev/null
 
     cd "$old_pwd"
 }
@@ -178,7 +178,7 @@ clean_build(){
 }
 
 build_dir(){
-    echo $OPT_BUILD_DIR/`ls $OPT_BUILD_DIR |head -n 1`
+    echo $OPT_BUILD_DIR/$(ls $OPT_BUILD_DIR |head -n 1)
 }
 
 compile(){
@@ -211,6 +211,7 @@ prepare_make(){
     local extra="$@"
 
     local old_pwd="`expand_path $(pwd)`"
+
     cd "`build_dir`"
 
     [ -f bootstrap ] && (./bootstrap || exit -1)
