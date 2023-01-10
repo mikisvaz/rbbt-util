@@ -50,11 +50,15 @@ class RemoteStep
         "ssh://" + @server + ":" + ["var/jobs", self.workflow.to_s, task_name.to_s, @name] * "/"
       end
     end
+    
+    def _run
+      RemoteWorkflow::SSH.run_job(File.join(base_url, task.to_s), @input_id, @base_name)
+    end
 
     def produce(*args)
       input_types = {}
       init_job
-      @remote_path = RemoteWorkflow::SSH.run_job(File.join(base_url, task.to_s), @input_id, @base_name)
+      @remote_path = _run
       @started = true
       while ! done?
         sleep 1

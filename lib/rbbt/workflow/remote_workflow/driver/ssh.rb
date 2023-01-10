@@ -85,7 +85,9 @@ job = wf.job(task, jobname, job_inputs)
 STDOUT.write res.to_json
       EOF
 
-      JSON.parse(Misc.ssh_run(server, script))
+      json = Misc.ssh_run(server, script)
+      Log.debug "JSON (#{ url }): #{json}"
+      JSON.parse(json)
     end
 
     def self.get_raw(url, params)
@@ -124,13 +126,16 @@ STDOUT.write job.path
       Misc.ssh_run(server, script)
     end
 
-    def self.run_slurm_job(url, input_id, jobname = nil)
+    def self.run_slurm_job(url, input_id, jobname = nil, slurm_options = {})
       server, path = parse_url(url)
 
       script = path_script(path)
       script += job_script(input_id, jobname)
       script +=<<-EOF
-job.produce
+require 'rbbt/hpc'
+HPC::BATCH_MODULE = HPC.batch_system "SLURM"
+slurm_options = JSON.parse(%q(#{slurm_options.to_json}))
+HPC::BATCH_MODULE.orchestrate_job(job, slurm_options) 
 STDOUT.write job.path
       EOF
       Misc.ssh_run(server, script)
