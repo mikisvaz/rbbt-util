@@ -520,6 +520,7 @@ module Workflow
   end
 
   def job(taskname, jobname = nil, inputs = {})
+    inputs, jobname = jobname, nil if Hash === jobname
     begin
       _job(taskname, jobname, inputs)
     ensure

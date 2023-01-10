@@ -42,7 +42,7 @@ module R
     def colClasses(tsv)
       return nil unless TSV === tsv
       "c('character', " << 
-      (tsv.fields.collect{|f| R.ruby2R(@options[f] ? @options[f].to_s : ":NA") } * ", ") <<
+      (tsv.fields.collect{|f| R.ruby2R(@options[f] ? @options[f].to_s : "NA") } * ", ") <<
       ")"
     end
 

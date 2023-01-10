@@ -437,7 +437,7 @@ def self.add_libdir(dir=nil)
                                   end
   end
 
-  def self.ssh_run(server, script = nil)
+  def self.ssh_run_alt(server, script = nil)
     Log.debug "Run ssh script in #{server}:\n#{script}"
 
     write, master, pid = ssh_connection(server)

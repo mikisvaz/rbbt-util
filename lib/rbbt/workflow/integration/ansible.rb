@@ -48,7 +48,7 @@ module Ansible
   end
 
   def self.playbook(file, task = nil, options = {})
-    task = 'default' if task.nil?
+    task = task.to_sym if String === task
 
     workflow = Workflow === file ? file : Workflow.require_workflow(file)
     task = workflow.tasks.keys.last if workflow.tasks[task].nil?

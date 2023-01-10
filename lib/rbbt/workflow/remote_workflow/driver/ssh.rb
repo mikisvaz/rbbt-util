@@ -190,18 +190,20 @@ job.clean
       produce = true if migrate
 
       workflow_name = job.workflow.to_s
-      inputs = job.inputs.to_hash
-      job.dependencies.each do |dep|
-        dep.produce if options[:produce_dependencies]
-        next unless dep.done?
+      inputs = job.recursive_inputs.to_hash
 
-        Step.migrate(dep.path, search_path, :target => server)
+      job.dependencies.each do |dep|
+        dep.produce 
+      end if options[:produce_dependencies]
+
+      job.rec_dependencies.each do |dep|
+        Step.migrate(dep.path, search_path, :target => server) if dep.done?
       end
 
       remote_workflow = RemoteWorkflow.new("ssh://#{server}:#{job.workflow.to_s}", "#{job.workflow.to_s}")
       rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
 
-      override_dependencies = job.dependencies.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
+      override_dependencies = job.rec_dependencies.select{|dep| dep.done? }.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
       rjob.override_dependencies = override_dependencies
 
       if options[:migrate]

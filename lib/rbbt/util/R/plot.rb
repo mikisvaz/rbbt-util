@@ -47,6 +47,8 @@ module R
             else
               "'character'"
             end
+          when Time
+            "'Date'"
           when Symbol
             "'factor'"
           else
