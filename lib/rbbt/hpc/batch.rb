@@ -385,10 +385,10 @@ mkdir -p "#{File.expand_path singularity_opt_dir}"
 
           prepare_environment +=<<-EOF
 # Prepare container for singularity
-mkdir -p "#{contain}/.rbbt/etc/"
+mkdir -p "#{contain}"/.rbbt/etc/
 
 for dir in .ruby_inline git home; do
-    mkdir -p "#{contain}/$dir"
+    mkdir -p "#{contain}"/$dir
 done
 
 for tmpd in persist_locks  produce_locks  R_sockets  sensiblewrite  sensiblewrite_locks  step_info_locks  tsv_open_locks; do
