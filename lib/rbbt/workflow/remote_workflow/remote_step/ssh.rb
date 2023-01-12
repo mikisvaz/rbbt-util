@@ -60,9 +60,10 @@ class RemoteStep
       init_job
       @remote_path = _run
       @started = true
-      while ! done?
+      while ! (done? || error?)
         sleep 1
       end
+      raise self.get_exception if error?
       self
     end
 

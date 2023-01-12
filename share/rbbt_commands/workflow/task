@@ -547,7 +547,8 @@ if job_file = options.delete(:job_file)
 end
 
 case res
-when (defined?(WorkflowRemoteClient) and WorkflowRemoteClient::RemoteStep)
+#when (defined?(WorkflowRemoteClient) and WorkflowRemoteClient::RemoteStep)
+when (defined?(RemoteStep) and RemoteStep)
   res = job.result
   if res.respond_to? :gets
     begin
@@ -598,7 +599,7 @@ when Step
   elsif detach
     exit! 0
   else
-      res.join if res.running?
+    res.join if res.running?
     if %w(float integer string boolean).include?(res.result_type.to_s)
       out.puts res.load
     else

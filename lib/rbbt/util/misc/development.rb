@@ -420,7 +420,8 @@ def self.add_libdir(dir=nil)
   def self.ssh_run(server, script = nil)
     Log.debug "Run ssh script in #{server}:\n#{script}"
 
-    CMD.cmd("ssh '#{server}' 'shopt -s expand_aliases; bash -l -c \"ruby\"' ", :in => script, :log => true).read
+    #CMD.cmd("ssh '#{server}' 'shopt -s expand_aliases; bash -l -c \"ruby\"' ", :in => script, :log => true).read
+    CMD.cmd("ssh '#{server}' ruby", :in => script, :log => true).read
   end
 
   def self.ssh_connection(server, reset = false)

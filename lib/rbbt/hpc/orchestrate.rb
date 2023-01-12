@@ -36,8 +36,16 @@ module HPC
       Log.high "Prepare for exec"
       prepare_for_execution(job)
 
-      if options[:orchestration_rules]
-        rules = Misc.load_yaml(options[:orchestration_rules])
+      if orchestration_rules_file = options[:orchestration_rules]
+        if Open.exists?(orchestration_rules_file)
+          rules = Misc.load_yaml(orchestration_rules_file)
+        elsif Rbbt.etc.slurm(orchestration_rules_file).exists?
+          rules = Misc.load_yaml(Rbbt.etc.slurm(orchestration_rules_file))
+        elsif Rbbt.etc.slurm(orchestration_rules_file + '.yaml').exists?
+          rules = Misc.load_yaml(Rbbt.etc.slurm(orchestration_rules_file + '.yaml'))
+        else
+          raise "Orchestration rules file not found: #{options[:orchestration_rules]}"
+        end
       elsif Rbbt.etc.slurm["default.yaml"].exists?
         rules = Misc.load_yaml(Rbbt.etc.slurm["default.yaml"])
       else

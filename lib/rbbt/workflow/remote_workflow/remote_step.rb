@@ -266,6 +266,8 @@ class RemoteStep < Step
       end
     end
 
+    raise "Error in remote step" if self.error?
+
     self
   end
 
