@@ -105,7 +105,7 @@ module TSV
                   if other.include? source_key
                     v = case other.type
                         when :flat
-                          other[source_key] 
+                          other[source_key]
                         when :single
                           [other[source_key]]
                         when :double
@@ -135,8 +135,12 @@ module TSV
               if pos == :key
                 source_key
               else
-                if other.include? source_key
-                  v = other[source_key][pos]
+                if other.include?(source_key)
+                  if other.type == :single
+                    v = other[source_key]
+                  else
+                    v = other[source_key][pos]
+                  end
                   Array === v ? v.first : v
                 else
                   nil
@@ -192,7 +196,7 @@ module TSV
                   end
                 end
                 new_values.collect!{|v| v.nil? ? [[]] : [v]}    if     type == :double and not other.type == :double
-                new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and     other.type == :double
+                new_values.collect!{|v| v.nil? ? nil : (other.type == :single ? v : v.first)} if not type == :double and other.type == :double
                 new_values.flatten! if type == :flat
                 all_new_values << new_values
               end

@@ -8,6 +8,8 @@ require 'rbbt/hpc'
 require 'rbbt/hpc/orchestrate'
 require 'time'
 
+rbbt_options = SOPT::GOT_OPTIONS
+
 $slurm_options = SOPT.get <<EOF
 -dr--dry_run Print only the template
 -cj--clean_job Clean job
@@ -47,6 +49,8 @@ EOF
 batch_system = $slurm_options.delete :batch_system
 batch_system ||= 'auto'
 
+$slurm_options[:config_keys] = SOPT::GOT_OPTIONS[:config_keys]
+
 HPC::BATCH_MODULE = HPC.batch_system batch_system
 
 raise ParameterException.new("Could not detect batch_system: #{Misc.fingerprint batch_system}") if HPC::BATCH_MODULE.nil?
@@ -62,7 +66,6 @@ class Step
     else
       begin
         Log.debug "Issuing SLURM job for #{self.path}"
-        #@batch_job_id, @batch_job_dir = HPC::BATCH_MODULE.orchestrate_job(self, SOPT::GOT_OPTIONS.merge($slurm_options)) 
         @batch_job_id, @batch_job_dir = HPC::BATCH_MODULE.orchestrate_job(self, $slurm_options) 
         if no_load
           self
@@ -84,6 +87,6 @@ module RemoteStep::SSH
 
 end
 
-ARGV.concat ['--detach']
-ARGV.concat ["-W", $slurm_options[:workflows]] if $slurm_options[:workflows]
+SOPT.current_options = rbbt_options
+
 load Rbbt.share.rbbt_commands.workflow.task.find

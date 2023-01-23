@@ -7,6 +7,8 @@ require 'rbbt/workflow/remote_workflow'
 require 'rbbt/hpc'
 require 'time'
 
+rbbt_options = SOPT::GOT_OPTIONS
+
 $slurm_options = SOPT.get <<EOF
 -dr--dry_run Print only the template
 -cj--clean_job Clean job
@@ -72,5 +74,5 @@ module RemoteStep::SSH
 
 end
 
-ARGV.concat ["-W", $slurm_options[:workflows]] if $slurm_options[:workflows]
+SOPT.current_options = rbbt_options
 load Rbbt.share.rbbt_commands.workflow.task.find

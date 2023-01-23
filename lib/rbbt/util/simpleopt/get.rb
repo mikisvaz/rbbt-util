@@ -1,8 +1,11 @@
 module SOPT
   GOT_OPTIONS= IndiferentHash.setup({})
+  def self.current_options=(options)
+    @@current_options = options
+  end
   def self.consume(args = ARGV)
     i = 0
-    values = {}
+    @@current_options ||= {}
     while i < args.length do
       current = args[i]
       break if current == "--"
@@ -25,20 +28,20 @@ module SOPT
 
       if input_types[input] == :string
         value = args.delete_at(i) if value.nil?
-        values[input] = value
+        @@current_options[input] = value
       else
         if value.nil? and %w(F false FALSE no).include?(args[i])
           Log.warn "Boolean values are best specified as #{current}=[true|false], not #{ current } [true|false]. Token '#{args[i]}' following '#{current}' automatically assigned as value" 
           value = args.delete_at(i)
         end
-        values[input] = %w(F false FALSE no).include?(value)? false : true
+        @@current_options[input] = %w(F false FALSE no).include?(value)? false : true
       end
     end
 
-    IndiferentHash.setup values
-    GOT_OPTIONS.merge! values
+    IndiferentHash.setup @@current_options
+    GOT_OPTIONS.merge! @@current_options
 
-    values
+    @@current_options
   end
   
   def self.get(opt_str)

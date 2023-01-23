@@ -42,7 +42,6 @@ if ! Misc.filename?(playbook_file)
   playbook_file = Ansible.playbook recipe, task, options
 end
 
-
 if dry_run
   if Hash === playbook_file
     ppp playbook_file.to_yaml
