@@ -18,7 +18,7 @@ def python_test(a, b):
 
       res = nil
 
-      RbbtPython.run 'file2', :python_test do 
+      RbbtPython.run 'file2', [:python_test] do 
         res = python_test(1, 3)
       end
       assert_equal 4, res
