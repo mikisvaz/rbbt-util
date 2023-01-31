@@ -79,12 +79,12 @@ module RbbtPython
 
   def self.run(mod = nil, imports = nil, &block)
     if mod
-      if Array === imports
-        pyfrom mod, :import => imports
-      elsif Hash === imports
+      if Hash === imports
         pyimport mod, **imports
-      else
+      elsif imports.nil?
         pyimport mod 
+      else
+        pyfrom mod, :import => imports
       end
     end
 
