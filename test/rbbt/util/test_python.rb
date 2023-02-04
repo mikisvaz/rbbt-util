@@ -81,5 +81,55 @@ def python_print():
     end
     assert defined
   end
+
+  def test_iterate
+    a2, b2 = nil, nil
+    RbbtPython.run :numpy, as: :np do 
+      a = np.array([1,2])
+      a2 = RbbtPython.collect a do |e|
+        e * 2
+      end
+      b = PyCall.tuple([1,2])
+      b2 = RbbtPython.collect b do |e|
+        e * 2
+      end
+    end
+    assert_equal [2,4], a2
+    assert_equal [2,4], b2
+  end
+
+  def test_lambda
+    l = PyCall.eval "lambda e: e + 2"
+    assert_equal 5, l.(3)
+  end
+
+  def test_binding
+    raised = false
+    RbbtPython.binding_run do
+      pyimport :torch
+      pyfrom :torch, import: ["nn"]
+      begin
+        torch
+      rescue
+        raised = true
+      end
+    end
+    assert ! raised
+
+    raised = false
+    RbbtPython.binding_run do
+      begin
+        torch
+      rescue
+        raised = true
+      end
+    end
+    assert raised
+  end
+
+  def test_import_method
+    random = RbbtPython.import_method :torch, :rand, :random
+    assert random.call(1).numpy.to_f > 0
+  end
 end
 

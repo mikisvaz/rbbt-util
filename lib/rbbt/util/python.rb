@@ -5,6 +5,16 @@ require 'rbbt/util/python/util'
 module RbbtPython
   extend PyCall::Import
 
+  class RbbtPythonException < StandardError; end
+
+  class Binding
+    include PyCall::Import
+
+    def run(*args, &block)
+      instance_exec(*args, &block)
+    end
+  end
+
   def self.script(text, options = {})
     Log.debug "Running python script:\n#{text.dup}"
     text = StringIO.new text unless IO === text
@@ -12,8 +22,13 @@ module RbbtPython
   end
 
   def self.add_path(path)
-    self.run 'sys' do
-      sys.path.append path
+    begin
+      self.run 'sys' do
+        sys.path.append path
+      end
+    rescue
+      raise RbbtPythonException, 
+        "Could not add path #{Misc.fingerprint path} to python sys: " + $!.message
     end
   end
 
@@ -26,19 +41,64 @@ module RbbtPython
   end
 
   def self.init_rbbt
-    if ! defined?(@@__init_rbbt) || ! @@__init_rbbt 
+    if ! defined?(@@__init_rbbt_python) || ! @@__init_rbbt_python
       Log.debug "Loading python 'rbbt' module into pycall RbbtPython module"
       RbbtPython.add_paths(Rbbt.python.find_all)
       RbbtPython.pyimport("rbbt")
-      @@__init_rbbt = true
+      @@__init_rbbt_python = true
     end
+  end
+
+  def self.import_method(module_name, method_name, as = nil)
+    RbbtPython.pyfrom module_name, import: method_name
+    RbbtPython.method(method_name)
   end
 
   def self.exec(script)
     PyCall.exec(script)
   end
 
-  def self.iterate(iterator, options = {})
+  def self.iterate_index(elem, options = {})
+    iii :interate_index
+    bar = options[:bar]
+
+    len = PyCall.len(elem)
+    case bar
+    when TrueClass
+      bar = Log::ProgressBar.new nil, :desc => "RbbtPython iterate"
+    when String
+      bar = Log::ProgressBar.new nil, :desc => bar
+    end
+
+    len.times do |i|
+      begin
+        yield elem[i]
+        bar.tick if bar
+      rescue PyCall::PyError
+        if $!.type.to_s == "<class 'StopIteration'>"
+          break
+        else
+          raise $!
+        end
+      rescue
+        bar.error if bar
+        raise $!
+      end
+    end
+
+    Log::ProgressBar.remove_bar bar if bar
+    nil
+  end
+
+  def self.iterate(iterator, options = {}, &block)
+    if ! iterator.respond_to?(:__next__)
+      if iterator.respond_to?(:__iter__)
+        iterator = iterator.__iter__
+      else
+        return iterate_index(iterator, options, &block)
+      end
+    end
+
     bar = options[:bar]
 
     case bar
@@ -50,7 +110,8 @@ module RbbtPython
 
     while true
       begin
-        yield iterator.__next__
+        elem = iterator.__next__
+        yield elem
         bar.tick if bar
       rescue PyCall::PyError
         if $!.type.to_s == "<class 'StopIteration'>"
@@ -123,5 +184,14 @@ module RbbtPython
     Log.trap_stderr("Python STDERR", severity) do
       module_eval(&block)
     end
+  end
+
+  def self.new_binding
+    Binding.new
+  end
+
+  def self.binding_run(binding = nil, *args, &block)
+    binding = new_binding
+    binding.instance_exec *args, &block
   end
 end

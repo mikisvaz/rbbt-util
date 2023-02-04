@@ -31,4 +31,23 @@ module RbbtPython
     tsv
   end
 
+  def self.list2ruby(list)
+    return list unless PyCall::List === list 
+    list.collect do |e|
+      list2ruby(e)
+    end
+  end
+
+  def self.numpy2ruby(numpy)
+    list2ruby(numpy.tolist)
+  end
+
+  def self.obj2hash(obj)
+    hash = {}
+    RbbtPython.iterate obj.keys do |k|
+      hash[k] = obj[k]
+    end
+    hash
+  end
+
 end

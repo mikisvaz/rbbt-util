@@ -13,5 +13,13 @@ class TestPythonUtil < Test::Unit::TestCase
     assert_equal tsv, new_tsv
   end
 
+  def test_numpy
+    ra = RbbtPython.run :numpy, :as => :np do
+      na = np.array([[[1,2,3], [4,5,6]]])
+      RbbtPython.numpy2ruby na
+    end
+    assert_equal 6, ra[0][1][2]
+  end
+
 end
 
