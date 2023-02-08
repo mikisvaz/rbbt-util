@@ -54,6 +54,10 @@ module RbbtPython
     RbbtPython.method(method_name)
   end
 
+  def self.call_method(module_name, method_name, *args)
+    RbbtPython.import_method(module_name, method_name).call(*args)
+  end
+
   def self.exec(script)
     PyCall.exec(script)
   end
