@@ -46,7 +46,9 @@ module Persist
     end
 
     def delete(key)
-      out(key)
+      self.write_lock do
+        out(key)
+      end
     end
 
     def lock
