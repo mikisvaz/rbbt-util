@@ -58,6 +58,16 @@ module RbbtPython
     RbbtPython.import_method(module_name, method_name).call(*args)
   end
 
+  def self.get_class(module_name, class_name)
+    save_module_name = module_name.gsub(".", "_")
+    RbbtPython.pyimport(module_name, as: save_module_name)
+    RbbtPython.send(save_module_name).send(class_name)
+  end
+
+  def self.class_new_obj(module_name, class_name, args)
+    RbbtPython.get_class(module_name, class_name).new(**args)
+  end
+
   def self.exec(script)
     PyCall.exec(script)
   end

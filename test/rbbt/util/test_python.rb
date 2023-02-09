@@ -131,5 +131,10 @@ def python_print():
     random = RbbtPython.import_method :torch, :rand, :random
     assert random.call(1).numpy.to_f > 0
   end
+
+  def test_class_new_obj
+    obj = RbbtPython.class_new_obj("torch.nn", "Module")
+    assert_equal "Module()", obj.to_s
+  end
 end
 
