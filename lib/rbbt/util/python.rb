@@ -59,12 +59,12 @@ module RbbtPython
   end
 
   def self.get_class(module_name, class_name)
-    save_module_name = module_name.gsub(".", "_")
+    save_module_name = module_name.to_s.gsub(".", "_")
     RbbtPython.pyimport(module_name, as: save_module_name)
     RbbtPython.send(save_module_name).send(class_name)
   end
 
-  def self.class_new_obj(module_name, class_name, args)
+  def self.class_new_obj(module_name, class_name, args={})
     RbbtPython.get_class(module_name, class_name).new(**args)
   end
 
