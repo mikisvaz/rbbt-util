@@ -331,7 +331,16 @@ module Path
   end
 
   def tsv(*args)
-    TSV.open(self.produce, *args)
+    begin
+      path = self.produce
+    rescue Resource::ResourceNotFound => e
+      begin
+        path = self.set_extension('tsv').produce
+      rescue Resource::ResourceNotFound 
+        raise e
+      end
+    end
+    TSV.open(path, *args)
   end
 
   def tsv_options(options = {})
