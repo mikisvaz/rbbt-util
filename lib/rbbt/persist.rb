@@ -44,6 +44,8 @@ module Persist
   end
 
   def self.is_persisted?(path, persist_options = {})
+    return true if Open.remote?(path)
+    return true if Open.ssh?(path)
     return false if not Open.exists? path
     return false if TrueClass === persist_options[:update]
 

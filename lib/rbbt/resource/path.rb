@@ -319,7 +319,8 @@ module Path
 
 
   def open(options = {}, &block)
-    Open.open(self.produce.find, options, &block)
+    file = Open.remote?(self) || Open.ssh?(self) ? self : self.produce.find
+    Open.open(file, options, &block)
   end
 
   def to_s
