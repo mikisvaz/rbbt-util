@@ -419,7 +419,6 @@ class Step
             })
             log :ending
             Step.purge_stream_cache
-            Open.rm pid_file if Open.exist?(pid_file)
           end
 
           set_info :dependencies, dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]}
@@ -430,6 +429,7 @@ class Step
           if result.nil? && File.exist?(self.tmp_path) && ! File.exist?(self.path)
             Open.mv self.tmp_path, self.path
           end
+          Open.rm pid_file if Open.exist?(pid_file) unless stream
           result
         end # END PERSIST
         log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec." unless stream or time_elapsed.nil?
