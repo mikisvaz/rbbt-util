@@ -98,7 +98,7 @@ class Step
   end
 
   def done?
-    @done ||= path and Open.exists? path
+    @done ||= path and Open.exists?(path)
   end
 
   def streaming?
