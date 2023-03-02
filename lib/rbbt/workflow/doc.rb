@@ -37,6 +37,7 @@ module Workflow
   def documentation_markdown
     return "" if @libdir.nil?
     file = @libdir['workflow.md'].find
+    file = @libdir['README.md'].find unless file.exists?
     if file.exists?
       file.read
     else
