@@ -163,6 +163,7 @@ class RemoteStep < Step
     begin
       status = info[:status]
       @done = true if status and status.to_sym == :done
+      Log.low "RemoteStep status '#{status}' #{self.url}"
       status
     rescue
       Log.exception $!

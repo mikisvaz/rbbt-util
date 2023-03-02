@@ -75,7 +75,7 @@ class RemoteStep
                        _orchestrate_slurm
                      end
       @started = true
-      while ! (done? || error?)
+      while ! (done? || error? || aborted?)
         sleep 1
       end
       raise self.get_exception if error?
