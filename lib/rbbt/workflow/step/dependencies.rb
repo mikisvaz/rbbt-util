@@ -260,6 +260,9 @@ class Step
           dep.produce
         rescue RbbtException
           Log.warn "Allowing failing of #{dep.path}: #{dep.messages.last if dep.messages}"
+        rescue Exception
+          Log.warn "Not Allowing failing of #{dep.path} because #{$!.class} not RbbtException"
+          raise $!
         end
         nil
       end

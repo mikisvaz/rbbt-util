@@ -72,6 +72,7 @@ module Workflow
   def setup_override_dependency(dep, workflow, task_name)
     return [] if dep == :skip || dep == 'skip'
 
+    unlocated = unlocated_override?(dep)
     dep = Workflow.load_step(dep) if not Step === dep
 
     dep.original_workflow ||= dep.workflow if dep.workflow
@@ -91,7 +92,7 @@ module Workflow
     end
 
     dep.task_name = task_name
-    dep.overriden = dep.original_task_name.to_sym if dep.original_task_name 
+    dep.overriden = dep.original_task_name.to_sym if dep.original_task_name && dep.original_task_name.to_s != task_name.to_s || ! unlocated
 
     dep.extend step_module
 
@@ -169,6 +170,16 @@ module Workflow
                    else
 
                      compute = options[:compute] if options
+                     if options && options[:canfail]
+                       compute = case compute
+                                 when nil
+                                   :canfail
+                                 when Array
+                                   compute + [:canfail]
+                                 else
+                                   [compute, :canfail]
+                                 end
+                     end
 
                      all_d = (real_dependencies + real_dependencies.flatten.collect{|d| d.rec_dependencies} ).flatten.compact.uniq
 
@@ -207,6 +218,16 @@ module Workflow
 
                        options = {} if options.nil?
                        compute = options[:compute]
+                       if options[:canfail]
+                         compute = case compute
+                                   when nil
+                                     :canfail
+                                   when Array
+                                     compute + [:canfail]
+                                   else
+                                     [compute, :canfail]
+                                   end
+                       end
 
                        options = IndiferentHash.setup(options.dup)
                        dep = dependency.call jobname, _inputs.merge(options), real_dependencies

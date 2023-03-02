@@ -490,8 +490,10 @@ module Workflow
       end
     end
 
+    overriden = true if dependencies.select{|d| d.overriden && d.clean_name != d.name }.any?
+
     input_values = task.take_input_values(inputs)
-    if real_inputs.empty? && Workflow::TAG != :inputs && ! overriden 
+    if real_inputs.empty? && Workflow::TAG != :inputs && ! overriden #&& ! dependencies.select{|d| d.overriden && d.clean_name != d.name }.any?
       step_path = step_path taskname, jobname, [], [], extension
     else
       step_path = step_path taskname, jobname, input_values, dependencies, extension
