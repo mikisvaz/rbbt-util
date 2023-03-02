@@ -65,11 +65,7 @@ class RbbtProcessQueue
           Log.high "Worker #{Process.pid} leaving"
         rescue Exception
           Log.high "Worker #{Process.pid} had exception: #{$!.message}"
-          Log.exception $!
-          begin
-            @callback_queue.push($!) if @callback_queue
-          rescue
-          end
+          @callback_queue.push($!) if @callback_queue
           Kernel.exit! -1
         ensure
           @callback_queue.close_write if @callback_queue 

@@ -28,6 +28,7 @@ class RbbtProcessQueue
 
 
     def dump(obj, stream)
+      obj.concurrent_stream = nil if obj.respond_to?(:concurrent_stream)
       case obj
       when Annotated
         payload = @serializer.dump(obj)

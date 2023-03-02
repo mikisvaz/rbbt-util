@@ -180,13 +180,15 @@ class RbbtProcessQueue
         rescue Exception
           Log.low "Process monitor exception [#{Process.pid}]: #{$!.message}"
           processes.each{|p| p.abort_and_join}
-          Log.low "Processes aborted #{Process.pid}"
+          Log.low "Processes aborted for monitor #{Process.pid}"
           processes.clear
 
+          @manager_thread.report_on_exception = false
           @manager_thread.raise $! if @manager_thread.alive?
           raise Aborted, "Aborted monitor thread with exception"
         end
       end
+      @monitor_thread.report_on_exception = false
 
       RbbtSemaphore.post_semaphore(@sem)
 
@@ -215,33 +217,36 @@ class RbbtProcessQueue
     init_master
 
     RbbtSemaphore.synchronize(@sem) do
-    @callback_thread = Thread.new do
-      begin
-        loop do
-          p = @callback_queue.pop unless @callback_queue.cleaned
+      @callback_thread = Thread.new do
+        begin
+          loop do
+            p = @callback_queue.pop unless @callback_queue.cleaned
 
-          if Exception === p or (Array === p and Exception === p.first)
-            e = Array === p ? p.first : p
-            Log.low "Callback recieved exception from worker: #{e.message}" unless Aborted === e or ClosedStream === e
-            raise e 
-          end
+            if Exception === p or (Array === p and Exception === p.first)
+              e = Array === p ? p.first : p
+              Log.low "Callback recieved exception from worker: #{e.message}" unless Aborted === e or ClosedStream === e
+              raise e 
+            end
 
-          if @callback.arity == 0
-            @callback.call
-          else
-            @callback.call p
+            if @callback.arity == 0
+              @callback.call
+            else
+              @callback.call p
+            end
           end
+        rescue ClosedStream
+          Log.low "Callback thread closing"
+        rescue Aborted
+          Log.low "Callback thread aborted"
+          raise $!
+        rescue Exception
+          Log.low "Exception captured in callback: #{$!.message}"
+          raise $!
         end
-      rescue ClosedStream
-        Log.low "Callback thread closing"
-      rescue Aborted
-        Log.low "Callback thread aborted"
-        raise $!
-      rescue Exception
-        Log.low "Exception captured in callback: #{$!.message}"
-        raise $!
-      end
-    end if @callback_queue
+      end if @callback_queue
+
+      @callback_thread.report_on_exception = false
+      
     end
 
   end
