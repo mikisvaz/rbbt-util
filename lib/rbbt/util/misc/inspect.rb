@@ -343,9 +343,9 @@ module Misc
             end
           when Array
             if obj.length > HASH2MD5_MAX_ARRAY_LENGTH
-              "[" << sample_large_obj(obj, HASH2MD5_MAX_ARRAY_LENGTH).collect{|v| obj2str(v)} * "," << "]"
+              "[" << sample_large_obj(obj, HASH2MD5_MAX_ARRAY_LENGTH).collect{|v| obj2str(v.nil? ? "" : v) } * "," << "]"
             else
-              "[" << obj.collect{|v| obj2str(v) } * "," << "]"
+              "[" << obj.collect{|v| obj2str(v.nil? ? "" : v) } * "," << "]"
             end
           when TSV::Parser
             remove_long_items(obj)
