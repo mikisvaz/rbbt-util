@@ -24,8 +24,8 @@ class RemoteWorkflow
       workflow, task, job, *rest = path.split("/")
 
       workflow_name = begin
-                        workflow = Kernel.const_get(workflow) if String === workflow
-                        workflow.respond_to?(:complete_name) ? workflow.complete_name : workflow
+                        wf = Kernel.const_get(workflow) if String === workflow && ! workflow.empty?
+                        wf.respond_to?(:complete_name) ? (wf.complete_name || workflow) : workflow
                       rescue
                         workflow
                       end
@@ -188,9 +188,10 @@ job.clean
           #   Open.write(file, new)
           # end
 
-          paths = Dir.glob(File.join(dir, "*.as_step")).collect{|f| Open.read(f).strip }
+          files = Dir.glob(File.join(dir, "*.as_step"))
+          paths = files.collect{|f| Open.read(f).strip }
           new = Step.migrate(paths, :user, :target => server)
-          paths.zip(new).each{|file,new| Open.write(file, new) }
+          files.zip(new).each{|file,new| Open.write(file, new) }
 
           CMD.cmd_log("ssh '#{server}' mkdir -p .rbbt/tmp/tmp-ssh_job_inputs/; scp -r '#{dir}' #{server}:.rbbt/tmp/tmp-ssh_job_inputs/#{input_id}")
         end
@@ -229,10 +230,11 @@ job.clean
       job.input_dependencies.each do |dep|
         Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{job.workflow}:#{job.short_path}"
         dep.produce
-      end if produce_dependencies
+      end 
 
       migrate_dependencies = job.rec_dependencies.select{|d| d.done? }.collect{|d| d.path }
-      Log.medium "Migrating #{migrate_dependencies.length} dependencies to #{ server }" 
+      migrate_dependencies += job.input_dependencies.select{|d| d.done? }.collect{|d| d.path }
+      Log.medium "Migrating #{migrate_dependencies.length} dependencies from #{job.path} to #{ server }" 
       Step.migrate(migrate_dependencies, search_path, :target => server) if migrate_dependencies.any?
     end
 

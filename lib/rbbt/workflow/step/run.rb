@@ -98,8 +98,10 @@ class Step
       old = Signal.trap("INT"){ Thread.current.raise Aborted }
       if @task.respond_to?(:exec_in)
         @task.exec_in((bindings || self), *@inputs)
-      else
+      elsif @task
         (bindings || self).instance_exec *@inputs, &@task
+      else
+        raise DependencyError, "Dependency #{self.path} cannot be produced"
       end
     ensure
       Signal.trap("INT", old)

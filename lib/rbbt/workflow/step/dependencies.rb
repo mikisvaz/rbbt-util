@@ -145,11 +145,12 @@ class Step
   end
 
   def input_dependencies
-    @input_dependencies ||= (recursive_inputs.flatten.select{|i| Step === i } + 
-                             recursive_inputs.flatten.
-                              select{|dep| Path === dep && Step === dep.resource }.
-                              select{|dep| ! dep.resource.started? }. # Ignore input_deps already started
-                              collect{|dep| dep.resource })
+    @input_dependencies ||= recursive_inputs.flatten.
+      select{|i| Step === i || (defined?(RemoteStep) && RemoteStep === i) } + 
+      recursive_inputs.flatten.
+      select{|dep| Path === dep && Step === dep.resource }.
+      select{|dep| ! dep.resource.started? }. # Ignore input_deps already started
+      collect{|dep| dep.resource }
   end
 
   def execute_dependency(dependency, log = true)
@@ -450,13 +451,15 @@ class Step
     compute_simple_dependencies = {}
     compute_last_deps = {}
     seen_paths = Set.new
-    rec_dependencies.uniq.each do |step| 
+    rec_dependencies.uniq.reverse.each do |step| 
       next if seen_paths.include? step.path
       seen_paths << step.path
       next unless required_dep_paths.include? step.path
       required_seen_paths = seen_paths & required_dep_paths
 
-      internal = step.inputs.select{|i| Step == i && required_paths.include?(i.path) && seen_paths.include?(i.path) }
+      inputs = step.inputs
+      inputs = inputs.values if Hash === inputs
+      internal = inputs.select{|i| i.respond_to?(:path) && required_seen_paths.include?(i.path) }.any?
 
       if ComputeDependency === step 
         next if produced.include? step.path
@@ -469,9 +472,9 @@ class Step
         end
       else
         if internal
-          simple_dependencies.prepend(step)
-        else
           simple_dependencies << step
+        else
+          simple_dependencies.prepend(step)
         end
       end
     end

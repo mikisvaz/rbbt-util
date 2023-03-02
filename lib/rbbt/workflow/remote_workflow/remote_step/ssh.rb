@@ -52,6 +52,7 @@ class RemoteStep
     end
     
     def _run
+      RemoteWorkflow::SSH.upload_dependencies(self, @server)
       RemoteWorkflow::SSH.run_job(File.join(base_url, task.to_s), @input_id, @base_name)
     end
 
@@ -97,6 +98,18 @@ class RemoteStep
       _restart
     end
 
+    def abort
+      Log.warn "not implemented RemoteWorkflow::SSH.abort(@url, @input_id, @base_name)"
+    end
+
+    def input_dependencies
+      @input_dependencies ||= inputs.values.flatten.
+        select{|i| Step === i || (defined?(RemoteStep) && RemoteStep === i) } + 
+        inputs.values.flatten.
+        select{|dep| Path === dep && Step === dep.resource }.
+        select{|dep| ! dep.resource.started? }. # Ignore input_deps already started
+        collect{|dep| dep.resource }
+    end
   end
 end
 
