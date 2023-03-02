@@ -1,5 +1,5 @@
 class Step
-  def self.prepare_dependencies(jobs, tasks, cpus)
+  def self.produce_dependencies(jobs, tasks, cpus)
     deps = []
 
     jobs = [jobs] unless Array === jobs

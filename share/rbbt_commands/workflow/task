@@ -213,8 +213,8 @@ The `recursive_clean` cleans all the job dependency steps recursively.
 -prov--provenance Report the jobs provenance
 -W--workflows* Load a list of workflows
 -R--requires* Require a list of files
--pre--prepare* Prepare dependencies
--prec--prepare_cpus* Number of dependencies prepared in parallel
+-pro--produce* Prepare dependencies
+-proc--produce_cpus* Number of dependencies prepared in parallel
 -rwt--remote_workflow_tasks* Load a yaml file describing remote workflow tasks
 -od--override_deps* Override deps using 'Workflow#task=<path>' array_separated
 -PERF--procpath_performance* Measure performance using procpath
