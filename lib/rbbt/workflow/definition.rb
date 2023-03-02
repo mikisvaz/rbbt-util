@@ -175,6 +175,8 @@ module Workflow
 
     tasks[name] = task
     task_dependencies[name] = consume_dependencies
+
+    task
   end
 
   def unexport(*names)

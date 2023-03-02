@@ -160,44 +160,50 @@ puts files * "\n"
     end
   end
 
-  def self.migrate(path, search_path, options = {})
-    if Step === path
-      if options[:source]
-        path = Rbbt.identify(path.path)
-      else
-        path = path.path
-      end
-    end
-    search_path = 'user' if search_path.nil?
-
-    resource = Rbbt
-
-    path, real_paths, lpath = self.migrate_source_paths(path, resource, options[:source], options[:recursive])
-
+  def self.migrate(paths, search_path, options = {})
     subpath_files = {}
-    real_paths.sort.each do |path|
-      parts = path.split("/")
-      subpath = parts[0..-4] * "/" + "/"
-
-      if subpath_files.keys.any? && subpath.start_with?(subpath_files.keys.last)
-        subpath = subpath_files.keys.last
-      end
-
-      source = path.chars[subpath.length..-1] * ""
-
-      subpath_files[subpath] ||= []
-      subpath_files[subpath] << source
-    end
+    target_paths = []
+    resource = options[:resource] || Rbbt
 
     target = Rbbt.migrate_target_path('var/jobs', search_path, resource, options[:target])
 
-    target_path = File.join(target, *path.split("/")[-3..-1])
+    (Array === paths ? paths : [paths]).each do |path|
+      if Step === path
+        if options[:source]
+          path = Rbbt.identify(path.path)
+        else
+          path = path.path
+        end
+      end
+      search_path = 'user' if search_path.nil?
+
+
+      path, real_paths, lpath = self.migrate_source_paths(path, resource, options[:source], options[:recursive])
+
+      real_paths.sort.each do |path|
+        parts = path.split("/")
+        subpath = parts[0..-4] * "/" + "/"
+
+        if subpath_files.keys.any? && subpath.start_with?(subpath_files.keys.last)
+          subpath = subpath_files.keys.last
+        end
+
+        source = path.chars[subpath.length..-1] * ""
+
+        subpath_files[subpath] ||= []
+        subpath_files[subpath] << source
+      end
+
+
+      target_paths << File.join(target, *path.split("/")[-3..-1])
+    end
+
 
     subpath_files.each do |subpath, files|
       Rbbt.migrate_files([subpath], target, options.merge(:files => files))
     end
 
-    target_path
+    target_paths
   end
 
   def self.purge(path, recursive = false, skip_overriden = true)

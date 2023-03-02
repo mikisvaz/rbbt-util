@@ -96,7 +96,11 @@ class Step
     @exec = true if @exec.nil?
     begin
       old = Signal.trap("INT"){ Thread.current.raise Aborted }
-      @task.exec_in((bindings ? bindings : self), *@inputs)
+      if @task.respond_to?(:exec_in)
+        @task.exec_in((bindings || self), *@inputs)
+      else
+        (bindings || self).instance_exec *@inputs, &@task
+      end
     ensure
       Signal.trap("INT", old)
     end
@@ -223,14 +227,15 @@ class Step
     end
 
     begin
-      time_elapsed = total_time_elapsed = nil
-      res = @mutex.synchronize do
-        no_load = :stream if no_load
+      no_load = :stream if no_load
+      result_type = self.result_type || info[:result_type]
 
+      res = @mutex.synchronize do
+        time_elapsed = total_time_elapsed = nil
         Open.write(pid_file, Process.pid.to_s) unless Open.exists?(path) or Open.exists?(pid_file)
-        result_type = @task.result_type if @task
-        result_type = info[:result_type] if result_type.nil?
+
         result = Persist.persist "Job", result_type, :file => path, :check => persist_checks, :no_load => no_load do 
+
           if Step === Step.log_relay_step and not self == Step.log_relay_step
             relay_log(Step.log_relay_step) unless self.respond_to? :relay_step and self.relay_step
           end
@@ -240,26 +245,30 @@ class Step
           @exec = false
           init_info(true)
 
-          log :setup, "#{Log.color :green, "Setup"} step #{Log.color :yellow, task.name.to_s || ""}"
+          workflow           = @workflow || @task.respond_to?(:workflow)  ?  @task.workflow : nil
+          result_type        = @task.respond_to?(:result_type)            ?  @task.result_type : nil
+          result_description = @task.respond_to?(:result_description)     ?  @task.result_description : nil
+
+          log :setup, "#{Log.color :green, "Setup"} step #{Log.color :yellow, task_name}"
 
           merge_info({
-            :issued => (issue_time = Time.now),
-            :name => name,
-            :pid => Process.pid.to_s,
-            :pid_hostname => Socket.gethostname,
-            :clean_name => clean_name,
-            :workflow => (@workflow || @task.workflow).to_s,
-            :task_name => @task.name,
-            :result_type => @task.result_type,
-            :result_description => @task.result_description,
-            :dependencies => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]},
-            :versions => Rbbt.versions
+            :issued             => (issue_time = Time.now),
+            :name               => name,
+            :pid                => Process.pid.to_s,
+            :pid_hostname       => Socket.gethostname,
+            :clean_name         => clean_name,
+            :workflow           => workflow.to_s,
+            :task_name          => task_name,
+            :result_type        => result_type,
+            :result_description => result_description,
+            :dependencies       => dependencies.collect{|dep| [dep.task_name, dep.name, dep.path]},
+            :versions           => Rbbt.versions
           })
 
           new_inputs = []
           @inputs.each_with_index do |input,i|
-            name = @task.inputs[i]
-            type = @task.input_types[name]
+            name = @task.respond_to?(:inputs)       ?  @task.inputs[i] : nil
+            type = @task.respond_to?(:input_types)  ?  @task.input_types[i] : nil
 
             if type == :directory
               directory_inputs = file('directory_inputs')
@@ -303,7 +312,7 @@ class Step
 
           @inputs = new_inputs if @inputs
 
-          if @inputs && ! task.inputs.nil?
+          if @inputs && task.respond_to?(:inputs) && ! task.inputs.nil?
             info_inputs = @inputs.collect do |i| 
               if Path === i 
                 i.to_s
@@ -323,7 +332,7 @@ class Step
           end
 
           set_info :started, (start_time = Time.now)
-          log :started, "Starting step #{Log.color :yellow, task.name.to_s || ""}"
+          log :started, "Starting step #{Log.color :yellow, task_name}"
 
           config_keys_pre = Rbbt::Config::GOT_KEYS.dup
           begin
@@ -357,7 +366,7 @@ class Step
                    end
 
           if stream
-            log :streaming, "Streaming step #{Log.color :yellow, task.name.to_s || ""}"
+            log :streaming, "Streaming step #{Log.color :yellow, task_name.to_s || ""}"
 
             callback = Proc.new do
               if AbortedStream === stream
@@ -377,7 +386,7 @@ class Step
                       :time_elapsed => (time_elapsed = done_time - start_time),
                       :versions => Rbbt.versions
                     })
-                    log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
+                    log :done, "Completed step #{Log.color :yellow, task_name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec."
                   end
                 end
               rescue
@@ -393,7 +402,7 @@ class Step
                 if exception
                   self.exception exception
                 else
-                  log :aborted, "#{Log.color :red, "Aborted"} step #{Log.color :yellow, task.name.to_s || ""}" if status == :streaming
+                  log :aborted, "#{Log.color :red, "Aborted"} step #{Log.color :yellow, task_name.to_s || ""}" if status == :streaming
                 end
                 _clean_finished
               rescue
@@ -432,14 +441,14 @@ class Step
           Open.rm pid_file if Open.exist?(pid_file) unless stream
           result
         end # END PERSIST
-        log :done, "Completed step #{Log.color :yellow, task.name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec." unless stream or time_elapsed.nil?
+        log :done, "Completed step #{Log.color :yellow, task_name.to_s || ""} in #{time_elapsed.to_i}+#{(total_time_elapsed - time_elapsed).to_i} sec." unless stream or time_elapsed.nil?
 
         if no_load
           @result ||= result
           self
         else
           Step.purge_stream_cache
-          @result = prepare_result result, @task.result_description
+          @result = prepare_result result, result_description
         end
       end # END SYNC
       res

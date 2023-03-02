@@ -1,4 +1,12 @@
 class Step
+  attr_accessor :clean_name, :path, :task, :workflow, :inputs, :dependencies, :bindings
+  attr_accessor :task_name, :overriden
+  attr_accessor :pid
+  attr_accessor :exec
+  attr_accessor :relocated
+  attr_accessor :result, :mutex, :seen
+  attr_accessor :real_inputs, :original_task_name, :original_workflow
+
 
   INFO_SERIALIZER = begin
                        if ENV["RBBT_INFO_SERIALIZER"]
@@ -86,11 +94,44 @@ class Step
     end
   end
 
+  def task_name
+    @task_name ||= begin
+                     if @task.respond_to?(:name)
+                     
+                     @task.name
+                     else
+                       @path.split("/")[-2]
+                     end
+                   end
+  end
+
+  def result_type
+    @result_type ||= if @task.respond_to?(:result_type)
+                       @task.result_type || info[:result_type]
+                     else
+                       info[:result_type]
+                     end
+  end
+
+  def result_type=(type)
+    @result_type = type
+  end
+
+  def result_description
+    @result_description ||= if @task.respond_to?(:result_description)
+                              @task.result_description
+                            else
+                              nil
+                            end
+  end
+
+  def result_description=(description)
+    @result_description = description
+  end
 
   def name
     @name ||= path.sub(/.*\/#{Regexp.quote task_name.to_s}\/(.*)/, '\1')
   end
-
 
   def short_path
     [task_name, name] * "/"
@@ -103,10 +144,6 @@ class Step
   def workflow_short_path
     return short_path unless workflow
     workflow.to_s + "#" + short_path
-  end
-
-  def task_name
-    @task_name ||= task.name
   end
 
   def task_signature

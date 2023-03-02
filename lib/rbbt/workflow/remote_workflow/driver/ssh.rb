@@ -1,4 +1,6 @@
 class RemoteWorkflow
+  RBBT_DEBUG_REMOTE_JSON = ENV["RBBT_DEBUG_REMOTE_JSON"] == 'true'
+
   module SSH
     #def self.run(server, script)
     #  Log.debug "Run ssh script in #{server}:\n#{script}"
@@ -21,9 +23,16 @@ class RemoteWorkflow
 
       workflow, task, job, *rest = path.split("/")
 
+      workflow_name = begin
+                        workflow = Kernel.const_get(workflow) if String === workflow
+                        workflow.respond_to?(:complete_name) ? workflow.complete_name : workflow
+                      rescue
+                        workflow
+                      end
+
       script =<<-EOF
 require 'rbbt/workflow'
-wf = Workflow.require_workflow "#{workflow}"
+wf = Workflow.require_workflow "#{workflow_name}"
       EOF
 
       case task
@@ -86,7 +95,7 @@ STDOUT.write res.to_json
       EOF
 
       json = Misc.ssh_run(server, script)
-      Log.debug "JSON (#{ url }): #{json}"
+      Log.debug "JSON (#{ url }): #{json}" if RBBT_DEBUG_REMOTE_JSON
       JSON.parse(json)
     end
 
@@ -172,11 +181,17 @@ job.clean
     def self.upload_inputs(server, inputs, input_types, input_id)
       TmpFile.with_file do |dir|
         if Step.save_inputs(inputs, input_types, dir)
-          Dir.glob(File.join(dir, "*.as_step")).each do |file|
-            path = Open.read(file).strip
-            new = Step.migrate(path, :user, :target => server)
-            Open.write(file, new)
-          end
+          # Dir.glob(File.join(dir, "*.as_step")).each do |file|
+          #   Log.medium "Migrating Step input #{file} #{ server }" 
+          #   path = Open.read(file).strip
+          #   new = Step.migrate(path, :user, :target => server)
+          #   Open.write(file, new)
+          # end
+
+          paths = Dir.glob(File.join(dir, "*.as_step")).collect{|f| Open.read(f).strip }
+          new = Step.migrate(paths, :user, :target => server)
+          paths.zip(new).each{|file,new| Open.write(file, new) }
+
           CMD.cmd_log("ssh '#{server}' mkdir -p .rbbt/tmp/tmp-ssh_job_inputs/; scp -r '#{dir}' #{server}:.rbbt/tmp/tmp-ssh_job_inputs/#{input_id}")
         end
       end
@@ -204,30 +219,55 @@ job.clean
     #  rjob.run
     #end
 
+    def self.upload_dependencies(job, server, search_path = 'user', produce_dependencies = false)
+      server, path = parse_url(server) if server =~ /^ssh:\/\//
+      job.dependencies.each do |dep|
+        Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{job.workflow}:#{job.short_path}"
+        dep.produce
+      end if produce_dependencies
+
+      job.input_dependencies.each do |dep|
+        Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{job.workflow}:#{job.short_path}"
+        dep.produce
+      end if produce_dependencies
+
+      migrate_dependencies = job.rec_dependencies.select{|d| d.done? }.collect{|d| d.path }
+      Log.medium "Migrating #{migrate_dependencies.length} dependencies to #{ server }" 
+      Step.migrate(migrate_dependencies, search_path, :target => server) if migrate_dependencies.any?
+    end
+
+    def self.missing_dep_inputs(job)
+      inputs = job.inputs.to_hash.slice(*job.real_inputs.map{|i| i.to_s})
+      job.dependencies.each do |dep|
+        next if dep.done?
+        iif [dep, dep.inputs, dep.real_inputs]
+        inputs = dep.inputs.to_hash.slice(*dep.real_inputs.map{|i| i.to_s}).merge(inputs)
+        inputs = missing_dep_inputs(dep).merge(inputs)
+      end
+      inputs
+    end
+
     def self.relay_job(job, server, options = {})
-      migrate, produce, produce_dependencies, search_path = Misc.process_options options.dup,
-        :migrate, :produce, :produce_dependencies, :search_path
+      migrate, produce, produce_dependencies, search_path, run_type, slurm_options = Misc.process_options options.dup,
+        :migrate, :produce, :produce_dependencies, :search_path, :run_type, :slurm_options
 
       search_path ||= 'user'
 
       produce = true if migrate
 
       workflow_name = job.workflow.to_s
-      inputs = job.recursive_inputs.to_hash
+      remote_workflow = RemoteWorkflow.new("ssh://#{server}:#{workflow_name}", "#{workflow_name}")
+      inputs = job.recursive_inputs.to_hash.slice(*job.real_inputs.map{|i| i.to_s})
+      Log.medium "Relaying dependency #{job.workflow}:#{job.short_path} to #{server} (#{inputs.keys * ", "})"
 
-      job.dependencies.each do |dep|
-        dep.produce 
-      end if options[:produce_dependencies]
-
-      job.rec_dependencies.each do |dep|
-        Step.migrate(dep.path, search_path, :target => server) if dep.done?
-      end
-
-      remote_workflow = RemoteWorkflow.new("ssh://#{server}:#{job.workflow.to_s}", "#{job.workflow.to_s}")
+      upload_dependencies(job, server, search_path, options[:produce_dependencies])
       rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
 
       override_dependencies = job.rec_dependencies.select{|dep| dep.done? }.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
       rjob.override_dependencies = override_dependencies
+
+      rjob.run_type = run_type
+      rjob.slurm_options = slurm_options || {}
 
       if options[:migrate]
         rjob.produce
@@ -255,7 +295,7 @@ job.clean
       @task_info ||= IndiferentHash.setup({})
 
       if @task_info[task].nil?
-        task_info = RemoteWorkflow::SSH.get_json(File.join(@base_url, task.to_s))
+        task_info = RemoteWorkflow::SSH.get_json(File.join(@base_url || @url, task.to_s))
         task_info = RemoteWorkflow::SSH.fix_hash(task_info)
 
         task_info[:result_type] = task_info[:result_type].to_sym if task_info[:result_type]

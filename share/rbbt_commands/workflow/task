@@ -218,6 +218,10 @@ The `recursive_clean` cleans all the job dependency steps recursively.
 -rwt--remote_workflow_tasks* Load a yaml file describing remote workflow tasks
 -od--override_deps* Override deps using 'Workflow#task=<path>' array_separated
 -PERF--procpath_performance* Measure performance using procpath
+-r--relay* Relay job to SSH server
+-sr--slurm_relay* Relay job to SSH SLURM server
+-rdep--relay_dependencies* Relay dependencies instead of main job
+-pdr--produce_dependencies_for_relay Prepare dependencies previous to relay jobs
 EOF
 
 workflow = ARGV.shift
@@ -415,12 +419,52 @@ begin
     exit 0
   end
 
-  if tasks = options.delete(:prepare)
+  if tasks = options.delete(:produce)
     tasks = tasks.split(",")
-    prepare_cpus = (options[:prepare_cpus] || 1)
-    puts Step.prepare_dependencies(job, tasks,  prepare_cpus)
+    produce_cpus = (options[:produce_cpus] || 1)
+    puts Step.produce_dependencies(job, tasks,  prepare_cpus)
     exit 0
   end
+
+  def match_dependencies(queries, dependencies)
+    queries = queries.collect{|q| q.include?("#") ? q.split("#") : q }
+    dependencies.select do |dep|
+      queries.select do |q|
+        if Array === q
+          q.first == dep.workflow.to_s && q.last == dep.task_name.to_s
+        else
+          q.to_s == dep.task_name.to_s
+        end
+      end.any?
+    end
+  end
+
+  if server = options.delete(:relay)
+    require 'rbbt/workflow/remote_workflow'
+    relay_dependencies = options.delete(:relay_dependencies).split(",")
+    produce_dependencies_for_relay = options.delete(:produce_dependencies_for_relay)
+    if relay_dependencies
+      match_dependencies(relay_dependencies, job.rec_dependencies).each do |dep|
+        RemoteWorkflow::SSH.relay_job(dep, server, :run_type => :run, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
+      end
+    else
+      RemoteWorkflow::SSH.relay_job(job, server, :run_type => :run, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
+    end
+  end
+
+  if server = options.delete(:slurm_relay)
+    require 'rbbt/workflow/remote_workflow'
+    relay_dependencies = options.delete(:relay_dependencies).split(",")
+    produce_dependencies_for_relay = options.delete(:produce_dependencies_for_relay)
+    if relay_dependencies
+      match_dependencies(relay_dependencies, job.rec_dependencies).each do |dep|
+        RemoteWorkflow::SSH.relay_job(dep, server, :run_type => :orchestrate, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
+      end
+    else
+      RemoteWorkflow::SSH.relay_job(job, server, :run_type => :orchestrate, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
+    end
+  end
+
 
   if options[:procpath_performance]
     require 'rbbt/util/procpath'

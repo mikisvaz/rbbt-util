@@ -212,11 +212,13 @@ module Workflow
                  end
       workflow.load_documentation
 
+
       first ||= workflow
     end
-    return first
 
-    workflow
+    first.complete_name = wf_name
+
+    return first
   end
 
   attr_accessor :description
@@ -230,6 +232,12 @@ module Workflow
   attr_accessor :relay_tasks
 
   #{{{ ATTR DEFAULTS
+  #
+  attr_accessor :complete_name
+
+  def self.complete_name
+    @complete_name ||= self.to_s
+  end
   
   def self.workdir=(path)
     path = Path.setup path.dup unless Path === path

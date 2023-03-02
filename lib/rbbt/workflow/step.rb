@@ -9,14 +9,6 @@ require 'rbbt/workflow/step/info'
 require 'rbbt/workflow/step/save_load_inputs'
 
 class Step
-  attr_accessor :clean_name, :path, :task, :workflow, :inputs, :dependencies, :bindings
-  attr_accessor :task_name, :overriden
-  attr_accessor :pid
-  attr_accessor :exec
-  attr_accessor :relocated
-  attr_accessor :result, :mutex, :seen
-  attr_accessor :real_inputs, :original_task_name, :original_workflow
-
   RBBT_DEBUG_CLEAN = ENV["RBBT_DEBUG_CLEAN"] == 'true'
 
   class << self
@@ -38,9 +30,11 @@ class Step
   end
 
 
-  def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil, clean_name = nil)
+  def initialize(path, task = nil, inputs = nil, dependencies = nil, bindings = nil, clean_name = nil, &block)
     path = Path.setup(Misc.sanitize_filename(path)) if String === path
     path = path.call if Proc === path
+
+    task = block if block_given?
 
     @path = path
     @task = task
@@ -73,7 +67,8 @@ class Step
 
     load_inputs_from_info if @inputs.nil? 
 
-    NamedArray.setup(@inputs, task.inputs) if task && task.inputs && !(NamedArray === @inputs)
+    task_inputs = task.respond_to?(:inputs) ? task.inputs : nil
+    NamedArray.setup(@inputs, task_inputs) unless NamedArray === @inputs
 
     @inputs || []
   end
@@ -133,15 +128,6 @@ class Step
     v
   end
 
-  def task_name
-    @task_name ||= begin
-                     if @task.nil?
-                        @path.split("/")[-2]
-                     else
-                       @task.name
-                     end
-                   end
-  end
 
   def path
     if Proc === @path
@@ -155,8 +141,11 @@ class Step
     attr_accessor :log_relay_step
   end
 
+  
+  # May be deprecated: This is no loger used
   def relay_log(step)
-    return self unless Task === self.task and not self.task.name.nil?
+    return self if self.task_name.nil?
+
     if not self.respond_to? :original_log
       class << self
         attr_accessor :relay_step
@@ -164,77 +153,58 @@ class Step
         def log(status, message = nil)
           self.status = status
           message Log.uncolor message
-          relay_step.log([task.name.to_s, status.to_s] * ">", message.nil? ? nil : message ) unless (relay_step.done? or relay_step.error? or relay_step.aborted?)
+          relay_step.log([self.task_name.to_s, status.to_s] * ">", message.nil? ? nil : message ) unless (relay_step.done? or relay_step.error? or relay_step.aborted?)
         end
       end
     end
     @relay_step = step
+
     self
-  end
-
-  def result_type
-    @result_type ||= if @task.nil?
-                       info[:result_type] || :binary
-                     else
-                       @task.result_type || info[:result_type] || :string
-                     end
-  end
-
-  def result_type=(type)
-    @result_type = type
-  end
-
-  def result_description
-    @result_description ||= if @task.nil?
-                       info[:result_description]
-                     else
-                       @task.result_description
-                     end
   end
 
   def prepare_result(value, description = nil, entity_info = nil)
     res = case 
-    when IO === value
-      begin
-        res = case result_type
-              when :array
-                array = []
-                while line = value.gets
-                  array << line.chomp
-                end
-                array
-              when :tsv
-                begin
-                  TSV.open(value)
-                rescue IOError
-                  TSV.setup({})
-                end
-              else
-                value.read
-              end
-        value.join if value.respond_to? :join
-        res
-      rescue Exception
-        value.abort if value.respond_to? :abort
-        self.abort
-        raise $!
-      end
-    when (not defined? Entity or description.nil? or not Entity.formats.include? description)
-      value
-    when (Annotated === value and info.empty?)
-      value
-    when Annotated === value
-      annotations = value.annotations
-      entity_info ||= begin 
-                        entity_info = info.dup
-                        entity_info.merge! info[:inputs] if info[:inputs]
-                        entity_info
+          when IO === value
+            begin
+              res = case result_type
+                    when :array
+                      array = []
+                      while line = value.gets
+                        array << line.chomp
                       end
-      entity_info.each do |k,v|
-        value.send("#{h}=", v) if annotations.include? k
-      end
-                        
-      value
+                      array
+                    when :tsv
+                      begin
+                        TSV.open(value)
+                      rescue IOError
+                        TSV.setup({})
+                      end
+                    else
+                      value.read
+                    end
+              value.join if value.respond_to? :join
+              res
+            rescue Exception
+              value.abort if value.respond_to? :abort
+              self.abort
+              raise $!
+            end
+          when (not defined? Entity or description.nil? or not Entity.formats.include? description)
+            value
+          when (Annotated === value and info.empty?)
+            value
+          when Annotated === value
+            annotations = value.annotations
+            entity_info ||= begin 
+                              entity_info = info.dup
+                              entity_info.merge! info[:inputs] if info[:inputs]
+                              entity_info
+                            end
+            entity_info.each do |k,v|
+              value.send("#{h}=", v) if annotations.include? k
+            end
+
+            value
     else
       entity_info ||= begin 
                         entity_info = info.dup
@@ -371,8 +341,9 @@ class Step
   def step(name)
     @steps ||= {}
     @steps[name] ||= begin
+                       name = name.to_sym
                        deps = rec_dependencies.select{|step| 
-                         step.task_name.to_sym == name.to_sym
+                         step.task_name && step.task_name.to_sym == name
                        }
                        raise "Dependency step not found: #{ name }" if deps.empty?
                        if (deps & self.dependencies).any?
@@ -385,3 +356,4 @@ class Step
 end
 
 require 'rbbt/workflow/step/run'
+require 'rbbt/workflow/step/accessor'

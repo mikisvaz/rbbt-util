@@ -1,6 +1,6 @@
 class RemoteStep
   module SSH
-    attr_accessor :override_dependencies
+    attr_accessor :override_dependencies, :run_type, :slurm_options
 
     def init_job(cache_type = nil, other_params = {})
       return self if @url
@@ -55,10 +55,25 @@ class RemoteStep
       RemoteWorkflow::SSH.run_job(File.join(base_url, task.to_s), @input_id, @base_name)
     end
 
+    def _run_slurm
+      RemoteWorkflow::SSH.run_slurm_job(File.join(base_url, task.to_s), @input_id, @base_name, @slurm_options || {})
+    end
+
+    def _orchestrate_slurm
+      RemoteWorkflow::SSH.orchestrate_slurm_job(File.join(base_url, task.to_s), @input_id, @base_name, @slurm_options || {})
+    end
+
     def produce(*args)
       input_types = {}
       init_job
-      @remote_path = _run
+      @remote_path = case @run_type
+                     when 'run', :run, nil
+                       _run
+                     when 'slurm', :slurm
+                       _run_slurm
+                     when 'orchestrate', :orchestrate
+                       _orchestrate_slurm
+                     end
       @started = true
       while ! (done? || error?)
         sleep 1

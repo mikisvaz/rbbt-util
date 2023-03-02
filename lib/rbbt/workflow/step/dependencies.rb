@@ -3,7 +3,7 @@ class Step
   STREAM_CACHE = {}
   STREAM_CACHE_MUTEX = Mutex.new
   def self.purge_stream_cache
-    Log.debug "Purging dup. stream cache"
+    # Log.debug "Purging dup. stream cache"
     STREAM_CACHE_MUTEX.synchronize do
       STREAM_CACHE.clear
     end
@@ -209,7 +209,7 @@ class Step
       end
 
     rescue TryAgain
-      Log.low "Retrying dep. #{Log.color :yellow, dependency.task_name.to_s} -- [#{dependency.status}] #{(dependency.messages || ["No message"]).last}"
+      #Log.low "Retrying dep. #{Log.color :yellow, dependency.task_name.to_s} -- [#{dependency.status}] #{(dependency.messages || ["No message"]).last}"
       retry
     rescue Aborted, Interrupt
       Log.error "Aborted dep. #{Log.color :red, dependency.task_name.to_s}"
@@ -430,7 +430,6 @@ class Step
 
     required_dep_paths = []
     dep_step.each do |path,list|
-      #required_dep_paths << path if list.length > 1
       required_dep_paths << path if (list & dependencies).any?
     end
 
@@ -442,42 +441,46 @@ class Step
       [dep.path] + dep.input_dependencies
     end.flatten)
 
-    log :dependencies, "Dependencies for step #{Log.color :yellow, task.name.to_s || ""}"
 
     pre_deps = []
-    compute_pre_deps = {}
-    last_deps = []
+    simple_dependencies = []
+    compute_simple_dependencies = {}
     compute_last_deps = {}
     seen_paths = Set.new
     rec_dependencies.uniq.each do |step| 
       next if seen_paths.include? step.path
       seen_paths << step.path
       next unless required_dep_paths.include? step.path
-      if step.inputs.flatten.select{|i| Step === i}.any?
-        if ComputeDependency === step
-          next if produced.include? step.path 
+      required_seen_paths = seen_paths & required_dep_paths
+
+      internal = step.inputs.select{|i| Step == i && required_paths.include?(i.path) && seen_paths.include?(i.path) }
+
+      if ComputeDependency === step 
+        next if produced.include? step.path
+        if internal
           compute_last_deps[step.compute] ||= []
           compute_last_deps[step.compute] << step
         else
-          last_deps << step
+          compute_simple_dependencies[step.compute] ||= []
+          compute_simple_dependencies[step.compute] << step
         end
       else
-        if ComputeDependency === step
-          next if produced.include? step.path 
-          compute_pre_deps[step.compute] ||= []
-          compute_pre_deps[step.compute] << step
+        if internal
+          simple_dependencies.prepend(step)
         else
-          pre_deps << step #if dependencies.include?(step)
+          simple_dependencies << step
         end
       end
     end
 
-    Log.medium "Computing pre dependencies: #{Misc.fingerprint(compute_pre_deps)} - #{Log.color :blue, self.path}" if compute_pre_deps.any?
-    compute_pre_deps.each do |type,list|
+    log :dependencies, "Processing dependencies for #{Log.color :yellow, task_name.to_s || ""}" if compute_simple_dependencies.any? || simple_dependencies.any? || compute_last_deps.any?
+
+    Log.debug "compute_simple_dependencies: #{Misc.fingerprint(compute_simple_dependencies)} - #{Log.color :blue, self.path}" if compute_simple_dependencies.any?
+    compute_simple_dependencies.each do |type,list|
       run_compute_dependencies(type, list, dep_step)
     end
 
-    Log.medium "Processing pre dependencies: #{Misc.fingerprint(pre_deps)} - #{Log.color :blue, self.path}" if pre_deps.any?
+    Log.low "pre_deps: #{Misc.fingerprint(pre_deps)} - #{Log.color :blue, self.path}" if pre_deps.any?
     pre_deps.each do |step|
       next if compute_deps.include? step
       begin
@@ -487,8 +490,8 @@ class Step
       end
     end
 
-    Log.medium "Processing last dependencies: #{Misc.fingerprint(last_deps)} - #{Log.color :blue, self.path}" if last_deps.any?
-    last_deps.each do |step|
+    Log.debug "simple_dependencies: #{Misc.fingerprint(simple_dependencies)} - #{Log.color :blue, self.path}" if simple_dependencies.any?
+    simple_dependencies.each do |step|
       next if compute_deps.include? step
       begin Exception
         execute_and_dup(step, dep_step) 
@@ -497,8 +500,8 @@ class Step
       end
     end
 
-    Log.medium "Computing last dependencies: #{Misc.fingerprint(compute_last_deps)} - #{Log.color :blue, self.path}" if compute_last_deps.any?
-    compute_last_deps.each do |type,list|
+    Log.low "compute_last_deps: #{Misc.fingerprint(compute_simple_dependencies)} - #{Log.color :blue, self.path}" if compute_simple_dependencies.any?
+    compute_simple_dependencies.each do |type,list|
       run_compute_dependencies(type, list, dep_step)
     end
 

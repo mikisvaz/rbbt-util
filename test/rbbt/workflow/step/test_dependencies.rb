@@ -294,5 +294,6 @@ class TestWorkflowDependency < Test::Unit::TestCase
     assert job.dependencies.first.file('foo').exists?
     assert_equal 'done'.reverse, job.run
   end
+
 end
 

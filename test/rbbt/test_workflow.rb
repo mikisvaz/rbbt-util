@@ -513,4 +513,92 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal "TLA", job.run
     assert job.overriden
   end
+
+  def test_anonymous_workflow
+    workflow = Module.new
+    workflow.extend Workflow
+    workflow.define_singleton_method(:to_s){"TestWorkflow"}
+
+    assert_equal "TestWorkflow", workflow.to_s
+
+    t1 = workflow.task :s1 => :string do
+      task_name.to_s
+    end
+
+    workflow.dep :s1
+    t2 = workflow.task :s2 => :string do
+      task_name.to_s
+    end
+
+    workflow.dep :s2
+    t3 = workflow.task :s3 => :string do
+      task_name.to_s
+    end
+
+    assert_equal "s3", workflow.job(:s3).run
+  end
+
+  def test_low_level_step
+    Log.with_severity 0 do
+      TmpFile.with_file do |tmpdir|
+        Path.setup tmpdir
+
+        s1 = Step.new tmpdir.s1 do "s1" end 
+        s1.task_name = "s1"
+
+        # run clean run
+        assert_equal "s1", s1.run
+        s1.clean
+        assert_equal "s1", s1.run
+        assert_equal "s1", s1.run
+
+        # is persisted because it raises RbbtException
+        s1.task = proc do raise RbbtException end
+        assert_equal "s1", s1.run
+        s1.clean
+        assert_raises RbbtException do s1.run end
+        assert RbbtException === s1.get_exception
+        assert s1.error?
+
+        s1.recursive_clean
+        s1.task = proc do "s1" end
+
+        # add dependencies
+        s2 = Step.new tmpdir.s2 do 
+          step(:s1).load + " -> s2"  
+        end 
+        s2.task_name = "s2"
+        s2.dependencies << s1
+
+        s3 = Step.new tmpdir.s3 do 
+          step(:s2).load + " -> s3"  
+        end 
+        s3.task_name = "s3"
+        s3.dependencies << s2
+
+        assert_equal "s1 -> s2", s2.run
+        assert_equal "s1 -> s2 -> s3", s3.run
+        
+        # Test recusive behaviour
+        s1.task = proc do raise RbbtException end
+        ComputeDependency.setup(s1, :produce)
+        s1.clean
+        s3.clean
+        s3.run
+        assert_equal "s1 -> s2 -> s3", s3.run
+
+        s1.task = proc do raise RbbtException end
+        ComputeDependency.setup(s1, :produce)
+        s3.recursive_clean
+        assert_raises RbbtException do s3.run end
+
+        s1.task = proc{|v| v }
+        s1.inputs = ["test"]
+        assert_equal "test", s1.run
+        s3.recursive_clean
+        assert_equal "test -> s2 -> s3", s3.run
+      end
+    end
+  end
+
 end
