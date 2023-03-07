@@ -2,7 +2,11 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../../..', 'test_he
 require 'rbbt/util/misc/development'
 
 class TestMiscDevelopment < Test::Unit::TestCase
-  def test_ssh
+  def test_mem
+    assert Integer === Misc.memory_use
+  end
+
+  def ___test_ssh
     Misc.ssh_run 'mn1' do
       puts "hola"
     end

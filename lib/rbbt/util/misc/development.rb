@@ -397,7 +397,13 @@ def self.add_libdir(dir=nil)
     end
   end
   def self.memory_use(pid=nil)
-    `ps -o rss -p #{pid || $$}`.strip.split.last.to_i
+    pid ||= $$
+    begin
+      CMD.cmd("grep 'VmRSS:' /proc/#{pid}/status").read.scan(/\d+/).first.to_i
+    rescue ProcessFailed
+      raise "Process with #{pid} not found"
+    end
+    #`ps -o rss -p #{pid || $$}`.strip.split.last.to_i
   end
 
 
