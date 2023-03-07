@@ -249,7 +249,8 @@ module Workflow
                                  task_info = d[:workflow].task_info(d[:task])
 
                                  _inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
-                                 job = d[:workflow]._job(d[:task], d[:jobname], _inputs) 
+                                 _jobname = d.include?(:jobname) ? d[:jobname] : jobname
+                                 job = d[:workflow]._job(d[:task], _jobname, _inputs) 
                                  overriden = true if TrueClass === job.overriden && (d.nil? || ! d[:not_overriden])
                                  job
                                end
@@ -271,8 +272,8 @@ module Workflow
                        else
                          task_info = (dep[:task] && dep[:workflow]) ? dep[:workflow].task_info(dep[:task]) : nil
                          _inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, task_info)
-                         job = dep[:workflow]._job(dep[:task], dep[:jobname], _inputs)
-                         job = d[:workflow]._job(d[:task], d[:jobname], _inputs) 
+                         _jobname = dep.include?(:jobname) ? dep[:jobname] : jobname
+                         job = dep[:workflow]._job(dep[:task], _jobname, _inputs)
                          overriden = true if TrueClass === job.overriden && (d.nil? || ! d[:not_overriden])
                          job
                        end
