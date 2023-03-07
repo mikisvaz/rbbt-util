@@ -16,26 +16,19 @@ begin
 
     
     gem.add_dependency('rake')
-    gem.add_dependency('progress-monitor')
     gem.add_dependency('lockfile')
-    gem.add_dependency('spreadsheet')
-    gem.add_dependency('rubyXL')
     gem.add_dependency('highline')
     gem.add_dependency('bio-bgzf')
     gem.add_dependency('term-ansicolor')
-    gem.add_dependency('rest-client')
     gem.add_dependency('to_regexp')
     gem.add_dependency('nakayoshi_fork')
     gem.add_dependency('method_source')
-    #gem.add_dependency('narray')
-    #gem.add_dependency('sass-css-importer')
-    #gem.add_dependency('simplews')
+    #gem.add_dependency('spreadsheet')
+    #gem.add_dependency('rubyXL')
     #gem.add_dependency('ruby-prof')
     #gem.add_dependency('RubyInline')
-
-    # I hate this...
-    #gem.add_dependency('ZenTest', '4.3')
-
+    #gem.add_dependency('rest-client')
+    
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
     gem.license = "MIT"
   end
@@ -51,6 +44,9 @@ Rake::TestTask.new(:test) do |test|
   test.verbose = true
   test.warning = false
 end
+
+require 'gem-licenses'
+Gem::GemLicenses.install_tasks
 
 begin
   require 'rcov/rcovtask'
