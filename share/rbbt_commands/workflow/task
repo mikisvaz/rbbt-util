@@ -428,15 +428,19 @@ begin
 
   def match_dependencies(queries, dependencies)
     queries = queries.collect{|q| q.include?("#") ? q.split("#") : q }
-    dependencies.select do |dep|
-      queries.select do |q|
+
+    matched = []
+    queries.each do |q|
+      matched += dependencies.select do |dep|
         if Array === q
           q.first == dep.workflow.to_s && q.last == dep.task_name.to_s
         else
           q.to_s == dep.task_name.to_s
         end
-      end.any?
+      end
     end
+
+    matched
   end
 
   if server = options.delete(:relay)
