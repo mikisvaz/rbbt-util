@@ -1,5 +1,3 @@
-require 'net/smtp'
-
 module Misc
 
   def self.hostname

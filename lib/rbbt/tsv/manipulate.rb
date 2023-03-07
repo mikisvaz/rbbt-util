@@ -1,5 +1,3 @@
-require 'progress-bar'
-
 module TSV
   
   attr_accessor :monitor
