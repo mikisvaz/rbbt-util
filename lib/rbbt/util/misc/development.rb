@@ -399,7 +399,7 @@ def self.add_libdir(dir=nil)
   def self.memory_use(pid=nil)
     pid ||= $$
     begin
-      CMD.cmd("grep 'VmRSS:' /proc/#{pid}/status").read.scan(/\d+/).first.to_i
+      Open.read("/proc/#{pid}/status").match(/VmRSS:\s+(\d+)/)[1].to_i
     rescue ProcessFailed
       raise "Process with #{pid} not found"
     end
