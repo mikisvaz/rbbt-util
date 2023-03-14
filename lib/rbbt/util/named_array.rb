@@ -1,4 +1,3 @@
-#require 'rbbt/util/chain_methods'
 require 'rbbt/util/misc'
 
 module NamedArray
