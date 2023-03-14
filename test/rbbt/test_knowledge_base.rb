@@ -9,15 +9,8 @@ require 'rbbt/entity/identifiers'
 require 'rbbt/association'
 require 'rbbt/knowledge_base'
 
-require 'rbbt/sources/organism'
-require 'rbbt/sources/tfacts'
-require 'rbbt/sources/kegg'
-
 module Gene
   extend Entity
-  add_identifiers Organism.identifiers("NAMESPACE"), "Ensembl Gene ID", "Associated Gene Name"
-  add_identifiers KEGG.identifiers
-
   property :follow => :single do |kb,name,annotate=nil|
     if annotate.nil? or annotate
       l = kb.children(name, self).target_entity
@@ -55,6 +48,15 @@ end
 
 
 class TestKnowledgeBase < Test::Unit::TestCase
+  def setup
+    require 'rbbt/sources/organism'
+    require 'rbbt/sources/tfacts'
+    require 'rbbt/sources/kegg'
+
+    Gene.add_identifiers Organism.identifiers("NAMESPACE"), "Ensembl Gene ID", "Associated Gene Name"
+    Gene.add_identifiers KEGG.identifiers
+
+  end
 
   def test_knowledge_base_reverse
     organism = Organism.default_code("Hsa")

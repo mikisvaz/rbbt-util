@@ -2,9 +2,12 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helpe
 require 'rbbt/hpc/batch'
 require 'rbbt/workflow'
 
-Workflow.require_workflow "Sample"
-Workflow.require_workflow "HTS"
 class TestSLURM < Test::Unit::TestCase
+
+  def setup
+    Workflow.require_workflow "Sample"
+    Workflow.require_workflow "HTS"
+  end
 
   def test_batch_options
     job = Sample.job(:mutect2, "small", :reference => "hg38")

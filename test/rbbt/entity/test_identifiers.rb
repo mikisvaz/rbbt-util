@@ -7,14 +7,16 @@ module Gene
   extend Entity
 end
 
-require 'rbbt/sources/kegg'
-require 'rbbt/sources/organism'
-Gene.add_identifiers Organism.identifiers("NAMESPACE"), "Ensembl Gene ID", "Associated Gene Name"
-Gene.add_identifiers KEGG.identifiers
-Gene.add_identifiers Organism.identifiers("NAMESPACE"), "Ensembl Gene ID", "Associated Gene Name"
-Gene.add_identifiers KEGG.identifiers
-
 class TestEntityIdentifiers < Test::Unit::TestCase
+  def setup
+    require 'rbbt/sources/kegg'
+    require 'rbbt/sources/organism'
+    Gene.add_identifiers Organism.identifiers("NAMESPACE"), "Ensembl Gene ID", "Associated Gene Name"
+    Gene.add_identifiers KEGG.identifiers
+    Gene.add_identifiers Organism.identifiers("NAMESPACE"), "Ensembl Gene ID", "Associated Gene Name"
+    Gene.add_identifiers KEGG.identifiers
+
+  end
   def test_name
     Gene.add_identifiers datafile_test('identifiers'), "Ensembl Gene ID", "Associated Gene Name"
     assert_equal "TP53", Gene.setup("ENSG00000141510").name
@@ -62,7 +64,7 @@ class TestEntityIdentifiers < Test::Unit::TestCase
     mod.instance_eval do
       extend Entity
       add_identifiers Path.setup(description_file), key_field, description_field
-      
+
       annotation :format
     end
     entity = "CORUM:6052"

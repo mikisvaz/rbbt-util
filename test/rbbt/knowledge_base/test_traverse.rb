@@ -2,8 +2,11 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helpe
 require 'rbbt/knowledge_base/traverse'
 require 'rbbt/workflow'
 
-Workflow.require_workflow "Genomics"
 class TestKnowledgeBaseTraverse < Test::Unit::TestCase
+  def setup
+    Workflow.require_workflow "Genomics"
+  end
+
   def kb
     Genomics.knowledge_base
   end
