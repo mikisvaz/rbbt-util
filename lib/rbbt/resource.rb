@@ -351,6 +351,7 @@ url='#{url}'
 
   def identify(path)
     path = File.expand_path(path)
+    path += "/" if File.directory?(path)
     resource ||= Rbbt
     locations = (Path::STANDARD_SEARCH + resource.search_order + resource.search_paths.keys)
     locations -= [:current, "current"]
@@ -363,7 +364,10 @@ url='#{url}'
 
       pattern = pattern.sub('{PWD}', Dir.pwd)
       if String ===  pattern and pattern.include?('{')
-        regexp = "^" + pattern.gsub(/{([^}]+)}/,'(?<\1>[^/]+)') + "(?:/(?<REST>.*))?/?$"
+        regexp = "^" + pattern
+          .gsub(/{(TOPLEVEL)}/,'(?<\1>[^/]+)')
+          .gsub(/{([^}]+)}/,'(?<\1>[^/]+)?') +
+        "(?:/(?<REST>.*))?/?$"
         if m = path.match(regexp) 
           if ! m.named_captures.include?("PKGDIR") || m["PKGDIR"] == resource.pkgdir
             return self[m["TOPLEVEL"]][m["SUBPATH"]][m["REST"]]

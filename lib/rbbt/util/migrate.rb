@@ -17,13 +17,20 @@ puts path.glob_all.collect{|p| File.directory?(p) ? p + "/" : p } * "\n"
 
       [path, paths.collect{|p| [source, p] * ":"}, lpath]
     else
+      original_path = Path.setup(path)
       if File.exist?(path)
         path = resource.identify(path)
       else
         path = Path.setup(path)
       end
 
-      [path, (path.directory? ? path.glob_all : path.find_all), path]
+      if original_path.located?
+        paths = [original_path]
+      else
+        paths = (path.directory? ? path.glob_all : path.find_all)
+      end
+
+      [path, paths, path]
     end
   end
 
@@ -54,9 +61,9 @@ puts resource[path].find(search_path)
 
     real_paths.each do |source_path|
       Log.medium "Migrating #{source_path} #{options[:files].length} files to #{target} - #{Misc.fingerprint(options[:files])}}" if options[:files]
-      if File.directory?(source_path) || source_path =~ /\/$/
-        source_path += "/" unless source_path[-1] == "/"
-        target += "/" unless target[-1] == "/"
+      if File.directory?(source_path) || source_path.ends_with?("/")
+        source_path += "/" unless source_path.end_with? '/'
+        target += "/" unless target.end_with? '/'
       end
 
       next if source_path == target
