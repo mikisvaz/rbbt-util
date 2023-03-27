@@ -1,6 +1,6 @@
 module Path
 
-  def self.caller_lib_dir(file = nil, relative_to = ['lib', 'bin', 'workflow.rb'])
+  def self.caller_lib_dir(file = nil, relative_to = ['lib', 'bin'])
     #file = caller.reject{|l| 
     #  l =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
     #  l =~ /rbbt\/resource\/path\.rb/ or
