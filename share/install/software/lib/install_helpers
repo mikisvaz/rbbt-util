@@ -28,13 +28,14 @@ else
 			done
 			REALPATH="$PWD/$(basename "$1")"
 			cd "$OURPWD"
+			echo "$REALPATH" >&2
 			echo "$REALPATH"
 	}
 
 	function relative_path(){
 		local basedir="$(realpath $1)"
 		local path="$(realpath "$2")"
-		echo ${path/$basedir\/}
+    echo ${path/$(dirname $basedir)\/..}
 	}
 fi
 
