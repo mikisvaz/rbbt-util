@@ -45,7 +45,7 @@ module Workflow
   end
 
 
-  def example_step(task_name, example, new_inputs = {})
+  def example_step(task_name, example="Example", new_inputs = {})
     inputs = example_inputs(task_name, example)
 
     if new_inputs and new_inputs.any?
