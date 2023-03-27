@@ -25,25 +25,30 @@ module Workflow
     end.compact
   end
 
+  #def example_inputs_old(task_name, example)
+  #  inputs = {}
+  #  IndiferentHash.setup(inputs)
+  #  example(task_name, example).each do |input,type,file|
+
+  #    case type
+  #    when :tsv, :array, :text
+  #      Log.debug "Pointing #{ input } to #{file}"
+  #      inputs[input.to_sym]  = file
+  #    when :boolean
+  #      inputs[input.to_sym]  = (file.read.strip == 'true')
+  #    else
+  #      Log.debug "Loading #{ input } from #{file}"
+  #      inputs[input.to_sym]  = file.read.strip
+  #    end
+  #  end
+  #  inputs
+  #end
+
   def example_inputs(task_name, example)
-    inputs = {}
-    IndiferentHash.setup(inputs)
-    example(task_name, example).each do |input,type,file|
-
-      case type
-      when :tsv, :array, :text
-        Log.debug "Pointing #{ input } to #{file}"
-        inputs[input.to_sym]  = file
-      when :boolean
-        inputs[input.to_sym]  = (file.read.strip == 'true')
-      else
-        Log.debug "Loading #{ input } from #{file}"
-        inputs[input.to_sym]  = file.read.strip
-      end
-    end
-    inputs
+    dir = example_dir[task_name][example]
+    info = self.task_info(task_name)
+    Workflow.load_inputs(dir, info[:inputs], info[:input_types])
   end
-
 
   def example_step(task_name, example="Example", new_inputs = {})
     inputs = example_inputs(task_name, example)
