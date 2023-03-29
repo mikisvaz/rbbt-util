@@ -45,7 +45,7 @@ module Path
 end
 
 module Resource
-  def set_software_env(software_dir)
+  def set_software_env(software_dir = self.root.software)
     software_dir.opt.find_all.collect{|d| d.annotate(File.dirname(d)) }.reverse.each do |software_dir|
       next unless software_dir.exists?
       software_dir = File.expand_path(software_dir)
