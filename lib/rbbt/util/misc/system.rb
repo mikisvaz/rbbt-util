@@ -37,8 +37,8 @@ module Misc
   end
 
   def self.path_relative_to(basedir, path)
-    path = File.expand_path(path) unless path[0] == "/"
-    basedir = File.expand_path(basedir) unless basedir[0] == "/"
+    path = File.expand_path(path) unless path.slice(0,1) == "/"
+    basedir = File.expand_path(basedir) unless basedir.slice(0,1) == "/"
 
     if path.index(basedir) == 0
       if basedir[-1] == "/"

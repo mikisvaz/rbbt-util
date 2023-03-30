@@ -1,6 +1,8 @@
 require 'rbbt/util/open'
 require 'rbbt/util/log'
 require 'rbbt/resource/path'
+require 'rbbt/resource/util'
+require 'rbbt/resource/rake'
 require 'net/http'
 require 'set'
 
@@ -21,16 +23,16 @@ module Resource
   end
 
   def self.extended(base)
-    base.pkgdir = 'rbbt'
-    base.subdir = ''
-    base.resources = {}
-    base.rake_dirs = {}
-    base.search_paths = Path::SEARCH_PATHS.dup
-    base.remote_server = Resource.remote_servers[base.to_s] || Resource.remote_servers["*"]
+    base.pkgdir ||= 'rbbt'
+    base.subdir ||= ''
+    base.resources ||= {}
+    base.rake_dirs ||= {}
+    base.search_paths ||= Path.path_maps.dup
+    base.remote_server ||= Resource.remote_servers[base.to_s] || Resource.remote_servers["*"]
     base
   end
 
-  attr_accessor :pkgdir, :subdir, :resources, :rake_dirs, :remote_server, :search_paths
+  attr_accessor :pkgdir, :libdir, :subdir, :resources, :rake_dirs, :remote_server, :search_paths
 
   def set_libdir(value = nil)
     _libdir = value || Path.caller_lib_dir
@@ -38,7 +40,7 @@ module Resource
   end
 
   def root
-    Path.setup @subdir || "", @pkgdir, self, @search_paths
+    Path.setup(@subdir || "", self, self.libdir, @search_paths)
   end
 
   def method_missing(name, prev = nil, *args)
