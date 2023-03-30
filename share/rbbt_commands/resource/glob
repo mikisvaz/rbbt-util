@@ -75,7 +75,14 @@ end if resource
 path = (resource || Rbbt)[path]
 
 if where.nil? || where == 'all' || path.search_paths.include?(where.to_sym)
-  location = where == 'all' ?  path.glob_all("*") : path.glob(where)
+  location = case where
+             when 'all'
+               path.glob_all("*")
+             when nil
+               path.glob_all
+             else
+               path.glob(where)
+             end
 
   puts location * "\n"
 else
