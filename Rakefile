@@ -15,6 +15,7 @@ begin
     #gem.test_files = Dir['test/**/test_*.rb']
 
     
+    gem.add_dependency('scout-gear')
     gem.add_dependency('rake')
     gem.add_dependency('lockfile')
     gem.add_dependency('highline')

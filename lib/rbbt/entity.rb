@@ -73,7 +73,7 @@ module Entity
     FORMATS
   end
 
-  dir = (defined?(Rbbt)? Rbbt.var.entity_property : 'var/entity_property')
+  dir = (defined?(Rbbt) && defined?(Resource) && Resource === Rbbt ? Rbbt.var.entity_property : 'var/entity_property')
   self.entity_property_cache = dir
 
   def self.entity_property_cache=(dir)

@@ -1,49 +1,3 @@
-module Path
-
-  def self.caller_lib_dir(file = nil, relative_to = ['lib', 'bin', 'LICENSE'])
-    #file = caller.reject{|l| 
-    #  l =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
-    #  l =~ /rbbt\/resource\/path\.rb/ or
-    #  l =~ /rbbt\/persist.rb/ or
-    #  l =~ /rbbt\/util\/misc\.rb/ or
-    #  l =~ /progress-monitor\.rb/ 
-    #}.first.sub(/\.rb[^\w].*/,'.rb') if file.nil?
-    
-    
-    if file.nil?
-      caller_dup = caller.dup
-      while file = caller_dup.shift
-        break unless file =~ /rbbt\/(?:resource\.rb|workflow\.rb)/ or
-          file =~ /rbbt\/resource\/path\.rb/ or
-          file =~ /rbbt\/persist.rb/ or
-          file =~ /rbbt\/util\/misc\.rb/ or
-          file =~ /progress-monitor\.rb/ 
-      end
-      file = file.sub(/\.rb[^\w].*/,'.rb')
-    end
-
-    relative_to = [relative_to] unless Array === relative_to
-    file = File.expand_path(file)
-    return Path.setup(file) if relative_to.select{|d| File.exist? File.join(file, d)}.any?
-
-    while file != '/'
-      dir = File.dirname file
-
-      return dir if relative_to.select{|d| File.exist? File.join(dir, d)}.any?
-
-      file = File.dirname file
-    end
-
-    return nil
-  end
-
-  SLASH = "/"[0]
-  DOT = "."[0]
-  def located?
-    self.byte(0) == SLASH || (self.byte(0) == DOT && self.byte(1) == SLASH) || (resource != Rbbt && (Open.remote?(self) || Open.ssh?(self)))
-  end
-end
-
 module Resource
   def set_software_env(software_dir = self.root.software)
     software_dir.opt.find_all.collect{|d| d.annotate(File.dirname(d)) }.reverse.each do |software_dir|
@@ -158,5 +112,3 @@ module Resource
     end
   end
 end
-
-

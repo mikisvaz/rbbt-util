@@ -31,16 +31,16 @@ if dev_dir
   end
 end
 
-require 'rbbt'
-require 'rbbt/util/simpleopt'
-require 'rbbt/util/config'
+require_relative '../lib/rbbt'
+require 'scout/simple_opt'
+require_relative '../lib/rbbt/util/config'
 
 Log.nocolor = true if ARGV.include? "--nocolor"
 
 options = SOPT.setup <<EOF
 Ruby bioinformatics toolkit
 
-$ rbbt <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value'
+$ #{$0} <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-value'
 
 
 --log*                  #{Log.color :yellow, "Log level from 0 (debug) 6 (errors)"}
@@ -96,7 +96,7 @@ if options.delete(:no_lock_id)
 end
 
 if mem_dump = options.delete(:dump_mem)
-  require 'rbbt/monitor'
+  require_relative '../lib/rbbt/monitor'
   Rbbt.dump_memory(mem_dump, String)
 end
 
@@ -210,7 +210,7 @@ def aliases
 end
 
 def cmd_alias
-  while aliases.include? ARGV[0]
+  while ARGV[0] && aliases.include?(ARGV[0])
     ARGV.replace Misc.parse_cmd_params(aliases[ARGV[0]]) + ARGV[1..-1]
   end
 end
