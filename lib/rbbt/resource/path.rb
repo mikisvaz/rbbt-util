@@ -165,6 +165,10 @@ module Path
       return self
     end
 
+    if where == :all || where == 'all'
+      return find_all(caller_lib, paths)
+    end
+
     @path ||= {}
     rsearch_paths = (resource and resource.respond_to?(:search_paths)) ? resource.search_paths : nil 
     key = [where, caller_lib, rsearch_paths, paths].inspect

@@ -3,6 +3,10 @@ require 'rbbt/util/simpleopt/get'
 require 'rbbt/util/simpleopt/doc'
 module SOPT
 
+  class << self
+    attr_accessor :original_argv
+  end
+
   def self.setup(str)
     parts = str.split(/\n\n+/)
 
@@ -24,6 +28,7 @@ module SOPT
     SOPT.description = description.strip if description
     SOPT.parse options  if options
 
+    SOPT.original_argv = ARGV.dup
     SOPT.consume
   end
 end

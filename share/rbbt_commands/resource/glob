@@ -10,7 +10,7 @@ $0 = "rbbt #{$previous_commands*" "} #{ File.basename(__FILE__) }" if $previous_
 
 options = SOPT.setup <<EOF
 
-Find files
+Find files in directories
 
 $ #{$0} [<options>] (<resource> <path>|<path>)
 
@@ -74,11 +74,11 @@ end if resource
 
 path = (resource || Rbbt)[path]
 
-unless where.start_with? 'ssh:'
-  location = path.find(where)
-  Array === location ? (puts location * "\n") : (puts location)
-  exit
-end
+if path.search_paths.include?(where)
+  where = "*" if where == 'all'
+  location = path.glob(where)
 
-IndiferentHash.setup(options)
-puts RbbtSSH.command(where, $0, ARGV, options.merge("where" => :all)).read
+  puts location * "\n"
+else
+  puts RbbtSSH.command(where, $0, ARGV, options.merge("where" => :all)).read
+end
