@@ -201,7 +201,7 @@ module Workflow
         description = description.split("\n\n").first
 
         next if abridge && ! final.include?(name)
-        puts Misc.format_definition_list_item(name.to_s, description, Log.tty_size, 20, :yellow)
+        puts Misc.format_definition_list_item(name.to_s, description, Log.tty_size || 80, 20, :yellow)
 
         prov_string = prov_string(dep_tree(name))
         puts Misc.format_paragraph Log.color(:blue, "-> " + prov_string) if prov_string && ! prov_string.empty?
