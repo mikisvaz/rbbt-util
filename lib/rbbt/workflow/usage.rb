@@ -201,7 +201,7 @@ module Workflow
         description = description.split("\n\n").first
 
         next if abridge && ! final.include?(name)
-        puts Misc.format_definition_list_item(name.to_s, description, Log.terminal_width, 20, :yellow)
+        puts Misc.format_definition_list_item(name.to_s, description, Log.tty_size, 20, :yellow)
 
         prov_string = prov_string(dep_tree(name))
         puts Misc.format_paragraph Log.color(:blue, "-> " + prov_string) if prov_string && ! prov_string.empty?
@@ -253,7 +253,7 @@ module Workflow
               puts Misc.format_definition_list_item(input, head, 1000, -1, :blue).gsub(/\n\s*\n/,"\n") 
               puts '...' if lines.length > 6
             else
-              puts Misc.format_definition_list_item(input, file.read, Log.terminal_width, 20, :blue)
+              puts Misc.format_definition_list_item(input, file.read, Log.tty_size, 20, :blue)
             end
           end
           puts
