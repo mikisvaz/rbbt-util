@@ -56,7 +56,16 @@ class Step
   end
 
   def self.info_file(path)
-    path.nil? ? nil : path + '.info'
+    return nil if path.nil?
+    info_file = path + '.info'
+    return info_file if Open.exist?(info_file)
+
+    if path.end_with?('.gz')
+      info_file_nogz = path.sub(/\.gz$/,'') + '.info'
+      return info_file_nogz if Open.exists?(info_file_nogz)
+    end
+
+    info_file
   end
 
   def self.tmp_path(path)
