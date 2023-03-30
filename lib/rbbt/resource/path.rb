@@ -71,7 +71,7 @@ module Path
 
   def glob(pattern = '*')
     if self.include? "*"
-      self.glob_all
+      self.glob_all pattern
     else
       return [] unless self.exists? 
       found = self.find

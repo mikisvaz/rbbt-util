@@ -74,11 +74,14 @@ end if resource
 
 path = (resource || Rbbt)[path]
 
-unless where.start_with? 'ssh:'
+if where.nil? || where == 'all' || path.search_paths.include?(where.to_sym)
   location = path.find(where)
-  Array === location ? (puts location * "\n") : (puts location)
-  exit
-end
 
-IndiferentHash.setup(options)
-puts RbbtSSH.command(where, $0, ARGV, options.merge("where" => :all)).read
+  if Array === location
+    puts location * "\n"
+  else
+    puts location
+  end
+else
+  puts RbbtSSH.command(where, $0, ARGV, options.merge("where" => :all)).read
+end

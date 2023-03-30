@@ -70,6 +70,8 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      setup.rb
     }
 
+    ssh.rb
+
     simpleDSL.rb
 
     chain_methods.rb
@@ -469,6 +471,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    resource=resource{
     exists
     find
+    glob
     get
     produce
     read
