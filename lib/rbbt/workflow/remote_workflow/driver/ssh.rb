@@ -220,21 +220,40 @@ job.clean
     #  rjob.run
     #end
 
-    def self.upload_dependencies(job, server, search_path = 'user', produce_dependencies = false)
+    def self.upload_dependencies(job_list, server, search_path = 'user', produce_dependencies = false)
       server, path = parse_url(server) if server =~ /^ssh:\/\//
-      job.dependencies.each do |dep|
-        Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{job.workflow}:#{job.short_path}"
-        dep.produce
-      end if produce_dependencies
 
-      job.input_dependencies.each do |dep|
-        Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{job.workflow}:#{job.short_path}"
-        dep.produce
+      job_list = [job] unless Array === job_list
+
+      all_deps = {}
+      if produce_dependencies
+        job_list.each do |job|
+          job.dependencies.each do |dep|
+            all_deps[dep] ||= []
+            all_deps[dep] << job
+          end
+        end
+      end
+
+      job_list.each do |job|
+        job.input_dependencies.each do |dep|
+          all_deps[dep] ||= []
+          all_deps[dep] << job
+        end
+      end
+      iif all_deps
+
+      missing_deps = []
+      all_deps.each do |dep,jobs|
+        next if dep.done?
+        Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{Misc.fingerprint jobs}"
+        dep.run(true)
+        missing_deps << dep
       end 
+      Step.wait_for_jobs missing_deps
 
-      migrate_dependencies = job.rec_dependencies.select{|d| d.done? }.collect{|d| d.path }
-      migrate_dependencies += job.input_dependencies.select{|d| d.done? }.collect{|d| d.path }
-      Log.medium "Migrating #{migrate_dependencies.length} dependencies from #{job.path} to #{ server }" 
+      migrate_dependencies = all_deps.keys.select{|d| d.done? }.collect{|d| d.path }
+      Log.medium "Migrating #{migrate_dependencies.length} dependencies from #{Misc.fingerprint job_list} to #{ server }" 
       Step.migrate(migrate_dependencies, search_path, :target => server) if migrate_dependencies.any?
     end
 
@@ -242,7 +261,6 @@ job.clean
       inputs = job.inputs.to_hash.slice(*job.real_inputs.map{|i| i.to_s})
       job.dependencies.each do |dep|
         next if dep.done?
-        iif [dep, dep.inputs, dep.real_inputs]
         inputs = dep.inputs.to_hash.slice(*dep.real_inputs.map{|i| i.to_s}).merge(inputs)
         inputs = missing_dep_inputs(dep).merge(inputs)
       end
@@ -278,6 +296,47 @@ job.clean
 
       rjob
     end
+
+    def self.relay_job_list(job_list, server, options = {})
+      migrate, produce, produce_dependencies, search_path, run_type, slurm_options = Misc.process_options options.dup,
+        :migrate, :produce, :produce_dependencies, :search_path, :run_type, :slurm_options
+
+      search_path ||= 'user'
+
+      produce = true if migrate
+
+      upload_dependencies(job_list, server, search_path, options[:produce_dependencies])
+
+      rjobs_job = job_list.each do |job|
+        
+        workflow_name = job.workflow.to_s
+        remote_workflow = RemoteWorkflow.new("ssh://#{server}:#{workflow_name}", "#{workflow_name}")
+        inputs = job.recursive_inputs.to_hash.slice(*job.real_inputs.map{|i| i.to_s})
+        Log.medium "Relaying dependency #{job.workflow}:#{job.short_path} to #{server} (#{inputs.keys * ", "})"
+
+        rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
+
+        override_dependencies = job.rec_dependencies.select{|dep| dep.done? }.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
+        rjob.override_dependencies = override_dependencies
+
+        rjob.run_type = run_type
+        rjob.slurm_options = slurm_options || {}
+
+        rjob.run(true)
+
+        [rjob, job]
+      end
+
+      if options[:migrate]
+        rjobs_job.each do |rjob,job|
+          rjob.produce
+          Step.migrate(Rbbt.identify(job.path), 'user', :source => server) 
+        end
+      end
+
+      rjobs_job.collect{|p| p.first }
+    end
+
 
     def self.relay(workflow, task, jobname, inputs, server, options = {})
       job = workflow.job(task, jobname, inputs)

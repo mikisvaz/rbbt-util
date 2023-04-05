@@ -447,26 +447,21 @@ begin
     require 'rbbt/workflow/remote_workflow'
     relay_dependencies = options.delete(:relay_dependencies).split(",")
     produce_dependencies_for_relay = options.delete(:produce_dependencies_for_relay)
-    if relay_dependencies
-      match_dependencies(relay_dependencies, job.rec_dependencies).each do |dep|
-        RemoteWorkflow::SSH.relay_job(dep, server, :run_type => :run, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
-      end
-    else
-      RemoteWorkflow::SSH.relay_job(job, server, :run_type => :run, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
-    end
+
+    jobs_to_relay = relay_dependencies ?  match_dependencies(relay_dependencies, job.rec_dependencies) : [job]
+    jobs_to_relay.reject!{|d| d.done? }
+
+    RemoteWorkflow::SSH.relay_job_list(jobs_to_relay, server, :run_type => :run, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
   end
 
   if server = options.delete(:slurm_relay)
     require 'rbbt/workflow/remote_workflow'
     relay_dependencies = options.delete(:relay_dependencies).split(",")
     produce_dependencies_for_relay = options.delete(:produce_dependencies_for_relay)
-    if relay_dependencies
-      match_dependencies(relay_dependencies, job.rec_dependencies).each do |dep|
-        RemoteWorkflow::SSH.relay_job(dep, server, :run_type => :orchestrate, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
-      end
-    else
-      RemoteWorkflow::SSH.relay_job(job, server, :run_type => :orchestrate, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
-    end
+    jobs_to_relay = relay_dependencies ?  match_dependencies(relay_dependencies, job.rec_dependencies) : [job]
+    jobs_to_relay.reject!{|d| d.done? }
+
+    RemoteWorkflow::SSH.relay_job_list(jobs_to_relay, server, :run_type => :orchestrate, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
   end
 
 

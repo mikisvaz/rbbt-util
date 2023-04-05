@@ -67,9 +67,9 @@ module Workflow
           inputs[input.to_sym] = steps.first
         when :step_file
           path = Open.read(file).strip
-          path.extend Path
-          step_path = path.match(/(.*)\.files/)[1]
-          path.resource = Step.new step_path
+          step_path, relative = path.match(/(.*)\.files\/(.*)/).values_at 1, 2
+          step = Step.new Path.setup(step_path).find
+          path = step.file(relative)
           inputs[input.to_sym] = path
         when :step_file_array
           paths = Open.read(file).split("\n")
@@ -149,6 +149,8 @@ class Step
     case value
     when Path
       if Step === value.resource
+        step = value.resource
+        value = File.join('var/jobs', step.workflow.to_s, step.short_path + '.files', Misc.path_relative_to(step.files_dir, value))
         path = path + '.as_step_file'
       else
         path = path + '.as_path'

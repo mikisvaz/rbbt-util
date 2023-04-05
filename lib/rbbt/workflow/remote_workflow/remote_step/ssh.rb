@@ -64,7 +64,7 @@ class RemoteStep
       RemoteWorkflow::SSH.orchestrate_slurm_job(File.join(base_url, task.to_s), @input_id, @base_name, @slurm_options || {})
     end
 
-    def produce(*args)
+    def issue
       input_types = {}
       init_job
       @remote_path = case @run_type
@@ -76,6 +76,10 @@ class RemoteStep
                        _orchestrate_slurm
                      end
       @started = true
+    end
+
+    def produce(*args)
+      issue
       while ! (done? || error? || aborted?)
         sleep 1
       end
@@ -87,9 +91,13 @@ class RemoteStep
       load_res Open.open(path)
     end
 
-    def run(*args)
-      produce(*args)
-      self.load unless args.first
+    def run(stream = nil)
+      if stream
+        issue
+      else
+        produce
+        self.load unless args.first
+      end
     end
 
     def clean
