@@ -57,7 +57,7 @@ class Step
   end
 
   def workflow
-    @workflow || info[:workflow]
+    @workflow || info[:workflow] || path.split("/")[-3]
   end
 
 
