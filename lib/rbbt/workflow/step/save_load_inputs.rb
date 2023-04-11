@@ -49,9 +49,9 @@ module Workflow
         when :nofile
           inputs[input.to_sym]  = Open.realpath(file)
         when :path_array
-          inputs[input.to_sym]  = Open.read(file).strip.split("\n")
+          inputs[input.to_sym]  = Open.read(file).strip.split("\n").collect{|p| Path.setup(p) }
         when :path
-          inputs[input.to_sym]  = Open.read(file).strip.split("\n").first
+          inputs[input.to_sym]  = Path.setup(Open.read(file).strip.split("\n").first)
         when :io
           inputs[input.to_sym] = Open.open(Open.realpath(file))
         when :io_array
