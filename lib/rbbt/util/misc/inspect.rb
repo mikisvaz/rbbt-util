@@ -283,9 +283,19 @@ module Misc
       i = parts.index job
       begin
         workflow, task = parts.values_at i - 2, i - 1
-        Workflow.require_workflow workflow
+        _loaded = false
+        begin
+          Kernel.const_get(workflow)
+        rescue 
+          if ! _loaded
+            Workflow.require_workflow workflow 
+            _loaded = true
+            retry
+          end
+          raise $!
+        end
         #return Kernel.const_get(workflow).tasks.include? task.to_sym
-        return true
+        return parts[i-2..-1] * "/"
       rescue
         Log.exception $!
       end
@@ -313,8 +323,8 @@ module Misc
           when (defined?(Path) and Path)
             if defined?(Step) && Open.exists?(Step.info_file(obj))
               obj2str(Workflow.load_step(obj))
-            elsif step_file?(obj)
-              "Step file: " + obj
+            elsif step_file_path = step_file?(obj)
+              "Step file: " + step_file_path
             else
               if obj.exists?
                 if obj.directory?

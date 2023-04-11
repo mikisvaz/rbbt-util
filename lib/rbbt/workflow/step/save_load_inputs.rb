@@ -156,7 +156,7 @@ class Step
         path = path + '.as_path'
       end
     when String
-      if Misc.is_filename?(value, false)
+      if Misc.is_filename?(value, true)
         value = value.dup
         value.extend Path
         return save_input(name, value, type, dir)
