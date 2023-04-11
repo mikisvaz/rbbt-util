@@ -86,7 +86,7 @@ wf = Workflow.require_workflow('#{workflow}')
 
   def self.run(server, cmd, options = nil)
     cmd = cmd * " " if Array === cmd
-    cmd += " " + CMD.process_cmd_options(options)
+    cmd += " " + CMD.process_cmd_options(options) if options
     open(server).cmd(cmd)
   end
 
