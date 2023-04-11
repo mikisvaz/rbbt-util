@@ -193,7 +193,8 @@ job.clean
           new = Step.migrate(paths, :user, :target => server)
           files.zip(new).each{|file,new| Open.write(file, new) }
 
-          CMD.cmd_log("ssh '#{server}' mkdir -p .rbbt/tmp/tmp-ssh_job_inputs/; scp -r '#{dir}' #{server}:.rbbt/tmp/tmp-ssh_job_inputs/#{input_id}")
+          SSHLine.run(server, "mkdir -p .rbbt/tmp/tmp-ssh_job_inputs/")
+          CMD.cmd_log("scp -r '#{dir}' #{server}:.rbbt/tmp/tmp-ssh_job_inputs/#{input_id}")
         end
       end
     end
@@ -307,7 +308,7 @@ job.clean
 
       upload_dependencies(job_list, server, search_path, options[:produce_dependencies])
 
-      rjobs_job = job_list.each do |job|
+      rjobs_job = job_list.collect do |job|
         
         workflow_name = job.workflow.to_s
         remote_workflow = RemoteWorkflow.new("ssh://#{server}:#{workflow_name}", "#{workflow_name}")

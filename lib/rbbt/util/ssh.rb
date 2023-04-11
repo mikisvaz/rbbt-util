@@ -1,25 +1,76 @@
-module RbbtSSH
+require 'net/ssh'
 
-  def self.ssh(server, argv = nil, options = {})
-    server = server.sub(%r(^ssh:(//)?), '')
+class SSHLine
 
-    argv = [] if argv.nil?
-    argv = [argv] unless Array === argv
+  def initialize(host, user = nil)
+    @host = host
+    @user = user
 
-    options = Misc.add_defaults options, :add_option_dashes => true
+    @ssh = Net::SSH.start(@host, @user)
 
-    cmd_sections = [server]
-    cmd_sections << argv * " "
-    cmd_sections << CMD.process_cmd_options(options)
+    @ch = @ssh.open_channel do |ch|
+      ch.exec 'bash'
+    end
 
-    cmd = cmd_sections.compact * " "
+    @ch.on_data do |_,data|
+      if m = data.match(/DONECMD: (\d+)\n/)
+        @exit_status = m[1].to_i
+        @output << data.sub(m[0],'')
+        serve_output 
+      else
+        @output << data
+      end
+    end
 
-    CMD.cmd(:ssh, cmd, :pipe => true)
+    @ch.on_extended_data do |_,c,err|
+      STDERR.write err 
+    end
   end
 
-  def self.command(server, command, argv = [], options = nil)
-    ssh(server, [command] + argv, options)
+  def send_cmd(command)
+    @output = ""
+    @complete_output = false
+    @ch.send_data(command+"\necho DONECMD: $?\n")
   end
 
+  def serve_output
+    @complete_output = true
+  end
+
+  def cmd(command)
+    send_cmd(command)
+    @ssh.loop{ ! @complete_output}
+    if @exit_status.to_i == 0
+      return @output
+    else
+      raise SSHProcessFailed.new @host, command
+    end
+  end
+
+  def ruby(script)
+    @output = ""
+    @complete_output = false
+    cmd = "ruby -e \"#{script.gsub('"','\\"')}\"\n"
+    @ch.send_data(cmd)
+    @ch.send_data("echo DONECMD: $?\n")
+    @ssh.loop{ !@complete_output }
+    if @exit_status.to_i == 0
+      return @output
+    else
+      raise SSHProcessFailed.new @host, "Ruby script:\n#{script}"
+    end
+  end
+
+  @connections = {}
+  def self.open(host, user = nil)
+    @connections[[host, user]] ||= SSHLine.new host, user
+  end
+
+  def self.run(server, cmd)
+    open(server).cmd(cmd)
+  end
+
+  def self.ruby(server, script)
+    open(server).ruby(script)
+  end
 end
-

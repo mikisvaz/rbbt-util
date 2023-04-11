@@ -28,6 +28,16 @@ class ProcessFailed < StandardError;
   end
 end
 
+class SSHProcessFailed < StandardError
+  attr_accessor :host, :cmd
+  def initialize(host, cmd)
+    @host = host
+    @cmd = cmd
+    message = "SSH server #{host} failed cmd '#{cmd}'" 
+    super(message)
+  end
+end
+
 class ConcurrentStreamProcessFailed < ProcessFailed
   attr_accessor :concurrent_stream
   def initialize(pid = Process.pid, msg = nil, concurrent_stream = nil)
