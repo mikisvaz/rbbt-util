@@ -479,4 +479,5 @@ module Path
   def clean_annotations
     "" << self.to_s
   end
+
 end

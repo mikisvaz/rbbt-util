@@ -80,6 +80,7 @@ if where.nil? || where == 'all' || path.search_paths.include?(where.to_sym)
   if Array === location
     puts location * "\n"
   else
+    location = nil if ! Open.exists?(location)
     puts location
   end
 else
