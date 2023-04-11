@@ -84,5 +84,5 @@ if where.nil? || where == 'all' || path.search_paths.include?(where.to_sym)
     puts location
   end
 else
-  puts RbbtSSH.command(where, $0, ARGV, options.merge("where" => :all)).read
+  puts SSHLine.command(where, $0, ARGV, options.merge("where" => :all))
 end

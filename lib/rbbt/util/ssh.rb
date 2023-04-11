@@ -51,6 +51,7 @@ class SSHLine
     @output = ""
     @complete_output = false
     cmd = "ruby -e \"#{script.gsub('"','\\"')}\"\n"
+    Log.debug "Running ruby on #{@host}:\n#{ script }"
     @ch.send_data(cmd)
     @ch.send_data("echo DONECMD: $?\n")
     @ssh.loop{ !@complete_output }
@@ -61,16 +62,49 @@ class SSHLine
     end
   end
 
+  def rbbt(script)
+    preamble =<<-EOF
+require 'rbbt-util'
+require 'rbbt/workflow'
+    EOF
+
+    ruby(preamble + "\n" + script)
+  end
+
+  def workflow(workflow, script)
+    preamble =<<-EOF
+wf = Workflow.require_workflow('#{workflow}')
+    EOF
+
+    rbbt(preamble + "\n" + script)
+  end
+
   @connections = {}
   def self.open(host, user = nil)
     @connections[[host, user]] ||= SSHLine.new host, user
   end
 
-  def self.run(server, cmd)
+  def self.run(server, cmd, options = nil)
+    cmd = cmd * " " if Array === cmd
+    cmd += " " + CMD.process_cmd_options(options)
     open(server).cmd(cmd)
   end
 
   def self.ruby(server, script)
     open(server).ruby(script)
+  end
+
+  def self.rbbt(server, script)
+    open(server).rbbt(script)
+  end
+
+  def self.workflow(server, workflow, script)
+    open(server).workflow(workflow, script)
+  end
+
+
+
+  def self.command(server, command, argv = [], options = nil)
+    run(server, [command] + argv, options)
   end
 end
