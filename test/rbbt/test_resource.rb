@@ -7,6 +7,8 @@ require 'test/unit'
 module TestResource
   extend Resource
 
+  self.subdir = 'tmp/tmp-share/resource/TestResource/'
+
   claim tmp.test.google, :url, "http://google.com"
   claim tmp.test.string, :string, "TEST"
   claim tmp.test.proc, :proc do
@@ -79,8 +81,8 @@ class TestTSV < Test::Unit::TestCase
   end
 
   def test_libdir
-    assert File.exist?(TestResource[].share.Rlib["util.R"].find(:lib))
-    assert File.exist?(TestResource[].share.Rlib["util.R"].find)
+    assert File.exist?(Rbbt.share.Rlib["util.R"].find(:lib))
+    assert File.exist?(Rbbt.share.Rlib["util.R"].find)
   end
 
   def __test_server
@@ -100,6 +102,9 @@ class TestTSV < Test::Unit::TestCase
     assert_equal 'share/databases/DATABASE/FILE', Rbbt.identify('/usr/local/share/rbbt/databases/DATABASE/FILE')
     assert_equal 'share/databases/DATABASE/FILE', Rbbt.identify(File.join(ENV["HOME"], '.rbbt/share/databases/DATABASE/FILE'))
     assert_equal 'share/databases/DATABASE/FILE', Rbbt.identify('/usr/local/share/rbbt/databases/DATABASE/FILE')
+
+    assert_equal 'etc/somefile', TestResource.identify(TestResource.etc.somefile.find(:user))
+    assert_equal 'etc/somefile', TestResource.identify(TestResource.etc.somefile.find(:local))
   end
 
 end

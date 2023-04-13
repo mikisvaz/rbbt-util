@@ -303,6 +303,8 @@ module Misc
     false
   end
 
+  RBBT_IDENTIFY_PATH = ENV["RBBT_IDENTIFY_PATH"] != 'false'
+
   def self.obj2str(obj)
     _obj = obj
     obj = Annotated.purge(obj) if Annotated === obj
@@ -327,11 +329,14 @@ module Misc
               "Step file: " + step_file_path
             else
               if obj.exists?
+                obj = (obj.resource || Rbbt).identify obj if RBBT_IDENTIFY_PATH
                 if obj.directory?
                   files = obj.glob("**/*")
                   "directory: #{Misc.fingerprint(files)}"
-                else
+                elsif obj.located?
                   "file: " << Open.realpath(obj) << "--" << mtime_str(obj)
+                else
+                  "path: " << obj 
                 end
               else
                 obj + " (file missing)"

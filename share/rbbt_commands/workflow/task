@@ -93,6 +93,8 @@ def fix_options(workflow, task, job_options)
               TrueClass === value or %w(true TRUE T yes).include? value
             when :float
               value.to_f
+            when :path
+              Path.setup(value)
             when :integer
               value.to_i
             when :text

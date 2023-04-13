@@ -107,7 +107,7 @@ class Step
       canfail = ComputeDependency === job && job.canfail?
     end
 
-    raise_dependency_error(job) if job.error? and not canfail
+    Step.raise_dependency_error(job) if job.error? and not canfail
   end
 
   def self.raise_dependency_error(job)
@@ -193,7 +193,7 @@ class Step
 
       if dependency.error?
         log_dependency_exec(dependency, :error)
-        raise_dependency_error dependency 
+        Step.raise_dependency_error dependency 
       end
 
       if dependency.streaming?

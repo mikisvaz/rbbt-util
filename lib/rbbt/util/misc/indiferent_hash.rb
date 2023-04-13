@@ -24,16 +24,19 @@ module IndiferentHash
 
   def [](key)
     res = super(key) 
+    res = IndiferentHash.setup(res) if Hash === res
     return res unless res.nil? or (_default? and not keys.include? key)
 
     case key
     when Symbol, Module
-      super(key.to_s)
+      res = super(key.to_s)
     when String
-      super(key.to_sym)
-    else
-      res
+      res = super(key.to_sym)
     end
+
+    res = IndiferentHash.setup(res) if Hash === res
+
+    res
   end
 
   def values_at(*key_list)
