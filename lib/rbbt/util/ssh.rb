@@ -37,7 +37,7 @@ class SSHLine
     @complete_output = true
   end
 
-  def cmd(command)
+  def run(command)
     send_cmd(command)
     @ssh.loop{ ! @complete_output}
     if @exit_status.to_i == 0
@@ -63,12 +63,22 @@ class SSHLine
   end
 
   def rbbt(script)
-    preamble =<<-EOF
+    rbbt_script =<<-EOF
 require 'rbbt-util'
 require 'rbbt/workflow'
+
+  res = begin
+      old_stdout = STDOUT.dup; STDOUT.reopen(STDERR)
+#{script}
+      ensure
+        STDOUT.reopen(old_stdout)
+      end
+
+  puts Marshal.dump(res)
     EOF
 
-    ruby(preamble + "\n" + script)
+    m = ruby(rbbt_script)
+    Marshal.load m
   end
 
   def workflow(workflow, script)
@@ -87,7 +97,7 @@ wf = Workflow.require_workflow('#{workflow}')
   def self.run(server, cmd, options = nil)
     cmd = cmd * " " if Array === cmd
     cmd += " " + CMD.process_cmd_options(options) if options
-    open(server).cmd(cmd)
+    open(server).run(cmd)
   end
 
   def self.ruby(server, script)
@@ -101,8 +111,6 @@ wf = Workflow.require_workflow('#{workflow}')
   def self.workflow(server, workflow, script)
     open(server).workflow(workflow, script)
   end
-
-
 
   def self.command(server, command, argv = [], options = nil)
     run(server, [command] + argv, options)

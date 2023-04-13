@@ -275,7 +275,6 @@ module Misc
 
 
   def self.step_file?(path)
-    return true if defined?(Step) && Step === path.resource
     return false unless path =~ /\.files(?:\/|$)/
     parts = path.split("/")
     job = parts.select{|p| p =~ /\.files$/}.first

@@ -432,8 +432,6 @@ def self.add_libdir(dir=nil)
 
   def self.ssh_run(server, script = nil)
     require 'rbbt/util/ssh'
-    Log.debug "Run ssh script in #{server}:\n#{script}"
-
     SSHLine.ruby(server, script)
   end
 

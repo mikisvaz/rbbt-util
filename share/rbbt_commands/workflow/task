@@ -421,13 +421,6 @@ begin
     exit 0
   end
 
-  if tasks = options.delete(:produce)
-    tasks = tasks.split(",")
-    produce_cpus = (options[:produce_cpus] || 1)
-    puts Step.produce_dependencies(job, tasks,  prepare_cpus)
-    exit 0
-  end
-
   def match_dependencies(queries, dependencies)
     queries = queries.collect{|q| q.include?("#") ? q.split("#") : q }
 
@@ -445,6 +438,49 @@ begin
     matched
   end
 
+  def replace_relayed_jobs(jobs_to_relay, server, produce_dependencies_for_relay = false, run_type = :run)
+    jobs_to_relay.each do |job|
+
+      next if job.done?
+      jmeta = class << job; self; end
+
+      job.instance_variable_set(:@job, job)
+      job.instance_variable_set(:@host, server)
+      job.instance_variable_set(:@produce_dependencies, produce_dependencies_for_relay)
+
+      jmeta.define_method :run do |*args|
+        if done?
+          load
+        else
+          RemoteWorkflow::SSH.relay_job_list([@job], @host, :run_type => run_type, :migrate => true, :produce_dependencies => @produce_dependencies)
+          Step.migrate(@job, 'user', :source => @host)
+          load
+        end
+      end
+      job.dependencies = []
+
+      #([job] + job.rec_dependencies).each do |j|
+      #  next if job.done?
+      #  jmeta = class << j; self; end
+
+      #  j.instance_variable_set(:@job, job)
+      #  j.instance_variable_set(:@host, server)
+      #  j.instance_variable_set(:@produce_dependencies, produce_dependencies_for_relay)
+
+      #  jmeta.define_method :run do |*args|
+      #    if done?
+      #      load
+      #    else
+      #      RemoteWorkflow::SSH.relay_job_list([@job], @host, :run_type => run_type, :migrate => true, :produce_dependencies => @produce_dependencies)
+      #      Step.migrate(@job, 'user', :source => @host)
+      #      load
+      #    end
+      #  end
+      #end
+    end
+  end
+
+
   if server = options.delete(:relay)
     require 'rbbt/workflow/remote_workflow'
     relay_dependencies = options.delete(:relay_dependencies).split(",")
@@ -453,7 +489,7 @@ begin
     jobs_to_relay = relay_dependencies ?  match_dependencies(relay_dependencies, job.rec_dependencies) : [job]
     jobs_to_relay.reject!{|d| d.done? }
 
-    RemoteWorkflow::SSH.relay_job_list(jobs_to_relay, server, :run_type => :run, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
+    replace_relayed_jobs(jobs_to_relay, server, produce_dependencies_for_relay, :run)
   end
 
   if server = options.delete(:slurm_relay)
@@ -463,7 +499,7 @@ begin
     jobs_to_relay = relay_dependencies ?  match_dependencies(relay_dependencies, job.rec_dependencies) : [job]
     jobs_to_relay.reject!{|d| d.done? }
 
-    RemoteWorkflow::SSH.relay_job_list(jobs_to_relay, server, :run_type => :orchestrate, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
+    replace_relayed_jobs(jobs_to_relay, server, produce_dependencies_for_relay, :orchestrate)
   end
 
 
@@ -484,6 +520,14 @@ begin
       end
     end
   end
+
+  if tasks = options.delete(:produce)
+    tasks = tasks.split(",")
+    produce_cpus = (options[:produce_cpus] || 1)
+    puts Step.produce_dependencies(job, tasks,  produce_cpus)
+    exit 0
+  end
+
 
   if do_fork
     ENV["RBBT_NO_PROGRESS"] = "true"

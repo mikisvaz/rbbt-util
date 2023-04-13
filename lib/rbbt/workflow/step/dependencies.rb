@@ -149,7 +149,7 @@ class Step
       select{|i| Step === i || (defined?(RemoteStep) && RemoteStep === i) } + 
       recursive_inputs.flatten.
       select{|dep| Path === dep && Step === dep.resource }.
-      select{|dep| ! dep.resource.started? }. # Ignore input_deps already started
+      #select{|dep| ! dep.resource.started? }. # Ignore input_deps already started
       collect{|dep| dep.resource }
   end
 
@@ -382,7 +382,7 @@ class Step
 
   def run_dependencies
 
-    rec_dependencies = self.rec_dependencies(true) + input_dependencies
+    rec_dependencies = self.rec_dependencies(true) + input_dependencies.reject{|d| d.started? }
 
     return if rec_dependencies.empty?
 
@@ -402,7 +402,7 @@ class Step
       seen_paths << step.path
 
       begin
-        Step.prepare_for_execution(step) unless step == self
+        Step.prepare_for_execution(step) unless step == self 
       rescue DependencyError, DependencyRbbtException
         raise $! unless canfail_paths.include? step.path
       end
@@ -423,6 +423,7 @@ class Step
 
     produced = []
     (dependencies + input_dependencies).each do |dep|
+      next if dep.started?
       next unless ComputeDependency === dep
       if dep.compute == :produce
         dep.produce 

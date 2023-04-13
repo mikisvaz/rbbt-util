@@ -115,7 +115,7 @@ module Persist
     begin
       case (type || :marshal).to_sym
       when :path
-        path
+        Path.setup(Open.read(path).strip)
       when :nil
         nil
       when :boolean
@@ -172,7 +172,7 @@ module Persist
 
     case (type || :marshal).to_sym
     when :path
-      nil
+      Open.write(path, content)
     when :nil
       nil
     when :boolean

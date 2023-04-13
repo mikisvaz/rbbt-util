@@ -99,7 +99,7 @@ STDOUT.write res.to_json
       JSON.parse(json)
     end
 
-    def self.get_raw(url, params)
+    def self.get_raw(url, params = {})
       server, path = parse_url(url)
       script = path_script(path)
 
@@ -224,7 +224,7 @@ job.clean
     def self.upload_dependencies(job_list, server, search_path = 'user', produce_dependencies = false)
       server, path = parse_url(server) if server =~ /^ssh:\/\//
 
-      job_list = [job] unless Array === job_list
+      job_list = [job_list] unless Array === job_list
 
       all_deps = {}
       if produce_dependencies
@@ -242,7 +242,6 @@ job.clean
           all_deps[dep] << job
         end
       end
-      iif all_deps
 
       missing_deps = []
       all_deps.each do |dep,jobs|
@@ -250,10 +249,10 @@ job.clean
         Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{Misc.fingerprint jobs}"
         dep.run(true)
         missing_deps << dep
-      end 
+      end if produce_dependencies
       Step.wait_for_jobs missing_deps
 
-      migrate_dependencies = all_deps.keys.select{|d| d.done? }.collect{|d| d.path }
+      migrate_dependencies = all_deps.keys.collect{|d| [d] + d.rec_dependencies + d.input_dependencies }.flatten.select{|d| d.done? }.collect{|d| d.path }
       Log.medium "Migrating #{migrate_dependencies.length} dependencies from #{Misc.fingerprint job_list} to #{ server }" 
       Step.migrate(migrate_dependencies, search_path, :target => server) if migrate_dependencies.any?
     end
@@ -331,6 +330,7 @@ job.clean
       if options[:migrate]
         rjobs_job.each do |rjob,job|
           rjob.produce
+          iif [:migrate, job]
           Step.migrate(Rbbt.identify(job.path), 'user', :source => server) 
         end
       end
