@@ -175,7 +175,7 @@ class Step
           path = path + '.as_path_array'
         end
       when String
-        if Misc.is_filename?(value.first, false)
+        if Misc.is_filename?(value.first, true)
           path = path + '.as_path_array'
         end
       when IO
@@ -251,5 +251,4 @@ class Step
 
     inputs.keys
   end
-
 end

@@ -440,8 +440,9 @@ begin
 
   def replace_relayed_jobs(jobs_to_relay, server, produce_dependencies_for_relay = false, run_type = :run)
     jobs_to_relay.each do |job|
-
+      ComputeDependency.setup(job, :bootstrap)
       next if job.done?
+      Log.low "Relaying #{Misc.fingerprint job} to #{server}"
       jmeta = class << job; self; end
 
       job.instance_variable_set(:@job, job)
@@ -457,7 +458,7 @@ begin
           load
         end
       end
-      job.dependencies = []
+      #job.dependencies = []
 
       #([job] + job.rec_dependencies).each do |j|
       #  next if job.done?

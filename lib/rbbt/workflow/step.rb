@@ -296,7 +296,7 @@ class Step
               res = @result
             else
               join if not done?
-              res = @path.exists? ? Persist.load_file(@path, result_type) : exec
+              res = @path.exists? ? Persist.load_file(@path, result_type) : run
             end
 
             if result_description

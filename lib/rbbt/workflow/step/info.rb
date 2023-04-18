@@ -132,7 +132,7 @@ class Step
       messages
     else
       set_info(:messages, []) if self.respond_to?(:set_info)
-    end
+    end || []
   end
 
   def message(message)

@@ -311,7 +311,7 @@ job.clean
         
         workflow_name = job.workflow.to_s
         remote_workflow = RemoteWorkflow.new("ssh://#{server}:#{workflow_name}", "#{workflow_name}")
-        inputs = job.recursive_inputs.to_hash.slice(*job.real_inputs.map{|i| i.to_s})
+        inputs = IndiferentHash.setup(job.recursive_inputs.to_hash).slice(*job.real_inputs.map{|i| i.to_s})
         Log.medium "Relaying dependency #{job.workflow}:#{job.short_path} to #{server} (#{inputs.keys * ", "})"
 
         rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
