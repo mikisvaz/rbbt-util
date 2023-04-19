@@ -98,7 +98,7 @@ class TestOpen < Test::Unit::TestCase
 4
     EOF
     TmpFile.with_file(content) do |file|
-      `bgzip #{file}`
+      `gzip #{file}`
       assert_equal(content, Open.read(file + '.gz'))
       puts content
       FileUtils.rm file + '.gz'
@@ -181,8 +181,8 @@ class TestOpen < Test::Unit::TestCase
       Misc.consume_stream(StringIO.new(text), false, file)
 
       assert_equal text, Open.read(file)
-      assert !File.exist?(file)
       assert Open.exists? file
+      refute File.exist?(file)
     end
 
   end
