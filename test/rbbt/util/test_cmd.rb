@@ -39,7 +39,7 @@ class TestCmd < Test::Unit::TestCase
     assert_nothing_raised ProcessFailed do CMD.cmd('ls -fake_option', :no_fail => true, :pipe => true) end
  
     assert_raise ProcessFailed do CMD.cmd('fake-command', :stderr => true, :pipe => true).join end
-    assert_raise ProcessFailed do CMD.cmd('ls -fake_option', :stderr => true, :pipe => true).join end
+    assert_raise ConcurrentStreamProcessFailed do CMD.cmd('ls -fake_option', :stderr => true, :pipe => true).join end
   end
 
   def test_pipes
