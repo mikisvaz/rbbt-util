@@ -308,6 +308,7 @@ module Misc
     _obj = obj
     obj = Annotated.purge(obj) if Annotated === obj
 
+    iif [obj, Path === obj]
     str = case obj
           when nil
             'nil'
@@ -321,7 +322,7 @@ module Misc
             'false'
           when Hash
             "{"<< obj.collect{|k,v| obj2str(k) + '=>' << obj2str(v)}*"," << "}"
-          when (defined?(Path) and Path === obj)
+          when (defined?(Path) && Path)
             if defined?(Step) && Open.exists?(Step.info_file(obj))
               obj2str(Workflow.load_step(obj))
             elsif step_file_path = step_file?(obj)
