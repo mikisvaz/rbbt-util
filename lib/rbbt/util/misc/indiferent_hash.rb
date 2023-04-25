@@ -22,16 +22,16 @@ module IndiferentHash
     @_default ||= self.default or self.default_proc
   end
 
-  def [](key)
-    res = super(key) 
+  def [](key, *args)
+    res = super(key, *args) 
     res = IndiferentHash.setup(res) if Hash === res
     return res unless res.nil? or (_default? and not keys.include? key)
 
     case key
     when Symbol, Module
-      res = super(key.to_s)
+      res = super(key.to_s, *args)
     when String
-      res = super(key.to_sym)
+      res = super(key.to_sym, *args)
     end
 
     res = IndiferentHash.setup(res) if Hash === res

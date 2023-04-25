@@ -321,7 +321,7 @@ module Misc
             'false'
           when Hash
             "{"<< obj.collect{|k,v| obj2str(k) + '=>' << obj2str(v)}*"," << "}"
-          when (defined?(Path) and Path)
+          when (defined?(Path) and Path === obj)
             if defined?(Step) && Open.exists?(Step.info_file(obj))
               obj2str(Workflow.load_step(obj))
             elsif step_file_path = step_file?(obj)

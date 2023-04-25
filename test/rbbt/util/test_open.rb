@@ -181,7 +181,7 @@ class TestOpen < Test::Unit::TestCase
       Misc.consume_stream(StringIO.new(text), false, file)
 
       assert_equal text, Open.read(file)
-      assert Open.exists? file
+      assert Open.exists?(file)
       refute File.exist?(file)
     end
 

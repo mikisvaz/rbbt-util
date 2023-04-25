@@ -57,7 +57,12 @@ class Step
   end
 
   def workflow
-    @workflow || info[:workflow] || (@task && @task.respond_to?(:workflow) && @task.workflow) || path.split("/")[-3]
+    @workflow ||= begin
+                    wf = info[:workflow] 
+                    wf = nil if wf == ""
+                    wf ||= @task.workflow if @task && @task.respond_to?(:workflow)
+                    wf ||= path.split("/")[-3]
+                  end
   end
 
 

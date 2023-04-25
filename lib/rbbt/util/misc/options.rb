@@ -111,7 +111,7 @@ module Misc
     html = if content.nil?
       "<#{ tag }#{attr_str}/>"
     else
-      "<#{ tag }#{attr_str}>#{ content }</#{ tag }>"
+      "<#{ tag }#{attr_str}>#{ content.to_s }</#{ tag }>"
     end
 
     html
