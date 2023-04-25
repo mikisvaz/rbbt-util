@@ -331,7 +331,7 @@ module Misc
                 obj = (obj.resource || Rbbt).identify obj if RBBT_IDENTIFY_PATH
                 if obj.directory?
                   files = obj.glob("**/*")
-                  "directory: #{Misc.fingerprint(files.collect{|f| Misc.path_relative_to(obj.find, f)})}"
+                  "directory: #{Misc.fingerprint(files.collect{|f| Misc.path_relative_to(obj.find, f)}.sort)}"
                 elsif obj.located?
                   "file: " << Open.realpath(obj) << "--" << mtime_str(obj)
                 else
