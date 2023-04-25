@@ -308,7 +308,6 @@ module Misc
     _obj = obj
     obj = Annotated.purge(obj) if Annotated === obj
 
-    iif [obj, Path === obj]
     str = case obj
           when nil
             'nil'
