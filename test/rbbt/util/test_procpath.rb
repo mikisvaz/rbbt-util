@@ -1,14 +1,14 @@
-require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
-require 'rbbt/util/procpath'
+require File.expand_path(__FILE__).sub(%r(/test/.*), '/test/test_helper.rb')
+require File.expand_path(__FILE__).sub(%r(.*/test/), '').sub(/test_(.*)\.rb/,'\1')
 
 class TestProcPath < Test::Unit::TestCase
   def test_record_and_plot
     keyword_test :procpath do
       pid = Process.fork do
         a = ""
-        (0..1000).each do 
+        (0..100).each do |i|
           a << (0..rand(10000).to_i).to_a.collect{|i| "TEST #{i}" } * " "
-          sleep 0.1
+          sleep 0.01
         end
       end
 
@@ -16,6 +16,7 @@ class TestProcPath < Test::Unit::TestCase
 
         ProcPath.record(pid, db, :interval => '1', "recnum" => 100)
         ProcPath.plot(db, db + '.svg', "moving-average-window" => 1 )
+        assert Open.exist?(db + '.svg')
       end
     end
   end

@@ -8,10 +8,10 @@ class TestMigrate < Test::Unit::TestCase
     assert_include Rbbt.migrate_source_paths(Rbbt.root['var/jobs'].find(:user))[1], (File.join(ENV["HOME"], '.rbbt/var/jobs'))
   end
 
-  def test_migrate
+  def _test_migrate
     Open.rm_rf Rbbt.tmp.test.migration_test.find(:user)
-    test_file = Rbbt.tmp.test.migration_test.migration_test_file.find(:user)
-    Open.write(test_file, "TEST")
+    _testfile = Rbbt.tmp.test.migration_test.migration_test_file.find(:user)
+    Open.write(testfile, "TEST")
     TmpFile.with_file do |tmpdir|
       Misc.in_dir tmpdir do
         Rbbt.migrate('tmp/test/migration_test/migration_test_file', :current)

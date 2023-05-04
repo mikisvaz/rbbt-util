@@ -1,9 +1,11 @@
 gem "test-unit", "~> 3.0"
 gem "minitest", "~> 5.5"
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-$LOAD_PATH.unshift(File.dirname(__FILE__))
+$LOAD_PATH.unshift(File.join(__dir__, '../../..', 'lib'))
+$LOAD_PATH.unshift(File.join(__dir__, '..', 'lib'))
+$LOAD_PATH.unshift(__dir__)
 
+require 'rbbt'
 require 'test/unit'
 require 'fileutils'
 require 'rubygems'
@@ -11,6 +13,7 @@ require 'rubygems'
 require 'rbbt'
 require 'rbbt/resource/path'
 require 'rbbt/util/config'
+
 require 'scout/persist'
 
 
