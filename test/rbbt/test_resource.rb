@@ -1,5 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '/../test_helper')
-require 'rbbt'
+require 'rbbt/util/misc/lock'
 require 'rbbt/resource'
 require 'rbbt/util/tmpfile'
 require 'test/unit'

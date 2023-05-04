@@ -11,6 +11,7 @@ require 'rubygems'
 require 'rbbt'
 require 'rbbt/resource/path'
 require 'rbbt/util/config'
+require 'scout/persist'
 
 
 class TestServerLoaded < Exception; end
@@ -22,7 +23,7 @@ class Test::Unit::TestCase
     Random.new
 
     if defined? Persist
-      Persist.cachedir = Rbbt.tmp.test.persistence.find(:user)
+      Persist.cache_dir = Rbbt.tmp.test.persistence.find(:user)
     end
 
     Entity.entity_property_cache = Rbbt.tmp.test.entity_property.find(:user) if defined? Entity

@@ -143,7 +143,7 @@ app.get '/reload_workflow' do
       end
       load wf_file
   rescue Exception
-      if File.exists?(Rbbt.etc['target_workflow'].read.strip)
+      if File.exist?(Rbbt.etc['target_workflow'].read.strip)
           load Rbbt.etc['target_workflow'].read.strip
       else
           raise $!

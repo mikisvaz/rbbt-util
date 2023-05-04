@@ -1,3 +1,4 @@
+require 'scout/exceptions'
 require 'rbbt/util/open'
 require 'rbbt/util/log'
 require 'rbbt/resource/path'
@@ -7,8 +8,7 @@ require 'net/http'
 require 'set'
 
 module Resource
-  class ResourceNotFound < RbbtException; end
-
+  class ResourceNotFound < ScoutException; end
  
   class << self
     attr_accessor :lock_dir

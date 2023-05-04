@@ -231,6 +231,8 @@ usage and exit! -1 if workflow.nil?
 
 task     = ARGV.shift
 
+task = task.to_sym
+
 # Set log, fork, clean, recursive_clean and help
 help = !!options.delete(:help)
 do_fork = !!options.delete(:fork)

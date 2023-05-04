@@ -97,7 +97,7 @@ module Persist
       return data 
     end
 
-    path = persistence_path(filename, persist_options, options)
+    path = persistence_path(filename, options)
 
     if ENV["RBBT_UPDATE_TSV_PERSIST"] == 'true' and filename
       check_options = {:check => [filename]}
