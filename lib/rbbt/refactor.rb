@@ -1,4 +1,5 @@
 require 'scout/log'
+require 'scout/exceptions'
 
 module Rbbt
   def self.require_instead(new_file)
