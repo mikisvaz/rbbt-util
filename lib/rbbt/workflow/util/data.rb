@@ -3,7 +3,7 @@ require 'rbbt/workflow/examples'
 
 module Workflow
   module Data
-    class DataNotFound < RbbtException; end
+    class DataNotFound < ScoutException; end
 
     def data_dir(directory)
       @@data_directory = directory

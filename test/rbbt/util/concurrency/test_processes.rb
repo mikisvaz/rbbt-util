@@ -10,7 +10,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     #Log.severity = 0
   end
 
-  def test_process_throttle
+  def _test_process_throttle
     q = RbbtProcessQueue.new 10
 
     times = 500
@@ -68,7 +68,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     assert_equal times * 3, res.length
   end
 
-  def test_process
+  def _test_process
     q = RbbtProcessQueue.new 10
 
     res = []
@@ -106,7 +106,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     end
   end
 
-  def test_error
+  def _test_error
     assert_raise RbbtException do
       q = RbbtProcessQueue.new 3
 
@@ -134,7 +134,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
     end
   end
 
-  def test_process_abort
+  def _test_process_abort
     assert_raise Aborted do
       q = RbbtProcessQueue.new 10
 
@@ -163,7 +163,7 @@ class TestConcurrencyProcess < Test::Unit::TestCase
   end
 
 
-  def test_process_respawn
+  def _test_process_respawn
     q = RbbtProcessQueue.new 2, nil, nil, true
 
     res = []

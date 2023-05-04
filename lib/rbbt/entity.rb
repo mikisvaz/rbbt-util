@@ -1,5 +1,5 @@
-require 'rbbt/annotations'
-require 'rbbt/entity/identifiers'
+require_relative 'annotations'
+require_relative 'entity/identifiers'
 
 module Entity 
   

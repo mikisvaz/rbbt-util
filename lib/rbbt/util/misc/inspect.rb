@@ -166,9 +166,9 @@ module Misc
     end
   end
 
-  def self.digest(text)
-    Digest::MD5.hexdigest(text)
-  end
+  #def self.digest(text)
+  #  Digest::MD5.hexdigest(text)
+  #end
 
   def self.sample_large_obj(obj, max = 100)
     length = obj.length

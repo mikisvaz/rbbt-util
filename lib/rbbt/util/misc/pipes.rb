@@ -368,83 +368,86 @@ module Misc
     end
     str
   end
-
-  def self.sensiblewrite(path, content = nil, options = {}, &block)
-    force = Misc.process_options options, :force
-
-    if Open.exists? path and not force
-      Misc.consume_stream content 
-      return
-    end
-
-    lock_options = Misc.pull_keys options.dup, :lock
-    lock_options = lock_options[:lock] if Hash === lock_options[:lock]
-    tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
-    tmp_path_lock = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_lock_dir})
-
-    tmp_path_lock = nil if FalseClass === options[:lock]
-
-    Misc.lock tmp_path_lock, lock_options do
-
-      if Open.exists? path and not force
-        Log.warn "Path exists in sensiblewrite, not forcing update: #{ path }"
-        Misc.consume_stream content 
-      else
-        FileUtils.mkdir_p File.dirname(tmp_path) unless File.directory? File.dirname(tmp_path)
-        FileUtils.rm_f tmp_path if File.exist? tmp_path
-        begin
-
-          case
-          when block_given?
-            File.open(tmp_path, 'wb', &block)
-          when String === content
-            File.open(tmp_path, 'wb') do |f| f.write content end
-          when (IO === content or StringIO === content or File === content)
-
-            Open.write(tmp_path) do |f|
-              #f.sync = true
-              while block = content.read(BLOCK_SIZE)
-                f.write block
-              end 
-            end
-          else
-            File.open(tmp_path, 'wb') do |f|  end
-          end
-
-          begin
-            Misc.insist do
-              Open.mv tmp_path, path, lock_options
-            end
-          rescue Exception
-            raise $! unless Open.exists? path
-          end
-
-          Open.touch path if Open.exists? path
-          content.join if content.respond_to?(:join) and not Path === content and not (content.respond_to?(:joined?) && content.joined?)
-
-          Open.notify_write(path) 
-        rescue Aborted
-          Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
-          content.abort if content.respond_to? :abort
-          Open.rm path if File.exist? path
-        rescue Exception
-          exception = (AbortedStream === content and content.exception) ? content.exception : $!
-          Log.medium "Exception in sensiblewrite: [#{Process.pid}] #{exception.message} -- #{ Log.color :blue, path }"
-          content.abort if content.respond_to? :abort
-          Open.rm path if File.exist? path
-          raise exception
-        rescue
-          Log.exception $!
-          raise $!
-        ensure
-          FileUtils.rm_f tmp_path if File.exist? tmp_path
-          if Lockfile === lock_options[:lock] and lock_options[:lock].locked?
-            lock_options[:lock].unlock
-          end
-        end
-      end
-    end
+  def self.sensiblewrite(*args, &block)
+    Open.sensible_write(*args, &block)
   end
+
+  #def self.sensiblewrite(path, content = nil, options = {}, &block)
+  #  force = Misc.process_options options, :force
+
+  #  if Open.exists? path and not force
+  #    Misc.consume_stream content 
+  #    return
+  #  end
+
+  #  lock_options = Misc.pull_keys options.dup, :lock
+  #  lock_options = lock_options[:lock] if Hash === lock_options[:lock]
+  #  tmp_path = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_dir})
+  #  tmp_path_lock = Persist.persistence_path(path, {:dir => Misc.sensiblewrite_lock_dir})
+
+  #  tmp_path_lock = nil if FalseClass === options[:lock]
+
+  #  Misc.lock tmp_path_lock, lock_options do
+
+  #    if Open.exists? path and not force
+  #      Log.warn "Path exists in sensiblewrite, not forcing update: #{ path }"
+  #      Misc.consume_stream content 
+  #    else
+  #      FileUtils.mkdir_p File.dirname(tmp_path) unless File.directory? File.dirname(tmp_path)
+  #      FileUtils.rm_f tmp_path if File.exist? tmp_path
+  #      begin
+
+  #        case
+  #        when block_given?
+  #          File.open(tmp_path, 'wb', &block)
+  #        when String === content
+  #          File.open(tmp_path, 'wb') do |f| f.write content end
+  #        when (IO === content or StringIO === content or File === content)
+
+  #          Open.write(tmp_path) do |f|
+  #            f.sync = true
+  #            while block = content.read(BLOCK_SIZE)
+  #              f.write block
+  #            end 
+  #          end
+  #        else
+  #          File.open(tmp_path, 'wb') do |f|  end
+  #        end
+
+  #        begin
+  #          Misc.insist do
+  #            Open.mv tmp_path, path, lock_options
+  #          end
+  #        rescue Exception
+  #          raise $! unless Open.exists? path
+  #        end
+
+  #        Open.touch path if Open.exists? path
+  #        content.join if content.respond_to?(:join) and not Path === content and not (content.respond_to?(:joined?) && content.joined?)
+
+  #        Open.notify_write(path) 
+  #      rescue Aborted
+  #        Log.medium "Aborted sensiblewrite -- #{ Log.reset << Log.color(:blue, path) }"
+  #        content.abort if content.respond_to? :abort
+  #        Open.rm path if File.exist? path
+  #      rescue Exception
+  #        exception = (AbortedStream === content and content.exception) ? content.exception : $!
+  #        Log.medium "Exception in sensiblewrite: [#{Process.pid}] #{exception.message} -- #{ Log.color :blue, path }"
+  #        content.abort if content.respond_to? :abort
+  #        Open.rm path if File.exist? path
+  #        raise exception
+  #      rescue
+  #        Log.exception $!
+  #        raise $!
+  #      ensure
+  #        FileUtils.rm_f tmp_path if File.exist? tmp_path
+  #        if Lockfile === lock_options[:lock] and lock_options[:lock].locked?
+  #          lock_options[:lock].unlock
+  #        end
+  #      end
+  #    end
+  #  end
+  #end
 
   def self.process_stream(s)
     begin

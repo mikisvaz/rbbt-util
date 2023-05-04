@@ -1,10 +1,10 @@
 require_relative 'rbbt'
 require_relative 'rbbt/util/misc'
 require_relative 'rbbt/util/open'
-Open.cachedir        = Rbbt.var.cache["open-remote"].find :user
+Open.remote_cache_dir        = Rbbt.var.cache["open-remote"].find :user
 
 require_relative 'rbbt/persist'
-Persist.cachedir = Rbbt.var.cache.persistence
+Persist.cache_dir = Rbbt.var.cache.persistence
 
 require_relative 'rbbt/util/filecache'
 FileCache.cachedir   = Rbbt.var.cache.filecache.find :user

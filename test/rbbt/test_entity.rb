@@ -1,4 +1,5 @@
-require File.expand_path(File.dirname(__FILE__) + '/../test_helper')
+require File.expand_path(__FILE__).sub(%r(/test/.*), '/test/test_helper.rb')
+require File.expand_path(__FILE__).sub(%r(.*/test/), '').sub(/test_(.*)\.rb/,'\1')
 require 'rbbt'
 require 'rbbt/entity'
 require 'rbbt/util/tmpfile'

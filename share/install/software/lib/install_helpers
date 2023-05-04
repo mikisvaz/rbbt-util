@@ -10,7 +10,7 @@ OPT_BUILD_DIR="$SOFTWARE_DIR/.build"; [ -d $OPT_BUILD_DIR ] || mkdir -p $OPT_BUI
 
 mkdir -p "$OPT_BUILD_DIR"
 
-if realpath --help | grep realative > /dev/null; then
+if (command -v realpath && realpath --help | grep relative) > /dev/null; then
 	function relative_path(){
 		local basedir=$1
 		local path=$2

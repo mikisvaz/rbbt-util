@@ -1,7 +1,7 @@
-require 'rbbt/entity'
+require_relative '../entity'
 
 module AssociationItem
-  extend Object::Entity
+  extend Entity
 
   annotation :knowledge_base
   annotation :database
