@@ -247,7 +247,7 @@ class Step
           @exec = false
           init_info(true)
 
-          workflow           = @workflow || @task.respond_to?(:workflow)  ?  @task.workflow : nil
+          #workflow           = @workflow || @task.respond_to?(:workflow)  ?  @task.workflow : nil
           result_type        = @task.respond_to?(:result_type)            ?  @task.result_type : nil
           result_description = @task.respond_to?(:result_description)     ?  @task.result_description : nil
 

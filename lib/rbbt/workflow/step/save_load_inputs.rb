@@ -49,9 +49,9 @@ module Workflow
         when :nofile
           inputs[input.to_sym]  = Open.realpath(file)
         when :path_array
-          inputs[input.to_sym]  = Open.read(file).strip.split("\n")
+          inputs[input.to_sym]  = Open.read(file).strip.split("\n").collect{|p| Path.setup(p) }
         when :path
-          inputs[input.to_sym]  = Open.read(file).strip.split("\n").first
+          inputs[input.to_sym]  = Path.setup(Open.read(file).strip.split("\n").first)
         when :io
           inputs[input.to_sym] = Open.open(Open.realpath(file))
         when :io_array
@@ -67,9 +67,9 @@ module Workflow
           inputs[input.to_sym] = steps.first
         when :step_file
           path = Open.read(file).strip
-          path.extend Path
-          step_path = path.match(/(.*)\.files/)[1]
-          path.resource = Step.new step_path
+          step_path, relative = path.match(/(.*)\.files\/(.*)/).values_at 1, 2
+          step = Step.new Path.setup(step_path).find
+          path = step.file(relative)
           inputs[input.to_sym] = path
         when :step_file_array
           paths = Open.read(file).split("\n")
@@ -149,12 +149,14 @@ class Step
     case value
     when Path
       if Step === value.resource
+        step = value.resource
+        value = File.join('var/jobs', step.workflow.to_s, step.short_path + '.files', Misc.path_relative_to(step.files_dir, value))
         path = path + '.as_step_file'
       else
         path = path + '.as_path'
       end
     when String
-      if Misc.is_filename?(value, false)
+      if Misc.is_filename?(value, true)
         value = value.dup
         value.extend Path
         return save_input(name, value, type, dir)
@@ -173,7 +175,7 @@ class Step
           path = path + '.as_path_array'
         end
       when String
-        if Misc.is_filename?(value.first, false)
+        if Misc.is_filename?(value.first, true)
           path = path + '.as_path_array'
         end
       when IO
@@ -249,60 +251,4 @@ class Step
 
     inputs.keys
   end
-
-  #def self.save_inputs_old(inputs, input_types, input_options, dir)
-  #  inputs.each do |name,value|
-  #    type = input_types[name]
-  #    type = type.to_s if type
-  #    path = File.join(dir, name.to_s)
-
-  #    if (IO === value || Step === value) && ! (input_options[name] && input_options[name][:nofile])
-  #      path = path + '.as_io' 
-  #    elsif Misc.is_filename?(value, false)
-  #      path = path + '.as_filename'
-  #    end
-
-  #    Log.debug "Saving job input #{name} (#{type}) into #{path}"
-
-  #    case
-  #    when IO === value
-  #      Open.write(path, value.to_s)
-  #    when Step === value
-  #      Open.ln_s(value.path, path)
-  #    when type.to_s == "binary"
-  #      if String === value && File.exist?(value)
-  #        value = File.expand_path(value)
-  #        Open.ln_s(value, path)
-  #      elsif String === value && Misc.is_filename?(value, false)
-  #        Open.write(path + '.as_path' , value)
-  #      else
-  #        Open.write(path, value, :mode => 'wb')
-  #      end
-  #    when TSV === value
-  #      Open.write(path, value.to_s)
-  #    when Array === value
-  #      Open.write(path, value.collect{|v| Step === v ? v.path : v.to_s} * "\n")
-  #    when %w(file tsv array).include?(type.to_s)
-  #      if String === value && File.exist?(value)
-  #        value = File.expand_path(value)
-  #        Open.ln_s(value, path)
-  #      elsif String === value && Misc.is_filename?(value, false)
-  #        Open.write(path + '.as_path' , value)
-  #      else
-  #        value = value.collect{|v| v = "#{v}" if Path === v; v } if Array === value
-  #        value = "#{value}" if Path === value
-  #        Open.write(path + '.yaml', value.to_yaml)
-  #      end
-  #    when IO === value
-  #      if value.filename && String === value.filename && File.exist?(value.filename)
-  #        Open.ln_s(value.filename, path)
-  #      else
-  #        Open.write(path, value)
-  #      end
-  #    else
-  #      Open.write(path, value.to_s)
-  #    end
-  #  end.any?
-  #end
-
 end

@@ -10,7 +10,7 @@ $0 = "rbbt #{$previous_commands*" "} #{ File.basename(__FILE__) }" if $previous_
 
 options = SOPT.setup <<EOF
 
-Find files
+Find files in directories
 
 $ #{$0} [<options>] (<resource> <path>|<path>)
 
@@ -75,14 +75,16 @@ end if resource
 path = (resource || Rbbt)[path]
 
 if where.nil? || where == 'all' || path.search_paths.include?(where.to_sym)
-  location = path.find(where)
+  location = case where
+             when 'all'
+               path.glob_all("*")
+             when nil
+               path.glob_all
+             else
+               path.glob(where)
+             end
 
-  if Array === location
-    puts location * "\n"
-  else
-    location = nil if ! Open.exists?(location)
-    puts location
-  end
+  puts location * "\n"
 else
   puts SSHLine.command(where, $0, ARGV, options.merge("where" => :all))
 end

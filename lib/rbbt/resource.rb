@@ -350,6 +350,7 @@ url='#{url}'
   end
 
   def identify(path)
+    return path unless path.start_with?("/")
     path = File.expand_path(path)
     path += "/" if File.directory?(path)
     resource ||= Rbbt
@@ -357,6 +358,7 @@ url='#{url}'
     locations -= [:current, "current"]
     locations << :current
     search_paths = IndiferentHash.setup(resource.search_paths)
+    choices = []
     locations.uniq.each do |name|
       pattern = search_paths[name]
       pattern = resource.search_paths[pattern] while Symbol === pattern
@@ -370,12 +372,15 @@ url='#{url}'
         "(?:/(?<REST>.*))?/?$"
         if m = path.match(regexp) 
           if ! m.named_captures.include?("PKGDIR") || m["PKGDIR"] == resource.pkgdir
-            return self[m["TOPLEVEL"]][m["SUBPATH"]][m["REST"]]
+            unlocated = ([m["TOPLEVEL"],m["SUBPATH"],m["REST"]] * "/")
+            unlocated.gsub!(/\/+/,'/')
+            unlocated[self.subdir] = "" if self.subdir
+            choices << self.annotate(unlocated)
           end
         end
       end
     end
-    nil
+    choices.sort_by{|s| s.length }.first
   end
 end
 

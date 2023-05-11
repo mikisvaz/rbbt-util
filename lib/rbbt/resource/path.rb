@@ -71,7 +71,7 @@ module Path
 
   def glob(pattern = '*')
     if self.include? "*"
-      self.glob_all
+      self.glob_all pattern
     else
       return [] unless self.exists? 
       found = self.find
@@ -163,6 +163,10 @@ module Path
     if located?
       self.original ||= self
       return self
+    end
+
+    if where == :all || where == 'all'
+      return find_all(caller_lib, paths)
     end
 
     @path ||= {}
@@ -475,4 +479,5 @@ module Path
   def clean_annotations
     "" << self.to_s
   end
+
 end

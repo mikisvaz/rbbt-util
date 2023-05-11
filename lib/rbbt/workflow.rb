@@ -206,7 +206,7 @@ module Workflow
         (Workflow.autoinstall and `rbbt workflow install #{Misc.snake_case(wf_name)} || rbbt workflow install #{wf_name}` and require_local_workflow(wf_name)) or raise("Workflow not found or could not be loaded: #{ wf_name }")
 
       workflow = begin
-                   Misc.string2const Misc.camel_case(wf_name.split("+").first)
+                   Misc.string2const Misc.camel_case(wf_name)
                  rescue
                    Workflow.workflows.last || true
                  end
@@ -370,9 +370,13 @@ module Workflow
   def exec_exports
     @exec_exports ||= []
   end
-  
+
   def all_exports
     @all_exports ||= asynchronous_exports + synchronous_exports + exec_exports + stream_exports
+  end
+
+  def documented_tasks
+    tasks.select{|k,v| v.description && ! v.description.empty? }.collect{|k,v| k }
   end
 
   # {{{ JOB MANAGEMENT

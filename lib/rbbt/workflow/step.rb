@@ -57,7 +57,12 @@ class Step
   end
 
   def workflow
-    @workflow || info[:workflow]
+    @workflow ||= begin
+                    wf = info[:workflow] 
+                    wf = nil if wf == ""
+                    wf ||= @task.workflow if @task && @task.respond_to?(:workflow)
+                    wf ||= path.split("/")[-3]
+                  end
   end
 
 
@@ -296,7 +301,7 @@ class Step
               res = @result
             else
               join if not done?
-              res = @path.exists? ? Persist.load_file(@path, result_type) : exec
+              res = @path.exists? ? Persist.load_file(@path, result_type) : run
             end
 
             if result_description

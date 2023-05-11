@@ -1,6 +1,6 @@
 class RemoteStep
   module SSH
-    attr_accessor :override_dependencies, :run_type, :slurm_options
+    attr_accessor :override_dependencies, :run_type, :slurm_options, :produce_dependencies
 
     def init_job(cache_type = nil, other_params = {})
       return self if @url
@@ -52,11 +52,12 @@ class RemoteStep
     end
     
     def _run
-      RemoteWorkflow::SSH.upload_dependencies(self, @server)
+      RemoteWorkflow::SSH.upload_dependencies(self, @server, 'user', @produce_dependencies)
       RemoteWorkflow::SSH.run_job(File.join(base_url, task.to_s), @input_id, @base_name)
     end
 
     def _run_slurm
+      RemoteWorkflow::SSH.upload_dependencies(self, @server, 'user', @produce_dependencies)
       RemoteWorkflow::SSH.run_slurm_job(File.join(base_url, task.to_s), @input_id, @base_name, @slurm_options || {})
     end
 
@@ -64,7 +65,7 @@ class RemoteStep
       RemoteWorkflow::SSH.orchestrate_slurm_job(File.join(base_url, task.to_s), @input_id, @base_name, @slurm_options || {})
     end
 
-    def produce(*args)
+    def issue
       input_types = {}
       init_job
       @remote_path = case @run_type
@@ -76,6 +77,10 @@ class RemoteStep
                        _orchestrate_slurm
                      end
       @started = true
+    end
+
+    def produce(*args)
+      issue
       while ! (done? || error? || aborted?)
         sleep 1
       end
@@ -87,9 +92,13 @@ class RemoteStep
       load_res Open.open(path)
     end
 
-    def run(*args)
-      produce(*args)
-      self.load unless args.first
+    def run(stream = nil)
+      if stream
+        issue
+      else
+        produce
+        self.load unless args.first
+      end
     end
 
     def clean
@@ -107,7 +116,7 @@ class RemoteStep
         select{|i| Step === i || (defined?(RemoteStep) && RemoteStep === i) } + 
         inputs.values.flatten.
         select{|dep| Path === dep && Step === dep.resource }.
-        select{|dep| ! dep.resource.started? }. # Ignore input_deps already started
+        #select{|dep| ! dep.resource.started? }. # Ignore input_deps already started
         collect{|dep| dep.resource }
     end
   end

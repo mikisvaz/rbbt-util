@@ -39,7 +39,7 @@ class TestCmd < Test::Unit::TestCase
     assert_nothing_raised ProcessFailed do CMD.cmd('ls -fake_option', :no_fail => true, :pipe => true) end
  
     assert_raise ProcessFailed do CMD.cmd('fake-command', :stderr => true, :pipe => true).join end
-    assert_raise ProcessFailed do CMD.cmd('ls -fake_option', :stderr => true, :pipe => true).join end
+    assert_raise ConcurrentStreamProcessFailed do CMD.cmd('ls -fake_option', :stderr => true, :pipe => true).join end
   end
 
   def test_pipes
@@ -77,5 +77,11 @@ line33
 
   def test_bash
     puts CMD.bash("awk 'test'")
+  end
+
+  def test_cmd_error
+    assert_raise ConcurrentStreamProcessFailed do
+      CMD.cmd_log("ruby -e 'puts 1; STDERR.puts 1; sleep 2; raise'")
+    end
   end
 end

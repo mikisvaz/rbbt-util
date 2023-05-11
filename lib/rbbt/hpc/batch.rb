@@ -556,23 +556,32 @@ env > #{batch_options[:fenv]}
       fcmd
     end
 
+    def batch_dir_for_id(batch_base_dir, id)
+      job_id_file = Dir.glob(File.join(batch_base_dir, '*/job.id')).select{|f| Open.read(f).strip == id.to_s }.first
+      job_id_file ? File.dirname(job_id_file) : nil
+    end
 
     def run_job(job, options = {})
       system = self.to_s.split("::").last
 
+      batch_base_dir, clean_batch_job, remove_batch_dir, procpath, tail, batch_dependencies, dry_run = Misc.process_options options, 
+        :batch_base_dir, :clean_batch_job, :remove_batch_dir, :batch_procpath, :tail, :batch_dependencies, :dry_run,
+        :batch_base_dir => File.expand_path(File.join('~/rbbt-batch')) 
+
       if (batch_job = job.info[:batch_job]) && job_queued(batch_job)
         Log.info "Job #{job.short_path} already queued in #{batch_job}"
-        return batch_job 
+        return batch_job, batch_dir_for_id(batch_base_dir, batch_job) 
       end
 
       if job.running?
         Log.info "Job #{job.short_path} already running in #{job.info[:pid]}"
-        return job.info[:batch_job]
-      end
 
-      batch_base_dir, clean_batch_job, remove_batch_dir, procpath, tail, batch_dependencies, dry_run = Misc.process_options options, 
-        :batch_base_dir, :clean_batch_job, :remove_batch_dir, :batch_procpath, :tail, :batch_dependencies, :dry_run,
-        :batch_base_dir => File.expand_path(File.join('~/rbbt-batch')) 
+        if job.info[:batch_job]
+          return job.info[:batch_job], batch_dir_for_id(batch_base_dir, batch_job)
+        else
+          return 
+        end
+      end
 
       workflow = job.original_workflow ||job.workflow
       task_name = job.original_task_name || job.task_name

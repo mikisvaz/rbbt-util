@@ -275,7 +275,6 @@ module Misc
 
 
   def self.step_file?(path)
-    return true if defined?(Step) && Step === path.resource
     return false unless path =~ /\.files(?:\/|$)/
     parts = path.split("/")
     job = parts.select{|p| p =~ /\.files$/}.first
@@ -283,15 +282,27 @@ module Misc
       i = parts.index job
       begin
         workflow, task = parts.values_at i - 2, i - 1
-        Workflow.require_workflow workflow
+        _loaded = false
+        begin
+          Kernel.const_get(workflow)
+        rescue 
+          if ! _loaded
+            Workflow.require_workflow workflow 
+            _loaded = true
+            retry
+          end
+          raise $!
+        end
         #return Kernel.const_get(workflow).tasks.include? task.to_sym
-        return true
+        return parts[i-2..-1] * "/"
       rescue
         Log.exception $!
       end
     end
     false
   end
+
+  RBBT_IDENTIFY_PATH = ENV["RBBT_IDENTIFY_PATH"] != 'false'
 
   def self.obj2str(obj)
     _obj = obj
@@ -310,18 +321,21 @@ module Misc
             'false'
           when Hash
             "{"<< obj.collect{|k,v| obj2str(k) + '=>' << obj2str(v)}*"," << "}"
-          when (defined?(Path) and Path)
+          when (defined?(Path) && Path)
             if defined?(Step) && Open.exists?(Step.info_file(obj))
               obj2str(Workflow.load_step(obj))
-            elsif step_file?(obj)
-              "Step file: " + obj
+            elsif step_file_path = step_file?(obj)
+              "Step file: " + step_file_path
             else
               if obj.exists?
+                obj = (obj.resource || Rbbt).identify obj if RBBT_IDENTIFY_PATH
                 if obj.directory?
                   files = obj.glob("**/*")
-                  "directory: #{Misc.fingerprint(files)}"
-                else
+                  "directory: #{Misc.fingerprint(files.collect{|f| Misc.path_relative_to(obj.find, f)}.sort)}"
+                elsif obj.located?
                   "file: " << Open.realpath(obj) << "--" << mtime_str(obj)
+                else
+                  "path: " << obj 
                 end
               else
                 obj + " (file missing)"

@@ -154,6 +154,8 @@ module Annotated
 
   def self.purge(object)
     case object
+    when Path
+      object
     when String
       object.respond_to?(:clean_annotations) ?
         object.clean_annotations : 

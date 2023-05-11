@@ -10,7 +10,7 @@ OPT_BUILD_DIR="$SOFTWARE_DIR/.build"; [ -d $OPT_BUILD_DIR ] || mkdir -p $OPT_BUI
 
 mkdir -p "$OPT_BUILD_DIR"
 
-if command -v realpath > /dev/null; then
+if realpath --help | grep realative > /dev/null; then
 	function relative_path(){
 		local basedir=$1
 		local path=$2
@@ -19,7 +19,6 @@ if command -v realpath > /dev/null; then
 else
 	realpath(){
 			OURPWD=$PWD
-			echo "REALPATH $@" >&2
 			cd "$(dirname "$1")"
 			LINK=$(readlink "$(basename "$1")")
 			while [ "$LINK" ]; do
@@ -34,7 +33,7 @@ else
 	function relative_path(){
 		local basedir="$(realpath $1)"
 		local path="$(realpath "$2")"
-		echo ${path/$basedir\/}
+    echo ${path/$(dirname $basedir)/..}
 	}
 fi
 

@@ -188,6 +188,7 @@ class RemoteStep < Step
   end
 
   def file(file)
+    init_job
     @adaptor.get_raw(File.join(url, 'file', file.to_s))
   end
 
