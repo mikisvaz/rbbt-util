@@ -130,12 +130,12 @@ module TSV
       keys = parts[key_position].split(@sep2, -1)
       values = case
                when field_positions.nil?
-                parts.tap{|o| o.delete_at key_position}
+                 parts.tap{|o| o.delete_at key_position}
                when field_positions.empty?
                  []
                else
                  parts.values_at *field_positions
-               end.collect{|value| (value.nil? || value.empty?) ? [] : value.split(@sep2, -1) }
+               end.collect{|value| (value.nil? || value.empty?) ? [""] : value.split(@sep2, -1) }
       [keys, values]
     end
 

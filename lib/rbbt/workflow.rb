@@ -486,7 +486,7 @@ module Workflow
         if dep_basename.include? "."
           parts = dep_basename.split(".")
           extension = [parts.pop]
-          while parts.last.length <= 4
+          while parts.length > 1 && parts.last.length <= 4
             extension << parts.pop
           end
           extension = extension.reverse * "."

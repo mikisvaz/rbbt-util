@@ -199,13 +199,30 @@ row3    A|AA|AAA|AAA    B    Id3    3
 
   def test_unzip
     content =<<-EOF
-#Id    ValueA    ValueB    OtherID
-row1    a|A    b|B    Id1|Id2
-row2    aa|aa|AA|AA    b1|b2|B1|B2    Id1|Id1|Id2|Id2
+#: :type=:list
+#PMID:Sentence number:TF:TG	Transcription Factor (Associated Gene Name)	Target Gene (Associated Gene Name)	Sign	Negation	PMID
+24265317:3:NR1H3:FASN	NR1H3	FASN			24265317
+17522048:0:NR1H3:FASN	NR1H3	FASN	+		17522048
+19903962:0:NR1H3:FASN	NR1H3	FASN			19903962
+19903962:7:NR1H3:FASN	NR1H3	FASN			19903962
+22183856:4:NR1H3:FASN	NR1H3	FASN			22183856
+22641099:4:NR1H3:FASN	NR1H3	FASN	+		22641099
+23499676:8:NR1H3:FASN	NR1H3	FASN	+		23499676
+11790787:5:NR1H3:FASN	NR1H3	FASN			11790787
+11790787:7:NR1H3:FASN	NR1H3	FASN	+		11790787
+11790787:9:NR1H3:FASN	NR1H3	FASN	+		11790787
+11790787:11:NR1H3:FASN	NR1H3	FASN			11790787
+17522048:1:NR1H3:FASN	NR1H3	FASN	+		17522048
+17522048:3:NR1H3:FASN	NR1H3	FASN			17522048
+22160584:1:NR1H3:FASN	NR1H3	FASN			22160584
+22160584:5:NR1H3:FASN	NR1H3	FASN	+		22160584
+22160584:8:NR1H3:FASN	NR1H3	FASN	+		22160584
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :sep => /\s+/)
+      tsv = TSV.open(filename, :key_field => "Transcription Factor (Associated Gene Name)", :fields => ["Target Gene (Associated Gene Name)", "Sign", "PMID"], :merge => true, :type => :double)
+      unzip = tsv.unzip(0,true)
+      assert_equal unzip["NR1H3:FASN"][0].length, unzip["NR1H3:FASN"][1].length
     end
   end
 

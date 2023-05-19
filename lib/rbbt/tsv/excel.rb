@@ -154,7 +154,11 @@ module TSV
       sheet1 = book.create_worksheet 
       sheet1.name = sheet if sheet
 
-      sheet1.row(0).concat fields
+      if fields
+        sheet1.row(0).concat fields if fields
+      else
+        sheet1.row(0).concat ["No field info"]
+      end
 
       rows.each_with_index do |cells,i|
         sheet1.row(i+1).concat cells
