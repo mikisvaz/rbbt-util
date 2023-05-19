@@ -1,5 +1,6 @@
 require_relative 'refactor'
 Rbbt.require_instead 'scout/tsv'
+require_relative 'tsv/refactor'
 #require 'rbbt/persist'
 #require 'rbbt/persist/tsv'
 #

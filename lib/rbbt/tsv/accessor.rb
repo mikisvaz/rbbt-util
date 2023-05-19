@@ -743,57 +743,57 @@ Example:
     new
   end
 
-  def unzip(field = 0, merge = false, sep = ":", delete = true)
-    new = {}
-    self.annotate new
+  #def unzip(field = 0, merge = false, sep = ":", delete = true)
+  #  new = {}
+  #  self.annotate new
 
-    field_pos = self.identify_field field
-    new.with_unnamed do
-      if merge
-        self.through do |key,values|
-          field_values = values[field_pos]
-          if delete
-            values = values.dup
-            values.delete_at(field_pos) 
-          end
-          next if field_values.nil?
-          zipped = Misc.zip_fields(values)
-          field_values.zip(zipped).each do |field_value,rest|
-            rest = [nil] * values.length if rest.nil?
-            k = [key,field_value]*sep
-            if new.include? k
-              new[k] = Misc.zip_fields(Misc.zip_fields(new[k]) << rest)
-            else
-              new[k] = rest.nil? ? nil : rest.collect{|v| [v]}
-            end
-          end
-        end
-        new.type = :double
-      else
-        self.through do |key,values|
-          field_values = values[field_pos]
-          values.delete_at(field_pos) if delete
-          next if field_values.nil?
-          zipped = Misc.zip_fields(values)
-          field_values.zip(zipped).each do |field_value,rest|
-            rest = [nil] * values.length if rest.nil?
-            k = [key,field_value]*sep
-            new[k] = rest
-          end
-        end
-        new.type = :list
-      end
-    end
+  #  field_pos = self.identify_field field
+  #  new.with_unnamed do
+  #    if merge
+  #      self.through do |key,values|
+  #        field_values = values[field_pos]
+  #        if delete
+  #          values = values.dup
+  #          values.delete_at(field_pos) 
+  #        end
+  #        next if field_values.nil?
+  #        zipped = Misc.zip_fields(values)
+  #        field_values.zip(zipped).each do |field_value,rest|
+  #          rest = [nil] * values.length if rest.nil?
+  #          k = [key,field_value]*sep
+  #          if new.include? k
+  #            new[k] = Misc.zip_fields(Misc.zip_fields(new[k]) << rest)
+  #          else
+  #            new[k] = rest.nil? ? nil : rest.collect{|v| [v]}
+  #          end
+  #        end
+  #      end
+  #      new.type = :double
+  #    else
+  #      self.through do |key,values|
+  #        field_values = values[field_pos]
+  #        values.delete_at(field_pos) if delete
+  #        next if field_values.nil?
+  #        zipped = Misc.zip_fields(values)
+  #        field_values.zip(zipped).each do |field_value,rest|
+  #          rest = [nil] * values.length if rest.nil?
+  #          k = [key,field_value]*sep
+  #          new[k] = rest
+  #        end
+  #      end
+  #      new.type = :list
+  #    end
+  #  end
 
-    if self.key_field and self.fields
-      new.key_field = [self.key_field, self.fields[field_pos]] * sep
-      new_fields = self.fields.dup 
-      new_fields.delete_at(field_pos) if delete
-      new.fields = new_fields
-    end
+  #  if self.key_field and self.fields
+  #    new.key_field = [self.key_field, self.fields[field_pos]] * sep
+  #    new_fields = self.fields.dup 
+  #    new_fields.delete_at(field_pos) if delete
+  #    new.fields = new_fields
+  #  end
 
-    new
-  end
+  #  new
+  #end
   
   def zip(merge = false, field = "New Field", sep = ":")
     new = {}
