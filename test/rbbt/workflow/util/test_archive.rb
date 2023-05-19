@@ -3,15 +3,17 @@ require 'rbbt-util'
 require 'rbbt/workflow'
 require 'rbbt/workflow/util/archive'
 
-module ArchiveTestWF
-  extend Workflow
-  task :test_archive => :string do
-    Open.write(file(:file1), "Test file")
-    "TEST"
-  end
-end
-
 class TestClass < Test::Unit::TestCase
+  setup do
+    module ArchiveTestWF
+      extend Workflow
+      task :test_archive => :string do
+        Open.write(file(:file1), "Test file")
+        "TEST"
+      end
+    end
+  end
+
   def test_migrate
     job = ArchiveTestWF.job(:test_archive)
     job.run

@@ -7,7 +7,6 @@ require_relative 'rbbt/resource'
 module Rbbt
   extend Resource
   self.pkgdir = 'rbbt'
-  self.libdir = Path.caller_lib_dir
 end
 
 require_relative 'rbbt/util/version'

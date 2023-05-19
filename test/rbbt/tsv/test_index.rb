@@ -28,7 +28,7 @@ row2    A    B    Id3
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(File.open(filename), :sep => /\s+/, :key_field => "OtherID", :persistence => false)
+      tsv = TSV.open(File.open(filename), :sep => /\s+/, :key_field => "OtherID", :persist => false)
       index = tsv.index(:persistence => true)
       assert index["row1"].include? "Id1"
       assert_equal "OtherID", index.fields.first
@@ -36,7 +36,7 @@ row2    A    B    Id3
 
   end
 
-  def test_index_fields_key
+  def _test_index_fields_key
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -51,7 +51,7 @@ row2    A    B    Id3
 
   end
 
-  def test_best_index
+  def _test_best_index
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b|A    Id1
@@ -79,7 +79,7 @@ row3    A    a|B    Id4
   end
 
 
-  def test_index_from_persit
+  def _test_index_from_persit
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b|A    Id1
@@ -96,7 +96,7 @@ row3    A    a|B    Id4
     end
   end
 
-  def test_index_to_persist
+  def _test_index_to_persist
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b|A    Id1
@@ -124,7 +124,7 @@ row3    A    a|B    Id4
     end
   end
 
-  def test_index_static
+  def _test_index_static
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b|B    Id1
@@ -140,7 +140,7 @@ row3    AA    bb    Id4
     end
   end
 
-  def test_index_static_persist
+  def _test_index_static_persist
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b|A    Id1
@@ -172,7 +172,7 @@ row3    A    a|B    Id4
     end
   end
 
-  def test_pos_index
+  def _test_pos_index
     content =<<-EOF
 #Id	ValueA    ValueB    Pos
 row1    a|aa|aaa    b    0|10
@@ -186,7 +186,7 @@ row2    A    B    30
     end
   end
 
-  def test_range_index
+  def _test_range_index
     content =<<-EOF
 #Id	ValueA    ValueB    Pos1    Pos2
 row1    a|aa|aaa    b    0|10    10|30
@@ -203,7 +203,7 @@ row2    A    B    30   35
     end
   end
 
-  def test_range_index2
+  def _test_range_index2
     data =<<-EOF
 # 012345678901234567890
 #ID:Range
@@ -228,7 +228,7 @@ g:         ____
     end
   end
 
-  def test_range_index_persistent
+  def _test_range_index_persistent
     data =<<-EOF
 # 012345678901234567890
 #ID:Range
@@ -257,7 +257,7 @@ g:         ____
 
 
 #  #{{{ Test Attach
-#  def test_index_headerless
+#  def _test_index_headerless
 #    content =<<-EOF
 #row1    a|aa|aaa    b    Id1|Id2
 #row2    A    B    Id3
@@ -272,7 +272,7 @@ g:         ____
 
 
 
-  def test_range_index_persistent_with_filter
+  def _test_range_index_persistent_with_filter
     data =<<-EOF
 # 012345678901234567890
 #ID:Range

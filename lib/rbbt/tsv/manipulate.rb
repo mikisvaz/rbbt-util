@@ -1,5 +1,15 @@
 module TSV
   
+  def self.identify_field(key_field, fields, name)
+    return 0 if name == :key || key_field.start_with?(name.to_s)
+    pos = NamedArray.identify_name(fields, name)
+    pos.nil? ? nil : pos + 1
+  end
+
+  def identify_field(name)
+    TSV.identify_field(@key_field, @fields, name)
+  end
+
   attr_accessor :monitor
 
   class Traverser
@@ -368,13 +378,6 @@ module TSV
     new = TSV.setup({}, :key_field => key_field, :fields => fields, :type => type, :filename => filename, :identifiers => identifiers)
 
     self.annotate(new)
-    #new.key_field = key_field
-    #new.fields    = fields.dup unless fields.nil?
-    #new.type      = type
-    #new.filename  = filename
-    #new.namespace = namespace
-    #new.entity_options = entity_options
-    #new.entity_templates = entity_templates
     
     case
     when (method.nil? and block_given?)

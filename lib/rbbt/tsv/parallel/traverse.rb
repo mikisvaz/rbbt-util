@@ -6,7 +6,8 @@ module TSV
       nil
     when (defined? Step and Step)
       obj.result
-    when IO, File, Zlib::GzipReader, Bgzf
+    #when IO, File, Zlib::GzipReader, Bgzf
+    when IO, File, Zlib::GzipReader #, Bgzf
       obj
     when TSV::Dumper
       obj.stream
@@ -347,7 +348,8 @@ module TSV
         else
           obj.traverse(options, &block)
         end
-      when IO, File, Zlib::GzipReader, Bgzf, StringIO
+      #when IO, File, Zlib::GzipReader, Bgzf, StringIO
+      when IO, File, Zlib::GzipReader, StringIO
         begin
           if options[:type] == :array or options[:type] == :line
             traverse_io_array(obj, options, &block)

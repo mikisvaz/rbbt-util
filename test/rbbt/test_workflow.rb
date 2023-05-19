@@ -3,203 +3,205 @@ require 'rbbt/workflow'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
 
-module TestWF
-  extend Workflow
-
-  helper :user do
-    "User"
-  end 
-
-  task :user => :string do
-    user
-  end
-
-  str = "TEST"
-  task :str => :string do
-    str
-  end
-
-  dep :str
-  task :reverse => :string do
-    step(:str).load.reverse
-  end
-
-  dep :str
-  task :downcase => :string do
-    step(:str).load.downcase
-  end
-
-  dep :str
-  input :times, :integer, "Times to repeat"
-  task :repeat => :string do |times|
-    [step(:str).load] * times * "\n"
-  end
-
-  input :number, :float, "Number to doble"
-  def self.double(number)
-    2 * number
-  end
-  task :double => :float
-
-  desc <<-EOT
-Returns numer * 2 lines containing TEST
-  EOT
-  dep :str
-  dep :double
-  task :repeat2 => :string do 
-    [step(:str).load] * step(:double).load * "\n"
-  end
-
-  dep :str, :repeat, :repeat2
-  task :double_dep => :array do
-   [] << step(:str).load << step(:repeat).load << step(:repeat2).load
-  end
-
-  export_synchronous :double
-  export_asynchronous :repeat2
-
-  input :letter, :string, "Letter", "D"
-  task :letter => :string do |l|
-    l
-  end
-
-  dep :letter
-  task :letter_repeat => :string do |l|
-    ([step(:letter).load] * 2) * ""
-  end
-
-  dep :letter
-  dep :letter_repeat, :letter => "A"
-  task :two_letters => :string do
-    dependencies.collect{|d| d.load } * ":"
-  end
-
-  task :stream => :array do
-    Misc.open_pipe do |sin|
-      5.times do |i|
-        sin.puts "line #{ i }"
-        sleep 1
-      end
-    end
-  end
-
-  dep :stream
-  task :stream2 => :array do
-    TSV.get_stream step(:stream)
-  end
-
-  input :name, :string, "Name"
-  task :input_dep => :text do |name|
-    <<-EOF
-Hi #{name}:
-This is the input text
-for this dependency
-    EOF
-  end
-
-  input :text, :text, "Input text"
-  task :reverse_input_text => :text do |text|
-    text.reverse
-  end
-
-  dep :input_dep
-  dep :reverse_input_text, :text => :input_dep
-  task :send_input_dep_to_reverse => :text do
-    TSV.get_stream step(:reverse_input_text)
-  end
-
-  input :i, :string, "Input", "A"
-  task :t1 => :string do |i|
-    i
-  end
-
-  input :i, :string, "Input", "B"
-  task :t2 => :string do |i|
-    i
-  end
-
-  dep :t1, :i => "C"
-  dep :t2
-  task :t3 => :string do |i|
-    step(:t1).load + step(:t2).load
-  end
-
-  input :name, :string, "Name", nil, :jobname => true
-  task :call_name => :string do |name|
-    "Hi #{name}"
-  end
-
-  input :num, :integer
-  task :odd => :integer do |num|
-    raise ParameterException, "Not odd" if num % 2 == 0
-    num
-  end
-
-  dep :odd, :num => 10, :compute => :canfail 
-  dep :odd, :num => 11, :compute => :canfail 
-  dep :odd, :num => 12, :compute => :canfail 
-  dep :odd, :num => 13, :compute => :canfail 
-  task :sum_odds => :integer do 
-    dependencies.inject(0) do |acc, dep|
-      acc += dep.load unless dep.error?
-      acc
-    end
-  end
-
-  dep :sum_odds
-  task :sum_odds_str => :string do
-    "Sum odds: " << step(:sum_odds).load.to_s
-  end
-
-  input :file, :file, "Save file"
-  task :reverse_file => :text do |file|
-    Open.read(file).reverse
-  end
-
-  task :create_file => :text do |file|
-    Open.write(file('a'), "A")
-    Open.write(file('b'), "B")
-    "DONE"
-  end
-
-  dep_task :reverse_step_file, TestWF, :reverse_file do |jobname, options, dependencies|
-    dep = dependencies.flatten.first
-  end
-
-  task :overr_orig => :string do
-    "over"
-  end
-
-  task :overr_alt => :string do
-    "alt"
-  end
-
-  dep :overr_orig
-  task :overr_target => :string do
-    step(:overr_orig).load.reverse
-  end
-
-  dep :overr_alt, :not_overriden => true
-  dep :overr_target, "TestWF#overr_orig" => :overr_alt, :not_overriden => true
-  task :overr_action => :string do
-    step(:overr_target).load.upcase
-  end
-
-
-  dep :overr_alt, :not_overriden => true
-  dep :overr_target, "TestWF#overr_orig" => :overr_alt
-  task :overr_action2 => :string do
-    step(:overr_target).load.upcase
-  end
-
-
-end
-
-TestWF.workdir = Rbbt.tmp.test.jobs.TestWF
 
 class TestWorkflow < Test::Unit::TestCase
 
-  
+  setup do
+    module TestWF
+      extend Workflow
+
+      helper :user do
+        "User"
+      end 
+
+      task :user => :string do
+        user
+      end
+
+      str = "TEST"
+      task :str => :string do
+        str
+      end
+
+      dep :str
+      task :reverse => :string do
+        step(:str).load.reverse
+      end
+
+      dep :str
+      task :downcase => :string do
+        step(:str).load.downcase
+      end
+
+      dep :str
+      input :times, :integer, "Times to repeat"
+      task :repeat => :string do |times|
+        [step(:str).load] * times * "\n"
+      end
+
+      input :number, :float, "Number to doble"
+      def self.double(number)
+        2 * number
+      end
+      task :double => :float
+
+      desc <<-EOT
+Returns numer * 2 lines containing TEST
+      EOT
+      dep :str
+      dep :double
+      task :repeat2 => :string do 
+        [step(:str).load] * step(:double).load * "\n"
+      end
+
+      dep :str, :repeat, :repeat2
+      task :double_dep => :array do
+        [] << step(:str).load << step(:repeat).load << step(:repeat2).load
+      end
+
+      export_synchronous :double
+      export_asynchronous :repeat2
+
+      input :letter, :string, "Letter", "D"
+      task :letter => :string do |l|
+        l
+      end
+
+      dep :letter
+      task :letter_repeat => :string do |l|
+        ([step(:letter).load] * 2) * ""
+      end
+
+      dep :letter
+      dep :letter_repeat, :letter => "A"
+      task :two_letters => :string do
+        dependencies.collect{|d| d.load } * ":"
+      end
+
+      task :stream => :array do
+        Misc.open_pipe do |sin|
+          5.times do |i|
+            sin.puts "line #{ i }"
+            sleep 1
+          end
+        end
+      end
+
+      dep :stream
+      task :stream2 => :array do
+        TSV.get_stream step(:stream)
+      end
+
+      input :name, :string, "Name"
+      task :input_dep => :text do |name|
+        <<-EOF
+Hi #{name}:
+This is the input text
+for this dependency
+        EOF
+      end
+
+      input :text, :text, "Input text"
+      task :reverse_input_text => :text do |text|
+        text.reverse
+      end
+
+      dep :input_dep
+      dep :reverse_input_text, :text => :input_dep
+      task :send_input_dep_to_reverse => :text do
+        TSV.get_stream step(:reverse_input_text)
+      end
+
+      input :i, :string, "Input", "A"
+      task :t1 => :string do |i|
+        i
+      end
+
+      input :i, :string, "Input", "B"
+      task :t2 => :string do |i|
+        i
+      end
+
+      dep :t1, :i => "C"
+      dep :t2
+      task :t3 => :string do |i|
+        step(:t1).load + step(:t2).load
+      end
+
+      input :name, :string, "Name", nil, :jobname => true
+      task :call_name => :string do |name|
+        "Hi #{name}"
+      end
+
+      input :num, :integer
+      task :odd => :integer do |num|
+        raise ParameterException, "Not odd" if num % 2 == 0
+        num
+      end
+
+      dep :odd, :num => 10, :compute => :canfail 
+      dep :odd, :num => 11, :compute => :canfail 
+      dep :odd, :num => 12, :compute => :canfail 
+      dep :odd, :num => 13, :compute => :canfail 
+      task :sum_odds => :integer do 
+        dependencies.inject(0) do |acc, dep|
+          acc += dep.load unless dep.error?
+          acc
+        end
+      end
+
+      dep :sum_odds
+      task :sum_odds_str => :string do
+        "Sum odds: " << step(:sum_odds).load.to_s
+      end
+
+      input :file, :file, "Save file"
+      task :reverse_file => :text do |file|
+        Open.read(file).reverse
+      end
+
+      task :create_file => :text do |file|
+        Open.write(file('a'), "A")
+        Open.write(file('b'), "B")
+        "DONE"
+      end
+
+      dep_task :reverse_step_file, TestWF, :reverse_file do |jobname, options, dependencies|
+        dep = dependencies.flatten.first
+      end
+
+      task :overr_orig => :string do
+        "over"
+      end
+
+      task :overr_alt => :string do
+        "alt"
+      end
+
+      dep :overr_orig
+      task :overr_target => :string do
+        step(:overr_orig).load.reverse
+      end
+
+      dep :overr_alt, :not_overriden => true
+      dep :overr_target, "TestWF#overr_orig" => :overr_alt, :not_overriden => true
+      task :overr_action => :string do
+        step(:overr_target).load.upcase
+      end
+
+
+      dep :overr_alt, :not_overriden => true
+      dep :overr_target, "TestWF#overr_orig" => :overr_alt
+      task :overr_action2 => :string do
+        step(:overr_target).load.upcase
+      end
+
+
+    end
+    TestWF.workdir = Rbbt.tmp.test.jobs.TestWF
+  end
+
+
   def test_repo_marshal
     TmpFile.with_file do |tmpdir|
       tmpdir = Rbbt.tmp.repo_dir.find
@@ -221,7 +223,7 @@ class TestWorkflow < Test::Unit::TestCase
     end
 
   end
-  
+
   def test_in_repo
     job = TestWF.job(:call_name, "Miguel")
     assert_equal "Hi Miguel", job.run

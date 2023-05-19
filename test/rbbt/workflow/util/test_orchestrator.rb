@@ -4,37 +4,39 @@ require 'rbbt/workflow/util/trace'
 require 'rbbt-util'
 require 'rbbt/workflow'
 
-module TestWF
-  extend Workflow 
-  
-  MULT = 0.1
-  task :a => :text do
-    sleep(TestWF::MULT * (rand(10) + 2))
-  end
-  
-  dep :a
-  task :b => :text do
-    sleep(TestWF::MULT * (rand(10) + 2))
-  end
-  
-  dep :a
-  dep :b
-  task :c => :text do
-    sleep(TestWF::MULT * (rand(10) + 2))
-  end
-  
-  dep :c
-  task :d => :text do
-    sleep(TestWF::MULT * (rand(10) + 2))
-  end
-
-  dep :c
-  task :e => :text do
-    sleep(TestWF::MULT * (rand(10) + 2))
-  end
-end
-
 class TestClass < Test::Unit::TestCase
+  setup do
+    module TestWF
+      extend Workflow 
+
+      MULT = 0.1
+      task :a => :text do
+        sleep(TestWF::MULT * (rand(10) + 2))
+      end
+
+      dep :a
+      task :b => :text do
+        sleep(TestWF::MULT * (rand(10) + 2))
+      end
+
+      dep :a
+      dep :b
+      task :c => :text do
+        sleep(TestWF::MULT * (rand(10) + 2))
+      end
+
+      dep :c
+      task :d => :text do
+        sleep(TestWF::MULT * (rand(10) + 2))
+      end
+
+      dep :c
+      task :e => :text do
+        sleep(TestWF::MULT * (rand(10) + 2))
+      end
+    end
+
+  end
   def test_orchestrate_resources
 
     jobs =[]

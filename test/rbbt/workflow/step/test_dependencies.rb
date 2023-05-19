@@ -1,124 +1,127 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../../..', 'test_helper.rb')
 require 'rbbt/workflow'
-
-module DepWorkflow
-  extend Workflow
-
-  input :input_file, :file, "Input file", nil, :stream => true
-  task :s1 => :array do |input_file|
-    TSV.traverse input_file, :type => :array, :into => :stream, :bar => "Task1" do |line|
-      line + "\t" << "Task1"
-    end
-  end
-
-  dep :s1
-  task :s2 => :array do |input_file|
-    TSV.traverse step(:s1), :type => :array, :into => :stream, :bar => "Task2" do |line|
-      next [line.split("\t").first, Misc::SKIP_TAG] * "\t" if rand < 0.9
-      line + "\t" << "Task2"
-    end
-  end
-
-  dep :s1
-  dep :s2
-  task :s3 => :array do |input_file|
-    Misc.paste_streams(dependencies.reverse)
-  end
-
-  input :input_file, :file, "Input file", nil, :stream => true
-  task :task1 => :array do |input_file|
-    TSV.traverse input_file, :type => :array, :into => :stream, :bar => "Task1" do |line|
-      line + "\t" << "Task1"
-    end
-  end
-
-  dep :task1
-  task :task2 => :array do
-    TSV.traverse step(:task1), :type => :array, :into => :stream, :bar => "Task2" do |line|
-      line + "\t" << "Task2"
-    end
-  end
-
-  dep :task1
-  task :task3 => :array do
-    TSV.traverse step(:task1), :type => :array, :into => :stream, :bar => "Task3" do |line|
-      line + "\t" << "Task3"
-    end
-  end
-
-  dep :task2
-  dep :task3
-  task :task4 => :array do
-    Misc.paste_streams(dependencies)
-  end
-
-  dep :task4
-  task :task5 => :array do
-    TSV.traverse step(:task4), :type => :array, :into => :stream, :bar => "Task5" do |line|
-      line + "\t" << "Task5"
-    end
-  end
-
-  dep :task2
-  dep :task5
-  task :task6 => :array do
-    Misc.paste_streams(dependencies)
-  end
-
-  input :stream_file, :file, "Streamed file", nil, :stream => true
-  task :task7 => :array do |file|
-    TSV.traverse file, :type => :array, :into => :stream, :bar => "Task7" do |line|
-      line + "\t" << "Task7"
-    end
-  end
-
-  dep :task6
-  dep :task7, :stream_file => :task6
-  task :task8 => :array do
-    TSV.get_stream step(:task7)
-  end
-end
-
-module ComputeWorkflow
-  extend Workflow
-
-  input :input_file, :file, "Input file", nil, :stream => true
-  task :task1 => :array do |input_file|
-    TSV.traverse input_file, :type => :array, :into => :stream, :bar => "Task1" do |line|
-      line + "\t" << "Task1"
-    end
-  end
-
-  dep :task1, :compute => :produce
-  task :task2 => :array do
-    TSV.traverse step(:task1), :type => :array, :into => :stream, :bar => "Task2" do |line|
-      line + "\t" << "Task2"
-    end
-  end
-
-end
-
-module ResumeWorkflow
-  extend Workflow
-
-  resumable
-  task :resume => :string do
-    if file('foo').exists?
-      'done'
-    else
-      Open.mkdir files_dir
-      Open.touch(file('foo'))
-      raise 
-    end
-  end
-
-  dep :resume
-  task :reverse => :string do
-    step(:resume).load.reverse
-  end
-end
-
 class TestWorkflowDependency < Test::Unit::TestCase
+  setup do
+
+
+    module DepWorkflow
+      extend Workflow
+
+      input :input_file, :file, "Input file", nil, :stream => true
+      task :s1 => :array do |input_file|
+        TSV.traverse input_file, :type => :array, :into => :stream, :bar => "Task1" do |line|
+          line + "\t" << "Task1"
+        end
+      end
+
+      dep :s1
+      task :s2 => :array do |input_file|
+        TSV.traverse step(:s1), :type => :array, :into => :stream, :bar => "Task2" do |line|
+          next [line.split("\t").first, Misc::SKIP_TAG] * "\t" if rand < 0.9
+          line + "\t" << "Task2"
+        end
+      end
+
+      dep :s1
+      dep :s2
+      task :s3 => :array do |input_file|
+        Misc.paste_streams(dependencies.reverse)
+      end
+
+      input :input_file, :file, "Input file", nil, :stream => true
+      task :task1 => :array do |input_file|
+        TSV.traverse input_file, :type => :array, :into => :stream, :bar => "Task1" do |line|
+          line + "\t" << "Task1"
+        end
+      end
+
+      dep :task1
+      task :task2 => :array do
+        TSV.traverse step(:task1), :type => :array, :into => :stream, :bar => "Task2" do |line|
+          line + "\t" << "Task2"
+        end
+      end
+
+      dep :task1
+      task :task3 => :array do
+        TSV.traverse step(:task1), :type => :array, :into => :stream, :bar => "Task3" do |line|
+          line + "\t" << "Task3"
+        end
+      end
+
+      dep :task2
+      dep :task3
+      task :task4 => :array do
+        Misc.paste_streams(dependencies)
+      end
+
+      dep :task4
+      task :task5 => :array do
+        TSV.traverse step(:task4), :type => :array, :into => :stream, :bar => "Task5" do |line|
+          line + "\t" << "Task5"
+        end
+      end
+
+      dep :task2
+      dep :task5
+      task :task6 => :array do
+        Misc.paste_streams(dependencies)
+      end
+
+      input :stream_file, :file, "Streamed file", nil, :stream => true
+      task :task7 => :array do |file|
+        TSV.traverse file, :type => :array, :into => :stream, :bar => "Task7" do |line|
+          line + "\t" << "Task7"
+        end
+      end
+
+      dep :task6
+      dep :task7, :stream_file => :task6
+      task :task8 => :array do
+        TSV.get_stream step(:task7)
+      end
+    end
+
+    module ComputeWorkflow
+      extend Workflow
+
+      input :input_file, :file, "Input file", nil, :stream => true
+      task :task1 => :array do |input_file|
+        TSV.traverse input_file, :type => :array, :into => :stream, :bar => "Task1" do |line|
+          line + "\t" << "Task1"
+        end
+      end
+
+      dep :task1, :compute => :produce
+      task :task2 => :array do
+        TSV.traverse step(:task1), :type => :array, :into => :stream, :bar => "Task2" do |line|
+          line + "\t" << "Task2"
+        end
+      end
+
+    end
+
+    module ResumeWorkflow
+      extend Workflow
+
+      resumable
+      task :resume => :string do
+        if file('foo').exists?
+          'done'
+        else
+          Open.mkdir files_dir
+          Open.touch(file('foo'))
+          raise 
+        end
+      end
+
+      dep :resume
+      task :reverse => :string do
+        step(:resume).load.reverse
+      end
+    end
+
+  end
   def test_task1
     size = 10000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
@@ -183,7 +186,7 @@ class TestWorkflowDependency < Test::Unit::TestCase
 
     assert_equal "Line #{size}\tTask1\tTask2\tTask1\tTask3", last_line
   end
-  
+
   def test_task5
     size = 10000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
@@ -198,7 +201,7 @@ class TestWorkflowDependency < Test::Unit::TestCase
     end
     assert_equal "Line #{size}\tTask1\tTask2\tTask1\tTask3\tTask5", last_line
   end
-  
+
   def test_s3
     size = 100000
     content = (1..size).to_a.collect{|num| "Line #{num}" } * "\n"
@@ -222,7 +225,7 @@ class TestWorkflowDependency < Test::Unit::TestCase
     end
     assert last_line.include? "Line #{size}"
   end
-  
+
   def test_task6
     size = 100000
     content = (1..size).to_a.collect{|num| "Line #{num}" } * "\n"
@@ -245,7 +248,7 @@ class TestWorkflowDependency < Test::Unit::TestCase
     end
     assert_equal "Line #{size}\tTask1\tTask2\tTask1\tTask2\tTask1\tTask3\tTask5", last_line
   end
-  
+
   def test_task8
     size = 10000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
@@ -253,13 +256,13 @@ class TestWorkflowDependency < Test::Unit::TestCase
     Log.severity = 0
     TmpFile.with_file(content) do |input_file|
       begin
-      job = DepWorkflow.job(:task8, "TEST", :input_file => input_file)
-      job.run(:stream)
-      io = TSV.get_stream job
-      while line = io.gets
-        last_line = line.strip
-      end
-      io.join
+        job = DepWorkflow.job(:task8, "TEST", :input_file => input_file)
+        job.run(:stream)
+        io = TSV.get_stream job
+        while line = io.gets
+          last_line = line.strip
+        end
+        io.join
       rescue Exception
         job.abort
         raise $!
