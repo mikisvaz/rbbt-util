@@ -1,11 +1,9 @@
 gem "test-unit", "~> 3.0"
 gem "minitest", "~> 5.5"
 
-$LOAD_PATH.unshift(File.join(__dir__, '../../..', 'lib'))
-$LOAD_PATH.unshift(File.join(__dir__, '..', 'lib'))
-$LOAD_PATH.unshift(__dir__)
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
+$LOAD_PATH.unshift(File.dirname(__FILE__))
 
-require 'rbbt'
 require 'test/unit'
 require 'fileutils'
 require 'rubygems'
@@ -13,8 +11,6 @@ require 'rubygems'
 require 'rbbt'
 require 'rbbt/resource/path'
 require 'rbbt/util/config'
-
-require 'scout/persist'
 
 
 class TestServerLoaded < Exception; end
@@ -26,7 +22,7 @@ class Test::Unit::TestCase
     Random.new
 
     if defined? Persist
-      Persist.cache_dir = Rbbt.tmp.test.persistence.find(:user)
+      Persist.cachedir = Rbbt.tmp.test.persistence.find(:user)
     end
 
     Entity.entity_property_cache = Rbbt.tmp.test.entity_property.find(:user) if defined? Entity

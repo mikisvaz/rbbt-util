@@ -1,13 +1,7 @@
-module Misc
-  def self.lock(*args, &block)
-    Open.lock(*args, &block)
-  end
+require_relative '../../refactor'
+require 'scout/misc'
+require 'scout/open'
 
-  def self.sensiblewrite(*args, &block)
-    Open.sensible_write(*args, &block)
-  end
-
-  def self.common_path(*args, &block)
-    Open.sensible_write(*args, &block)
-  end
-end
+Rbbt.relay_module_method Misc, :lock, Open, :lock
+Rbbt.relay_module_method Misc, :sensiblewrite, Open, :sensible_write
+Rbbt.relay_module_method Misc, :sort_stream, Open, :sort_stream

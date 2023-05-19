@@ -26,40 +26,26 @@ module Path
     Open.write(self.find(:default), *args, &block)
   end
 
-  def produce(force = false)
-    return self if _exists? and not force
-
-    raise "No resource defined to produce file: #{ self }" unless pkgdir.respond_to? :claim
-
-    pkgdir.produce self, force
-
-    self
-  end
-
-  def list
-    Open.read(self.produce.find).split "\n"
-  end
-
-  def index(options = {})
-    TSV.index(self.produce, options)
-  end
+  #def index(options = {})
+  #  TSV.index(self.produce, **options)
+  #end
 
   def basename
     Path.setup(File.basename(self), self.resource, self.pkgdir)
   end
 
-  def tsv(*args)
-    begin
-      path = self.produce
-    rescue Resource::ResourceNotFound => e
-      begin
-        path = self.set_extension('tsv').produce
-      rescue Resource::ResourceNotFound 
-        raise e
-      end
-    end
-    TSV.open(path, *args)
-  end
+  #def tsv(*args)
+  #  begin
+  #    path = self.produce
+  #  rescue ResourceNotFound => e
+  #    begin
+  #      path = self.set_extension('tsv').produce
+  #    rescue ResourceNotFound 
+  #      raise e
+  #    end
+  #  end
+  #  TSV.open(path, *args)
+  #end
 
   def tsv_options(options = {})
     self.open do |stream|

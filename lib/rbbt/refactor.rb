@@ -6,4 +6,11 @@ module Rbbt
     Log.low "Requiring #{new_file} instead of #{caller.first}"
     require new_file
   end
+
+  def self.relay_module_method(new_mod, new_method, orig_mod, orig_method)
+    method = orig_mod.method(orig_method)
+    class << new_mod
+      self
+    end.define_method(new_method, &method)
+  end
 end

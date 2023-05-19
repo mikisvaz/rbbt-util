@@ -4,7 +4,7 @@ require 'rbbt/util/log/progress'
 class TestProgress < Test::Unit::TestCase
   def test_bar
     t1 = Thread.new do
-      Log::ProgressBar.with_bar(20, :desc => "Bar 1", :severity => 0) do |bar|
+      Log::ProgressBar.with_bar(20, :desc => "Bar 1") do |bar|
         20.times do
           bar.tick
           sleep 0.3
@@ -28,7 +28,7 @@ class TestProgress < Test::Unit::TestCase
     t2.join
   end
 
-  def _test_bar_no_size
+  def test_bar_no_size
     t1 = Thread.new do
       Log::ProgressBar.with_bar(nil, :desc => "Bar 1") do |bar|
         20.times do
@@ -54,7 +54,7 @@ class TestProgress < Test::Unit::TestCase
     t2.join
   end
 
-  def _test_bar_nested
+  def test_bar_nested
     Log::ProgressBar.with_bar(20, :desc => "Bar 1") do |bar|
       bar.init
       20.times do
@@ -70,7 +70,7 @@ class TestProgress < Test::Unit::TestCase
     end
   end
 
-  def _test_pos
+  def test_pos
     size = 10000
 
     Log::ProgressBar.with_bar(size, :desc => "Bar 1") do |bar|
@@ -87,7 +87,7 @@ class TestProgress < Test::Unit::TestCase
     end
   end
 
-  def _test_file
+  def test_file
     size = 10000
 
     TmpFile.with_file do |file|

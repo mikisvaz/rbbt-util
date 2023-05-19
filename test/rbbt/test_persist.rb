@@ -1,5 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '/../test_helper')
-require 'scout/persist'
+require 'rbbt/persist'
 require 'rbbt/annotations'
 require 'rbbt/util/tmpfile'
 require 'test/unit'
@@ -52,8 +52,7 @@ class TestPersist < Test::Unit::TestCase
     end
   end
 
-  def __test_tsv_dumper_stream
-    Log.severity = 0
+  def test_tsv_dumper_stream
     TmpFile.with_file do |tmpdir|
       stream = Persist.persist("Dumper", :tsv, :dir => tmpdir, :no_load => :stream) do
         dumper = TSV::Dumper.new :key_field => "Field 1", :fields => ["Field 2"], :type => :single

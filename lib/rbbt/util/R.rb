@@ -188,14 +188,15 @@ module TSV
     r_options[:monitor] = open_options[:monitor] if open_options.include?(:monitor)
     r_options[:method] = open_options[:method] if open_options.include?(:method)
     r_options[:debug] = open_options[:debug] if open_options.include?(:debug)
+    r_options[:erase] = open_options.delete(:erase) if open_options.include?(:erase)
 
     r_options[:debug] = true if r_options[:method] == :debug
     if r_options.delete :debug
       r_options[:monitor] = true
       r_options[:method] = :shell
-      erase = false
+      erase = r_options.include?(:erase) ? r_options[:erase] : false
     else
-      erase = true
+      erase = r_options.include?(:erase) ? r_options[:erase] : true
     end
 
     tsv_R_option_str = r_options.delete :open
@@ -223,7 +224,7 @@ NULL
         R.run script, r_options
       end
 
-      open_options = Misc.add_defaults open_options, :type => :list
+      open_options = IndiferentHash.add_defaults open_options, :type => :list
       if raw
         Open.read(f)
       else

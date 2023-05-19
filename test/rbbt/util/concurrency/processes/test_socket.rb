@@ -32,27 +32,6 @@ class TestConcurrency < Test::Unit::TestCase
 
     socket.clean
   end
-
-  def test_speed
-    sss 0
-    socket = RbbtProcessQueue::RbbtProcessSocket.new
-
-    num = 100_000
-
-    Thread.new do
-      num.times do |i|
-        socket.push i
-      end
-      socket.push DoneProcessing.new 
-    end
-
-    bar = Log::ProgressBar.new num
-    while i = socket.pop
-      bar.tick
-      break if DoneProcessing === i
-    end
-    bar.done
-  end
 end
 
 if false and __FILE__ == $0
