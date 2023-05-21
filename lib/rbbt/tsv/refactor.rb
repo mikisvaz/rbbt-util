@@ -19,4 +19,28 @@ module TSV
     change_id(field, format, **options)
   end
 
+
+  class << self
+    alias original_range_index range_index
+    alias original_pos_index pos_index
+    def range_index(*args, filters: nil, **kwargs)
+      if filters
+        raise "Not implemented" if filters.length > 1
+        method, value = filters.first
+        method.sub!("field:", '')
+        kwargs[:select] = {method => value}
+      end
+      original_range_index(*args, **kwargs)
+    end
+
+    def pos_index(*args, filters: nil, **kwargs)
+      if filters
+        raise "Not implemented" if filters.length > 1
+        method, value = filters.first
+        method.sub!("field:", '')
+        kwargs[:select] = {method => value}
+      end
+      original_pos_index(*args, **kwargs)
+    end
+  end
 end
