@@ -45,3 +45,5 @@ module Log
   end
 
 end
+
+Rbbt.relay_module_method Misc, :fingerprint, Log, :fingerprint
