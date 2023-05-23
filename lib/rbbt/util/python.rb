@@ -73,7 +73,6 @@ module RbbtPython
   end
 
   def self.iterate_index(elem, options = {})
-    iii :interate_index
     bar = options[:bar]
 
     len = PyCall.len(elem)

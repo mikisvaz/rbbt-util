@@ -1,35 +1,34 @@
-require 'rbbt/tsv/dumper'
 module TSV
 
   def self.collapse_stream(input, options = {}, &block)
-    options = Misc.add_defaults options, :sep => "\t", :header_hash => '#', :uniq => true
+    options = IndiferentHash.add_defaults options, :sep => "\t", :header_hash => '#', :uniq => true
     input_stream = TSV.get_stream input
 
     header_hash = options[:header_hash]
     cmd_args = options[:uniq] ? "-u" : nil
 
-    sorted_input_stream = Misc.sort_stream input_stream, header_hash, cmd_args
+    sorted_input_stream = Open.sort_stream input_stream, header_hash, cmd_args
 
     parser = TSV::Parser.new(sorted_input_stream, options.dup)
     dumper = TSV::Dumper.new parser
     header = TSV.header_lines(parser.key_field, parser.fields, parser.options)
     dumper.close_in
     dumper.close_out
-    dumper.stream = Misc.collapse_stream parser.stream, parser.first_line, parser.sep, header, &block
+    dumper.stream = Open.collapse_stream parser.stream, parser.first_line, parser.sep, header, &block
     dumper
   end
  
   def self.paste_streams(streams, options = {})
-    options = Misc.add_defaults options, :sep => "\t", :sort => true
-    sort, sep, preamble, header, same_fields, fix_flat, all_match, field_prefix = Misc.process_options options, :sort, :sep, :preamble, :header, :same_fields, :fix_flat, :all_match, :field_prefix
+    options = IndiferentHash.add_defaults options, :sep => "\t", :sort => true
+    sort, sep, preamble, header, same_fields, fix_flat, all_match, field_prefix = IndiferentHash.process_options options, :sort, :sep, :preamble, :header, :same_fields, :fix_flat, :all_match, :field_prefix
 
-    out = Misc.open_pipe do |sin|
+    out = Open.open_pipe do |sin|
 
       streams = streams.collect do |stream|
         case stream
         when (defined? Step and Step) 
           stream.grace
-          stream.get_stream || Open.open(stream.join.path)
+          stream.stream || Open.open(stream.join.path)
         when Path
           stream.open
         when TSV::Dumper
@@ -42,7 +41,7 @@ module TSV
       num_streams = streams.length
 
       streams = streams.collect do |stream|
-        sorted = Misc.sort_stream(stream)
+        sorted = Open.sort_stream(stream)
         stream.annotate sorted if stream.respond_to? :annotate
         sorted
       end if sort
@@ -57,7 +56,7 @@ module TSV
 
       streams = streams.collect do |stream|
 
-        parser = TSV::Parser.new stream, options.dup
+        parser = TSV::Parser.new stream, **options.dup
         sfields = parser.fields
 
         if field_prefix
@@ -237,7 +236,7 @@ module TSV
   end
 
   def self.stream_flat2double(stream, options = {})
-    noheader = Misc.process_options options, :noheader
+    noheader = IndiferentHash.process_options options, :noheader
     parser = TSV::Parser.new TSV.get_stream(stream), :type => :flat
     dumper_options = parser.options.merge(options).merge(:type => :double)
     dumper = TSV::Dumper.new dumper_options
@@ -252,7 +251,7 @@ module TSV
 
 
   def self.reorder_stream(stream, positions, sep = "\t")
-    Misc.open_pipe do |sin|
+    Open.open_pipe do |sin|
       line = stream.gets
       line.chomp! unless line.nil?
 

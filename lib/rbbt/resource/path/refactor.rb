@@ -1,17 +1,17 @@
 module Path
 
-  def _exists?
-    Open.exists? self.find
-  end
+  #def _exists?
+  #  Open.exists? self.find
+  #end
 
-  def exists?
-    begin
-      self.produce
-      _exists?
-    rescue Exception
-      false
-    end
-  end
+  #def exists?
+  #  begin
+  #    self.produce
+  #    _exists?
+  #  rescue Exception
+  #    false
+  #  end
+  #end
 
   def open(options = {}, &block)
     file = Open.remote?(self) || Open.ssh?(self) ? self : self.produce.find

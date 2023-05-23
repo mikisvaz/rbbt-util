@@ -23,12 +23,12 @@ module TSV
 
     csv = case obj
           when Path
-            CSV.read obj.find.open, options
+            CSV.read obj.find.open, **options
           when String
             if Open.remote?(obj)
-              CSV.read Open.open(obj), options
+              CSV.read Open.open(obj), **options
             elsif Misc.is_filename?(obj)
-              CSV.read obj, options
+              CSV.read obj, **options
             else
               CSV.new obj, **options
             end
