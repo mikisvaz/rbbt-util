@@ -1,3 +1,4 @@
+require_relative 'stream'
 module TSV
   alias original_unzip unzip
   def unzip(field = 0, merge = false, sep = ":", delete = true, **kwargs)
@@ -41,6 +42,16 @@ module TSV
         kwargs[:select] = {method => value}
       end
       original_pos_index(*args, **kwargs)
+    end
+
+    alias original_setup setup
+
+    def setup(*args, **kwargs, &block)
+      if args.length == 2 && String === args.last
+        str_setup(args.last, args.first)
+      else
+        original_setup(*args, **kwargs, &block)
+      end
     end
   end
 end
