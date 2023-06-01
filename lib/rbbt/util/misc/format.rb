@@ -27,6 +27,9 @@ module Misc
 
   def self.format_paragraph(text, size = 80, indent = 0, offset = 0)
     i = 0
+    offset = 0 if offset.nil?
+    indent = 0 if indent.nil?
+    size = 80 if size.nil?
     size = size + offset + indent
     re = /((?:\n\s*\n\s*)|(?:\n\s*(?=\*)))/
       text.split(re).collect do |paragraph|
