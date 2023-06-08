@@ -1,5 +1,4 @@
 require_relative '../../rbbt'
-require 'lockfile'
 require 'digest/md5'
 require 'cgi'
 require 'zlib'

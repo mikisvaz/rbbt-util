@@ -2,7 +2,6 @@
 
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
-require 'rbbt/workflow/usage'
 require 'time'
 
 def report_options(options)
@@ -180,7 +179,7 @@ available. Examples can be enacted using `rbbt workflow example <workflow>
 [<task>] [<example>]`.
 
 When a task is enacted a job is instantiated. This job is identified by the
-`jobname` (which is *#{Workflow::DEFAULT_NAME}* unless specified otherwise) and the values of the
+`jobname` (which is *#{Task::DEFAULT_NAME}* unless specified otherwise) and the values of the
 parameters; these two things determine the filename under which the job result
 will be saved. If the taks is enacted using the same `jobname` and parameters
 it will result in the same job, pointing to the same result file.
@@ -196,7 +195,7 @@ The `recursive_clean` cleans all the job dependency steps recursively.
 -wda--workdir_all* Change the working directory of ALL workflow
 -as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default
 -fs--field_separator* Change the character that separates fields of TSV files '\\t' by default
--jn--jobname* Job name to use. The name '#{Workflow::DEFAULT_NAME}' is used by default
+-jn--jobname* Job name to use. The name '#{Task::DEFAULT_NAME}' is used by default
 -pn--printname Print the name of the job and exit without starting it
 -pf--printpath Print the path of the job result
 -cl--clean Clean the last step of the job so that it gets recomputed
@@ -319,14 +318,14 @@ usage workflow, task, nil, options[:abridge] and exit 0 if help
 name = options.delete(:jobname) 
 
 # get job args
-job_options = workflow.get_SOPT(task)
+job_options = task.get_SOPT(task)
 
 if options[:load_inputs]
   task_info = workflow.task_info(task_name)
   job_options = Workflow.load_inputs(options[:load_inputs], task_info[:inputs], task_info[:input_types]).merge(job_options)
 end
 
-job_options = fix_options(workflow, task, job_options)
+#job_options = fix_options(workflow, task, job_options)
 saved_job_options = job_options
 
 workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if options[:workdir]
@@ -692,7 +691,7 @@ when Step
     exit! 0
   else
     res.join if res.running?
-    if %w(float integer string boolean).include?(res.result_type.to_s)
+    if %w(float integer string boolean).include?(res.type.to_s)
       out.puts res.load
     else
       Open.open(res.path, :mode => 'rb') do |io|
