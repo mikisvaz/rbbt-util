@@ -20,7 +20,6 @@ module TSV
     change_id(field, format, **options)
   end
 
-
   class << self
     alias original_range_index range_index
     alias original_pos_index pos_index
@@ -55,3 +54,5 @@ module TSV
     end
   end
 end
+
+Rbbt.relay_module_method TSV, :get_stream, Open, :get_stream
