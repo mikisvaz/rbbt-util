@@ -89,7 +89,8 @@ module Path
 
   def all_fields
     self.open do |stream|
-      TSV.parse_header(stream).all_fields
+      header = TSV.parse_header(stream)
+      [header.key_field] + header.fields
     end
   end
 
