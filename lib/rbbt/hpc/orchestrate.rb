@@ -14,7 +14,9 @@ module HPC
 
       all_deps.each do |dep|
         begin
-          Step.prepare_for_execution(dep)
+          dep.clean if dep.error? && dep.recoverable_error?
+          dep.clean if dep.aborted?
+          dep.clean if ! dep.updated?
         rescue RbbtException
           next
         end
@@ -81,7 +83,7 @@ module HPC
             canfail = false
 
             top_jobs.each do |job|
-              canfail = true if job.canfail_paths.include?(target.path)
+              canfail = true if job.canfail? # job.canfail_paths.include?(target.path)
             end
 
             if canfail
