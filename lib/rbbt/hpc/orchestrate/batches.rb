@@ -101,8 +101,8 @@ module HPC
 
       batches.each do |batch|
         job_rules = batch[:jobs].inject(nil) do |acc,job|
-          workflow = job.original_workflow || job.workflow
-          task_name = job.original_task_name || job.task_name
+          workflow = job.workflow
+          task_name = job.task_name
           task_rules = task_specific_rules(rules, workflow, task_name)
           acc = accumulate_rules(acc, task_rules.dup)
         end

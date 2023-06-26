@@ -102,12 +102,12 @@ module HPC
     def rbbt_job_exec_cmd(job, options)
 
       jobname  = job.clean_name
-      workflow = job.original_workflow || job.workflow
-      task     = job.original_task_name || job.task_name
+      workflow = job.workflow
+      task     = job.task_name
 
       Misc.add_defaults options, :jobname => jobname
 
-      task = Symbol === job.overriden ? job.overriden : job.task_name
+      task = job.task_name
 
       #override_deps = job.overriden_deps.collect do |dep| 
       #  name = [dep.workflow.to_s, dep.task_name] * "#"
@@ -129,7 +129,7 @@ module HPC
 
       # Save inputs into inputs_dir
       inputs_dir = Misc.process_options options, :inputs_dir
-      saved = Step.save_job_inputs(job, inputs_dir) if inputs_dir
+      saved = job.save_inputs(inputs_dir)
       options[:load_inputs] = inputs_dir if saved && saved.any?
 
       saved.each do |input|
@@ -591,8 +591,8 @@ env > #{batch_options[:fenv]}
         end
       end
 
-      workflow = job.original_workflow ||job.workflow
-      task_name = job.original_task_name || job.task_name
+      workflow = job.workflow
+      task_name = job.task_name
 
       options = options.merge(HPC::Orchestration.job_rules(HPC::Orchestration.orchestration_rules(orchestration_rules_file), job)) if orchestration_rules_file
 
