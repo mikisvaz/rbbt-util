@@ -7,7 +7,8 @@ module Rbbt
     require new_file
   end
 
-  def self.relay_module_method(new_mod, new_method, orig_mod, orig_method)
+  def self.relay_module_method(new_mod, new_method, orig_mod, orig_method = nil)
+    orig_method = new_method if orig_method.nil?
     method = orig_mod.method(orig_method)
     class << new_mod
       self

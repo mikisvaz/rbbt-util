@@ -36,21 +36,6 @@ module Misc
     end
   end
 
-  def self.path_relative_to(basedir, path)
-    path = File.expand_path(path) unless path.slice(0,1) == "/"
-    basedir = File.expand_path(basedir) unless basedir.slice(0,1) == "/"
-
-    if path.start_with?(basedir)
-      if basedir[-1] == "/"
-        return path[basedir.length..-1]
-      else
-        return path[basedir.length+1..-1]
-      end
-    else
-      return nil
-    end
-  end
-
   def self.common_path(dir, file)
     file = File.expand_path file
     dir = File.expand_path dir
