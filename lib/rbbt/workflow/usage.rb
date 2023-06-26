@@ -20,7 +20,7 @@ module Task
       task_inputs = dep_inputs deps, workflow
       task_inputs.each do |task,new_inputs|
         new_inputs.zip(task.input_types.values_at(*new_inputs)).select do |i,t| 
-          t.to_sym == :select and task.input_options[i][:select_options] 
+          t.to_sym == :select && task.input_options.include?(i) && task.input_options[i][:select_options] 
         end.each do |i,t| 
           selects << [i, task.input_options[i][:select_options]] 
         end
