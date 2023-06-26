@@ -90,7 +90,7 @@ class Step
     end
   end
 
-  def recursive_inputs
+  def recursive_inputs(connected = false)
     if NamedArray === inputs
       i = {}
       inputs.zip(inputs.fields).each do |v,f|
@@ -99,7 +99,7 @@ class Step
     else
       i = {}
     end
-    rec_dependencies.each do |dep|
+    rec_dependencies(connected).each do |dep|
       next unless NamedArray === dep.inputs
 
       dep.inputs.zip(dep.inputs.fields).each do |v,f|

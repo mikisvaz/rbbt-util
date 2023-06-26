@@ -245,7 +245,7 @@ class RbbtProcessQueue
         end
       end if @callback_queue
 
-      @callback_thread.report_on_exception = false
+      @callback_thread.report_on_exception = false if @callback_thread
       
     end
 

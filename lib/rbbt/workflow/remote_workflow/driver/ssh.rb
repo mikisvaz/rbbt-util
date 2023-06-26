@@ -253,7 +253,7 @@ job.clean
       Step.wait_for_jobs missing_deps
 
       migrate_dependencies = all_deps.keys.collect{|d| [d] + d.rec_dependencies + d.input_dependencies }.flatten.select{|d| d.done? }.collect{|d| d.path }
-      Log.medium "Migrating #{migrate_dependencies.length} dependencies from #{Misc.fingerprint job_list} to #{ server }" 
+      Log.low "Migrating #{migrate_dependencies.length} dependencies from #{Misc.fingerprint job_list} to #{ server }" 
       Step.migrate(migrate_dependencies, search_path, :target => server) if migrate_dependencies.any?
     end
 
