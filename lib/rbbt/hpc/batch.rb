@@ -52,7 +52,7 @@ module HPC
       if contain = options[:contain]
         contain = File.expand_path(contain)
         env_cmd ||= ""
-        env_cmd << " TMPDIR='#{contain}/.rbbt/tmp' "
+        env_cmd << " TMPDIR='#{contain}/.scout/tmp' "
       end
 
       if options[:singularity]
@@ -79,17 +79,17 @@ module HPC
 -B #{projects_group_dir} \
 -B /apps/ \
 -B ~/git:"#{contain}/git":ro \
-          #{Open.exists?('~/.rbbt/software/opt/')? '-B ~/.rbbt/software/opt/:"/opt/":ro' : '' } \
--B ~/.rbbt:"#{contain}/home/":ro)
+          #{Open.exists?('~/.scout/software/opt/')? '-B ~/.scout/software/opt/:"/opt/":ro' : '' } \
+-B ~/.scout:"#{contain}/home/":ro)
         end
 
         singularity_cmd << " #{singularity_img} "
       end
 
       if env_cmd
-        exec_cmd = %(env #{env_cmd} rbbt)
+        exec_cmd = %(env #{env_cmd} scout)
       else
-        exec_cmd = %(rbbt)
+        exec_cmd = %(scout)
       end
 
       exec_cmd << "--dev '#{development}'" if development
@@ -99,7 +99,7 @@ module HPC
       exec_cmd
     end
 
-    def rbbt_job_exec_cmd(job, options)
+    def scout_job_exec_cmd(job, options)
 
       jobname  = job.clean_name
       workflow = job.workflow
@@ -109,18 +109,12 @@ module HPC
 
       task = job.task_name
 
-      #override_deps = job.overriden_deps.collect do |dep| 
-      #  name = [dep.workflow.to_s, dep.task_name] * "#"
-      #  [name, dep.path] * "="  
-      #end.uniq * ","
-
       if job.overriden?
-        #override_deps = job.rec_dependencies.
-        #  select{|dep| Symbol === dep.overriden }.
-        
         override_deps = job.overriden_deps.
           collect do |dep| 
-          name = [dep.workflow.to_s, dep.task_name] * "#"
+            o_workflow = dep.overriden_workflow || dep.workflow 
+            o_task_name = dep.overriden_task || dep.task
+            name = [o_workflow, o_task_name] * "#"
           [name, dep.path] * "="  
         end.uniq * ","
 
@@ -178,7 +172,7 @@ EOF
         :sync,
         :contain_and_sync,
         :copy_image,
-        :drbbt,
+        :dscout,
         :env_cmd,
         :manifest,
         :user_group,
@@ -231,13 +225,13 @@ EOF
 
       if batch_options[:contain_and_sync]
         if batch_options[:contain].nil?
-          contain_base = Rbbt::Config.get(:contain_base_dir, :batch_contain, :batch, :default => "/scratch/tmp/rbbt-[USER]")
+          contain_base = Rbbt::Config.get(:contain_base_dir, :batch_contain, :batch, :default => "/scratch/tmp/scout-[USER]")
           contain_base = contain_base.sub('[USER]', user)
           random_file = TmpFile.random_name
           batch_options[:contain] = File.join(contain_base, random_file)
         end
 
-        batch_options[:sync] ||= "~/.rbbt/var/jobs" 
+        batch_options[:sync] ||= "~/.scout/var/jobs" 
         batch_options[:wipe_container] ||= 'post'
       end
 
@@ -253,17 +247,17 @@ EOF
         :task_cpus => 1,
         :time => '2min', 
         :env_cmd => '_JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m"',
-        :singularity_img => ENV["SINGULARITY_IMG"] || "~/rbbt.singularity.img",
+        :singularity_img => ENV["SINGULARITY_IMG"] || "~/scout.singularity.img",
         :singularity_ruby_inline => ENV["SINGULARITY_RUBY_INLINE"] || "~/.singularity_ruby_inline",
         :singularity_opt_dir => ENV["SINGULARITY_OPT_DIR"] || "~/singularity_opt",
         :workdir => Dir.pwd 
 
       exec_cmd = exec_cmd(job, batch_options)
-      rbbt_cmd = rbbt_job_exec_cmd(job, options)
+      scout_cmd = scout_job_exec_cmd(job, options)
 
       Misc.add_defaults batch_options, 
         :exec_cmd => exec_cmd,
-        :rbbt_cmd => rbbt_cmd
+        :scout_cmd => scout_cmd
 
       batch_dir = batch_options[:batch_dir]
 
@@ -287,7 +281,7 @@ EOF
 #MANIFEST: #{(options[:manifest] || []) * ", "}
 #DEPENDENCIES: #{(options[:dependencies] || []) * ", "}
 #EXEC_CMD: #{options[:exec_cmd]}
-#CMD: #{options[:rbbt_cmd]}
+#CMD: #{options[:scout_cmd]}
 #STEP_PATH: #{options[:step_path]}
       EOF
 
@@ -357,11 +351,11 @@ batch_erase_contain_dir()
 
       if sync = options[:sync]
         source = if options[:singularity]
-                   File.join(options[:contain], '.rbbt/var/jobs')
+                   File.join(options[:contain], '.scout/var/jobs')
                  elsif options[:contain]
                    File.join(options[:contain], 'var/jobs')
                  else
-                   '~/.rbbt/var/jobs/'
+                   '~/.scout/var/jobs/'
                  end
 
         source = File.expand_path(source)
@@ -393,27 +387,27 @@ mkdir -p "#{File.expand_path singularity_opt_dir}"
 
           prepare_environment +=<<-EOF
 # Prepare container for singularity
-mkdir -p "#{contain}"/.rbbt/etc/
+mkdir -p "#{contain}"/.scout/etc/
 
 for dir in .ruby_inline git home; do
     mkdir -p "#{contain}"/$dir
 done
 
 for tmpd in persist_locks  produce_locks  R_sockets  sensiblewrite  sensiblewrite_locks  step_info_locks  tsv_open_locks; do
-    mkdir -p "#{contain}/.rbbt/tmp/$tmpd"
+    mkdir -p "#{contain}/.scout/tmp/$tmpd"
 done
 
 # Copy environment 
-cp ~/.rbbt/etc/environment #{contain}/.rbbt/etc/
+cp ~/.scout/etc/environment #{contain}/.scout/etc/
 
 # Set search_paths
-echo "singularity: /singularity_opt/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" > #{contain}/.rbbt/etc/search_paths
-echo "rbbt_user: /home/rbbt/.rbbt/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
-echo "outside_home: #{contain}/home/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
-echo "group_projects: #{projects_group_dir}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
-echo "group_scratch: #{scratch_group_dir}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
-echo "user_projects: #{projects_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
-echo "user_scratch: #{scratch_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.rbbt/etc/search_paths
+echo "singularity: /singularity_opt/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" > #{contain}/.scout/etc/search_paths
+echo "scout_user: /home/scout/.scout/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.scout/etc/search_paths
+echo "outside_home: #{contain}/home/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.scout/etc/search_paths
+echo "group_projects: #{projects_group_dir}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.scout/etc/search_paths
+echo "group_scratch: #{scratch_group_dir}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.scout/etc/search_paths
+echo "user_projects: #{projects_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.scout/etc/search_paths
+echo "user_scratch: #{scratch_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" >> #{contain}/.scout/etc/search_paths
           EOF
         end
       end
@@ -422,7 +416,7 @@ echo "user_scratch: #{scratch_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" 
     end
 
     def execute(options)
-      exec_cmd, job_cmd, task_cpus = options.values_at :exec_cmd, :rbbt_cmd, :task_cpus
+      exec_cmd, job_cmd, task_cpus = options.values_at :exec_cmd, :scout_cmd, :task_cpus
 
       script=<<-EOF
 step_path=$( 
@@ -598,7 +592,7 @@ env > #{batch_options[:fenv]}
 
       workflows_to_load = job.rec_dependencies.select{|d| Step === d}.collect{|d| d.workflow }.compact.collect(&:to_s) - [workflow.to_s]
 
-      TmpFile.with_file(nil, remove_batch_dir, :tmpdir => batch_base_dir, :prefix => "#{system}_rbbt_job-#{workflow.to_s}-#{task_name}-") do |batch_dir|
+      TmpFile.with_file(nil, remove_batch_dir, :tmpdir => batch_base_dir, :prefix => "#{system}_scout_job-#{workflow.to_s}-#{task_name}-") do |batch_dir|
         Misc.add_defaults options, 
           :batch_dir => batch_dir, 
           :inputs_dir => File.join(batch_dir, "inputs_dir"),
