@@ -112,8 +112,8 @@ module HPC
       if job.overriden?
         override_deps = job.overriden_deps.
           collect do |dep| 
-            o_workflow = dep.overriden_workflow || dep.workflow 
-            o_task_name = dep.overriden_task || dep.task
+            o_workflow = dep.overriden_workflow || dep.workflow.to_s
+            o_task_name = dep.overriden_task || dep.task.name
             name = [o_workflow, o_task_name] * "#"
           [name, dep.path] * "="  
         end.uniq * ","

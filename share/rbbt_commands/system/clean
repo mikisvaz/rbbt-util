@@ -98,7 +98,7 @@ TSV.traverse jobs do |file,i|
   else
     info = begin
              Open.open(i[:info_file]) do |f|
-               Step::INFO_SERIALIZER.load(f)
+               Step.load_info(f)
              end
            rescue
              {:status => :noinfo}

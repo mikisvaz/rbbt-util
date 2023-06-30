@@ -53,6 +53,12 @@ module TSV
       end
     end
   end
+
+  def self.header_lines(key_field, fields, entry_hash = nil)
+    entry_hash = entry_hash || {}
+    entry_hash = entry_hash.merge(:key_field => key_field, :fields => fields)
+    TSV::Dumper.header entry_hash
+  end
 end
 
 Rbbt.relay_module_method TSV, :get_stream, Open, :get_stream
