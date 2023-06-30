@@ -13,18 +13,18 @@ module Path
   #  end
   #end
 
-  def open(options = {}, &block)
-    file = Open.remote?(self) || Open.ssh?(self) ? self : self.produce.find
-    Open.open(file, options, &block)
-  end
+  #def open(options = {}, &block)
+  #  file = Open.remote?(self) || Open.ssh?(self) ? self : self.produce.find
+  #  Open.open(file, options, &block)
+  #end
 
-  def read(&block)
-    Open.read(self.produce.find, &block)
-  end
+  #def read(&block)
+  #  Open.read(self.produce.find, &block)
+  #end
 
-  def write(*args, &block)
-    Open.write(self.find(:default), *args, &block)
-  end
+  #def write(*args, &block)
+  #  Open.write(self.find(:default), *args, &block)
+  #end
 
   #def index(options = {})
   #  TSV.index(self.produce, **options)

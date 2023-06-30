@@ -39,7 +39,7 @@ def get_step(file)
   file = File.expand_path(file) if File.exist?(file)
   file = file.sub(/\.(info|files)$/,'')
   $seen << file
-  Workflow.load_step file
+  Step.load file
 end
 
 def touch(step)
