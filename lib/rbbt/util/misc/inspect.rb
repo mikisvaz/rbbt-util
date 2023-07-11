@@ -455,6 +455,7 @@ module Misc
   end
 
   def self.scan_version_text(text, cmd = nil)
+    text = Misc.fixutf8 text
     cmd = "NOCMDGIVE" if cmd.nil? || cmd.empty?
     text.split("\n").each do |line|
       next unless line =~ /\W#{cmd}\W/i

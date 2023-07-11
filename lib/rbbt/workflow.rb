@@ -23,7 +23,7 @@ module Workflow
 
   #{{{ WORKFLOW MANAGEMENT 
   class << self
-    attr_accessor :workflows, :autoinstall, :workflow_dir
+    attr_accessor :workflows, :autoinstall, :workflow_dir, :main
   end
 
   self.workflows = []
@@ -202,13 +202,14 @@ module Workflow
 
     first = nil
     wf_name.split("+").each do |wf_name|
+      self.main = nil
       require_local_workflow(wf_name) or 
         (Workflow.autoinstall and `rbbt workflow install #{Misc.snake_case(wf_name)} || rbbt workflow install #{wf_name}` and require_local_workflow(wf_name)) or raise("Workflow not found or could not be loaded: #{ wf_name }")
 
       workflow = begin
                    Misc.string2const Misc.camel_case(wf_name)
                  rescue
-                   Workflow.workflows.last || true
+                   self.main || Workflow.workflows.last 
                  end
       workflow.load_documentation
 

@@ -354,7 +354,7 @@ url='#{url}'
     path = File.expand_path(path)
     path += "/" if File.directory?(path)
     resource ||= Rbbt
-    locations = (Path::STANDARD_SEARCH + resource.search_order + resource.search_paths.keys)
+    locations = (Path::STANDARD_SEARCH + resource.search_order + resource.search_paths.keys).uniq
     locations -= [:current, "current"]
     locations << :current
     search_paths = IndiferentHash.setup(resource.search_paths)
@@ -374,7 +374,11 @@ url='#{url}'
           if ! m.named_captures.include?("PKGDIR") || m["PKGDIR"] == resource.pkgdir
             unlocated = ([m["TOPLEVEL"],m["SUBPATH"],m["REST"]] * "/")
             unlocated.gsub!(/\/+/,'/')
-            unlocated[self.subdir] = "" if self.subdir
+            if self.subdir && ! self.subdir.empty?
+              subdir = self.subdir
+              subdir += "/" unless subdir.end_with?("/")
+              unlocated[subdir] = ""
+            end
             choices << self.annotate(unlocated)
           end
         end

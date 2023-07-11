@@ -1,6 +1,5 @@
 module Rbbt 
 
-  prepare_for_execution(job)
   def self.migrate_source_paths(path, resource = Rbbt, source = nil)
     if source
       lpath, *paths = Misc.ssh_run(source, <<-EOF).split("\n")
