@@ -1,4 +1,5 @@
 require 'rbbt/util/R'
+require 'rbbt/util/misc/math'
 
 module Workflow
   def self.trace_job_times(jobs, fix_gap = false)
@@ -6,9 +7,9 @@ module Workflow
     min_start = nil
     max_done = nil
     jobs.each do |job|
-      next unless job.info[:done]
-      started = job.info[:started]
-      ddone = job.info[:done]
+      next unless job.info[:end]
+      started = job.info[:start]
+      ddone = job.info[:end]
 
       started = Time.parse started if String === started
       ddone = Time.parse ddone if String === ddone
@@ -139,13 +140,13 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
     report_keys = report_keys.collect{|k| k.to_s}
 
     jobs.each do |dep|
-      next unless dep.info[:done]
+      next unless dep.info[:end]
       task = [dep.workflow, dep.task_name].compact.collect{|s| s.to_s} * "#"
       info = tasks_info[task] ||= IndiferentHash.setup({})
       dep_info = IndiferentHash.setup(dep.info)
 
-      ddone = dep_info[:done]
-      started = dep_info[:started]
+      ddone = dep_info[:end]
+      started = dep_info[:start]
 
       started = Time.parse started if String === started
       ddone = Time.parse ddone if String === ddone
@@ -162,7 +163,7 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
         key, value, tokens = kinfo
 
         info[key.to_s] = value if report_keys.include? key.to_s
-      end
+      end if dep.info.include? :config_keys
     end
 
     summary = TSV.setup({}, "Task~Calls,Avg. Time,Total Time#:type=:list")
