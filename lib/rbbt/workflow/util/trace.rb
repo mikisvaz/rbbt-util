@@ -1,5 +1,6 @@
 require 'rbbt/util/R'
 require 'rbbt/util/misc/math'
+require 'rbbt/util/misc/manipulation'
 
 module Workflow
   def self.trace_job_times(jobs, fix_gap = false)

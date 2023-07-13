@@ -183,7 +183,7 @@ module TSV
 
     script = require_sources + "\n\n" + script if require_sources
 
-    r_options = Misc.pull_keys open_options, :R
+    r_options = IndiferentHash.pull_keys open_options, :R
 
     r_options[:monitor] = open_options[:monitor] if open_options.include?(:monitor)
     r_options[:method] = open_options[:method] if open_options.include?(:method)
