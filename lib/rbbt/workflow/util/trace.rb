@@ -81,7 +81,8 @@ module Workflow
 
   def self.plot_trace_job_times(data, plot, width=800, height=800)
     data.R <<-EOF, [:svg]
-rbbt.require('tidyverse')
+rbbt.require('dplyr')
+rbbt.require('tidyr')
 rbbt.require('ggplot2')
 
 names(data) <- make.names(names(data))
