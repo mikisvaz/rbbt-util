@@ -530,16 +530,22 @@ module Open
 
   def self.gzip?(file)
     file = file.find if Path === file
+    file = file.filename if File === file
+    return false unless String === file
     !! (file =~ /\.gz$/)
   end
 
   def self.bgzip?(file)
     file = file.find if Path === file
+    file = file.filename if File === file
+    return false unless String === file
     !! (file =~ /\.bgz$/)
   end
 
   def self.zip?(file)
     file = file.find if Path === file
+    file = file.filename if File === file
+    return false unless String === file
     !! (file =~ /\.zip$/)
   end
 
