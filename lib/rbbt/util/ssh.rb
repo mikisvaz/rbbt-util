@@ -9,7 +9,7 @@ class SSHLine
     @ssh = Net::SSH.start(@host, @user)
 
     @ch = @ssh.open_channel do |ch|
-      ch.exec 'bash'
+      ch.exec 'bash -l'
     end
 
     @ch.on_data do |_,data|
