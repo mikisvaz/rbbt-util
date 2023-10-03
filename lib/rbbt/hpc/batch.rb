@@ -12,24 +12,32 @@ module HPC
       HPC::SLURM
     when 'lsf'
       HPC::LSF
+    when 'pbs'
+      HPC::PBS
     when 'auto'
       case $previous_commands.last
       when 'slurm'
         HPC::SLURM
       when 'lsf'
         HPC::LSF
+      when 'pbs'
+        HPC::PBS
       else
         case Rbbt::Config.get(:batch_system, :batch, :batch_system, :hpc, :HPC, :BATCH).to_s.downcase
         when 'slurm'
           HPC::SLURM
         when 'lsf'
           HPC::LSF
+        when 'pbd'
+          HPC::PBS
         else
           case ENV["BATCH_SYSTEM"].to_s.downcase
           when 'slurm'
             HPC::SLURM
           when 'lsf'
             HPC::LSF
+          when 'pbs'
+            HPC::PBS
           end
         end
       end

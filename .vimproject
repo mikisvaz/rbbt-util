@@ -183,6 +183,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     batch.rb
     slurm.rb
     lsf.rb
+    pbs.rb
 
     orchestrate.rb
     orchestrate=orchestrate{
