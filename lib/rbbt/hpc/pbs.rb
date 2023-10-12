@@ -21,11 +21,14 @@ export MAX_MEMORY_DEFAULT
 export MAX_MEMORY
 export BATCH_JOB_ID=$PBS_JOBID
 export BATCH_SYSTEM=#{batch_system}
+
+cd ${PBS_O_WORKDIR}
       EOF
     end
 
     def self.header(options = {})
       options = options.dup
+      iii options
 
       workdir    = Misc.process_options options, :workdir
       batch_dir  = Misc.process_options options, :batch_dir
@@ -39,7 +42,7 @@ export BATCH_SYSTEM=#{batch_system}
       # PBS 
       place      = Misc.process_options options, :place, :place => 'scatter'
       system     = Misc.process_options options, :partition
-      filesystems = Misc.process_options options, :filesystems, :filesystems => ['home']
+      filesystems = Misc.process_options options, :filesystems
 
       filesystems = filesystems * "," if Array === filesystems
 
@@ -71,6 +74,7 @@ export BATCH_SYSTEM=#{batch_system}
                        "-A " => account,
                        "-o " => fout,
                        "-e " => ferr,
+                       "-k doe" => true,
                        # "cpus-per-task" => task_cpus,
                        # "nodes" => nodes,
                        # "time" => time,
@@ -141,8 +145,8 @@ export BATCH_SYSTEM=#{batch_system}
           return
         elsif dry_run
           STDERR.puts Log.color(:magenta, "To execute run: ") + Log.color(:blue, "squb '#{fcmd}'")
-          STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): ") + Log.color(:blue, "rbbt slurm tail '#{batch_dir}'")
-          raise HPC::SBATCH, batch_dir
+          STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): ") + Log.color(:blue, "rbbt pbs tail '#{batch_dir}'")
+          raise HPC::BATCH_DRY_RUN, batch_dir
         else
           Open.rm fsync
           Open.rm fexit

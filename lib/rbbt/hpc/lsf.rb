@@ -99,7 +99,7 @@ export BATCH_SYSTEM=#{batch_system}
         elsif dry_run
           STDERR.puts Log.color(:magenta, "To execute run: ") + Log.color(:blue, cmd)
           STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): ") + Log.color(:blue, "rbbt lsf tail '#{batch_dir}'")
-          raise HPC::SBATCH, batch_dir
+          raise HPC::BATCH_DRY_RUN, batch_dir
         else
           Open.rm fsync
           Open.rm fexit

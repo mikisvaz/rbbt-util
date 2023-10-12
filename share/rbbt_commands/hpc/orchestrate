@@ -73,7 +73,7 @@ class Step
           join
           self.load
         end
-      rescue HPC::SBATCH
+      rescue HPC::BATCH_DRY_RUN
       end
     end
   end
