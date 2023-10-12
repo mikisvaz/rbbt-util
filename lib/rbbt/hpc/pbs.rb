@@ -28,7 +28,6 @@ cd ${PBS_O_WORKDIR}
 
     def self.header(options = {})
       options = options.dup
-      iii options
 
       workdir    = Misc.process_options options, :workdir
       batch_dir  = Misc.process_options options, :batch_dir
