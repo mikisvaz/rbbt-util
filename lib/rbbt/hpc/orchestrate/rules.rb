@@ -65,6 +65,13 @@ module HPC
       merge_rules(rules[workflow][task], workflow_rules)
     end
 
-
+    def self.job_rules(rules, job)
+      return {} if job.done? or job.error?
+      job_rules = task_specific_rules(rules, job.workflow.to_s, job.task_name.to_s)
+      job.dependencies.each do |dep|
+        job_rules = accumulate_rules(job_rules, job_rules(rules, dep))
+      end
+      job_rules
+    end
   end
 end

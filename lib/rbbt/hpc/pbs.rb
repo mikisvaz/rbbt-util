@@ -2,38 +2,52 @@ require 'rbbt/hpc/batch'
 require 'rbbt/hpc/orchestrate'
 
 module HPC
-  module SLURM 
+  module PBS 
     extend HPC::TemplateGeneration
     extend HPC::Orchestration
 
     def self.batch_system
-      "SLURM"
+      "PBS"
     end
 
     def self.batch_system_variables
       <<-EOF
 let TOTAL_PROCESORS="$(cat /proc/cpuinfo|grep ^processor |wc -l)"
-let MAX_MEMORY_DEFAULT="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / ( (1024 * $TOTAL_PROCESORS) / $SLURM_CPUS_PER_TASK )"
+let MAX_MEMORY_DEFAULT="$(grep MemTotal /proc/meminfo|grep -o "[[:digit:]]*") / ( (1024 * $TOTAL_PROCESORS) / $PBS_CPUS_PER_TASK )"
 MAX_MEMORY="$MAX_MEMORY_DEFAULT"
-[ ! -z $SLURM_MEM_PER_CPU ] && let MAX_MEMORY="$SLURM_MEM_PER_CPU * $SLURM_CPUS_PER_TASK" 
-[ ! -z $SLURM_MEM_PER_NODE ] && MAX_MEMORY="$SLURM_MEM_PER_NODE"
+[ ! -z $PBS_MEM_PER_CPU ] && let MAX_MEMORY="$PBS_MEM_PER_CPU * $PBS_CPUS_PER_TASK" 
+[ ! -z $PBS_MEM_PER_NODE ] && MAX_MEMORY="$PBS_MEM_PER_NODE"
 export MAX_MEMORY_DEFAULT
 export MAX_MEMORY
-export BATCH_JOB_ID=$SLURM_JOB_ID
+export BATCH_JOB_ID=$PBS_JOBID
 export BATCH_SYSTEM=#{batch_system}
+
+cd ${PBS_O_WORKDIR}
       EOF
     end
 
     def self.header(options = {})
       options = options.dup
 
+      workdir    = Misc.process_options options, :workdir
+      batch_dir  = Misc.process_options options, :batch_dir
+      batch_name = Misc.process_options options, :batch_name
+
       queue      = Misc.process_options options, :queue
       account    = Misc.process_options options, :account
-      partition  = Misc.process_options options, :partition
-      task_cpus  = Misc.process_options options, :task_cpus
       time       = Misc.process_options options, :time
       nodes      = Misc.process_options options, :nodes
-      workdir    = Misc.process_options options, :workdir
+
+      # PBS 
+      place      = Misc.process_options options, :place, :place => 'scatter'
+      system     = Misc.process_options options, :partition
+      filesystems = Misc.process_options options, :filesystems
+
+      filesystems = filesystems * "," if Array === filesystems
+
+      # NOT USED 
+      partition  = Misc.process_options options, :partition
+      task_cpus  = Misc.process_options options, :task_cpus
       exclusive  = Misc.process_options options, :exclusive
       highmem    = Misc.process_options options, :highmem
       licenses   = Misc.process_options options, :licenses
@@ -45,29 +59,30 @@ export BATCH_SYSTEM=#{batch_system}
       mem            = Misc.process_options options, :mem
       mem_per_cpu    = Misc.process_options options, :mem_per_cpu
 
-      batch_dir  = Misc.process_options options, :batch_dir
-      batch_name = Misc.process_options options, :batch_name
-
       fout       = File.join(batch_dir, 'std.out')
       ferr       = File.join(batch_dir, 'std.err')
 
       time = Misc.format_seconds Misc.timespan(time) unless time.include? ":"
 
-      sbatch_params = {"job-name" => batch_name,
-                       "qos" => queue,
-                       "account" => account,
-                       "partition" => partition,
-                       "output" => fout,
-                       "error" => ferr,
-                       "cpus-per-task" => task_cpus,
-                       "nodes" => nodes,
-                       "time" => time,
-                       "constraint" => constraint,
-                       "exclusive" => exclusive,
-                       "licenses" => licenses,
-                       "gres" => gres,
-                       "mem" => mem,
-                       "mem-per-cpu" => mem_per_cpu,
+      qsub_params = {  "-l filesystems=" => filesystems,
+                       "-l system=" => system,
+                       "-l select=" => nodes,
+                       "-l place=" => place,
+                       "-l walltime=" => time,
+                       "-q " => queue,
+                       "-A " => account,
+                       "-o " => fout,
+                       "-e " => ferr,
+                       "-k doe" => true,
+                       # "cpus-per-task" => task_cpus,
+                       # "nodes" => nodes,
+                       # "time" => time,
+                       # "constraint" => constraint,
+                       # "exclusive" => exclusive,
+                       # "licenses" => licenses,
+                       # "gres" => gres,
+                       # "mem" => mem,
+                       # "mem-per-cpu" => mem_per_cpu,
       }
 
 
@@ -75,16 +90,16 @@ export BATCH_SYSTEM=#{batch_system}
 #!/bin/bash
       EOF
 
-      sbatch_params.each do |name,value|
+      qsub_params.each do |name,value|
         next if value.nil? || value == ""
         if TrueClass === value
-          header << "#SBATCH --#{name}" << "\n"
+          header << "#PBS #{name}" << "\n"
         elsif Array === value
           value.each do |v|
-            header << "#SBATCH --#{name}=\"#{v}\"" << "\n"
+            header << "#PBS #{name}\"#{v}\"" << "\n"
           end
         else
-          header << "#SBATCH --#{name}=\"#{value}\"" << "\n"
+          header << "#PBS #{name}\"#{value}\"" << "\n"
         end
       end
 
@@ -104,7 +119,7 @@ export BATCH_SYSTEM=#{batch_system}
 
       return if Open.exists?(fexit)
 
-      Log.info "Issuing SLURM file: #{fcmd}"
+      Log.info "Issuing PBS file: #{fcmd}"
       Log.debug Open.read(fcmd)
 
       if File.exist?(fjob)
@@ -120,16 +135,16 @@ export BATCH_SYSTEM=#{batch_system}
         if normal_dep_str.nil? && canfail_dep_str.nil?
           dep_str = ""
         else
-          dep_str = '--dependency=' + [normal_dep_str, canfail_dep_str].compact * ","
+          dep_str = '-W depend=' + [normal_dep_str, canfail_dep_str].compact * ","
         end
 
-        cmd = "sbatch #{dep_str} '#{fcmd}'"
+        cmd = "qsub #{dep_str} '#{fcmd}'"
 
         if File.exist?(fout)
           return
         elsif dry_run
-          STDERR.puts Log.color(:magenta, "To execute run: ") + Log.color(:blue, "sbatch '#{fcmd}'")
-          STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): ") + Log.color(:blue, "rbbt slurm tail '#{batch_dir}'")
+          STDERR.puts Log.color(:magenta, "To execute run: ") + Log.color(:blue, "squb '#{fcmd}'")
+          STDERR.puts Log.color(:magenta, "To monitor progress run (needs local rbbt): ") + Log.color(:blue, "rbbt pbs tail '#{batch_dir}'")
           raise HPC::BATCH_DRY_RUN, batch_dir
         else
           Open.rm fsync
@@ -147,10 +162,10 @@ export BATCH_SYSTEM=#{batch_system}
 
     def self.job_status(job = nil)
       if job.nil?
-        CMD.cmd("squeue").read
+        CMD.cmd("qstat").read
       else
         begin
-          CMD.cmd("squeue --job #{job}").read
+          CMD.cmd("qstat #{job}").read
         rescue
           ""
         end

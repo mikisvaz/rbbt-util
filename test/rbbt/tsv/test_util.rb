@@ -35,4 +35,18 @@ row2    A    B    Id3
       assert_equal %w(aa bb Id2), tsv.unzip_replicates["row1(1)"]
     end
   end
+
+  def test_merge
+   content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b|bb|bbb    Id1|Id2|Id3
+row2    A    B    Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+      tsv = tsv.merge({"row3" => [["A3"], ["B3"], ["Id4"]]})
+      assert TSV === tsv
+    end
+  end
 end

@@ -1,6 +1,5 @@
 module Rbbt 
 
-  prepare_for_execution(job)
   def self.migrate_source_paths(path, resource = Rbbt, source = nil)
     if source
       lpath, *paths = Misc.ssh_run(source, <<-EOF).split("\n")
@@ -60,7 +59,7 @@ puts resource[path].find(search_path)
     test_str = options[:test] ? '-nv' : ''
 
     real_paths.each do |source_path|
-      Log.medium "Migrating #{source_path} #{options[:files].length} files to #{target} - #{Misc.fingerprint(options[:files])}}" if options[:files]
+      Log.low "Migrating #{source_path} #{options[:files].length} files to #{target} - #{Misc.fingerprint(options[:files])}}" if options[:files]
       if File.directory?(source_path) || source_path.end_with?("/")
         source_path += "/" unless source_path.end_with? '/'
         target += "/" unless target.end_with? '/'

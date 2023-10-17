@@ -318,9 +318,9 @@ module Misc
           Open.mkdir dir unless Open.exists?(dir)
           into_path, into = into, Open.open(into, :mode => 'w') 
         end
-        into.sync = true if IO === into
+        #into.sync = true if IO === into
         into_close = false unless into.respond_to? :close
-        io.sync = true
+        #io.sync = true
 
         begin
           while c = io.readpartial(BLOCK_SIZE)
@@ -402,7 +402,7 @@ module Misc
           when (IO === content or StringIO === content or File === content)
 
             Open.write(tmp_path) do |f|
-              f.sync = true
+              #f.sync = true
               while block = content.read(BLOCK_SIZE)
                 f.write block
               end 

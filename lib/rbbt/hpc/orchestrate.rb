@@ -22,6 +22,25 @@ module HPC
 
     end
 
+    def self.orchestration_rules(orchestration_rules_file = nil)
+      rules = {}
+      if orchestration_rules_file
+        if Open.exists?(orchestration_rules_file)
+          rules = Misc.load_yaml(orchestration_rules_file)
+        elsif Rbbt.etc.batch[orchestration_rules_file].exists?
+          rules = Misc.load_yaml(Rbbt.etc.batch[orchestration_rules_file])
+        elsif Rbbt.etc.batch[orchestration_rules_file + '.yaml'].exists?
+          rules = Misc.load_yaml(Rbbt.etc.batch[orchestration_rules_file + '.yaml'])
+        else
+          raise "Orchestration rules file not found: #{orchestration_rules_file}"
+        end
+      elsif Rbbt.etc.batch["default.yaml"].exists?
+        rules = Misc.load_yaml(Rbbt.etc.batch["default.yaml"])
+      end
+
+      IndiferentHash.setup(rules)
+    end
+
     def orchestrate_job(job, options)
       options.delete "recursive_clean"
       options.delete "clean_task"
@@ -33,26 +52,11 @@ module HPC
       options.delete "load_inputs"
       options.delete "provenance"
 
+
       Log.high "Prepare for exec"
       prepare_for_execution(job)
 
-      if orchestration_rules_file = options[:orchestration_rules]
-        if Open.exists?(orchestration_rules_file)
-          rules = Misc.load_yaml(orchestration_rules_file)
-        elsif Rbbt.etc.slurm(orchestration_rules_file).exists?
-          rules = Misc.load_yaml(Rbbt.etc.slurm(orchestration_rules_file))
-        elsif Rbbt.etc.slurm(orchestration_rules_file + '.yaml').exists?
-          rules = Misc.load_yaml(Rbbt.etc.slurm(orchestration_rules_file + '.yaml'))
-        else
-          raise "Orchestration rules file not found: #{options[:orchestration_rules]}"
-        end
-      elsif Rbbt.etc.slurm["default.yaml"].exists?
-        rules = Misc.load_yaml(Rbbt.etc.slurm["default.yaml"])
-      else
-        rules = {}
-      end
-
-      IndiferentHash.setup(rules)
+      rules = HPC::Orchestration.orchestration_rules(options[:orchestration_rules])
 
       batches = HPC::Orchestration.job_batches(rules, job)
       Log.high "Compute #{batches.length} batches"

@@ -1,5 +1,5 @@
 module HPC
-  class SBATCH < Exception; 
+  class BATCH_DRY_RUN < Exception; 
     attr_accessor :directory
     def initialize(directory)
       @directory = directory
@@ -12,24 +12,32 @@ module HPC
       HPC::SLURM
     when 'lsf'
       HPC::LSF
+    when 'pbs'
+      HPC::PBS
     when 'auto'
       case $previous_commands.last
       when 'slurm'
         HPC::SLURM
       when 'lsf'
         HPC::LSF
+      when 'pbs'
+        HPC::PBS
       else
         case Rbbt::Config.get(:batch_system, :batch, :batch_system, :hpc, :HPC, :BATCH).to_s.downcase
         when 'slurm'
           HPC::SLURM
         when 'lsf'
           HPC::LSF
+        when 'pbd'
+          HPC::PBS
         else
           case ENV["BATCH_SYSTEM"].to_s.downcase
           when 'slurm'
             HPC::SLURM
           when 'lsf'
             HPC::LSF
+          when 'pbs'
+            HPC::PBS
           end
         end
       end
@@ -564,8 +572,8 @@ env > #{batch_options[:fenv]}
     def run_job(job, options = {})
       system = self.to_s.split("::").last
 
-      batch_base_dir, clean_batch_job, remove_batch_dir, procpath, tail, batch_dependencies, dry_run = Misc.process_options options, 
-        :batch_base_dir, :clean_batch_job, :remove_batch_dir, :batch_procpath, :tail, :batch_dependencies, :dry_run,
+      batch_base_dir, clean_batch_job, remove_batch_dir, procpath, tail, batch_dependencies, dry_run, orchestration_rules_file = Misc.process_options options, 
+        :batch_base_dir, :clean_batch_job, :remove_batch_dir, :batch_procpath, :tail, :batch_dependencies, :dry_run, :orchestration_rules,
         :batch_base_dir => File.expand_path(File.join('~/rbbt-batch')) 
 
       if (batch_job = job.info[:batch_job]) && job_queued(batch_job)
@@ -585,6 +593,8 @@ env > #{batch_options[:fenv]}
 
       workflow = job.original_workflow ||job.workflow
       task_name = job.original_task_name || job.task_name
+
+      options = options.merge(HPC::Orchestration.job_rules(HPC::Orchestration.orchestration_rules(orchestration_rules_file), job)) if orchestration_rules_file
 
       workflows_to_load = job.rec_dependencies.select{|d| Step === d}.collect{|d| d.workflow }.compact.collect(&:to_s) - [workflow.to_s]
 

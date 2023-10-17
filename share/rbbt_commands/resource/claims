@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+
+require 'rbbt-util'
+require 'rbbt/resource'
+require 'rbbt/workflow'
+
+options = SOPT.get <<EOF
+-W--workflows* Workflows to use; 'all' for all in Rbbt.etc.workflows:
+-r--requires* Files to require; 'all' for all in Rbbt.etc.requires:
+-f--force Force the production if the file is already present
+-h--help Help
+EOF
+
+if options[:help]
+  puts SOPT.doc 
+  exit
+end
+
+case options[:workflows]
+when nil, false, "false", "none"
+when "all"
+  Rbbt.etc.workflows.list.each do |workflow|
+    Workflow.require_workflow file
+  end if Rbbt.etc.workflows.exists?
+else
+  options[:workflows].split(/[ ,;|]/).each do |workflow|
+    Workflow.require_workflow workflow
+  end
+end
+
+case options[:requires]
+when nil, false, "false", "none"
+when "all"
+  Rbbt.etc.requires.list.each do |file|
+    require file
+  end if Rbbt.etc.requires.exists?
+else
+  options[:requires].split(/[ ,;|]/).each do |file|
+    require file
+  end
+end
+
+resource, path = ARGV
+
+begin
+  resource = Kernel.const_get(resource)
+rescue
+  begin
+    resource = Workflow.require_workflow resource
+  rescue
+    raise "Resource not found: #{ resource }"
+  end
+end
+
+puts resource.claims * "\n"
+ 
+

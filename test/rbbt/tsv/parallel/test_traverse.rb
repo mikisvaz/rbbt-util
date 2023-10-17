@@ -50,11 +50,11 @@ class TestTSVParallelThrough < Test::Unit::TestCase
   def test_traverse_stream
     require 'rbbt/sources/organism'
 
-    head = 1000
+    head = 3000
 
     tsv = datafile_test('identifiers').open
     res = {}
-    TSV.traverse tsv, :head => head, :into => res do |k,v|
+    TSV.traverse tsv, :head => head, :into => res, :bar => true do |k,v|
       [k,v]
     end
 

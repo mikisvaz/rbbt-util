@@ -400,5 +400,9 @@ module TSV
     end
     index
   end
+
+  def merge(other)
+    self.annotate(super(other))
+  end
 end
 

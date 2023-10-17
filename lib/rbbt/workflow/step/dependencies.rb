@@ -145,9 +145,9 @@ class Step
   end
 
   def input_dependencies
-    @input_dependencies ||= recursive_inputs.flatten.
+    @input_dependencies ||= recursive_inputs(true).flatten.
       select{|i| Step === i || (defined?(RemoteStep) && RemoteStep === i) } + 
-      recursive_inputs.flatten.
+      recursive_inputs(true).flatten.
       select{|dep| Path === dep && Step === dep.resource }.
       #select{|dep| ! dep.resource.started? }. # Ignore input_deps already started
       collect{|dep| dep.resource }
@@ -581,7 +581,6 @@ class Step
   #but dependencies are absent, meanining that the file could have been dropped
   #in
   def rec_dependencies(connected = false, seen = [])
-
     # A step result with no info_file means that it was manually
     # placed. In that case, do not consider its dependencies
     return [] if ! (defined? WorkflowRemoteClient && WorkflowRemoteClient::RemoteStep === self) && ! Open.exists?(self.info_file) && Open.exists?(self.path.to_s) 
@@ -599,7 +598,7 @@ class Step
       #next if self.done? && Open.exists?(info_file) && info[:dependencies] && info[:dependencies].select{|task,name,path| path == step.path }.empty?
       next if archived_deps.include? step.path
       next if seen.include? step
-      next if self.done? && connected && ! updatable?
+      next if step.done? && connected && ! step.updatable?
 
       r = step.rec_dependencies(connected, new_dependencies)
       new_dependencies.concat r

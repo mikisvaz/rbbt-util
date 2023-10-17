@@ -302,7 +302,7 @@ b 2
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :key_field => "Value", :select => Proc.new{|l| ! l =~ /1/})
+      tsv = TSV.open(filename, :key_field => "Value", :select => Proc.new{|l| l !~ /1/})
       assert(! tsv.include?("3"))
     end
   end
@@ -650,5 +650,20 @@ row3    AA    BB|BBB    Id3|Id2
  
     end
   end
+
+  def test_benchmark
+    num = 10_000
+    txt = num.times.inject(nil) do |acc,i|
+      (acc.nil? ? "" : acc << "\n") << (0..10).collect{|v| v == 0 ? i : [v,v] * "|" } * "\t"
+    end 
+
+    txt = StringIO.new(([txt] * (10))*"\n")
+    #Misc.profile do
+    Misc.benchmark(1) do
+      data = TSV.open(txt, type: :double, bar: true, merge: true)
+      assert_equal num, data.size
+    end
+  end
+
 end
 

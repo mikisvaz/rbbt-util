@@ -32,16 +32,17 @@ $slurm_options = SOPT.get <<EOF
 -p--partition* Partition
 -t--task_cpus* Tasks
 -tm--time* Time
--m--mem* SLURM minimum memory
---gres* SLURM Generic resources
--mcpu--mem_per_cpu* SLURM minimum memory per CPU
--lin--licenses* SLURM licenses
--cons--constraint* SLURM constraint
+-m--mem* minimum memory
+--gres* Generic resources
+-mcpu--mem_per_cpu* minimum memory per CPU
+-lin--licenses* licenses
+-cons--constraint* constraint
 -W--workflows* Additional workflows
 -rmb--remove_batch_dir Remove the batch working directory (command, STDIN, exit status, ...)
 -bs--batch_system* Batch system to use: auto, lsf, slurm (default is auto-detect)
 -lmod--lua_modules* Lua Modules to load 
 -co--conda* Conda environment to use
+-OR--orchestration_rules* Orchestration rules
 EOF
 
 batch_system = $slurm_options.delete :batch_system
@@ -58,9 +59,9 @@ class Step
       self.load
     else
       begin
-        Log.debug "Issuing SLURM job for #{self.path}"
+        Log.debug "Issuing BATCH job for #{self.path}"
         HPC::BATCH_MODULE.run_job(self, $slurm_options) 
-      rescue HPC::SBATCH
+      rescue HPC::BATCH_DRY_RUN
       end
     end
   end

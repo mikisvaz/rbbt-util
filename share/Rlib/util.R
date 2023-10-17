@@ -577,6 +577,16 @@ rbbt.get.modes <- function(x,bw = NULL,spar = NULL) {
 
 #{{{ PLOTS
 
+rbbt.svg_plot <- function(filename, p, width=500, height=500, ...){
+    svg(filename=filename, width=width, height=height, ...);
+    if (is.function(p)) {
+      p()
+    }else{
+      eval(parse(text=p));
+    }
+    dev.off()
+}
+
 rbbt.png_plot <- function(filename, p, width=500, height=500, ...){
     png(filename=filename, width=width, height=height, type='cairo', ...);
     if (is.function(p)) {
@@ -750,6 +760,8 @@ rbbt.plot.venn <- function(data, a=NULL, category=NULL, fill=NULL, ...) {
       category = a; 
       fill=rbbt.plot.set_colors(dim(data)[2], "Set3")
     }
+
+    fill=fill[0:dim(data)[2]]
 
     group.matches <- function(data, fields) {
         sub = data

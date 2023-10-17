@@ -175,14 +175,10 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
    hpc.rb
    hpc=hpc{
-    old=old{
-     slurm.rb
-    }
-    orchestrate.old.rb
-
     batch.rb
     slurm.rb
     lsf.rb
+    pbs.rb
 
     orchestrate.rb
     orchestrate=orchestrate{
@@ -476,6 +472,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     get
     produce
     read
+    claims
    }
    workflow=workflow{
     archive

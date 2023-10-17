@@ -253,6 +253,8 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
       text = CMD.cmd('grep "^#SBATCH" ', :in => Open.read(fcmd)).read.strip
     when 'lsf'
       text = CMD.cmd('grep "^#BSUB" ', :in => Open.read(fcmd)).read.strip
+    when 'pbs'
+      text = CMD.cmd('grep "^#PBS" ', :in => Open.read(fcmd)).read.strip
     else
       text = ""
     end
