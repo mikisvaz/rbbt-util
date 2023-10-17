@@ -43,6 +43,8 @@ cd ${PBS_O_WORKDIR}
       system     = Misc.process_options options, :partition
       filesystems = Misc.process_options options, :filesystems
 
+      filesystems = "home" if filesystems.nil?
+
       filesystems = filesystems * "," if Array === filesystems
 
       # NOT USED 
