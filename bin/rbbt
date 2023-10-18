@@ -75,7 +75,7 @@ end
 Log.ignore_stderr do
   begin
     require "nokogiri"
-  rescue
+  rescue Exception
   end
 end
 
