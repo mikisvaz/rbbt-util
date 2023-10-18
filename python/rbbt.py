@@ -29,6 +29,7 @@ def tsv_preamble(line, comment_char="#"):
     entries = re.sub(f"^{comment_char}:", '', line)
     entries = re.sub(f"^{comment_char}:", '', line).split("#")
     for entry in entries:
+        entry = entry.strip()
         key, value = entry.split("=")
         key = re.sub("^:","",key)
         value = re.sub("^:","",value)
@@ -75,7 +76,13 @@ def tsv_pandas(filename, sep="\t", comment_char="#", index_col=0, **kwargs):
         header = tsv_header(filename, sep=sep, comment_char="#")
 
         if ("type" in header and header["type"] == "flat"):
-            return None
+            if ("sep" in header):
+                sep=header["sep"]
+
+            tsv = pandas.read_table(filename, sep=sep, index_col=index_col, header=None, skiprows=[0,1], **kwargs)
+
+            if ("key_field" in header):
+                tsv.index.name = header["key_field"]
         else:
             if ("sep" in header):
                 sep=header["sep"]

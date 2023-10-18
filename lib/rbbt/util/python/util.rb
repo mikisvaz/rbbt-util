@@ -49,5 +49,5 @@ module RbbtPython
     end
     hash
   end
-
 end
+

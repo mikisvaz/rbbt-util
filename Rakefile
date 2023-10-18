@@ -24,7 +24,7 @@ begin
     gem.add_dependency('nakayoshi_fork')
     gem.add_dependency('method_source')
     gem.add_dependency('net')
-    gem.add_dependency('nokogiri')
+    #gem.add_dependency('nokogiri')
     #gem.add_dependency('spreadsheet')
     #gem.add_dependency('rubyXL')
     #gem.add_dependency('ruby-prof')
