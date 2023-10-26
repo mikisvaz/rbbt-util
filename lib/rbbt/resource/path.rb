@@ -359,7 +359,16 @@ module Path
   end
 
   def list
-    Open.read(self.produce.find).split "\n"
+    begin
+      path = self.produce
+    rescue Resource::ResourceNotFound => e
+      begin
+        path = self.set_extension('list').produce
+      rescue Resource::ResourceNotFound 
+        raise e
+      end
+    end
+    Open.read(path).split("\n")
   end
 
   def keys(field = 0, sep = "\t")
