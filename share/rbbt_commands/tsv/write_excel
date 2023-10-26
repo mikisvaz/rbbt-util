@@ -7,11 +7,12 @@ $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_c
 
 options = SOPT.setup <<EOF
 
-Description
+Write a Excel file with the contents of a TSV
 
-$ rbbt tsv write_excel [options] <filename.tsv|-> <filename.xls|filename.xlsx>
+$ rbbt tsv write_excel [options] <filename.tsv|-> [<filename.xls|filename.xlsx>]
 
-Use - to read from STDIN
+If no target file is specified it uses the same input files but replaces extension. Specifying
+the extension of the excel file select the excel format to use.
 
 -k--key_field* Key field
 -f--fields* Fields

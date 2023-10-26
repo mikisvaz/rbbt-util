@@ -26,6 +26,7 @@ puts path.glob_all.collect{|p| File.directory?(p) ? p + "/" : p } * "\n"
       if original_path.located?
         paths = [original_path]
       else
+        path = Path.setup(path) unless Path === path
         paths = (path.directory? ? path.glob_all : path.find_all)
       end
 

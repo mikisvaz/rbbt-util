@@ -70,9 +70,14 @@ begin
       exit 0
     else
       if command == 'bootstrap'
-        Log.info "No bootstrap for #{ workflow }, running examples instead"
-        puts `rbbt workflow example #{ workflow }`
-        exit 0
+        if wf.libdir["test_workflow.rb"].exists?
+          Log.info "No bootstrap for #{ workflow }, running test_workflow.rb instead"
+          CMD.cmd_log('ruby', wf.libdir["test_workflow.rb"].find)
+        else
+          Log.info "No bootstrap for #{ workflow }, running examples instead"
+          CMD.cmd_log("rbbt workflow example #{ workflow }")
+          exit 0
+        end
       end
 
       raise ParameterException, "Error: Command not understood: #{command}"

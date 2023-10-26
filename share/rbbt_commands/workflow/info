@@ -114,6 +114,7 @@ end
 if dependencies and dependencies.any?
   puts Log.color(:magenta, "Dependencies") << ": "
   dependencies.each do |name,task,file|
+    file = name if file.nil?
     puts "  " << file
   end 
 end
