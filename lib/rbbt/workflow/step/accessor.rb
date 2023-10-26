@@ -16,6 +16,17 @@ class Step
                        end
                      end
 
+  def relocated
+    if @relocated.nil?
+      if Open.exists?(info_file) and (info[:path] != path)
+        @relocated = true
+      else
+        @relocated = false
+      end
+    end
+    @relocated
+  end
+
   def self.serialize_info(info)
     info = info.clean_version if IndiferentHash === info
     INFO_SERIALIZER.dump(info)

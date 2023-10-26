@@ -495,7 +495,8 @@ module Workflow
       end
     end
 
-    overriden = true if dependencies.select{|d| d.overriden && d.clean_name != d.name }.any?
+    #overriden = true if dependencies.select{|d| d.overriden && d.clean_name != d.name }.any?
+    overriden = true if dependencies.select{|d| Symbol === d.overriden }.any?
 
     input_values = task.take_input_values(inputs)
     if real_inputs.empty? && Workflow::TAG != :inputs && ! overriden #&& ! dependencies.select{|d| d.overriden && d.clean_name != d.name }.any?
@@ -665,6 +666,7 @@ module Workflow
     step = Step.new path
     relocated = false
     dependencies = (step.info[:dependencies] || []).collect do |task,name,dep_path|
+      dep_path = task if dep_path.nil?
       if Open.exists?(dep_path) || Open.exists?(dep_path + '.info') || Open.remote?(dep_path) || Open.ssh?(dep_path)
         Workflow._load_step dep_path
       else

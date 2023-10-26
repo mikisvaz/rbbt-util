@@ -165,7 +165,8 @@ module Workflow
                    workflow, dep_task, options = dependency
 
                    if override_dependencies[workflow.to_s] && value = override_dependencies[workflow.to_s][dep_task]
-                     overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
+                     overriden = true if (inputs.nil? || ! inputs[:not_overriden]) && (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
+                     #overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
                      setup_override_dependency(value, workflow, dep_task)
                    else
 
@@ -189,21 +190,23 @@ module Workflow
                      job = workflow._job(dep_task, jobname, _inputs)
                      ComputeDependency.setup(job, compute) if compute
 
-                     overriden = true if TrueClass === job.overriden && (options.nil? || ! options[:not_overriden])
+                     overriden = true if Symbol === job.overriden? && (d.nil? || ! d[:not_overriden]) && (inputs.nil? || ! inputs[:not_overriden])
 
                      job
                    end
                  when Step
                    job = dependency
-                   overriden = true if TrueClass === job.overriden && (options.nil? || ! options[:not_overriden])
+                   overriden = true if Symbol === job.overriden? && (d.nil? || ! d[:not_overriden]) && (inputs.nil? || ! inputs[:not_overriden])
                    job
                  when Symbol
                    if override_dependencies[self.to_s] && value = override_dependencies[self.to_s][dependency]
-                     overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
+                     overriden = true if (inputs.nil? || ! inputs[:not_overriden]) && (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
+                     #overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
                      setup_override_dependency(value, self, dependency)
                    else
                      job = _job(dependency, jobname, _inputs)
-                     overriden = true if TrueClass === job.overriden && (options.nil? || ! options[:not_overriden])
+                     overriden = true if Symbol === job.overriden && (options.nil? || ! options[:not_overriden]) && (inputs.nil? || ! inputs[:not_overriden])
+
                      job
                    end
                  when Proc
@@ -212,7 +215,8 @@ module Workflow
                      wf, task_name, options = orig_dep
 
                      if override_dependencies[wf.to_s] && value = override_dependencies[wf.to_s][task_name]
-                       overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
+                       overriden = true if (inputs.nil? || ! inputs[:not_overriden]) && (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
+                       #overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
                        dep = setup_override_dependency(value, wf, task_name)
                      else
 
@@ -243,7 +247,8 @@ module Workflow
                            d[:task] ||= task_name
                            _override_dependencies = override_dependencies.merge(override_dependencies(d[:inputs] || {}))
                            d = if _override_dependencies[d[:workflow].to_s] && value = _override_dependencies[d[:workflow].to_s][d[:task]]
-                                 overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
+                                 overriden = true if (inputs.nil? || ! inputs[:not_overriden]) && (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
+                                 #overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
                                  setup_override_dependency(value, d[:workflow], d[:task])
                                else
                                  task_info = d[:workflow].task_info(d[:task])
@@ -251,7 +256,7 @@ module Workflow
                                  _inputs = assign_dep_inputs({}, options.merge(d[:inputs] || {}), real_dependencies, task_info) 
                                  _jobname = d.include?(:jobname) ? d[:jobname] : jobname
                                  job = d[:workflow]._job(d[:task], _jobname, _inputs) 
-                                 overriden = true if TrueClass === job.overriden && (d.nil? || ! d[:not_overriden])
+                                 overriden = true if Symbol === job.overriden? && (d.nil? || ! d[:not_overriden]) && (inputs.nil? || ! inputs[:not_overriden])
                                  job
                                end
                          end
@@ -267,14 +272,15 @@ module Workflow
                        dep[:workflow] ||= wf || self
                        _override_dependencies = override_dependencies.merge(override_dependencies(dep[:inputs] || {}))
                        if _override_dependencies[dep[:workflow].to_s] && value = _override_dependencies[dep[:workflow].to_s][dep[:task]]
-                         overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
+                         overriden = true if (inputs.nil? || ! inputs[:not_overriden]) && (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
+                         #overriden = true if (options.nil? || ! options[:not_overriden]) && ! unlocated_override?(value)
                          setup_override_dependency(value, dep[:workflow], dep[:task])
                        else
                          task_info = (dep[:task] && dep[:workflow]) ? dep[:workflow].task_info(dep[:task]) : nil
                          _inputs = assign_dep_inputs({}, dep[:inputs], real_dependencies, task_info)
                          _jobname = dep.include?(:jobname) ? dep[:jobname] : jobname
                          job = dep[:workflow]._job(dep[:task], _jobname, _inputs)
-                         overriden = true if TrueClass === job.overriden && (d.nil? || ! d[:not_overriden])
+                         overriden = true if Symbol === job.overriden? && (d.nil? || ! d[:not_overriden]) && (inputs.nil? || ! inputs[:not_overriden])
                          job
                        end
                      end
