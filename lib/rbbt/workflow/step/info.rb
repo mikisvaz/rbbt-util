@@ -48,7 +48,11 @@ class Step
         IndiferentHash.setup info_inputs
         @inputs = NamedArray.setup info_inputs.values_at(*task.inputs.collect{|name| name.to_s}), task.inputs
       else
-        @inputs = NamedArray.setup info_inputs.values, info_inputs.keys
+        if Hash === info_inputs
+          @inputs = NamedArray.setup info_inputs.values, info_inputs.keys
+        else
+          @inputs = info_inputs
+        end
       end
     else
       nil
