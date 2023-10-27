@@ -43,15 +43,15 @@ module TSV
       original_pos_index(*args, **kwargs)
     end
 
-    alias original_setup setup
+    #alias original_setup setup
 
-    def setup(*args, **kwargs, &block)
-      if args.length == 2 && String === args.last
-        str_setup(args.last, args.first)
-      else
-        original_setup(*args, **kwargs, &block)
-      end
-    end
+    #def setup(*args, **kwargs, &block)
+    #  if args.length == 2 && String === args.last
+    #    str_setup(args.last, args.first)
+    #  else
+    #    original_setup(*args, **kwargs, &block)
+    #  end
+    #end
   end
 
   def self.header_lines(key_field, fields, entry_hash = nil)
