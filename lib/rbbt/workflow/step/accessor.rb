@@ -428,4 +428,8 @@ class Step
              end
   end
 
+  def inspect
+    Misc.fingerprint(self)
+  end
+
 end

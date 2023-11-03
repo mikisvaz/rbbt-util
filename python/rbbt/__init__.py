@@ -1,23 +1,52 @@
 import warnings
 import sys
 import os
+import subprocess
 
-def rbbt():
-    print("Rbbt")
+def rbbt(cmd = None):
+    if cmd is None:
+        print("Rbbt")
+    else:
+        return subprocess.run('rbbt_exec.rb', input=cmd.encode('utf-8'), capture_output=True).stdout.decode()
+
+def libdir():
+    return rbbt('puts Rbbt.find(:lib)').rstrip()
+
+def add_libdir():
+    pythondir = os.path.join(libdir(), 'python')
+    sys.path.insert(0, pythondir)
 
 def path(subdir = None, base_dir = None):
     from pathlib import Path
     import os
 
-    if (base_dir == None):
+    if (base_dir == 'base'):
         base_dir = os.path.join(Path.home(), ".rbbt")
+    elif (base_dir == 'lib'):
+        base_dir = libdir()
+    else:
+        for base_dir in ('lib', 'base'):
+            file = path(subdir, base_dir)
+            if os.path.exists(file):
+                return file
+        return path(subdir, 'base')
+
     if (subdir == None):
         return base_dir
     else:
         return os.path.join(base_dir, subdir)
 
+def read(subdir, base_dir = None, encoding='utf-8'):
+    file = path(subdir, base_dir)
+    with open(file, encoding=encoding) as f:
+        return f.read()
+
 def inspect(obj):
     print(dir(obj))
+
+def rich(obj):
+    import rich
+    rich.inspect(obj)
 
 def log_tsv(tsv):
     print(tsv)
