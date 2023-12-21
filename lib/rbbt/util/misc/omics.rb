@@ -251,12 +251,20 @@ module Misc
   end
 
   def self.translate_prot_mutation_hgvs2rbbt(mutation)
+    mutation.sub!('p.', '')
+    if m = mutation.match(/([a-z]{3})(\d+)([a-z]{3})/i)
+      ref = m[1]
+      num = m[2]
+      alt = m[3]
+      ref = THREE_TO_ONE_AA_CODE[ref.downcase]
+      alt = THREE_TO_ONE_AA_CODE[alt.downcase]
+      mutation = [ref, num, alt] * ""
+    end
     one_aa_code = THREE_TO_ONE_AA_CODE.values
     one_aa_code << "X" << "B" << "Z" << "J" << "*" << "?"
     one_aa_code_re = one_aa_code*""
     subs = Regexp.new("^[#{one_aa_code_re}]\\d+[#{one_aa_code_re}]")
     f_aa = Regexp.new("^[#{one_aa_code_re}]\\d+")
-    mutation.sub!('p.', '')
     mutation = case
                when mutation =~ subs
                  mutation

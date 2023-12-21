@@ -412,9 +412,9 @@ module Persist
         repo.delete path if persist_options[:update]
         repo[path] ||= yield
 
-      when (type.to_sym == :annotations and persist_options.include? :annotation_repo)
+      when (type.to_sym == :annotations and (persist_options.include?(:annotation_repo) || persist_options.include?(:repo)))
 
-        repo = persist_options[:annotation_repo]
+        repo = persist_options[:annotation_repo] || persist_options[:repo]
 
         keys = nil
         subkey = name + ":"

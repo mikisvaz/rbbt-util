@@ -46,6 +46,7 @@ app.get '/' do
   begin
     template_render('main', params, 'main', :cache_type => :asynchronous)
   rescue TemplateMissing
+    Log.exception $!
     redirect to(File.join('/', wf.to_s))
   end
 end
@@ -88,7 +89,16 @@ load_file Rbbt.etc['app.d/semaphores.rb'].find_all
 if etc_dir['target_workflow_exports'].exists?
   exports = etc_dir['target_workflow_exports'].read.split("\n")
   exports.each do |task|
-    wf.export task.to_sym
+    if task.include?('#')
+      wf_name, task_name = task.split("#")
+      begin
+        task_wf = Kernel.const_get wf_name
+        task_wf.export task_name.to_sym
+      rescue
+      end
+    else
+      wf.export task.to_sym
+    end
   end
 end
 

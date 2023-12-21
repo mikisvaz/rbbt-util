@@ -35,6 +35,7 @@ class TestMiscOmics < Test::Unit::TestCase
   end
 
   def test_translate_prot_mutation_hgvs2rbbt
+    assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.Arg2459Gly"), "R2459G"
     assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.E255K"), "E255K"
     assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.E279Z"), "E279Z"
     assert_equal Misc.translate_prot_mutation_hgvs2rbbt("p.R132?"), "R132?"

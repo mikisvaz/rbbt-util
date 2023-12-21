@@ -30,7 +30,7 @@ module Workflow
     title = doc_parse_first_line doc
     description, task_info = doc_parse_up_to doc, /^# Tasks/i
     task_description, tasks = doc_parse_up_to task_info, /^##/, true
-    tasks = doc_parse_chunks tasks, /## (.*)/ 
+    tasks = doc_parse_chunks tasks, /^## (.*)/ 
     {:title => title.strip, :description => description.strip, :task_description => task_description.strip, :tasks => tasks}
   end
 
