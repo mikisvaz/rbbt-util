@@ -69,6 +69,7 @@ module TSV
     options = TSV.str2options(options) if String === options and options.include? "~"
     options ||= {}
     options[:type] ||= type unless type.nil?
+    options[:zipped] = true if options[:one2one]
 
     persist_options = Misc.pull_keys options, :persist
 
