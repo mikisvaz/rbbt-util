@@ -7,9 +7,10 @@ options = SOPT.setup <<EOF
 
 Query a TSV value
 
-$ rbbt tsv get [options] <filename.tsv|-> <key>
+$ rbbt tsv get [options] <filename.tsv|-> [<key>]
 
-Use - to read from STDIN
+Use - to read from STDIN, 'key' can be the key string or a number representing
+its position. If not specified 'key' defaults to 0, the first entry.
 
 -tch--tokyocabinet File is a tokyocabinet hash database
 -tcb--tokyocabinet_bd File is a tokyocabinet B database
@@ -26,7 +27,7 @@ rbbt_usage and exit 0 if options[:help]
 
 file, key = ARGV
 
-raise ParameterException, "Please specify file and key" if key.nil?
+raise ParameterException, "Please specify file" if file.nil?
 
 file = STDIN if file == '-'
 
@@ -48,7 +49,15 @@ key_field = options[:key_field]
 fields = fields.split(/[,|]/, -1) unless fields.nil?
 
 if TSV === tsv
+  case key
+  when nil
+    key = tsv.keys.first if key.nil?
+  when /^\d+$/
+    key = tsv.keys[key.to_i] unless tsv.include?(key)
+  end
+
   v = tsv[key]
+
   fields ||= tsv.fields
   puts Log.color(:blue, "Key: #{ key }")
   if fields
@@ -72,8 +81,15 @@ end
 parser = TSV::Parser.new tsv, :key_field => key_field,  :fields => fields, :type => options[:type], :header_hash => options[:header_hash], :sep => options[:sep]
 fields ||= parser.fields
 
+i = 0
 TSV.traverse(parser) do |k,v|
-  next unless k.include? key
+  if key== "#{i}"
+    key = k.first
+  elsif key.nil?
+    key = k.first
+  end
+  i += 1
+  next unless k.include?(key)
   k = k.first if Array === k
   puts Log.color(:blue, "Key: #{ k }")
   if fields
