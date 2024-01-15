@@ -30,7 +30,7 @@ if options[:help]
 end
 
 resource, path = ARGV
-path, resource = resource, nil
+path, resource = resource, nil if path.nil?
 
 raise MissingParameterException.new(:path) if path.nil?
 

@@ -187,5 +187,14 @@ class TestOpen < Test::Unit::TestCase
 
   end
 
+  def test_download_fails
+    TmpFile.with_file do |tmp|
+      assert_raise do
+        Open.download("http:fake-host/some_path", tmp)
+      end
+      refute Open.exists?(tmp)
+    end
+  end
+
 end
 

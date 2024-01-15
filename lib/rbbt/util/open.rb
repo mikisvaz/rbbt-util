@@ -101,7 +101,6 @@ module Open
 
       CMD.cmd("wget '#{ url }'", wget_options)
     rescue
-     STDERR.puts $!.backtrace.inspect
      raise OpenURLError, "Error reading remote url: #{ url }.\n#{$!.message}"
     end
   end
@@ -654,7 +653,12 @@ module Open
   end
 
   def self.download(url, path)
-    Open.wget(url, "--output-document" => path, :pipe => false)
+    begin
+      Open.wget(url, "--output-document" => path, :pipe => false)
+    rescue Exception
+      Open.rm(path) if Open.exist?(path)
+      raise $!
+    end
   end
 
   def self.can_open?(file)
