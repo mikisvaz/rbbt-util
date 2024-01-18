@@ -203,7 +203,7 @@ module NamedArray
 
   def report
     fields.zip(self).collect do |field,value|
-      "#{ field }: #{ Array === value ? value * "|" : value }"
+      "#{Log.color(:magenta, field) }: #{ Array === value ? value * "|" : value }"
     end * "\n"
   end
 

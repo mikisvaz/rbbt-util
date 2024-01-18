@@ -74,6 +74,25 @@ row2    A    B    Id3
     end
   end
   
+  def test_to_s_no_preable
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+    EOF
+
+    target =<<-EOF
+Id,ValueA,ValueB,OtherID
+row1,a|aa|aaa,b,Id1|Id2
+row2,A,B,Id3
+    EOF
+
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(filename, :sep => /\s+/)
+      assert_equal tsv.to_s(preamble: false, header_hash: '').gsub(/\t/, ','), target
+    end
+  end
+  
   def test_entries
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
