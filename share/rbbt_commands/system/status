@@ -202,7 +202,6 @@ workflows.sort.each do |workflow,tasks|
                    Step.load_info(f)
                  end
                rescue
-                 Log.exception $!
                  {:status => :noinfo}
                end
         IndiferentHash.setup(info)
