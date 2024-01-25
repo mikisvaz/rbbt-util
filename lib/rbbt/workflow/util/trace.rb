@@ -3,7 +3,7 @@ require 'rbbt/util/misc/math'
 require 'rbbt/util/misc/manipulation'
 
 module Workflow
-  def self.trace_job_times(jobs, fix_gap = false)
+  def self.trace_job_times(jobs, fix_gap = false, report_keys = nil)
     data = TSV.setup({}, "Job~Code,Workflow,Task,Start,End#:type=:list")
     min_start = nil
     max_done = nil
@@ -73,10 +73,41 @@ module Workflow
       Log.info "Total gaps: #{total_gaps} seconds"
     end
 
+    if report_keys && report_keys.any?
+      job_keys = {}
+      jobs.each do |job|
+        job_info = IndiferentHash.setup(job.info)
+        report_keys.each do |key|
+          job_keys[job.path] ||= {}
+          job_keys[job.path][key] = job_info[key]
+        end
+      end
+      report_keys.each do |key|
+        data.add_field Misc.humanize(key) do |p,values|
+          job_keys[p][key]
+        end
+      end
+    end
+
     start = data.column("Start.second").values.flatten.collect{|v| v.to_f}.min
     eend = data.column("End.second").values.flatten.collect{|v| v.to_f}.max
     total = eend - start unless eend.nil? || start.nil?
     Log.info "Total time elapsed: #{total} seconds" if total
+
+    if report_keys && report_keys.any?
+      job_keys = {}
+      report_keys.each do |key|
+        jobs.each do |job|
+          job_keys[job.path] ||= {}
+          job_keys[job.path][key] = job.info[key]
+        end
+      end
+      report_keys.each do |key|
+        data.add_field Misc.humanize(key) do |p,values|
+          job_keys[p][key]
+        end
+      end
+    end
 
     data
   end
@@ -97,41 +128,41 @@ data$Project = data$Workflow
 tasks = data
 
 #theme_gantt <- function(base_size=11, base_family="Source Sans Pro Light") {
-theme_gantt <- function(base_size=11, base_family="Sans Serif") {
-  ret <- theme_bw(base_size, base_family) %+replace%
-    theme(panel.background = element_rect(fill="#ffffff", colour=NA),
-          axis.title.x=element_text(vjust=-0.2), axis.title.y=element_text(vjust=1.5),
-          title=element_text(vjust=1.2, family="Source Sans Pro Semibold"),
-          panel.border = element_blank(), axis.line=element_blank(),
-          panel.grid.minor=element_blank(),
-          panel.grid.major.y = element_blank(),
-          panel.grid.major.x = element_line(size=0.5, colour="grey80"),
-          axis.ticks=element_blank(),
-          legend.position="bottom", 
-          axis.title=element_text(size=rel(1.2), family="Source Sans Pro Semibold"),
-          strip.text=element_text(size=rel(1.5), family="Source Sans Pro Semibold"),
-          strip.background=element_rect(fill="#ffffff", colour=NA),
-          panel.spacing.y=unit(1.5, "lines"),
-          legend.key = element_blank())
+  theme_gantt <- function(base_size=11, base_family="Sans Serif") {
+    ret <- theme_bw(base_size, base_family) %+replace%
+      theme(panel.background = element_rect(fill="#ffffff", colour=NA),
+            axis.title.x=element_text(vjust=-0.2), axis.title.y=element_text(vjust=1.5),
+            title=element_text(vjust=1.2, family="Source Sans Pro Semibold"),
+            panel.border = element_blank(), axis.line=element_blank(),
+            panel.grid.minor=element_blank(),
+            panel.grid.major.y = element_blank(),
+            panel.grid.major.x = element_line(size=0.5, colour="grey80"),
+            axis.ticks=element_blank(),
+            legend.position="bottom", 
+            axis.title=element_text(size=rel(1.2), family="Source Sans Pro Semibold"),
+            strip.text=element_text(size=rel(1.5), family="Source Sans Pro Semibold"),
+            strip.background=element_rect(fill="#ffffff", colour=NA),
+            panel.spacing.y=unit(1.5, "lines"),
+            legend.key = element_blank())
 
-  ret
-}
+      ret
+  }
 
-tasks.long <- tasks %>%
-gather(date.type, task.date, -c(Code,Project, Task, id, Start.second, End.second)) %>%
-arrange(date.type, task.date) %>%
-mutate(id = factor(id, levels=rev(unique(id)), ordered=TRUE))
+  tasks.long <- tasks %>%
+    gather(date.type, task.date, -c(Code,Project, Task, id, Start.second, End.second)) %>%
+    arrange(date.type, task.date) %>%
+    mutate(id = factor(id, levels=rev(unique(id)), ordered=TRUE))
 
-x.breaks <- seq(length(tasks$Task) + 0.5 - 3, 0, by=-3)
+    x.breaks <- seq(length(tasks$Task) + 0.5 - 3, 0, by=-3)
 
-timeline <- ggplot(tasks.long, aes(y=id, yend=id, x=Start.second, xend=End.second, colour=Task)) + 
-  geom_segment() + 
-  geom_vline(xintercept=x.breaks, colour="grey80", linetype="dotted") + 
-  guides(colour=guide_legend(title=NULL)) +
-  labs(x=NULL, y=NULL) + 
-  theme_gantt() + theme(axis.text.x=element_text(angle=45, hjust=1))
+    timeline <- ggplot(tasks.long, aes(y=id, yend=id, x=Start.second, xend=End.second, colour=Task)) + 
+    geom_segment() + 
+    geom_vline(xintercept=x.breaks, colour="grey80", linetype="dotted") + 
+    guides(colour=guide_legend(title=NULL)) +
+    labs(x=NULL, y=NULL) + 
+    theme_gantt() + theme(axis.text.x=element_text(angle=45, hjust=1))
 
-rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, pointsize=6)
+    rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, pointsize=6)
     EOF
   end
 
@@ -211,11 +242,13 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
 
     jobs = jobs.uniq.sort_by{|job| [job, job.info]; t = job.info[:started] || Open.mtime(job.path) || Time.now; Time === t ? t : Time.parse(t) }
 
-    data = trace_job_times(jobs, options[:fix_gap])
-
     report_keys = options[:report_keys] || ""
     report_keys = report_keys.split(/,\s*/) if String === report_keys
+
+    data = trace_job_times(jobs, options[:fix_gap], report_keys)
+
     summary = trace_job_summary(jobs, report_keys)
+
 
     raise "No jobs to process" if data.size == 0
 

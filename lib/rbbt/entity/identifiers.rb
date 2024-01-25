@@ -92,7 +92,8 @@ module Entity
     else
       if file =~ /NAMESPACE/
         all_fields = file.sub(/NAMESPACE/,'**').glob.collect do |f|
-        TSV.parse_header(f).all_fields
+          header = TSV.parse_header(f)
+          [header.key_field] + header.fields
         end.flatten.compact.uniq
       else
         all_fields = TSV.parse_header(file).all_fields
