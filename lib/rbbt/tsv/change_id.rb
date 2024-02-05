@@ -8,8 +8,8 @@ module TSV
 
     identifiers, persist_input = Misc.process_options options, :identifiers, :persist_input
 
-    identifiers = Organism.identifiers(tsv.namespace) if identifiers.nil? and tsv.namespace
-
+    identifiers = Organism.identifiers(tsv.namespace) if identifiers.nil? && tsv.namespace && 
+      defined?(Organism) && Organism.identifiers(tsv.namespace).exists?
 
     if ! tsv.fields.include?(format)
       new = {}
@@ -58,7 +58,10 @@ module TSV
 
     identifiers, persist_input, compact = Misc.process_options options, :identifiers, :persist, :compact
     identifiers = tsv.identifier_files.first if identifiers.nil?
-    identifiers = Organism.identifiers(tsv.namespace) if defined?(Organism) && identifiers.nil? && tsv.namespace && Organism.identifiers(tsv.namespace).exists?
+
+    identifiers = Organism.identifiers(tsv.namespace) if identifiers.nil? && tsv.namespace && 
+      defined?(Organism) && Organism.identifiers(tsv.namespace).exists?
+
     identifiers.namespace ||= tsv.namespace
 
     fields = (identifiers and identifiers.all_fields.include?(field))? [field] : nil 
