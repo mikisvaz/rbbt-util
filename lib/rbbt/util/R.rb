@@ -50,7 +50,7 @@ source('#{UTIL}');
           Log.debug "R: " <<  line
         end
       end
-      nil
+      io.join if io.respond_to? :join
     else
       CMD.cmd('R --no-save --slave --quiet', options.merge(:in => cmd, :xvfb => options[:xvfb]))
     end
