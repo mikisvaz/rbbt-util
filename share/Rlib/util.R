@@ -646,7 +646,16 @@ rbbt.pheatmap <- function(filename, data, width=800, height=800, take_log=FALSE,
 }
 
 rbbt.heatmap <- function(filename, data, width=800, height=800, take_log=FALSE, stdize=FALSE, ...){
+    rbbt.require('gplots')
     opar = par()
+
+    if (height == 'auto')
+        height = dim(data)[1] * 8 * 1.3
+
+    if (width == 'auto')
+        width = dim(data)[2] * 8 * 1.3
+
+
     png(filename=filename, width=width, height=height);
 
     #par(cex.lab=0.5, cex=0.5, ...)
