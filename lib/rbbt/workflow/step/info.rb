@@ -219,7 +219,7 @@ class Step
     Step.log_progress(status, options, file(:progress), &block)
   end
 
-  def progress_bar(msg = "Progress", options = nil)
+  def progress_bar(msg = "Progress", options = nil, &block)
     if Hash === msg and options.nil?
       options = msg
       msg = nil
@@ -227,7 +227,16 @@ class Step
     options = {} if options.nil?
 
     max = options[:max]
-    Log::ProgressBar.new_bar(max, {:desc => msg, :file => (@exec ? nil : file(:progress))}.merge(options))
+    bar = Log::ProgressBar.new_bar(max, {:desc => msg, :file => (@exec ? nil : file(:progress))}.merge(options))
+
+    if block_given?
+      bar.init
+      res = yield bar
+      bar.remove
+      res
+    else
+      bar
+    end
   end
 
   def self.log(status, message, path, &block)
