@@ -399,6 +399,10 @@ module Log
         end
       end
     end
+    LOG_MUTEX.synchronize do
+      Log::LAST.replace "log"
+    end
+    nil
   end
 
   def self.stack(stack)
