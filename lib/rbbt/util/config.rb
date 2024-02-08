@@ -18,7 +18,7 @@ module Rbbt::Config
     Log.debug "Loading config file: #{ file }"
     TSV.traverse file, :type => :array do |line|
       next if line =~ /^#/
-      key, value, *tokens = line.strip.split(/\s/)
+      key, value, *tokens = line.strip.split(/\s+/)
 
       self.add_entry(key, value, tokens) if key
     end
