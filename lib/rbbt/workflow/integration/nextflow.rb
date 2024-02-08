@@ -1,4 +1,47 @@
 module Workflow
+
+  OUTPUT_FIELDS=%w(outdir output)
+
+  def self.parse_nextflow_schema(file)
+    doc = Open.open(file){|f| JSON.parse(f.read) }
+    description = doc["description"]
+
+    properties = {}
+    required = []
+
+    properties[nil] = doc["properties"] if doc["properties"]
+    required.concat doc["required"] if doc["required"]
+
+    doc["definitions"].each do |section,section_info|
+      next unless section_info["properties"]
+      name = section_info["title"] || section
+      properties[name] = section_info["properties"]
+      required.concat section_info["required"] if section_info["required"] if section_info["required"]
+    end if doc["definitions"]
+
+    required = required.compact.flatten
+
+    parameters = {}
+    properties.each do |section,param_info|
+      param_info.each do |name,info|
+        input_options = {}
+        type = info["type"]
+        format = info["format"]
+        input_desc = info["description"]
+        input_section = info["description"]
+        input_required = required.include?(name)
+        input_options[:required] = true if input_required && ! OUTPUT_FIELDS.include?(name)
+        if info.include?("enum")
+          type = 'select'
+          input_options[:select_options] = info["enum"]
+        end
+        parameters[name] = {type: type, format: format, description: input_desc, options: input_options, section: section}
+      end
+    end
+
+    [description, parameters]
+  end
+
   def self.nextflow_file_params(file)
     Open.read(file).scan(/params\.\w+/).collect{|p| p.split(".").last}.uniq
   end
@@ -16,8 +59,11 @@ module Workflow
       included_file += '.nf' unless File.exist?(included_file) || ! File.exist?(included_file + '.nf')
       name_str.split(";").each do |name|
         name = name.strip
-        include_params = nextflow_recursive_params(included_file).collect{|p| [p,name] * "-"}
-        params += include_params
+        begin
+          include_params = nextflow_recursive_params(included_file).collect{|p| [p,name] * "-"}
+          params += include_params
+        rescue
+        end
       end
       params
     end
@@ -32,22 +78,31 @@ module Workflow
       result = :text
     end
 
+    dir = Path.setup(File.dirname(file))
+
+    nextflow_schema = dir['nextflow_schema.json']
+
+    description, params = Workflow.parse_nextflow_schema(nextflow_schema) if nextflow_schema.exists?
+
     file = file + '.nf' unless File.exist?(file) || ! File.exist?(file + '.nf')
     file = File.expand_path(file)
     name ||= File.basename(file).sub(/\.nf$/,'').gsub(/\s/,'_')
-    params = Workflow.nextflow_recursive_params(file)
-
-    params.each do |param|
+    Workflow.nextflow_recursive_params(file).each do |param|
       p,_sep, section = param.partition("-")
-      if section.nil? || section.empty?
-        input param, :string, "Nextflow param #{p}", nil, :nofile => true
-      else
-        input param, :string, "Nextflow param #{p} from import #{section}", nil, :nofile => true
+      if ! params.include?(p)
+        params[p] = {type: :string, description: "Undocumented"}
       end
+    end
+
+    used_params = []
+    desc description
+    params.each do |name,info|
+      input name.to_sym, info[:type], info[:description], nil, info[:options].merge(:noload => true)
     end
     task name => result do 
       work = file('work')
       profile = config :profile, :nextflow
+      resume = config :resume, :nextflow
       config_file = config :config, :nextflow
 
       nextflow_inputs = {}
@@ -68,9 +123,17 @@ module Workflow
           name = f
         end
           
-        nextflow_inputs[name] = v
+        case name.to_s
+        when 'outdir'
+          output = nextflow_inputs[name] = v || output || file('output')
+        when 'output'
+          output = nextflow_inputs[name] = v || output || self.tmp_path
+        else
+          nextflow_inputs[name] = v
+        end
       end
-      
+
+      current_pwd = FileUtils.pwd
       Misc.in_dir file('stage') do
 
         cmd = "nextflow "
@@ -83,19 +146,26 @@ module Workflow
 
         cmd += " -profile #{profile}" if profile
 
+        cmd += " -resume" if resume == 'true'
+
+        Dir.glob(current_pwd + "/*").each do |file|
+          target = File.basename(file)
+          Open.ln_s file, target unless File.exist?(target)
+        end
 
         cmd("#{cmd} #{file}", nextflow_inputs.merge('add_option_dashes' => true))
       end
 
-      output_file = file(output).glob.first if output
-      output_file = work[File.join('*', '*', output)].glob.first if output && output_file.nil?
-
-      if output_file.nil?
-        work[File.join("*", "*", "*")].glob * "\n"
+      if output && Open.exists?(output)
+        if File.directory?(output)
+          Dir.glob(output + "/**/*") * "\n"
+        else
+          output_file = output
+          Open.link output, self.tmp_path
+          nil
+        end
       else
-        Open.link output_file, self.tmp_path
-        #Open.rm_rf file('work')
-        nil
+        work[File.join("*", "*", "*")].glob * "\n"
       end
     end
   end
@@ -105,11 +175,19 @@ module Workflow
     nextflow_file main, File.basename(path), output
   end
 
+  def nextflow_project(project, *args)
+    CMD.cmd_log("nextflow pull #{project}")
+    directory = File.join(ENV["HOME"], '.nextflow/assets', project)
+    nextflow_dir directory, *args
+  end
+
   def nextflow(path, *args)
     if File.directory?(path)
       nextflow_dir path, *args
-    else
+    elsif File.exist?(path)
       nextflow_file path, *args
+    else
+      nextflow_project path, *args
     end
   end
 end
