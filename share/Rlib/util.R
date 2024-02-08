@@ -649,22 +649,27 @@ rbbt.heatmap <- function(filename, data, width=800, height=800, take_log=FALSE, 
     rbbt.require('gplots')
     opar = par()
 
-    if (height == 'auto')
-        height = dim(data)[1] * 8 * 1.3
-
-    if (width == 'auto')
-        width = dim(data)[2] * 8 * 1.3
-
-
-    png(filename=filename, width=width, height=height);
-
-    #par(cex.lab=0.5, cex=0.5, ...)
-
     data = as.matrix(data)
     data[is.nan(data)] = NA
 
     #data = data[rowSums(!is.na(data))!=0, colSums(!is.na(data))!=0]
     data = data[rowSums(is.na(data))==0, ]
+
+    key.size = 150
+    label.size = 200
+    block.size = 12
+    
+    if (height == 'auto'){
+        height = max(c(dim(data)[1], 30)) * block.size + key.size + label.size
+    }
+
+    if (width == 'auto'){
+        width = max(c(dim(data)[2], 30)) * block.size + key.size + label.size
+    }
+
+    png(filename=filename, width=width, height=height);
+
+    #par(cex.lab=0.5, cex=0.5, ...)
 
     if (take_log){
         for (study in colnames(data)){
@@ -682,7 +687,11 @@ rbbt.heatmap <- function(filename, data, width=800, height=800, take_log=FALSE, 
         data = stdize(data)
     }
 
-    heatmap.2(data, scale='column', ...)
+    lwid = key.size / (width)
+    lhei = key.size / (height)
+    str(dim(data))
+    str(c(height, lhei, width, lwid))
+    heatmap.2(data, scale='column', lwid = c(lwid, 1-lwid), lhei = c(lhei, 1-lhei), ...)
 
     dev.off();
     par(opar)
