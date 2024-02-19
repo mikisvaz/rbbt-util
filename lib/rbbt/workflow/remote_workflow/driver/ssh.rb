@@ -136,33 +136,33 @@ STDOUT.write job.path
       Misc.ssh_run(server, script)
     end
 
-    def self.run_slurm_job(url, input_id, jobname = nil, slurm_options = {})
+    def self.run_batch_job(url, input_id, jobname = nil, batch_options = {})
       server, path = parse_url(url)
 
       script = path_script(path)
       script += job_script(input_id, jobname)
       script +=<<-EOF
 require 'rbbt/hpc'
-HPC::BATCH_MODULE = HPC.batch_system "SLURM"
-slurm_options = JSON.parse(%q(#{slurm_options.to_json}))
+HPC::BATCH_MODULE = HPC.batch_system 
+batch_options = JSON.parse(%q(#{batch_options.to_json}))
 job.clean if job.error? and job.recoverable_error?
-HPC::BATCH_MODULE.run_job(job, slurm_options) unless job.done? || job.error?
+HPC::BATCH_MODULE.run_job(job, batch_options) unless job.done? || job.error?
 STDOUT.write job.path
       EOF
       Misc.ssh_run(server, script)
     end
 
-    def self.orchestrate_slurm_job(url, input_id, jobname = nil, slurm_options = {})
+    def self.orchestrate_batch_job(url, input_id, jobname = nil, batch_options = {})
       server, path = parse_url(url)
 
       script = path_script(path)
       script += job_script(input_id, jobname)
       script +=<<-EOF
 require 'rbbt/hpc'
-HPC::BATCH_MODULE = HPC.batch_system "SLURM"
-slurm_options = JSON.parse(%q(#{slurm_options.to_json}))
+HPC::BATCH_MODULE = HPC.batch_system
+batch_options = JSON.parse(%q(#{batch_options.to_json}))
 job.clean if job.error? and job.recoverable_error?
-HPC::BATCH_MODULE.orchestrate_job(job, slurm_options) unless job.done? || job.error?
+HPC::BATCH_MODULE.orchestrate_job(job, batch_options) unless job.done? || job.error?
 STDOUT.write job.path
       EOF
       Misc.ssh_run(server, script)
@@ -268,8 +268,8 @@ job.clean
     end
 
     def self.relay_job(job, server, options = {})
-      migrate, produce, produce_dependencies, search_path, run_type, slurm_options = Misc.process_options options.dup,
-        :migrate, :produce, :produce_dependencies, :search_path, :run_type, :slurm_options
+      migrate, produce, produce_dependencies, search_path, run_type, batch_options = Misc.process_options options.dup,
+        :migrate, :produce, :produce_dependencies, :search_path, :run_type, :batch_options
 
       search_path ||= 'user'
 
@@ -287,7 +287,7 @@ job.clean
       rjob.override_dependencies = override_dependencies
 
       rjob.run_type = run_type
-      rjob.slurm_options = slurm_options || {}
+      rjob.batch_options = batch_options || {}
 
       if options[:migrate]
         rjob.produce
@@ -298,8 +298,8 @@ job.clean
     end
 
     def self.relay_job_list(job_list, server, options = {})
-      migrate, produce, produce_dependencies, search_path, run_type, slurm_options = Misc.process_options options.dup,
-        :migrate, :produce, :produce_dependencies, :search_path, :run_type, :slurm_options
+      migrate, produce, produce_dependencies, search_path, run_type, batch_options = Misc.process_options options.dup,
+        :migrate, :produce, :produce_dependencies, :search_path, :run_type, :batch_options
 
       search_path ||= 'user'
 
@@ -320,7 +320,7 @@ job.clean
         rjob.override_dependencies = override_dependencies
 
         rjob.run_type = run_type
-        rjob.slurm_options = slurm_options || {}
+        rjob.batch_options = batch_options || {}
 
         rjob.run(true)
 
@@ -330,7 +330,6 @@ job.clean
       if options[:migrate]
         rjobs_job.each do |rjob,job|
           rjob.produce
-          iif [:migrate, job]
           Step.migrate(Rbbt.identify(job.path), 'user', :source => server) 
         end
       end

@@ -129,6 +129,8 @@ module Workflow
     end
   end
 
+  alias task_alias dep_task
+
   def task(name, &block)
     if Hash === name
       type = name.first.last

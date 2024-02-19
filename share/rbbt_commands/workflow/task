@@ -221,7 +221,7 @@ The `recursive_clean` cleans all the job dependency steps recursively.
 -od--override_deps* Override deps using 'Workflow#task=<path>' array_separated
 -PERF--procpath_performance* Measure performance using procpath
 --relay* Relay job to SSH server
---slurm_relay* Relay job to SSH SLURM server
+--batch_relay* Relay job to SSH BATCH server (SLURM, PBS, etc.)
 -rdep--relay_dependencies* Relay dependencies instead of main job
 -pdr--produce_dependencies_for_relay Prepare dependencies previous to relay jobs
 EOF
@@ -493,7 +493,7 @@ begin
     replace_relayed_jobs(jobs_to_relay, server, produce_dependencies_for_relay, :run)
   end
 
-  if server = options.delete(:slurm_relay)
+  if server = options.delete(:batch_relay)
     require 'rbbt/workflow/remote_workflow'
     relay_dependencies = options.delete(:relay_dependencies).split(",")
     produce_dependencies_for_relay = options.delete(:produce_dependencies_for_relay)

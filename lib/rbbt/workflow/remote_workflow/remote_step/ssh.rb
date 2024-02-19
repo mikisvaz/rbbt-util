@@ -1,6 +1,6 @@
 class RemoteStep
   module SSH
-    attr_accessor :override_dependencies, :run_type, :slurm_options, :produce_dependencies
+    attr_accessor :override_dependencies, :run_type, :batch_options, :produce_dependencies
 
     def init_job(cache_type = nil, other_params = {})
       return self if @url
@@ -22,7 +22,7 @@ class RemoteStep
 
       RemoteWorkflow::SSH.upload_inputs(@server, inputs, @input_types, @input_id)
 
-      @remote_path ||= Persist.memory("RemoteSteps", :workflow => self, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
+      @remote_path ||= Persist.memory("RemoteStep", :workflow => self.workflow, :task => task, :jobname => @name, :inputs => inputs, :cache_type => cache_type) do
         Misc.insist do
           input_types = {}
           RemoteWorkflow::SSH.post_job(File.join(base_url, task.to_s), @input_id, @base_name)
@@ -56,13 +56,13 @@ class RemoteStep
       RemoteWorkflow::SSH.run_job(File.join(base_url, task.to_s), @input_id, @base_name)
     end
 
-    def _run_slurm
+    def _run_batch
       RemoteWorkflow::SSH.upload_dependencies(self, @server, 'user', @produce_dependencies)
-      RemoteWorkflow::SSH.run_slurm_job(File.join(base_url, task.to_s), @input_id, @base_name, @slurm_options || {})
+      RemoteWorkflow::SSH.run_batch_job(File.join(base_url, task.to_s), @input_id, @base_name, @batch_options || {})
     end
 
-    def _orchestrate_slurm
-      RemoteWorkflow::SSH.orchestrate_slurm_job(File.join(base_url, task.to_s), @input_id, @base_name, @slurm_options || {})
+    def _orchestrate_batch
+      RemoteWorkflow::SSH.orchestrate_batch_job(File.join(base_url, task.to_s), @input_id, @base_name, @batch_options || {})
     end
 
     def issue
@@ -71,10 +71,10 @@ class RemoteStep
       @remote_path = case @run_type
                      when 'run', :run, nil
                        _run
-                     when 'slurm', :slurm
-                       _run_slurm
+                     when 'batch', :batch
+                       _run_batch
                      when 'orchestrate', :orchestrate
-                       _orchestrate_slurm
+                       _orchestrate_batch
                      end
       @started = true
     end
