@@ -15,6 +15,7 @@ module HPC
     when 'pbs'
       HPC::PBS
     when 'auto'
+      $previous_commands = [] if $previous_commands.nil?
       case $previous_commands.last
       when 'slurm'
         HPC::SLURM
