@@ -46,7 +46,6 @@ app.get '/' do
   begin
     template_render('main', params, 'main', :cache_type => :asynchronous)
   rescue TemplateMissing
-    Log.exception $!
     redirect to(File.join('/', wf.to_s))
   end
 end
