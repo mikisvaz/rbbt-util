@@ -44,7 +44,7 @@ app_eval app, Rbbt.etc['app.d/remote_workflow_tasks.rb'].find_all
 app_eval app, Rbbt.etc['app.d/base.rb'].find
 
 #{{{ SINATRA
-load_file Rbbt.lib['sinatra.rb'].find_all
+app_eval app, Rbbt.lib['sinatra.rb'].find_all
 
 #{{{ RESOURCES
 load_file Rbbt.etc['app.d/resources.rb'].find
