@@ -495,7 +495,7 @@ begin
 
   if server = options.delete(:batch_relay)
     require 'rbbt/workflow/remote_workflow'
-    relay_dependencies = options.delete(:relay_dependencies).split(",")
+    relay_dependencies = options.include?(:relay_dependencies) ? options.delete(:relay_dependencies).split(",") : nil
     produce_dependencies_for_relay = options.delete(:produce_dependencies_for_relay)
     jobs_to_relay = relay_dependencies ?  match_dependencies(relay_dependencies, job.rec_dependencies) : [job]
     jobs_to_relay.reject!{|d| d.done? }

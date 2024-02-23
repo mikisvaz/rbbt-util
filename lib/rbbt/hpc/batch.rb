@@ -736,7 +736,7 @@ env > #{batch_options[:fenv]}
     end
 
     def job_queued(job)
-      job_status(job).split(/\s+/).include?(job.to_s)
+      job_status(job).split(/[\s\.]+/).include?(job.to_s)
     end
 
     def wait_for_job(batch_dir, time = 1)
