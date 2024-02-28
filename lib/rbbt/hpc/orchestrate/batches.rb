@@ -152,7 +152,7 @@ module HPC
     end
 
     def self.job_batches(rules, job)
-      job_chains = self.job_chains(rules, job)
+      job_chains = self.job_chains(rules, job).dup
 
       workload = job_workload(job).uniq
 

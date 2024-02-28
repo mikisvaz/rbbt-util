@@ -289,16 +289,17 @@ module Entity
       end
 
       def self.unpersist(method_name)
-        return unless persisted? method_name
-        orig_name = UNPERSISTED_PREFIX + method_name.to_s
-
+        return unless orig_name = persisted?(method_name)
         alias_method method_name, orig_name
         remove_method orig_name
       end
 
       def self.persisted?(method_name)
-        orig_name = UNPERSISTED_PREFIX + method_name.to_s
-        instance_methods.include? orig_name.to_sym
+        ["", "_multiple_", "_single_"].each do |type|
+          orig_name = (UNPERSISTED_PREFIX + type + method_name.to_s).to_sym
+          return orig_name if instance_methods.include?(orig_name)
+        end
+        return false
       end
 
       def self.with_persisted(method_name)

@@ -43,7 +43,7 @@ module Annotated
   end
 
   def self.resolve_array(entry)
-    if entry =~ /^Array:/
+    if String === entry && entry =~ /^Array:/
       entry["Array:".length..-1].split("|")
     else
       entry

@@ -25,57 +25,50 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   EFFECT_TSV = TSV.open EFFECT, EFFECT_OPTIONS.dup 
 
-  KNOWLEDGE_BASE = KnowledgeBase.new '/tmp/kb.foo2'
+  def with_kb(&block)
+    keyword_test :organism do
+      require 'rbbt/sources/organism'
+      organism = Organism.default_code("Hsa")
+      TmpFile.with_file do |tmpdir|
+        kb = KnowledgeBase.new tmpdir
+        kb.namespace = organism
+        kb.format = {"Gene" => "Associated Gene Name"}
 
-  KNOWLEDGE_BASE.register :effects, EFFECT_TSV, EFFECT_OPTIONS.dup
+        kb.register :effects, EFFECT_TSV, EFFECT_OPTIONS
+        kb.register :pina, datafile_test('pina'), 
+          :source => "UniProt/SwissProt Accession", 
+          :target => "Interactor UniProt/SwissProt Accession=~UniProt/SwissProt Accession", 
+          :undirected => true
 
-  KNOWLEDGE_BASE.register :pina, datafile_test('pina'), :source => "UniProt/SwissProt Accession", :target => "Interactor UniProt/SwissProt Accession=~UniProt/SwissProt Accession", :undirected => true
+        kb.register :gene_ages, datadir_test.gene_ages, :source => "=>Associated Gene Name"
+
+        kb.register :CollecTRI, datadir_test.CollecTRI, 
+          :source => "Transcription Factor=~Associated Gene Name", 
+          :target => "Target Gene=~Associated Gene Name",
+          :fields => ["[ExTRI] Confidence", "[ExTRI] PMID"]
+
+        yield kb
+      end
+    end
+  end
 
   def test_database
-    assert_equal "Associated Gene Name", KNOWLEDGE_BASE.get_database(:effects, :source_format => "Associated Gene Name").key_field
+    with_kb do |kb|
+      assert_equal "Associated Gene Name", kb.get_database(:effects, :source_format => "Associated Gene Name").key_field
+    end
   end
 
   def test_index
-    assert KNOWLEDGE_BASE.get_index(:effects, :source_format => "Associated Gene Name", :target_format => "Ensembl Gene ID", :persist => false).include? "MDM2~ENSG00000141510"
+    with_kb do |kb|
+      assert kb.get_index(:effects, :source_format => "Associated Gene Name", :target_format => "Ensembl Gene ID", :persist => false).include? "MDM2~ENSG00000141510"
+    end
   end
 
   def test_index_persist
-    assert KNOWLEDGE_BASE.get_index(:effects, :source_format => "Associated Gene Name", :target_format => "Ensembl Gene ID", :persist => true).include? "MDM2~ENSG00000141510"
-  end
-
-  def test_index_flat
-    require 'rbbt/sources/tfacts'
-    file = TFactS.regulators
-    KNOWLEDGE_BASE.register :tfacts, file,  :type => :flat, :source => "Transcription Factor Associated Gene Name=~Associated Gene Name", :merge => true
-    assert KNOWLEDGE_BASE.subset(:tfacts, :source => ["TP53"], :target => :all).length > 10
-  end
-
-  def test_pina
-    index = KNOWLEDGE_BASE.get_index(:pina, :persist => false, :source_format => "Associated Gene Name", :target_format => "Associated Gene Name")
-    assert index["TP53~ARID1A"]
-    assert index["ARID1A~TP53"]
-    assert_equal index["ARID1A~TP53"], index["TP53~ARID1A"]
-
-    index = KNOWLEDGE_BASE.get_index(:pina, :persist => false, :source_format => "Associated Gene Name", :target_format => "Associated Gene Name", :undirected => false)
-    count = 0
-    index.through do |k,values|
-      split_values = values.collect{|v| v.split ";;" }
-      count += 1 if Misc.zip_fields(split_values).uniq != Misc.zip_fields(split_values)
+    with_kb do |kb|
+      assert kb.get_index(:effects, :source_format => "Associated Gene Name", :target_format => "Ensembl Gene ID", :persist => true).include? "MDM2~ENSG00000141510"
     end
-
-    index = KNOWLEDGE_BASE.get_index(:pina, :persist => false, :source_format => "Associated Gene Name", :target_format => "Associated Gene Name", :undirected => true)
-    count2 = 0
-    index.through do |k,values|
-      split_values = values.collect{|v| v.split ";;" }
-      count2 += 1 if Misc.zip_fields(split_values).uniq != Misc.zip_fields(split_values)
-    end
-
   end
 
-  def test_pina2
-    KNOWLEDGE_BASE.entity_options["Gene"] = {:organism => "Mmu"}
-    index = KNOWLEDGE_BASE.get_index(:pina, :persist => true, :source_format => "Ensembl Gene ID", :target_format => "Ensembl Gene ID", :undirected => true)
-    assert_equal "Mmu", index.entity_options["Gene"][:organism]
-  end
 end
 

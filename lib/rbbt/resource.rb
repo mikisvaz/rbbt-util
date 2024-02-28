@@ -374,7 +374,7 @@ url='#{url}'
           if ! m.named_captures.include?("PKGDIR") || m["PKGDIR"] == resource.pkgdir
             unlocated = ([m["TOPLEVEL"],m["SUBPATH"],m["REST"]] * "/")
             unlocated.gsub!(/\/+/,'/')
-            if self.subdir && ! self.subdir.empty?
+            if self.subdir && ! self.subdir.empty? && unlocated.include?(subdir)
               subdir = self.subdir
               subdir += "/" unless subdir.end_with?("/")
               unlocated[subdir] = ""

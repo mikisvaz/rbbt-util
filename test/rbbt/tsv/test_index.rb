@@ -111,16 +111,22 @@ row3    A    a|B    Id4
       assert_equal "Id1", index['a']
       assert_equal "Id3", index['A']
       assert_equal "OtherID", index.fields.first
+      assert_equal "Id1", index['a']
+
+      index = tsv.index(:order => true, :persist => false)
+      assert_equal "Id1", index['a']
 
       tsv.delete "Id1"
+
+      index = tsv.index(:order => true, :persist => false)
+      assert_equal "Id3", index['a']
 
       index = tsv.index(:order => true, :persist => true)
       assert_equal "Id1", index['a']
       assert_equal "Id3", index['A']
       assert_equal "OtherID", index.fields.first
-
-      index = tsv.index(:order => true, :persist => false)
       assert_equal "Id1", index['a']
+
     end
   end
 

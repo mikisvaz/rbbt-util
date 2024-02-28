@@ -169,7 +169,6 @@ class TestWorkflowDependency < Test::Unit::TestCase
 
   def test_task4
     size = 100000
-    Log.severity = 0
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
     last_line = nil
     TmpFile.with_file(content) do |input_file|
@@ -227,7 +226,6 @@ class TestWorkflowDependency < Test::Unit::TestCase
     size = 100000
     content = (1..size).to_a.collect{|num| "Line #{num}" } * "\n"
     last_line = nil
-    Log.severity = 0
     TmpFile.with_file(content) do |input_file|
       begin
         job = DepWorkflow.job(:task6, "TEST", :input_file => input_file)
@@ -250,7 +248,6 @@ class TestWorkflowDependency < Test::Unit::TestCase
     size = 10000
     content = (0..size).to_a.collect{|num| "Line #{num}" } * "\n"
     last_line = nil
-    Log.severity = 0
     TmpFile.with_file(content) do |input_file|
       begin
       job = DepWorkflow.job(:task8, "TEST", :input_file => input_file)
@@ -285,7 +282,6 @@ class TestWorkflowDependency < Test::Unit::TestCase
   end
 
   def test_resume
-    Log.severity = 0
     job = ResumeWorkflow.job(:reverse)
     job.recursive_clean
     assert_raise do

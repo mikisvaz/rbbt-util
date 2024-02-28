@@ -2,42 +2,9 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../../..', 'test_he
 require 'rbbt/workflow'
 require 'rbbt/hpc/orchestrate/rules'
 
-module TestWFA
-  extend Workflow
+require_relative '../hpc_test_workflows'
 
-  task :a1 => :string do self.task_name.to_s end
-
-  dep :a1
-  task :a2 => :string do self.task_name.to_s end
-
-  dep :a2
-  task :a3 => :string do self.task_name.to_s end
-end
-
-module TestWFB
-  extend Workflow
-
-  dep TestWFA, :a2
-  task :b1 => :string do self.task_name.to_s end
-
-  dep :b1
-  task :b2 => :string do self.task_name.to_s end
-end
-
-module TestWFC
-  extend Workflow
-
-  dep TestWFA, :a1
-  dep_task :c1, TestWFB, :b2
-
-  task :c2 => :string do self.task_name.to_s end
-
-  dep :c1
-  dep :c2
-  task :c3 => :string do self.task_name.to_s end
-end
-
-class TestOrchestrate < Test::Unit::TestCase
+class TestOrchestrateRules < Test::Unit::TestCase
 
   RULES = IndiferentHash.setup(YAML.load(<<-EOF))
 ---

@@ -21,7 +21,7 @@ module Persist
       tokyocabinet_class = TokyoCabinet::HDB if tokyocabinet_class == "HDB" or tokyocabinet_class.nil?
       tokyocabinet_class = TokyoCabinet::BDB if tokyocabinet_class == "BDB"
 
-      database = CONNECTIONS[path] ||= tokyocabinet_class.new
+      database = CONNECTIONS[path] ||= Log.ignore_stderr do tokyocabinet_class.new end
 
       if big and not Open.exists?(path)
         database.tune(nil,nil,nil,tokyocabinet_class::TLARGE | tokyocabinet_class::TDEFLATE) 

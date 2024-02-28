@@ -39,9 +39,8 @@ module HPC
       (job.dependencies + job.input_dependencies).uniq.select{|d| ! d.done? || d.dirty? }
     end
 
-    def self.job_chains(rules, job)
-      @@job_chains ||= {}
-      @@job_chains[Misc.digest([rules, job.path].inspect)] ||= 
+    def self.job_chains(rules, job, computed = {})
+      computed[Misc.fingerprint([rules, job.path, job.object_id])] ||=
         begin
           chains = self.parse_chains(rules)
 
@@ -55,7 +54,7 @@ module HPC
             dep_matches = check_chains(chains, dep)
             common = matches & dep_matches
 
-            dep_chains = job_chains(rules, dep)
+            dep_chains = job_chains(rules, dep, computed)
             found = []
             dep_chains.each do |match,info|
               if common.include?(match)

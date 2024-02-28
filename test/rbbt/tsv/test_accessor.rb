@@ -312,4 +312,8 @@ row2    aa|aa|AA|AA    b1|b2|B1|B2    Id1|Id1|Id2|Id2
     end
 
   end
+
+  def test_identifier_files
+    assert_include datadir_test.CollecTRI.identifier_files.first, "test/data"
+  end
 end

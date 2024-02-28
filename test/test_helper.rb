@@ -10,6 +10,7 @@ require 'rubygems'
 
 require 'rbbt'
 require 'rbbt/resource/path'
+require 'rbbt/util/config'
 
 
 class TestServerLoaded < Exception; end
@@ -41,9 +42,32 @@ class Test::Unit::TestCase
     #end
   end
 
-  def self.datafile_test(file)
-    Path.setup(File.join(File.dirname(__FILE__), 'data', file.to_s))
+  def config(*args)
+    Rbbt::Config.get *args
   end
+
+  def keyword_test(key, &block)
+    test = config(:test, key)
+    if %w(true yes).include?(test.to_s.downcase)
+      block.call
+    else
+      Log.high "Not testing for #{key}"
+    end
+  end
+
+  def self.datadir_test
+    #Rbbt.root.test.data
+    Path.setup(File.join(File.dirname(__FILE__), 'data'))
+  end
+
+  def self.datafile_test(file)
+    datadir_test[file.to_s]
+  end
+
+  def datadir_test
+    Test::Unit::TestCase.datadir_test
+  end
+
 
   def datafile_test(file)
     Test::Unit::TestCase.datafile_test(file)

@@ -181,6 +181,48 @@ module TSV
     end
   end
 
+  def self.traverse_enumerable(enum, options = {}, &block)
+    callback, bar, join = Misc.process_options options, :callback, :bar, :join
+
+    begin
+      error = false
+      if callback
+        bar.init if bar
+        while enum.any?
+          e = enum.pop
+          begin
+            callback.call yield(e)
+          rescue Exception
+            Log.warn "Traverse exception on element: #{Misc.fingerprint(e)}"
+            raise $!
+          ensure
+            bar.tick if bar
+          end
+        end
+      else
+        bar.init if bar
+        while enum.any?
+          e = enum.pop
+          begin
+            yield e
+          rescue Exception
+            Log.warn "Traverse exception on element: #{Misc.fingerprint(e)}"
+            raise $!
+          ensure
+            bar.tick if bar
+          end
+        end
+      end
+
+    rescue
+      error = true
+      raise $!
+    ensure
+      join.call(error) if join
+      Log::ProgressBar.remove_bar(bar, error) if bar
+    end
+  end
+
   def self.traverse_priority_queue(queue, options = {}, &block)
     callback, bar, join = Misc.process_options options, :callback, :bar, :join
 
@@ -396,6 +438,8 @@ module TSV
         else
           raise "Can not open obj for traversal #{Misc.fingerprint obj}"
         end
+      when Enumerable
+        traverse_enumerable(obj, options, &block)
       when nil
         raise "Can not traverse nil object into #{stream_name(options[:into])}"
       else

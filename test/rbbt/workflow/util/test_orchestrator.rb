@@ -66,9 +66,7 @@ TestWF:
     EOF
 
     orchestrator = Workflow::Orchestrator.new(TestWF::MULT, "cpus" => 30, "IO" => 4, "size" => 10 )
-    Log.with_severity 0 do
-      orchestrator.process(rules, jobs)
-    end
+    orchestrator.process(rules, jobs)
 
     data = Workflow.trace jobs, :plot_data => true
     eend = data.column("End.second").values.collect{|v| v.to_f}.max
@@ -120,9 +118,7 @@ TestWF:
     EOF
 
     orchestrator = Workflow::Orchestrator.new(TestWF::MULT, "cpus" => 30, "IO" => 4, "size" => 10 )
-    Log.with_severity 3 do
-      orchestrator.process(rules, jobs)
-    end
+    orchestrator.process(rules, jobs)
 
     jobs.each do |job|
       assert job.step(:c).dependencies.empty?
@@ -167,9 +163,7 @@ TestWF:
     EOF
 
     orchestrator = Workflow::Orchestrator.new(TestWF::MULT, "cpus" => 30, "IO" => 4, "size" => 10 )
-    Log.with_severity 3 do
-      orchestrator.process(rules, jobs)
-    end
+    orchestrator.process(rules, jobs)
 
     jobs.each do |job|
       assert job.step(:c).dependencies.empty?
@@ -212,9 +206,7 @@ TestWF:
     EOF
 
     orchestrator = Workflow::Orchestrator.new(TestWF::MULT, "cpus" => 30, "IO" => 4, "size" => 10 )
-    Log.with_severity 3 do
-      orchestrator.process(rules, jobs)
-    end
+    orchestrator.process(rules, jobs)
 
     jobs.each do |job|
       next unless job.task_name.to_s == 'd'
@@ -258,9 +250,7 @@ TestWF:
     EOF
 
     orchestrator = Workflow::Orchestrator.new(TestWF::MULT, "cpus" => 30, "IO" => 4, "size" => 10 )
-    Log.with_severity 3 do
-      orchestrator.process(rules, jobs)
-    end
+    orchestrator.process(rules, jobs)
 
     jobs.each do |job|
       next unless job.task_name.to_s == 'd' || job.task_name.to_s == 'e'

@@ -59,7 +59,7 @@ class TestRemoteWorkflow < Test::Unit::TestCase
   end
 
   def test_rest
-    Log.with_severity 0 do
+    keyword_test :rest do
 
       remote_workflow_server(TestWFRest) do |client|
         job = client.job(:hi, nil, {})
@@ -89,10 +89,11 @@ class TestRemoteWorkflow < Test::Unit::TestCase
 
 
   def test_ssh
-    Log.severity = 0
-    client = RemoteWorkflow.new "ssh://#{ENV["HOSTNAME"]}:Translation", "Translation"
-    job = client.job("translate", "SSH-TEST-1", :genes => ["TP53","KRAS"])
-    assert_equal 2, job.run.select{|l| l =~ /ENSG/}.length
+    keyword_test :ssh do
+      client = RemoteWorkflow.new "ssh://#{ENV["HOSTNAME"] || 'localhost'}:Translation", "Translation"
+      job = client.job("translate", "SSH-TEST-1", :genes => ["TP53","KRAS"])
+      assert_equal 2, job.run.select{|l| l =~ /ENSG/}.length
+    end
   end
 end
 

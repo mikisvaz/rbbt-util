@@ -2,12 +2,12 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../../..', 'test_he
 require 'rbbt/util/misc/bgzf'
 
 class TestBgzf < Test::Unit::TestCase
-  def _test_Bgzf
+  def test_Bgzf
     content = "1234567890" * 1000000
     TmpFile.with_file(content) do |file|
       compressed = file + '.gz'
       `bgzip #{file} -c > #{compressed}`
-      stream = Bgzf.setup File.open(compressed)
+      stream = Bgzf.setup Open.open(compressed, :noz => true)
       assert_equal "1234", stream.read(4)
       assert_equal "56", stream.read(2)
       stream.seek 500003
@@ -40,7 +40,7 @@ class TestBgzf < Test::Unit::TestCase
     end
   end
 
-  def _test_bgzip
+  def test_bgzip
     assert File.exist?(Bgzf.bgzip_cmd)
     assert 'bgzip', File.basename(Bgzf.bgzip_cmd)
   end

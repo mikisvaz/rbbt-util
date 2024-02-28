@@ -174,21 +174,26 @@ for this dependency
     "alt"
   end
 
+  task :overr_alt2 => :string do
+    "alt"
+  end
+
+
   dep :overr_orig
   task :overr_target => :string do
     step(:overr_orig).load.reverse
   end
 
   dep :overr_alt, :not_overriden => true
-  dep :overr_target, "TestWF#overr_orig" => :overr_alt, :not_overriden => true
+  dep :overr_target, "TestWF#overr_orig" => :overr_alt
   task :overr_action => :string do
     step(:overr_target).load.upcase
   end
 
 
-  dep :overr_alt, :not_overriden => true
-  dep :overr_target, "TestWF#overr_orig" => :overr_alt
-  task :overr_action2 => :string do
+  dep :overr_alt2, :not_overriden => true
+  dep :overr_target, "TestWF#overr_orig" => :overr_alt2, :not_overriden => true
+  task :not_overr_action => :string do
     step(:overr_target).load.upcase
   end
 
@@ -354,12 +359,10 @@ class TestWorkflow < Test::Unit::TestCase
 
   def test_stream_order
 
-    Log.with_severity 0 do
-      job = TestWF.job(:stream2)
-      job.recursive_clean
-      job.produce
+    job = TestWF.job(:stream2)
+    job.recursive_clean
+    job.produce
 
-    end
   end
 
   def test_rec_input_use
@@ -450,13 +453,16 @@ class TestWorkflow < Test::Unit::TestCase
       end
     end
 
-    job = TestWF.job(:reverse_file, nil, :file => "code")
-    TmpFile.with_file do |dir|
-      Path.setup(dir)
-      Step.save_job_inputs(job, dir)
-      assert_equal Dir.glob(dir + "/*"), [dir.file.find + '.as_path']
-      inputs  = Workflow.load_inputs(dir, [:file], :file => :file)
-      assert_equal inputs, {:file => 'code'}
+    TmpFile.with_file("code") do |tmpfile|
+      job_orig = TestWF.job(:reverse_file, nil, :file => tmpfile)
+      TmpFile.with_file do |dir|
+        Path.setup(dir)
+        Step.save_job_inputs(job_orig, dir)
+        assert_equal [dir.file.find + '.as_path'], Dir.glob(dir + "/*")
+        inputs  = Workflow.load_inputs(dir, [:file], :file => :file)
+        job = TestWF.job(:reverse_file, nil, inputs)
+        assert job_orig.path, job.path
+      end
     end
 
   end
@@ -507,11 +513,12 @@ class TestWorkflow < Test::Unit::TestCase
 
     assert Symbol === job.step(:overr_orig).overriden
     assert TrueClass === job.step(:overr_target).overriden
-    assert ! job.overriden
-
-    job = TestWF.job(:overr_action2)
-    assert_equal "TLA", job.run
     assert job.overriden
+
+    job = TestWF.job(:not_overr_action)
+    assert ! job.overriden
+    assert_equal "TLA", job.run
+    assert ! job.step(:overr_target).overriden
   end
 
   def test_anonymous_workflow
@@ -539,65 +546,63 @@ class TestWorkflow < Test::Unit::TestCase
   end
 
   def test_low_level_step
-    Log.with_severity 0 do
-      TmpFile.with_file do |tmpdir|
-        Path.setup tmpdir
+    TmpFile.with_file do |tmpdir|
+      Path.setup tmpdir
 
-        s1 = Step.new tmpdir.s1 do "s1" end 
-        s1.task_name = "s1"
+      s1 = Step.new tmpdir.s1 do "s1" end 
+      s1.task_name = "s1"
 
-        # run clean run
-        assert_equal "s1", s1.run
-        s1.clean
-        assert_equal "s1", s1.run
-        assert_equal "s1", s1.run
+      # run clean run
+      assert_equal "s1", s1.run
+      s1.clean
+      assert_equal "s1", s1.run
+      assert_equal "s1", s1.run
 
-        # is persisted because it raises RbbtException
-        s1.task = proc do raise RbbtException end
-        assert_equal "s1", s1.run
-        s1.clean
-        assert_raises RbbtException do s1.run end
-        assert RbbtException === s1.get_exception
-        assert s1.error?
+      # is persisted because it raises RbbtException
+      s1.task = proc do raise RbbtException end
+      assert_equal "s1", s1.run
+      s1.clean
+      assert_raises RbbtException do s1.run end
+      assert RbbtException === s1.get_exception
+      assert s1.error?
 
-        s1.recursive_clean
-        s1.task = proc do "s1" end
+      s1.recursive_clean
+      s1.task = proc do "s1" end
 
-        # add dependencies
-        s2 = Step.new tmpdir.s2 do 
-          step(:s1).load + " -> s2"  
-        end 
-        s2.task_name = "s2"
-        s2.dependencies << s1
+      # add dependencies
+      s2 = Step.new tmpdir.s2 do 
+        step(:s1).load + " -> s2"  
+      end 
+      s2.task_name = "s2"
+      s2.dependencies << s1
 
-        s3 = Step.new tmpdir.s3 do 
-          step(:s2).load + " -> s3"  
-        end 
-        s3.task_name = "s3"
-        s3.dependencies << s2
+      s3 = Step.new tmpdir.s3 do 
+        step(:s2).load + " -> s3"  
+      end 
+      s3.task_name = "s3"
+      s3.dependencies << s2
 
-        assert_equal "s1 -> s2", s2.run
-        assert_equal "s1 -> s2 -> s3", s3.run
-        
-        # Test recusive behaviour
-        s1.task = proc do raise RbbtException end
-        ComputeDependency.setup(s1, :produce)
-        s1.clean
-        s3.clean
-        s3.run
-        assert_equal "s1 -> s2 -> s3", s3.run
+      assert_equal "s1 -> s2", s2.run
+      assert_equal "s1 -> s2 -> s3", s3.run
 
-        s1.task = proc do raise RbbtException end
-        ComputeDependency.setup(s1, :produce)
-        s3.recursive_clean
-        assert_raises RbbtException do s3.run end
+      # Test recusive behaviour
+      s1.task = proc do raise RbbtException end
+      ComputeDependency.setup(s1, :produce)
+      s1.clean
+      s3.clean
+      s3.run
+      assert_equal "s1 -> s2 -> s3", s3.run
 
-        s1.task = proc{|v| v }
-        s1.inputs = ["test"]
-        assert_equal "test", s1.run
-        s3.recursive_clean
-        assert_equal "test -> s2 -> s3", s3.run
-      end
+      s1.task = proc do raise RbbtException end
+      ComputeDependency.setup(s1, :produce)
+      s3.recursive_clean
+      assert_raises RbbtException do s3.run end
+
+      s1.task = proc{|v| v }
+      s1.inputs = ["test"]
+      assert_equal "test", s1.run
+      s3.recursive_clean
+      assert_equal "test -> s2 -> s3", s3.run
     end
   end
 

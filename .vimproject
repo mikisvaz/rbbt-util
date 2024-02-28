@@ -285,6 +285,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
  test=test {
   test_helper.rb
   data=data filter="*"{
+   CollecTRI.gz
    Test.xls
    dose_response
    dose_response2
@@ -292,6 +293,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    example.pdf
    gene_ages
    identifiers
+   nature
+   pina
+   sample_genes
    test.tsv
   }
   rbbt=rbbt{
@@ -310,10 +314,16 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     test_path.rb
     }
    workflow=workflow{
-    _test_soap.rb
     test_doc.rb
+    test_remote_workflow.rb
+    test_schedule.rb
     test_step.rb
     test_task.rb
+    util=util{
+     test_archive.rb
+     test_data.rb
+     test_orchestrator.rb
+    }
    }
    association=association{
     test_database.rb
@@ -324,10 +334,14 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
    knowledge_base=knowledge_base{
     test_enrichment.rb
+    test_entity.rb
     test_query.rb
     test_registry.rb
+    test_syndicate.rb
+    test_traverse.rb
     }
    persist=persist{
+    test_tsv.rb
     tsv=tsv{
      test_cdb.rb
      test_kyotocabinet.rb
@@ -336,7 +350,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      test_sharder.rb
      test_tokyocabinet.rb
      }
-    test_tsv.rb
    }
    tsv=tsv{
     test_accessor.rb
@@ -348,6 +361,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     test_filter.rb
     test_index.rb
     test_manipulate.rb
+    test_marshal.rb
     test_matrix.rb
     test_parallel.rb
     test_parser.rb
@@ -371,12 +385,15 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     test_excel2tsv.rb
     test_filecache.rb
     test_log.rb
+    test_migrate.rb
     test_misc.rb
     test_open.rb
+    test_procpath.rb
     test_python.rb
     test_semaphore.rb
     test_simpleDSL.rb
     test_simpleopt.rb
+    test_ssh.rb
     test_tmpfile.rb
     R=R{
      test_eval.rb
@@ -385,11 +402,15 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     }
     misc=misc{
      test_bgzf.rb
+     test_communication.rb
+     test_development.rb
      test_format.rb
+     test_indiferent_hash.rb
      test_lock.rb
      test_multipart_payload.rb
      test_omics.rb
      test_pipes.rb
+     test_serialize.rb
     }
     simpleopt=simpleopt{
      test_get.rb
@@ -400,6 +421,18 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      test_processes.rb
      test_threads.rb
      }
+   }
+   hpc=hpc{
+    hpc_test_workflows.rb
+    test_batch.rb
+    test_orchestrate.rb
+    test_pbs.rb
+    test_slurm.rb
+    orchestrate=orchestrate{
+     test_batches.rb
+     test_chains.rb
+     test_rules.rb
+    }
    }
   }
  }

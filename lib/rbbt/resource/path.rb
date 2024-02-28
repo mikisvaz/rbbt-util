@@ -161,8 +161,13 @@ module Path
   def find(where = nil, caller_lib = nil, paths = nil)
 
     if located?
-      self.original ||= self
-      return self
+      path = self
+      path = path + '.gz' if File.exist?(path + '.gz')
+      path = path + '.bgz' if File.exist?(path + '.bgz')
+      self.annotate(path)
+
+      path.original = self
+      return path
     end
 
     if where == :all || where == 'all'

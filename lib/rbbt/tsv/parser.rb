@@ -281,19 +281,20 @@ module TSV
       end
 
       values = values.collect{|v| v.length != num ? [v.first] * num : v}
+
       all = values
       all.unshift keys
-      Misc.zip_fields(all).each do |values|
-        key = values.shift
+      Misc.zip_fields(all).each do |vs|
+        key = vs.shift
         if data.include? key
-          data[key] = data[key].zip(values).collect do |old, new|
-            old.push new
-            old
+          data[key] = data[key].zip(vs).collect do |old, new|
+            old + [new]
           end
         else
-          data[key] = values.collect{|v| [v]}
+          data[key] = vs.collect{|v| [v] }
         end
       end
+
       nil
     end
 

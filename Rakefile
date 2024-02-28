@@ -47,6 +47,18 @@ Rake::TestTask.new(:test) do |test|
   test.warning = false
 end
 
+%w(tsv persist util workflow entity annotations association knowledge_base resource hpc resource concurrency).each do |subsystem|
+  Rake::TestTask.new("test_#{subsystem}") do |test|
+    test.libs << 'lib' << 'test'
+    test.pattern = ["test/rbbt/#{subsystem}/**/*.rb", "test/**/test_#{subsystem}.rb"]
+    test.verbose = true
+    test.warning = false
+  end
+end
+
+
+
+
 begin
   require 'rcov/rcovtask'
   Rcov::RcovTask.new do |test|

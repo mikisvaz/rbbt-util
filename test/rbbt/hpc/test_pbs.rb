@@ -25,7 +25,7 @@ class TestPBS < Test::Unit::TestCase
     TmpFile.with_file do |batch_dir|
 
       template = HPC::PBS.job_template(job, :batch_dir => batch_dir, :lua_modules => 'java')
-      ppp template
+      assert_include template, "rbbt workflow task TestWorkflow hello"
 
     end
   end

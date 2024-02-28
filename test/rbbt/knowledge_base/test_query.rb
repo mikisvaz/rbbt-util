@@ -38,7 +38,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
     end
   end
 
-  def _test_subset_all_persist_format
+  def test_subset_all_persist_format
     assert KNOWLEDGE_BASE.subset(:effects, :all).target_entity.reject{|e| e =~ /^ENS/}.empty?
   end
 

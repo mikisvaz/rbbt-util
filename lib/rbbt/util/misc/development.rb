@@ -39,13 +39,13 @@ module Misc
         end
       end
       if message
-        puts "#{message }: #{ repeats } repeats"
+        STDERR.pust "#{message }: #{ repeats } repeats"
       else
-        puts "Benchmark for #{ repeats } repeats"
+        STDERR.puts "Benchmark for #{ repeats } repeats"
       end
-      puts measure
+      STDERR.puts measure
     rescue Exception
-      puts "Benchmark aborted"
+      STDERR.puts "Benchmark aborted"
       raise $!
     end
     res

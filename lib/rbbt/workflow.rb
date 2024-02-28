@@ -496,7 +496,7 @@ module Workflow
     end
 
     #overriden = true if dependencies.select{|d| d.overriden && d.clean_name != d.name }.any?
-    overriden = true if not_overriden && dependencies.select{|d| Symbol === d.overriden }.any?
+    overriden = true if ! not_overriden && dependencies.select{|d| Symbol === d.overriden }.any?
 
     input_values = task.take_input_values(inputs)
     if real_inputs.empty? && Workflow::TAG != :inputs && ! overriden #&& ! dependencies.select{|d| d.overriden && d.clean_name != d.name }.any?
@@ -507,7 +507,7 @@ module Workflow
 
     job = get_job_step step_path, task, input_values, dependencies
     job.workflow = self
-    job.overriden ||= overriden 
+    job.overriden = overriden if job.overriden.nil?
     job.clean_name = jobname
 
     #iif [job, not_overriden]

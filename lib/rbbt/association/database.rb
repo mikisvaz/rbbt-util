@@ -93,7 +93,7 @@ module Association
       tmp_data = Persist.open_database(tmpfile, true, :double, "HDB")
 
       tsv.with_monitor(options[:monitor]) do
-        tsv = tsv.reorder source_field, fields, :persist => persist, :persist_data => tmp_data if true or source_field != tsv.key_field or (fields and tsv.fields != fields)
+        tsv = tsv.reorder source_field, tsv.all_fields.values_at(*field_pos), :persist => persist, :persist_data => tmp_data if true or source_field != tsv.key_field or (fields and tsv.fields != fields)
       end
 
       tsv.key_field = source_header
@@ -216,6 +216,7 @@ module Association
                  open_stream(stream, options.dup)
                end
 
+    database.filename = file if Path === file && file.identifier_files.any?
     database.entity_options = options[:entity_options] if options[:entity_options]
 
     database

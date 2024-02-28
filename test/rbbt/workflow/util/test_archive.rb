@@ -16,16 +16,12 @@ class TestClass < Test::Unit::TestCase
     job = ArchiveTestWF.job(:test_archive)
     job.run
 
-    Log.with_severity 0 do
-      TmpFile.with_file do |tmpdir|
-        Misc.in_dir tmpdir do
-          Step.migrate(job.path, :current, :delete => false, :print => false)
-        end
-        assert_equal "TEST", Open.read(File.join(tmpdir, 'var/jobs/ArchiveTestWF/test_archive/Default'))
+    TmpFile.with_file do |tmpdir|
+      Misc.in_dir tmpdir do
+        Step.migrate(job.path, :current, :delete => false, :print => false)
       end
+      assert_equal "TEST", Open.read(File.join(tmpdir, 'var/jobs/ArchiveTestWF/test_archive/Default'))
     end
-
-
   end
 end
 

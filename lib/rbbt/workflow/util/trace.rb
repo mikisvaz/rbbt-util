@@ -158,11 +158,11 @@ rbbt.png_plot('#{plot}', 'plot(timeline)', width=#{width}, height=#{height}, poi
         info[key] = dep_info[key] 
       end
 
-      dep.info[:config_keys].select do |kinfo| 
+      dep.info[:config_keys].each do |kinfo| 
         key, value, tokens = kinfo
 
         info[key.to_s] = value if report_keys.include? key.to_s
-      end
+      end if dep.info[:config_keys]
     end
 
     summary = TSV.setup({}, "Task~Calls,Avg. Time,Total Time#:type=:list")

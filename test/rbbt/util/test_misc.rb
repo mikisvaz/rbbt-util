@@ -471,7 +471,7 @@ eum fugiat quo voluptas nulla pariatur?"
   end
 
   def test_snake_case
-    ppp Misc.snake_case("KinaseSARfari")
+    assert_equal "kinase_SAR_fari", Misc.snake_case("KinaseSARFari")
   end
 
   def test_bootstrap
@@ -676,7 +676,7 @@ Commands:
     assert_equal "1.10.2-dirty", Misc.scan_version_text(txt, "bcftools")
 
     txt =<<-EOF
-The Genome Analysis Toolkit (GATK) v4.1.4.1
+The Genome Analysis Toolkit (GATK) 4.1.4.1
 HTSJDK Version: 2.21.0
 Picard Version: 2.21.2
     EOF
@@ -718,6 +718,11 @@ Written by Mike Haertel and others, see <http://git.sv.gnu.org/cgit/grep.git/tre
       assert_equal Etc.nprocessors * 2, Open.read(f).split("\n").uniq.length
     end
 
+  end
+
+  def test_tokenize
+    iii Misc.tokenize("One Two 'this is Three'")
+    iii Misc.tokenize("some - 'Ex t=tr'")
   end
 end
 

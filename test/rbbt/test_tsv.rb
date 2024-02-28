@@ -651,7 +651,7 @@ row3    AA    BB|BBB    Id3|Id2
     end
   end
 
-  def test_benchmark
+  def __test_benchmark
     num = 10_000
     txt = num.times.inject(nil) do |acc,i|
       (acc.nil? ? "" : acc << "\n") << (0..10).collect{|v| v == 0 ? i : [v,v] * "|" } * "\t"

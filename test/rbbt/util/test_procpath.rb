@@ -3,7 +3,7 @@ require 'rbbt/util/procpath'
 
 class TestProcPath < Test::Unit::TestCase
   def test_record_and_plot
-    Log.with_severity 0 do
+    keyword_test :procpath do
       pid = Process.fork do
         a = ""
         (0..1000).each do 

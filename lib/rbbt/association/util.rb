@@ -115,8 +115,14 @@ module Association
     source_field = specs[:source][0]
     target_field = specs[:target][0]
 
-    source_pos = all_fields.index source_field
-    target_pos = all_fields.index target_field
+    #source_pos = all_fields.index source_field
+    #target_pos = all_fields.index target_field
+   
+    source_pos = TSV.identify_field all_fields.first, all_fields[1..-1], source_field
+    target_pos = TSV.identify_field all_fields.first, all_fields[1..-1], target_field
+
+    source_pos = source_pos == :key ? 0 : source_pos + 1
+    target_pos = target_pos == :key ? 0 : target_pos + 1
 
     source_header = specs[:source][1] || specs[:source][0]
     target_header = specs[:target][1] || specs[:target][0]
@@ -140,7 +146,11 @@ module Association
       field_headers << header
     end
 
-    field_pos = info_fields.collect{|f| raise "Field #{f} not found. Options: #{all_fields * ", "}" unless all_fields.include?(f); f == :key ? 0 : all_fields.index(f);  }
+    field_pos = info_fields.collect do |f| 
+      p = TSV.identify_field all_fields.first, all_fields[1..-1], f
+      p == :key ? 0 : p + 1
+    end
+
     field_pos.delete source_pos
 
     source_format = specs[:source][2]

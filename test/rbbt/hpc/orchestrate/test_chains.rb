@@ -1,51 +1,9 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../../..', 'test_helper.rb')
-require 'rbbt/workflow'
 require 'rbbt/hpc/orchestrate/chains'
 
-module TestWFA
-  extend Workflow
+require_relative '../hpc_test_workflows'
 
-  task :a1 => :string do self.task_name.to_s end
-
-  dep :a1
-  task :a2 => :string do self.task_name.to_s end
-
-  dep :a2
-  task :a3 => :string do self.task_name.to_s end
-end
-
-module TestWFB
-  extend Workflow
-
-  dep TestWFA, :a2
-  task :b1 => :string do self.task_name.to_s end
-
-  dep :b1
-  task :b2 => :string do self.task_name.to_s end
-end
-
-module TestWFC
-  extend Workflow
-
-  dep TestWFA, :a1
-  dep_task :c1, TestWFB, :b2
-
-  task :c2 => :string do self.task_name.to_s end
-
-  dep :c1
-  dep :c2
-  task :c3 => :string do self.task_name.to_s end
-end
-
-module TestWFD
-  extend Workflow
-
-  dep TestWFC, :c3, :jobname => "First c3"
-  dep TestWFC, :c3, :jobname => "Second c3"
-  task :d1 => :string do self.task_name.to_s end
-end
-
-class TestOrchestrate < Test::Unit::TestCase
+class TestOrchestrateChains < Test::Unit::TestCase
 
   RULES = IndiferentHash.setup(YAML.load(<<-EOF))
 ---
@@ -134,6 +92,17 @@ TestWFC:
       collect{|n,i| i[:top_level].name }.sort
 
     assert_equal 1, job_chains.select{|n,i| n == 'chain_d' }.length
+  end
+
+  def __test_benchmark
+
+    job = TestDeepWF.job(:suite, :size => 100)
+    job.recursive_clean
+
+    Misc.benchmark(10) do
+      HPC::Orchestration.job_chains(RULES, job)
+    end
+
   end
 end
 

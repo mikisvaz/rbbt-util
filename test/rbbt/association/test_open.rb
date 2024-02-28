@@ -30,7 +30,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
 
   def test_open_persist
-    tsv = Association.open(EFFECT_TSV, EFFECT_OPTIONS, :persist => true, :update => true)
+    tsv = Association.open(EFFECT, EFFECT_OPTIONS, :persist => true, :update => true)
     assert_equal "ENSG00000141510", tsv["MDM2"]["Ensembl Gene ID"].first
     assert_equal ["false"], tsv["MDM2"]["directed?"]
   end

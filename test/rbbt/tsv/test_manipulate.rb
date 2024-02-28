@@ -13,8 +13,6 @@ rowa    a|aa    b|BB  C|CC
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(File.open(filename), :sep => /\s+/, :type => :double)
-      Log.tsv tsv
-      Log.tsv tsv.reorder("ValueA", nil, :zipped => true)
       assert_equal ["A", "AA", "a", "aa"].sort, tsv.reorder("ValueA", nil, :zipped => true).keys.sort
     end
   end
@@ -129,7 +127,6 @@ row2 A B C
       tsv = tsv.slice []
       assert tsv.fields.empty?
       TmpFile.with_file do |tmpfile|
-        iii tsv.to_s
         Open.write(tmpfile, tsv.to_s)
         tsv = TSV.open tmpfile
         assert tsv.fields.empty?

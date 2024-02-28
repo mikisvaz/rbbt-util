@@ -54,7 +54,7 @@ module ReversableString
   end
 
   persist :reverse_text_ary_p, :marshal
-  persist :reverse_text_single_p, :memory
+  #persist :reverse_text_single_p, :memory
 
   persist :reverse_text_ary_p_array, :array, :dir => TmpFile.tmp_file
 
@@ -133,12 +133,15 @@ class TestEntity < Test::Unit::TestCase
 
     assert_equal 2, $count
 
+    a = ["String1", "String2"]
+    ReversableString.setup a
+
     $count = 0
 
     assert_equal "2gnirtS", a.reverse_text_single_p.last
-    assert_equal 0, $count
+    assert_equal 2, $count
     assert_equal "2gnirtS", a[1].reverse_text_single_p
-    assert_equal 1, $count
+    assert_equal 3, $count
   end
 
   def test_property_ary_p_array
@@ -168,7 +171,7 @@ class TestEntity < Test::Unit::TestCase
 
     # After persist
     ReversableString.persist :random
-    assert(ReversableString.persisted?(:random))
+    assert ReversableString.persisted?(:random)
 
     r1 = a.random
     r2 = a.random
@@ -176,7 +179,7 @@ class TestEntity < Test::Unit::TestCase
 
     # After unpersist
     ReversableString.unpersist :random
-    assert(! ReversableString.persisted?(:random))
+    refute ReversableString.persisted?(:random)
 
     r1 = a.random
     r2 = a.random

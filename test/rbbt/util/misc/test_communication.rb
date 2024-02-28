@@ -3,9 +3,11 @@ require 'rbbt/util/misc/communication'
 
 class TestCommunication < Test::Unit::TestCase
   def test_send_email
-    to = from = 'mvazque2@localhost'
-    subject = message = "Test"
-    iii Misc.send_email(to, from, subject, message)
+    keyword_test :mail do
+      to = from = 'mvazque2@localhost'
+      subject = message = "Test"
+      Misc.send_email(to, from, subject, message)
+    end
   end
 end
 

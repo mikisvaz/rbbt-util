@@ -2,7 +2,7 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '..', 'test_helper.r
 require 'rbbt/packed_index'
 
 class TestPackedIndex < Test::Unit::TestCase
-  def _test_packed_index
+  def test_packed_index
 
     TmpFile.with_file do |tmpfile|
       pi = PackedIndex.new tmpfile, true, %w(i i 23s f f f f f)
@@ -14,10 +14,10 @@ class TestPackedIndex < Test::Unit::TestCase
       pi.close
       pi = PackedIndex.new(tmpfile, false)
       Misc.benchmark(1000) do
-      100.times do |i|
-        assert_equal i, pi[i][0] 
-        assert_equal i+2, pi[i][1] 
-      end
+        100.times do |i|
+          assert_equal i, pi[i][0] 
+          assert_equal i+2, pi[i][1] 
+        end
       end
       assert_equal nil, pi[100]
       assert_equal nil, pi[101]

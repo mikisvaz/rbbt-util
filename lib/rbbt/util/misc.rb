@@ -69,7 +69,7 @@ module Misc
   end
 
   def self.tokenize(str)
-    str.scan(/"[^"]*"|'[^']*'|[^"'\s]+/)
+    str.scan(/"([^"]*)"|'([^']*)'|([^"'\s]+)/).flatten.compact
   end
 
   def self.timespan(str, default = "s")

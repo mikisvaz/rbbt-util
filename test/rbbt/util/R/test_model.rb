@@ -3,8 +3,6 @@ require 'rbbt/util/R'
 require 'rbbt/util/R/model'
 
 class TestRModel < Test::Unit::TestCase
-  def model
-  end
 
   def test_fit
     data = TSV.setup({}, :key_field => "Dose", :fields => ["Response"], :type => :single)

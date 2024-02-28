@@ -146,7 +146,7 @@ class KnowledgeBase
       if conditions
         Misc.tokenize(conditions).each do |condition|
           if condition.index "="
-            key, value = conditions.split("=")
+            key, value = condition.split("=")
             matches = matches.select{|m| Misc.match_value(m.info[key.strip], value)}
           else
             matches = matches.select{|m| m.info[condition.strip].to_s =~ /\btrue\b/}
@@ -158,17 +158,19 @@ class KnowledgeBase
     end
 
     def id_dbs(db)
+      # ToDo: Revise this, I'm not sure what id does anymore
+      # I think it deals with syndication
       if db.include? '?'
-        all_dbs = kb.registry.keys
+        all_dbs = kb.registry.keys.collect{|k| k.to_s }
         _name, _sep, _kb = db.partition("@")
         case
         when _name[0] == '?'
           dbs = all_dbs.select{|_db| 
             n,_s,d=_db.partition("@"); 
-            d.nil? or d.empty? or (d == _kd and assignments[_name].include?(n))
+            d.nil? or d.empty? or (d == _kb and assignments[_name].include?(n))
           }
         when _kb[0] == '?'
-          dbs = all_dbs.select{|_db| n,_s,d=_db.partition("@"); n == _name and assignments[_kb].include?(d)}
+          dbs = all_dbs.select{|_db| n,_s,d=_db.partition("@"); n == _name and assignments[_kb].include?(d) }
         end
       else
         dbs = [db]
@@ -181,11 +183,12 @@ class KnowledgeBase
       all_matches = []
       path_rules = []
       acc_var = nil
+      pre_acc_var_assignments = nil
       rules.each do |rule|
         rule = rule.strip
         next if rule.empty?
 
-        if m = rule.match(/([^\s]+)\s+([^\s=]+)\s+([^\s]+)(?:\s+-\s+([^\s]+))?/)
+        if m = rule.match(/([^\s]+)\s+([^\s=]+)\s+([^\s]+)(?:\s+-\s+(.*))?/)
           Log.debug "Traverse rule: #{rule}"
           path_rules << rule
 
@@ -199,17 +202,19 @@ class KnowledgeBase
 
             next if matches.nil? or matches.empty?
 
-            if db.include? '?'
-              _name, _sep, _kb = db.partition("@")
-              case
-              when _kb[0] == '?'
-                assignments[_kb] ||= []
-                assignments[_kb] << _db.partition("@").reject{|p| p.empty?}.last
-              when _name[0] == '?'
-                assignments[_name] ||= []
-                assignments[_name] << _db.partition("@").first
-              end
-            end
+            # ToDo: Revise this, I'm not sure what id does anymore
+            #
+            #if db.include? '?'
+            #  _name, _sep, _kb = db.partition("@")
+            #  case
+            #  when _kb[0] == '?'
+            #    assignments[_kb] ||= []
+            #    assignments[_kb] << _db.partition("@").reject{|p| p.empty?}.last
+            #  when _name[0] == '?'
+            #    assignments[_name] ||= []
+            #    assignments[_name] << _db.partition("@").first
+            #  end
+            #end
 
             matches.each do |m|
               rule_matches << m
@@ -244,11 +249,14 @@ class KnowledgeBase
 
         elsif m = rule.match(/(\?[^\s{]+)\s*{/)
           acc_var = m.captures.first
+          pre_acc_var_assignments = assignments.dup
           Log.debug "Start assign block: #{acc_var}"
         elsif m = rule.match(/^\s*}\s*$/)
           Log.debug "Close assign block: #{acc_var}"
           saved_assign = assignments[acc_var]
           assignments.clear
+          assignments.merge!(pre_acc_var_assignments)
+          pre_acc_var_assignments = nil
           assignments[acc_var] = saved_assign
           all_matches = []
           path_rules = []

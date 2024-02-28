@@ -14,9 +14,7 @@ class TestMigrate < Test::Unit::TestCase
     Open.write(test_file, "TEST")
     TmpFile.with_file do |tmpdir|
       Misc.in_dir tmpdir do
-        Log.with_severity 0 do
-          Rbbt.migrate('tmp/test/migration_test/migration_test_file', :current)
-        end
+        Rbbt.migrate('tmp/test/migration_test/migration_test_file', :current)
       end
       assert_equal "TEST", Open.read(File.join(tmpdir, 'tmp/test/migration_test/migration_test_file'))
     end

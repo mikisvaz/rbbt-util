@@ -2,20 +2,16 @@ require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helpe
 require 'rbbt/hpc/slurm'
 require 'rbbt/workflow'
 
+require_relative 'hpc_test_workflows'
 class TestSLURM < Test::Unit::TestCase
-  def setup
-    Workflow.require_workflow "Sample"
-    Workflow.require_workflow "HTS"
-  end
-
-  def __test_template
-    job = Sample.job(:mutect2, "small", :reference => "hg38")
+  def test_template
+    job = TestWFA.job(:a2, "TEST")
 
     TmpFile.with_file do |batch_dir|
 
-      template = HPC::SLURM.job_template(job, :batch_dir => batch_dir, :batch_modules => 'java')
-      ppp template
-
+      template = HPC::SLURM.job_template(job, :batch_dir => batch_dir, :batch_modules => 'java', :time => '10min')
+      assert_include template, "rbbt workflow task TestWFA a2"
+      assert_include template, "00:10:00"
     end
   end
 

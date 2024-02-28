@@ -168,6 +168,8 @@ module TSV
       end
     when Set
       get_stream(file.to_a, open_options)
+    when Enumerable
+      file
     else
       raise "Cannot get stream from: #{file.inspect}"
     end
@@ -189,6 +191,16 @@ module TSV
       pos = fields.index field
       return pos if pos
       return identify_field(key_field, fields, field.to_i) if field =~ /^\d+$/
+      if fields.select{|f| f.include?("(") }.any?
+        simplify_fields = fields.collect do |f|
+          if m = f.match(/(.*)\s+\(.*\)/)
+            m[1]
+          else
+            f
+          end
+        end
+        return identify_field(key_field, simplify_fields, field)
+      end
       raise "Field '#{ field }' was not found. Options: (#{key_field || "NO_KEY_FIELD"}), #{(fields || ["NO_FIELDS"]) * ", "}" if pos.nil?
     else
       raise "Field '#{ field }' was not found. Options: (#{key_field || "NO_KEY_FIELD"}), #{(fields || ["NO_FIELDS"]) * ", "}"

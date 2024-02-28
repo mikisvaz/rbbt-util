@@ -67,19 +67,23 @@ def python_print():
   end
 
   def test_keras
-    defined = RbbtPython.run do
-      pyimport "tensorflow.keras.models", as: :km
-      defined?(km.Sequential)
+    keyword_test :tensorflow do
+      defined = RbbtPython.run do
+        pyimport "tensorflow.keras.models", as: :km
+        defined?(km.Sequential)
+      end
+      assert defined
     end
-    assert defined
   end
 
   def test_keras_import
-    defined = RbbtPython.run do
-      pyfrom "tensorflow.keras.models", import: :Sequential
-      defined?(self::Sequential)
+    keyword_test :tensorflow do
+      defined = RbbtPython.run do
+        pyfrom "tensorflow.keras.models", import: :Sequential
+        defined?(self::Sequential)
+      end
+      assert defined
     end
-    assert defined
   end
 
   def test_iterate

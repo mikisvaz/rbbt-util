@@ -50,13 +50,38 @@ end
 class TestKnowledgeBase < Test::Unit::TestCase
   def setup
     require 'rbbt/sources/organism'
-    require 'rbbt/sources/tfacts'
-    require 'rbbt/sources/kegg'
 
     Gene.add_identifiers Organism.identifiers("NAMESPACE"), "Ensembl Gene ID", "Associated Gene Name"
-    Gene.add_identifiers KEGG.identifiers
-
   end
+
+  def test_knowledge_base_simple
+    organism = Organism.default_code("Hsa")
+    TmpFile.with_file do |tmpdir|
+      kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
+      kb.format = {"Gene" => "Ensembl Gene ID"}
+
+      kb.register :gene_ages, datadir_test.gene_ages
+
+      i = kb.get_index(:gene_ages)
+
+      assert_include i.match("ENSG00000000003"), "ENSG00000000003~Bilateria"
+    end
+  end
+
+  def test_knowledge_base_translate
+    organism = Organism.default_code("Hsa")
+    TmpFile.with_file do |tmpdir|
+      kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
+      kb.format = {"Gene" => "Ensembl Gene ID"}
+
+      kb.register :gene_ages, datadir_test.gene_ages, :source => "FamilyAge", :target => "=>Associated Gene Name"
+
+      i = kb.get_index(:gene_ages)
+
+      assert_include i.match("Bilateria"), "Bilateria~SMAD4"
+    end
+  end
+
 
   def test_knowledge_base_reverse
     organism = Organism.default_code("Hsa")
@@ -64,52 +89,85 @@ class TestKnowledgeBase < Test::Unit::TestCase
       kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
       kb.format = {"Gene" => "Ensembl Gene ID"}
 
-      kb.register :tfacts, TFactS.regulators, :source =>"=~Associated Gene Name"
+      kb.register :gene_ages, datadir_test.gene_ages
 
-      kb.get_index(:tfacts).reverse
+      ri = kb.get_index(:gene_ages).reverse
+
+      assert_include ri.match("Bilateria"), "Bilateria~ENSG00000000003"
     end
   end
 
-  def test_knowledge_base
+  def test_entity
     organism = Organism.default_code("Hsa")
     TmpFile.with_file do |tmpdir|
       kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
       kb.format = {"Gene" => "Ensembl Gene ID"}
 
-      kb.register :tfacts, TFactS.regulators, :source =>"=~Associated Gene Name"
+      kb.register :gene_ages, datadir_test.gene_ages, :source => "=>Associated Gene Name"
 
-      assert_equal "Ensembl Gene ID", kb.get_database(:tfacts).key_field
+      kb.register :CollecTRI, datadir_test.CollecTRI, 
+        :source => "Transcription Factor", :target => "Target Gene",
+        :fields => ["[ExTRI] Confidence", "[ExTRI] PMID"]
 
-      kb.register :kegg, KEGG.gene_pathway, :source_format => "Ensembl Gene ID"
-      assert_match "Ensembl Gene ID", kb.get_database(:kegg).key_field
+      smad4 = Gene.setup("SMAD4", "Associated Gene Name", kb.namespace)
+      smad7 = Gene.setup("SMAD7", "Associated Gene Name", kb.namespace)
 
-      gene = Gene.setup("TP53", "Associated Gene Name", organism).ensembl
-      assert_equal "TP53", gene.name
-      assert_equal "ENSG00000141510", gene.ensembl
 
-      downstream = gene.follow kb, :tfacts
-      upstream = gene.backtrack kb, :tfacts
-      close = gene.expand kb, :tfacts
+      assert_include smad4.follow(kb, :CollecTRI), smad7
+      assert_include smad7.backtrack(kb, :CollecTRI), smad4
+      refute smad7.follow(kb, :CollecTRI).include?(smad4)
+      assert_include smad7.expand(kb, :CollecTRI), smad4
+      assert_include smad4.expand(kb, :CollecTRI), smad7
 
-      assert downstream.length < downstream.follow(kb, :tfacts,false).flatten.length
+    end
+  end
+
+  def __test_benchmark
+    organism = Organism.default_code("Hsa")
+    TmpFile.with_file do |tmpdir|
+      kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
+      kb.format = {"Gene" => "Ensembl Gene ID"}
+
+      kb.register :gene_ages, datadir_test.gene_ages, :source => "=>Associated Gene Name"
+
+      kb.register :CollecTRI, datadir_test.CollecTRI, 
+        :source => "Transcription Factor", :target => "Target Gene (Associated Gene Name)",
+        :fields => ["[ExTRI] Confidence", "[ExTRI] PMID"]
+
+
+      smad4 = Gene.setup("SMAD4", "Associated Gene Name", kb.namespace)
+      downstream = smad4.follow(kb, :CollecTRI, true)
+      Gene.setup(downstream)
+
+      downstream.follow(kb, :CollecTRI)
+      downstream.backtrack(kb, :CollecTRI)
+      downstream.expand(kb, :CollecTRI)
 
       Misc.benchmark(50) do
-        downstream.follow(kb, :tfacts, false)
-        downstream.backtrack(kb, :tfacts, false)
-        downstream.expand(kb, :tfacts, false)
-      end
-
-      Misc.benchmark(50) do
-        downstream.follow(kb, :tfacts)
-        downstream.backtrack(kb, :tfacts)
-        downstream.expand(kb, :tfacts)
+        downstream.follow(kb, :CollecTRI)
+        downstream.backtrack(kb, :CollecTRI)
+        downstream.expand(kb, :CollecTRI)
       end
       
       Misc.benchmark(50) do
-        downstream.follow(kb, :tfacts, true)
-        downstream.backtrack(kb, :tfacts, true)
-        downstream.expand(kb, :tfacts, true)
+        downstream.follow(kb, :CollecTRI, true)
+        downstream.backtrack(kb, :CollecTRI, true)
+        downstream.expand(kb, :CollecTRI, true)
       end
+    end
+  end
+
+  def test_identifier_files
+    organism = Organism.default_code("Hsa")
+    TmpFile.with_file do |tmpdir|
+      Path.setup(tmpdir)
+      kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
+
+      kb.register :gene_ages, datadir_test.gene_ages
+
+      assert_include kb.get_database(:gene_ages).identifier_files.first, "test/data"
+      assert_include kb.get_index(:gene_ages).identifier_files.first, "test/data"
+
     end
   end
 
@@ -117,10 +175,29 @@ class TestKnowledgeBase < Test::Unit::TestCase
     organism = Organism.default_code("Hsa")
     TmpFile.with_file do |tmpdir|
       Path.setup(tmpdir)
-      Association.index(TFactS.regulators, :persist_file => tmpdir.tfacts, :format => {"Gene" => "Ensembl Gene ID"}, :namespace => Organism.default_code("Hsa"))
+      kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
+      kb.register :CollecTRI, datadir_test.CollecTRI,
+        :source => "Transcription Factor=~Associated Gene Name=>Ensembl Gene ID", :target => "Target Gene",
+        :fields => ["[ExTRI] Confidence", "[ExTRI] PMID"]
+
+      assert kb.get_database(:CollecTRI).identifier_files.any?
+
+      i = Association.index(datadir_test.CollecTRI, :persist_file => tmpdir.CollecTRI, 
+                        :source => "Transcription Factor=~Associated Gene Name=>Ensembl Gene ID", :target => "Target Gene",
+                        :fields => ["[ExTRI] Confidence", "[ExTRI] PMID"],
+                        :format => {"Gene" => "Ensembl Gene ID"},
+                        :namespace => Organism.default_code("Hsa"))
+
+      assert i.identifier_files.any?
 
       kb = KnowledgeBase.load(tmpdir)
-      assert kb.identify_source('tfacts', "TP53") =~ /ENSG/
+
+      assert kb.get_database(:CollecTRI).identifier_files.any?
+
+      i =  kb.get_index(:CollecTRI)
+
+      assert i.identifier_files.any?
+      assert kb.identify_source('CollecTRI', "SMAD4") =~ /ENSG/
     end
   end
 

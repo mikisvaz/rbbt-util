@@ -29,14 +29,34 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   EFFECT_TSV = TSV.open EFFECT, EFFECT_OPTIONS.dup 
 
-  KNOWLEDGE_BASE = KnowledgeBase.new '/tmp/kb.foo3', "Hsa"
-  KNOWLEDGE_BASE.format = {"Gene" => "Associated Gene Name"}
+  def with_kb(&block)
+    keyword_test :organism do
+      require 'rbbt/sources/organism'
+      organism = Organism.default_code("Hsa")
+      TmpFile.with_file do |tmpdir|
+        kb = KnowledgeBase.new tmpdir, "Hsa"
+        kb.format = {"Gene" => "Associated Gene Name"}
 
-  KNOWLEDGE_BASE.register :effects, EFFECT_TSV, EFFECT_OPTIONS.dup
+        kb.register :effects, EFFECT_TSV, EFFECT_OPTIONS.dup
+
+        yield kb
+      end
+    end
+  end
 
   def test_entity_options
-    KNOWLEDGE_BASE.entity_options = {"Gene" => {:organism => "Mmu"}}
-    assert_equal "Mmu", KNOWLEDGE_BASE.children(:effects, "TP53").target_entity.organism
+    with_kb do |kb|
+      kb.entity_options = {"Gene" => {:organism => "Mmu"}}
+      assert_include kb.children(:effects, "TP53").target_entity.to("Associated Gene Name"), "GLI1"
+      assert_equal "Mmu", kb.children(:effects, "TP53").target_entity.organism
+    end
   end
+
+  def test_source_type
+    with_kb do |kb|
+      assert_match "Gene", kb.source_type(:effects).to_s
+    end
+  end
+
 end
 

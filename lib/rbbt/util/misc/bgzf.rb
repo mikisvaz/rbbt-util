@@ -29,8 +29,8 @@ module Bgzf
 
   def filename
     @filename ||= begin
-                  compressed_stream.respond_to?(:filename) ? compressed_stream.filename : nil
-                end
+                    compressed_stream.respond_to?(:filename) ? compressed_stream.filename : rand(1000000000).to_s
+                  end
   end
 
   def closed?
@@ -49,7 +49,8 @@ module Bgzf
 
   def _index
     @_index ||= begin
-                  index = Persist.persist("BGZF index" + (filename || "").sub(/.bgz$/,''), :marshal, :dir => Rbbt.var.bgzf_index) do
+                  prefix_code = "BGZF index" + (filename || "").sub(/.bgz$/,'')
+                  index = Persist.persist(prefix_code, :marshal) do
                     index = []
                     pos = 0
                     while true do
@@ -66,7 +67,7 @@ module Bgzf
                     end
                     index
                   end
-                  @block_cache_size = Math.log(index.length).to_i + 1
+                  @block_cache_size = Math.log(index.length + 1).to_i + 1
                   index
                end
   end

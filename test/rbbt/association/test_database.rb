@@ -23,7 +23,6 @@ MDM2 TP53 inhibition false
 TP53 NFKB1|GLI1 activation|activation true|true
     END
 
-
     effect_tsv = TSV.open effect, effect_options.dup
   end
 
@@ -35,7 +34,6 @@ TP53 NFKB1|GLI1 activation|activation true|true
     assert_equal %w(NFKB1 GLI1), effect_tsv["TP53"]["TG"]
   end
 
-  
   def test_open_new_tsv
     tsv = Association.database effect_tsv, :fields => ["Effect"], :target => "TG=~Associated Gene Name=>Ensembl Gene ID"
     assert_equal ["Ensembl Gene ID", "Effect"], tsv.fields

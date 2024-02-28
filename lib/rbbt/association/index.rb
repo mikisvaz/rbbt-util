@@ -38,6 +38,7 @@ module Association
       data.fields = fields[1..-1]
       data.type = :list
       data.serializer ||= serializer
+      data.filename ||= file if String === file
 
       database.with_unnamed do
         database.with_monitor(options[:monitor]) do

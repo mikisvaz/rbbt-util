@@ -215,7 +215,6 @@ row2    E
 
     tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
     tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
-    Log.tsv tsv2
 
     tsv2.identifiers = Rbbt.tmp.test.test2.identifiers.produce.find #.to_s
 
@@ -603,8 +602,7 @@ A    Id3
     tsv2.identifiers = Rbbt.tmp.test.test2.identifiers.produce(true).produce.find #.to_s
 
     tsv1.attach tsv2, :fields => ["ValueE"] #, :persist_input => true
-    Log.tsv tsv1
-    ppp tsv1
+    assert_equal [["a", "aa", "aaa"], ["b"], ["e"]], tsv1["row1"]
     
   end
 
@@ -631,7 +629,7 @@ E    B
     tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
 
     tsv1.attach tsv2, :fields => ["ValueE"] #, :persist_input => true
-    Log.tsv tsv1
+    assert_equal [["a", "aa", "aaa"], ["b"], ["e"]], tsv1["row1"]
     
   end
 
@@ -663,7 +661,6 @@ row3    C
     tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
     tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
 
-    ppp tsv1.attach tsv2, :complete => ["AA"]
     tsv1.attach tsv2, :complete => ["AA"]
     assert_equal [["AA"], ["C"]], tsv1["row3"]
   end

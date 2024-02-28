@@ -20,10 +20,15 @@ class RemoteWorkflow
 
     def self.escape_url(url)
       base, _sep, query = url.partition("?")
-      protocol, path = base.split("://") 
-      path = protocol if path.nil?
+      protocol, _sep, host_and_path = base.partition("://") 
+      host_and_path = protocol if host_and_path.nil?
+
+      host, _sep, path = host_and_path.partition("/")
+
       path = path.split("/").collect{|p| CGI.escape(p) }* "/"
-      base = protocol ? [protocol, path] * "://" : path
+
+      host_and_path = [host, path] * "/"
+      base = protocol ? [protocol, host_and_path] * "://" : host_and_path
 
       if query && ! query.empty?
         query = query.split("&").collect{|e| e.split("=").collect{|pe| CGI.escape(pe) } * "=" } * "&"
