@@ -470,7 +470,7 @@ eum fugiat quo voluptas nulla pariatur?"
     puts `ls -l /proc/#{ Process.pid }/fd`
   end
 
-  def test_snake_case
+  def test_snake_case_mixed_case
     assert_equal "kinase_SAR_fari", Misc.snake_case("KinaseSARFari")
   end
 
@@ -498,14 +498,16 @@ eum fugiat quo voluptas nulla pariatur?"
     Misc.benchmark(1000) do
       Misc.obj2md5(obj1)
     end
-    Misc.profile do
-      10.times do
-        Misc.hash2md5(hash)
+    keyword_test :profile do
+      Misc.profile do
+        10.times do
+          Misc.hash2md5(hash)
+        end
       end
-    end
-    Misc.profile do
-      10.times do
-        Misc.obj2md5(obj1)
+      Misc.profile do
+        10.times do
+          Misc.obj2md5(obj1)
+        end
       end
     end
   end

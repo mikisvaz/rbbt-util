@@ -47,13 +47,26 @@ Rake::TestTask.new(:test) do |test|
   test.warning = false
 end
 
-%w(tsv persist util workflow entity annotations association knowledge_base resource hpc resource).each do |subsystem|
+subsystems = %w(tsv persist util workflow entity annotations association knowledge_base resource hpc fix_width_table packed_index)
+
+subsystems.each do |subsystem|
   Rake::TestTask.new("test_#{subsystem}") do |test|
     test.libs << 'lib' << 'test'
     test.pattern = ["test/rbbt/#{subsystem}/**/*.rb", "test/**/test_#{subsystem}.rb"]
     test.verbose = true
     test.warning = false
   end
+end
+
+
+Rake::TestTask.new("test_all") do |test|
+  test.libs << 'lib' << 'test'
+  test.pattern = subsystems.collect do |subsystem|
+    next if subsystem == 'workflow'
+    ["test/rbbt/#{subsystem}/**/*.rb", "test/**/test_#{subsystem}.rb"]
+  end.flatten.compact.uniq
+  test.verbose = true
+  test.warning = false
 end
 
 
