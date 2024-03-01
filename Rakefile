@@ -12,7 +12,7 @@ begin
     gem.authors = ["Miguel Vazquez"]
     gem.files = Dir['lib/**/*.rb', 'share/**/*.rb', 'share/**/Rakefile', 'share/rbbt_commands/pbs/*', 'share/rbbt_commands/slurm/*', 'share/rbbt_commands/lsf/*', 'share/rbbt_commands/**/*', 'share/*.ru', 'share/Rlib/*.R', 'share/color/*', 'share/install/software/*', 'share/install/software/lib/install_helpers', 'LICENSE', 'bin/rbbt_commands/*', 'etc/app.d/*', 'python/**/*.py']
     gem.executables = ['rbbt_query.rb', 'rbbt_exec.rb', 'rbbt_Rutil.rb', 'rbbt', 'rbbt_dangling_locks.rb', 'rbbt_find.rb']
-    gem.test_files = Dir['test/**/test_*.rb']
+    #gem.test_files = Dir['test/**/test_*.rb']
 
     
     gem.add_dependency('rake')
@@ -47,7 +47,7 @@ Rake::TestTask.new(:test) do |test|
   test.warning = false
 end
 
-%w(tsv persist util workflow entity annotations association knowledge_base resource hpc resource concurrency).each do |subsystem|
+%w(tsv persist util workflow entity annotations association knowledge_base resource hpc resource).each do |subsystem|
   Rake::TestTask.new("test_#{subsystem}") do |test|
     test.libs << 'lib' << 'test'
     test.pattern = ["test/rbbt/#{subsystem}/**/*.rb", "test/**/test_#{subsystem}.rb"]

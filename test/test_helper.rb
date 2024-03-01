@@ -31,11 +31,11 @@ class Test::Unit::TestCase
   def teardown
     FileUtils.rm_rf Rbbt.tmp.test.workflow.find
     #Open.clear_dir_repos
-    #if defined? Persist
-    #  FileUtils.rm_rf Path.setup("", 'rbbt').tmp.test.find :user
-    #  Persist::CONNECTIONS.values.each do |c| c.close end
-    #  Persist::CONNECTIONS.clear
-    #end
+    if defined? Persist
+      FileUtils.rm_rf Path.setup("", 'rbbt').tmp.test.find :user
+      Persist::CONNECTIONS.values.each do |c| c.close end
+      Persist::CONNECTIONS.clear
+    end
 
     #if defined? Entity
     #  FileUtils.rm_rf Entity.entity_property_cache.find(:user) if Entity.entity_property_cache =~ /tmp\/test/
