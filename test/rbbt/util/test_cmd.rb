@@ -76,7 +76,7 @@ line33
   end
 
   def test_bash
-    puts CMD.bash("awk 'test'")
+    assert_include CMD.bash("awk 'test'"), "awk 'test'"
   end
 
   def test_cmd_error
