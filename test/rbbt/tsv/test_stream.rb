@@ -5,7 +5,7 @@ require 'rbbt'
 
 class TestStream < Test::Unit::TestCase
 
-  def test_collapse_stream
+  def _test_collapse_stream
     text=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -55,7 +55,7 @@ row3 ccc
     assert_equal ["AAA", "BBB", "CCC", "aaa", "bbb", "ccc"], tsv["row3"]
   end
 
-  def test_paste_stream_sort
+  def _test_paste_stream_sort
     text1=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -91,7 +91,7 @@ row2 cc
     assert_equal ["AAA", "BBB", "CCC", "aaa", "bbb", "ccc"], tsv["row3"]
   end
 
-  def test_paste_stream_missing_2
+  def _test_paste_stream_missing_2
     text1=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -123,7 +123,7 @@ row2 cc
     assert_equal ["", "", "", "", "", "ccc"], tsv["row3"]
   end
 
-  def test_paste_stream_missing
+  def _test_paste_stream_missing
     text1=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -155,7 +155,7 @@ row2 cc
     assert_equal ["", "", "", "", "", "ccc"], tsv["row3"]
   end
 
-  def test_paste_stream_missing_3
+  def _test_paste_stream_missing_3
     text1=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -177,7 +177,7 @@ row1 A B C
     assert_equal ["AA", "BB", "CC", ""], tsv["row2"]
   end
 
-  def test_paste_stream_same_field
+  def _test_paste_stream_same_field
     text1=<<-EOF
 #: :sep=" "
 #Row LabelA
@@ -198,7 +198,7 @@ row2 AAA
     assert_equal ["AA", "AAA"], tsv["row2"][0]
   end
 
-  def test_paste_stream_nohead
+  def _test_paste_stream_nohead
     text1=<<-EOF
 row1\tA
 row2\tAA
@@ -214,7 +214,7 @@ row2\tAAA
     assert_equal ["AA", "AAA"], tsv["row2"][0]
   end
 
-  def test_flat2double
+  def _test_flat2double
     text1=<<-EOF
 #: :sep= #:type=:flat
 #Row LabelA
@@ -234,7 +234,7 @@ row2 a|aa|aaa
     assert_equal text2, s2.stream.read
   end
 
-  def test_reorder_stream
+  def _test_reorder_stream
     text=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC

@@ -13,7 +13,7 @@ A B C D E
       EOF
       Open.write(file, str)
       Open.open(file) do |io|
-        parser = TSV::Parser.new(io, :merge => true, :zipped => true)
+        parser = TSV::Parser.new(io)
         parser.traverse do |k,v|
           assert v.length > 1
         end
@@ -29,7 +29,8 @@ row1    a|aa|aaa    b    Id1|Id2
 
     TmpFile.with_file(content) do |filename|
       TSV::Parser.traverse(Open.open(filename), :sep => /\s+/, :fields => [1], :type => :double) do |k,v|
-        assert_equal ["row1"], k
+        k = k.first if Array === k
+        assert_equal "row1", k
         assert_equal [%w(a aa aaa)], v
       end
 
@@ -44,7 +45,8 @@ row1    a|aa|aaa    b    Id1|Id2
       end
 
       TSV::Parser.traverse(Open.open(filename), :sep => /\s+/, :fields => [1], :type => :flat) do |k,v|
-        assert_equal ["row1"], k
+        k = k.first if Array === k
+        assert_equal "row1", k
         assert_equal %w(a aa aaa), v
       end
     end
@@ -61,7 +63,7 @@ A B C D E
       EOF
       Open.write(file, str)
       Open.open(file) do |io|
-        parser = TSV::Parser.new(io, :merge => true, :zipped => true, :type => :double)
+        parser = TSV::Parser.new(io, :type => :double)
         parser.traverse do |k,v,f|
           assert_equal f, %w(Value)
         end

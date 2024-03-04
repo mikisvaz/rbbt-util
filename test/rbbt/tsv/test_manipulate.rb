@@ -17,8 +17,24 @@ rowa    a|aa    b|BB  C|CC
     end
   end
 
+  def test_through_named
+    content =<<-EOF
+#Id    ValueA    ValueB    OtherID
+row1    a|aa|aaa    b    Id1|Id2
+row2    A    B    Id3
+row3    a    C    Id4
+    EOF
 
-  def test_through
+    TmpFile.with_file(content) do |filename|
+      tsv = TSV.open(File.open(filename), :sep => /\s+/)
+
+      new_key, new_fields = tsv.through :key, ["ValueB"] do |key, values|
+        assert_include %w(b B C), values["ValueB"].first
+      end
+    end
+  end
+
+  def test_through_change_key
     content =<<-EOF
 #Id    ValueA    ValueB    OtherID
 row1    a|aa|aaa    b    Id1|Id2
@@ -30,7 +46,7 @@ row3    a    C    Id4
       tsv = TSV.open(File.open(filename), :sep => /\s+/)
 
       new_key, new_fields = tsv.through "ValueA" do |key, values|
-        assert(tsv.keys.include? values["Id"].first)
+        assert_include tsv.keys, values["Id"].first
       end
 
       assert_equal "ValueA", new_key
@@ -48,7 +64,7 @@ row3    a    b_    Id1_
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(File.open(filename), :sep => /\s+/)
 
-      tsv1 = tsv.reorder("ValueA", nil, :zipped => true, :merge => true, :persist => true, :persist_file => '/tmp/foo.rbbt.tch')
+      tsv1 = tsv.reorder("ValueA", nil, :zipped => true, :merge => true)
 
       assert_equal "ValueA", tsv1.key_field
       assert_equal ["B"], tsv1["A"]["ValueB"]
@@ -322,12 +338,10 @@ row3    a    C    Id4
     EOF
  
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :sep => /\s+/)
-      tsv.through :key, ["vA"] do |k,v|
+      tsv = TSV.open(filename, :sep => /\s+/, :type => :flat)
+      tsv.through do |k,v|
         assert_equal 3, v.length
       end
-
-
     end
   end
 end

@@ -1,11 +1,36 @@
 require_relative 'stream'
+require 'scout/tsv'
+require 'scout/open'
+require_relative '../refactor'
 module TSV
+  class << self
+    alias original_open open
+
+    def open(source, type = nil, options = nil)
+      type, options = nil, type if options.nil? and (Hash === type or (String === type and type.include? "~"))
+      options = TSV.str2options(options) if String === options and options.include? "~"
+      options ||= {}
+      options[:type] ||= type unless type.nil?
+      if zipped = options.delete(:zipped)
+        options[:one2one] = zipped
+      end
+      original_open(source, options)
+    end
+  end
+
+
   alias original_unzip unzip
   def unzip(field = 0, merge = false, sep = ":", delete = true, **kwargs)
     kwargs[:merge] ||= merge
     kwargs[:sep] ||= sep
     kwargs[:delete] ||= delete
     original_unzip(field, **kwargs)
+  end
+
+  alias original_reorder reorder
+  def reorder(key_field = nil, fields = nil, merge: true, one2one: true, zipped: nil, **kwargs) 
+    kwargs[:one2one] = zipped if one2one.nil?
+    original_reorder(key_field, fields, **kwargs)
   end
 
   def swap_id(field = 0, merge = false, sep = ":", delete = true, **kwargs)
@@ -62,3 +87,70 @@ module TSV
 end
 
 Rbbt.relay_module_method TSV, :get_stream, Open, :get_stream
+Rbbt.relay_module_method TSV::Parser, :traverse, TSV, :parse
+Rbbt.relay_module_method TSV, :zip_fields, NamedArray, :zip_fields
+
+module TSV
+  alias original_dumper_stream dumper_stream
+  def dumper_stream(keys = nil, no_options = false, unmerge = false)
+    original_dumper_stream(:keys => keys, unmerge: unmerge, preamble: no_options)
+  end
+
+  alias original_to_s to_s
+  def to_s(keys = nil, no_options = false, unmerge = false)
+    if FalseClass === keys or TrueClass === keys or Hash === keys
+      no_options = keys
+      keys = nil
+    end
+
+    if keys == :sort
+      with_unnamed do
+        keys = self.keys.sort
+      end
+    end
+
+
+    options = {:keys => keys, unmerge: unmerge}
+    case no_options
+    when TrueClass, FalseClass
+      options[:preamble] = !no_options
+    when Hash
+      options.merge!(no_options)
+      
+    end
+    original_dumper_stream(options).read
+  end
+  alias tsv_sort sort
+
+  def attach_same_key(tsv, fields = nil)
+    fields = [fields] unless fields.nil? || Array === fields
+    if fields
+      self.attach tsv, :fields => fields
+    else
+      self.attach tsv
+    end
+  end
+
+  def attach_index(tsv, index = nil)
+    self.attach tsv, index: index
+  end
+
+  def self.merge_row_fields(input, output, options = {})
+    Open.write(output, Open.collapse_stream(input, **options))
+  end
+
+  def self.merge_different_fields(stream1, stream2, output, options = {})
+    Open.write(output, TSV.paste_streams([stream1, stream2], **options))
+  end
+
+  def merge_different_fields(other, options = {})
+    TmpFile.with_file do |output|
+      TSV.merge_different_fields(self, other, output, options)
+      tsv = TSV.open output, options
+      tsv.key_field = self.key_field unless self.key_field.nil?
+      tsv.fields = self.fields + other.fields unless self.fields.nil? or other.fields.nil?
+      tsv
+    end
+  end
+end
+

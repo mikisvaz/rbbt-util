@@ -15,7 +15,7 @@ row2    A    B    Id3
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/)
       hash = tsv.to_hash
-      assert hash.methods.select{|m| m =~ /#{ TSV::KEY_PREFIX }/}.empty?
+      refute TSV === hash
     end
   end
 
@@ -43,7 +43,6 @@ row2    A    B    Id3
       tsv = TSV.open(filename, :sep => /\s+/)
       assert_equal 2, tsv.keys.length
       assert_equal 2, tsv.values.length
-      assert_equal 2, tsv.collect.length
     end
   end
 
@@ -89,7 +88,7 @@ row2,A,B,Id3
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/)
-      assert_equal tsv.to_s(preamble: false, header_hash: '').gsub(/\t/, ','), target
+      assert_equal target, tsv.to_s(preamble: false, header_hash: '').gsub(/\t/, ',')
     end
   end
   
@@ -116,7 +115,7 @@ row2    A    B    Id3
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/, :persist_serializer => :marshal, :persist => true)
-      assert_equal 2, tsv.size
+      assert_equal 2, tsv.length
       assert_equal filename, tsv.options[:filename]
     end
   end

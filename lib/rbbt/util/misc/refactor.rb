@@ -14,3 +14,4 @@ Rbbt.relay_module_method Misc, :open_pipe, Open
 Rbbt.relay_module_method Misc, :pipe, Open
 Rbbt.relay_module_method Misc, :with_fifo, Open
 Rbbt.relay_module_method Misc, :zip2hash, IndiferentHash
+Rbbt.relay_module_method Misc, :obj2md5, Misc, :digest

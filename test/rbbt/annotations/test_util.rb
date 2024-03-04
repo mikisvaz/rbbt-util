@@ -1,5 +1,6 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
 require 'rbbt/annotations'
+require 'rbbt/entity'
 
 module TestEntityString
   extend Entity

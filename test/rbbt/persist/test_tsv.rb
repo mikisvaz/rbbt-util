@@ -26,13 +26,13 @@ class TestPersistTSV < Test::Unit::TestCase
         db = TSV.open(file, :fields => [1], :persist => true, :persist_engine => engine, :persist_dir => tmp_file, :type => :single, :unnamed => true)
       end
 
-      test = db.keys.sort{rand}[1..100000]
+      _test = db.keys.sort{rand}[1..100000]
       Misc.benchmark(5, "Access #{test.length} random entries") do
-        test.each do |k| db[k] end
+        _test.each do |k| db[k] end
       end
       Log.info "Profiling access to #{test.length} random entries"
       Misc.profile :min_percent => 0.1 do
-        test.each do |k| db[k] end
+        _test.each do |k| db[k] end
       end
       assert_equal "1:10611:G", db["rs189107123"]
     end
@@ -82,6 +82,7 @@ k2 1.2 2.2
     EOF
     TmpFile.with_file(content) do |tsv_file|
       tsv = TSV.open(tsv_file, :sep => " ", :persist => true, :type => :double, :merge => true)
+      iii tsv.persistence_path
       assert_equal [[1.1], [2.1]], tsv["k1"]
     end
   end

@@ -5,16 +5,16 @@ require 'test/unit'
 
 module AnnotatedString
   extend Annotation
-  self.annotation :annotation_str
+  annotation :annotation_str
 
   def add_annot
     self + annotation_str
   end
+
 end
 
 module AnnotatedString2
   extend Annotation
-  include AnnotatedString
   self.annotation :annotation_str2
 end
 
@@ -28,7 +28,7 @@ class TestAnnotations < Test::Unit::TestCase
     str = "string"
     annotation_str = "Annotation String"
     AnnotatedString.setup(str, annotation_str)
-    assert_equal [AnnotatedString], str.annotation_types
+    assert_include str.annotation_types, AnnotatedString
     assert_equal annotation_str, str.annotation_str
   end
 

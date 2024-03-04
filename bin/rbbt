@@ -1,11 +1,24 @@
 #!/usr/bin/env ruby
 
+$LOAD_PATH.unshift File.join(__dir__, '../lib')
+
+ENV["SCOUT_NOCOLOR"] = "true" if ARGV.include? "--nocolor"
+
+ENV["SCOUT_NO_PROGRESS"] = "true" if ARGV.include? "--nobar"
+
+require 'scout-gear'
+
+
+require_relative '../lib/rbbt'
+
 class CmdStop < Exception
   attr_accessor :exit_status
   def initialize(exit_status = 0)
     @exit_status = exit_status
   end
 end
+
+# Add paths to scout repos under --dev to LOAD_PATHS
 dev_dir = nil
 if _i = ARGV.index("--dev")
   dev_dir = ARGV[_i+1]
@@ -25,17 +38,29 @@ if dev_dir.nil?
   ARGV.delete _s if _s
 end
 
+if dev_dir.nil? && ENV["SCOUT_DEV"]
+  dev_dir = ENV["SCOUT_DEV"]
+  ARGV.delete "--dev"
+  ARGV.delete dev_dir
+end
+
 if dev_dir
-  Dir.glob(File.join(File.expand_path(dev_dir),'rbbt-*/lib')).each do |f|
-    $LOAD_PATH.unshift f
+  ['scout-*/lib'].each do |pattern|
+    Dir.glob(File.join(File.expand_path(dev_dir), pattern)).each do |f|
+      $LOAD_PATH.unshift f
+    end
+  end
+  ['rbbt-*/lib'].each do |pattern|
+    Dir.glob(File.join(File.expand_path(dev_dir), pattern)).each do |f|
+      next if f.include? 'rbbt-util'
+      $LOAD_PATH.unshift f
+    end
   end
 end
 
-require_relative '../lib/rbbt'
-require 'scout/simple_opt'
-require_relative '../lib/rbbt/util/config'
+require 'scout'
 
-Log.nocolor = true if ARGV.include? "--nocolor"
+require 'scout/simple_opt'
 
 options = SOPT.setup <<EOF
 Ruby bioinformatics toolkit
@@ -44,98 +69,51 @@ $ #{$0} <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-valu
 
 
 --log*                  #{Log.color :yellow, "Log level from 0 (debug) 6 (errors)"}
---log_file*             #{Log.color :yellow, "Divert all Rbbt logs from STDERR to the file"}
 --dev*                  #{Log.color :yellow, "Find development libraries in the directory specified"}
--cd--command_dir*       #{Log.color :yellow, "Directory from where to load command scripts"}
---profile               #{Log.color :yellow, "Profile execution"}
 --nocolor               #{Log.color :yellow, "Disable colored output"}
 --nobar                 #{Log.color :yellow, "Disable progress report"}
---nostream              #{Log.color :yellow, "Disable persistance/job streaming"}
---update                #{Log.color :yellow, "Update persisted files when dependencies update"}
---update_tsv            #{Log.color :yellow, "Update persisted TSV files also if source has been updated"}
 --locate_file           #{Log.color :yellow, "Report the location of the script instead of executing it"}
---dump_mem*             #{Log.color :yellow, "Dump strings in memory each second into file"}
--nolock--no_lock_id     #{Log.color :yellow, "Do not track lockfiles with ids (prevent stale file handlers for high-througput and high-concurrency)"}
--ji--jobname_show_inputs  #{Log.color :yellow, "Show inputs as part of the jobname in workflows instead of digesting them"}
 -ck--config_keys*       #{Log.color :yellow, "Override some config keys"}
--srand--random_seed*    #{Log.color :yellow, "Set the random seed"}
 EOF
 
-srand(options[:random_seed].to_i) if options[:random_seed]
-if options[:jobname_show_inputs]
-  ENV["RBBT_INPUT_JOBNAME"] = "true"
-end
+Log.nocolor = true if options[:nocolor]
 
 locate = options.delete :locate_file
 
 if options[:log_file]
-  Log.logfile(options[:log_file])
-end
-
-Log.ignore_stderr do
-  begin
-    require "nokogiri"
-  rescue Exception
-  end
+  Log.logfile(options.delete(:log_file))
 end
 
 if options[:log]
-  Log.severity = options[:log].to_i
+  Log.severity = options.delete(:log).to_i
 else
-  global_severity = Log.get_level(Rbbt.etc.log_severity.read.strip) if Rbbt.etc.log_severity.exists?
-  if ENV["RBBT_LOG"]
-    Log.severity = ENV["RBBT_LOG"].to_i 
+  global_severity = Log.get_level(Scout.etc.log_severity.read.strip) if Scout.etc.log_severity.exists?
+  if ENV["SCOUT_LOG"]
+    Log.severity = ENV["SCOUT_LOG"].to_i 
   else
-    global_severity = Log.get_level(Rbbt.etc.log_severity.read.strip) if Rbbt.etc.log_severity.exists?
+    global_severity = Log.get_level(Scout.etc.log_severity.read.strip) if Scout.etc.log_severity.exists?
     Log.severity = global_severity.to_i if global_severity
   end
 end
 
-if options.delete(:no_lock_id)
-  Misc.use_lock_id = false
-end
-
-if mem_dump = options.delete(:dump_mem)
-  require_relative '../lib/rbbt/monitor'
-  Rbbt.dump_memory(mem_dump, String)
-end
-
-if options[:config_keys]
-  options[:config_keys].split(",").each do |config|
+if config_keys = options.delete(:config_keys)
+  config_keys.split(",").each do |config|
     config = config.strip
-    Rbbt::Config.process_config config
+    Scout::Config.process_config config
   end
 end
 
-if options.delete(:update)
-  ENV["RBBT_UPDATE"] = "true"
-end
-
-if options.delete(:update_tsv)
-  ENV["RBBT_UPDATE"] = "true"
-  ENV["RBBT_UPDATE_TSV_PERSIST"] = "true"
-end
-
-if options.delete :nostream
-  ENV["RBBT_NO_STREAM"] = "true"
-end
-
-if options.delete :nobar
-  ENV["RBBT_NO_PROGRESS"] = "true"
-end
-
-if options[:command_dir]
-  $rbbt_command_dir = Path.setup(options[:command_dir].dup)
-else
-  $rbbt_command_dir = Rbbt.share.rbbt_commands
-end
+$scout_command_dir = Scout.bin.scout
+$scout_command_dir.path_maps[:rbbt_bin] = File.join(File.dirname(__dir__), "{PATH/bin\\/scout/bin\\/rbbt}")
+$scout_command_dir.path_maps[:rbbt_commands] = File.join(File.dirname(__dir__), "{PATH/bin\\/scout/share\\/rbbt_commands}")
+$scout_command_dir.path_maps[:scout_commands] = File.join(Scout.root.find(:scout_gear), "{PATH/bin\\/scout/scout_commands}")
 
 SOPT.description =<<EOF
-This command controls many aspects of the Rbbt framework, from configuration tasks to running applications. 
+This command controls many aspects of the Scout framework, from configuration tasks to running applications. 
 
-Commands are implemented in separate files under the Rbbt path '#{$rbbt_command_dir}'. 
-Known locations are: #{([$rbbt_command_dir] + $rbbt_command_dir.find_all) * ", " }. 
-You can place your own commads at #{$rbbt_command_dir.find(:user)}.
+Commands are implemented in separate files under the Scout path '#{$scout_command_dir}'. 
+Known locations are: #{([$scout_command_dir] + $scout_command_dir.find_all) * ", " }. 
+You can place your own commads at #{$scout_command_dir.find(:user)}.
 EOF
 
 if options[:profile]
@@ -145,25 +123,24 @@ end
 
 
 def prev_dir(prev)
-    rbbt_command_dir = $rbbt_command_dir
+    scout_command_dir = $scout_command_dir
 
     prev.each do |previous_command|
-        rbbt_command_dir = rbbt_command_dir[previous_command]
+        scout_command_dir = scout_command_dir[previous_command]
     end
 
-    rbbt_command_dir
+    scout_command_dir
 end
 
 def commands(prev)
-    rbbt_command_dir = prev_dir(prev)
+    scout_command_dir = prev_dir(prev)
 
-    command_file_dirs = rbbt_command_dir.find_all
+    command_file_dirs = scout_command_dir.find_all
     command_files = command_file_dirs.collect{|d| d.glob('*') }.flatten
     command_files.collect{|p| File.basename(p) }.uniq.reject{|p| p =~ /\.desc$/}.sort
 end
 
-def rbbt_usage(prev = nil)
-  puts
+def scout_usage(prev = nil)
   puts SOPT.doc
 
   if prev
@@ -190,7 +167,7 @@ def rbbt_usage(prev = nil)
   true
 end
 
-alias usage rbbt_usage 
+alias usage scout_usage 
 
 def print_error(error, backtrace = nil)
   puts Log.color :magenta, "## ERROR"
@@ -206,16 +183,24 @@ def print_error(error, backtrace = nil)
 end
 
 def aliases
-  @aliases ||= Rbbt.etc.cmd_alias.exists? ? Rbbt.etc.cmd_alias.yaml : {}
+  @aliases ||= Scout.etc.cmd_alias.exists? ? Scout.etc.cmd_alias.yaml : {}
+end
+
+def tokenize_cmd_params(str)
+ return str if Array === str
+ str.scan(/
+          (?:["']([^"']*?)["']) |
+          ([^"'\s]+)
+          /x).flatten.compact
 end
 
 def cmd_alias
   while ARGV[0] && aliases.include?(ARGV[0])
-    ARGV.replace Misc.parse_cmd_params(aliases[ARGV[0]]) + ARGV[1..-1]
+    ARGV.replace tokenize_cmd_params(aliases[ARGV[0]]) + ARGV[1..-1]
   end
 end
     
-dir = $rbbt_command_dir
+dir = $scout_command_dir
 $previous_commands = []
 
 cmd_alias
@@ -244,31 +229,27 @@ begin
       exit exit_status
     else
       error = "Command '#{$command }' not understood"
-      rbbt_usage($previous_commands)
+      scout_usage($previous_commands)
       print_error(error)
       exit_status = -1
       exit exit_status
     end
   end
 
-  rbbt_usage($previous_commands)
+  scout_usage($previous_commands)
   exit_status = 0
-  exit exit_status
 
 rescue ParameterException
   puts
-  rbbt_usage
+  scout_usage
   print_error($!.message, $!.backtrace)
   puts
   exit_status = -1
-  exit exit_status
 rescue SystemExit,CmdStop
   exit_status = $!.status
-  exit exit_status
 rescue Exception
   Log.exception $!
   exit_status = -1
-  exit exit_status
 ensure
   if options[:profile]
     result = RubyProf.stop

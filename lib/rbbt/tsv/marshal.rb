@@ -3,15 +3,15 @@ module TSV
     if defined?(Persist::TCAdapter) && Persist::TCAdapter === self
       super
     else
-      [info, to_hash]
+      [options, MetaExtension.purge(self)]
     end
   end
 end
 
 class Hash
   def marshal_load(array)
-    info, to_hash = array
+    options, to_hash = array
     self.merge! to_hash
-    TSV.setup(self)
+    TSV.setup(self, options)
   end
 end

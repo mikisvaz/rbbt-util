@@ -22,7 +22,7 @@ class Test::Unit::TestCase
     Random.new
 
     if defined? Persist
-      Persist.cachedir = Rbbt.tmp.test.persistence.find(:user)
+      Persist.cache_dir = Rbbt.tmp.test.persistence.find(:user)
     end
 
     Entity.entity_property_cache = Rbbt.tmp.test.entity_property.find(:user) if defined? Entity
@@ -43,7 +43,7 @@ class Test::Unit::TestCase
   end
 
   def config(*args)
-    Rbbt::Config.get *args
+    Scout::Config.get *args
   end
 
   def keyword_test(key, &block)

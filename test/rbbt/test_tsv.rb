@@ -195,7 +195,7 @@ row2    4
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :sep => /\s+/, :cast => :to_i, :type => :single, :serializer => :integer)
+      tsv = TSV.open(filename, :sep => /\s+/, :cast => :to_i, :type => :single, :serializer => :integer, :persist => true)
       assert_equal 1, tsv["row1"]
       assert String === tsv.send(:[], "row1", true)
     end
@@ -326,13 +326,13 @@ b 2
 #: :sep=/\\s+/#:type=:single
 #Id Value
 a 1
-b 2
 b 3
 d 22
+b 2
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :key_field => "Value", :grep => "2")
+      tsv = TSV.open(filename, :key_field => "Value", :tsv_grep => "2")
       assert(tsv.include?("2"))
       assert(! tsv.include?("3"))
     end
@@ -343,6 +343,7 @@ d 22
 #: :sep=/\\s+/#:type=:single
 #Id Value
 a 1
+c 3
 b 2
     EOF
 
@@ -350,6 +351,9 @@ b 2
       tsv = TSV.open(filename, :key_field => "Value", :tsv_grep => "2", :invert_grep => true)
       assert(! tsv.include?("2"))
       assert(tsv.include?("1"))
+      tsv = TSV.open(filename, :key_field => "Value", :tsv_grep => "3", :invert_grep => true)
+      assert(! tsv.include?("3"))
+      assert(tsv.include?("2"))
     end
   end
 
@@ -363,7 +367,7 @@ b 2
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :key_field => "Value", :grep => '2')
+      tsv = TSV.open(filename, :key_field => "Value", :tsv_grep => '2')
       assert(tsv.include?("2"))
       assert(! tsv.include?("7"))
     end
@@ -429,6 +433,7 @@ row2   b  bbb bbbb bb
 
   def test_flat_with_field
     content =<<-EOF
+#: :type=:flat
 #Id    ValueA
 row1   a   aa   aaa
 row2   b  bbb bbbb bb
@@ -521,7 +526,7 @@ row2    0.1  4.5 0
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(filename, :sep => /\s+/, :persist => true, :type => :list, :cast => :to_f)
       assert_equal [0.2, 0.3, 0], tsv["row1"]
-      assert_equal :float_array, tsv.serializer
+      assert_equal TSVAdapter::FloatArraySerializer, tsv.serializer
     end
  
   end
@@ -585,11 +590,13 @@ row2    A AA AAA
   end
 
   def test_shard
-    shard_function = Proc.new do |key|
-      key[-1]
+    keyword_test :shard do
+      shard_function = Proc.new do |key|
+        key[-1]
+      end
+      tsv = datafile_test('identifiers').tsv :persist => true, :shard_function => shard_function
+      assert_equal 10000, tsv.keys.length + 2
     end
-    tsv = datafile_test('identifiers').tsv :persist => true, :shard_function => shard_function
-    assert_equal 10000, tsv.keys.length + 2
   end
 
   def test_flat_merge

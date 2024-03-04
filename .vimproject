@@ -1,4 +1,4 @@
-rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf LICENSE" {
+rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf LICENSE" {
  Migration-1.9.txt
  Troubleshooting.txt
  ToDo.txt
@@ -19,6 +19,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
   rbbt-util.rb
 
   rbbt=rbbt{
+   refactor.rb
    util=util{
     misc.rb
     misc=misc{
@@ -59,6 +60,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      }
     }
     open.rb
+    open=open{
+     refactor.rb
+    }
     semaphore.rb
 
     simpleopt.rb
@@ -113,6 +117,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
    workflow.rb
    workflow=workflow{
+    refactor.rb
     annotate.rb
 
     definition.rb
@@ -191,32 +196,32 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
    tsv.rb
    tsv=tsv{
-    parser.rb
-    dumper.rb
-
-    matrix.rb
+    refactor.rb
 
     accessor.rb
-    util.rb
-    marshal.rb
-    serializers.rb
-    manipulate.rb
+    change_id.rb
+    csv.rb
+    dumper.rb
+    excel.rb
+    field_index.rb
+    filter.rb
     index.rb
+    manipulate.rb
+    marshal.rb
+    matrix.rb
+    melt.rb
+    parallel.rb
+    parser.rb
+    serializers.rb
     stream.rb
+    util.rb
     attach.rb
     attach=attach{
      util.rb
     }
-    melt.rb
-    excel.rb
-    csv.rb
-    filter.rb
-    field_index.rb
-    change_id.rb
-    parallel.rb
     parallel=parallel{
-     traverse.rb
      through.rb
+     traverse.rb
     }
    }
 
@@ -225,6 +230,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
 
    persist.rb
    persist=persist{
+    refactor.rb
     tsv.rb
     tsv=tsv{
      adapter.rb
@@ -246,6 +252,9 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    resource.rb
    resource=resource{
     path.rb
+    path=path{
+     refactor.rb
+     }
     util.rb
     with_key.rb
     rake.rb

@@ -1,3 +1,5 @@
+require_relative '../refactor'
+Rbbt.require_instead 'scout/tsv'
 require 'spreadsheet'
 require 'rubyXL'
 
@@ -28,14 +30,14 @@ module TSV
 
 
   def self._excel_data(tsv, options ={})
-    options = Misc.add_defaults options, :sep2 => ', '
+    options = IndiferentHash.add_defaults options, :sep2 => ', '
 
-    name = Misc.process_options options, :name
-    sep2 = Misc.process_options options, :sep2
-    unmerge = Misc.process_options options, :unmerge
-    sort_by = Misc.process_options options, :sort_by
-    sort_by_cast = Misc.process_options options, :sort_by_cast
-    remove_links = Misc.process_options options, :remove_links
+    name = IndiferentHash.process_options options, :name
+    sep2 = IndiferentHash.process_options options, :sep2
+    unmerge = IndiferentHash.process_options options, :unmerge
+    sort_by = IndiferentHash.process_options options, :sort_by
+    sort_by_cast = IndiferentHash.process_options options, :sort_by_cast
+    remove_links = IndiferentHash.process_options options, :remove_links
 
     i = 1
     if sort_by
@@ -83,7 +85,7 @@ module TSV
       new_rows = []
       rows.each do |row|
         header = row.shift
-        Misc.zip_fields(row).each do |values|
+        NamedArray.zip_fields(row).each do |values|
           new_rows << [header] + values
         end
       end
@@ -94,11 +96,11 @@ module TSV
 
   module XLS
     def self.read(file, options = {})
-      options = Misc.add_defaults options, :sep2 => /[,|]\s?/, :skip_rows => 0
-      sheet = Misc.process_options options, :sheet
-      header = Misc.process_options options, :header
-      text = Misc.process_options options, :text
-      skip_rows = Misc.process_options options, :skip_rows
+      options = IndiferentHash.add_defaults options, :sep2 => /[,|]\s?/, :skip_rows => 0
+      sheet = IndiferentHash.process_options options, :sheet
+      header = IndiferentHash.process_options options, :header
+      text = IndiferentHash.process_options options, :text
+      skip_rows = IndiferentHash.process_options options, :skip_rows
       skip_rows = skip_rows.to_i
 
       header = true unless header == false
@@ -112,7 +114,7 @@ module TSV
       sheet_name = sheet
       Log.debug "Opening LSX #{file} sheet #{ sheet_name }"
 
-      TmpFile.with_file :extension => Misc.sanitize_filename(sheet_name.to_s) do |filename|
+      TmpFile.with_file :extension => Path.sanitize_filename(sheet_name.to_s) do |filename|
 
         sheet    = workbook.worksheet sheet
 
@@ -146,8 +148,8 @@ module TSV
     end
 
     def self.write(tsv, file, options = {})
-      options = Misc.add_defaults options, :sheet => "Sheet1"
-      sheet = Misc.process_options options, :sheet
+      options = IndiferentHash.add_defaults options, :sheet => "Sheet1"
+      sheet = IndiferentHash.process_options options, :sheet
       fields, rows = TSV._excel_data(tsv, options)
 
       book = Spreadsheet::Workbook.new
@@ -170,11 +172,11 @@ module TSV
 
   module XLSX
     def self.read(file, options = {})
-      options = Misc.add_defaults options, :sep2 => /[,|]\s?/, :skip_rows => 0
-      sheet = Misc.process_options options, :sheet
-      header = Misc.process_options options, :header
-      text = Misc.process_options options, :text
-      skip_rows = Misc.process_options options, :skip_rows
+      options = IndiferentHash.add_defaults options, :sep2 => /[,|]\s?/, :skip_rows => 0
+      sheet = IndiferentHash.process_options options, :sheet
+      header = IndiferentHash.process_options options, :header
+      text = IndiferentHash.process_options options, :text
+      skip_rows = IndiferentHash.process_options options, :skip_rows
       skip_rows = skip_rows.to_i
 
       header = true unless header == false
@@ -187,7 +189,7 @@ module TSV
       sheet_name = sheet
       Log.debug "Opening XLSX #{file} sheet #{ sheet_name }"
 
-      TmpFile.with_file :extension => Misc.sanitize_filename(sheet_name.to_s) do |filename|
+      TmpFile.with_file :extension => Path.sanitize_filename(sheet_name.to_s) do |filename|
 
         sheet    = sheet_name ? workbook[sheet_name] : workbook.worksheets.first
 
@@ -223,7 +225,7 @@ module TSV
     end
 
     def self.write(tsv, file, options = {})
-      sheet, add_sheet = Misc.process_options options, :sheet, :add_sheet
+      sheet, add_sheet = IndiferentHash.process_options options, :sheet, :add_sheet
 
       fields, rows = TSV._excel_data(tsv, options)
 

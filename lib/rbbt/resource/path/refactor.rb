@@ -47,11 +47,11 @@ module Path
   #  TSV.open(path, *args)
   #end
 
-  def tsv_options(options = {})
-    self.open do |stream|
-      TSV::Parser.new(stream, options).options
-    end
-  end
+  #def tsv_options(options = {})
+  #  self.open do |stream|
+  #    TSV::Parser.new(stream, options).options
+  #  end
+  #end
 
   def traverse(options = {}, &block)
     TSV::Parser.traverse(self.open, options, &block)

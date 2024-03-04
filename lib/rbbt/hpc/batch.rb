@@ -24,7 +24,7 @@ module HPC
       when 'pbs'
         HPC::PBS
       else
-        case Rbbt::Config.get(:batch_system, :batch, :batch_system, :hpc, :HPC, :BATCH).to_s.downcase
+        case Scout::Config.get(:batch_system, :batch, :batch_system, :hpc, :HPC, :BATCH).to_s.downcase
         when 'slurm'
           HPC::SLURM
         when 'lsf'
