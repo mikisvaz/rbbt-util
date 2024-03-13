@@ -86,6 +86,14 @@ end
 
 class TestEntity < Test::Unit::TestCase
 
+  def test_property_ary_make_list
+    $count = 0
+    a = "String1"
+    ReversableString.setup(a)
+
+    assert_equal "1gnirtS", a.reverse_text_ary
+  end
+
   def test_property_ary
     a = ["String1", "String2"]
     ReversableString.setup(a)
@@ -260,7 +268,6 @@ class TestEntity < Test::Unit::TestCase
     array = ReversableString.setup([string2, string3, string4])
     assert_equal string2.length, array[0].multiple_annotation_list.length
     assert_equal $processed_multiple, []
-
   end
 
   def test_clean_annotations
