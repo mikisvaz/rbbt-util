@@ -484,7 +484,7 @@ begin
 
   if server = options.delete(:relay)
     require 'rbbt/workflow/remote_workflow'
-    relay_dependencies = options.delete(:relay_dependencies).split(",")
+    relay_dependencies = options.delete(:relay_dependencies).split(",") if options[:relay_dependencies]
     produce_dependencies_for_relay = options.delete(:produce_dependencies_for_relay)
 
     jobs_to_relay = relay_dependencies ?  match_dependencies(relay_dependencies, job.rec_dependencies) : [job]
