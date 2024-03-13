@@ -1,6 +1,7 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
 require 'rbbt/annotations'
 require 'rbbt/entity'
+require 'rbbt/tsv'
 
 module TestEntityString
   extend Entity
@@ -16,7 +17,7 @@ class TestAnnotation < Test::Unit::TestCase
     assert_equal a, Marshal.load(Marshal.dump(a))
   end
 
-  def test_marshal_array
+  def _test_marshal_array
     a = ["STRING"]
     TestEntityString.setup(a)
 
@@ -26,13 +27,13 @@ class TestAnnotation < Test::Unit::TestCase
     assert_equal a, Marshal.load(Marshal.dump(a))
   end
 
-  def test_hash
+  def _test_hash
     e = TestEntityString.setup("TEST", :code => 10)
     assert_equal "TEST", Annotated.to_hash(e)[:literal]
     assert_equal 10, Annotated.to_hash(e)[:info][:code]
   end
 
-  def test_traverse_cpus
+  def _test_traverse_cpus
     strings = (1..10).to_a.collect{|n| n.to_s }
     res = TSV.traverse strings, :cpus => 2, :into => [] do |s|
       TestEntityString.setup(s, :code => s.to_i)

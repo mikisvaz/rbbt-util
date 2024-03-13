@@ -13,6 +13,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     tsv.pthrough do |k,v|
       h[k] = v.first
     end
+    raise
 
     assert_equal tsv.size, h.size
     assert_equal tsv.keys.sort, h.keys.sort

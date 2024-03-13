@@ -35,8 +35,8 @@ module Association
     data ||= {}
     TmpFile.with_file do |tmpfile1|
       TmpFile.with_file do |tmpfile2|
-        tmp_data1 = Persist.open_database(tmpfile1, true, :double, "HDB")
-        tmp_data2 = Persist.open_database(tmpfile2, true, :double, "HDB")
+        tmp_data1 = Persist.open_tokyocabinet(tmpfile1, true, :double, "HDB")
+        tmp_data2 = Persist.open_tokyocabinet(tmpfile2, true, :double, "HDB")
 
         if source_final_format and source_field != source_final_format 
           Log.debug("Changing source format from #{tsv.key_field} to #{source_final_format}")
@@ -48,7 +48,7 @@ module Association
           identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
           identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
 
-          tsv = TSV.translate(tsv, source_field, source_final_format, options.merge(:identifier_files => identifier_files, :persist_data => tmp_data1))
+          tsv = TSV.translate(tsv, source_field, source_final_format, identifiers: identifier_files)
         end
 
         # Translate target 
@@ -63,7 +63,7 @@ module Association
           identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
           identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
 
-          tsv = TSV.translate(tsv, target_field, target_final_format, options.merge(:identifier_files => identifier_files, :persist_data => tmp_data2))
+          tsv = TSV.translate(tsv, target_field, target_final_format, identifiers: identifier_files)
           tsv.key_field = old_key_field
         end
 
@@ -90,7 +90,7 @@ module Association
 
     data = options[:data] || {}
     TmpFile.with_file do |tmpfile|
-      tmp_data = Persist.open_database(tmpfile, true, :double, "HDB")
+      tmp_data = Persist.open_tokyocabinet(tmpfile, true, :double, "HDB")
 
       tsv.with_monitor(options[:monitor]) do
         tsv = tsv.reorder source_field, tsv.all_fields.values_at(*field_pos), :persist => persist, :persist_data => tmp_data if true or source_field != tsv.key_field or (fields and tsv.fields != fields)
@@ -167,7 +167,7 @@ module Association
       data.write
     end
     TmpFile.with_file do |tmpfile|
-      tmp_data = Persist.open_database(tmpfile, true, open_options[:type], "HDB")
+      tmp_data = Persist.open_tokyocabinet(tmpfile, true, open_options[:type], "HDB")
 
       tsv = TSV.parse parser.stream, tmp_data, open_options
       tsv = tsv.to_double

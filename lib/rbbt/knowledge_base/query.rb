@@ -21,7 +21,7 @@ class KnowledgeBase
                when Hash
                  entities
                else
-                 raise "Entities are not a Hash or an AnnotatedArray: #{Misc.fingerprint entities}"
+                 raise "Entities are not a Hash or an AnnotatedArray: #{Log.fingerprint entities}"
                end
 
     identify, identify_source, identify_target = entities.merge(options || {}).values_at :identify, :identify_source, :identify_target

@@ -1,27 +1,29 @@
 require_relative  'refactor'
 Rbbt.require_instead 'scout/meta_extension'
-module Annotation
-  def self.extended(base)
-    meta = class << base; self; end
-
-    base.extend MetaExtension
-
-    meta.define_method(:annotations) do
-      meta.class_variable_get(:@@extension_attrs)
-    end
-
-    meta.define_method(:annotation) do |*args|
-      base.extension_attr(*args)
-    end
-
-    base.define_method(:annotation_types) do
-      self.extension_types
-    end
-  end
-end
-#require 'rbbt/tsv'
-#require 'rbbt/util/misc'
-require 'rbbt/annotations/annotated_array'
+Rbbt.require_instead 'scout/tsv'
+require_relative 'annotations/refactor'
+#module Annotation
+#  def self.extended(base)
+#    meta = class << base; self; end
+#
+#    base.extend MetaExtension
+#
+#    meta.define_method(:annotations) do
+#      meta.class_variable_get(:@@extension_attrs)
+#    end
+#
+#    meta.define_method(:annotation) do |*args|
+#      base.extension_attr(*args)
+#    end
+#
+#    base.define_method(:annotation_types) do
+#      self.extension_types
+#    end
+#  end
+#end
+##require 'rbbt/tsv'
+##require 'rbbt/util/misc'
+#require 'rbbt/annotations/annotated_array'
 #require 'rbbt/annotations/util'
 #
 ##{{{ ANNOTATED

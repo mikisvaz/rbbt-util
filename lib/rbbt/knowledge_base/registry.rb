@@ -9,7 +9,7 @@ class KnowledgeBase
       Log.debug("Registering #{ name } from code block")
       @registry[name] = [block, options]
     else
-      Log.debug("Registering #{ name }: #{ Misc.fingerprint file } #{Misc.fingerprint options}")
+      Log.debug("Registering #{ name }: #{ Log.fingerprint file } #{Log.fingerprint options}")
       @registry[name] = [file, options]
     end
   end
@@ -49,7 +49,7 @@ class KnowledgeBase
           key = options[:key]
           key = name if key == :name
         else
-          fp = Misc.hash2md5(options)
+          fp = Misc.digest(options)
           key = name.to_s + "_" + fp
         end
 
@@ -60,26 +60,26 @@ class KnowledgeBase
           persist_file = persist_dir[key].find
           file, registered_options = registry[name]
 
-          options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
-          options = Misc.add_defaults options, :persist_file => persist_file, :persist_dir => persist_dir, :format => format, :persist => true
+          options = IndiferentHash.add_defaults options, registered_options if registered_options and registered_options.any?
+          options = IndiferentHash.add_defaults options, :persist_file => persist_file, :persist_dir => persist_dir, :format => format, :persist => true
 
           if entity_options
             options[:entity_options] ||= {}
             entity_options.each do |type, info|
               options[:entity_options][type] ||= {}
-              options[:entity_options][type] = Misc.add_defaults options[:entity_options][type], info
+              options[:entity_options][type] = IndiferentHash.add_defaults options[:entity_options][type], info
             end
           end
 
-          persist_options = Misc.pull_keys options, :persist
+          persist_options = IndiferentHash.pull_keys options, :persist
 
           index = if persist_file.exists? and persist_options[:persist] and not persist_options[:update]
-                    Log.low "Re-opening index #{ name } from #{ Misc.fingerprint persist_file }. #{options}"
+                    Log.low "Re-opening index #{ name } from #{ Log.fingerprint persist_file }. #{options}"
                     Association.index(file, options, persist_options.dup)
                   else
-                    options = Misc.add_defaults options, registered_options if registered_options
+                    options = IndiferentHash.add_defaults options, registered_options if registered_options
                     raise "Repo #{ name } not found and not registered" if file.nil?
-                    Log.medium "Opening index #{ name } from #{ Misc.fingerprint file }. #{options}"
+                    Log.medium "Opening index #{ name } from #{ Log.fingerprint file }. #{options}"
                     Association.index(file, options, persist_options.dup)
                   end
 
@@ -102,12 +102,12 @@ class KnowledgeBase
     end
     @databases[[name, options]] ||= 
       begin 
-        fp = Misc.fingerprint([name,options])
+        fp = Log.fingerprint([name,options])
 
         if options.empty?
           key = name.to_s
         else
-          fp = Misc.hash2md5(options)
+          fp = Misc.digest(options)
           key = name.to_s + "_" + fp
         end
 
@@ -121,26 +121,26 @@ class KnowledgeBase
           persist_file = persist_dir[key].find
           file, registered_options = registry[name]
 
-          options = Misc.add_defaults options, registered_options if registered_options and registered_options.any?
-          options = Misc.add_defaults options, :persist_file => persist_file, :format => format, :persist => true
+          options = IndiferentHash.add_defaults options, registered_options if registered_options and registered_options.any?
+          options = IndiferentHash.add_defaults options, :persist_file => persist_file, :format => format, :persist => true
 
           if entity_options
             options[:entity_options] ||= {}
             entity_options.each do |type, info|
               options[:entity_options][type] ||= {}
-              options[:entity_options][type] = Misc.add_defaults options[:entity_options][type], info
+              options[:entity_options][type] = IndiferentHash.add_defaults options[:entity_options][type], info
             end
           end
 
-          persist_options = Misc.pull_keys options, :persist
+          persist_options = IndiferentHash.pull_keys options, :persist
 
           database = if persist_file.exists? and persist_options[:persist] and not persist_options[:update]
-                       Log.low "Re-opening database #{ name } from #{ Misc.fingerprint persist_file }. #{options}"
+                       Log.low "Re-opening database #{ name } from #{ Log.fingerprint persist_file }. #{options}"
                        Association.open(file, options, persist_options)
                      else
-                       options = Misc.add_defaults options, registered_options if registered_options
+                       options = IndiferentHash.add_defaults options, registered_options if registered_options
                        raise "Repo #{ name } not found and not registered" if file.nil?
-                       Log.medium "Opening database #{ name } from #{ Misc.fingerprint file }. #{options}"
+                       Log.medium "Opening database #{ name } from #{ Log.fingerprint file }. #{options}"
                        Association.open(file, options, persist_options)
                      end
 

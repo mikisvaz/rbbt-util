@@ -5,7 +5,7 @@ module Association
     entity_type = Entity.formats[format]
     raise "Field #{ format } could not be resolved: #{fields}" if entity_type.nil?
     main_field = fields.select{|f| Entity.formats[f] == entity_type}.first
-    raise "Field #{ format } not present, options: #{Misc.fingerprint fields}" if main_field.nil?
+    raise "Field #{ format } not present, options: #{Log.fingerprint fields}" if main_field.nil?
     [main_field, nil, format]
   end
 
@@ -42,7 +42,7 @@ module Association
   end
 
   def self.extract_specs(all_fields=nil, options = {})
-    source, source_format, target, target_format, format = Misc.process_options options, :source, :source_format, :target, :target_format, :format
+    source, source_format, target, target_format, format = IndiferentHash.process_options options, :source, :source_format, :target, :target_format, :format
 
     key_field, *fields = all_fields.nil? ? [nil] : all_fields
 
@@ -57,13 +57,13 @@ module Association
 
     if source_specs.first and not all_fields.include? source_specs.first and defined? Entity and (_format = Entity.formats[source_specs.first.to_s])
       _source = all_fields.select{|f| Entity.formats[f.to_s] == _format }.first
-      raise "Source not found #{source_specs}. Options: #{Misc.fingerprint all_fields}" if _source.nil?
+      raise "Source not found #{source_specs}. Options: #{Log.fingerprint all_fields}" if _source.nil?
       source_specs[0] = _source
     end
 
     if target_specs.first and  not all_fields.include? target_specs.first and defined? Entity and (_format = Entity.formats[target_specs.first.to_s])
       _target = all_fields.select{|f| Entity.formats[f.to_s].to_s == _format.to_s }.first
-      raise "Target not found #{target_specs}. Options: #{Misc.fingerprint all_fields}" if _target.nil?
+      raise "Target not found #{target_specs}. Options: #{Log.fingerprint all_fields}" if _target.nil?
       target_specs[0] = _target
     end
 

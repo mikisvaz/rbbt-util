@@ -254,7 +254,7 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
     path.rb
     path=path{
      refactor.rb
-     }
+    }
     util.rb
     with_key.rb
     rake.rb
@@ -262,6 +262,7 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
 
    annotations.rb
    annotations=annotations{
+    refactor.rb
     util.rb
     annotated_array.rb
    }

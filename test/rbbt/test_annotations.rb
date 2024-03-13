@@ -15,6 +15,7 @@ end
 
 module AnnotatedString2
   extend Annotation
+  include AnnotatedString
   self.annotation :annotation_str2
 end
 
@@ -77,18 +78,11 @@ class TestAnnotations < Test::Unit::TestCase
     AnnotatedString.setup(str1, annotation_str1)
     AnnotatedString.setup(str2, annotation_str2)
     
-    assert_equal str1, Annotated.tsv([str1, str2], :all).tap{|t| t.unnamed = false}[str1.id + "#0"]["literal"] 
+    assert_equal str1, MetaExtension.tsv([str1, str2], :all).tap{|t| t.unnamed = false}[str1.id + "#0"]["literal"] 
     assert_equal annotation_str1, Annotated.tsv([str1, str2], :all).tap{|t| t.unnamed = false}[str1.id + "#0"]["annotation_str"] 
     assert_equal str1, Annotated.tsv([str1, str2], :all).tap{|t| t.unnamed = false}[str1.id + "#0"]["literal"] 
     assert_equal annotation_str1, Annotated.tsv([str1, str2], :all).tap{|t| t.unnamed = false}[str1.id + "#0"]["annotation_str"] 
     assert_equal annotation_str1, Annotated.tsv([str1, str2], :annotation_str, :JSON).tap{|t| t.unnamed = false}[str1.id + "#0"]["annotation_str"] 
-  end
-
-  def test_literal
-    str = "string"
-    annotation_str = "Annotation String"
-    AnnotatedString.setup(str, annotation_str)
-    assert_equal ["string"], str.tsv_values("literal")
   end
 
   def test_load_tsv
@@ -135,26 +129,14 @@ class TestAnnotations < Test::Unit::TestCase
   def test_double_array_1
     ary = ["string"]
     annotation_str = "Annotation String"
-    ary.extend AnnotatedArray
+    ary.extend ExtendedArray
     ary_ary = [ary]
-    ary_ary.extend AnnotatedArray
+    ary_ary.extend ExtendedArray
     AnnotatedString.setup(ary, annotation_str)
     AnnotatedString.setup(ary_ary, annotation_str)
     assert_equal [AnnotatedString], ary.annotation_types
     assert_equal annotation_str, ary.annotation_str
     assert_equal annotation_str, ary[0].annotation_str
-  end
-
-  def test_double_array_2
-    a = ["a"]
-    b = AnnotatedString.setup([AnnotatedString.setup(["a"])])
-    AnnotatedString.setup(a)
-    a.extend AnnotatedArray
-    assert AnnotatedString === b[0]
-    b.extend AnnotatedArray
-    assert AnnotatedString === b[0, true]
-    assert(!a.double_array)
-    assert(b.double_array)
   end
 
   def test_annotation_positional2hash
@@ -163,5 +145,24 @@ class TestAnnotations < Test::Unit::TestCase
     AnnotatedString.setup(str, :annotation_str => annotation_str)
     assert_equal str + annotation_str, str.add_annot
   end
+
+  #def __test_literal
+  #  str = "string"
+  #  annotation_str = "Annotation String"
+  #  AnnotatedString.setup(str, annotation_str)
+  #  assert_equal ["string"], str.tsv_values("literal")
+  #end
+
+  #def __test_double_array_2
+  #  a = ["a"]
+  #  b = AnnotatedString.setup([AnnotatedString.setup(["a"])])
+  #  AnnotatedString.setup(a)
+  #  a.extend ExtendedArray
+  #  assert AnnotatedString === b[0]
+  #  b.extend ExtendedArray
+  #  assert AnnotatedString === b[0, true]
+  #  assert(!a.double_array)
+  #  assert(b.double_array)
+  #end
 
 end

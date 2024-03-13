@@ -3,7 +3,9 @@ require 'scout/tsv'
 require 'scout/open'
 require_relative '../refactor'
 module TSV
+  extension_attr :monitor
   class << self
+
     alias original_open open
 
     def open(source, type = nil, options = nil)
@@ -30,6 +32,8 @@ module TSV
   alias original_reorder reorder
   def reorder(key_field = nil, fields = nil, merge: true, one2one: true, zipped: nil, **kwargs) 
     kwargs[:one2one] = zipped if one2one.nil?
+    kwargs.delete :persist
+    kwargs.delete :persist_data
     original_reorder(key_field, fields, **kwargs)
   end
 
@@ -150,6 +154,16 @@ module TSV
       tsv.key_field = self.key_field unless self.key_field.nil?
       tsv.fields = self.fields + other.fields unless self.fields.nil? or other.fields.nil?
       tsv
+    end
+  end
+
+  def with_monitor(use_monitor = true)
+    monitor_state = monitor
+    monitor = use_monitor
+    begin
+      yield
+    ensure
+      monitor = monitor_state
     end
   end
 end

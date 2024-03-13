@@ -8,10 +8,10 @@ class TestAssociationDatabase < Test::Unit::TestCase
    
   def effect_options
     effect_options = {
-      :source => "SG=~Associated Gene Name",
-      :target => "TG=~Associated Gene Name=>Ensembl Gene ID",
+      #:source => "SG=~Associated Gene Name",
+      #:target => "TG=~Associated Gene Name=>Ensembl Gene ID",
       :persist => false,
-    :identifiers => datafile_test('identifiers'),
+      :identifiers => datafile_test('identifiers'),
     }
   end
 

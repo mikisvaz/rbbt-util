@@ -50,7 +50,7 @@ module Persist
 
   def self.persist_tsv(source, filename = nil, options = {}, persist_options = {}, &block)
     engine = Misc.process_options persist_options, :engine, engine: "HDB"
-    Persist.persist(name, engine, persist_options)
+    Persist.persist(name, engine, persist_options, &block)
   end
 
 #
@@ -154,4 +154,12 @@ module Persist
 #      end
 #    end
 #  end
+end
+
+Persist.save_drivers[:annotations] = proc do |file,content|
+  Persist.save(content, file, :meta_extension)
+end
+
+Persist.load_drivers[:annotations] = proc do |file|
+  Persist.load(file, :meta_extension)
 end

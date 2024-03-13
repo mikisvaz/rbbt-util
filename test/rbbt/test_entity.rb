@@ -70,10 +70,10 @@ module ReversableString
 
 
   $processed_multiple = []
-  property :multiple_annotation_list => :multiple do |list|
-    $processed_multiple.concat list
+  property :multiple_annotation_list => :multiple do 
+    $processed_multiple.concat self
     res = {}
-    list.collect do |e|
+    self.collect do |e|
       e.chars.to_a.collect{|c| 
         ReversableString.setup(c)
       }
@@ -92,6 +92,15 @@ class TestEntity < Test::Unit::TestCase
     ReversableString.setup(a)
 
     assert_equal "1gnirtS", a.reverse_text_ary
+  end
+
+  def test_property_single_simple
+    a = "String1"
+    ReversableString.setup(a)
+
+    $count = 0
+
+    assert_equal "1gnirtS", a.reverse_text_single
   end
 
   def test_property_ary
@@ -280,7 +289,7 @@ class TestEntity < Test::Unit::TestCase
   end
 
   def test_all_properties
-    assert ReversableString.setup("TEST").all_properties.include?("reverse_text_ary")
-    assert_equal ReversableString.setup("TEST").all_properties, ReversableString.all_properties
+    assert ReversableString.setup("TEST").all_properties.include?(:reverse_text_ary)
+    assert_equal ReversableString.setup("TEST").all_properties, ReversableString.properties
   end
 end

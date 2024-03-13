@@ -17,6 +17,22 @@ class TestTSV < Test::Unit::TestCase
 
     assert_equal "1", a["one"]
   end
+
+  def test_monitor
+    a = {
+      "one" => "1", 
+      "two" => "2"
+    }
+
+    a.extend TSV
+    
+    a.key_field = "Number"
+
+    a.with_monitor do
+      assert_equal "1", a["one"]
+    end
+
+  end
   
   def test_tsv_1
     content =<<-EOF
@@ -163,7 +179,7 @@ row2    4
     EOF
 
     TmpFile.with_file(content) do |filename|
-      tsv = TSV.open(filename, :sep => /\s+/, :cast => :to_i, :type => :single, :fields => "Value")
+      tsv = TSV.open(filename, :sep => /\s+/, :cast => :to_i, :type => :single, :fields => ["Value"])
       assert_equal 1, tsv["row1"]
       tsv = TSV.open(filename, :sep => /\s+/, :cast => :to_i, :type => :single, :fields => ["Value"])
       assert_equal 1, tsv["row1"]

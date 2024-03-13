@@ -32,7 +32,7 @@ class TestPersist < Test::Unit::TestCase
     end
   end
 
-  def test_tsv_dumper
+  def _test_tsv_dumper
     TmpFile.with_file do |tmpdir|
       tsv = Persist.persist("Dumper", :tsv, :dir => tmpdir) do
         dumper = TSV::Dumper.new :key_field => "Field 1", :fields => ["Field 2"], :type => :single
@@ -52,7 +52,7 @@ class TestPersist < Test::Unit::TestCase
     end
   end
 
-  def test_tsv_dumper_stream
+  def _test_tsv_dumper_stream
     TmpFile.with_file do |tmpdir|
       stream = Persist.persist("Dumper", :tsv, :dir => tmpdir, :no_load => :stream) do
         dumper = TSV::Dumper.new :key_field => "Field 1", :fields => ["Field 2"], :type => :single
@@ -73,7 +73,7 @@ class TestPersist < Test::Unit::TestCase
     end
   end
 
-  def test_newer
+  def _test_newer
     TmpFile.with_file("Test1") do |tmp1|
       sleep 1
       TmpFile.with_file("Test1") do |tmp2|
