@@ -315,7 +315,6 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
    test_entity.rb
    test_fix_width_table.rb
    test_knowledge_base.rb
-   test_monitor.rb
    test_packed_index.rb
    test_persist.rb
    test_resource.rb
@@ -391,7 +390,6 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
     test_chain_methods.rb
     test_cmd.rb
     test_colorize.rb
-    test_concurrency.rb
     test_config.rb
     test_excel2tsv.rb
     test_filecache.rb
@@ -436,6 +434,7 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
    hpc=hpc{
     hpc_test_workflows.rb
     test_batch.rb
+    test_hpc_test_workflows.rb
     test_orchestrate.rb
     test_pbs.rb
     test_slurm.rb
