@@ -23,6 +23,14 @@ module ReversableString
     self.collect{|s| s.reverse}
   end
 
+  property :reverse_text_ary_hash => :array do
+    $count += 1
+    res = {}
+    self.each{|s| res[s] = s.reverse }
+    res
+  end
+
+
   property :reverse_text_single => :single do
     $count += 1
     self.reverse
@@ -98,6 +106,25 @@ class TestEntity < Test::Unit::TestCase
     end
   end
 
+  def test_property_ary_hash
+    a = ["String1", "String2"]
+    ReversableString.setup(a)
+
+    $count = 0
+
+    assert_equal "2gnirtS", a.reverse_text_ary_hash["String2"]
+    assert_equal 1, $count
+    a._ary_property_cache.clear
+    assert_equal "2gnirtS", a[1].reverse_text_ary_hash
+    assert_equal 2, $count
+    a._ary_property_cache.clear
+
+    $count = 0
+    a.each do |string|
+      string.reverse_text_ary
+      assert_equal 1, $count
+    end
+  end
   def test_property_single
     a = ["String1", "String2"]
     ReversableString.setup a
