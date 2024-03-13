@@ -150,11 +150,16 @@ module TSV
   def merge_different_fields(other, options = {})
     TmpFile.with_file do |output|
       TSV.merge_different_fields(self, other, output, options)
+      options.delete :sort
       tsv = TSV.open output, options
       tsv.key_field = self.key_field unless self.key_field.nil?
       tsv.fields = self.fields + other.fields unless self.fields.nil? or other.fields.nil?
       tsv
     end
+  end
+
+  def attach_source_key(other, key)
+    attach other, other_key: key
   end
 
   def with_monitor(use_monitor = true)

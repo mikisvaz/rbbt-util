@@ -29,7 +29,7 @@ row2    A    B    Id3
 
     TmpFile.with_file(content) do |filename|
       tsv = TSV.open(File.open(filename), :sep => /\s+/, :key_field => "OtherID", :persist => false)
-      index = tsv.index(:persist => true)
+      index = tsv.index(:persist => true, :persist_update => true)
       assert index["row1"].include? "Id1"
       assert_equal "OtherID", index.fields.first
     end
@@ -139,7 +139,7 @@ row3    AA    bb    Id4
     EOF
 
     TmpFile.with_file(content) do |filename|
-      index = TSV.index(filename, :target => "OtherID", :data_sep => /\s+/, :order => true, :persist => true, :data_persist => true)
+      index = TSV.index(filename, :target => "OtherID", :sep => /\s+/, :order => true, :persist => true, :data_persist => true)
       assert_equal "Id1", index['a']
       assert_equal "Id3", index['A']
       assert_equal "OtherID", index.fields.first
@@ -155,25 +155,25 @@ row3    A    a|B    Id4
     EOF
 
     TmpFile.with_file(content) do |filename|
-      index = TSV.index(filename, :target => "OtherID", :data_sep => /\s+/, :order => true, :persist => false)
+      index = TSV.index(filename, :target => "OtherID", :sep => /\s+/, :order => true, :persist => false)
       assert_equal "Id1", index['a']
       assert_equal "Id3", index['A']
       assert_equal "OtherID", index.fields.first
 
-      index = TSV.index(filename, :target => "OtherID", :data_sep => /\s+/, :order => true, :persist => true)
+      index = TSV.index(filename, :target => "OtherID", :sep => /\s+/, :order => true, :persist => true)
       assert_equal "Id1", index['a']
       assert_equal "Id3", index['A']
       assert_equal "OtherID", index.fields.first
 
       Open.write(filename, Open.read(filename).sub(/row1.*Id1\n/,''))
 
-      index = TSV.index(filename, :target => "OtherID", :data_sep => /\s+/, :order => true, :persist => true)
+      index = TSV.index(filename, :target => "OtherID", :sep => /\s+/, :order => true, :persist => true)
       assert_equal "Id1", index['a']
       assert_equal "Id3", index['A']
       assert_equal "OtherID", index.fields.first
       assert index.include?('aaa')
 
-      index = TSV.index(filename, :target => "OtherID", :data_sep => /\s+/, :order => true, :persist => false)
+      index = TSV.index(filename, :target => "OtherID", :sep => /\s+/, :order => true, :persist => false)
       assert ! index.include?('aaa')
     end
   end

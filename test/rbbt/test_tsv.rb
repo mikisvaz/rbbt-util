@@ -128,10 +128,10 @@ row2    A    B    Id3
       tsv = TSV.open(filename, :sep => /\s+/, :key_field => "Id")
       assert_equal ["a", "aa", "aaa"], tsv["row1"][0]
 
-      tsv = TSV.open(filename, :sep => /\s+/, :fields => 1)
+      tsv = TSV.open(filename, :sep => /\s+/, :fields => [1])
       assert_equal ["a", "aa", "aaa"], tsv["row1"].first
 
-      tsv = TSV.open(filename, :sep => /\s+/, :fields => 2)
+      tsv = TSV.open(filename, :sep => /\s+/, :fields => [2])
       assert_equal ["b"], tsv["row1"].first
 
       tsv = TSV.open(filename, :sep => /\s+/, :fields => [1,2])
@@ -146,7 +146,7 @@ row2    A    B    Id3
       assert_equal ["row1"], tsv["Id1"].first
       assert_equal tsv["Id2"], tsv["Id1"]
 
-      tsv = TSV.open(filename, :sep => /\s+/, :key_field => "OtherID", :fields => "Id")
+      tsv = TSV.open(filename, :sep => /\s+/, :key_field => "OtherID", :fields => ["Id"])
       assert_equal ["row1"], tsv["Id1"].first
       assert_equal tsv["Id2"], tsv["Id1"]
 

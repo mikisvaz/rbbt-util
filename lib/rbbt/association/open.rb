@@ -9,16 +9,17 @@ module Association
   
   def self.open(file, options = nil, persist_options = nil)
     options = options.nil? ? {} : options.dup
-    persist_options = persist_options.nil? ?  Misc.pull_keys(options, :persist)  : persist_options.dup 
+    persist_options = persist_options.nil? ?  IndiferentHash.pull_keys(options, :persist)  : persist_options.dup 
 
-    options = Misc.add_defaults options, :zipped => true, :merge => true, :monitor => {:desc => "Opening database #{Misc.fingerprint file}"}
+    options = IndiferentHash.add_defaults options, :zipped => true, :merge => true, :monitor => {:desc => "Opening database #{Log.fingerprint file}"}
     options[:zipped] = false unless options[:merge]
-    persist_options = Misc.add_defaults persist_options.dup, :persist => true, :dir => Rbbt.var.associations
+    persist_options = IndiferentHash.add_defaults persist_options.dup, :persist => true, :dir => Rbbt.var.associations
     persist = persist_options[:persist]
 
     file = version_file(file, options[:namespace]) if options[:namespace] and String === file
 
     data = Persist.persist_tsv(file, nil, options, persist_options.merge(:prefix => "Association Database")) do |data|
+      data = {} if data.nil?
       file = file.call if Proc === file
 
       options = options.dup

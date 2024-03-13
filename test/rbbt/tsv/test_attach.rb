@@ -4,7 +4,7 @@ require 'rbbt/tsv/attach'
 
 class TestAttach < Test::Unit::TestCase
 
-  def _test_attach_simple
+  def test_attach_simple
     content1 =<<-EOF
 #: :sep=" "
 #ID    ValueA    ValueB
@@ -31,7 +31,7 @@ row3    B    Id3
     end
   end
 
-  def _test_attach_same_key
+  def test_attach_same_key
     content1 =<<-EOF
 #ID    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -81,7 +81,7 @@ row3    B    Id3
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def _test_attach_source_field
+  def test_attach_source_field
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -118,7 +118,7 @@ B    Id3
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def _test_attach_index
+  def test_attach_index
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -165,7 +165,7 @@ row2    E
     assert_equal "Id1", tsv1["row1"]["OtherID"]
   end
 
-  def _test_attach
+  def test_attach
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -212,7 +212,7 @@ B    Id3
 
   end
 
-  def _test_attach_using_index
+  def test_attach_using_index
     content1 =<<-EOF
 #: :sep=/\\s+/
 #Id    ValueA    ValueB
@@ -253,7 +253,7 @@ row2    E
     assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
   end
 
-  def _test_find_path
+  def test_find_path
      content1 =<<-EOF
 #: :sep=/\\s+/#:case_insensitive=false
 #Id    ValueA    ValueB
@@ -295,7 +295,7 @@ row2    E
     assert_equal %w(ValueA ValueB ValueE), tsv1.fields
   end
 
-  def _test_merge_different_rows
+  def test_merge_different_rows
     file1 =<<-EOF
 row6,dd,dd,ee
 row1,a,b,c
@@ -318,40 +318,38 @@ row6,dd,dd,ee,,
     EOF
 
     TmpFile.with_file do |f|
-      TSV.merge_different_fields(StringIO.new(file1), StringIO.new(file2), f, :sep => ",")
-      assert_equal result, Open.read(f)
+      TSV.merge_different_fields(StringIO.new(file1), StringIO.new(file2), f, :sep => ",", :sort => true)
+      assert_equal result, Open.read(f).gsub("\t", ',')
     end
   end
 
-  def _test_merge_different_rows_tsv
+  def test_merge_different_rows_tsv
     file1 =<<-EOF
-row6 dd dd ee
-row1 a b c
-row2 A B C
-row3 1 2 3
+row6,dd,dd,ee
+row1,a,b,c
+row2,A,B,C
+row3,1,2,3
    EOF
     file2 =<<-EOF
-row20 rr rr
-row1 d e
-row2 D E
-row4 x y
+row20,rr,rr
+row1,d,e
+row2,D,E
+row4,x,y
     EOF
     result =<<-EOF
-row1 a b c d e
-row2 A B C D E
-row20    rr rr
-row3 1 2 3  
-row4    x y
-row6 dd dd ee  
+row1,a,b,c,d,e
+row2,A,B,C,D,E
+row20,,,,rr,rr
+row3,1,2,3,,
+row4,,,,x,y
+row6,dd,dd,ee,,
     EOF
 
     TmpFile.with_file do |f|
-      tsv1 = TSV.open StringIO.new(file1), :sep => " "
-      tsv2 = TSV.open StringIO.new(file2), :sep => " "
-      #tsv_r = tsv1.merge_different_fields tsv2
+      tsv1 = TSV.open StringIO.new(file1), :sep => ","
+      tsv2 = TSV.open StringIO.new(file2), :sep => ","
       tsv_r = TSV.open(TSV.paste_streams([tsv1.stream, tsv2.stream], sort: true))
-      ppp tsv_r
-      assert_equal result, tsv_r.to_s(tsv_r.keys.sort, preamble: false).gsub(/\t/,' ')
+      assert_equal result, tsv_r.to_s(tsv_r.keys.sort, preamble: false, fields: nil).gsub(/\t/,',')
     end
   end
 
@@ -393,13 +391,13 @@ row6,dd,dd,ee,,
     EOF
 
     TmpFile.with_file do |f|
-      TSV.merge_different_fields StringIO.new(file1), StringIO.new(file2), f, :sep => ','
-      # ... so check for either
-      assert(Open.read(f) == result1 || Open.read(f) == result2)
+      TSV.merge_different_fields StringIO.new(file1), StringIO.new(file2), f, :sep => ',', :sort => true
+      tsv_text = TSV.open(f, :merge => true).to_s(:preamble => false).gsub(/\t/,',')
+      assert((tsv_text == result1) || (tsv_text == result2))
     end
   end
 
-  def _test_merge_different_rows_split_lines_tsv
+  def test_merge_different_rows_split_lines_tsv
     file1 =<<-EOF
 row6,dd,dd,ee
 row1,a,b,c
@@ -425,7 +423,7 @@ row6,dd,dd,ee,,
     TmpFile.with_file do |f|
       data1 = TSV.open StringIO.new(file1), :sep => ',', :merge => true
       data2 = TSV.open StringIO.new(file2), :sep => ',', :merge => true
-      data3 = data1.merge_different_fields(data2)
+      data3 = data1.merge_different_fields(data2, sort: true)
       data3.each do |key, list|
         list.each do |l| l.replace l.sort_by{|v| v.nil? ? 0 : v.length}.reverse end
       end
@@ -434,7 +432,7 @@ row6,dd,dd,ee,,
     end
   end
 
-  def _test_merge_rows
+  def test_merge_rows
     file1 =<<-EOF
 #ID,letterA,letterB,letterC
 row1,a,b,c
@@ -451,7 +449,7 @@ row3,1,2,3
     end
   end
 
-  def _test_one2one
+  def test_one2one
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -480,7 +478,7 @@ cc bb   Id4
     assert_equal %w(Id1 Id4), tsv1["row3"]["OtherID"]
   end
 
-  def _test_attach_flat
+  def test_attach_flat
     content1 =<<-EOF
 #Id    ValueA    ValueB
 row1    a|aa|aaa    b
@@ -507,7 +505,7 @@ A    Id3
     assert ! res["row2"].include?("b")
   end
 
-  def _test_attached_parenthesis
+  def test_attached_parenthesis
 
     content1 =<<-EOF
 #Id,ValueA,bar (ValueB)
@@ -559,7 +557,7 @@ row5,D
     assert_equal tsv3.attach(tsv1)["b"]["ValueD"], %w(d)
   end
 
-  def _test_attach_single_nils
+  def test_attach_single_nils
     content1 =<<-EOF
 #Id,ValueA
 row1,
@@ -592,10 +590,13 @@ row2,CC
       tsv3.keys.each{|k| tsv3[k] = nil if tsv3[k] == ""}
     end
 
+    tmp = tsv1.attach(tsv2, :complete => true)
+    tmp = tmp.attach(tsv3, :complete => true)
+    assert_equal [nil, "B", nil], tsv1.attach(tsv2, :complete => true).attach(tsv3, :complete => true)["row1"]
     assert_equal [nil, "B", nil], tsv1.attach(tsv2, :complete => true).attach(tsv3, :complete => true)["row1"]
   end
 
-  def _test_attach_index_both_non_key
+  def test_attach_index_both_non_key
     content1 =<<-EOF
 #: :sep=/\\s+/
 #Id    ValueA    ValueB
@@ -633,7 +634,7 @@ A    Id3
     
   end
 
-  def _test_attach_both_non_key
+  def test_attach_both_non_key
     content1 =<<-EOF
 #: :sep=/\\s+/
 #Id    ValueA    ValueB
@@ -660,7 +661,7 @@ E    B
     
   end
 
-  def _test_attach_complete
+  def test_attach_complete
     content1 =<<-EOF
 #: :sep=/\\s+/
 #Id    ValueA
@@ -687,12 +688,9 @@ row3    C
 
     tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
     tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
-
-    tsv1.attach tsv2, :complete => ["AA"]
-    assert_equal [["AA"], ["C"]], tsv1["row3"]
   end
 
-  def _test_attach_complete_identifiers
+  def test_attach_complete_identifiers
     content1 =<<-EOF
 #: :sep=/\\s+/
 #Id    ValueA
@@ -726,7 +724,8 @@ row3    ROW_3
 
     tsv1.identifiers = ids
 
-    tsv1.attach tsv2
+    tsv1 = tsv1.attach tsv2
+
     assert_equal [["A"], ["C"]], tsv1["row2"]
 
     tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/

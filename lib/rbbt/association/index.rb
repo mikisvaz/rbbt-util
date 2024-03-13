@@ -5,15 +5,15 @@ require 'rbbt/association/item'
 module Association
   def self.index(file, options = nil, persist_options = nil)
     options = options.nil? ? {} : options.dup
-    persist_options = persist_options.nil? ?  Misc.pull_keys(options, :persist)  : persist_options.dup 
+    persist_options = persist_options.nil? ?  IndiferentHash.pull_keys(options, :persist)  : persist_options.dup 
     persist_options[:serializer] ||= options[:serializer] if options.include?(:serializer)
 
-    persist_options = Misc.add_defaults persist_options.dup, :persist => true, :dir => Rbbt.var.associations
+    persist_options = IndiferentHash.add_defaults persist_options.dup, :persist => true, :dir => Rbbt.var.associations
     persist = persist_options[:persist]
 
     file = version_file(file, options[:namespace]) if options[:namespace] and String === file
     Persist.persist_tsv(file, nil, options, persist_options.merge(:engine => "BDB", :prefix => "Association Index")) do |data|
-      options = Misc.add_defaults options.dup, :monitor => "Building index for #{Misc.fingerprint file}"
+      options = IndiferentHash.add_defaults options.dup, :monitor => "Building index for #{Log.fingerprint file}"
       recycle = options[:recycle]
       undirected = options[:undirected]
 
@@ -58,7 +58,7 @@ module Association
             #targets, *rest = Misc.zip_fields(Misc.zip_fields(values).uniq)
             
             next if values.first.empty?
-            values =  Misc.zip_fields(Misc.zip_fields(values).uniq)
+            values =  NamedArray.zip_fields(NamedArray.zip_fields(values).uniq)
             targets, *rest = values
 
             size = targets ? targets.length : 0
@@ -67,7 +67,7 @@ module Association
               list.replace [list.first] * size if list.length == 1
             end if recycle and size > 1
 
-            rest = Misc.zip_fields rest
+            rest = NamedArray.zip_fields rest
 
             annotations = (Array === rest.first and rest.first.length > 1) ?
               targets.zip(rest) :

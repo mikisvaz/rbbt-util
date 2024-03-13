@@ -49,7 +49,7 @@ module Persist
   end
 
   def self.persist_tsv(source, filename = nil, options = {}, persist_options = {}, &block)
-    engine = Misc.process_options persist_options, :engine, engine: "HDB"
+    engine = IndiferentHash.process_options persist_options, :engine, engine: "HDB"
     Persist.persist(name, engine, persist_options, &block)
   end
 

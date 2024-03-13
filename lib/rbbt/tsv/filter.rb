@@ -192,7 +192,7 @@ module Filtered
     if filters.empty?
       unfiltered_filename
     else
-      unfiltered_filename + ":Filtered[#{filters.collect{|f| [f.match, Array === f.value ? Misc.hash2md5(:values => f.value) : f.value] * "="} * ", "}]"
+      unfiltered_filename + ":Filtered[#{filters.collect{|f| [f.match, Array === f.value ? Misc.digest(:values => f.value) : f.value] * "="} * ", "}]"
     end
   end
 

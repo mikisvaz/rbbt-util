@@ -9,7 +9,7 @@ module Association
       case tsv.type
       when :double
         tsv.through do |source, values|
-          Misc.zip_fields(values).each do |info|
+          NamedArray.zip_fields(values).each do |info|
             target, *rest = info
             next if target == source
             rest.unshift source
@@ -30,7 +30,7 @@ module Association
     target_field = tsv.fields.first
     namespace = tsv.namespace
 
-    data = Misc.process_options options, :data
+    data = IndiferentHash.process_options options, :data
 
     data ||= {}
     TmpFile.with_file do |tmpfile1|
@@ -77,7 +77,7 @@ module Association
   end
 
   def self.reorder_tsv(tsv, options = {})
-    fields, persist = Misc.process_options options, :fields, :persist 
+    fields, persist = IndiferentHash.process_options options, :fields, :persist 
     all_fields = tsv.all_fields
 
     source_pos, field_pos, source_header, field_headers, source_format, target_format = headers(all_fields, fields, options)
@@ -113,11 +113,11 @@ module Association
   end
 
   def self.open_stream(stream, options = {})
-    fields, persist, data = Misc.process_options options, :fields, :persist, :data
+    fields, persist, data = IndiferentHash.process_options options, :fields, :persist, :data
 
     parser = TSV::Parser.new stream, options.merge(:fields => nil, :key_field => nil)
     options = options.merge(parser.options)
-    options = Misc.add_defaults options, :type => :double, :merge => true
+    options = IndiferentHash.add_defaults options, :type => :double, :merge => true
 
     key_field, *_fields = all_fields = parser.all_fields
 
@@ -158,7 +158,7 @@ module Association
     #end
 
     open_options = options.merge(parser.options).merge(:parser => parser)
-    open_options = Misc.add_defaults open_options, :monitor => {:desc => "Parsing #{ Misc.fingerprint stream }"}
+    open_options = IndiferentHash.add_defaults open_options, :monitor => {:desc => "Parsing #{ Log.fingerprint stream }"}
 
     data ||= {}
     tsv = nil
@@ -201,7 +201,7 @@ module Association
                  if options[:data]
                    data = options[:data]
                    tsv.with_unnamed do
-                     tsv.with_monitor("Saving database #{Misc.fingerprint file}") do
+                     tsv.with_monitor("Saving database #{Log.fingerprint file}") do
                        tsv.through do |k,v|
                          data[k] = v
                        end
