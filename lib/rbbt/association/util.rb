@@ -1,4 +1,4 @@
-require 'rbbt/entity'
+require 'scout/entity'
 
 module Association
   def self.identify_entity_format(format, fields)

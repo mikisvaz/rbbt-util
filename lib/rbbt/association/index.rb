@@ -1,6 +1,9 @@
+#require 'rbbt/tsv'
+#require 'rbbt/association/open'
+#require 'rbbt/association/item'
+require 'scout/association'
 require 'rbbt/tsv'
-require 'rbbt/association/open'
-require 'rbbt/association/item'
+require_relative 'item'
 
 module Association
   def self.index(file, options = nil, persist_options = nil)
@@ -21,7 +24,7 @@ module Association
 
       persist_options[:file] = persist_options[:file] + '.database' if persist_options[:file]
 
-      database = open(file, options, persist_options.dup.merge(:engine => "HDB"))
+      database = database(file, **options)
 
       source_field = database.key_field
 
@@ -32,18 +35,17 @@ module Association
 
       key_field = [source_field, target_field, undirected ? "undirected" : nil].compact * "~"
 
-      TSV.setup(data, :key_field => key_field, :fields => fields[1..-1], :type => :list, :serializer => serializer, :namespace => database.namespace)
+      TSV.setup(data, :key_field => key_field, :fields => fields[1..-1], :type => :list, :namespace => database.namespace)
 
       data.key_field = key_field
       data.fields = fields[1..-1]
       data.type = :list
-      data.serializer ||= serializer
+      data.serializer = serializer if data.respond_to?(:serializer)
       data.filename ||= file if String === file
 
       database.with_unnamed do
-        database.with_monitor(options[:monitor]) do
-          database.through do |source, values|
-            case database.type
+        database.traverse do |source, values|
+          case database.type
             when :single
               values = [[values]]
             when :list
@@ -51,58 +53,58 @@ module Association
             when :flat
               values = [values]
             end
-            next if values.empty?
-            next if source.nil? or source.empty?
-            next if values.empty?
+          next if values.empty?
+          next if source.nil? or source.empty?
+          next if values.empty?
 
-            #targets, *rest = Misc.zip_fields(Misc.zip_fields(values).uniq)
-            
-            next if values.first.empty?
-            values =  NamedArray.zip_fields(NamedArray.zip_fields(values).uniq)
-            targets, *rest = values
+          #targets, *rest = Misc.zip_fields(Misc.zip_fields(values).uniq)
 
-            size = targets ? targets.length : 0
+          next if values.first.empty?
+          values =  NamedArray.zip_fields(NamedArray.zip_fields(values).uniq)
+          targets, *rest = values
 
-            rest.each_with_index do |list,i|
-              list.replace [list.first] * size if list.length == 1
-            end if recycle and size > 1
+          size = targets ? targets.length : 0
 
-            rest = NamedArray.zip_fields rest
+          rest.each_with_index do |list,i|
+            list.replace [list.first] * size if list.length == 1
+          end if recycle and size > 1
 
-            annotations = (Array === rest.first and rest.first.length > 1) ?
-              targets.zip(rest) :
-              targets.zip(rest * targets.length) 
+          rest = NamedArray.zip_fields rest
 
-            source = source.gsub('~','-..-')
-            annotations.each do |target, info|
-              next if target.nil? or target.empty?
-              target = target.gsub('~','-..-')
-              key = [source, target] * "~"
+          annotations = (Array === rest.first and rest.first.length > 1) ?
+            targets.zip(rest) :
+            targets.zip(rest * targets.length) 
 
-              if data[key].nil? or info.nil?
-                data[key] = info
-              else
-                old_info = data[key]
-                info = old_info.zip(info).collect{|p| p * ";;" }
-                data[key] = info
-              end
+          source = source.gsub('~','-..-')
+          annotations.each do |target, info|
+            next if target.nil? or target.empty? 
+            info ||= [] if info.nil?
+            target = target.gsub('~','-..-')
+            key = [source, target] * "~"
+
+            if data[key].nil? or info.nil?
+              data[key] = info
+            else
+              old_info = data[key]
+              info = old_info.zip(info).collect{|p| p * ";;" }
+              data[key] = info
             end
           end
-
-          if undirected
-            new_data = {}
-
-            data.through do |key,values|
-              reverse_key = key.split("~").reverse * "~"
-              new_data[reverse_key] = values
-            end 
-
-            new_data.each do |key,values|
-              data[key] = values
-            end
-          end
-
         end
+
+        if undirected
+          new_data = {}
+
+          data.through do |key,values|
+            reverse_key = key.split("~").reverse * "~"
+            new_data[reverse_key] = values
+          end 
+
+          new_data.each do |key,values|
+            data[key] = values
+          end
+        end
+
       end
 
       data

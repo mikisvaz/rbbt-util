@@ -24,7 +24,7 @@ def usage(workflow = nil, task = nil, exception=nil, abridge = false)
 
   if task.nil?
     workflow.load_tasks if workflow.respond_to? :load_tasks
-    workflow.doc nil, abridge
+    workflow.usage nil, abridge
     puts
     puts "E.g. rbbt workflow task #{workflow.to_s} #{workflow.tasks.keys.first.to_s} -h"
   else
@@ -39,7 +39,7 @@ def usage(workflow = nil, task = nil, exception=nil, abridge = false)
       puts Misc.format_paragraph workflow.documentation[:description] 
     end
     puts
-    workflow.doc(task, abridge)
+    workflow.usage task, abridge
   end
 
   print_error(exception.message, exception.backtrace) if exception
@@ -230,7 +230,7 @@ usage and exit! -1 if workflow.nil?
 
 task     = ARGV.shift
 
-task = task.to_sym
+task = task.to_sym if task
 
 # Set log, fork, clean, recursive_clean and help
 help = !!options.delete(:help)
