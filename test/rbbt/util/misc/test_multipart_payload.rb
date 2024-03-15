@@ -4,7 +4,7 @@ require 'rbbt/util/misc/multipart_payload'
 class TestMultipartPayload < Test::Unit::TestCase
 
   URL='http://localhost:2887/Echo'
-  def _test_post_data_stream
+  def test_post_data_stream
     content =<<-EOF
 Line 1
 Line 2
@@ -49,7 +49,7 @@ END
     end
   end
 
-  def _test_issue
+  def test_issue
     content =<<-EOF
 Line 1
 Line 2
@@ -99,7 +99,7 @@ DONE_PARAM_STREAM
     end
   end
 
-  def _test_issue_multiple
+  def test_issue_multiple
     content =<<-EOF
 Line 1
 Line 2
@@ -151,7 +151,7 @@ DONE_PARAM_STREAM
     end
   end
 
-  def _test_raw
+  def test_raw
     mutipart =<<-EOF
 --Rbbt_Param_Stream<>
 Content-Disposition: form-data; name="input1"<>

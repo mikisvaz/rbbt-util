@@ -74,7 +74,7 @@ class TestKnowledgeBase < Test::Unit::TestCase
       kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
       kb.format = {"Gene" => "Ensembl Gene ID"}
 
-      kb.register :gene_ages, datadir_test.gene_ages, :source => "FamilyAge", :target => "=>Associated Gene Name"
+      kb.register :gene_ages, datadir_test.gene_ages, :source => "FamilyAge", :target => "Ensembl Gene ID=>Associated Gene Name", :merge => true, :type => :double
 
       i = kb.get_index(:gene_ages)
 

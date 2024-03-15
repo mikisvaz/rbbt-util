@@ -44,17 +44,17 @@ aa xx
   end
 
 
-  def _test_change_key
+  def test_change_key
     @f1.identifiers = @id
     assert @f1.change_key("X").include? "x"
   end
 
-  def _test_translate_key
+  def test_translate_key
     @f1.identifiers = @id
     assert TSV.translate(@f1, @f1.key_field, "X", :persist => false).include? "x"
   end
 
-  def _test_translate_key_persist
+  def test_translate_key_persist
     @f1.identifiers = @id
     assert TSV.translate(@f1, @f1.key_field, "X", :persist => true).include? "x"
   end

@@ -99,7 +99,6 @@ class TestAssociationUtil < Test::Unit::TestCase
     assert_equal "Ensembl Gene ID", spec[5]
     assert_equal nil, spec[4]
 
-
     spec = Association.headers  %w(SG TG Effect directed?), %w(Effect), :target => "TG=~Associated Gene Name", :source => "SG=~Associated Gene Name", :source_format => "Ensembl Gene ID"
     assert_equal 0, spec[0]
     assert_equal "Ensembl Gene ID", spec[4]

@@ -1,15 +1,10 @@
-require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
-require 'rbbt-util'
-require 'rbbt/association'
-require 'rbbt/association'
-require 'rbbt/association/database'
+require File.expand_path(__FILE__).sub(%r(/test/.*), '/test/test_helper.rb')
+require File.expand_path(__FILE__).sub(%r(.*/test/), '').sub(/test_(.*)\.rb/,'\1')
 
 class TestAssociationDatabase < Test::Unit::TestCase
    
   def effect_options
     effect_options = {
-      #:source => "SG=~Associated Gene Name",
-      #:target => "TG=~Associated Gene Name=>Ensembl Gene ID",
       :persist => false,
       :identifiers => datafile_test('identifiers'),
     }
@@ -49,7 +44,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
   end
 
   def test_database_translate
-    database = Association.database(effect_tsv, effect_options.merge({:source => "SG=~Associated Gene Name=>Ensembl Gene ID", :target => "TG"}))
+    database = Association.database(effect_tsv, **effect_options.merge({:source => "SG=~Associated Gene Name=>Ensembl Gene ID", :target => "TG"}))
     assert_equal %w(inhibition), database["ENSG00000135679"]["Effect"]
     assert_equal %w(activation activation), database["ENSG00000141510"]["Effect"]
   end
@@ -61,8 +56,9 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_list
     file = datafile_test('gene_ages')
+    tsv = TSV.open(file)
     tsv = Association.database(file)
-    assert_equal [["Bilateria"], ["Euteleostomi"], ["Duplicate"]], tsv["ENSG00000000003"]
+    assert_equal ["Bilateria", "Euteleostomi", "Duplicate"], tsv["ENSG00000000003"]
   end
 
   def test_gene_ages

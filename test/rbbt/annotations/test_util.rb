@@ -17,7 +17,7 @@ class TestAnnotation < Test::Unit::TestCase
     assert_equal a, Marshal.load(Marshal.dump(a))
   end
 
-  def _test_marshal_array
+  def test_marshal_array
     a = ["STRING"]
     TestEntityString.setup(a)
 
@@ -27,13 +27,13 @@ class TestAnnotation < Test::Unit::TestCase
     assert_equal a, Marshal.load(Marshal.dump(a))
   end
 
-  def _test_hash
+  def test_hash
     e = TestEntityString.setup("TEST", :code => 10)
     assert_equal "TEST", Annotated.to_hash(e)[:literal]
     assert_equal 10, Annotated.to_hash(e)[:info][:code]
   end
 
-  def _test_traverse_cpus
+  def test_traverse_cpus
     strings = (1..10).to_a.collect{|n| n.to_s }
     res = TSV.traverse strings, :cpus => 2, :into => [] do |s|
       TestEntityString.setup(s, :code => s.to_i)

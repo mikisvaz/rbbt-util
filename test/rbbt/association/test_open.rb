@@ -3,9 +3,12 @@ require 'rbbt/util/misc'
 require 'rbbt/association'
 require 'rbbt/association/open'
 
+require 'rbbt/tsv'
+require 'rbbt/persist'
+
 class TestAssociationOpen < Test::Unit::TestCase
    
-  EFFECT =<<-END
+  EFFECT = StringIO.new <<-END
 #: :sep=" "#:type=:double
 #SG TG Effect directed?
 MDM2 TP53 inhibition false
@@ -15,15 +18,12 @@ TP53 NFKB1|GLI1 activation|activation true|true
   EFFECT_OPTIONS = {
     :source => "SG=~Associated Gene Name",
     :target => "TG=~Associated Gene Name=>Ensembl Gene ID",
-    :persist => false,
-    :identifiers => datafile_test('identifiers'),
-    :namespace => "Hsa"
   }
 
-  EFFECT_TSV = TSV.open EFFECT, EFFECT_OPTIONS.dup
+  #EFFECT_TSV = TSV.open EFFECT, EFFECT_OPTIONS.dup
 
   def test_open_no_persist
-    tsv = Association.open(EFFECT_TSV, EFFECT_OPTIONS, :persist => false)
+    tsv = Association.database(EFFECT, **EFFECT_OPTIONS)
     assert_equal "ENSG00000141510", tsv["MDM2"]["Ensembl Gene ID"].first
     assert_equal ["false"], tsv["MDM2"]["directed?"]
   end
