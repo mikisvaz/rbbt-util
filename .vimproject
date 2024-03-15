@@ -305,8 +305,8 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
    gene_ages
    identifiers
    nature
-   pina
-   sample_genes
+   pina.gz
+   sample_genes.gz
    test.tsv
   }
   rbbt=rbbt{

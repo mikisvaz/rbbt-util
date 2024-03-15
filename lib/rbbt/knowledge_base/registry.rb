@@ -40,7 +40,7 @@ class KnowledgeBase
 
   def get_index(name, options = {})
     name = name.to_s
-    options[:organism] ||= options[:namespace] ||= self.namespace unless self.namespace.nil?
+    options[:namespace] ||= self.namespace unless self.namespace.nil?
     @indices[[name, options]] ||= 
       begin 
         if options.empty?
@@ -61,7 +61,7 @@ class KnowledgeBase
           file, registered_options = registry[name]
 
           options = IndiferentHash.add_defaults options, registered_options if registered_options and registered_options.any?
-          options = IndiferentHash.add_defaults options, :persist_file => persist_file, :persist_dir => persist_dir, :format => format, :persist => true
+          options = IndiferentHash.add_defaults options, :persist_file => persist_file, :persist_dir => persist_dir, :persist => true
 
           if entity_options
             options[:entity_options] ||= {}
@@ -75,12 +75,12 @@ class KnowledgeBase
 
           index = if persist_file.exists? and persist_options[:persist] and not persist_options[:update]
                     Log.low "Re-opening index #{ name } from #{ Log.fingerprint persist_file }. #{options}"
-                    Association.index(file, options, persist_options.dup)
+                    Association.index(file, **options.merge(persist_options: persist_options.dup))
                   else
                     options = IndiferentHash.add_defaults options, registered_options if registered_options
                     raise "Repo #{ name } not found and not registered" if file.nil?
                     Log.medium "Opening index #{ name } from #{ Log.fingerprint file }. #{options}"
-                    Association.index(file, options, persist_options.dup)
+                    Association.index(file, **options.merge(persist_options: persist_options.dup))
                   end
 
           index.namespace = self.namespace unless self.namespace
@@ -97,9 +97,6 @@ class KnowledgeBase
     if self.namespace == options[:namespace]
       options.delete(:namespace) 
     end
-    if self.namespace == options[:organism]
-      options.delete(:organism) 
-    end
     @databases[[name, options]] ||= 
       begin 
         fp = Log.fingerprint([name,options])
@@ -111,7 +108,7 @@ class KnowledgeBase
           key = name.to_s + "_" + fp
         end
 
-        options[:organism] ||= options[:namespace] ||= self.namespace unless self.namespace.nil?
+        options[:namespace] ||= self.namespace unless self.namespace.nil?
 
         key += '.database'
         Persist.memory("Database:" << [key, dir] * "@") do
@@ -122,7 +119,7 @@ class KnowledgeBase
           file, registered_options = registry[name]
 
           options = IndiferentHash.add_defaults options, registered_options if registered_options and registered_options.any?
-          options = IndiferentHash.add_defaults options, :persist_file => persist_file, :format => format, :persist => true
+          options = IndiferentHash.add_defaults options, :persist_file => persist_file, :persist => true
 
           if entity_options
             options[:entity_options] ||= {}

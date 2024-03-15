@@ -55,7 +55,6 @@ class TestKnowledgeBase < Test::Unit::TestCase
   end
 
   def test_knowledge_base_simple
-    organism = Organism.default_code("Hsa")
     TmpFile.with_file do |tmpdir|
       kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
       kb.format = {"Gene" => "Ensembl Gene ID"}
@@ -76,6 +75,7 @@ class TestKnowledgeBase < Test::Unit::TestCase
 
       kb.register :gene_ages, datadir_test.gene_ages, :source => "FamilyAge", :target => "Ensembl Gene ID=>Associated Gene Name", :merge => true, :type => :double
 
+      d = kb.get_database(:gene_ages)
       i = kb.get_index(:gene_ages)
 
       assert_include i.match("Bilateria"), "Bilateria~SMAD4"

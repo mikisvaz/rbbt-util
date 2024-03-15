@@ -36,26 +36,26 @@ class TestAssociations < Test::Unit::TestCase
   end
 
   def test_simple_open
-    database = Association.open(FAssocs, {}, :dir => DAssocs)
+    database = Association.open(FAssocs)
     database.unnamed = false
     assert_equal ["C", "K"], database["c"]["Entity2"]
   end
  
   def test_source_open
-    database = Association.open(FAssocs, {:source => "Entity2", :zipped => true}, :dir => DAssocs)
+    database = Association.open(FAssocs, :source => "Entity2", :one2one => true)
     assert_equal ["c", "3", 'cc', "PTEN"], database["C"].flatten
     assert_equal ["c", "4", 'kk', "PTEN"], database["K"].flatten
   end
   
   def test_target_open
-    database = Association.open(FAssocs, {:source => "Entity2", :target => "Entity3", :zipped => true}, :dir => DAssocs)
+    database = Association.open(FAssocs, :source => "Entity2", :target => "Entity3", :zipped => true, :persist_dir => DAssocs, :persist => true)
     assert_equal ["cc", "c", "3", "PTEN"], database["C"].flatten
     assert_equal ["kk", "c", "4", "PTEN"], database["K"].flatten
   end
 
 
   def test_gene_open
-    database = Association.open(FAssocs, {:source => "Gene=~Associated Gene Name", :target => "Entity3", :zipped => true}, :dir => DAssocs)
+    database = Association.open(FAssocs, :source => "Gene=~Associated Gene Name", :target => "Entity3", :one2one => true)
     assert_equal ["aa"], database["TP53"].first
   end
 

@@ -24,7 +24,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_no_persist_string
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge(:source => "TG", :target => "SG=~Associated Gene Name"), :persist => false)
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge(:source => "TG", :target => "SG=~Associated Gene Name"), :persist => false)
       tsv.unnamed = false
       assert_equal "inhibition", tsv["TP53~MDM2"]["Effect"]
     end
@@ -32,7 +32,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_no_persist_string_undirected
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge(:undirected => true, :source => "TG", :target => "SG=~Associated Gene Name"), :persist => false)
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge(:undirected => true, :source => "TG", :target => "SG=~Associated Gene Name"), :persist => false)
       tsv.unnamed = false
       assert_equal "inhibition", tsv["TP53~MDM2"]["Effect"]
     end
@@ -40,7 +40,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_persist_string
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge(:source => "SG", :target => "TG=~Associated Gene Name"), :persist => true)
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge(:source => "SG", :target => "TG=~Associated Gene Name"), :persist => true)
       tsv.unnamed = false
       assert_equal "inhibition", tsv["MDM2~TP53"]["Effect"]
       assert_equal %w(TP53~NFKB1 TP53~GLI1).sort, tsv.match("TP53").sort
@@ -49,7 +49,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_persist_reverse
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge(:source => "TG", :target => "SG=~Associated Gene Name"), :persist => true, :update => true).reverse
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge(:source => "TG", :target => "SG=~Associated Gene Name"), :persist => true).reverse
       tsv.unnamed = false
       assert_equal "inhibition", tsv["MDM2~TP53"]["Effect"]
       assert_equal %w(MDM2~TP53), tsv.match("MDM2")
@@ -58,7 +58,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_persist_undirected
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge(:undirected => true, :source => "TG=~Associated Gene Name", :target => "SG=~Associated Gene Name"), :persist => true)
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge(:undirected => true, :source => "TG=~Associated Gene Name", :target => "SG=~Associated Gene Name"), :persist => true)
       tsv.unnamed = false
       assert_equal "inhibition", tsv["MDM2~TP53"]["Effect"]
       assert_equal "inhibition", tsv["TP53~MDM2"]["Effect"]
@@ -68,7 +68,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_persist_directed_subset
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge(:undirected => true, :source => "TG=~Associated Gene Name", :target => "SG=~Associated Gene Name"), :persist => true)
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge(:undirected => true, :source => "TG=~Associated Gene Name", :target => "SG=~Associated Gene Name"), :persist => true)
       tsv.unnamed = false
       assert_equal %w(TP53~GLI1 TP53~MDM2).sort, tsv.subset(["TP53"], ["GLI1","MDM2"]).sort
       assert_equal %w(MDM2~TP53).sort, tsv.subset(["MDM2"], :all).sort
@@ -79,7 +79,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_persist_undirected_subset
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
       tsv.unnamed = false
       assert_equal %w(TP53~GLI1 TP53~NFKB1).sort, tsv.subset(["TP53"], ["GLI1","MDM2", "NFKB1"]).sort
     end
@@ -87,9 +87,10 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_flat
     require 'rbbt/sources/tfacts'
-    file = TFactS.regulators
-    tsv = Association.index(file,  :type => :flat, :source => "Transcription Factor (Associated Gene Name)=~Associated Gene Name", :merge => true)
-    assert tsv.match("TP53").length > 10
+    file = TFactS.regulators.tsv type: :flat
+    Association.database(file,  :type => :flat, :source => "Transcription Factor (Associated Gene Name)=~Associated Gene Name")
+    index = Association.index(file,  :type => :flat, :source => "Transcription Factor (Associated Gene Name)=~Associated Gene Name", :merge => true)
+    assert index.match("TP53").length > 10
   end
 
   def test_index_flat_to_matrix
@@ -101,7 +102,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_filter_no_block
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"))
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"))
       tsv.unnamed = false
       matches = tsv.filter :directed?
       assert_equal 2, matches.length
@@ -110,7 +111,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_filter_no_block_value
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"))
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"))
       tsv.unnamed = false
       matches = tsv.filter :Effect, "inhibition"
       assert_equal ["MDM2~TP53"], matches
@@ -119,7 +120,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_filter_block_value_field
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"))
       tsv.unnamed = false
       matches = tsv.filter :Effect do |value|
         return value.include? "inhibition"
@@ -130,7 +131,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_filter_block_no_value_field
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"), :persist => true)
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge(:undirected => false, :source => "SG=~Associated Gene Name", :target => "TG=~Associated Gene Name"))
       tsv.unnamed = false
       matches = tsv.filter do |key,values|
         return values.flatten.include? "inhibition"

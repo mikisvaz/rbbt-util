@@ -13,7 +13,6 @@ class TestAnnotation < Test::Unit::TestCase
     a = "STRING"
     a = TestEntityString.setup(a)
 
-    #assert !(Annotated === Marshal.load(Marshal.dump(a)))
     assert_equal a, Marshal.load(Marshal.dump(a))
   end
 
