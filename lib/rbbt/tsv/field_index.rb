@@ -12,7 +12,9 @@ module TSV
 
   def field_index(field)
     @field_indices ||= {}
-    @field_indices[field] ||= Persist.persist_tsv(self, filename, {:field => field}, :prefix => "FieldIndex", :dir => TSV.field_index_dir, :persist => true, :serializer => :list, :engine => "BDB" ) do 
+    @field_indices[field] ||= Persist.persist_tsv(self, filename, {:field => field}, :prefix => "FieldIndex", :dir => TSV.field_index_dir, :persist => true, :serializer => :list, :engine => "BDB" ) do |data|
+      data.serializer = :flat
+
       tsv = {}
       case type 
       when :single, :list
@@ -30,7 +32,7 @@ module TSV
         end
       end
 
-      data = TSV.setup({}, :key_field => field, :fields => ["Keys"], :type => :flat)
+      TSV.setup(data, :key_field => field, :fields => ["Keys"], :type => :flat)
       tsv.each do |v,keys|
         data[v] = keys.sort
       end

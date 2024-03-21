@@ -41,7 +41,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_open_no_persist_string
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.database(f, **EFFECT_OPTIONS.merge(:source => "TG", :target => "SG=~Associated Gene Name", :persist => false))
+      tsv = Association.database(f, **EFFECT_OPTIONS.merge(:source => "TG", :target => "SG=~SG (Associated Gene Name)", :persist => false))
       tsv.include? "TP53"
       assert_equal ["MDM2"], tsv["TP53"]["SG"]
     end
@@ -66,7 +66,7 @@ TP53 NFKB1|GLI1 activation|activation true|true
 
   def test_index_persist_reverse
     TmpFile.with_file(EFFECT) do |f|
-      tsv = Association.index(f, EFFECT_OPTIONS.merge( :source => "TG", :target => "SG=~Associated Gene Name"), :persist => true).reverse
+      tsv = Association.index(f, **EFFECT_OPTIONS.merge( :source => "TG", :target => "SG=~Associated Gene Name"), :persist => true).reverse
       tsv.unnamed = false
       assert_equal "inhibition", tsv["MDM2~TP53"]["Effect"]
       assert_equal %w(MDM2~TP53), tsv.match("MDM2")

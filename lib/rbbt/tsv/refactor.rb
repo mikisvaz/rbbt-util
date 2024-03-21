@@ -3,7 +3,7 @@ require 'scout/tsv'
 require 'scout/open'
 require_relative '../refactor'
 module TSV
-  extension_attr :monitor
+  annotation :monitor
   class << self
 
     alias original_open open

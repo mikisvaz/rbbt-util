@@ -10,7 +10,7 @@ class TestSLURM < Test::Unit::TestCase
     TmpFile.with_file do |batch_dir|
 
       template = HPC::SLURM.job_template(job, :batch_dir => batch_dir, :batch_modules => 'java', :time => '10min')
-      assert_include template, "rbbt workflow task TestWFA a2"
+      assert_include template, "scout workflow task TestWFA a2"
       assert_include template, "00:10:00"
     end
   end

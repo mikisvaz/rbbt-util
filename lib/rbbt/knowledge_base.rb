@@ -1,4 +1,4 @@
-
+require 'rbbt/annotations'
 require 'rbbt/association'
 require 'rbbt/association/item'
 require 'rbbt/knowledge_base/entity'

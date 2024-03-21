@@ -17,7 +17,7 @@ class KnowledgeBase
                when AnnotatedArray
                  format = entities.format if entities.respond_to? :format 
                  format ||= entities.base_entity.to_s
-                 {format => entities.clean_annotations}
+                 {format => entities.purge}
                when Hash
                  entities
                else

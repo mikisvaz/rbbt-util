@@ -78,7 +78,7 @@ class TestAnnotations < Test::Unit::TestCase
     AnnotatedString.setup(str1, annotation_str1)
     AnnotatedString.setup(str2, annotation_str2)
     
-    assert_equal str1, MetaExtension.tsv([str1, str2], :all).tap{|t| t.unnamed = false}[str1.id + "#0"]["literal"] 
+    assert_equal str1, Annotation.tsv([str1, str2], :all).tap{|t| t.unnamed = false}[str1.id + "#0"]["literal"] 
     assert_equal annotation_str1, Annotated.tsv([str1, str2], :all).tap{|t| t.unnamed = false}[str1.id + "#0"]["annotation_str"] 
     assert_equal str1, Annotated.tsv([str1, str2], :all).tap{|t| t.unnamed = false}[str1.id + "#0"]["literal"] 
     assert_equal annotation_str1, Annotated.tsv([str1, str2], :all).tap{|t| t.unnamed = false}[str1.id + "#0"]["annotation_str"] 

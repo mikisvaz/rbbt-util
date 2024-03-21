@@ -161,8 +161,8 @@ source(interactive.script.file)
   end
 
   def self.tsv(file, options = {})
-    options = Misc.add_defaults :header_hash => '', :sep => / +/, :type => :list, :key_field => 'ID'
-    key_field = Misc.process_options options, :key_field
+    options = IndiferentHash.add_defaults :header_hash => '', :sep => / +/, :type => :list, :key_field => 'ID'
+    key_field = IndiferentHash.process_options options, :key_field
     clean = CMD.cmd('grep -v WARNING', :in => file, :pipe => true)
     TSV.open(clean, options).tap{|tsv| tsv.key_field = key_field }
   end
@@ -173,7 +173,7 @@ module TSV
   def R(script, source = nil, open_options = {})
     open_options, source = source, nil if Hash === source
 
-    source ||= Misc.process_options open_options, :source
+    source ||= IndiferentHash.process_options open_options, :source
     source = [source] unless Array === source 
 
     require_sources  = source.collect{|source|

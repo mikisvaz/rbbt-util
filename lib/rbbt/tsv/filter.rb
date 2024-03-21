@@ -32,7 +32,8 @@ module Filtered
       when Hash === persistence
         @persistence = persistence
       when String === persistence
-        @persistence = TSV.setup Persist.open_tokyocabinet(persistence, false, :list)
+        @persistence = Persist.open_tokyocabinet(persistence, false, :list)
+        @persistence = TSV.setup(@persistence)
         @persistence.read
       end
 

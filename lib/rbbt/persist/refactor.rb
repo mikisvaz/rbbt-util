@@ -156,10 +156,10 @@ module Persist
 #  end
 end
 
-Persist.save_drivers[:annotations] = proc do |file,content|
-  Persist.save(content, file, :meta_extension)
-end
-
-Persist.load_drivers[:annotations] = proc do |file|
-  Persist.load(file, :meta_extension)
-end
+#Persist.save_drivers[:annotations] = proc do |file,content|
+#  Persist.save(content, file, :)
+#end
+#
+#Persist.load_drivers[:annotations] = proc do |file|
+#  Persist.load(file, :meta_extension)
+#end

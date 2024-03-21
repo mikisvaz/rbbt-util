@@ -9,6 +9,8 @@ require_relative 'rbbt/refactor'
 
 module Rbbt
   extend Resource
+
+  self.pkgdir = 'rbbt'
 end
 
 Resource.set_software_env Rbbt.software

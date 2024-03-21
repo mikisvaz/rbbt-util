@@ -553,6 +553,7 @@ row5,D
     assert_equal tsv1.attach(tsv2)["row2"]["OtherID"], %w(Id3)
 
     assert_equal tsv1.attach(tsv4)["row1"]["ValueD"], %w(d)
+    tsv4.key_field = tsv1.key_field
     assert_equal tsv4.attach(tsv1)["row1"]["bar (ValueB)"], %w(b)
     assert_equal tsv3.attach(tsv1)["b"]["ValueD"], %w(d)
   end

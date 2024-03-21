@@ -8,4 +8,6 @@ module Workflow
   def resumable
     Log.warn "RESUMABLE MOCKED"
   end
+
+  DEFAULT_NAME = Task::DEFAULT_NAME
 end

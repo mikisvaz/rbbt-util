@@ -27,26 +27,26 @@ export BATCH_SYSTEM=#{batch_system}
     def self.header(options = {})
       options = options.dup
 
-      queue      = Misc.process_options options, :queue
-      account    = Misc.process_options options, :account
-      partition  = Misc.process_options options, :partition
-      task_cpus  = Misc.process_options options, :task_cpus
-      time       = Misc.process_options options, :time
-      nodes      = Misc.process_options options, :nodes
-      workdir    = Misc.process_options options, :workdir
-      exclusive  = Misc.process_options options, :exclusive
-      highmem    = Misc.process_options options, :highmem
-      licenses   = Misc.process_options options, :licenses
-      constraint = Misc.process_options options, :constraint
-      gres       = Misc.process_options options, :gres
+      queue      = IndiferentHash.process_options options, :queue
+      account    = IndiferentHash.process_options options, :account
+      partition  = IndiferentHash.process_options options, :partition
+      task_cpus  = IndiferentHash.process_options options, :task_cpus
+      time       = IndiferentHash.process_options options, :time
+      nodes      = IndiferentHash.process_options options, :nodes
+      workdir    = IndiferentHash.process_options options, :workdir
+      exclusive  = IndiferentHash.process_options options, :exclusive
+      highmem    = IndiferentHash.process_options options, :highmem
+      licenses   = IndiferentHash.process_options options, :licenses
+      constraint = IndiferentHash.process_options options, :constraint
+      gres       = IndiferentHash.process_options options, :gres
 
       constraint     = [constraint, "highmem"].compact * "&" if highmem
 
-      mem            = Misc.process_options options, :mem
-      mem_per_cpu    = Misc.process_options options, :mem_per_cpu
+      mem            = IndiferentHash.process_options options, :mem
+      mem_per_cpu    = IndiferentHash.process_options options, :mem_per_cpu
 
-      batch_dir  = Misc.process_options options, :batch_dir
-      batch_name = Misc.process_options options, :batch_name
+      batch_dir  = IndiferentHash.process_options options, :batch_dir
+      batch_name = IndiferentHash.process_options options, :batch_name
 
       fout       = File.join(batch_dir, 'std.out')
       ferr       = File.join(batch_dir, 'std.err')

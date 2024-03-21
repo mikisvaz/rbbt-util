@@ -7,6 +7,6 @@ module Entity
     base.instance_variable_set(:@properties, [])
     base.instance_variable_set(:@persisted_methods, {})
     base.include Entity::Object
-    base.include ExtendedArray
+    base.include AnnotatedArray
   end
 end

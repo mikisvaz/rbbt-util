@@ -9,6 +9,7 @@ require 'rbbt/association'
 require 'rbbt/association/open'
 require 'rbbt/knowledge_base'
 require 'rbbt/entity'
+require 'rbbt/tsv'
 
 
 TEST_ASSOCIATIONS =<<-EOF

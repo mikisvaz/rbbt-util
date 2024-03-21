@@ -1,4 +1,2 @@
-require 'scout/association'
-require 'rbbt/association/index'
-module Association
-end
+require_relative 'refactor'
+Rbbt.require_instead 'scout/association'

@@ -47,8 +47,8 @@ module HPC
 
   module TemplateGeneration
     def exec_cmd(job, options = {})
-      env_cmd     = Misc.process_options options, :env_cmd
-      development = Misc.process_options options, :development
+      env_cmd     = IndiferentHash.process_options options, :env_cmd
+      development = IndiferentHash.process_options options, :development
 
       if contain = options[:contain]
         contain = File.expand_path(contain)
@@ -106,7 +106,7 @@ module HPC
       workflow = job.workflow
       task     = job.task_name
 
-      Misc.add_defaults options, :jobname => jobname
+      IndiferentHash.add_defaults options, :jobname => jobname
 
       task = job.task_name
 
@@ -123,7 +123,7 @@ module HPC
       end
 
       # Save inputs into inputs_dir
-      inputs_dir = Misc.process_options options, :inputs_dir
+      inputs_dir = IndiferentHash.process_options options, :inputs_dir
       saved = job.save_inputs(inputs_dir)
       options[:load_inputs] = inputs_dir if saved && saved.any?
 
@@ -189,7 +189,7 @@ EOF
 
       keys.each do |key|
         next if options[key].nil?
-        batch_options[key] = Misc.process_options options, key
+        batch_options[key] = IndiferentHash.process_options options, key
       end
 
       batch_dir = batch_options[:batch_dir]
@@ -212,9 +212,9 @@ EOF
 
       keys_from_config.each do |key|
         next unless batch_options.include? key
-        default_value = Rbbt::Config.get(key, "batch_#{key}", "batch")
+        default_value = Scout::Config.get(key, "batch_#{key}", "batch")
         next if default_value.nil? 
-        Misc.add_defaults batch_options, default_value
+        IndiferentHash.add_defaults batch_options, default_value
       end
 
       user = batch_options[:user] ||= ENV['USER'] || `whoami`.strip
@@ -226,7 +226,7 @@ EOF
 
       if batch_options[:contain_and_sync]
         if batch_options[:contain].nil?
-          contain_base = Rbbt::Config.get(:contain_base_dir, :batch_contain, :batch, :default => "/scratch/tmp/scout-[USER]")
+          contain_base = Scout::Config.get(:contain_base_dir, :batch_contain, :batch, :default => "/scratch/tmp/scout-[USER]")
           contain_base = contain_base.sub('[USER]', user)
           random_file = TmpFile.random_name
           batch_options[:contain] = File.join(contain_base, random_file)
@@ -240,7 +240,7 @@ EOF
         options[:workdir_all] = batch_options[:contain]
       end
 
-      Misc.add_defaults batch_options, 
+      IndiferentHash.add_defaults batch_options, 
         :batch_name => batch_name,
         :inputs_dir => inputs_dir, 
         :nodes => 1, 
@@ -256,13 +256,13 @@ EOF
       exec_cmd = exec_cmd(job, batch_options)
       scout_cmd = scout_job_exec_cmd(job, options)
 
-      Misc.add_defaults batch_options, 
+      IndiferentHash.add_defaults batch_options, 
         :exec_cmd => exec_cmd,
         :scout_cmd => scout_cmd
 
       batch_dir = batch_options[:batch_dir]
 
-      Misc.add_defaults batch_options,
+      IndiferentHash.add_defaults batch_options,
         :fout   => File.join(batch_dir, 'std.out'),
         :ferr   => File.join(batch_dir, 'std.err'),
         :fjob   => File.join(batch_dir, 'job.id'),
@@ -567,7 +567,7 @@ env > #{batch_options[:fenv]}
     def run_job(job, options = {})
       system = self.to_s.split("::").last
 
-      batch_base_dir, clean_batch_job, remove_batch_dir, procpath, tail, batch_dependencies, dry_run, orchestration_rules_file = Misc.process_options options, 
+      batch_base_dir, clean_batch_job, remove_batch_dir, procpath, tail, batch_dependencies, dry_run, orchestration_rules_file = IndiferentHash.process_options options, 
         :batch_base_dir, :clean_batch_job, :remove_batch_dir, :batch_procpath, :tail, :batch_dependencies, :dry_run, :orchestration_rules,
         :batch_base_dir => File.expand_path(File.join('~/rbbt-batch')) 
 
@@ -594,7 +594,7 @@ env > #{batch_options[:fenv]}
       workflows_to_load = job.rec_dependencies.select{|d| Step === d}.collect{|d| d.workflow }.compact.collect(&:to_s) - [workflow.to_s]
 
       TmpFile.with_file(nil, remove_batch_dir, :tmpdir => batch_base_dir, :prefix => "#{system}_scout_job-#{workflow.to_s}-#{task_name}-") do |batch_dir|
-        Misc.add_defaults options, 
+        IndiferentHash.add_defaults options, 
           :batch_dir => batch_dir, 
           :inputs_dir => File.join(batch_dir, "inputs_dir"),
           :workflows => workflows_to_load.any? ? workflows_to_load.uniq * "," : nil

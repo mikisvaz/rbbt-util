@@ -228,9 +228,9 @@ EOF
 workflow = ARGV.shift
 usage and exit! -1 if workflow.nil?
 
-task     = ARGV.shift
+task_name     = ARGV.shift
 
-task = task.to_sym if task
+task_name = task_name.to_sym if task_name
 
 # Set log, fork, clean, recursive_clean and help
 help = !!options.delete(:help)
@@ -292,33 +292,28 @@ end
 # Set task
 namespace = nil, nil
 
-case 
-when task.nil?
-  usage workflow, nil, nil, options[:abridge] and exit 0
-else
-  task_name = task.to_sym
-  begin
-    task = workflow.tasks[task_name]
-    raise Workflow::TaskNotFoundException.new workflow, task_name if task.nil?
-  rescue Workflow::TaskNotFoundException
-    usage workflow, nil, nil, options[:abridge]
+help = options[:help] = true if task_name.nil?
 
-    puts
-    puts Log.color :magenta, "## Error"
-    puts
-    puts $!.message
-    puts
-
-    exit -1
+if help
+  if defined? scout_usage
+    scout_usage 
+  else
+    puts SOPT.doc
   end
+
+  puts workflow.usage(task_name) if workflow
+  exit 0
+else
+  task = workflow.tasks[task_name.to_sym] if task_name
 end
 
-usage workflow, task, nil, options[:abridge] and exit 0 if help
+#usage workflow, task, nil, options[:abridge] and exit 0 if help
+#puts workflow.usage(task, options[:abridge]) and exit 0 if help
 
 name = options.delete(:jobname) 
 
 # get job args
-job_options = task.get_SOPT(task)
+job_options = task.get_SOPT
 
 if options[:load_inputs]
   task_info = workflow.task_info(task_name)
@@ -369,11 +364,11 @@ if recursive_clean
   job.recursive_clean 
 end
 
-require 'pp'
 
 # run
 begin
   if options[:info]
+    require 'pp'
     pp job.info
     exit 0
   end

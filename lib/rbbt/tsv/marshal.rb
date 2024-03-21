@@ -3,7 +3,7 @@ module TSV
     if defined?(Persist::TCAdapter) && Persist::TCAdapter === self
       super
     else
-      [options, MetaExtension.purge(self)]
+      [options, Annotation.purge(self)]
     end
   end
 end

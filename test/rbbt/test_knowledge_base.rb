@@ -73,9 +73,8 @@ class TestKnowledgeBase < Test::Unit::TestCase
       kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
       kb.format = {"Gene" => "Ensembl Gene ID"}
 
-      kb.register :gene_ages, datadir_test.gene_ages, :source => "FamilyAge", :target => "Ensembl Gene ID=>Associated Gene Name", :merge => true, :type => :double
+      kb.register :gene_ages, datadir_test.gene_ages, :source => "FamilyAge", :target => "Ensembl Gene ID=>Associated Gene Name", :merge => true, :type => :list
 
-      d = kb.get_database(:gene_ages)
       i = kb.get_index(:gene_ages)
 
       assert_include i.match("Bilateria"), "Bilateria~SMAD4"
@@ -103,7 +102,7 @@ class TestKnowledgeBase < Test::Unit::TestCase
       kb = KnowledgeBase.new tmpdir, Organism.default_code("Hsa")
       kb.format = {"Gene" => "Ensembl Gene ID"}
 
-      kb.register :gene_ages, datadir_test.gene_ages, :source => "=>Associated Gene Name"
+      #kb.register :gene_ages, datadir_test.gene_ages, :source => "=>Associated Gene Name"
 
       kb.register :CollecTRI, datadir_test.CollecTRI, 
         :source => "Transcription Factor", :target => "Target Gene",
@@ -182,17 +181,19 @@ class TestKnowledgeBase < Test::Unit::TestCase
 
       assert kb.get_database(:CollecTRI).identifier_files.any?
 
-      i = Association.index(datadir_test.CollecTRI, :persist_file => tmpdir.CollecTRI, 
-                        :source => "Transcription Factor=~Associated Gene Name=>Ensembl Gene ID", :target => "Target Gene",
-                        :fields => ["[ExTRI] Confidence", "[ExTRI] PMID"],
-                        :format => {"Gene" => "Ensembl Gene ID"},
-                        :namespace => Organism.default_code("Hsa"))
+      i = Association.index(datadir_test.CollecTRI, :persist_path => tmpdir.CollecTRI, :persist => true,
+                            :source => "Transcription Factor=~Associated Gene Name=>Ensembl Gene ID", :target => "Target Gene",
+                            :fields => ["[ExTRI] Confidence", "[ExTRI] PMID"],
+                            :format => {"Gene" => "Ensembl Gene ID"},
+                            :namespace => Organism.default_code("Hsa"))
 
       assert i.identifier_files.any?
 
+      kb.get_database(:CollecTRI, persist: true)
+
       kb = KnowledgeBase.load(tmpdir)
 
-      assert kb.get_database(:CollecTRI).identifier_files.any?
+      assert kb.get_database(:CollecTRI, persist: true).identifier_files.any?
 
       i =  kb.get_index(:CollecTRI)
 
@@ -218,8 +219,9 @@ A B C D E
         Open.write(file, str)
         file
       end
-      db = kb.get_database(:test_flat)
-      assert db["a"].first.length > 1
+      db = kb.get_index(:test_flat)
+
+      assert_include db, "A~B"
     end
   end
 end

@@ -1,5 +1,5 @@
 require_relative  'refactor'
-Rbbt.require_instead 'scout/meta_extension'
+Rbbt.require_instead 'scout/annotation'
 Rbbt.require_instead 'scout/tsv'
 require_relative 'annotations/refactor'
 #module Annotation

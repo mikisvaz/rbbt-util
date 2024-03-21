@@ -45,10 +45,20 @@ class TestPersist < Test::Unit::TestCase
           end
           dumper.close
         end
-        dumper
+        dumper.tsv
       end
 
       assert_equal 10, tsv.size
+
+      tsv = assert_nothing_raised do
+        Persist.persist("Dumper", :tsv, :dir => tmpdir) do
+          raise 
+        end
+      end
+
+      tsv = tsv.tsv if tsv.respond_to?(:tsv)
+      assert_equal 10, tsv.size
+
     end
   end
 
@@ -68,7 +78,14 @@ class TestPersist < Test::Unit::TestCase
         dumper
       end
 
-      assert_equal 10, stream.read.split("\n").length
+      assert_equal 10, Open.read(stream).split("\n").length
+      stream.join
+
+      stream = Persist.persist("Dumper", :tsv, :dir => tmpdir, :no_load => :stream) do
+        raise
+      end
+
+      assert_equal 10, Open.read(stream).split("\n").length
       stream.join
     end
   end

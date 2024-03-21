@@ -7,7 +7,7 @@ require 'rbbt/knowledge_base/registry'
 
 class TestKnowledgeBaseRegistry < Test::Unit::TestCase
 
-  EFFECT =StringIO.new <<-END
+  EFFECT =<<-END
 #: :sep=" "#:type=:double
 #SG TG Effect
 MDM2 TP53 inhibition
@@ -23,31 +23,44 @@ TP53 NFKB1|GLI1 activation|activation true|true
     :namespace => "Hsa"
   }
 
-  EFFECT_TSV = TSV.open EFFECT, EFFECT_OPTIONS.dup 
+  #EFFECT_TSV = TSV.open EFFECT, EFFECT_OPTIONS.dup 
 
   def with_kb(&block)
+    Log.severity = 0
     keyword_test :organism do
       require 'rbbt/sources/organism'
       organism = Organism.default_code("Hsa")
+
+      effect_options = {
+        :source => "SG=~Associated Gene Name",
+        :target => "TG=~Associated Gene Name=>Ensembl Gene ID",
+        :persist => false,
+        :identifiers => datafile_test('identifiers'),
+        :undirected => true,
+        :namespace => "Hsa"
+      }
       TmpFile.with_file do |tmpdir|
-        kb = KnowledgeBase.new tmpdir
-        kb.namespace = organism
-        kb.format = {"Gene" => "Associated Gene Name"}
+        TmpFile.with_file(EFFECT) do |file|
+          effect_tsv = TSV.open(file)
+          kb = KnowledgeBase.new tmpdir
+          kb.namespace = organism
+          kb.format = {"Gene" => "Associated Gene Name"}
 
-        kb.register :effects, EFFECT_TSV, EFFECT_OPTIONS
-        kb.register :pina, datafile_test('pina'), 
-          :source => "UniProt/SwissProt Accession", 
-          :target => "Interactor UniProt/SwissProt Accession=~UniProt/SwissProt Accession", 
-          :undirected => true
+          kb.register :effects, effect_tsv, effect_options
+          kb.register :pina, datafile_test('pina'), 
+            :source => "UniProt/SwissProt Accession", 
+            :target => "Interactor UniProt/SwissProt Accession=~UniProt/SwissProt Accession", 
+            :undirected => true
 
-        kb.register :gene_ages, datadir_test.gene_ages, :source => "=>Associated Gene Name"
+          kb.register :gene_ages, datadir_test.gene_ages, :source => "=>Associated Gene Name"
 
-        kb.register :CollecTRI, datadir_test.CollecTRI, 
-          :source => "Transcription Factor=~Associated Gene Name", 
-          :target => "Target Gene=~Associated Gene Name",
-          :fields => ["[ExTRI] Confidence", "[ExTRI] PMID"]
+          kb.register :CollecTRI, datadir_test.CollecTRI, 
+            :source => "Transcription Factor=~Associated Gene Name", 
+            :target => "Target Gene=~Associated Gene Name",
+            :fields => ["[ExTRI] Confidence", "[ExTRI] PMID"]
 
-        yield kb
+          yield kb
+        end
       end
     end
   end

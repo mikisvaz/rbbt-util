@@ -39,7 +39,7 @@ class KnowledgeBase
   def annotate(entities, type, database = nil)
     format = @format[type] || type
     entity_options = entity_options_for(type, database)
-    Misc.prepare_entity(entities, format, entity_options)
+    Entity.prepare_entity(entities, format, entity_options)
   end
 
   def translate(entities, type)
@@ -82,7 +82,7 @@ class KnowledgeBase
       identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if namespace
       identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, db_namespace(name)))} if not namespace and db_namespace(name)
       identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
-      TSV.translation_index identifier_files, source(name), nil, :persist => true
+      TSV.translation_index identifier_files, nil, source(name), :persist => true
     end
   end
   
@@ -94,7 +94,7 @@ class KnowledgeBase
       identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, namespace))} if self.namespace
       identifier_files.collect!{|f| f.annotate(f.gsub(/\bNAMESPACE\b/, db_namespace(name)))} if namespace.nil? and db_namespace(name)
       identifier_files.reject!{|f| f.match(/\bNAMESPACE\b/)}
-      TSV.translation_index identifier_files, target(name), nil, :persist => true
+      TSV.translation_index identifier_files, nil, target(name), :persist => true
     end
   end
 
@@ -102,7 +102,11 @@ class KnowledgeBase
     return :all if entity == :all
     index = source_index(name)
     return entity if index.nil?
-    Array === entity ? index.values_at(*entity) : index[entity]
+    if Array === entity
+      entity.collect{|e| index[e] || e }
+    else
+      index[entity] || entity
+    end
   end
 
   
@@ -110,7 +114,11 @@ class KnowledgeBase
     return :all if entity == :all
     index = target_index(name)
     return entity if index.nil?
-    Array === entity ? index.values_at(*entity) : index[entity]
+    if Array === entity
+      entity.collect{|e| index[e] || e }
+    else
+      index[entity] || entity
+    end
   end
 
   def identify(name, entity)

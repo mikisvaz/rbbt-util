@@ -191,7 +191,6 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
      chains.rb
      batches.rb
     }
-    trace.rb
    }
 
    tsv.rb
@@ -458,6 +457,7 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
   test_workflow.rb
  }
  etc=etc filter="*"{
+  config
   app.d=app.d{
    init.rb
 

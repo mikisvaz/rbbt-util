@@ -76,9 +76,9 @@ class RbbtProcessQueue
       end
 
       if @callback_queue
-        Misc.purge_pipes(@queue.swrite, @queue.sread, @callback_queue.swrite) 
+        Open.purge_pipes(@queue.swrite, @queue.sread, @callback_queue.swrite) 
       else
-        Misc.purge_pipes(@queue.swrite, @queue.sread) 
+        Open.purge_pipes(@queue.swrite, @queue.sread) 
       end
 
       @total = 0
