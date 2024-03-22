@@ -1,4 +1,5 @@
 module Persist
+  TSVAdapter = Object::TSVAdapter
   def self.is_persisted?(path, persist_options = {})
     return true if Open.remote?(path)
     return true if Open.ssh?(path)
