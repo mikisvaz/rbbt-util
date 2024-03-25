@@ -61,12 +61,18 @@ module ReversableString
     }
   end
 
+  property :annotation_list_empty => :single do
+    []
+  end
+
   persist :reverse_text_ary_p, :marshal
   #persist :reverse_text_single_p, :memory
 
   persist :reverse_text_ary_p_array, :array, :dir => TmpFile.tmp_file
 
   persist :annotation_list, :annotations, :dir => TmpFile.tmp_file
+
+  persist :annotation_list_empty, :annotations, :dir => TmpFile.tmp_file
 
 
   $processed_multiple = []
@@ -220,6 +226,13 @@ class TestEntity < Test::Unit::TestCase
     r2 = a.random
     assert_not_equal r1, r2
 
+  end
+
+  def test_persist_annotations_list
+    string = 'aaabbbccc'
+    ReversableString.setup(string)
+    assert_equal 0, string.annotation_list_empty.length
+    assert_equal 0, string.annotation_list_empty.length
   end
 
   def test_persist_annotations
