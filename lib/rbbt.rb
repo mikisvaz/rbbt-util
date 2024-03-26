@@ -11,10 +11,10 @@ module Rbbt
   extend Resource
 
   self.pkgdir = 'rbbt'
+
+  Config = Scout::Config
 end
 
 Resource.set_software_env Rbbt.software
-
-Scout = Rbbt
 
 #Path.path_maps[:rbbt_util] = File.join(Path.caller_lib_dir(__FILE__), "{TOPLEVEL}/{SUBPATH}")
