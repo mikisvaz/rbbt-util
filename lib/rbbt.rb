@@ -1,5 +1,6 @@
 $LOAD_PATH.unshift File.join(__dir__)
 $LOAD_PATH.unshift File.join(__dir__, '../../lib')
+require 'scout/config'
 require 'scout/path'
 require 'scout/log'
 require 'scout/resource'
