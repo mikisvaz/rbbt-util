@@ -19,7 +19,7 @@ end
 class TestRemoteWorkflow < Test::Unit::TestCase
 
   def remote_workflow_server(workflow, options = {}, &block)
-    trap(:USR1){ raise TestServerLoaded}
+    trap(:USR1){ raise TestServerLoaded }
 
     begin
       pid = Process.fork do 

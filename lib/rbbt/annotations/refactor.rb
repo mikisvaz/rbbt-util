@@ -1,3 +1,4 @@
+require_relative '../refactor'
 module Annotation
   module AnnotatedObject
     alias id annotation_id
@@ -21,3 +22,6 @@ module Annotation
   end
 end
 
+Rbbt.relay_module_method Annotated, :tsv, Annotation, :tsv
+Rbbt.relay_module_method Annotated, :load_tsv, Annotation, :load_tsv
+Rbbt.relay_module_method Annotated, :load_entity, Annotation, :load_entity

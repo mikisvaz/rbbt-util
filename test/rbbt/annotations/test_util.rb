@@ -28,8 +28,8 @@ class TestAnnotation < Test::Unit::TestCase
 
   def test_hash
     e = TestEntityString.setup("TEST", :code => 10)
-    assert_equal "TEST", Annotated.to_hash(e)[:literal]
-    assert_equal 10, Annotated.to_hash(e)[:info][:code]
+    assert_equal "TEST", e.serialize[:literal]
+    assert_equal 10, e.serialize[:code]
   end
 
   def test_traverse_cpus

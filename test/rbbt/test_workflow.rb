@@ -205,7 +205,7 @@ TestWF.workdir = Rbbt.tmp.test.jobs.TestWF
 class TestWorkflow < Test::Unit::TestCase
 
   
-  def _test_repo_marshal
+  def test_repo_marshal
     TmpFile.with_file do |tmpdir|
       tmpdir = Rbbt.tmp.repo_dir.find
       repo = File.join(tmpdir, 'repo')
@@ -227,13 +227,13 @@ class TestWorkflow < Test::Unit::TestCase
 
   end
   
-  def _test_in_repo
+  def test_in_repo
     job = TestWF.job(:call_name, "Miguel")
     assert_equal "Hi Miguel", job.run
     assert_equal "Miguel", job.clean_name
   end
 
-  def _test_as_jobname
+  def test_as_jobname
     job = TestWF.job(:call_name, "Miguel")
     assert_equal "Hi Miguel", job.run
     assert_equal "Miguel", job.clean_name
@@ -243,7 +243,7 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal "Miguel", job.clean_name
   end
 
-  def _test_update_on_input_dependency_update
+  def test_update_on_input_dependency_update
     Open.repository_dirs << File.join(ENV["HOME"],".rbbt/tmp/test/workflow")
     Misc.with_env "RBBT_UPDATE", "true" do
       send_input_dep_to_reverse_job = TestWF.job(:send_input_dep_to_reverse, nil, :name => "Miguel")
@@ -264,11 +264,11 @@ class TestWorkflow < Test::Unit::TestCase
     end
   end
 
-  def _test_helper
+  def test_helper
     assert_equal "User", TestWF.job(:user, "Default", :number => 3).run
   end
 
-  def _test_job
+  def test_job
     str = "TEST"
     job = TestWF.job(:repeat2, "Default", :number => 3).clean.fork
     while not job.done?
@@ -280,7 +280,7 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal ["TEST"] * 6 * "\n", job.load
   end
 
-  def _test_with_subdir
+  def test_with_subdir
     str = "TEST"
     job = TestWF.job(:repeat2, "Default", :number => 3).fork
     while not job.done?
@@ -292,7 +292,7 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal ["TEST"] * 6 * "\n", job.load
   end
 
-  def _test_search
+  def test_search
     str = "TEST"
     TestWF.jobs(:repeat2).each do |name|
       TestWF.load_name(:repeat2, name).clean
@@ -314,11 +314,11 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal "TEST\nTEST\nTEST\nTEST\nTEST\nTEST", TestWF.load_name(:repeat2, TestWF.jobs(:repeat2).first).load
   end
 
-  def _test_double_dep
+  def test_double_dep
     assert_equal ["TEST", "TEST\nTEST", "TEST\nTEST\nTEST\nTEST"], TestWF.job(:double_dep, "foo", :times => 2, :number => 2).clean.run
   end
 
-  def _test_object_workflow
+  def test_object_workflow
     a = ""
     a.extend Workflow
     a.task :foo => :string do
@@ -329,7 +329,7 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal 'bar', job.exec
   end
 
-  def _test_letter
+  def test_letter
     assert_equal "D", TestWF.job(:letter).run
     assert_equal "B", TestWF.job(:letter, nil, :letter => "B").run
     assert_equal "BB", TestWF.job(:letter_repeat, nil, :letter => "B").run
@@ -357,7 +357,7 @@ class TestWorkflow < Test::Unit::TestCase
     nil
   end
 
-  def _test_stream_order
+  def test_stream_order
 
     job = TestWF.job(:stream2)
     job.recursive_clean
@@ -365,18 +365,18 @@ class TestWorkflow < Test::Unit::TestCase
 
   end
 
-  def _test_rec_input_use
+  def test_rec_input_use
     assert TestWF.rec_input_use(:double_dep).include?(:times)
     assert TestWF.rec_input_use(:double_dep)[:times].include?(TestWF)
     assert TestWF.rec_input_use(:double_dep)[:times][TestWF].include?(:repeat)
   end
 
-  def _test_shared_inputs
+  def test_shared_inputs
     assert_equal "CB", TestWF.job(:t3).run
     assert_equal "CB", TestWF.job(:t3).run
   end
 
-  def _test_transplant
+  def test_transplant
     listed = '/home/user/.rbbt/var/jobs/TestWF/task1/Default'
     real = '/usr/local/var/rbbt/jobs/TestWF/task1/Default'
     other = '/home/user/.rbbt/var/jobs/TestWF/task2/Default'
@@ -386,7 +386,7 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal real_other, Workflow.transplant(nil, real, other)
   end
 
-  def _test_relocate
+  def test_relocate
     TmpFile.with_file do |tmpdir|
       listed = File.join(tmpdir, '/home/user/.rbbt/var/jobs/TestWF/task1/Default')
       real = File.join(tmpdir, '/usr/local/var/rbbt/jobs/TestWF/task1/Default')
@@ -399,7 +399,7 @@ class TestWorkflow < Test::Unit::TestCase
     end
   end
 
-  def _test_relocate_alt
+  def test_relocate_alt
     TmpFile.with_file do |tmpdir|
       listed = File.join(tmpdir, '/scratch/tmp/rbbt/.rbbt/var/jobs/Study/sample_gene_cnvs_focal/Bladder-TCC')
       real = File.join(tmpdir, '/home/bsc26/bsc26892/.rbbt/var/jobs/Study/sample_gene_cnvs_focal/Bladder-TCC')
@@ -411,7 +411,7 @@ class TestWorkflow < Test::Unit::TestCase
     end
   end
 
-  def _test_delete_dep
+  def test_delete_dep
     job = TestWF.job(:t3).recursive_clean
     job.run
     Misc.with_env "RBBT_UPDATE", 'true' do
@@ -434,7 +434,7 @@ class TestWorkflow < Test::Unit::TestCase
     end
   end
 
-  def _test_canfail
+  def test_canfail
     job = TestWF.job(:sum_odds)
     assert_equal 24, job.run
 
@@ -443,7 +443,7 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal "Sum odds: 24", job.run
   end
 
-  def _test_save_inputs
+  def test_save_inputs
     TmpFile.with_file("Hi") do |file|
       job = TestWF.job(:reverse_file, nil, :file => file)
       TmpFile.with_file do |dir|
@@ -467,7 +467,7 @@ class TestWorkflow < Test::Unit::TestCase
 
   end
 
-  def _test_archive
+  def test_archive
     job = TmpFile.with_file("Hi") do |file|
       job = TestWF.job(:reverse_file, nil, :file => file)
       job.run
@@ -483,7 +483,7 @@ class TestWorkflow < Test::Unit::TestCase
     end
   end
 
-  def _test_input_step_file_check
+  def __test_input_step_file_check
     job = TestWF.job(:t3).recursive_clean
     job.run
     Misc.with_env "RBBT_UPDATE", 'true' do
@@ -506,7 +506,7 @@ class TestWorkflow < Test::Unit::TestCase
     end
   end
 
-  def _test_overriden
+  def __test_overriden
     job = TestWF.job(:overr_action)
     job.recursive_clean
     assert_equal "TLA", job.run
@@ -521,7 +521,7 @@ class TestWorkflow < Test::Unit::TestCase
     assert ! job.step(:overr_target).overriden
   end
 
-  def _test_anonymous_workflow
+  def test_anonymous_workflow
     workflow = Module.new
     workflow.extend Workflow
     workflow.define_singleton_method(:to_s){"TestWorkflow"}
@@ -545,7 +545,7 @@ class TestWorkflow < Test::Unit::TestCase
     assert_equal "s3", workflow.job(:s3).run
   end
 
-  def _test_low_level_step
+  def test_low_level_step
     TmpFile.with_file do |tmpdir|
       Path.setup tmpdir
 

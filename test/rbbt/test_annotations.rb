@@ -22,7 +22,7 @@ end
 class TestAnnotations < Test::Unit::TestCase
 
   def test_annotated_string
-    assert_equal %w(annotation_str), AnnotatedString.annotations.collect{|a| a.to_s}
+    assert_equal %w(annotation_str), AnnotatedString.instance_variable_get(:@annotations).collect{|a| a.to_s }
   end
 
   def test_string
@@ -129,9 +129,9 @@ class TestAnnotations < Test::Unit::TestCase
   def test_double_array_1
     ary = ["string"]
     annotation_str = "Annotation String"
-    ary.extend ExtendedArray
+    ary.extend AnnotatedArray
     ary_ary = [ary]
-    ary_ary.extend ExtendedArray
+    ary_ary.extend AnnotatedArray
     AnnotatedString.setup(ary, annotation_str)
     AnnotatedString.setup(ary_ary, annotation_str)
     assert_equal [AnnotatedString], ary.annotation_types
