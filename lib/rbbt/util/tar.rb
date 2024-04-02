@@ -1,5 +1,5 @@
 require_relative '../refactor'
-Rbbt.require_instead 'scout/misc/tar'
+Rbbt.require_instead 'scout/misc/filesystem'
 #require 'rubygems/package'
 #require 'zlib'
 #require 'fileutils'

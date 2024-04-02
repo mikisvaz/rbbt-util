@@ -23,7 +23,7 @@ class RemoteWorkflow
     name
   end
 
-  def __job(task, name = nil, inputs = {})
+  def remote_job(task, name = nil, inputs = {})
     task_info = task_info(task)
     fixed_inputs = {}
     input_types = IndiferentHash.setup(task_info[:input_types])
@@ -48,6 +48,8 @@ class RemoteWorkflow
     step.workflow = self
     step
   end
+
+  alias job remote_job
 
   def load_id(id)
     task, name = id.split("/")

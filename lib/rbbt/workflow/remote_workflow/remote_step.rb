@@ -26,7 +26,7 @@ class RemoteStep < Step
 
   def cache_file
     begin
-      digest = Misc.obj2digest([base_url, task.to_s, base_name, inputs])
+      digest = Misc.digest([base_url, task.to_s, base_name, inputs])
       Rbbt.var.cache.REST[task.to_s][[clean_name, digest].compact * "."].find
     rescue
       Log.exception $!

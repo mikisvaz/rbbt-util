@@ -28,14 +28,14 @@ require Rbbt.etc['app.d/init.rb'].find
 
 #{{{ Workflow
 workflow = Rbbt.etc['target_workflow'].read
-wf = Workflow.require_workflow workflow, true
+wf = Workflow.require_workflow workflow
 
 
 $title = wf.to_s
 $app_name = app_name = wf.to_s + "REST"
 $app = app = eval "class #{app_name} < Sinatra::Base; self end"
 
-Rbbt.search_paths = Path::SEARCH_PATHS.merge(:workflow => File.join(wf.libdir, '{TOPLEVEL}','{SUBPATH}'))
+Rbbt.search_paths = Path::path_maps.merge(:workflow => File.join(wf.libdir, '{TOPLEVEL}','{SUBPATH}'))
 
 etc_dir = Rbbt.etc
 

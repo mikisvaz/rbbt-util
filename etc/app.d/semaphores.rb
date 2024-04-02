@@ -6,8 +6,8 @@ parallel_rest_jobs = Rbbt::Config.get('parallel_rest_jobs', :parallel_rest_jobs,
 parallel_rest_jobs = parallel_rest_jobs.to_i if String === parallel_rest_jobs
 
 begin
-  RbbtSemaphore.delete_semaphore($rest_cache_semaphore)
+  ScoutSemaphore.delete_semaphore($rest_cache_semaphore)
 ensure
-  RbbtSemaphore.create_semaphore($rest_cache_semaphore, parallel_rest_jobs)
+  ScoutSemaphore.create_semaphore($rest_cache_semaphore, parallel_rest_jobs)
 end
 Log.debug("Created semaphore: #{$rest_cache_semaphore} with #{parallel_rest_jobs} size")
