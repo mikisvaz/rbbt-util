@@ -23,25 +23,26 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
    util=util{
     misc.rb
     misc=misc{
-     serialize.rb
-     exceptions.rb
-     concurrent_stream.rb
-     indiferent_hash.rb
-     pipes.rb
-     format.rb
-     omics.rb
-     inspect.rb
-     math.rb
-     development.rb
-     lock.rb
-     options.rb
-     system.rb
-     objects.rb
-     manipulation.rb
-     bgzf.rb
-     multipart_payload.rb
      annotated_module.rb
+     bgzf.rb
      communication.rb
+     concurrent_stream.rb
+     development.rb
+     exceptions.rb
+     format.rb
+     indiferent_hash.rb
+     inspect.rb
+     lock.rb
+     manipulation.rb
+     math.rb
+     multipart_payload.rb
+     objects.rb
+     omics.rb
+     options.rb
+     pipes.rb
+     refactor.rb
+     serialize.rb
+     system.rb
     }
     version.rb
     tar.rb
@@ -118,6 +119,11 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
    workflow.rb
    workflow=workflow{
     refactor.rb
+    refactor=refactor{
+     export.rb
+     recursive.rb
+     task_info.rb
+    }
     annotate.rb
 
     definition.rb

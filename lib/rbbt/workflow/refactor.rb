@@ -1,3 +1,7 @@
+require_relative 'refactor/export'
+require_relative 'refactor/recursive'
+require_relative 'refactor/task_info'
+
 class Step
   alias get_stream stream
 
@@ -20,9 +24,8 @@ module Workflow
   end
 
   DEFAULT_NAME = Task::DEFAULT_NAME
+
 end
-
-
 module ComputeDependency
   attr_accessor :compute
   def self.setup(dep, value)
@@ -46,4 +49,9 @@ class Step
       Task.save_input(dir, name, type, value)
     end.any?
   end
+
+  def soft_grace
+    sleep 1 until ! Open.exists?(info_file)
+  end
 end
+
