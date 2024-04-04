@@ -10,7 +10,7 @@ module Association
   end
 
   def self.parse_field_specification(spec)
-    return [2,nil,nil] if Numeric === spec
+    return [spec,nil,nil] if Numeric === spec
     spec = spec.split "=>" unless Array === spec
     field_part, final_format = spec
 
