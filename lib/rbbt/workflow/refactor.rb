@@ -1,6 +1,7 @@
 require_relative 'refactor/export'
 require_relative 'refactor/recursive'
 require_relative 'refactor/task_info'
+require_relative 'refactor/inputs'
 
 class Step
   alias get_stream stream
@@ -26,6 +27,7 @@ module Workflow
   DEFAULT_NAME = Task::DEFAULT_NAME
 
 end
+
 module ComputeDependency
   attr_accessor :compute
   def self.setup(dep, value)
@@ -40,18 +42,9 @@ end
 
 class Step
 
-  def self.save_inputs(inputs, input_types, dir)
-    inputs.each do |name,value|
-      next if value.nil?
-      type = input_types[name]
-      type = type.to_s if type
-
-      Task.save_input(dir, name, type, value)
-    end.any?
-  end
-
   def soft_grace
     sleep 1 until ! Open.exists?(info_file)
   end
 end
 
+Rbbt.relay_module_method Workflow, :load_step, Step, :load
