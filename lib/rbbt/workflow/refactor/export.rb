@@ -23,6 +23,8 @@ module Workflow
     asynchronous_exports + synchronous_exports + exec_exports + stream_exports
   end
 
+  alias task_exports all_exports
+
   def unexport(*names)
     names = names.collect{|n| n.to_s} + names.collect{|n| n.to_sym}
     names.uniq!
