@@ -67,10 +67,10 @@ def tsv_preamble(line, comment_char="#"):
     return header
 
 
-def tsv_header(filename, sep="\t", comment_char="#"):
+def tsv_header(filename, sep="\t", comment_char="#", encoding='utf8'):
     import re
 
-    f = open(filename)
+    f = open(filename, encoding=encoding)
     line = f.readline().strip()
 
     if (not line.startswith(comment_char)):
