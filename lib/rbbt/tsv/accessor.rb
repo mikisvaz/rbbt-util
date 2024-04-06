@@ -651,7 +651,9 @@ module TSV
       end
     end
 
-    dumper_stream(keys, no_options, unmerge, '')
+    io = dumper_stream(keys, no_options, unmerge, StringIO.new)
+    io.rewind
+    io.read
   end
 
   def to_unmerged_s(keys = nil, no_options = false)

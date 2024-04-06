@@ -10,7 +10,6 @@ module TSV
       else
         thread = Thread.new(Thread.current) do |parent|
           yield dumper
-          dumper.close
         end
         ConcurrentStream.setup(dumper.stream, threads: thread)
       end
@@ -91,11 +90,11 @@ module TSV
 
     def close_in
       @in_stream.join if @in_stream.respond_to?(:join) && ! @in_stream.joined?
-      @in_stream.close if @in_stream.respond_to?(:close) && ! @in_stream.closed?
+      @in_stream.close if @in_stream.respond_to?(:close) && ! @in_stream.closed? 
     end
 
     def close
-      close_in
+      close_in unless @in_stream == @stream
     end
   end
 end
