@@ -120,6 +120,7 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
    workflow=workflow{
     refactor.rb
     refactor=refactor{
+     inputs.rb
      export.rb
      recursive.rb
      task_info.rb

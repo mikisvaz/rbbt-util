@@ -261,12 +261,12 @@ Workflow.workdir.search_paths.merge!({:workdir => File.expand_path(options.delet
 workflow = Workflow.require_workflow workflow
 
 if clean_task
-  ENV["RBBT_UPDATE"] = 'true'
+  ENV["SCOUT_UPDATE"] = 'true'
 end
 
 if options[:update_all_jobs]
-  ENV["RBBT_UPDATE_ALL_JOBS"] = 'true'
-  ENV["RBBT_UPDATE"] = 'true'
+  ENV["SCOUT_UPDATE_ALL_JOBS"] = 'true'
+  ENV["SCOUT_UPDATE"] = 'true'
 end
 
 if options[:workflows]
@@ -528,7 +528,7 @@ begin
 
 
   if do_fork
-    ENV["RBBT_NO_PROGRESS"] = "true"
+    ENV["SCOUT_NO_PROGRESS"] = "true"
     if detach
       job.fork
       Process.detach job.pid if job.pid
