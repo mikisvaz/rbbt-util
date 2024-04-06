@@ -303,7 +303,7 @@ class Step
 
             if result_description
               entity_info = info.dup
-              entity_info.merge! info[:inputs] if info[:inputs]
+              entity_info.merge! info[:inputs] if Hash === info[:inputs]
               res = prepare_result res, result_description, entity_info 
             end
 
