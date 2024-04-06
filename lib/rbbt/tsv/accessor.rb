@@ -567,13 +567,13 @@ module TSV
     end
   end
 
-  def dumper_stream(keys = nil, no_options = false, unmerge = false)
+  def dumper_stream(keys = nil, no_options = false, unmerge = false, stream = nil)
     unmerge = false unless type == :double
 
     options = self.options
     options[:type] = :list if unmerge
 
-    TSV::Dumper.stream options do |dumper|
+    TSV::Dumper.stream options, filename, stream do |dumper|
       case no_options
       when FalseClass, nil
         dumper.init
@@ -631,11 +631,11 @@ module TSV
             end
           end
         end
+        dumper.close
       rescue Exception
         Log.exception $!
         raise $!
       end
-      dumper.close
     end
   end
 
@@ -651,14 +651,7 @@ module TSV
       end
     end
 
-    io = dumper_stream(keys, no_options, unmerge)
-
-    str = ''
-    while block = io.read(Misc::BLOCK_SIZE)
-      str << block
-    end
-
-    str
+    dumper_stream(keys, no_options, unmerge, '')
   end
 
   def to_unmerged_s(keys = nil, no_options = false)

@@ -1,13 +1,25 @@
 module TSV
   class Dumper
     attr_accessor :in_stream, :stream, :options, :filename, :sep
-    def self.stream(options = {}, filename = nil, &block)
+    def self.stream(options = {}, filename = nil, stream = nil, &block)
       dumper = TSV::Dumper.new options, filename
-      Thread.new(Thread.current) do |parent|
+      if stream
+        dumper.set_stream stream if stream
         yield dumper
-        dumper.close
+        stream
+      else
+        thread = Thread.new(Thread.current) do |parent|
+          yield dumper
+          dumper.close
+        end
+        ConcurrentStream.setup(dumper.stream, threads: thread)
       end
-      dumper.stream
+    end
+
+    def set_stream(stream)
+      @stream.close
+      @in_stream.close
+      @in_stream = @stream = stream
     end
 
     def initialize(options, filename = nil)
@@ -56,16 +68,16 @@ module TSV
 
       str = TSV.header_lines(key_field, fields, options.merge(init_options || {}))
 
-      Thread.pass while IO.select(nil, [@in_stream],nil,1).nil?
+      Thread.pass while IO.select(nil, [@in_stream],nil,1).nil? if IO === @in_stream
 
-      @in_stream.puts str
+      @in_stream << str
     end
 
     def add(k,v)
       @fields ||= @options[:fields]
       @sep ||= @options[:sep]
       begin
-        Thread.pass while IO.select(nil, [@in_stream],nil,1).nil?
+        Thread.pass while IO.select(nil, [@in_stream],nil,1).nil? if IO === @in_stream
         @in_stream << k << TSV::Dumper.values_to_s(v, @fields, @sep)
       rescue IOError
       rescue Exception
@@ -74,12 +86,12 @@ module TSV
     end
 
     def close_out
-      @stream.close unless @stream.closed?
+      @stream.close unless StringIO === @stream || @stream.closed?
     end
 
     def close_in
       @in_stream.join if @in_stream.respond_to?(:join) && ! @in_stream.joined?
-      @in_stream.close unless @in_stream.closed?
+      @in_stream.close if @in_stream.respond_to?(:close) && ! @in_stream.closed?
     end
 
     def close
