@@ -729,7 +729,7 @@ module Open
       dir_sub_path.push content
       save_content_in_repo(*dir_sub_path)
     else
-      FileUtils.mkdir_p File.dirname(file)
+      FileUtils.mkdir_p File.dirname(file) unless File.directory?(file)
       case
       when block_given?
         begin

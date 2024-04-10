@@ -303,6 +303,7 @@ class Step
 
             if result_description
               entity_info = info.dup
+              # Also load entity_info in rbbt6
               entity_info.merge! info[:inputs] if Hash === info[:inputs]
               res = prepare_result res, result_description, entity_info 
             end

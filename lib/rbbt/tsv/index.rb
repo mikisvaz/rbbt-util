@@ -125,7 +125,7 @@ module TSV
   def self.index(file, options = {})
     persist_options = Misc.pull_keys options, :persist
     persist_options[:prefix] ||= "StaticIndex[#{options[:target] || :key}]"
-     
+
     Log.debug "Static Index: #{ file } - #{Misc.fingerprint options}"
     Persist.persist_tsv nil, file, options, persist_options do |data|
       data_options = Misc.pull_keys options, :data
@@ -258,6 +258,7 @@ module TSV
                else
                  file.object_id.to_s
                end
+
     persist_options = Misc.pull_keys options, :persist
     persist_options[:prefix] ||= "StaticRangeIndex[#{start_field}-#{end_field}]"
 
