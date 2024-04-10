@@ -259,7 +259,6 @@ end
 Workflow.workdir.search_paths.merge!({:workdir => File.expand_path(options.delete(:workdir_all)), :default => :workdir }) if options[:workdir_all]
 
 workflow = Workflow.require_workflow workflow
-
 if clean_task
   ENV["SCOUT_UPDATE"] = 'true'
 end
@@ -320,6 +319,7 @@ if options[:load_inputs]
   task_info = workflow.task_info(task_name)
   job_options = Workflow.load_inputs(options[:load_inputs], task_info[:inputs], task_info[:input_types]).merge(job_options)
 end
+
 
 #job_options = fix_options(workflow, task, job_options)
 saved_job_options = job_options
