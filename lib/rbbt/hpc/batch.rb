@@ -110,23 +110,25 @@ module HPC
 
       task = Symbol === job.overriden ? job.overriden : job.task_name
 
-      #override_deps = job.overriden_deps.collect do |dep| 
-      #  name = [dep.workflow.to_s, dep.task_name] * "#"
-      #  [name, dep.path] * "="  
-      #end.uniq * ","
+      override_deps = job.overriden_deps.collect do |dep| 
+        name = [dep.workflow.to_s, dep.task_name] * "#"
+        [name, dep.path] * "="  
+      end.uniq * ","
 
-      if job.overriden?
-        #override_deps = job.rec_dependencies.
-        #  select{|dep| Symbol === dep.overriden }.
-        
-        override_deps = job.overriden_deps.
-          collect do |dep| 
-          name = [dep.workflow.to_s, dep.task_name] * "#"
-          [name, dep.path] * "="  
-        end.uniq * ","
+      options[:override_deps] = override_deps unless override_deps.empty?
 
-        options[:override_deps] = override_deps unless override_deps.empty?
-      end
+      #if job.overriden?
+      #  #override_deps = job.rec_dependencies.
+      #  #  select{|dep| Symbol === dep.overriden }.
+      #  
+      #  override_deps = job.overriden_deps.
+      #    collect do |dep| 
+      #    name = [dep.workflow.to_s, dep.task_name] * "#"
+      #    [name, dep.path] * "="  
+      #  end.uniq * ","
+
+      #  options[:override_deps] = override_deps unless override_deps.empty?
+      #end
 
       # Save inputs into inputs_dir
       inputs_dir = Misc.process_options options, :inputs_dir
