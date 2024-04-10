@@ -122,8 +122,11 @@ module TSV
       options.merge!(no_options)
       
     end
-    original_dumper_stream(options).read
+    io = original_dumper_stream(options.merge(stream: StringIO.new))
+    io.rewind
+    io.read
   end
+
   alias tsv_sort sort
 
   def attach_same_key(tsv, fields = nil)
