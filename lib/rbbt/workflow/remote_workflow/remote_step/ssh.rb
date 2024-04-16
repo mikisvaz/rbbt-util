@@ -97,7 +97,7 @@ class RemoteStep
         issue
       else
         produce
-        self.load unless args.first
+        self.load unless stream
       end
     end
 

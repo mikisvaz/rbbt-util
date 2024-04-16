@@ -1,4 +1,5 @@
 require 'rbbt/workflow'
+require 'rbbt/tsv'
 class RemoteWorkflow
   include Workflow
 
