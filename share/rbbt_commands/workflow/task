@@ -94,7 +94,7 @@ def fix_options(workflow, task, job_options)
             when :float
               value.to_f
             when :path
-              Path.setup(value)
+              Path.setup(value.dup)
             when :integer
               value.to_i
             when :text
@@ -321,7 +321,7 @@ if options[:load_inputs]
 end
 
 
-#job_options = fix_options(workflow, task, job_options)
+job_options = fix_options(workflow, task, job_options)
 saved_job_options = job_options
 
 workflow.workdir = Path.setup(File.expand_path(options.delete(:workdir))) if options[:workdir]
