@@ -336,12 +336,12 @@ module Misc
 
 
     options = Misc.add_defaults options, :respawn => true, :cpus => cpus
-    options = Misc.add_defaults options, :bar => "Bootstrap in #{ options[:cpus] } cpus: #{ Misc.fingerprint Annotated.purge(elems) }"
+    options = Misc.add_defaults options, :bar => "Bootstrap in #{ options[:cpus] } cpus: #{ Misc.fingerprint Annotation.purge(elems) }"
     respawn = options[:respawn] and options[:cpus] and options[:cpus].to_i > 1
 
     index = (0..elems.length-1).to_a.collect{|v| v.to_s }
 
-    TSV.traverse index, options do |pos|
+    TSV.traverse index, **options do |pos|
       if num == :current
         $BOOTSTRAPPED_CURRENT ||= n 
         $BOOTSTRAPPED_CURRENT += 0 

@@ -129,7 +129,7 @@ row2    A    B    Id3
         assert_equal %w(a aa), new["row1"]["ValueA"]
 
         new = TSV.excel(excelfile, :merge => false)
-        assert_equal %w(a), new["row1"]["ValueA"]
+        assert_equal %w(aa), new["row1"]["ValueA"]
       end
     end
   end

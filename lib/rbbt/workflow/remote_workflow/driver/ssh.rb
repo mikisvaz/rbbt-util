@@ -31,6 +31,7 @@ class RemoteWorkflow
                       end
 
       script =<<-EOF
+require 'rbbt-util'
 require 'rbbt/workflow'
 wf = Workflow.require_workflow "#{workflow_name}"
       EOF

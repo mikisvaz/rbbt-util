@@ -76,4 +76,33 @@ module Workflow
   end
 
   alias load_id fast_load_id
+
+  class << self
+    alias original_require_workflow require_workflow
+  
+    def require_remote_workflow(wf_name, url)
+      require 'rbbt/workflow/remote_workflow'
+      eval "Object::#{wf_name.split("+").first} = RemoteWorkflow.new '#{ url }', '#{wf_name}'"
+    end
+
+    def require_workflow(wf_name, force_local = true)
+      if Open.remote?(wf_name) or Open.ssh?(wf_name)
+        url = wf_name
+
+        if Open.ssh?(wf_name)
+          wf_name = File.basename(url.split(":").last)
+        else
+          wf_name = File.basename(url)
+        end
+
+        begin
+          return require_remote_workflow(wf_name, url)
+        ensure
+          Log.debug{"Workflow #{ wf_name } loaded remotely: #{ url }"}
+        end
+      end
+
+      original_require_workflow(wf_name)
+    end
+  end
 end

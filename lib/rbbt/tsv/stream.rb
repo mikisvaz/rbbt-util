@@ -297,6 +297,8 @@ module TSV
   def self.reorder_stream_tsv(stream, key_field, fields=nil, zipped = true, bar = nil)
     parser = TSV::Parser.new TSV.get_stream(stream)
     dumper_options = parser.options
+    dumper_options[:key_field] = key_field
+    dumper_options[:fields] = fields if fields
     dumper = TSV::Dumper.new dumper_options
     dumper.init 
     case parser.type
@@ -308,6 +310,7 @@ module TSV
     when :double
       TSV.traverse parser, :key_field => key_field, :fields => fields, :into => dumper, :bar => bar do |keys,values|
         res = []
+        keys = [keys] unless Array === keys
         keys.each_with_index do |key,i|
           vs = zipped ?  values.collect{|l| l.length == 1 ? l : [l[i]] } : values
           res << [key, vs]

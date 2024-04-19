@@ -5,7 +5,7 @@ require 'rbbt'
 
 class TestStream < Test::Unit::TestCase
 
-  def _test_collapse_stream
+  def test_collapse_stream
     text=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -21,7 +21,7 @@ row2 aa bb cc
     assert_equal ["BB", "bb"], tsv["row2"][1]
   end
 
-  def _test_paste_stream
+  def test_paste_stream
     text1=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -55,7 +55,7 @@ row3 ccc
     assert_equal ["AAA", "BBB", "CCC", "aaa", "bbb", "ccc"], tsv["row3"]
   end
 
-  def _test_paste_stream_sort
+  def test_paste_stream_sort
     text1=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -91,7 +91,7 @@ row2 cc
     assert_equal ["AAA", "BBB", "CCC", "aaa", "bbb", "ccc"], tsv["row3"]
   end
 
-  def _test_paste_stream_missing_2
+  def test_paste_stream_missing_2
     text1=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -123,7 +123,7 @@ row2 cc
     assert_equal ["", "", "", "", "", "ccc"], tsv["row3"]
   end
 
-  def _test_paste_stream_missing
+  def test_paste_stream_missing
     text1=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -155,7 +155,7 @@ row2 cc
     assert_equal ["", "", "", "", "", "ccc"], tsv["row3"]
   end
 
-  def _test_paste_stream_missing_3
+  def test_paste_stream_missing_3
     text1=<<-EOF
 #: :sep=" "
 #Row LabelA LabelB LabelC
@@ -177,7 +177,7 @@ row1 A B C
     assert_equal ["AA", "BB", "CC", ""], tsv["row2"]
   end
 
-  def _test_paste_stream_same_field
+  def test_paste_stream_same_field
     text1=<<-EOF
 #: :sep=" "
 #Row LabelA
@@ -198,7 +198,7 @@ row2 AAA
     assert_equal ["AA", "AAA"], tsv["row2"][0]
   end
 
-  def _test_paste_stream_nohead
+  def test_paste_stream_nohead
     text1=<<-EOF
 row1\tA
 row2\tAA
@@ -214,7 +214,7 @@ row2\tAAA
     assert_equal ["AA", "AAA"], tsv["row2"][0]
   end
 
-  def _test_flat2double
+  def __test_flat2double
     text1=<<-EOF
 #: :sep= #:type=:flat
 #Row LabelA
@@ -235,8 +235,7 @@ row2 a|aa|aaa
   end
 
   def test_reorder_stream
-    text=<<-EOF
-#: :sep=" "
+    text=<<-EOF.gsub(" ", "\t")
 #Row LabelA LabelB LabelC
 row1 A B C
 row1 a b c
@@ -247,8 +246,6 @@ row4  BBB CC
 
     s = StringIO.new text
     dumper = TSV.reorder_stream_tsv(s, "LabelC", %w(Row LabelA))
-    ppp dumper.stream.read
-    raise
     stream = TSV.collapse_stream(dumper.stream)
     tsv = TSV.open stream
     assert_equal %w(row2 row4), tsv["CC"]["Row"]

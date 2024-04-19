@@ -77,8 +77,8 @@ if options[:original]
   exit 0
 end
 
+inputs = step.inputs
 dependencies = info[:dependencies]
-inputs = info[:inputs]
 status = info[:status]
 time = info[:time_elapsed]
 total_time = info[:total_time_elapsed]
@@ -96,7 +96,7 @@ puts Log.color(:magenta, "Time") << ": " << time.to_i.to_s << " sec." if time
 puts Log.color(:magenta, "Total time") << ": " << total_time.to_i.to_s << " sec." if time
 if inputs and inputs.any?
   puts Log.color(:magenta, "Inputs")
-  inputs.each do |input,value|
+  inputs.to_hash.each do |input,value|
     case value
     when nil
       puts Misc.format_definition_list_item("  " + input.to_s, 'nil', width, 20, :blue)
@@ -150,20 +150,19 @@ if all
 end
 
 if recursive
-  inputs = step.info[:inputs] || {}
+  inputs = step.inputs
   deps = step.dependencies
 
   while deps.any? do
     dep = deps.shift
-    inputs = {} if inputs.nil?
-    inputs = inputs.merge(dep.info[:inputs] || {})
+    inputs.concat dep.inputs
     deps = deps.concat dep.dependencies if dep.dependencies
   end
 
-  inputs = inputs.merge step.archived_inputs
+  inputs = inputs.concat step.archived_inputs
   if inputs.any?
     puts Log.color(:magenta, "Recursive inputs") << ": "
-    inputs.each do |input,value|
+    inputs.to_hash.each do |input,value|
       case value
       when nil
         puts Misc.format_definition_list_item("  " << input.to_s, 'nil', width, 20, :blue)
