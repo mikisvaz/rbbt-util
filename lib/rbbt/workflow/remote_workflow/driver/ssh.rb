@@ -81,7 +81,7 @@ res = job_info = job.info
       script =<<-EOF
 jobname = #{jobname.nil? ? 'nil' : "'#{jobname}'"}
 path = File.join(ENV["HOME"], '.rbbt/tmp/tmp-ssh_job_inputs/#{inputs_id}')
-job_inputs = Workflow.load_inputs(path, task_info[:inputs], task_info[:input_types])
+job_inputs = wf.tasks[task].load_inputs(path)
 job = wf.job(task, jobname, job_inputs)
       EOF
       script
@@ -312,7 +312,7 @@ job.clean
         
         workflow_name = job.workflow.to_s
         remote_workflow = RemoteWorkflow.new("ssh://#{server}:#{workflow_name}", "#{workflow_name}")
-        inputs = IndiferentHash.setup(job.recursive_inputs.to_hash).slice(*job.real_inputs.map{|i| i.to_s})
+        inputs = IndiferentHash.setup(job.recursive_inputs.to_hash).slice(*job.non_default_inputs.map{|i|  i.to_s})
         Log.medium "Relaying dependency #{job.workflow}:#{job.short_path} to #{server} (#{inputs.keys * ", "})"
 
         rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
