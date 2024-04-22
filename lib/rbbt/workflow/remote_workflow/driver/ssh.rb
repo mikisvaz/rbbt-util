@@ -350,7 +350,6 @@ job.clean
 
     def documentation
       @documention ||= IndiferentHash.setup(RemoteWorkflow::SSH.get_json(File.join(url, "documentation")))
-      @documention
     end
 
     def task_info(task)
@@ -381,6 +380,23 @@ job.clean
         task.name = task_name.to_sym
         hash[task_name] = task
       end
+    end
+
+    def tasks
+      @tasks ||= begin
+                   tasks = Hash.new do |hash,task_name| 
+                     raise Workflow::TaskNotFoundException, "Task #{task_name} not found in workflow #{self.to_s}" unless @task_info.include?(task_name)
+                     info = @task_info[task_name]
+                     task = Task.setup info do |*args|
+                       raise "This is a remote task" 
+                     end
+                     task.name = task_name.to_sym
+                     hash[task_name] = task
+                   end
+
+                   @task_info.keys.each{|k| tasks[k] }
+                   tasks
+                 end
     end
 
     def task_dependencies
