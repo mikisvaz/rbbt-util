@@ -1,6 +1,8 @@
 class RemoteStep
   module REST
 
+    DEFAULT_REFRESH_TIME = 2
+
     def get
       params ||= {}
       params = params.merge(:_format => [:string, :boolean, :tsv, :annotations, :array].include?(result_type.to_sym) ? :raw : :json )

@@ -2,10 +2,10 @@ require 'rbbt/workflow'
 
 class RemoteStep < Step
 
-  attr_accessor :url, :base_url, :task, :base_name, :inputs, :input_types, :result_type, :result_description, :is_exec, :is_stream, :stream_input, :started
+  attr_accessor :url, :base_url, :task, :base_name, :inputs, :input_types, :result_type, :result_description, :is_exec, :is_stream, :stream_input, :started, :refresh_time
 
-  def initialize(base_url, task = nil, base_name = nil, inputs = nil, input_types = nil, result_type = nil, result_description = nil, is_exec = false, is_stream = false, stream_input = nil)
-    @base_url, @task, @base_name, @inputs, @input_types, @result_type, @result_description, @is_exec, @is_stream, @stream_input = base_url, task, base_name, inputs, input_types, result_type, result_description, is_exec, is_stream, stream_input
+  def initialize(base_url, task = nil, base_name = nil, inputs = nil, input_types = nil, result_type = nil, result_description = nil, is_exec = false, is_stream = false, stream_input = nil, refresh_time = nil)
+    @base_url, @task, @base_name, @inputs, @input_types, @result_type, @result_description, @is_exec, @is_stream, @stream_input, @refresh_time = base_url, task, base_name, inputs, input_types, result_type, result_description, is_exec, is_stream, stream_input, refresh_time
     @base_url = "http://" << @base_url unless @base_url =~ /^[a-z]+:\/\//
     @mutex = Mutex.new
     rest = base_url.include?('ssh:') ? false : true
@@ -13,9 +13,11 @@ class RemoteStep < Step
     if rest
       @adaptor = RemoteWorkflow::REST
       self.extend RemoteStep::REST
+      @refresh_time ||= Rbbt::Config.get(:remote_refresh_time, :refresh_time, :ssh_refresh_time, :ssh, :SSH, :default => RemoteStep::REST::DEFAULT_REFRESH_TIME)
     else
       @adaptor = RemoteWorkflow::SSH
       self.extend RemoteStep::SSH
+      @refresh_time ||= Rbbt::Config.get(:remote_refresh_time, :refresh_time, :rest_refresh_time, :rest, :REST, :default => RemoteStep::SSH::DEFAULT_REFRESH_TIME)
     end
 
   end
@@ -134,7 +136,7 @@ class RemoteStep < Step
     return {:status => :waiting } unless started?
     @done = @info && @info[:status] && (@info[:status].to_sym == :done || @info[:status].to_sym == :error)
 
-    if !@done && (@last_info_time.nil? || (Time.now - @last_info_time) > 0.5)
+    if !@done && (@last_info_time.nil? || (Time.now - @last_info_time) > @refresh_time)
       update = true 
     else
       update = false
@@ -163,8 +165,8 @@ class RemoteStep < Step
     begin
       status = info[:status]
       @done = true if status and status.to_sym == :done
-      Log.low "RemoteStep status '#{status}' #{self.url}"
-      status
+      Log.low "RemoteStep status '#{status}' #{self.url}" if @status != status
+      @status = status
     rescue
       Log.exception $!
       nil

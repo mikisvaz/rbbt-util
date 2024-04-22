@@ -1,5 +1,8 @@
 class RemoteStep
   module SSH
+
+    DEFAULT_REFRESH_TIME = 2
+
     attr_accessor :override_dependencies, :run_type, :batch_options, :produce_dependencies
 
     def init_job(cache_type = nil, other_params = {})
