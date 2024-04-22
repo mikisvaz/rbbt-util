@@ -630,6 +630,7 @@ env > #{batch_options[:fenv]}
     end
 
     def hold_dependencies(job, batch_job)
+      job.init_info
       job.set_info :batch_job, batch_job
       job.set_info :batch_system, self.batch_system
       job.dependencies.each do |dep|
