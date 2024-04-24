@@ -62,6 +62,7 @@ class Step
   def load_dependencies_from_info
     relocated = nil
     @dependencies = (self.info[:dependencies] || []).collect do |task,name,dep_path|
+      dep_path = task if dep_path.nil?
       if Open.exists?(dep_path) || Open.exists?(dep_path + '.info')
         Workflow._load_step dep_path
       else
