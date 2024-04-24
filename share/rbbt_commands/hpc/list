@@ -206,7 +206,6 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
         require 'rbbt/workflow'
         step_path = step_line.split(": ").last.strip
         step = Step.new step_path
-        step.load_dependencies_from_info
         has_bar = false
         [step].reverse.each do |j|
           next if j.done? 

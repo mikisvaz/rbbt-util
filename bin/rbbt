@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-
 $LOAD_PATH.unshift File.join(__dir__, '../lib')
 
 ENV["SCOUT_NOCOLOR"] = "true" if ARGV.include? "--nocolor"
@@ -7,7 +6,6 @@ ENV["SCOUT_NOCOLOR"] = "true" if ARGV.include? "--nocolor"
 ENV["SCOUT_NO_PROGRESS"] = "true" if ARGV.include? "--nobar"
 
 require 'scout-gear'
-
 
 require_relative '../lib/rbbt'
 
