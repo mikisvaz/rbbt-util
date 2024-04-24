@@ -1,4 +1,3 @@
-
 module Misc
 
   Log2Multiplier = 1.0 / Math.log(2.0)
