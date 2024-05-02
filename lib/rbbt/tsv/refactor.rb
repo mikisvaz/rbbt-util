@@ -16,6 +16,7 @@ module TSV
       if zipped = options.delete(:zipped)
         options[:one2one] = zipped
       end
+      options.delete(:keep_empty) 
       original_open(source, options)
     end
   end
