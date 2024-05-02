@@ -48,6 +48,7 @@ module Workflow
 
     task.deps.inject(input_use) do |acc,p|
       workflow, task_name = p
+      next if task_name.nil?
       workflow.rec_input_use(task_name).each do |name,uses|
         acc[name] ||= {}
         uses.each do |workflow, task_names|
