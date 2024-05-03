@@ -155,7 +155,7 @@ if recursive
 
   while deps.any? do
     dep = deps.shift
-    inputs.concat dep.inputs
+    inputs.concat dep.inputs if dep.inputs
     deps = deps.concat dep.dependencies if dep.dependencies
   end
 

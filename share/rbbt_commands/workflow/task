@@ -452,29 +452,9 @@ begin
         else
           RemoteWorkflow::SSH.relay_job_list([@job], @host, :run_type => run_type, :migrate => true, :produce_dependencies => @produce_dependencies)
           Step.migrate(@job, 'user', :source => @host)
-          load
+          nil
         end
       end
-      #job.dependencies = []
-
-      #([job] + job.rec_dependencies).each do |j|
-      #  next if job.done?
-      #  jmeta = class << j; self; end
-
-      #  j.instance_variable_set(:@job, job)
-      #  j.instance_variable_set(:@host, server)
-      #  j.instance_variable_set(:@produce_dependencies, produce_dependencies_for_relay)
-
-      #  jmeta.define_method :run do |*args|
-      #    if done?
-      #      load
-      #    else
-      #      RemoteWorkflow::SSH.relay_job_list([@job], @host, :run_type => run_type, :migrate => true, :produce_dependencies => @produce_dependencies)
-      #      Step.migrate(@job, 'user', :source => @host)
-      #      load
-      #    end
-      #  end
-      #end
     end
   end
 
@@ -522,7 +502,8 @@ begin
   if tasks = options.delete(:produce)
     tasks = tasks.split(",")
     produce_cpus = (options[:produce_cpus] || 1)
-    puts Step.produce_dependencies(job, tasks,  produce_cpus)
+    jobs = Workflow.produce_dependencies(job, tasks,  produce_cpus)
+    puts "Produced #{jobs.length} dependency jobs: #{Log.fingerprint jobs}"
     exit 0
   end
 

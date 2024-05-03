@@ -200,28 +200,6 @@ job.clean
       end
     end
 
-    #def self.relay_old(workflow, task, jobname, inputs, server, options = {})
-    #  options = Misc.add_defaults options, :search_path => 'user'
-    #  search_path = options[:search_path]
-
-    #  job = workflow.job(task, jobname, inputs)
-
-    #  job.dependencies.each do |dep| 
-    #    dep.produce 
-    #  end
-
-    #  override_dependencies = job.dependencies.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
-
-    #  job.dependencies.each do |dep| 
-    #    Step.migrate(dep.path, search_path, :target => server)
-    #  end
-
-    #  remote = RemoteWorkflow.new("ssh://#{server}:#{workflow.to_s}", "#{workflow.to_s}")
-    #  rjob = remote.job(task, jobname, {})
-    #  rjob.override_dependencies = override_dependencies
-    #  rjob.run
-    #end
-
     def self.upload_dependencies(job_list, server, search_path = 'user', produce_dependencies = false)
       server, path = parse_url(server) if server =~ /^ssh:\/\//
 
@@ -230,7 +208,7 @@ job.clean
       all_deps = {}
       if produce_dependencies
         job_list.each do |job|
-          job.dependencies.each do |dep|
+          job.all_dependencies.each do |dep|
             all_deps[dep] ||= []
             all_deps[dep] << job
           end
@@ -253,7 +231,8 @@ job.clean
       end if produce_dependencies
       Step.wait_for_jobs missing_deps
 
-      migrate_dependencies = all_deps.keys.collect{|d| [d] + d.rec_dependencies + d.input_dependencies }.flatten.select{|d| d.done? }.collect{|d| d.path }
+      #migrate_dependencies = all_deps.keys.collect{|d| [d] + d.rec_dependencies + d.input_dependencies }.flatten.select{|d| d.done? }.collect{|d| d.path }
+      migrate_dependencies = all_deps.keys.collect{|d| [d] + d.input_dependencies }.flatten.select{|d| d.done? }.collect{|d| d.path }
       Log.low "Migrating #{migrate_dependencies.length} dependencies from #{Misc.fingerprint job_list} to #{ server }" 
       Step.migrate(migrate_dependencies, search_path, :target => server) if migrate_dependencies.any?
     end

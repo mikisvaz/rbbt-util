@@ -213,7 +213,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
             bar = Log::ProgressBar.new 
             bar.load(j.file(:progress).yaml)
             rep = bar.report_msg.split("·")[1]
-            rep = rep.sub(/.*?(\d+%)/, Log.color(:blue,'\1')).sub(/\-.*/,'')
+            rep = rep.sub(/.*?(\d+%) /, Log.color(:blue,'\1')).sub(/\-.*/,'')
             prog_rep << [rep]
           end
         end
