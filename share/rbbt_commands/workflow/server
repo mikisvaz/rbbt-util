@@ -128,13 +128,19 @@ TmpFile.with_file do |app_dir|
       #`puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 3 -t 8:32 --preload`
       CMD.cmd_log("env RBBT_LOG=#{Log.severity.to_s} puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 20 -t 10:160 --preload")
     else
+
       options[:config] = config_ru_file
 
       fixed_options = {}
       options.each do |k,v| fixed_options[k.to_sym] = v end
       options = fixed_options
 
-      Rack::Server.start(options)
+      begin
+        Rack::Server.start(options)
+      rescue LoadError
+        require 'rackup'
+        Rackup::Server.start(options)
+      end
     end
   end
 end
