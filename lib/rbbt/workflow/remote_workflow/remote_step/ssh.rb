@@ -15,9 +15,15 @@ class RemoteStep
       @input_id ||= "inputs-" << rand(100000).to_s
 
       if override_dependencies && override_dependencies.any?
-        override_dependencies.each do |od|
-          name, _sep, value = od.partition("=")
-          inputs[name] = value
+        if Hash === override_dependencies
+          override_dependencies.each do |name,dep|
+            inputs[name] = dep
+          end
+        else
+          override_dependencies.each do |od|
+            name, _sep, value = od.partition("=")
+            inputs[name] = value
+          end
         end
       end
 

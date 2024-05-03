@@ -31,7 +31,6 @@ class RemoteWorkflow
                       end
 
       script =<<-EOF
-require 'rbbt-util'
 require 'rbbt/workflow'
 wf = Workflow.require_workflow "#{workflow_name}"
       EOF
@@ -216,6 +215,15 @@ job.clean
       end
 
       job_list.each do |job|
+        job.dependencies.
+          select{|dep| dep.overriden? }.
+          each do |dep|
+            all_deps[dep] ||= []
+            all_deps[dep] << job
+          end
+      end
+
+      job_list.each do |job|
         job.input_dependencies.each do |dep|
           all_deps[dep] ||= []
           all_deps[dep] << job
@@ -263,10 +271,11 @@ job.clean
       upload_dependencies(job, server, search_path, options[:produce_dependencies])
       rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
 
-      override_dependencies = job.rec_dependencies.
+      override_dependencies = {}
+      job.rec_dependencies.
         select{|dep| dep.done? }.
         collect{|dep| 
-          [dep.overriden_workflow.to_s, dep.overriden_task.to_s] * "#" << "=" << Rbbt.identify(dep.path)
+          override_dependencies[[dep.overriden_workflow.to_s, dep.overriden_task.to_s] * "#"] = dep
         }
 
       rjob.override_dependencies = override_dependencies
@@ -301,11 +310,13 @@ job.clean
 
         rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
 
-        override_dependencies = job.rec_dependencies.
+        override_dependencies = {}
+        job.rec_dependencies.
           select{|dep| dep.done? }.
           collect{|dep| 
-            [dep.overriden_workflow.to_s, dep.overriden_task.to_s] * "#" << "=" << Rbbt.identify(dep.path)
+            override_dependencies[[dep.overriden_workflow.to_s, dep.overriden_task.to_s] * "#"] = dep
           }
+
 
         rjob.override_dependencies = override_dependencies
 

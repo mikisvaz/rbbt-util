@@ -207,6 +207,7 @@ class Step
       type = input_types[name]
       type = type.to_s if type
 
+
       save_input(name, value, type, dir)
     end.any?
   end
