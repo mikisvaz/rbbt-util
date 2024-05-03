@@ -284,7 +284,12 @@ job.clean
       upload_dependencies(job, server, search_path, options[:produce_dependencies])
       rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
 
-      override_dependencies = job.rec_dependencies.select{|dep| dep.done? }.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
+      override_dependencies = job.rec_dependencies.
+        select{|dep| dep.done? }.
+        collect{|dep| 
+          [dep.overriden_workflow.to_s, dep.overriden_task.to_s] * "#" << "=" << Rbbt.identify(dep.path)
+        }
+
       rjob.override_dependencies = override_dependencies
 
       rjob.run_type = run_type
@@ -317,7 +322,12 @@ job.clean
 
         rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
 
-        override_dependencies = job.rec_dependencies.select{|dep| dep.done? }.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
+        override_dependencies = job.rec_dependencies.
+          select{|dep| dep.done? }.
+          collect{|dep| 
+            [dep.overriden_workflow.to_s, dep.overriden_task.to_s] * "#" << "=" << Rbbt.identify(dep.path)
+          }
+
         rjob.override_dependencies = override_dependencies
 
         rjob.run_type = run_type
