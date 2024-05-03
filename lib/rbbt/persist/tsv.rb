@@ -1,5 +1,5 @@
 require_relative '../refactor'
-Rbbt.require_instead 'scout/tsv/persist'
+Rbbt.require_instead 'scout/persist/tsv'
 #require 'rbbt/persist/tsv/adapter'
 #
 #require 'rbbt/persist/tsv/fix_width_table'
