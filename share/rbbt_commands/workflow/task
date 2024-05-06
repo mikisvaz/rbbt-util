@@ -468,6 +468,7 @@ begin
     jobs_to_relay.reject!{|d| d.done? }
 
     replace_relayed_jobs(jobs_to_relay, server, produce_dependencies_for_relay, :run)
+    RemoteWorkflow::SSH.relay_job_list(jobs_to_relay, server, :run_type => :run, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
   end
 
   if server = options.delete(:batch_relay)
@@ -478,6 +479,7 @@ begin
     jobs_to_relay.reject!{|d| d.done? }
 
     replace_relayed_jobs(jobs_to_relay, server, produce_dependencies_for_relay, :orchestrate)
+    RemoteWorkflow::SSH.relay_job_list(jobs_to_relay, server, :run_type => :orchestrate, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
   end
 
 

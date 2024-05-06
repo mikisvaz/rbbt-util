@@ -308,22 +308,26 @@ job.clean
         inputs = IndiferentHash.setup(job.recursive_inputs.to_hash).slice(*job.non_default_inputs.map{|i|  i.to_s})
         Log.medium "Relaying dependency #{job.workflow}:#{job.short_path} to #{server} (#{inputs.keys * ", "})"
 
-        rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
+        rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, job.provided_inputs)
 
         override_dependencies = {}
         job.rec_dependencies.
           select{|dep| dep.done? }.
           collect{|dep| 
-            override_dependencies[[dep.overriden_workflow.to_s, dep.overriden_task.to_s] * "#"] = dep
+            dep_key = if dep.overriden_workflow
+                        [dep.overriden_workflow.to_s, dep.overriden_task.to_s] * "#"
+                      else
+                        [dep.workflow.to_s, dep.task_name.to_s] * "#"
+                      end
+            override_dependencies[dep_key] = dep
           }
-
 
         rjob.override_dependencies = override_dependencies
 
         rjob.run_type = run_type
         rjob.batch_options = batch_options || {}
 
-        rjob.run(true)
+        rjob.run(:noload)
 
         [rjob, job]
       end

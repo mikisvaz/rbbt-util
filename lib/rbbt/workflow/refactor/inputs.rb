@@ -1,15 +1,14 @@
 class Step
-
   def self.save_inputs(inputs, input_types, dir)
-    inputs.each do |name,value|
+    inputs.collect do |name,value|
       next if value.nil?
       type = input_types[name]
       type = type.to_s if type
 
       Task.save_input(dir, name, type, value)
-    end.any?
+      name
+    end.compact.any?
   end
-
 end
 
 module Workflow
