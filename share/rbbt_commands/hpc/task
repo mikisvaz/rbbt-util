@@ -9,7 +9,7 @@ require 'time'
 
 rbbt_options = SOPT::GOT_OPTIONS
 
-$slurm_options = SOPT.get <<EOF
+$batch_options = SOPT.get <<EOF
 -dr--dry_run Print only the template
 -cj--clean_job Clean job
 --drbbt* Use development version of rbbt 
@@ -45,8 +45,10 @@ $slurm_options = SOPT.get <<EOF
 -OR--orchestration_rules* Orchestration rules
 EOF
 
-batch_system = $slurm_options.delete :batch_system
+batch_system = $batch_options.delete :batch_system
 batch_system ||= 'auto'
+$batch_options[:log] = rbbt_options[:log]
+$batch_options[:config_keys] = rbbt_options[:config_keys]
 
 HPC::BATCH_MODULE = HPC.batch_system batch_system
 
@@ -60,7 +62,7 @@ class Step
     else
       begin
         Log.debug "Issuing BATCH job for #{self.path}"
-        HPC::BATCH_MODULE.run_job(self, $slurm_options) 
+        HPC::BATCH_MODULE.run_job(self, $batch_options) 
       rescue HPC::BATCH_DRY_RUN
       end
     end
@@ -70,7 +72,7 @@ end
 module RemoteStep::SSH
 
   def _run
-    RemoteWorkflow::SSH.run_slurm_job(File.join(base_url, task.to_s), @input_id, @base_name, $slurm_options)
+    RemoteWorkflow::SSH.run_slurm_job(File.join(base_url, task.to_s), @input_id, @base_name, $batch_options)
   end
 
 end
