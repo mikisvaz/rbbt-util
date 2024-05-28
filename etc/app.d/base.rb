@@ -19,7 +19,7 @@ end
 use Rack::Session::Cookie, :key => 'rack.session',
   :path => '/',
   :expire_after => 2592000,
-  :secret => "#{self.to_s} secret!!"
+  :secret => Misc.digest("#{self.to_s} secret!!") * 4
 
 #{{{ DIRECTORIES
 global_var = Rbbt.var.sinatra

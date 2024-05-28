@@ -134,7 +134,12 @@ TmpFile.with_file do |app_dir|
       options.each do |k,v| fixed_options[k.to_sym] = v end
       options = fixed_options
 
-      Rack::Server.start(options)
+      begin
+        Rack::Server.start(options)
+      rescue LoadError
+        require 'rackup'
+        Rackup::Server.start(options)
+      end
     end
   end
 end

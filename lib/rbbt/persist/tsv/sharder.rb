@@ -214,7 +214,7 @@ module Persist
     def [](key, clean=false)
       database = database(key)
       return nil if database.nil?
-      v = database.send(:[], key)
+      database.send(:[], key)
     end
 
     def <<(p)
