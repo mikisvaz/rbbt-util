@@ -167,12 +167,12 @@ module Path
     end
   end
 
-  def prepend_search_path(name, dir)
-    dir = File.join(dir, '{PATH}')
-    new = {name => dir}
-    path_maps.each{|n,d| new[n] = d}
-    self.path_maps = new
-  end
+  #def prepend_search_path(name, dir)
+  #  dir = File.join(dir, '{PATH}')
+  #  new = {name => dir}
+  #  path_maps.each{|n,d| new[n] = d}
+  #  self.path_maps = new
+  #end
 
 
 end

@@ -18,4 +18,4 @@ end
 
 Resource.set_software_env Rbbt.software
 
-#Path.path_maps[:rbbt_util] = File.join(Path.caller_lib_dir(__FILE__), "{TOPLEVEL}/{SUBPATH}")
+Path.add_path :rbbt_util, File.join(Path.caller_lib_dir(__FILE__), "{TOPLEVEL}/{SUBPATH}")
