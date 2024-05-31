@@ -98,7 +98,11 @@ Rbbt.relay_module_method TSV, :zip_fields, NamedArray, :zip_fields
 module TSV
   alias original_dumper_stream dumper_stream
   def dumper_stream(keys = nil, no_options = false, unmerge = false)
-    original_dumper_stream(:keys => keys, unmerge: unmerge, preamble: no_options)
+    if Hash === keys
+      original_dumper_stream(keys)
+    else
+      original_dumper_stream(:keys => keys, unmerge: unmerge, preamble: no_options)
+    end
   end
 
   alias original_to_s to_s
