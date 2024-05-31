@@ -27,7 +27,7 @@ module R
       @@semfile 
     else
       @@semfile = File.basename(socket_file) + '.sem'
-      RbbtSemaphore.create_semaphore(@@semfile,1) 
+      ScoutSemaphore.create_semaphore(@@semfile,1) 
       @@semfile
     end
   end
@@ -120,7 +120,7 @@ module R
   end
 
   def self._eval(cmd)
-    RbbtSemaphore.synchronize(semfile) do 
+    ScoutSemaphore.synchronize(semfile) do 
       times = 1
       begin
         instance.eval(cmd)
