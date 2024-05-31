@@ -305,6 +305,7 @@ if help
   exit 0
 else
   task = workflow.tasks[task_name.to_sym] if task_name
+  raise ParameterException, "Task #{task_name} not found" if task.nil?
 end
 
 #usage workflow, task, nil, options[:abridge] and exit 0 if help
@@ -382,11 +383,17 @@ begin
   if do_exec or (job.respond_to?(:is_exec) and job.is_exec)
     res = job.exec(:stream)
 
-    result_type = job.result_type
+    result_type = job.type
 
     res = JSON.parse(res.read) if (defined?(RemoteStep) and RemoteStep === job) && %w(array float integer boolean).include?(result_type.to_s)
 
     case
+    when res.respond_to?(:stream)
+      begin
+        Misc.consume_stream(res.stream, false, out)
+      rescue EOFError, IOError
+      end
+      res.join if res.respond_to? :join
     when res.respond_to?(:gets)
       begin
         Misc.consume_stream(res, false, out)
