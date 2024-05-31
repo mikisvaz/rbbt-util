@@ -139,7 +139,12 @@ TmpFile.with_file do |app_dir|
         Rack::Server.start(options)
       rescue LoadError
         require 'rackup'
-        Rackup::Server.start(options)
+        begin
+          Rackup::Server.start(options)
+        rescue Exception
+          Log.exception $!
+          raise $!
+        end
       end
     end
   end
