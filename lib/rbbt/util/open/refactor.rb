@@ -1,3 +1,4 @@
+require 'rbbt/util/misc/bgzf'
 module Open
   class << self
     attr_accessor :repository_dirs
