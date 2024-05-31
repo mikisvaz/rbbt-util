@@ -15,3 +15,5 @@ module Rbbt
     end.define_method(new_method, &method)
   end
 end
+
+require 'rbbt/util/concurrency'
