@@ -104,7 +104,26 @@ module Misc
     time
   end
 
-  
+  def self.name2basename(file)
+    sanitize_filename(file.gsub("/",'·').gsub("~", '-'))
+  end
+
+  def self.sanitize_filename(filename, length = 254)
+    if filename.length > length
+      if filename =~ /(\..{2,9})$/
+        extension = $1
+      else
+        extension = ''
+      end
+
+      post_fix = "--#{filename.length}@#{length}_#{Misc.digest(filename)[0..4]}" + extension
+
+      filename = filename[0..(length - post_fix.length - 1)] << post_fix
+    else
+      filename
+    end
+    filename
+  end
 end
 
 module PDF2Text
