@@ -16,4 +16,5 @@ module Rbbt
   end
 end
 
-require 'rbbt/util/concurrency'
+require 'rbbt/util/concurrency/processes/refactor'
+require 'rbbt/util/named_array/refactor'

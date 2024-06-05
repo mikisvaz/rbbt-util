@@ -2,9 +2,15 @@ require_relative 'refactor/export'
 require_relative 'refactor/recursive'
 require_relative 'refactor/task_info'
 require_relative 'refactor/inputs'
+require_relative 'refactor/entity'
 
 class Step
   alias get_stream stream
+  alias old_exec exec
+
+  def exec(noload = false)
+    old_exec
+  end
 
   def self.md5_file(path)
     path.nil? ? nil : path + '.md5'

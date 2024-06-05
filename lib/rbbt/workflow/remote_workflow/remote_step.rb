@@ -260,6 +260,14 @@ class RemoteStep < Step
       Misc.consume_stream(res, true) 
     end
 
+    case @adaptor
+    when RemoteWorkflow::REST
+      max_tries = Scout::Config.get :max_tries, :remote_step, :rest, :default => nil
+    when RemoteWorkflow::SSH
+      max_tries = Scout::Config.get :max_tries, :remote_step, :ssh, :default => 10
+    end
+
+    times = 0
     if not (self.done? || self.aborted? || self.error?)
       self.info 
       return self if self.done? || self.aborted? || self.error?
@@ -267,6 +275,8 @@ class RemoteStep < Step
       sleep 1 unless self.done? || self.aborted? || self.error?
       while not (self.done? || self.aborted? || self.error?)
         sleep 3
+        raise "Max tries reached while waiting for remote job: #{Log.fingerprint self}" if times >  max_tries
+        times += 1
       end
     end
 
