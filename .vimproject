@@ -49,6 +49,9 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
     color.rb
     colorize.rb
     named_array.rb
+    named_array=named_array{
+     refactor.rb
+    }
     cmd.rb
     docker.rb
     config.rb
@@ -104,6 +107,7 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
      processes.rb
      threads.rb
      processes=processes{
+      refactor.rb
       socket.rb
       worker.rb
      }
@@ -124,6 +128,7 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
      export.rb
      recursive.rb
      task_info.rb
+     entity.rb
     }
     annotate.rb
 

@@ -471,6 +471,14 @@ begin
     end
   end
 
+  if tasks = options.delete(:produce)
+    tasks = tasks.split(",")
+    produce_cpus = (options[:produce_cpus] || 1)
+    jobs = Workflow.produce_dependencies(job, tasks,  produce_cpus)
+    puts "Produced #{jobs.length} dependency jobs: #{Log.fingerprint jobs}"
+    exit 0
+  end
+
 
   if server = options.delete(:relay)
     require 'rbbt/workflow/remote_workflow'
@@ -513,15 +521,6 @@ begin
       end
     end
   end
-
-  if tasks = options.delete(:produce)
-    tasks = tasks.split(",")
-    produce_cpus = (options[:produce_cpus] || 1)
-    jobs = Workflow.produce_dependencies(job, tasks,  produce_cpus)
-    puts "Produced #{jobs.length} dependency jobs: #{Log.fingerprint jobs}"
-    exit 0
-  end
-
 
   if do_fork
     ENV["SCOUT_NO_PROGRESS"] = "true"

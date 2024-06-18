@@ -234,7 +234,7 @@ job.clean
       all_deps.each do |dep,jobs|
         next if dep.done?
         Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{Misc.fingerprint jobs}"
-        dep.run(true)
+        dep.produce
         missing_deps << dep
       end if produce_dependencies
       Step.wait_for_jobs missing_deps
