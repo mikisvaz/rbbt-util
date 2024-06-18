@@ -35,8 +35,8 @@ class Step
     rescue Exception
       Log.debug{"Error loading info file: " + info_file}
       Log.exception $!
-      Open.rm info_file
-      Misc.sensiblewrite(info_file, Step.serialize_info({:status => :error, :messages => ["Info file lost"]}))
+      #Open.rm info_file
+      #Misc.sensiblewrite(info_file, Step.serialize_info({:status => :error, :messages => ["Info file lost"]}))
       raise $!
     end
   end
