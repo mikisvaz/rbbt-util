@@ -6,7 +6,7 @@ require 'rubyXL'
 module TSV
 
   def self._remove_link(value)
-    if value =~ /<([\w]+)[^>]*>(.*?)<\/\1>/
+    if String === value && value =~ /<([\w]+)[^>]*>(.*?)<\/\1>/
       $2
     else
       value
