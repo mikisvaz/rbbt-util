@@ -110,7 +110,7 @@ module HPC
 
       task = job.task_name
 
-      if job.overriden?
+      if job.overriden_deps.any?
         override_deps = job.overriden_deps.
           collect do |dep| 
             o_workflow = dep.overriden_workflow || dep.workflow.to_s
