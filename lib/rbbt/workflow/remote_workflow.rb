@@ -33,6 +33,8 @@ class RemoteWorkflow
       k = k.to_sym
       if TSV === v
         fixed_inputs[k] = v.to_s
+      elsif Path === v && Path.step_file?(v)
+        fixed_inputs[k] = v.identify
       else
         next if input_types[k].nil?
         case input_types[k].to_sym
