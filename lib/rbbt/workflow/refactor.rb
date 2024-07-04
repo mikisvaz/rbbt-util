@@ -21,6 +21,15 @@ class Step
   end
 
   alias real_inputs non_default_inputs
+
+  def reset_info(info = {})
+    if ENV["BATCH_SYSTEM"]
+      info = info.dup
+      info[:batch_system] = ENV["BATCH_SYSTEM"]
+      info[:batch_job] = ENV["BATCH_JOB_ID"]
+    end
+    save_info(info)
+  end
 end
 
 module Workflow
