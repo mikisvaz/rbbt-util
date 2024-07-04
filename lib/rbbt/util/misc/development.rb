@@ -193,15 +193,15 @@ module Misc
     insist(3, &block)
   end
 
-  def self.chunk(array, num)
-    total = array.length
-    current = 0
-    while current < total
-      last = current + num - 1
-      yield array[current..last]
-      current = last + 1
-    end
-  end
+  #def self.chunk(array, num)
+  #  total = array.length
+  #  current = 0
+  #  while current < total
+  #    last = current + num - 1
+  #    yield array[current..last]
+  #    current = last + 1
+  #  end
+  #end
 
   # Divides the array into +num+ chunks of the same size by placing one
   # element in each chunk iteratively.
