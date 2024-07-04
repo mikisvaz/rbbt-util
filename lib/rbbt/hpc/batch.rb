@@ -689,7 +689,7 @@ env > #{batch_options[:fenv]}
               sleep 1
             end
             status_txt = job_status(job)
-            lines.times do
+            (lines + 1).times do
               Log.clear_line(STDERR)
             end
             Log.clear_line(STDERR)
