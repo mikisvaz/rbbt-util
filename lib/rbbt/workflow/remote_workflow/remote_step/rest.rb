@@ -22,7 +22,7 @@ class RemoteStep
     def load
       params = {}
       join unless done? or streaming?
-      raise get_exception if error? or aborted?
+      raise exception if error? or aborted?
       load_res get
     end
 

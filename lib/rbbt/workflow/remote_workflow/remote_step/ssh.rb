@@ -93,7 +93,7 @@ class RemoteStep
       while ! (done? || error? || aborted?)
         sleep 1
       end
-      raise self.get_exception if error?
+      raise self.exception if error?
       self
     end
 
