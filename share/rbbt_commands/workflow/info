@@ -99,14 +99,16 @@ if inputs and inputs.any?
   inputs.to_hash.each do |input,value|
     case value
     when nil
-      puts Misc.format_definition_list_item("  " + input.to_s, 'nil', width, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, 'nil', 20, width, :blue)
     when Array
-      puts Misc.format_definition_list_item("  " + input.to_s, (value.length > 6 ? value[0..5]*"\n" << "\n" << "..." : value * "\n" ), width, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, (value.length > 6 ? value[0..5]*"\n" << "\n" << "..." : value * "\n" ), 20, width, :blue)
     when TrueClass, FalseClass
-      puts Misc.format_definition_list_item("  " + input.to_s, value.to_s, width, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, value.to_s, 20, width, :blue)
+    when Step
+      puts Misc.format_definition_list_item("  " << input.to_s, value.short_path, 20, width, :blue)
     else
       text = value.to_s.split("\n")[0..5].compact * "\n\n"
-      puts Misc.format_definition_list_item("  " + input.to_s, text, width, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, text, 20, width, :blue)
     end
   end
 end
@@ -165,16 +167,16 @@ if recursive
     inputs.to_hash.each do |input,value|
       case value
       when nil
-        puts Misc.format_definition_list_item("  " << input.to_s, 'nil', width, 20, :blue)
+        puts Misc.format_definition_list_item("  " + input.to_s, 'nil', 20, width, :blue)
       when Array
-        puts Misc.format_definition_list_item("  " << input.to_s, (value.length > 6 ? (value[0..5])*"\n\n" << "\n\n" << "..." : value * "\n\n" ), width, 20, :blue).gsub("\n\n","\n")
+        puts Misc.format_definition_list_item("  " + input.to_s, (value.length > 6 ? value[0..5]*"\n" << "\n" << "..." : value * "\n" ), 20, width, :blue)
       when TrueClass, FalseClass
-        puts Misc.format_definition_list_item("  " << input.to_s, value.to_s, width, 20, :blue)
+        puts Misc.format_definition_list_item("  " + input.to_s, value.to_s, 20, width, :blue)
+      when Step
+        puts Misc.format_definition_list_item("  " << input.to_s, value.short_path, 20, width, :blue)
       else
-        lines = value.to_s.split("\n").collect{|l| l.length >= width - 5 ? l[0..width - 5] + " ..." : l }
-        text = lines[0..5].compact * "\n\n"
-        text << "\n\n...\n\n" if lines.length > 6
-        puts Misc.format_definition_list_item("  " << input.to_s, text, width, 20, :blue).gsub("\n\n","\n")
+        text = value.to_s.split("\n")[0..5].compact * "\n\n"
+        puts Misc.format_definition_list_item("  " + input.to_s, text, 20, width, :blue)
       end
     end
   end
