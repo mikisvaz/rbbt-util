@@ -37,22 +37,26 @@ when options[:tokyocabinet_bd]
   exit
 end
 
-parser = TSV::Parser.new TSV.get_stream(file), options.merge(:fields => [])
+parser = TSV::Parser.new TSV.get_stream(file)
 
 options[:merge] = false if options[:merge] == "false"
 
-line = parser.first_line
-bar = Log::ProgressBar.new
-while line 
-  bar.tick
-
-  line = Misc.fixutf8(line)
-  line = parser.process line
-  raise SKIP_LINE if line.empty?
-  parts = parser.chop_line line
-  key, values = parser.get_values parts
-  values = parser.cast_values values if parser.cast?
-
+parser.traverse fields: [] do |key,v|
   puts key
-  line = parser.stream.gets
 end
+
+#line = parser.first_line
+#bar = Log::ProgressBar.new
+#while line 
+#  bar.tick
+#
+#  line = Misc.fixutf8(line)
+#  line = parser.traverse line
+#  raise SKIP_LINE if line.empty?
+#  parts = parser.chop_line line
+#  key, values = parser.get_values parts
+#  values = parser.cast_values values if parser.cast?
+#
+#  puts key
+#  line = parser.stream.gets
+#end

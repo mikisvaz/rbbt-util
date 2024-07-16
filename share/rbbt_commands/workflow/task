@@ -83,8 +83,8 @@ def fix_options(workflow, task, job_options)
     end
 
     if Path === value && Step === value.resource
-        job_options_cleaned[name] = value
-        next
+      job_options_cleaned[name] = value
+      next
     end
 
     value = case type

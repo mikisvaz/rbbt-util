@@ -78,11 +78,10 @@ if TSV === tsv
   exit
 end
 
-parser = TSV::Parser.new tsv, :key_field => key_field,  :fields => fields, :type => options[:type], :header_hash => options[:header_hash], :sep => options[:sep]
+parser = TSV::Parser.new tsv, **options
 fields ||= parser.fields
-
 i = 0
-TSV.traverse(parser) do |k,v|
+TSV.traverse(parser, :key_field => key_field,  :fields => fields, :type => options[:type]) do |k,v|
   if key== "#{i}"
     key = k.first
   elsif key.nil?
