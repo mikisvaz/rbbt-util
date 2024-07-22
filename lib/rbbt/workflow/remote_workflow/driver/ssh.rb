@@ -319,7 +319,7 @@ job.clean
                       else
                         [dep.workflow.to_s, dep.task_name.to_s] * "#"
                       end
-            override_dependencies[dep_key] = dep
+            override_dependencies[dep_key] ||= dep
           }
 
         rjob.override_dependencies = override_dependencies
