@@ -152,7 +152,11 @@ module TSV
   end
 
   def self.merge_different_fields(stream1, stream2, output, options = {})
-    Open.write(output, TSV.paste_streams([stream1, stream2], **options))
+    if true
+      Open.write(output, Open.collapse_stream(TSV.paste_streams([stream1, stream2], **options), compact: true))
+    else
+      Open.write(output, TSV.paste_streams([stream1, stream2], **options))
+    end
   end
 
   def merge_different_fields(other, options = {})

@@ -138,6 +138,7 @@ source(interactive.script.file)
     when Symbol
       "#{ object }"
     when String
+      object = object.dup if Path === object
       object[0] == ":" ? object[1..-1] : "'#{ object }'"
     when Numeric
       object
