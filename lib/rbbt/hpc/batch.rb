@@ -112,8 +112,10 @@ module HPC
 
       if job.overriden_deps.any?
         override_deps = job.overriden_deps.
+          select do |dep| Symbol === dep.overriden end.
           collect do |dep| 
-            o_workflow = dep.overriden_workflow || dep.workflow.to_s
+            o_workflow = dep.overriden_workflow || dep.workflow
+            o_workflow = o_workflow.name if o_workflow.respond_to?(:name)
             o_task_name = dep.overriden_task || dep.task.name
             name = [o_workflow, o_task_name] * "#"
           [name, dep.path] * "="  
