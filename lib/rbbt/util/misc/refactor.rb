@@ -4,7 +4,7 @@ require 'scout/open'
 require_relative '../log/refactor'
 
 Rbbt.relay_module_method Misc, :sensiblewrite, Open, :sensible_write
-Rbbt.relay_module_method Misc, :file2md5, Misc, :fast_file_md5
+Rbbt.relay_module_method Misc, :file2md5, Misc, :digest_file
 Rbbt.relay_module_method Misc, :lock, Open
 Rbbt.relay_module_method Misc, :consume_stream, Open
 Rbbt.relay_module_method Misc, :sort_stream, Open

@@ -233,10 +233,12 @@ job.clean
       missing_deps = []
       all_deps.each do |dep,jobs|
         next if dep.done?
+        next if job_list.include?(dep)
         Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{Misc.fingerprint jobs}"
         dep.produce
         missing_deps << dep
       end if produce_dependencies
+
       Step.wait_for_jobs missing_deps
 
       #migrate_dependencies = all_deps.keys.collect{|d| [d] + d.rec_dependencies + d.input_dependencies }.flatten.select{|d| d.done? }.collect{|d| d.path }
