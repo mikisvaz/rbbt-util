@@ -335,6 +335,7 @@ module Misc
            end
 
 
+    cpus = 1 if cpus <= 0
     options = Misc.add_defaults options, :respawn => true, :cpus => cpus
     options = Misc.add_defaults options, :bar => "Bootstrap in #{ options[:cpus] } cpus: #{ Misc.fingerprint Annotation.purge(elems) }"
     respawn = options[:respawn] and options[:cpus] and options[:cpus].to_i > 1
