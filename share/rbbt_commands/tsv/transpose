@@ -34,7 +34,8 @@ file = case file
 
 field = options[:field]
 
-options[:header_hash] = options["header_hash"]
+options[:header_hash] ||= options.delete "header_hash"
+options.delete :header_hash if options[:header_hash].nil?
 
 case
 when options[:tokyocabinet]
