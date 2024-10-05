@@ -183,5 +183,16 @@ module TSV
       monitor = monitor_state
     end
   end
+
+  class << self
+    alias attach_orig attach
+    def attach(*args, **kwargs)
+      if kwargs.include?(:zipped)
+        zipped = kwargs.delete(:zipped)
+        kwargs[:one2one] = zipped unless kwargs.include?(:one2one)
+      end
+      attach_orig(*args, **kwargs)
+    end
+  end
 end
 
