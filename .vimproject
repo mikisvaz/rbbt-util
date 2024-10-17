@@ -42,6 +42,7 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
      pipes.rb
      refactor.rb
      serialize.rb
+     ssw.rb
      system.rb
     }
     version.rb
