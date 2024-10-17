@@ -223,6 +223,7 @@ The `recursive_clean` cleans all the job dependency steps recursively.
 -R--requires* Require a list of files
 -pro--produce* Prepare dependencies
 -proc--produce_cpus* Number of dependencies prepared in parallel
+-prot--produce_timer* Time step for refreshing the orchestrator status
 -rwt--remote_workflow_tasks* Load a yaml file describing remote workflow tasks
 -od--override_deps* Override deps using 'Workflow#task=<path>' array_separated
 -PERF--procpath_performance* Measure performance using procpath
@@ -479,7 +480,8 @@ begin
   if tasks = options.delete(:produce)
     tasks = tasks.split(",")
     produce_cpus = (options[:produce_cpus] || 1)
-    jobs = Workflow.produce_dependencies(job, tasks,  produce_cpus)
+    produce_timer = (options[:produce_timer] || 5)
+    jobs = Workflow.produce_dependencies(job, tasks,  produce_cpus, produce_timer.to_f)
     puts "Produced #{jobs.length} dependency jobs: #{Log.fingerprint jobs}"
     exit 0
   end
