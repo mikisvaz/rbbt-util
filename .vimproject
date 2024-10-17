@@ -29,6 +29,7 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
      pipes.rb
      format.rb
      omics.rb
+     ssw.rb
      inspect.rb
      math.rb
      development.rb
