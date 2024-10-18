@@ -1,5 +1,5 @@
 
-equire File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
+require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
 require 'rbbt/workflow'
 require 'rbbt/hpc/orchestrate'
 
@@ -128,13 +128,11 @@ TestWFC:
     assert_equal job.rec_dependencies.length + 1, batches.inject(0){|acc,e| acc += e[:jobs].length }
   end
 
-  k :c1, TestWFB, :b2 -W workflow.rb   def test_job_workload    job = TestWFB.job(:b2, nil)    job.recursive_clean    workload = HPC::Orchestration.job_workload(job)    assert workload.include? job  end -pf 
-
+  def test_job_workload
     job = TestWFB.job(:b2, nil)
     job.recursive_clean
-
     workload = HPC::Orchestration.job_workload(job)
-
     assert workload.include? job
   end
+end
 
