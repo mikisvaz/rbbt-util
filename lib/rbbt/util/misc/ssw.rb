@@ -239,13 +239,13 @@ end:
   end
 
   def self.align(query_sequence, target_sequence)
-    Log.low { "Aligning #{ Misc.fingerprint query_sequence } to #{ Misc.fingerprint target_sequence }" }
+    Log.low { "Aligning #{ Log.fingerprint query_sequence } to #{ Log.fingerprint target_sequence }" }
 
     begin
       raise "No query sequence" if query_sequence.nil?
       raise "No target sequence" if target_sequence.nil?
 
-      s_out = Misc.open_pipe do |s_in|
+      s_out = Open.open_pipe do |s_in|
         SmithWaterman.ssw_aa(query_sequence, target_sequence, query_sequence.length, target_sequence.length, s_in.fileno)
       end
 
@@ -294,5 +294,9 @@ end:
     else
       map
     end
+  end
+
+  def self.alignment_percent(source, target)
+    alignment_map(source, target).keys.length.to_f / source.length
   end
 end
