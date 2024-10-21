@@ -14,14 +14,12 @@ module HPC
 
       all_deps.each do |dep|
         begin
-          dep.clean if dep.error? && dep.recoverable_error?
-          dep.clean if dep.aborted?
-          dep.clean if ! dep.updated?
+          dep.clean if (dep.error? && dep.recoverable_error?) ||
+            dep.aborted? || (dep.done? && dep.updated?)
         rescue RbbtException
           next
         end
       end
-
     end
 
     def self.orchestration_rules(orchestration_rules_file = nil)
