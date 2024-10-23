@@ -238,27 +238,33 @@ end:
 
   end
 
-  def self.align(query_sequence, target_sequence)
+  def self.align_txt(query_sequence, target_sequence)
     Log.low { "Aligning #{ Log.fingerprint query_sequence } to #{ Log.fingerprint target_sequence }" }
 
+    raise "No query sequence" if query_sequence.nil?
+    raise "No target sequence" if target_sequence.nil?
+
+    s_out = Open.open_pipe do |s_in|
+      SmithWaterman.ssw_aa(query_sequence, target_sequence, query_sequence.length, target_sequence.length, s_in.fileno)
+    end
+
+    txt = s_out.read
+    s_out.close
+    s_out.join
+
+    txt
+  end
+
+  def self.align(query_sequence, target_sequence)
+    txt = align_txt(query_sequence, target_sequence)
+
     begin
-      raise "No query sequence" if query_sequence.nil?
-      raise "No target sequence" if target_sequence.nil?
+      ppp txt if Rbbt::Config.get(:print, :ssw_aligmnent, default: false).to_s == 'true'
 
-      s_out = Open.open_pipe do |s_in|
-        SmithWaterman.ssw_aa(query_sequence, target_sequence, query_sequence.length, target_sequence.length, s_in.fileno)
-      end
+      target_start, target, target_end = txt.match(/Target:\s+(\d+)\s+([A-Za-z\-?*]+)\s+(\d+)/).values_at 1, 2, 3
 
-      txt = s_out.read
-      s_out.close
-      s_out.join
-      txt
+      query_start, query, query_end = txt.match(/Query:\s+(\d+)\s+([A-Za-z\-?*]+)\s+(\d+)/).values_at 1, 2, 3
 
-      target_start, target, target_end = txt.match(/Target:\s+(\d+)\s+([A-Z\-?*]+)\s+(\d+)/).values_at 1, 2, 3
-
-      query_start, query, query_end = txt.match(/Query:\s+(\d+)\s+([A-Z\-?*]+)\s+(\d+)/).values_at 1, 2, 3
-
-      txt.replace ""
       [("_" * (query_start.to_i - 1)) + query, ("_" * (target_start.to_i - 1)) + target]
     rescue
       Log.warn("Error in aligmnent: #{$!.message}")
