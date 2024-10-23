@@ -65,7 +65,7 @@ module HPC
       last_id = nil
       last_dir = nil
       while batches.any?
-        top = batches.select{|b| b[:deps].nil? || (b[:deps] - batch_ids.keys).empty? }.first
+        top = batches.select{|b| b[:deps].nil? || (b[:deps].collect{|d| d[:top_level]} - batch_ids.keys).empty? }.first
         raise "No batch without unmet dependencies" if top.nil?
         batches.delete top
 
@@ -85,9 +85,9 @@ module HPC
             end
 
             if canfail
-              'canfail:' + batch_ids[d].to_s
+              'canfail:' + batch_ids[d[:top_level]].to_s
             else
-              batch_ids[d].to_s
+              batch_ids[d[:top_level]].to_s
             end
           }
         end
@@ -100,10 +100,10 @@ module HPC
           puts Log.color(:yellow, "Deps: ") + Log.color(:blue, job_options[:batch_dependencies]*", ")
           puts Log.color(:yellow, "Path: ") + top[:top_level].path
           puts Log.color(:yellow, "Options: ") + job_options.inspect
-          batch_ids[top] = top[:top_level].task_signature
+          batch_ids[top[:top_level]] = top[:top_level].task_signature
         else
           id, dir = run_job(top[:top_level], job_options)
-          last_id = batch_ids[top] = id
+          last_id = batch_ids[top[:top_level]] = id
           last_dir = dir
         end
       end
