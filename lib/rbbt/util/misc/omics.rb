@@ -256,8 +256,9 @@ module Misc
       ref = m[1]
       num = m[2]
       alt = m[3]
+      alt = "*" if alt == "Ter"
       ref = THREE_TO_ONE_AA_CODE[ref.downcase]
-      alt = alt == "Ter" ? "*" : THREE_TO_ONE_AA_CODE[alt.downcase]
+      alt = (alt == "Ter" || alt == "*") ? "*" : THREE_TO_ONE_AA_CODE[alt.downcase]
       mutation = [ref, num, alt] * ""
     end
     one_aa_code = THREE_TO_ONE_AA_CODE.values
