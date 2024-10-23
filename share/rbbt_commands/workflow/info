@@ -152,14 +152,8 @@ if all
 end
 
 if recursive
-  inputs = step.inputs
-  deps = step.dependencies
-
-  while deps.any? do
-    dep = deps.shift
-    inputs.concat dep.inputs if dep.inputs
-    deps = deps.concat dep.dependencies if dep.dependencies
-  end
+  inputs = step.recursive_inputs
+  inputs = NamedArray.setup(inputs.values, inputs.keys)
 
   inputs = inputs.concat step.archived_inputs
   if inputs.any?
