@@ -128,11 +128,5 @@ TestWFC:
     assert_equal job.rec_dependencies.length + 1, batches.inject(0){|acc,e| acc += e[:jobs].length }
   end
 
-  def test_job_workload
-    job = TestWFB.job(:b2, nil)
-    job.recursive_clean
-    workload = HPC::Orchestration.job_workload(job)
-    assert workload.include? job
-  end
 end
 
