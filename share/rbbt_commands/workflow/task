@@ -330,7 +330,7 @@ job_options = task.get_SOPT
 
 if options[:load_inputs]
   task_info = workflow.task_info(task_name)
-  job_options = workflow.tasks[task_name].load_inputs(options[:load_inputs])
+  job_options = workflow.tasks[task_name].load_inputs(options[:load_inputs]).merge(job_options)
 end
 
 
