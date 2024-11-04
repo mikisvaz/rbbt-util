@@ -42,7 +42,7 @@ module R
 
   def self.clear
     @@instance = nil
-    if defined? @@instance_process and @@instance_process and Misc.pid_exists? @@instance_process
+    if defined? @@instance_process and @@instance_process and Misc.pid_alive? @@instance_process
       Log.warn "Clearing Rserver session #{SESSION}, PID #{@@instance_process}"
       begin
         Process.kill :INT, @@instance_process
@@ -59,7 +59,7 @@ module R
   def self.instance
     @@instance ||= begin
 
-                     clear if File.exist? pid_file and ! Misc.pid_exists?(Open.read(pid_file).strip.to_i)
+                     clear if File.exist? pid_file and ! Misc.pid_alive?(Open.read(pid_file).strip.to_i)
 
                      FileUtils.mkdir_p File.dirname(socket_file) unless File.directory?(File.dirname(socket_file))
                      FileUtils.mkdir_p workdir unless File.directory? workdir

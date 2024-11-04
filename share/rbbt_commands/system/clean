@@ -136,9 +136,9 @@ TSV.traverse jobs do |file,i|
   end
 
   if (force && status !~ /done/) or 
-    status =~ /\b(old|dirty|nopid|error|missing|aborted|dead|sync)$/ or
-    (status == "noinfo" and not done) or
-    status == "" 
+      status =~ /\b(old|dirty|nopid|error|missing|aborted|dead|sync|waiting)$/ or
+      (status == "noinfo" and not done) or
+      status == "" 
 
     puts "  Removing #{ file } - #{status}" 
     Step.clean(file) 

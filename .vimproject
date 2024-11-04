@@ -23,6 +23,8 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
    util=util{
     misc.rb
     misc=misc{
+     refactor.rb
+
      annotated_module.rb
      bgzf.rb
      communication.rb
@@ -40,7 +42,6 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
      omics.rb
      options.rb
      pipes.rb
-     refactor.rb
      serialize.rb
      ssw.rb
      system.rb

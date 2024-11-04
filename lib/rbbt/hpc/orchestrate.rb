@@ -78,11 +78,11 @@ module HPC
 
           batch_dependencies = top[:deps].collect{|d| 
             target = d[:top_level]
-            canfail = false
+            canfail = target.canfail?
 
-            top_jobs.each do |job|
-              canfail = true if job.canfail? # job.canfail_paths.include?(target.path)
-            end
+            #top_jobs.each do |job|
+            #  canfail = true if job.canfail? # job.canfail_paths.include?(target.path)
+            #end
 
             if canfail
               'canfail:' + batch_ids[d[:top_level]].to_s

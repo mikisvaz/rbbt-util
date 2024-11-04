@@ -89,6 +89,7 @@ exception = info[:exception]
 rest = info.keys - [:inputs, :dependencies, :status, :time_elapsed, :messages, :backtrace, :exception, :archived_info]
 
 
+status = :noinfo if status.nil?
 puts Log.color(:magenta, "File") << ": " << step.path
 puts Log.color(:magenta, "Status") << ": " << status_msg(status) << ((step.aborted? || step.error?) && step.recoverable_error? ? " (recoverable)" : "" ) << (step.dirty? ? " (dirty)" : "")
 puts Log.color(:magenta, "Pid") << ": " << pid_msg(pid, status.to_s == "done")

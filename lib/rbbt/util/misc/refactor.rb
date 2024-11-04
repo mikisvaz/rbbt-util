@@ -16,3 +16,5 @@ Rbbt.relay_module_method Misc, :with_fifo, Open
 Rbbt.relay_module_method Misc, :zip2hash, IndiferentHash
 Rbbt.relay_module_method Misc, :obj2md5, Misc, :digest
 Rbbt.relay_module_method Misc, :obj2digest, Misc, :digest
+Rbbt.relay_module_method Misc, :add_defaults, IndiferentHash, :add_defaults
+Rbbt.relay_module_method Misc, :process_options, IndiferentHash, :process_options

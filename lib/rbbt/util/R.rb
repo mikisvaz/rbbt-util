@@ -109,17 +109,17 @@ source(interactive.script.file)
        begin
          Process.waitpid pid
        rescue Interrupt
-         if Misc.pid_exists? pid
+         if Misc.pid_alive? pid
            Process.kill "INT", pid
            retry
          else
            raise $!
          end
        rescue Exception
-         Process.kill 9, pid if Misc.pid_exists? pid
+         Process.kill 9, pid if Misc.pid_alive? pid
          raise $!
        ensure
-         Process.waitpid pid if Misc.pid_exists? pid
+         Process.waitpid pid if Misc.pid_alive? pid
        end
 
     end
