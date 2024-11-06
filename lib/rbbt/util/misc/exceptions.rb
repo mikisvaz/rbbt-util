@@ -1,7 +1,8 @@
 require_relative '../../refactor'
 Rbbt.require_instead 'scout/exceptions'
 class ClosedStream < StandardError; end
-class RbbtException < ScoutException; end
+RbbtException = ScoutException
+#class RbbtException < ScoutException; end
 #class ParameterException < RbbtException; end
 #
 #class MissingParameterException < ParameterException

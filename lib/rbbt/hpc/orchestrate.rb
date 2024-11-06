@@ -99,7 +99,7 @@ module HPC
           puts Log.color(:magenta, "Manifest: ") + Log.color(:blue, job_options[:manifest] * ", ") + " - tasks: #{job_options[:task_cpus] || 1} - time: #{job_options[:time]} - config: #{job_options[:config_keys]}"
           puts Log.color(:yellow, "Deps: ") + Log.color(:blue, job_options[:batch_dependencies]*", ")
           puts Log.color(:yellow, "Path: ") + top[:top_level].path
-          puts Log.color(:yellow, "Options: ") + job_options.inspect
+          puts Log.color(:yellow, "Options: ") + job_options.reject{|k,v| k == :batch_dependencies || k == :manifest }.inspect
           batch_ids[top[:top_level]] = top[:top_level].task_signature
         else
           id, dir = run_job(top[:top_level], job_options)

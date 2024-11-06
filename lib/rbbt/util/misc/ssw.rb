@@ -272,7 +272,7 @@ end:
     end
   end
 
-  def self.alignment_map(source, target)
+  def self.alignment_map(source, target, filter_low_quality=true)
     alignment_source, alignment_target = SmithWaterman.align(source, target)
     map = {}
 
@@ -295,14 +295,14 @@ end:
       end
     end
 
-    if miss_match + gaps_source > alignment_source.length.to_f / 2
+    if filter_low_quality && miss_match + gaps_source > alignment_source.length.to_f / 2
       {}
     else
       map
     end
   end
 
-  def self.alignment_percent(source, target)
-    alignment_map(source, target).keys.length.to_f / source.length
+  def self.alignment_percent(source, target, filter_low_quality=true)
+    alignment_map(source, target,filter_low_quality).keys.length.to_f / source.length
   end
 end
