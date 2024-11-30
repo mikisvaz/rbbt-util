@@ -41,7 +41,7 @@ module HPC
       IndiferentHash.setup(rules)
     end
 
-    def orchestrate_job(job, options)
+    def orchestrate_job(job, options = {})
       options.delete "recursive_clean"
       options.delete "clean_task"
       options.delete "clean"
@@ -111,5 +111,11 @@ module HPC
       [last_id, last_dir]
     end
 
+    def produce_jobs(jobs, options = {})
+      jobs.each do |job|
+        self.orchestrate_job(job, options)
+      end
+      Step.wait_for_jobs jobs
+    end
   end
 end

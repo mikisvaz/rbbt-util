@@ -110,8 +110,8 @@ module HPC
 
       task = job.task_name
 
-      if job.overriden_deps.any?
-        override_deps = job.overriden_deps.
+      if job.recursive_overriden_deps.any?
+        override_deps = job.recursive_overriden_deps.
           select do |dep| Symbol === dep.overriden end.
           collect do |dep| 
             o_workflow = dep.overriden_workflow || dep.workflow
