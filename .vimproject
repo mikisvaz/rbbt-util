@@ -99,6 +99,9 @@ rbbt6=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.tx
 
     python.rb
     python=python{
+     paths.rb
+     script.rb
+     run.rb
      util.rb
     }
 

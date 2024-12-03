@@ -10,7 +10,7 @@ module RbbtPython
 
   def self.tsv2df(tsv)
     df = nil
-    RbbtPython.run 'pandas' do
+    RbbtPython.run_direct 'pandas' do
       df = pandas.DataFrame.new(tsv.values, columns: tsv.fields, index: tsv.keys)
       df.columns.name = tsv.key_field
     end
@@ -21,9 +21,9 @@ module RbbtPython
     options = Misc.add_defaults options, :type => :list
     IndiferentHash.setup options
     tsv = TSV.setup({}, options)
-    tsv.key_field = options[:key_field] || tuple.columns.name
+    tsv.key_field = options[:key_field] || tuple.columns.name.to_s
     tsv.fields = py2ruby_a(tuple.columns.values)
-    keys = tuple.index.values
+    keys = py2ruby_a(tuple.index.values)
     PyCall.len(tuple.index).times do |i|
       k = keys[i]
       tsv[k] = py2ruby_a(tuple.values[i])

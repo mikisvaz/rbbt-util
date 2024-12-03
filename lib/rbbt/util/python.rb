@@ -1,6 +1,10 @@
 require 'rbbt-util'
-require 'pycall/import'
+require 'rbbt/util/python/paths'
+require 'rbbt/util/python/run'
 require 'rbbt/util/python/util'
+require 'rbbt/util/python/script'
+
+require 'pycall/import'
 
 module RbbtPython
   extend PyCall::Import
@@ -15,36 +19,13 @@ module RbbtPython
     end
   end
 
-  def self.script(text, options = {})
-    Log.debug "Running python script:\n#{text.dup}"
-    text = StringIO.new text unless IO === text
-    CMD.cmd_log(:python, options.merge(:in => text))
-  end
-
-  def self.add_path(path)
-    begin
-      self.run 'sys' do
-        sys.path.append path
-      end
-    rescue
-      raise RbbtPythonException, 
-        "Could not add path #{Misc.fingerprint path} to python sys: " + $!.message
-    end
-  end
-
-  def self.add_paths(paths)
-    self.run 'sys' do
-      paths.each do |path|
-        sys.path.append path
-      end
-    end
-  end
-
   def self.init_rbbt
     if ! defined?(@@__init_rbbt_python) || ! @@__init_rbbt_python
-      Log.debug "Loading python 'rbbt' module into pycall RbbtPython module"
-      RbbtPython.add_paths(Rbbt.python.find_all)
-      RbbtPython.pyimport("rbbt")
+      add_paths(Rbbt.python.find_all)
+      res = RbbtPython.run do
+        Log.debug "Loading python 'rbbt' module into pycall RbbtPython module"
+        pyimport("rbbt")
+      end
       @@__init_rbbt_python = true
     end
   end
@@ -154,20 +135,6 @@ module RbbtPython
       acc << res
     end
     acc
-  end
-
-  def self.run(mod = nil, imports = nil, &block)
-    if mod
-      if Hash === imports
-        pyimport mod, **imports
-      elsif imports.nil?
-        pyimport mod 
-      else
-        pyfrom mod, :import => imports
-      end
-    end
-
-    module_eval(&block)
   end
 
   def self.run_log(mod = nil, imports = nil, severity = 0, severity_err = nil, &block)
