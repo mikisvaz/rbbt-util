@@ -353,7 +353,13 @@ $job = job
 
 # clean job
 if clean 
-  job.clean 
+  if job.info[:task_alias]
+    Log.info "Cleaning task_alias #{Log.fingerprint job.dependencies.last}"
+    job.dependencies.last.clean
+    job.clean 
+  else
+    job.clean 
+  end
   sleep 1
 end
 
