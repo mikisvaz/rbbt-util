@@ -19,9 +19,9 @@ module RbbtPython
     when FalseClass
       "False"
     when Array
-      "[#{object.collect{|e| ruby2R(e) } * ", "}]"
+      "[#{object.collect{|e| ruby2python(e) } * ", "}]"
     when Hash
-      "{" << object.collect{|k,v| [k, ruby2R(v)] * "="} * ", " << "}"
+      "{" << object.collect{|k,v| [k, ruby2python(v)] * "="} * ", " << "}"
     else
       raise "Type of object not known: #{ object.inspect }"
     end
@@ -61,7 +61,6 @@ if result is not None:
       text += save_script_result(tmp_file)
       Log.debug "Running python script:\n#{text.dup}"
       CMD.cmd_log(:python, options.merge(:in => text))
-      ppp text
       if Open.exists?(tmp_file)
         load_pickle(tmp_file)
       end
