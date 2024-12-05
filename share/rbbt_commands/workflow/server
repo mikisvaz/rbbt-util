@@ -127,6 +127,9 @@ TmpFile.with_file do |app_dir|
     when 'puma_production'
       #`puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 3 -t 8:32 --preload`
       CMD.cmd_log("env RBBT_LOG=#{Log.severity.to_s} puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 20 -t 10:160 --preload")
+    when 'puma_single'
+      #`puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 3 -t 8:32 --preload`
+      CMD.cmd_log("env RBBT_LOG=#{Log.severity.to_s} puma '#{config_ru_file}' -p #{options[:Port] || "2887"} -w 1 -t 1:1 ")
     else
 
       options[:config] = config_ru_file

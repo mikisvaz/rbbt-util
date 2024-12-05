@@ -67,7 +67,6 @@ module RbbtPython
   end
 
   def self.run_direct(mod = nil, imports = nil, &block)
-    iii [:run, mod, imports, block]
     if mod
       if Hash === imports
         pyimport mod, **imports
