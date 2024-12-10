@@ -171,10 +171,10 @@ end
 
 module TSV
 
-  def R(script, source = nil, open_options = {})
-    open_options, source = source, nil if Hash === source
+  def R(script, source = nil, options = {})
+    options, source = source, nil if Hash === source
 
-    source ||= IndiferentHash.process_options open_options, :source
+    source ||= IndiferentHash.process_options options, :source
     source = [source] unless Array === source 
 
     require_sources  = source.collect{|source|
@@ -184,12 +184,13 @@ module TSV
 
     script = require_sources + "\n\n" + script if require_sources
 
-    r_options = IndiferentHash.pull_keys open_options, :R
+    r_options = IndiferentHash.pull_keys options, :R
+    open_options = IndiferentHash.pull_keys options, :open
 
-    r_options[:monitor] = open_options[:monitor] if open_options.include?(:monitor)
-    r_options[:method] = open_options[:method] if open_options.include?(:method)
-    r_options[:debug] = open_options[:debug] if open_options.include?(:debug)
-    r_options[:erase] = open_options.delete(:erase) if open_options.include?(:erase)
+    r_options[:monitor] = options[:monitor] if options.include?(:monitor)
+    r_options[:method] = options[:method] if options.include?(:method)
+    r_options[:debug] = options[:debug] if options.include?(:debug)
+    r_options[:erase] = options.delete(:erase) if options.include?(:erase)
 
     r_options[:debug] = true if r_options[:method] == :debug
     if r_options.delete :debug
@@ -203,7 +204,7 @@ module TSV
     tsv_R_option_str = r_options.delete :open
     tsv_R_option_str = ", "  + tsv_R_option_str if String === tsv_R_option_str and not tsv_R_option_str.empty?
 
-    raw = open_options.delete :raw
+    raw = options.delete :raw
     TmpFile.with_file nil, erase do |f|
       Open.write(f, self.to_s)
 
@@ -229,8 +230,8 @@ NULL
       if raw
         Open.read(f)
       else
-        tsv = TSV.open(f, open_options) unless open_options[:ignore_output]
-        tsv.key_field = open_options[:key] if open_options.include? :key
+        tsv = TSV.open(f, open_options) unless options[:ignore_output]
+        tsv.key_field = options[:key] if options.include? :key
         tsv.namespace ||= self.namespace if self.namespace
         tsv
       end
