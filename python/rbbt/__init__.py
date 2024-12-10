@@ -3,7 +3,7 @@ import sys
 import os
 import subprocess
 
-def rbbt(cmd = None):
+def cmd(cmd = None):
     if cmd is None:
         print("Rbbt")
     else:
@@ -51,6 +51,15 @@ def rich(obj):
 def log_tsv(tsv):
     print(tsv)
     print(tsv.keys())
+
+def benchmark():
+    import time
+    tic: float = time.perf_counter()
+    try:
+        yield
+    finally:
+        toc: float = time.perf_counter()
+    print(f"Computation time = {1000*(toc - tic):.3f}ms")
 
 def tsv_preamble(line, comment_char="#"):
     import re
