@@ -9,12 +9,15 @@ rbbt.require('Cairo')
 
 # Modified from http://aaronecay.com/blog/2014/02/tooltips-in-ggplot/
 
-rbbt.SVG.extract <- function(plot, size=NULL, prefix=NULL, ...){
+rbbt.SVG.extract <- function(plot, size=NULL, prefix=NULL, entity.geom='geom_point', data=NULL, ...){
 
     if (is.null(prefix)) prefix = rbbt.random_string();
+
+    if (!endsWith(prefix, '.'))
+        prefix = paste(prefix, ".", sep="")
+
     if (is.null(size)){
         print(plot, type='cairo');
-        mysvg <- grid.export(prefix=prefix, ...)
     }else{
         base.size = 10 * (7/size)
         resolution = 72 * (size/7)
@@ -25,10 +28,19 @@ rbbt.SVG.extract <- function(plot, size=NULL, prefix=NULL, ...){
 
         if (is.null(plot$theme$text$size))
           plot$theme$text$size = base.size
-
-        print(plot, type='cairo')
-        mysvg <- grid.export(res=resolution, prefix=prefix, ...)
+        print(plot, type='cairo');
     }
+
+    grid.force()
+    if (!is.null(data[["Entity"]]))
+        grid.garnish(entity.geom, 'data-entity'= data[["Entity"]], group = FALSE, grep = TRUE, redraw = TRUE)
+    if (!is.null(data[["Entity type"]]))
+        grid.garnish(entity.geom, 'data-entity_type' = data[["Entity type"]], group = FALSE, grep = TRUE, redraw = TRUE)
+    if (!is.null(data[["Title"]]))
+        grid.garnish(entity.geom, 'title' = data[["Title"]], group = FALSE, grep = TRUE, redraw = TRUE)
+
+
+    mysvg <- grid.export(prefix=prefix, strict = FALSE, ...)
 
     xml <- saveXML(mysvg$svg)
     xml

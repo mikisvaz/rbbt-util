@@ -91,14 +91,16 @@ module R
     end
 
     def self.ggplot(data, script = nil, width = nil, height = nil, options = {})
-      width ||= 3
-      height ||= 3
+      width ||= 2
+      height ||= 2
       values = []
 
       options = options.dup
 
       sources = [:plot, :svg, options[:source]].flatten.compact
       options.delete :source
+
+      entity_geom = options.delete :entity_geom
 
       field_classes = options[:field_classes]
 
@@ -149,15 +151,22 @@ module R
 
         TmpFile.with_file nil, true, :extension => 'svg' do |tmpfile|
 
-          data.R <<-EOF, sources, options
+          if entity_geom
+            data.R <<-EOF, sources, options
+  plot = { #{script} }
+  #{save_method}('#{tmpfile}', plot, width = #{R.ruby2R width}, height = #{R.ruby2R height}, entity.geom=#{R.ruby2R(entity_geom)}, data=data)
+  data = NULL
+            EOF
+          else
+            data.R <<-EOF, sources, options
   plot = { #{script} }
 
   #{save_method}('#{tmpfile}', plot, width = #{R.ruby2R width}, height = #{R.ruby2R height})
   data = NULL
-          EOF
+            EOF
+          end
 
           Open.read(tmpfile).gsub(/(glyph\d+-\d+)/, '\1-' + File.basename(tmpfile))
-
         end
       else
 
