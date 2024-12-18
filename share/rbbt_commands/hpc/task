@@ -52,6 +52,7 @@ $batch_options[:config_keys] = rbbt_options[:config_keys]
 
 HPC::BATCH_MODULE = HPC.batch_system batch_system
 
+
 raise ParameterException.new("Could not detect batch_system: #{Misc.fingerprint batch_system}") if HPC::BATCH_MODULE.nil?
 
 class Step

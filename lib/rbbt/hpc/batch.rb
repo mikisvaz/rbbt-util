@@ -176,6 +176,7 @@ EOF
         :copy_image,
         :drbbt,
         :env_cmd,
+        :env,
         :manifest,
         :user_group,
         :wipe_container,
@@ -203,6 +204,7 @@ EOF
         :highmem,
         :exclusive,
         :env_cmd,
+        :env,
         :user_group,
         :singularity_img,
         :singularity_mounts,
@@ -248,7 +250,7 @@ EOF
         :step_path => job.path,
         :task_cpus => 1,
         :time => '2min', 
-        :env_cmd => '_JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m"',
+        :env => {'JDK_JAVA_OPTIONS' => "-Xms1g -Xmx${MAX_MEMORY}m"},
         :singularity_img => ENV["SINGULARITY_IMG"] || "~/rbbt.singularity.img",
         :singularity_ruby_inline => ENV["SINGULARITY_RUBY_INLINE"] || "~/.singularity_ruby_inline",
         :singularity_opt_dir => ENV["SINGULARITY_OPT_DIR"] || "~/singularity_opt",
@@ -373,6 +375,13 @@ function batch_sync_contain_dir(){
         EOF
       end
 
+      if options[:env]
+        prepare_environment +=<<-EOF
+# Set ENV variables 
+#{options[:env].collect{|n,v| "export #{n}=\"#{v}\"" } * "\n"}
+        EOF
+      end
+
       if options[:singularity]
 
         group, user, user_group, scratch_group_dir, projects_group_dir = options.values_at :group, :user, :user_group, :scratch_group_dir, :projects_group_dir
@@ -414,7 +423,7 @@ echo "user_scratch: #{scratch_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" 
         end
       end
 
-      batch_system_variables + load_modules(modules) + "\n" + load_conda(conda) + "\n"  + functions + "\n" + prepare_environment
+      [batch_system_variables, load_modules(modules), load_conda(conda), functions, prepare_environment].reject{|s| s.empty? } * "\n"
     end
 
     def execute(options)
@@ -426,9 +435,11 @@ step_path=$(
 )
 exit_status=$?
 
-[[ -z $BATCH_JOB_ID ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_job $BATCH_JOB_ID
-[[ -z $BATCH_SYSTEM ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_system $BATCH_SYSTEM
-#{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_cpus #{task_cpus}
+if [ $exit_status -eq 0 ]; then
+  [[ -z $BATCH_JOB_ID ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_job $BATCH_JOB_ID
+  [[ -z $BATCH_SYSTEM ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_system $BATCH_SYSTEM
+  #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_cpus #{task_cpus}
+fi
       EOF
 
       script
@@ -521,7 +532,7 @@ exit $exit_status
 #{meta_data}
 
 # #{Log.color :green, "1. Prepare environment"}
-#{prepare_environment}
+#{prepare_environment(batch_options)}
 env > #{batch_options[:fenv]}
 
 # #{Log.color :green, "2. Execute"}
@@ -590,7 +601,7 @@ env > #{batch_options[:fenv]}
       workflow = job.workflow
       task_name = job.task_name
 
-      options = options.merge(HPC::Orchestration.job_rules(HPC::Orchestration.orchestration_rules(orchestration_rules_file), job)) if orchestration_rules_file
+      options = options.merge(HPC::Orchestration.job_rules(HPC::Orchestration.orchestration_rules(orchestration_rules_file), job, true)) if orchestration_rules_file
 
       workflows_to_load = job.rec_dependencies.select{|d| Step === d}.collect{|d| d.workflow }.compact.collect(&:to_s) - [workflow.to_s]
 
