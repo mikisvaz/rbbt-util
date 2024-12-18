@@ -11,6 +11,8 @@ rbbt.require('Cairo')
 
 rbbt.SVG.extract <- function(plot, size=NULL, prefix=NULL, entity.geom='geom_point', data=NULL, ...){
 
+    if (is.null(data)) data = plot$data;
+
     if (is.null(prefix)) prefix = rbbt.random_string();
 
     if (!endsWith(prefix, '.'))
@@ -32,13 +34,16 @@ rbbt.SVG.extract <- function(plot, size=NULL, prefix=NULL, entity.geom='geom_poi
     }
 
     grid.force()
+
     if (!is.null(data[["Entity"]]))
         grid.garnish(entity.geom, 'data-entity'= data[["Entity"]], group = FALSE, grep = TRUE, redraw = TRUE)
+    else
+        grid.garnish(entity.geom, 'data-entity'= rownames(data), group = FALSE, grep = TRUE, redraw = TRUE)
+
     if (!is.null(data[["Entity type"]]))
         grid.garnish(entity.geom, 'data-entity_type' = data[["Entity type"]], group = FALSE, grep = TRUE, redraw = TRUE)
-    if (!is.null(data[["Title"]]))
-        grid.garnish(entity.geom, 'title' = data[["Title"]], group = FALSE, grep = TRUE, redraw = TRUE)
-
+    else if (!is.null(attributes(data)$key.field))
+        grid.garnish(entity.geom, 'data-entity_type' = rep(attributes(data)$key.field, length(rownames(data))), group = FALSE, grep = TRUE, redraw = TRUE)
 
     mysvg <- grid.export(prefix=prefix, strict = FALSE, ...)
 
