@@ -3,7 +3,7 @@ require 'rbbt/util/python'
 
 class TestPython < Test::Unit::TestCase
 
-  def _test_python
+  def test_python
     TmpFile.with_file do |tmpdir|
       code =<<-EOF
 def python_test(a, b):
@@ -42,7 +42,7 @@ def python_test(a, b):
     end
   end
 
-  def _test_run_log
+  def test_run_log
     TmpFile.with_file do |tmpdir|
       code =<<-EOF
 import sys
@@ -66,7 +66,7 @@ def python_print():
     end
   end
 
-  def _test_keras
+  def test_keras
     keyword_test :tensorflow do
       defined = RbbtPython.run do
         pyimport "tensorflow.keras.models", as: :km
@@ -76,7 +76,7 @@ def python_print():
     end
   end
 
-  def _test_keras_import
+  def test_keras_import
     keyword_test :tensorflow do
       defined = RbbtPython.run do
         pyfrom "tensorflow.keras.models", import: :Sequential
@@ -86,7 +86,7 @@ def python_print():
     end
   end
 
-  def _test_iterate
+  def test_iterate
     a2, b2 = nil, nil
     RbbtPython.run :numpy, as: :np do 
       a = np.array([1,2])
@@ -102,12 +102,12 @@ def python_print():
     assert_equal [2,4], b2
   end
 
-  def _test_lambda
+  def test_lambda
     l = PyCall.eval "lambda e: e + 2"
     assert_equal 5, l.(3)
   end
 
-  def _test_binding
+  def test_binding
     raised = false
     RbbtPython.binding_run do
       pyimport :torch
@@ -131,17 +131,17 @@ def python_print():
     assert raised
   end
 
-  def _test_import_method
+  def test_import_method
     random = RbbtPython.import_method :torch, :rand, :random
     assert random.call(1).numpy.to_f > 0
   end
 
-  def _test_class_new_obj
+  def test_class_new_obj
     obj = RbbtPython.class_new_obj("torch.nn", "Module")
     assert_equal "Module()", obj.to_s
   end
 
-  def _test_single
+  def test_single
     a = RbbtPython.run_direct :numpy do
       numpy.array([1,2])
     end
@@ -154,25 +154,5 @@ def python_print():
     end
     assert a.methods.include? :__pyptr__
   end
-
-  def _test_single_lock
-    list = %w(TP53 MDM2 BRCA1 KRAS)
-    RbbtPython.run :gprofiler do
-      res = gprofiler.GProfiler.new(return_dataframe:true).profile(organism:'hsapiens', query: list, sources: %w(GO:BP))
-
-      tsv = RbbtPython.df2tsv res
-      tsv.type = :list
-      tsv.key_field = "Position"
-      tsv = tsv.reorder "native"
-      tsv.fields = tsv.fields.collect{|f| f == "p_value" ? "p-value" : f }
-      tsv.each do |k,v|
-        v[13] = v[13..-1] * "|"
-        v.replace v.slice(0, 14)
-      end
-      res = nil
-      tsv
-    end
-  end
-
 end
 

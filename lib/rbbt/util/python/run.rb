@@ -23,12 +23,7 @@ module RbbtPython
 
     self.thread ||= Thread.new do
       require 'pycall'
-      RbbtPython.run 'sys' do
-        RbbtPython.paths.each do |path|
-          sys.path.append path
-        end
-        nil
-      end
+      RbbtPython.process_paths
       begin
         while block = QUEUE_IN.pop
           break if block == :stop
@@ -96,12 +91,7 @@ module RbbtPython
 
   def self.run_simple(mod = nil, imports = nil, &block)
     self.synchronize do
-      RbbtPython.run_direct 'sys' do
-        while path = RbbtPython.paths.pop
-          sys.path.append path
-        end
-        nil
-      end
+      RbbtPython.process_paths
       run_direct(mod, imports, &block)
     end
   end
@@ -109,4 +99,17 @@ module RbbtPython
   class << self
     alias run run_simple
   end
+
+  def self.run_log(mod = nil, imports = nil, severity = 0, severity_err = nil, &block)
+    Log.trap_std("Python STDOUT", "Python STDERR", severity, severity_err) do
+      run(mod, imports, &block)
+    end
+  end
+
+  def self.run_log_stderr(mod = nil, imports = nil, severity = 0, &block)
+    Log.trap_stderr("Python STDERR", severity) do
+      run(mod, imports, &block)
+    end
+  end
+
 end
