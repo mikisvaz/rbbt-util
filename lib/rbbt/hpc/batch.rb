@@ -601,7 +601,7 @@ env > #{batch_options[:fenv]}
       workflow = job.workflow
       task_name = job.task_name
 
-      options = options.merge(HPC::Orchestration.job_rules(HPC::Orchestration.orchestration_rules(orchestration_rules_file), job, true)) if orchestration_rules_file
+      options = IndiferentHash.setup(HPC::Orchestration.job_rules(HPC::Orchestration.orchestration_rules(orchestration_rules_file), job, true)).merge(options) if orchestration_rules_file
 
       workflows_to_load = job.rec_dependencies.select{|d| Step === d}.collect{|d| d.workflow }.compact.collect(&:to_s) - [workflow.to_s]
 
