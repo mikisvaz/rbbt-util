@@ -33,6 +33,8 @@ raise ParameterException.new("Could not detect batch_system: #{Misc.fingerprint 
 
 directory = ARGV.shift
 
+directory = HPC::BATCH_MODULE.jobs.first if directory.nil?
+
 raise ParameterException if directory.nil?
 
 if directory =~ /^[0-9]*$/

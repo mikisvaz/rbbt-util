@@ -746,6 +746,10 @@ env > #{batch_options[:fenv]}
       job_status(job).split(/[\s\.]+/).include?(job.to_s)
     end
 
+    def jobs
+      job_status.split("\n").collect{|l| l.scan(/\d{5,}/).first}.compact.flatten.uniq
+    end
+
     def wait_for_job(batch_dir, time = 1)
       fexit = File.join(batch_dir, 'exit.status')
       fjob = File.join(batch_dir, 'job.id')
