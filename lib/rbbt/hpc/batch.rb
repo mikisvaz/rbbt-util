@@ -47,8 +47,9 @@ module HPC
 
   module TemplateGeneration
     def exec_cmd(job, options = {})
-      env_cmd     = IndiferentHash.process_options options, :env_cmd
-      development = IndiferentHash.process_options options, :development
+      options = IndiferentHash.add_defaults options, :launcher => :srun if HPC.batch_system == SLURM
+
+      launcher, env_cmd, development = IndiferentHash.process_options options, :launcher, :env_cmd, :development
 
       if contain = options[:contain]
         contain = File.expand_path(contain)
@@ -87,10 +88,16 @@ module HPC
         singularity_cmd << " #{singularity_img} "
       end
 
+      base_cmd = if launcher
+                   %(#{launcher} rbbt)
+                 else
+                   %(rbbt)
+                 end
+
       if env_cmd
-        exec_cmd = %(env #{env_cmd} rbbt)
+        exec_cmd = %(env #{env_cmd} #{ base_cmd })
       else
-        exec_cmd = %(rbbt)
+        exec_cmd = base_cmd
       end
 
       exec_cmd << "--dev '#{development}'" if development
@@ -174,7 +181,8 @@ EOF
         :sync,
         :contain_and_sync,
         :copy_image,
-        :drbbt,
+        :launcher,
+        :development,
         :env_cmd,
         :env,
         :manifest,
@@ -203,6 +211,8 @@ EOF
         :queue,
         :highmem,
         :exclusive,
+        :launcher,
+        :development,
         :env_cmd,
         :env,
         :user_group,
