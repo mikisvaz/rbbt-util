@@ -5,6 +5,7 @@ module RbbtPython
       @paths ||= []
     end
   end
+
   def self.add_path(path)
     self.paths << path
   end
@@ -21,4 +22,6 @@ module RbbtPython
       nil
     end
   end
+
+  add_paths(Rbbt.python.find_all)
 end

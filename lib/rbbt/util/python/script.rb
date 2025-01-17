@@ -45,7 +45,7 @@ module RbbtPython
     [code, tmp_files]
   end
 
-  def self.save_script_result(file)
+  def self.save_script_result_pickle(file)
     <<-EOF
 
 # Save
@@ -61,9 +61,34 @@ if result is not None:
 
   def self.load_pickle(file)
     require 'python/pickle'
+    Log.debug ("Loading pickle #{file}")
     Python::Pickle.load_file(file)
   end
 
+  def self.save_script_result_json(file)
+    <<-EOF
+
+# Save
+try: result
+except NameError: result = None
+if result is not None:
+  import json
+  file = open('#{file}', 'w', encoding='utf-8')
+  # dump information to that file
+  file.write(json.dumps(result))
+  file.flush
+  file.close
+    EOF
+  end
+
+  def self.load_json(file)
+    JSON.load_file(file)
+  end
+
+  class << self
+    alias save_script_result save_script_result_pickle
+    alias load_result load_pickle
+  end
 
   def self.script(text, variables = {})
     if variables.any?
@@ -74,10 +99,11 @@ if result is not None:
     TmpFile.with_file do |tmp_file|
       text += save_script_result(tmp_file)
       Log.debug "Running python script:\n#{text.dup}"
-      CMD.cmd_log(:python, {in: text})
-      tmp_files.each{|file| Open.rm_rf file }
+      path_env = RbbtPython.paths * ":"
+      CMD.cmd_log("env PYTHONPATH=#{path_env} python", {in: text})
+      tmp_files.each{|file| Open.rm_rf file } if tmp_files
       if Open.exists?(tmp_file)
-        load_pickle(tmp_file)
+        load_result(tmp_file)
       end
     end
   end

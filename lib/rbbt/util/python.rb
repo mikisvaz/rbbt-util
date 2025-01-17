@@ -21,7 +21,7 @@ module RbbtPython
 
   def self.init_rbbt
     if ! defined?(@@__init_rbbt_python) || ! @@__init_rbbt_python
-      add_paths(Rbbt.python.find_all)
+      RbbtPython.process_paths
       res = RbbtPython.run do
         Log.debug "Loading python 'rbbt' module into pycall RbbtPython module"
         pyimport("rbbt")
@@ -31,6 +31,7 @@ module RbbtPython
   end
 
   def self.import_method(module_name, method_name, as = nil)
+    init_rbbt
     RbbtPython.pyfrom module_name, import: method_name
     RbbtPython.method(method_name)
   end
@@ -40,6 +41,7 @@ module RbbtPython
   end
   
   def self.get_module(module_name)
+    init_rbbt
     save_module_name = module_name.to_s.gsub(".", "_")
     RbbtPython.pyimport(module_name, as: save_module_name)
     RbbtPython.send(save_module_name)
@@ -146,3 +148,5 @@ module RbbtPython
     binding.instance_exec *args, &block
   end
 end
+
+RbbtPython.add_path Rbbt.python.find(:lib)
