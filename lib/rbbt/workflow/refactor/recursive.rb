@@ -6,7 +6,7 @@ module Workflow
   def rec_input_types(task_name)
     tasks[task_name].recursive_inputs.inject({}) do |acc,l|
       name, type, desc, default, options = l
-      acc.merge!(name => type)
+      acc.merge!(name => type) unless acc.include?(name)
       acc
     end
   end
@@ -15,7 +15,7 @@ module Workflow
   def rec_input_descriptions(task_name)
     tasks[task_name].recursive_inputs.inject({}) do |acc,l|
       name, type, desc, default, options = l
-      acc.merge!(name => desc)  unless desc.nil?
+      acc.merge!(name => desc)  unless desc.nil? || acc.include?(name)
       acc
     end
   end
@@ -23,7 +23,7 @@ module Workflow
   def rec_input_defaults(task_name)
     tasks[task_name].recursive_inputs.inject({}) do |acc,l|
       name, type, desc, default, options = l
-      acc.merge!(name => default)  unless default.nil?
+      acc.merge!(name => default)  unless default.nil? || acc.include?(name)
       acc
     end
   end
@@ -31,7 +31,7 @@ module Workflow
   def rec_input_options(task_name)
     tasks[task_name].recursive_inputs.inject({}) do |acc,l|
       name, type, desc, default, options = l
-      acc.merge!(name => options) unless options.nil?
+      acc.merge!(name => options) unless options.nil? unless acc.include?(name)
       acc
     end
   end
