@@ -1,8 +1,8 @@
 require File.expand_path(File.dirname(__FILE__) + '/../../test_helper')
-require 'rbbt/tsv'
-require 'rbbt/tsv/util'
-require 'rbbt/util/tmpfile'
+require 'scout/tsv'
+require 'scout/tmpfile'
 require 'test/unit'
+require 'rbbt/tsv/util'
 
 class TestTSVUtil < Test::Unit::TestCase
 

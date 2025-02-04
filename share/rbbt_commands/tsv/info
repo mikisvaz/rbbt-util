@@ -14,10 +14,7 @@ Display summary information. Works with Tokyocabinet HDB and BDB as well.
 
 -tch--tokyocabinet File is a TC HDB
 -tcb--tokyocabinet_bd File is a TC BDB
--t--type* Type of tsv (single, list, double, flat)
 -hh--header_hash* Change the character used to mark the header line (defaults to #)
--k--key_field* Change the key field
--f--fields* Change the fields to load
 -fp--fingerprint Fingerprint values
 -s--sep* Change the fields separator (default TAB)
 -h--help Help
@@ -32,8 +29,8 @@ file = STDIN if file == '-'
 raise ParameterException, "Please specify the tsv file as argument" if file.nil?
 
 options[:fields] = options[:fields].split(/[,\|]/) if options[:fields]
-options[:header_hash] = options["header_hash"]
-options[:sep] = options["sep"]
+
+options.keys_to_sym!
 
 case
 when options[:tokyocabinet]
@@ -43,16 +40,16 @@ when options[:tokyocabinet_bd]
   tsv = Persist.open_tokyocabinet(file, false, nil, TokyoCabinet::BDB)
   puts tsv.summary
 else
-  header = TSV.parse_header(Open.open(file, :nocache => true), options)
+  options, key_field, fields, first_line = TSV.parse_header(Open.open(file, :nocache => true), **options)
 
   puts "File: #{ file }"
-  puts "Type: #{header.type}"
-  puts "Namespace: #{header.namespace}"
-  puts "Key: #{Log.color :yellow, header.key_field}"
+  puts "Type: #{options[:type]}"
+  puts "Namespace: #{options[:namespace]}"
+  puts "Key: #{Log.color :yellow, key_field}"
   puts "Fields: "
-  if header.fields.nil?
+  if fields.nil?
   else
-    header.fields.each_with_index do |f,i|
+    fields.each_with_index do |f,i|
       puts "  - #{Log.color :cyan, i + 1}: " << Log.color(:yellow, f)
     end
   end
@@ -71,9 +68,9 @@ else
   
   puts "Rows: #{Log.color :blue, rows}" 
   parts = []
-  header.first_line.split(header.sep, -1).each_with_index do |p,i| 
+  first_line.split(options[:sep] || "\t", -1).each_with_index do |p,i| 
    p.strip!
-   p = Misc.fingerprint p.split("|") if %w(double flat).include?(header.options[:type].to_s) && options[:fingerprint]
+   p = Misc.fingerprint p.split("|") if %w(double flat).include?(options[:type].to_s) && options[:fingerprint]
    parts << (Log.color(:cyan, "(#{i}) ") << p.strip) 
   end
   puts parts * "\t"

@@ -1,4 +1,5 @@
 require 'rbbt/workflow'
+require 'rbbt/tsv'
 class RemoteWorkflow
   include Workflow
 
@@ -23,7 +24,7 @@ class RemoteWorkflow
     name
   end
 
-  def __job(task, name = nil, inputs = {})
+  def remote_job(task, name = nil, inputs = {})
     task_info = task_info(task)
     fixed_inputs = {}
     input_types = IndiferentHash.setup(task_info[:input_types])
@@ -32,6 +33,8 @@ class RemoteWorkflow
       k = k.to_sym
       if TSV === v
         fixed_inputs[k] = v.to_s
+      elsif Path === v && Path.step_file?(v)
+        fixed_inputs[k] = v.identify
       else
         next if input_types[k].nil?
         case input_types[k].to_sym
@@ -48,6 +51,8 @@ class RemoteWorkflow
     step.workflow = self
     step
   end
+
+  alias job remote_job
 
   def load_id(id)
     task, name = id.split("/")

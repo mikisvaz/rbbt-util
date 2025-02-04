@@ -1,5 +1,3 @@
-require 'rbbt/association'
-
 module TSV
   def self.read_matrix(tsv, field_format = "ID", value_format = "Value", *others)
     tsv = TSV.open(tsv) unless TSV === tsv
@@ -32,6 +30,8 @@ module TSV
   end
 
   def matrix_melt(*args)
+    require 'rbbt/association'
+
     tsv = TSV.read_matrix(self, *args)
 
     melt = Association.index tsv, :persist => false, :recycle => true

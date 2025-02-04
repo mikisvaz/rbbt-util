@@ -140,5 +140,19 @@ def python_print():
     obj = RbbtPython.class_new_obj("torch.nn", "Module")
     assert_equal "Module()", obj.to_s
   end
+
+  def test_single
+    a = RbbtPython.run_direct :numpy do
+      numpy.array([1,2])
+    end
+    assert a.methods.include? :__pyptr__
+  end
+
+  def test_threaded
+    a = RbbtPython.run_threaded :numpy do
+      numpy.array([1,2])
+    end
+    assert a.methods.include? :__pyptr__
+  end
 end
 

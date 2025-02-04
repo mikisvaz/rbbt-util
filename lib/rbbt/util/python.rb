@@ -1,6 +1,10 @@
 require 'rbbt-util'
-require 'pycall/import'
+require 'rbbt/util/python/paths'
+require 'rbbt/util/python/run'
 require 'rbbt/util/python/util'
+require 'rbbt/util/python/script'
+
+require 'pycall/import'
 
 module RbbtPython
   extend PyCall::Import
@@ -15,41 +19,19 @@ module RbbtPython
     end
   end
 
-  def self.script(text, options = {})
-    Log.debug "Running python script:\n#{text.dup}"
-    text = StringIO.new text unless IO === text
-    CMD.cmd_log(:python, options.merge(:in => text))
-  end
-
-  def self.add_path(path)
-    begin
-      self.run 'sys' do
-        sys.path.append path
-      end
-    rescue
-      raise RbbtPythonException, 
-        "Could not add path #{Misc.fingerprint path} to python sys: " + $!.message
-    end
-  end
-
-  def self.add_paths(paths)
-    self.run 'sys' do
-      paths.each do |path|
-        sys.path.append path
-      end
-    end
-  end
-
   def self.init_rbbt
     if ! defined?(@@__init_rbbt_python) || ! @@__init_rbbt_python
-      Log.debug "Loading python 'rbbt' module into pycall RbbtPython module"
-      RbbtPython.add_paths(Rbbt.python.find_all)
-      RbbtPython.pyimport("rbbt")
+      RbbtPython.process_paths
+      res = RbbtPython.run do
+        Log.debug "Loading python 'rbbt' module into pycall RbbtPython module"
+        pyimport("rbbt")
+      end
       @@__init_rbbt_python = true
     end
   end
 
   def self.import_method(module_name, method_name, as = nil)
+    init_rbbt
     RbbtPython.pyfrom module_name, import: method_name
     RbbtPython.method(method_name)
   end
@@ -57,11 +39,17 @@ module RbbtPython
   def self.call_method(module_name, method_name, *args)
     RbbtPython.import_method(module_name, method_name).call(*args)
   end
-
-  def self.get_class(module_name, class_name)
+  
+  def self.get_module(module_name)
+    init_rbbt
     save_module_name = module_name.to_s.gsub(".", "_")
     RbbtPython.pyimport(module_name, as: save_module_name)
-    RbbtPython.send(save_module_name).send(class_name)
+    RbbtPython.send(save_module_name)
+  end
+
+  def self.get_class(module_name, class_name)
+    mod = get_module(module_name)
+    mod.send(class_name)
   end
 
   def self.class_new_obj(module_name, class_name, args={})
@@ -73,7 +61,6 @@ module RbbtPython
   end
 
   def self.iterate_index(elem, options = {})
-    iii :interate_index
     bar = options[:bar]
 
     len = PyCall.len(elem)
@@ -152,54 +139,6 @@ module RbbtPython
     acc
   end
 
-  def self.run(mod = nil, imports = nil, &block)
-    if mod
-      if Hash === imports
-        pyimport mod, **imports
-      elsif imports.nil?
-        pyimport mod 
-      else
-        pyfrom mod, :import => imports
-      end
-    end
-
-    module_eval(&block)
-  end
-
-  def self.run_log(mod = nil, imports = nil, severity = 0, severity_err = nil, &block)
-    if mod
-      if imports == "*" || imports == ["*"]
-        pyfrom mod
-      elsif Array === imports
-        pyfrom mod, :import => imports
-      elsif Hash === imports
-        pyimport mod, imports
-      else
-        pyimport mod 
-      end
-    end
-
-    Log.trap_std("Python STDOUT", "Python STDERR", severity, severity_err) do
-      module_eval(&block)
-    end
-  end
-
-  def self.run_log_stderr(mod = nil, imports = nil, severity = 0, &block)
-    if mod
-      if Array === imports
-        pyfrom mod, :import => imports
-      elsif Hash === imports
-        pyimport mod, imports
-      else
-        pyimport mod 
-      end
-    end
-
-    Log.trap_stderr("Python STDERR", severity) do
-      module_eval(&block)
-    end
-  end
-
   def self.new_binding
     Binding.new
   end
@@ -209,3 +148,5 @@ module RbbtPython
     binding.instance_exec *args, &block
   end
 end
+
+RbbtPython.add_path Rbbt.python.find(:lib)

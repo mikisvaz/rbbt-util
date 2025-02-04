@@ -18,9 +18,9 @@ $slurm_options = SOPT.get <<EOF
 -si--singularity_img* Singularity image to use
 -sm--singularity_mounts* Singularity image to use
 -ug--user_group* Use alternative user group for group project directory
--c--contain* Contain in directory (using Singularity)
--s--sync* Contain in directory and sync jobs
--e--exclusive Make exclusive use of the node
+--contain* Contain in directory (using Singularity)
+--sync* Contain in directory and sync jobs
+--exclusive Make exclusive use of the node
 -hm--highmem Make use of highmem cores
 -wc--wipe_container* Wipe the jobs from the contain directory
 -pd--purge_deps Purge job dependencies
@@ -57,7 +57,7 @@ raise ParameterException.new("Could not detect batch_system: #{Misc.fingerprint 
 
 class Step
   def join
-    HPC::BATCH_MODULE.wait_for_job(@batch_job_dir)
+    HPC::BATCH_MODULE.wait_for_job(@batch_job_dir) unless done?
   end
 
   def run(no_load = true)

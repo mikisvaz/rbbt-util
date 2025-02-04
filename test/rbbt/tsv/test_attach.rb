@@ -1,12 +1,39 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../..', 'test_helper.rb')
 require 'rbbt/tsv'
 require 'rbbt/tsv/attach'
-require 'rbbt'
 
 class TestAttach < Test::Unit::TestCase
+
+  def test_attach_simple
+    content1 =<<-EOF
+#: :sep=" "
+#ID    ValueA    ValueB
+row1    a|aa|aaa    b
+row2    A    B
+    EOF
+
+    content2 =<<-EOF
+#: :sep=" "
+#ID    ValueB    OtherID
+row1    b    Id1|Id2
+row3    B    Id3
+    EOF
+
+    TmpFile.with_file(content1) do |filename1|
+      TmpFile.with_file(content2) do |filename2|
+        tsv = TSV.open(filename1)
+        other = TSV.open(filename2)
+        tsv.attach other, :complete => true
+        assert_equal %w(Id1 Id2), tsv["row1"]["OtherID"]
+        assert_equal %w(Id3), tsv["row3"]["OtherID"]
+        assert_equal %w(B), tsv["row3"]["ValueB"]
+      end
+    end
+  end
+
   def test_attach_same_key
     content1 =<<-EOF
-#Id    ValueA    ValueB
+#ID    ValueA    ValueB
 row1    a|aa|aaa    b
 row2    A    B
     EOF
@@ -19,11 +46,11 @@ row3    B    Id3
 
     tsv1 = tsv2 = nil
     TmpFile.with_file(content1) do |filename|
-      tsv1 = TSV.open(File.open(filename), :double, :sep => /\s+/)
+      tsv1 = TSV.open(File.open(filename), type: :double, :sep => /\s+/)
     end
 
     TmpFile.with_file(content2) do |filename|
-      tsv2 = TSV.open(File.open(filename), :double, :sep => /\s+/)
+      tsv2 = TSV.open(File.open(filename), type: :double, :sep => /\s+/)
     end
 
     tsv1.attach_same_key tsv2, "OtherID"
@@ -48,7 +75,7 @@ row3    B    Id3
       tsv2 = TSV.open(File.open(filename), :double, :sep => /\s+/)
     end
 
-    tsv1.attach_same_key tsv2, "OtherID"
+    tsv1.attach tsv2, fields: "OtherID"
 
     assert_equal %w(ValueA ValueB OtherID), tsv1.fields
     assert_equal "Id1", tsv1["row1"]["OtherID"]
@@ -216,9 +243,11 @@ row2    E
     tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
     tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
 
-    tsv2.identifiers = Rbbt.tmp.test.test2.identifiers.produce.find #.to_s
+    tsv2.identifiers = Rbbt.tmp.test.test2.identifiers.produce(true).find #.to_s
 
-    tsv1.attach tsv2, :fields => ["OtherID"] #, :persist_input => true
+    index = tsv2.identifiers.tsv.index :target => "ValueE"
+
+    tsv1.attach tsv2, :fields => ["OtherID"], index: index
     
     assert_equal tsv1.fields, %w(ValueA ValueB OtherID)
     assert_equal %w(Id1 Id2), tsv1["row1"]["OtherID"]
@@ -248,7 +277,7 @@ row2    E
 
     tsv1 = tsv2 = identifiers = nil
     TmpFile.with_file(content1) do |filename|
-      tsv1 = TSV.open(Path.setup(filename), :key => "Id")
+      tsv1 = TSV.open(Path.setup(filename), :key_field => "Id")
     end
 
     TmpFile.with_file(content2) do |filename|
@@ -268,59 +297,59 @@ row2    E
 
   def test_merge_different_rows
     file1 =<<-EOF
-row6 dd dd ee
-row1 a b c
-row2 A B C
-row3 1 2 3
+row6,dd,dd,ee
+row1,a,b,c
+row2,A,B,C
+row3,1,2,3
    EOF
     file2 =<<-EOF
-row20 rr rr
-row1 d e
-row2 D E
-row4 x y z
+row20,rr,rr
+row1,d,e
+row2,D,E
+row4,x,y,z
     EOF
     result =<<-EOF
-row1 a b c d e
-row2 A B C D E
-row20    rr rr
-row3 1 2 3  
-row4    x y z
-row6 dd dd ee  
+row1,a,b,c,d,e
+row2,A,B,C,D,E
+row20,,,,rr,rr
+row3,1,2,3,,
+row4,,,,x,y,z
+row6,dd,dd,ee,,
     EOF
 
     TmpFile.with_file do |f|
-      TSV.merge_different_fields(StringIO.new(file1), StringIO.new(file2), f, :sep => " ")
-      assert_equal result, Open.read(f)
+      TSV.merge_different_fields(StringIO.new(file1), StringIO.new(file2), f, :sep => ",", :sort => true)
+      assert_equal result, Open.read(f).gsub("\t", ',')
     end
   end
 
   def test_merge_different_rows_tsv
     file1 =<<-EOF
-row6 dd dd ee
-row1 a b c
-row2 A B C
-row3 1 2 3
+row6,dd,dd,ee
+row1,a,b,c
+row2,A,B,C
+row3,1,2,3
    EOF
     file2 =<<-EOF
-row20 rr rr
-row1 d e
-row2 D E
-row4 x y
+row20,rr,rr
+row1,d,e
+row2,D,E
+row4,x,y
     EOF
     result =<<-EOF
-row1 a b c d e
-row2 A B C D E
-row20    rr rr
-row3 1 2 3  
-row4    x y
-row6 dd dd ee  
+row1,a,b,c,d,e
+row2,A,B,C,D,E
+row20,,,,rr,rr
+row3,1,2,3,,
+row4,,,,x,y
+row6,dd,dd,ee,,
     EOF
 
     TmpFile.with_file do |f|
-      tsv1 = TSV.open StringIO.new(file1), :sep => " "
-      tsv2 = TSV.open StringIO.new(file2), :sep => " "
-      tsv_r = tsv1.merge_different_fields tsv2
-      assert_equal result, tsv_r.to_s(tsv_r.keys.sort, true).gsub(/\t/,' ')
+      tsv1 = TSV.open StringIO.new(file1), :sep => ","
+      tsv2 = TSV.open StringIO.new(file2), :sep => ","
+      tsv_r = TSV.open(TSV.paste_streams([tsv1.stream, tsv2.stream], sort: true))
+      assert_equal result, tsv_r.to_s(tsv_r.keys.sort, preamble: false, fields: nil).gsub(/\t/,',')
     end
   end
 
@@ -343,7 +372,6 @@ row4,x,y
 
     # Might be slightly different ...
     result1 =<<-EOF
-#: :sep=,
 #ID,letterA,letterB,letterC,letterD,letterE
 row1,aa|a,bb|b,cc|c,d,e
 row2,A,B,C,D,E
@@ -353,7 +381,6 @@ row4,,,,x,y
 row6,dd,dd,ee,,
     EOF
     result2 =<<-EOF
-#: :sep=,
 #ID,letterA,letterB,letterC,letterD,letterE
 row1,a|aa,b|bb,c|cc,d,e
 row2,A,B,C,D,E
@@ -364,9 +391,9 @@ row6,dd,dd,ee,,
     EOF
 
     TmpFile.with_file do |f|
-      TSV.merge_different_fields StringIO.new(file1), StringIO.new(file2), f, :sep => ','
-      # ... so check for either
-      assert(Open.read(f) == result1 || Open.read(f) == result2)
+      TSV.merge_different_fields StringIO.new(file1), StringIO.new(file2), f, :sep => ',', :sort => true
+      tsv_text = TSV.open(f, :merge => true).to_s(:preamble => false).gsub(/\t/,',')
+      assert((tsv_text == result1) || (tsv_text == result2))
     end
   end
 
@@ -396,9 +423,9 @@ row6,dd,dd,ee,,
     TmpFile.with_file do |f|
       data1 = TSV.open StringIO.new(file1), :sep => ',', :merge => true
       data2 = TSV.open StringIO.new(file2), :sep => ',', :merge => true
-      data3 = data1.merge_different_fields(data2)
+      data3 = data1.merge_different_fields(data2, sort: true)
       data3.each do |key, list|
-        list.each do |l| l.replace l.sort_by{|v| v.length}.reverse end
+        list.each do |l| l.replace l.sort_by{|v| v.nil? ? 0 : v.length}.reverse end
       end
 
       assert_equal result, data3.to_s(:sort, true).gsub(/\t/,',')
@@ -420,8 +447,6 @@ row3,1,2,3
         assert Open.read(output).index "a|aa"
       end
     end
-
-
   end
 
   def test_one2one
@@ -433,10 +458,10 @@ row3    A    b|bb
     EOF
 
     content2 =<<-EOF
-#ValueB    OtherID
-b    Id1|Id2
-B    Id3
-bb   Id4
+#ValueC ValueB    OtherID
+c b|b2    Id1|Id2
+C B    Id3
+cc bb   Id4
     EOF
    tsv1 = tsv2 = nil
     TmpFile.with_file(content1) do |filename|
@@ -447,7 +472,7 @@ bb   Id4
       tsv2 = TSV.open(File.open(filename), :double, :sep => /\s+/)
     end
 
-    tsv1.attach tsv2, :one2one => true
+    tsv1.attach tsv2, :one2one => true, :fields => "OtherID"
 
     assert_equal %w(ValueA ValueB OtherID), tsv1.fields
     assert_equal %w(Id1 Id4), tsv1["row3"]["OtherID"]
@@ -528,6 +553,7 @@ row5,D
     assert_equal tsv1.attach(tsv2)["row2"]["OtherID"], %w(Id3)
 
     assert_equal tsv1.attach(tsv4)["row1"]["ValueD"], %w(d)
+    tsv4.key_field = tsv1.key_field
     assert_equal tsv4.attach(tsv1)["row1"]["bar (ValueB)"], %w(b)
     assert_equal tsv3.attach(tsv1)["b"]["ValueD"], %w(d)
   end
@@ -565,6 +591,9 @@ row2,CC
       tsv3.keys.each{|k| tsv3[k] = nil if tsv3[k] == ""}
     end
 
+    tmp = tsv1.attach(tsv2, :complete => true)
+    tmp = tmp.attach(tsv3, :complete => true)
+    assert_equal [nil, "B", nil], tsv1.attach(tsv2, :complete => true).attach(tsv3, :complete => true)["row1"]
     assert_equal [nil, "B", nil], tsv1.attach(tsv2, :complete => true).attach(tsv3, :complete => true)["row1"]
   end
 
@@ -660,9 +689,6 @@ row3    C
 
     tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/
     tsv2 = Rbbt.tmp.test.test2.data.produce(true).tsv :double,  :sep => /\s+/
-
-    tsv1.attach tsv2, :complete => ["AA"]
-    assert_equal [["AA"], ["C"]], tsv1["row3"]
   end
 
   def test_attach_complete_identifiers
@@ -699,7 +725,8 @@ row3    ROW_3
 
     tsv1.identifiers = ids
 
-    tsv1.attach tsv2
+    tsv1 = tsv1.attach tsv2
+
     assert_equal [["A"], ["C"]], tsv1["row2"]
 
     tsv1 = Rbbt.tmp.test.test1.data.produce(true).tsv :double,  :sep => /\s+/

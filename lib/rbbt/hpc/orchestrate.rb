@@ -14,12 +14,12 @@ module HPC
 
       all_deps.each do |dep|
         begin
-          Step.prepare_for_execution(dep)
+          dep.clean if (dep.error? && dep.recoverable_error?) ||
+            dep.aborted? || (dep.done? && dep.updated?)
         rescue RbbtException
           next
         end
       end
-
     end
 
     def self.orchestration_rules(orchestration_rules_file = nil)
@@ -41,7 +41,7 @@ module HPC
       IndiferentHash.setup(rules)
     end
 
-    def orchestrate_job(job, options)
+    def orchestrate_job(job, options = {})
       options.delete "recursive_clean"
       options.delete "clean_task"
       options.delete "clean"
@@ -65,7 +65,7 @@ module HPC
       last_id = nil
       last_dir = nil
       while batches.any?
-        top = batches.select{|b| b[:deps].nil? || (b[:deps] - batch_ids.keys).empty? }.first
+        top = batches.select{|b| b[:deps].nil? || (b[:deps].collect{|d| d[:top_level]} - batch_ids.keys).empty? }.first
         raise "No batch without unmet dependencies" if top.nil?
         batches.delete top
 
@@ -78,16 +78,16 @@ module HPC
 
           batch_dependencies = top[:deps].collect{|d| 
             target = d[:top_level]
-            canfail = false
+            canfail = target.canfail?
 
-            top_jobs.each do |job|
-              canfail = true if job.canfail_paths.include?(target.path)
-            end
+            #top_jobs.each do |job|
+            #  canfail = true if job.canfail? # job.canfail_paths.include?(target.path)
+            #end
 
             if canfail
-              'canfail:' + batch_ids[d].to_s
+              'canfail:' + batch_ids[d[:top_level]].to_s
             else
-              batch_ids[d].to_s
+              batch_ids[d[:top_level]].to_s
             end
           }
         end
@@ -99,11 +99,11 @@ module HPC
           puts Log.color(:magenta, "Manifest: ") + Log.color(:blue, job_options[:manifest] * ", ") + " - tasks: #{job_options[:task_cpus] || 1} - time: #{job_options[:time]} - config: #{job_options[:config_keys]}"
           puts Log.color(:yellow, "Deps: ") + Log.color(:blue, job_options[:batch_dependencies]*", ")
           puts Log.color(:yellow, "Path: ") + top[:top_level].path
-          puts Log.color(:yellow, "Options: ") + job_options.inspect
-          batch_ids[top] = top[:top_level].task_signature
+          puts Log.color(:yellow, "Options: ") + job_options.reject{|k,v| k == :batch_dependencies || k == :manifest }.inspect
+          batch_ids[top[:top_level]] = top[:top_level].task_signature
         else
           id, dir = run_job(top[:top_level], job_options)
-          last_id = batch_ids[top] = id
+          last_id = batch_ids[top[:top_level]] = id
           last_dir = dir
         end
       end
@@ -111,5 +111,11 @@ module HPC
       [last_id, last_dir]
     end
 
+    def produce_jobs(jobs, options = {})
+      jobs.each do |job|
+        self.orchestrate_job(job, options)
+      end
+      Step.wait_for_jobs jobs
+    end
   end
 end

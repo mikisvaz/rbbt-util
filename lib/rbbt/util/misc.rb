@@ -1,28 +1,28 @@
-require 'lockfile'
+require_relative '../../rbbt'
 require 'digest/md5'
 require 'cgi'
 require 'zlib'
 require 'etc'
 require 'rubygems/package'
 
-require 'rbbt/util/tar'
-require 'rbbt/util/misc/exceptions'
-require 'rbbt/util/misc/concurrent_stream'
-require 'rbbt/util/misc/indiferent_hash'
-require 'rbbt/util/misc/pipes'
-require 'rbbt/util/misc/format'
-require 'rbbt/util/misc/omics'
-require 'rbbt/util/misc/inspect'
-require 'rbbt/util/misc/math'
-require 'rbbt/util/misc/development'
-require 'rbbt/util/misc/lock'
-require 'rbbt/util/misc/options'
-require 'rbbt/util/misc/system'
-require 'rbbt/util/misc/objects'
-require 'rbbt/util/misc/manipulation'
-require 'rbbt/util/misc/communication'
+require_relative 'tar'
+require_relative 'misc/exceptions'
+require_relative 'misc/concurrent_stream'
+require_relative 'misc/indiferent_hash'
+require_relative 'misc/pipes'
+require_relative 'misc/format'
+require_relative 'misc/omics'
+require_relative 'misc/inspect'
+#require_relative 'misc/math'
+require_relative 'misc/development'
+require_relative 'misc/lock'
+require_relative 'misc/options'
+require_relative 'misc/system'
+require_relative 'misc/objects'
+require_relative 'misc/manipulation'
+require_relative 'misc/communication'
 
-require 'rbbt/util/misc/serialize'
+require_relative 'misc/serialize'
 
 require 'to_regexp'
 
@@ -104,7 +104,26 @@ module Misc
     time
   end
 
-  
+  def self.name2basename(file)
+    sanitize_filename(file.gsub("/",'·').gsub("~", '-'))
+  end
+
+  def self.sanitize_filename(filename, length = 254)
+    if filename.length > length
+      if filename =~ /(\..{2,9})$/
+        extension = $1
+      else
+        extension = ''
+      end
+
+      post_fix = "--#{filename.length}@#{length}_#{Misc.digest(filename)[0..4]}" + extension
+
+      filename = filename[0..(length - post_fix.length - 1)] << post_fix
+    else
+      filename
+    end
+    filename
+  end
 end
 
 module PDF2Text

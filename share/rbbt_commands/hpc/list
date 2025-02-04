@@ -206,7 +206,6 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
         require 'rbbt/workflow'
         step_path = step_line.split(": ").last.strip
         step = Step.new step_path
-        step.load_dependencies_from_info
         has_bar = false
         [step].reverse.each do |j|
           next if j.done? 
@@ -218,6 +217,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
             prog_rep << [rep]
           end
         end
+        prog_rep = [Log.color(step.status, step.status)] if prog_rep.empty?
       end
     end
     workflow, task, name = step_path.split("/")[-3..-1]
@@ -321,7 +321,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
   if tail && File.exist?(File.join(dir, 'std.err'))
     if exit_status && exit_status != 0
       puts Log.color(:magenta, "First error or exception found: ")
-      puts CMD.cmd("grep -i -w 'error\\|[a-z]*exception' #{File.join(dir, 'std.err')} -A #{tail.to_i} |head -n #{tail.to_i}", :no_fail => true).read
+      puts CMD.cmd("grep -i 'error\\|exception' #{File.join(dir, 'std.err')} -A #{tail.to_i} |head -n #{tail.to_i}", :no_fail => true).read
     elsif exit_status
       puts Log.color(:magenta, "Completed jobs: ")
       puts CMD.cmd("grep -i -w 'Completed step' #{File.join(dir, 'std.err')} | grep -v 'Retrying dep.' | tail -n #{tail.to_i}", :no_fail => true).read
@@ -337,7 +337,6 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
       require 'rbbt/workflow'
       step_path = step_line.split(": ").last.strip
       step = Step.new step_path
-      step.load_dependencies_from_info
       has_bar = false
       (step.rec_dependencies + [step]).reverse.each do |j|
         next if j.done? 

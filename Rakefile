@@ -10,11 +10,12 @@ begin
     gem.email = "miguel.vazquez.g@bsc.es"
     gem.homepage = "http://github.com/mikisvaz/rbbt-util"
     gem.authors = ["Miguel Vazquez"]
-    gem.files = Dir['lib/**/*.rb', 'share/**/*.rb', 'share/**/Rakefile', 'share/rbbt_commands/pbs/*', 'share/rbbt_commands/slurm/*', 'share/rbbt_commands/lsf/*', 'share/rbbt_commands/**/*', 'share/*.ru', 'share/Rlib/*.R', 'share/color/*', 'share/install/software/*', 'share/install/software/lib/install_helpers', 'LICENSE', 'bin/rbbt_commands/*', 'etc/app.d/*', 'python/**/*.py']
+    gem.files = Dir['lib/**/*.rb', 'share/**/*.rb', 'share/**/Rakefile', 'share/rbbt_commands/pbs/*', 'share/rbbt_commands/slurm/*', 'share/rbbt_commands/lsf/*', 'share/rbbt_commands/**/*', 'share/*.ru', 'share/Rlib/*.R', 'share/color/*', 'share/software/opt/ssw/*', 'share/install/software/*', 'share/install/software/lib/install_helpers', 'LICENSE', 'bin/rbbt_commands/*', 'etc/app.d/*', 'python/**/*.py']
     gem.executables = ['rbbt_query.rb', 'rbbt_exec.rb', 'rbbt_Rutil.rb', 'rbbt', 'rbbt_dangling_locks.rb', 'rbbt_find.rb']
     #gem.test_files = Dir['test/**/test_*.rb']
 
     
+    gem.add_dependency('scout-gear')
     gem.add_dependency('rake')
     gem.add_dependency('lockfile')
     gem.add_dependency('highline')

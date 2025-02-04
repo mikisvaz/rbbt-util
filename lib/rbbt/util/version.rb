@@ -1,3 +1,5 @@
+require 'scout/path'
+require 'scout/indiferent_hash'
 module Rbbt
   VERSIONS = IndiferentHash.setup({})
 

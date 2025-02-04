@@ -24,7 +24,7 @@ module HPC
       when 'pbs'
         HPC::PBS
       else
-        case Rbbt::Config.get(:batch_system, :batch, :batch_system, :hpc, :HPC, :BATCH).to_s.downcase
+        case Scout::Config.get(:batch_system, :batch, :batch_system, :hpc, :HPC, :BATCH).to_s.downcase
         when 'slurm'
           HPC::SLURM
         when 'lsf'
@@ -47,8 +47,9 @@ module HPC
 
   module TemplateGeneration
     def exec_cmd(job, options = {})
-      env_cmd     = Misc.process_options options, :env_cmd
-      development = Misc.process_options options, :development
+      options = IndiferentHash.add_defaults options, :launcher => :srun if HPC.batch_system == SLURM
+
+      launcher, env_cmd, development = IndiferentHash.process_options options, :launcher, :env_cmd, :development
 
       if contain = options[:contain]
         contain = File.expand_path(contain)
@@ -87,10 +88,16 @@ module HPC
         singularity_cmd << " #{singularity_img} "
       end
 
+      base_cmd = if launcher
+                   %(#{launcher} rbbt)
+                 else
+                   %(rbbt)
+                 end
+
       if env_cmd
-        exec_cmd = %(env #{env_cmd} rbbt)
+        exec_cmd = %(env #{env_cmd} #{ base_cmd })
       else
-        exec_cmd = %(rbbt)
+        exec_cmd = base_cmd
       end
 
       exec_cmd << "--dev '#{development}'" if development
@@ -103,36 +110,29 @@ module HPC
     def rbbt_job_exec_cmd(job, options)
 
       jobname  = job.clean_name
-      workflow = job.original_workflow || job.workflow
-      task     = job.original_task_name || job.task_name
+      workflow = job.workflow
+      task     = job.task_name
 
-      Misc.add_defaults options, :jobname => jobname
+      IndiferentHash.add_defaults options, :jobname => jobname
 
-      task = Symbol === job.overriden ? job.overriden : job.task_name
+      task = job.task_name
 
-      override_deps = job.overriden_deps.collect do |dep| 
-        name = [dep.workflow.to_s, dep.task_name] * "#"
-        [name, dep.path] * "="  
-      end.uniq * ","
-
-      options[:override_deps] = override_deps unless override_deps.empty?
-
-      #if job.overriden?
-      #  #override_deps = job.rec_dependencies.
-      #  #  select{|dep| Symbol === dep.overriden }.
-      #  
-      #  override_deps = job.overriden_deps.
-      #    collect do |dep| 
-      #    name = [dep.workflow.to_s, dep.task_name] * "#"
-      #    [name, dep.path] * "="  
-      #  end.uniq * ","
-
-      #  options[:override_deps] = override_deps unless override_deps.empty?
-      #end
+      if job.recursive_overriden_deps.any?
+        override_deps = job.recursive_overriden_deps.
+          select do |dep| Symbol === dep.overriden end.
+          collect do |dep| 
+            o_workflow = dep.overriden_workflow || dep.workflow
+            o_workflow = o_workflow.name if o_workflow.respond_to?(:name)
+            o_task_name = dep.overriden_task || dep.task.name
+            name = [o_workflow, o_task_name] * "#"
+            [name, dep.path] * "="  
+          end.uniq * ","
+          options[:override_deps] = override_deps unless override_deps.empty?
+      end
 
       # Save inputs into inputs_dir
-      inputs_dir = Misc.process_options options, :inputs_dir
-      saved = Step.save_job_inputs(job, inputs_dir) if inputs_dir
+      inputs_dir = IndiferentHash.process_options options, :inputs_dir
+      saved = job.save_inputs(inputs_dir)
       options[:load_inputs] = inputs_dir if saved && saved.any?
 
       saved.each do |input|
@@ -181,8 +181,10 @@ EOF
         :sync,
         :contain_and_sync,
         :copy_image,
-        :drbbt,
+        :launcher,
+        :development,
         :env_cmd,
+        :env,
         :manifest,
         :user_group,
         :wipe_container,
@@ -197,7 +199,7 @@ EOF
 
       keys.each do |key|
         next if options[key].nil?
-        batch_options[key] = Misc.process_options options, key
+        batch_options[key] = IndiferentHash.process_options options, key
       end
 
       batch_dir = batch_options[:batch_dir]
@@ -209,7 +211,10 @@ EOF
         :queue,
         :highmem,
         :exclusive,
+        :launcher,
+        :development,
         :env_cmd,
+        :env,
         :user_group,
         :singularity_img,
         :singularity_mounts,
@@ -220,9 +225,9 @@ EOF
 
       keys_from_config.each do |key|
         next unless batch_options.include? key
-        default_value = Rbbt::Config.get(key, "batch_#{key}", "batch")
+        default_value = Scout::Config.get(key, "batch_#{key}", "batch")
         next if default_value.nil? 
-        Misc.add_defaults batch_options, default_value
+        IndiferentHash.add_defaults batch_options, default_value
       end
 
       user = batch_options[:user] ||= ENV['USER'] || `whoami`.strip
@@ -234,7 +239,7 @@ EOF
 
       if batch_options[:contain_and_sync]
         if batch_options[:contain].nil?
-          contain_base = Rbbt::Config.get(:contain_base_dir, :batch_contain, :batch, :default => "/scratch/tmp/rbbt-[USER]")
+          contain_base = Scout::Config.get(:contain_base_dir, :batch_contain, :batch, :default => "/scratch/tmp/rbbt-[USER]")
           contain_base = contain_base.sub('[USER]', user)
           random_file = TmpFile.random_name
           batch_options[:contain] = File.join(contain_base, random_file)
@@ -248,14 +253,14 @@ EOF
         options[:workdir_all] = batch_options[:contain]
       end
 
-      Misc.add_defaults batch_options, 
+      IndiferentHash.add_defaults batch_options, 
         :batch_name => batch_name,
         :inputs_dir => inputs_dir, 
         :nodes => 1, 
         :step_path => job.path,
         :task_cpus => 1,
         :time => '2min', 
-        :env_cmd => '_JAVA_OPTIONS="-Xms1g -Xmx${MAX_MEMORY}m"',
+        :env => {'JDK_JAVA_OPTIONS' => "-Xms1g -Xmx${MAX_MEMORY}m"},
         :singularity_img => ENV["SINGULARITY_IMG"] || "~/rbbt.singularity.img",
         :singularity_ruby_inline => ENV["SINGULARITY_RUBY_INLINE"] || "~/.singularity_ruby_inline",
         :singularity_opt_dir => ENV["SINGULARITY_OPT_DIR"] || "~/singularity_opt",
@@ -264,13 +269,13 @@ EOF
       exec_cmd = exec_cmd(job, batch_options)
       rbbt_cmd = rbbt_job_exec_cmd(job, options)
 
-      Misc.add_defaults batch_options, 
+      IndiferentHash.add_defaults batch_options, 
         :exec_cmd => exec_cmd,
         :rbbt_cmd => rbbt_cmd
 
       batch_dir = batch_options[:batch_dir]
 
-      Misc.add_defaults batch_options,
+      IndiferentHash.add_defaults batch_options,
         :fout   => File.join(batch_dir, 'std.out'),
         :ferr   => File.join(batch_dir, 'std.err'),
         :fjob   => File.join(batch_dir, 'job.id'),
@@ -380,6 +385,13 @@ function batch_sync_contain_dir(){
         EOF
       end
 
+      if options[:env]
+        prepare_environment +=<<-EOF
+# Set ENV variables 
+#{options[:env].collect{|n,v| "export #{n}=\"#{v}\"" } * "\n"}
+        EOF
+      end
+
       if options[:singularity]
 
         group, user, user_group, scratch_group_dir, projects_group_dir = options.values_at :group, :user, :user_group, :scratch_group_dir, :projects_group_dir
@@ -421,7 +433,7 @@ echo "user_scratch: #{scratch_group_dir}/#{user}/{PKGDIR}/{TOPLEVEL}/{SUBPATH}" 
         end
       end
 
-      batch_system_variables + load_modules(modules) + "\n" + load_conda(conda) + "\n"  + functions + "\n" + prepare_environment
+      [batch_system_variables, load_modules(modules), load_conda(conda), functions, prepare_environment].reject{|s| s.empty? } * "\n"
     end
 
     def execute(options)
@@ -433,9 +445,11 @@ step_path=$(
 )
 exit_status=$?
 
-[[ -z $BATCH_JOB_ID ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_job $BATCH_JOB_ID
-[[ -z $BATCH_SYSTEM ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_system $BATCH_SYSTEM
-#{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_cpus #{task_cpus}
+if [ $exit_status -eq 0 ]; then
+  [[ -z $BATCH_JOB_ID ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_job $BATCH_JOB_ID
+  [[ -z $BATCH_SYSTEM ]] || #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_system $BATCH_SYSTEM
+  #{exec_cmd} workflow write_info --recursive --force=false --check_pid "$step_path" batch_cpus #{task_cpus}
+fi
       EOF
 
       script
@@ -528,7 +542,7 @@ exit $exit_status
 #{meta_data}
 
 # #{Log.color :green, "1. Prepare environment"}
-#{prepare_environment}
+#{prepare_environment(batch_options)}
 env > #{batch_options[:fenv]}
 
 # #{Log.color :green, "2. Execute"}
@@ -575,7 +589,7 @@ env > #{batch_options[:fenv]}
     def run_job(job, options = {})
       system = self.to_s.split("::").last
 
-      batch_base_dir, clean_batch_job, remove_batch_dir, procpath, tail, batch_dependencies, dry_run, orchestration_rules_file = Misc.process_options options, 
+      batch_base_dir, clean_batch_job, remove_batch_dir, procpath, tail, batch_dependencies, dry_run, orchestration_rules_file = IndiferentHash.process_options options, 
         :batch_base_dir, :clean_batch_job, :remove_batch_dir, :batch_procpath, :tail, :batch_dependencies, :dry_run, :orchestration_rules,
         :batch_base_dir => File.expand_path(File.join('~/rbbt-batch')) 
 
@@ -594,15 +608,15 @@ env > #{batch_options[:fenv]}
         end
       end
 
-      workflow = job.original_workflow ||job.workflow
-      task_name = job.original_task_name || job.task_name
+      workflow = job.workflow
+      task_name = job.task_name
 
-      options = options.merge(HPC::Orchestration.job_rules(HPC::Orchestration.orchestration_rules(orchestration_rules_file), job)) if orchestration_rules_file
+      options = IndiferentHash.setup(HPC::Orchestration.job_rules(HPC::Orchestration.orchestration_rules(orchestration_rules_file), job, true)).merge(options) if orchestration_rules_file
 
       workflows_to_load = job.rec_dependencies.select{|d| Step === d}.collect{|d| d.workflow }.compact.collect(&:to_s) - [workflow.to_s]
 
       TmpFile.with_file(nil, remove_batch_dir, :tmpdir => batch_base_dir, :prefix => "#{system}_rbbt_job-#{workflow.to_s}-#{task_name}-") do |batch_dir|
-        Misc.add_defaults options, 
+        IndiferentHash.add_defaults options, 
           :batch_dir => batch_dir, 
           :inputs_dir => File.join(batch_dir, "inputs_dir"),
           :workflows => workflows_to_load.any? ? workflows_to_load.uniq * "," : nil
@@ -638,6 +652,7 @@ env > #{batch_options[:fenv]}
     end
 
     def hold_dependencies(job, batch_job)
+      job.init_info
       job.set_info :batch_job, batch_job
       job.set_info :batch_system, self.batch_system
       job.dependencies.each do |dep|
@@ -696,7 +711,7 @@ env > #{batch_options[:fenv]}
               sleep 1
             end
             status_txt = job_status(job)
-            lines.times do
+            (lines + 1).times do
               Log.clear_line(STDERR)
             end
             Log.clear_line(STDERR)
@@ -739,6 +754,10 @@ env > #{batch_options[:fenv]}
 
     def job_queued(job)
       job_status(job).split(/[\s\.]+/).include?(job.to_s)
+    end
+
+    def jobs
+      job_status.split("\n").collect{|l| l.scan(/\d{5,}/).first}.compact.flatten.uniq
     end
 
     def wait_for_job(batch_dir, time = 1)

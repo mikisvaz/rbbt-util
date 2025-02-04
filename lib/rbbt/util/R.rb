@@ -109,17 +109,17 @@ source(interactive.script.file)
        begin
          Process.waitpid pid
        rescue Interrupt
-         if Misc.pid_exists? pid
+         if Misc.pid_alive? pid
            Process.kill "INT", pid
            retry
          else
            raise $!
          end
        rescue Exception
-         Process.kill 9, pid if Misc.pid_exists? pid
+         Process.kill 9, pid if Misc.pid_alive? pid
          raise $!
        ensure
-         Process.waitpid pid if Misc.pid_exists? pid
+         Process.waitpid pid if Misc.pid_alive? pid
        end
 
     end
@@ -138,6 +138,7 @@ source(interactive.script.file)
     when Symbol
       "#{ object }"
     when String
+      object = object.dup if Path === object
       object[0] == ":" ? object[1..-1] : "'#{ object }'"
     when Numeric
       object
@@ -161,8 +162,8 @@ source(interactive.script.file)
   end
 
   def self.tsv(file, options = {})
-    options = Misc.add_defaults :header_hash => '', :sep => / +/, :type => :list, :key_field => 'ID'
-    key_field = Misc.process_options options, :key_field
+    options = IndiferentHash.add_defaults :header_hash => '', :sep => / +/, :type => :list, :key_field => 'ID'
+    key_field = IndiferentHash.process_options options, :key_field
     clean = CMD.cmd('grep -v WARNING', :in => file, :pipe => true)
     TSV.open(clean, options).tap{|tsv| tsv.key_field = key_field }
   end
@@ -170,10 +171,10 @@ end
 
 module TSV
 
-  def R(script, source = nil, open_options = {})
-    open_options, source = source, nil if Hash === source
+  def R(script, source = nil, options = {})
+    options, source = source, nil if Hash === source
 
-    source ||= Misc.process_options open_options, :source
+    source ||= IndiferentHash.process_options options, :source
     source = [source] unless Array === source 
 
     require_sources  = source.collect{|source|
@@ -183,25 +184,27 @@ module TSV
 
     script = require_sources + "\n\n" + script if require_sources
 
-    r_options = Misc.pull_keys open_options, :R
+    r_options = IndiferentHash.pull_keys options, :R
+    open_options = IndiferentHash.pull_keys options, :open
 
-    r_options[:monitor] = open_options[:monitor] if open_options.include?(:monitor)
-    r_options[:method] = open_options[:method] if open_options.include?(:method)
-    r_options[:debug] = open_options[:debug] if open_options.include?(:debug)
+    r_options[:monitor] = options[:monitor] if options.include?(:monitor)
+    r_options[:method] = options[:method] if options.include?(:method)
+    r_options[:debug] = options[:debug] if options.include?(:debug)
+    r_options[:erase] = options.delete(:erase) if options.include?(:erase)
 
     r_options[:debug] = true if r_options[:method] == :debug
     if r_options.delete :debug
       r_options[:monitor] = true
       r_options[:method] = :shell
-      erase = false
+      erase = r_options.include?(:erase) ? r_options[:erase] : false
     else
-      erase = true
+      erase = r_options.include?(:erase) ? r_options[:erase] : true
     end
 
     tsv_R_option_str = r_options.delete :open
     tsv_R_option_str = ", "  + tsv_R_option_str if String === tsv_R_option_str and not tsv_R_option_str.empty?
 
-    raw = open_options.delete :raw
+    raw = options.delete :raw
     TmpFile.with_file nil, erase do |f|
       Open.write(f, self.to_s)
 
@@ -223,12 +226,12 @@ NULL
         R.run script, r_options
       end
 
-      open_options = Misc.add_defaults open_options, :type => :list
+      open_options = IndiferentHash.add_defaults open_options, :type => :list
       if raw
         Open.read(f)
       else
-        tsv = TSV.open(f, open_options) unless open_options[:ignore_output]
-        tsv.key_field = open_options[:key] if open_options.include? :key
+        tsv = TSV.open(f, open_options) unless options[:ignore_output]
+        tsv.key_field = options[:key] if options.include? :key
         tsv.namespace ||= self.namespace if self.namespace
         tsv
       end

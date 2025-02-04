@@ -6,7 +6,7 @@ require 'rbbt/util/simpleopt'
 
 options = SOPT.get('-wd--workflow_dir*:-d--describe')
 
-workflow_dir = options[:workflow_dir] || Workflow.workflow_dir
+workflow_dir = options[:workflow_dir] || Rbbt.workflows
 
 Path.setup(workflow_dir) unless Path === workflow_dir
 

@@ -1,4 +1,4 @@
-require 'rbbt/util/cmd'
+require 'scout/cmd'
 module ProcPath
   CMD.tool :procpath do
     'pip install procpath'
@@ -6,11 +6,11 @@ module ProcPath
 
   def self.record(pid, path, options = {})
     IndiferentHash.setup(options)
-    options = Misc.add_defaults options, "interval" => 30
+    options = IndiferentHash.add_defaults options, "interval" => 30
 
     cmd_options = %w(interval recnum reevalnum).inject({}){|acc,k| acc[k] = options[k]; acc}
 
-    Log.debug "ProcPath recording #{pid} in #{path} (#{Misc.fingerprint options})"
+    Log.debug "ProcPath recording #{pid} in #{path} (#{Log.fingerprint options})"
     procpath_thread = Thread.new do 
       begin
         procpath_pid = CMD.cmd_pid(:procpath, "record --database-file '#{path}' '$..children[?(@.stat.pid == #{pid})]'", cmd_options.merge(:nofail => true, :add_option_dashes => true))
@@ -28,7 +28,7 @@ module ProcPath
 
   def self.plot(path, output, options = {})
     IndiferentHash.setup(options)
-    options = Misc.add_defaults options, "query-name" => 'rss', 'epsilon' => 0.5, "moving-average-window" => 10
+    options = IndiferentHash.add_defaults options, "query-name" => 'rss', 'epsilon' => 0.5, "moving-average-window" => 10
 
     cmd_options = %w(query-name epsilon monitor-average-window title logarithmic after before custom-query-file custom-value-expr).inject({}){|acc,k| acc[k] = options[k]; acc}
     CMD.cmd_log(:procpath, "plot --database-file '#{path}' --plot-file '#{output}' ", cmd_options.merge(:nofail => true, :add_option_dashes => true))
@@ -36,10 +36,10 @@ module ProcPath
 
   def self.monitor(pid, path)
     database, options_str = path.split("#")
-    options = options_str.nil? ? {} : Misc.string2hash(options_str)
+    options = options_str.nil? ? {} : IndiferentHash.string2hash(options_str)
 
     database = File.expand_path database
-    Log.low "ProcPath monitor #{pid} in #{database} (#{Misc.fingerprint options})"
+    Log.low "ProcPath monitor #{pid} in #{database} (#{Log.fingerprint options})"
 
     ProcPath.record(pid, database + '.sqlite3', options)
     ProcPath.plot(database + '.sqlite3', database + '.cpu.svg', options.merge("query-name" => 'cpu'))

@@ -193,15 +193,15 @@ module Misc
     insist(3, &block)
   end
 
-  def self.chunk(array, num)
-    total = array.length
-    current = 0
-    while current < total
-      last = current + num - 1
-      yield array[current..last]
-      current = last + 1
-    end
-  end
+  #def self.chunk(array, num)
+  #  total = array.length
+  #  current = 0
+  #  while current < total
+  #    last = current + num - 1
+  #    yield array[current..last]
+  #    current = last + 1
+  #  end
+  #end
 
   # Divides the array into +num+ chunks of the same size by placing one
   # element in each chunk iteratively.
@@ -335,13 +335,14 @@ module Misc
            end
 
 
+    cpus = 1 if cpus <= 0
     options = Misc.add_defaults options, :respawn => true, :cpus => cpus
-    options = Misc.add_defaults options, :bar => "Bootstrap in #{ options[:cpus] } cpus: #{ Misc.fingerprint Annotated.purge(elems) }"
+    options = Misc.add_defaults options, :bar => "Bootstrap in #{ options[:cpus] } cpus: #{ Misc.fingerprint Annotation.purge(elems) }"
     respawn = options[:respawn] and options[:cpus] and options[:cpus].to_i > 1
 
     index = (0..elems.length-1).to_a.collect{|v| v.to_s }
 
-    TSV.traverse index, options do |pos|
+    TSV.traverse index, **options do |pos|
       if num == :current
         $BOOTSTRAPPED_CURRENT ||= n 
         $BOOTSTRAPPED_CURRENT += 0 

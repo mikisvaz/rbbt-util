@@ -3,7 +3,7 @@ import sys
 import os
 import subprocess
 
-def rbbt(cmd = None):
+def cmd(cmd = None):
     if cmd is None:
         print("Rbbt")
     else:
@@ -51,6 +51,15 @@ def rich(obj):
 def log_tsv(tsv):
     print(tsv)
     print(tsv.keys())
+
+def benchmark():
+    import time
+    tic: float = time.perf_counter()
+    try:
+        yield
+    finally:
+        toc: float = time.perf_counter()
+    print(f"Computation time = {1000*(toc - tic):.3f}ms")
 
 def tsv_preamble(line, comment_char="#"):
     import re
@@ -126,4 +135,13 @@ def tsv_pandas(filename, sep="\t", comment_char="#", index_col=0, **kwargs):
 
 def tsv(*args, **kwargs):
     return tsv_pandas(*args, **kwargs)
+
+def save_tsv(filename, df, key=None):
+    if (key == None):
+        key = df.index.name
+    if (key == None):
+        key = "Key"
+    key = "#" + key
+    df.to_csv(filename, sep="\t", index_label=key)
+
 

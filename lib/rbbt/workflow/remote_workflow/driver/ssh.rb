@@ -80,7 +80,7 @@ res = job_info = job.info
       script =<<-EOF
 jobname = #{jobname.nil? ? 'nil' : "'#{jobname}'"}
 path = File.join(ENV["HOME"], '.rbbt/tmp/tmp-ssh_job_inputs/#{inputs_id}')
-job_inputs = Workflow.load_inputs(path, task_info[:inputs], task_info[:input_types])
+job_inputs = wf.tasks[task].load_inputs(path)
 job = wf.job(task, jobname, job_inputs)
       EOF
       script
@@ -199,28 +199,6 @@ job.clean
       end
     end
 
-    #def self.relay_old(workflow, task, jobname, inputs, server, options = {})
-    #  options = Misc.add_defaults options, :search_path => 'user'
-    #  search_path = options[:search_path]
-
-    #  job = workflow.job(task, jobname, inputs)
-
-    #  job.dependencies.each do |dep| 
-    #    dep.produce 
-    #  end
-
-    #  override_dependencies = job.dependencies.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
-
-    #  job.dependencies.each do |dep| 
-    #    Step.migrate(dep.path, search_path, :target => server)
-    #  end
-
-    #  remote = RemoteWorkflow.new("ssh://#{server}:#{workflow.to_s}", "#{workflow.to_s}")
-    #  rjob = remote.job(task, jobname, {})
-    #  rjob.override_dependencies = override_dependencies
-    #  rjob.run
-    #end
-
     def self.upload_dependencies(job_list, server, search_path = 'user', produce_dependencies = false)
       server, path = parse_url(server) if server =~ /^ssh:\/\//
 
@@ -229,11 +207,20 @@ job.clean
       all_deps = {}
       if produce_dependencies
         job_list.each do |job|
-          job.dependencies.each do |dep|
+          job.all_dependencies.each do |dep|
             all_deps[dep] ||= []
             all_deps[dep] << job
           end
         end
+      end
+
+      job_list.each do |job|
+        job.dependencies.
+          select{|dep| dep.overriden? }.
+          each do |dep|
+            all_deps[dep] ||= []
+            all_deps[dep] << job
+          end
       end
 
       job_list.each do |job|
@@ -246,13 +233,16 @@ job.clean
       missing_deps = []
       all_deps.each do |dep,jobs|
         next if dep.done?
+        next if job_list.include?(dep)
         Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{Misc.fingerprint jobs}"
-        dep.run(true)
+        dep.produce
         missing_deps << dep
       end if produce_dependencies
+
       Step.wait_for_jobs missing_deps
 
-      migrate_dependencies = all_deps.keys.collect{|d| [d] + d.rec_dependencies + d.input_dependencies }.flatten.select{|d| d.done? }.collect{|d| d.path }
+      #migrate_dependencies = all_deps.keys.collect{|d| [d] + d.rec_dependencies + d.input_dependencies }.flatten.select{|d| d.done? }.collect{|d| d.path }
+      migrate_dependencies = all_deps.keys.collect{|d| [d] + d.input_dependencies }.flatten.select{|d| d.done? }.collect{|d| d.path }
       Log.low "Migrating #{migrate_dependencies.length} dependencies from #{Misc.fingerprint job_list} to #{ server }" 
       Step.migrate(migrate_dependencies, search_path, :target => server) if migrate_dependencies.any?
     end
@@ -283,7 +273,13 @@ job.clean
       upload_dependencies(job, server, search_path, options[:produce_dependencies])
       rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
 
-      override_dependencies = job.rec_dependencies.select{|dep| dep.done? }.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
+      override_dependencies = {}
+      job.rec_dependencies.
+        select{|dep| dep.done? }.
+        collect{|dep| 
+          override_dependencies[[dep.overriden_workflow.to_s, dep.overriden_task.to_s] * "#"] = dep
+        }
+
       rjob.override_dependencies = override_dependencies
 
       rjob.run_type = run_type
@@ -311,18 +307,29 @@ job.clean
         
         workflow_name = job.workflow.to_s
         remote_workflow = RemoteWorkflow.new("ssh://#{server}:#{workflow_name}", "#{workflow_name}")
-        inputs = IndiferentHash.setup(job.recursive_inputs.to_hash).slice(*job.real_inputs.map{|i| i.to_s})
+        inputs = IndiferentHash.setup(job.recursive_inputs.to_hash).slice(*job.non_default_inputs.map{|i|  i.to_s})
         Log.medium "Relaying dependency #{job.workflow}:#{job.short_path} to #{server} (#{inputs.keys * ", "})"
 
-        rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, inputs)
+        rjob = remote_workflow.job(job.task_name.to_s, job.clean_name, job.provided_inputs)
 
-        override_dependencies = job.rec_dependencies.select{|dep| dep.done? }.collect{|dep| [dep.workflow.to_s, dep.task_name.to_s] * "#" << "=" << Rbbt.identify(dep.path)}
+        override_dependencies = {}
+        job.rec_dependencies.
+          select{|dep| dep.done? }.
+          collect{|dep| 
+            dep_key = if dep.overriden_workflow
+                        [dep.overriden_workflow.to_s, dep.overriden_task.to_s] * "#"
+                      else
+                        [dep.workflow.to_s, dep.task_name.to_s] * "#"
+                      end
+            override_dependencies[dep_key] ||= dep
+          }
+
         rjob.override_dependencies = override_dependencies
 
         rjob.run_type = run_type
         rjob.batch_options = batch_options || {}
 
-        rjob.run(true)
+        rjob.run(:noload)
 
         [rjob, job]
       end
@@ -349,7 +356,6 @@ job.clean
 
     def documentation
       @documention ||= IndiferentHash.setup(RemoteWorkflow::SSH.get_json(File.join(url, "documentation")))
-      @documention
     end
 
     def task_info(task)
@@ -380,6 +386,23 @@ job.clean
         task.name = task_name.to_sym
         hash[task_name] = task
       end
+    end
+
+    def tasks
+      @tasks ||= begin
+                   tasks = Hash.new do |hash,task_name| 
+                     raise Workflow::TaskNotFoundException, "Task #{task_name} not found in workflow #{self.to_s}" unless @task_info.include?(task_name)
+                     info = @task_info[task_name]
+                     task = Task.setup info do |*args|
+                       raise "This is a remote task" 
+                     end
+                     task.name = task_name.to_sym
+                     hash[task_name] = task
+                   end
+
+                   @task_info.keys.each{|k| tasks[k] }
+                   tasks
+                 end
     end
 
     def task_dependencies

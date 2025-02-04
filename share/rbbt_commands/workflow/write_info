@@ -42,16 +42,33 @@ step = get_step file
 
 step.set_info key, value if force || ! step.info.include?(key)
 
-pid = step.info[:pid]
-host = step.info[:pid_hostname]
+def recursive_write(step, key, value, force, check_pid)
+  pid = step.info[:pid]
+  host = step.info[:pid_hostname]
 
-step.rec_dependencies.each do |dep|
-  begin
-    dep.set_info key, value if (force || ! dep.info.include?(key)) && (!check_pid || dep.info[:pid].to_s == pid and dep.info[:pid_hostname] == host)
-  rescue
-    Log.warn "Could no set info #{key} for #{dep.path}: #{$!.message}"
+  dependencies = step.dependencies + step.input_dependencies
+  dependencies.each do |dep|
+    next if check_pid && (dep.info[:pid].to_s != pid.to_s || dep.info[:pid_hostname] != host)
+    if force || !dep.info.include?(key)
+      begin
+        dep.set_info key, value
+      rescue
+        Log.warn "Could no set info #{key} for #{dep.path}: #{$!.message}"
+      end
+    end
+    recursive_write(dep, key, value, force, check_pid)
   end
-end if recursive
+end
+
+recursive_write(step, key, value, force, check_pid) if recursive
+
+#step.rec_dependencies.each do |dep|
+#  begin
+#    dep.set_info key, value if (force || ! dep.info.include?(key)) && (!check_pid || dep.info[:pid].to_s == pid and dep.info[:pid_hostname] == host)
+#  rescue
+#    Log.warn "Could no set info #{key} for #{dep.path}: #{$!.message}"
+#  end
+#end if recursive
 
 if recursive && step.info[:archived_info]
   ad = step.info[:archived_info]

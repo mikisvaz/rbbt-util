@@ -137,24 +137,26 @@ class TestTSVParallelThrough < Test::Unit::TestCase
   end
 
   def test_traverse_array_threads
-    require 'rbbt/sources/organism'
+    keyword_test :traverse_threads do
+      require 'rbbt/sources/organism'
 
-    array = []
-    100.times do array << rand(10).to_i end
+      array = []
+      100.times do array << rand(10).to_i end
 
-    res = []
-    TSV.traverse array, :threads => 5 do |v|
-       res << v
+      res = []
+      TSV.traverse array, :threads => 5 do |v|
+        res << v
+      end
+
+      assert_equal array.sort, res.sort
+
+      res = []
+      TSV.traverse array, :threads => 5, :into => res do |v|
+        v
+      end
+
+      assert_equal array.sort, res.sort
     end
-
-    assert_equal array.sort, res.sort
-
-    res = []
-    TSV.traverse array, :threads => 5, :into => res do |v|
-      v
-    end
-
-    assert_equal array.sort, res.sort
   end
 
   def test_traverse_array_cpus
@@ -203,7 +205,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
     dumper.init
     TSV.traverse stream, :head => head, :into => dumper, :bar => true do |k,v|
-      k = k.first
+      k = k.first if Array === k
       [k,v]
     end
 
@@ -221,7 +223,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
     dumper.init
     TSV.traverse stream, :head => head, :into => dumper, :bar => true do |k,v|
-      k = k.first
+      k = k.first if Array === k
       raise 
       [k,v]
     end
@@ -233,23 +235,24 @@ class TestTSVParallelThrough < Test::Unit::TestCase
   end
 
   def test_traverse_into_dumper_threads
-    require 'rbbt/sources/organism'
+    keyword_test :traverse_threads do
 
-    head = 2_000
-    threads = 10
+      head = 2_000
+      threads = 10
 
-    stream = datafile_test('identifiers').open 
-    dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
-    dumper.init
+      stream = datafile_test('identifiers').open 
+      dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
+      dumper.init
 
-    TSV.traverse stream, :threads => threads, :head => head, :into => dumper do |k,v|
-      k = k.first
-      [k,v]
+      TSV.traverse stream, :threads => threads, :head => head, :into => dumper do |k,v|
+        k = k.first if Array === k
+        [k,v]
+      end
+
+      res = TSV.open(StringIO.new(dumper.stream.read))
+
+      assert_equal head, res.size
     end
-
-    res = TSV.open(StringIO.new(dumper.stream.read))
-
-    assert_equal head, res.size
   end
 
   def test_traverse_into_dumper_cpus
@@ -262,7 +265,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     dumper = TSV::Dumper.new datafile_test('identifiers').tsv_options
     dumper.init
     TSV.traverse stream, :cpus => cpus, :head => head, :into => dumper do |k,v|
-      k = k.first
+      k = k.first if Array === k
       [k,v]
     end
 
@@ -278,11 +281,11 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
     head = 2_000
 
-    tsv = TSV::Parser.new datafile_test('identifiers').open, :head => head
+    tsv = TSV::Parser.new datafile_test('identifiers')
     dumper = TSV::Dumper.new tsv.options
 
     TSV.traverse tsv, :head => head, :into => dumper do |k,v|
-      k = k.first
+      k = k.first if Array === k
       [k,v]
     end
     
@@ -295,27 +298,27 @@ class TestTSVParallelThrough < Test::Unit::TestCase
   end
 
   def test_traverse_dumper_threads
-    require 'rbbt/sources/organism'
+    keyword_test :traverse_threads do
+      head = 2_000
+      threads = 3
 
-    head = 2_000
-    threads = 3
+      tsv = TSV::Parser.new datafile_test('identifiers').open
 
-    tsv = TSV::Parser.new datafile_test('identifiers').open, :head => head
+      dumper = TSV::Dumper.new tsv.options
+      dumper.init
 
-    dumper = TSV::Dumper.new tsv.options
-    dumper.init
+      TSV.traverse tsv, :head => head, :threads => threads, :into => dumper do |k,v|
+        k = k.first if Array === k
+        [k,v]
+      end
 
-    TSV.traverse tsv, :head => head, :threads => threads, :into => dumper do |k,v|
-      k = k.first
-      [k,v]
+      res = {}
+      TSV.traverse dumper.stream, :threads => threads, :into => res do |k,v|
+        [k, v.length]
+      end
+
+      assert_equal head, res.size
     end
-    
-    res = {}
-    TSV.traverse dumper.stream, :threads => threads, :into => res do |k,v|
-      [k, v.length]
-    end
-
-    assert_equal head, res.size
   end
 
   def test_traverse_dumper_cpus
@@ -329,7 +332,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
     dumper.init
 
     TSV.traverse stream, :head => head, :cpus => cpus, :into => dumper do |k,v|
-      k = k.first
+      k = k.first if Array === k
       [k,v]
     end
 
@@ -354,7 +357,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
     assert_raise StopException do
       TSV.traverse stream, :head => head, :into => dumper do |k,v|
-        k = k.first
+        k = k.first if Array === k
         raise StopException if rand(100) < 20
         [k,v]
       end
@@ -375,7 +378,7 @@ class TestTSVParallelThrough < Test::Unit::TestCase
 
     assert_raise ProcessFailed do
       TSV.traverse stream, :head => head, :cpus => cpus, :into => dumper do |k,v|
-        k = k.first
+        k = k.first if Array === k
         raise ProcessFailed if rand(100) < 20
         [k,v]
       end

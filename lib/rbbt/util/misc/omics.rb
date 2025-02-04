@@ -258,7 +258,7 @@ module Misc
       alt = m[3]
       alt = "*" if alt == "Ter"
       ref = THREE_TO_ONE_AA_CODE[ref.downcase]
-      alt = THREE_TO_ONE_AA_CODE[alt.downcase] unless alt == "*"
+      alt = (alt == "Ter" || alt == "*") ? "*" : THREE_TO_ONE_AA_CODE[alt.downcase]
       mutation = [ref, num, alt] * ""
     end
     one_aa_code = THREE_TO_ONE_AA_CODE.values
@@ -574,5 +574,13 @@ module Misc
       end
       [chr, pos.to_i - 1, pos.to_i - 1 + size, mutation] * "\t"
     end
+  end
+
+  def self.sort_mutation_stream_strict(stream, sep=":")
+    CMD.cmd("grep '#{sep}' | sort -u | sed 's/^M:/MT:/' | env LC_ALL=C sort -V -k1,1 -k2,2n -k3,3n -t'#{sep}'", :in => stream, :pipe => true, :no_fail => true)
+  end
+
+  def self.sort_mutation_stream(stream, sep=":")
+    CMD.cmd("grep '#{sep}' | sort -u | sed 's/^M:/MT:/' | env LC_ALL=C sort -k1,1 -k2,2n -k3,3n -t'#{sep}'", :in => stream, :pipe => true, :no_fail => true)
   end
 end

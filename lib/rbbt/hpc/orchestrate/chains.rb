@@ -1,11 +1,11 @@
 module HPC
   module Orchestration
     def self.check_chains(chains, job)
-      return [] if Symbol === job.overriden
+      return [] if Symbol === job.overriden_task
       matches = []
       chains.each do |name, chain|
-        workflow = job.original_workflow || job.workflow
-        task_name = job.original_task_name || job.task_name
+        workflow = job.overriden_workflow || job.workflow
+        task_name = job.overriden_workflow || job.task_name
         next unless chain[:tasks].include?(workflow.to_s)
         next unless chain[:tasks][workflow.to_s].include?(task_name.to_s)
         matches << name
@@ -14,9 +14,28 @@ module HPC
     end
 
     def self.parse_chains(rules)
-      return {} if rules["chains"].nil?
-
       chains = IndiferentHash.setup({})
+
+      rules.each do |workflow,rules|
+        next unless rules["chains"]
+        rules["chains"].each do |name,rules|
+          rules  = IndiferentHash.setup(rules.dup)
+          chain_tasks = rules.delete(:tasks).split(/,\s*/)
+          workflow = rules.delete(:workflow) if rules.include?(:workflow)
+
+          chain_tasks.each do |task|
+            chain_workflow, chain_task = task.split("#")
+            chain_task, chain_workflow = chain_workflow, workflow if chain_task.nil? or chain_tasks.empty?
+
+            chains[name] ||= IndiferentHash.setup({:tasks => {}, :rules => rules })
+            chains[name][:tasks][chain_workflow] ||= []
+            chains[name][:tasks][chain_workflow] << chain_task
+          end
+        end
+      end
+
+      return chains if rules["chains"].nil?
+
       rules["chains"].each do |name,rules|
         rules  = IndiferentHash.setup(rules.dup)
         chain_tasks = rules.delete(:tasks).split(/,\s*/)
@@ -31,6 +50,7 @@ module HPC
           chains[name][:tasks][chain_workflow] << chain_task
         end
       end
+
 
       chains
     end

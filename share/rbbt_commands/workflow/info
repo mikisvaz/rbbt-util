@@ -77,8 +77,8 @@ if options[:original]
   exit 0
 end
 
+inputs = step.inputs
 dependencies = info[:dependencies]
-inputs = info[:inputs]
 status = info[:status]
 time = info[:time_elapsed]
 total_time = info[:total_time_elapsed]
@@ -89,6 +89,7 @@ exception = info[:exception]
 rest = info.keys - [:inputs, :dependencies, :status, :time_elapsed, :messages, :backtrace, :exception, :archived_info]
 
 
+status = :noinfo if status.nil?
 puts Log.color(:magenta, "File") << ": " << step.path
 puts Log.color(:magenta, "Status") << ": " << status_msg(status) << ((step.aborted? || step.error?) && step.recoverable_error? ? " (recoverable)" : "" ) << (step.dirty? ? " (dirty)" : "")
 puts Log.color(:magenta, "Pid") << ": " << pid_msg(pid, status.to_s == "done")
@@ -96,17 +97,19 @@ puts Log.color(:magenta, "Time") << ": " << time.to_i.to_s << " sec." if time
 puts Log.color(:magenta, "Total time") << ": " << total_time.to_i.to_s << " sec." if time
 if inputs and inputs.any?
   puts Log.color(:magenta, "Inputs")
-  inputs.each do |input,value|
+  inputs.to_hash.each do |input,value|
     case value
     when nil
-      puts Misc.format_definition_list_item("  " + input.to_s, 'nil', width, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, 'nil', 20, width, color: :blue)
     when Array
-      puts Misc.format_definition_list_item("  " + input.to_s, (value.length > 6 ? value[0..5]*"\n" << "\n" << "..." : value * "\n" ), width, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, (value.length > 6 ? value[0..5]*"\n" << "\n" << "..." : value * "\n" ), 20, width, color: :blue)
     when TrueClass, FalseClass
-      puts Misc.format_definition_list_item("  " + input.to_s, value.to_s, width, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, value.to_s, 20, width, color: :blue)
+    when Step
+      puts Misc.format_definition_list_item("  " << input.to_s, value.short_path, 20, width, color: :blue)
     else
       text = value.to_s.split("\n")[0..5].compact * "\n\n"
-      puts Misc.format_definition_list_item("  " + input.to_s, text, width, 20, :blue)
+      puts Misc.format_definition_list_item("  " + input.to_s, text, 20, width, color: :blue)
     end
   end
 end
@@ -150,32 +153,25 @@ if all
 end
 
 if recursive
-  inputs = step.info[:inputs] || {}
-  deps = step.dependencies
+  inputs = step.recursive_inputs
+  inputs = NamedArray.setup(inputs.values, inputs.keys)
 
-  while deps.any? do
-    dep = deps.shift
-    inputs = {} if inputs.nil?
-    inputs = inputs.merge(dep.info[:inputs] || {})
-    deps = deps.concat dep.dependencies if dep.dependencies
-  end
-
-  inputs = inputs.merge step.archived_inputs
+  inputs = inputs.concat step.archived_inputs
   if inputs.any?
     puts Log.color(:magenta, "Recursive inputs") << ": "
-    inputs.each do |input,value|
+    inputs.to_hash.each do |input,value|
       case value
       when nil
-        puts Misc.format_definition_list_item("  " << input.to_s, 'nil', width, 20, :blue)
+        puts Misc.format_definition_list_item("  " + input.to_s, 'nil', 20, width, color: :blue)
       when Array
-        puts Misc.format_definition_list_item("  " << input.to_s, (value.length > 6 ? (value[0..5])*"\n\n" << "\n\n" << "..." : value * "\n\n" ), width, 20, :blue).gsub("\n\n","\n")
+        puts Misc.format_definition_list_item("  " + input.to_s, (value.length > 6 ? value[0..5]*"\n" << "\n" << "..." : value * "\n" ), 20, width, color: :blue)
       when TrueClass, FalseClass
-        puts Misc.format_definition_list_item("  " << input.to_s, value.to_s, width, 20, :blue)
+        puts Misc.format_definition_list_item("  " + input.to_s, value.to_s, 20, width, color: :blue)
+      when Step
+        puts Misc.format_definition_list_item("  " << input.to_s, value.short_path, 20, width, color: :blue)
       else
-        lines = value.to_s.split("\n").collect{|l| l.length >= width - 5 ? l[0..width - 5] + " ..." : l }
-        text = lines[0..5].compact * "\n\n"
-        text << "\n\n...\n\n" if lines.length > 6
-        puts Misc.format_definition_list_item("  " << input.to_s, text, width, 20, :blue).gsub("\n\n","\n")
+        text = value.to_s.split("\n")[0..5].compact * "\n\n"
+        puts Misc.format_definition_list_item("  " + input.to_s, text, 20, width, color: :blue)
       end
     end
   end

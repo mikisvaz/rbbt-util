@@ -1,3 +1,4 @@
+require 'scout/tsv'
 module TSV
 
   def pthrough(num_threads = 10, new_key_field = nil, new_fields = nil, uniq = false, zipped = false, &block)
@@ -6,7 +7,7 @@ module TSV
     q.init(true, &block)
 
     begin
-      res = through(new_key_field, new_fields, uniq, zipped) do |*p|
+      res = through(new_key_field, new_fields, one2one: zipped) do |*p|
         q.process p
       end
       q.join

@@ -28,7 +28,7 @@ class Step
       seen = Set.new
       while deps.any?
         path = deps.shift
-        dep = Workflow.load_step path
+        dep = Step.load path
         seen << dep.path
         dep.dependencies.each do |dep|
           next if seen.include? dep.path
@@ -83,10 +83,10 @@ class Step
       while deps.any?
         path = deps.shift
 
-        dep = Workflow.load_step path
+        dep = Step.load path
         seen << dep.path
 
-        dep.load_dependencies_from_info
+        #dep.load_dependencies_from_info
 
         dep.dependencies.each do |dep|
           next if seen.include? dep.path
@@ -96,7 +96,7 @@ class Step
       end
 
       rec_dependencies.each do |path|
-        dep = Workflow.load_step path
+        dep = Workflow.load_step path.dup
         job_files << dep.path
         job_files << dep.files_dir if Dir.glob(dep.files_dir + '/*').any?
         job_files << dep.info_file if File.exist?(dep.info_file)
@@ -120,7 +120,8 @@ class Step
         if File.directory?(target)
           CMD.cmd_log("rsync #{MAIN_RSYNC_ARGS} --copy-unsafe-links '#{ tmpdir }/' '#{ target }/'")
         else
-          CMD.cmd_log("tar cvhzf '#{target}'  ./*")
+          Misc.tarize('.', target)
+          #CMD.cmd_log("tar cvhzf '#{target}'  ./*")
         end
       end
       Log.debug "Archive finished at: #{target}"

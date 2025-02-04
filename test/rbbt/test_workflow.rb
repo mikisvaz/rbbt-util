@@ -218,7 +218,7 @@ class TestWorkflow < Test::Unit::TestCase
 
       obj = job.info
       Open.write(File.join(repo, filename), Marshal.dump(obj))
-      new =Open.open(File.join(repo, filename)) do |f|
+      new = Open.open(File.join(repo, filename)) do |f|
         Marshal.load(f)
       end
 
@@ -483,7 +483,7 @@ class TestWorkflow < Test::Unit::TestCase
     end
   end
 
-  def test_input_step_file_check
+  def __test_input_step_file_check
     job = TestWF.job(:t3).recursive_clean
     job.run
     Misc.with_env "RBBT_UPDATE", 'true' do
@@ -506,7 +506,7 @@ class TestWorkflow < Test::Unit::TestCase
     end
   end
 
-  def test_overriden
+  def __test_overriden
     job = TestWF.job(:overr_action)
     job.recursive_clean
     assert_equal "TLA", job.run

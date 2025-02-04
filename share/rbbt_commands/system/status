@@ -74,7 +74,7 @@ end
 def input_msg(file, inputs)
 
   str = ""
-  job_inputs = Workflow.load_step(file).recursive_inputs.to_hash
+  job_inputs = Step.new(file).recursive_inputs.to_hash
   IndiferentHash.setup(job_inputs)
 
   inputs.each do |input|
@@ -187,9 +187,10 @@ workflows.sort.each do |workflow,tasks|
         if info_fields and info_fields.any?
           info = begin
                    Open.open(i[:info_file]) do |f|
-                     Step::INFO_SERIALIZER.load(f)
+                     Step.load_info(f)
                    end
                  rescue
+                   Log.exception $!
                    {:status => :noinfo}
                  end
           IndiferentHash.setup(info)
@@ -198,10 +199,9 @@ workflows.sort.each do |workflow,tasks|
       else
         info = begin
                  Open.open(i[:info_file]) do |f|
-                   Step::INFO_SERIALIZER.load(f)
+                   Step.load_info(f)
                  end
                rescue
-                 #Log.exception $!
                  {:status => :noinfo}
                end
         IndiferentHash.setup(info)
@@ -219,7 +219,7 @@ workflows.sort.each do |workflow,tasks|
           end
         end
         str << " #{ Step.prov_status_msg status }"
-        str << " (dirty)" if status == 'done' && Workflow.load_step(file).dirty?
+        str << " (dirty)" if status == 'done' && Step.new(file).dirty?
 
         if inputs and inputs.any? 
           str << input_msg(file, inputs)

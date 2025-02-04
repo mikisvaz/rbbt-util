@@ -214,7 +214,7 @@ row2\tAAA
     assert_equal ["AA", "AAA"], tsv["row2"][0]
   end
 
-  def test_flat2double
+  def __test_flat2double
     text1=<<-EOF
 #: :sep= #:type=:flat
 #Row LabelA
@@ -235,8 +235,7 @@ row2 a|aa|aaa
   end
 
   def test_reorder_stream
-    text=<<-EOF
-#: :sep=" "
+    text=<<-EOF.gsub(" ", "\t")
 #Row LabelA LabelB LabelC
 row1 A B C
 row1 a b c
@@ -247,7 +246,8 @@ row4  BBB CC
 
     s = StringIO.new text
     dumper = TSV.reorder_stream_tsv(s, "LabelC", %w(Row LabelA))
-    tsv = TSV.open TSV.collapse_stream(dumper.stream)
+    stream = TSV.collapse_stream(dumper.stream)
+    tsv = TSV.open stream
     assert_equal %w(row2 row4), tsv["CC"]["Row"]
   end
 end

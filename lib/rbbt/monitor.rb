@@ -8,7 +8,7 @@ module Rbbt
   LOCK_DIRS = Rbbt.tmp.tsv_open_locks.find_all + Rbbt.tmp.persist_locks.find_all + Rbbt.tmp.sensiblewrite_locks.find_all +
     Rbbt.tmp.produce_locks.find_all + Rbbt.tmp.step_info_locks.find_all
 
-  SENSIBLE_WRITE_DIRS = Misc.sensiblewrite_dir.find_all
+  SENSIBLE_WRITE_DIRS = Open.sensible_write_dir.find_all
 
   PERSIST_DIRS    = Rbbt.share.find_all  + Rbbt.var.cache.persistence.find_all
 
@@ -142,23 +142,28 @@ module Rbbt
       tasks_dirs = if dir == '.'
                     ["."]
                    else
-                     workflowdirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
-                                      repo_dir, sub_path = dir_sub_path
-                                      Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
-                                    else
-                                      dir.glob("*")
-                                    end
+                     #workflowdirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
+                     #                 repo_dir, sub_path = dir_sub_path
+                     #                 Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
+                     #               else
+                     #                 dir.glob("*")
+                     #               end
+
+                     workflowdirs = dir.glob("*")
 
                      workflowdirs.collect do |workflowdir|
                        workflow = File.basename(workflowdir)
                        next if workflows and not workflows.include? workflow
 
-                       task_dirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
-                                     repo_dir, sub_path = dir_sub_path
-                                     Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
-                                   else
-                                     workflowdir.glob("*")
-                                   end
+                       #task_dirs = if (dir_sub_path = Open.find_repo_dir(workflowdir))
+                       #              repo_dir, sub_path = dir_sub_path
+                       #              Open.list_repo_files(*dir_sub_path).collect{|f| f.split("/").first}.uniq.collect{|f| File.join(repo_dir, f)}.uniq
+                       #            else
+                       #              workflowdir.glob("*")
+                       #            end
+
+                       task_dirs = workflowdir.glob("*")
+
                        task_dirs.each do |tasks_dir|
                          task_dir_workflows[tasks_dir] = workflow
                        end
@@ -170,18 +175,24 @@ module Rbbt
         next if tasks and not tasks.include? task
 
 
-        files = if (dir_sub_path = Open.find_repo_dir(taskdir))
-                  repo_dir, sub_path = dir_sub_path
-                  Open.list_repo_files(*dir_sub_path).reject do |f|
-                    f.include?("/.info/") ||
-                      f.include?(".files/") ||
-                      f.include?(".pid/") ||
-                      File.directory?(f)
-                  end.collect do |f|
-                    File.join(repo_dir, f)
-                  end
-                else
-                  #cmd = "find -L '#{ taskdir }/'  -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' 2>/dev/null"
+        #files = if (dir_sub_path = Open.find_repo_dir(taskdir))
+        #          repo_dir, sub_path = dir_sub_path
+        #          Open.list_repo_files(*dir_sub_path).reject do |f|
+        #            f.include?("/.info/") ||
+        #              f.include?(".files/") ||
+        #              f.include?(".pid/") ||
+        #              File.directory?(f)
+        #          end.collect do |f|
+        #            File.join(repo_dir, f)
+        #          end
+        #        else
+        #          #cmd = "find -L '#{ taskdir }/'  -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.notify' -not -name '\\.*' 2>/dev/null"
+        #          cmd = "find -L '#{ taskdir }/' -not \\( -path \"#{taskdir}/.info/*\" -prune \\) -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.md5' -not -name '*.notify' -not -name '\\.*' \\( -not -type d -o -name '*.files' \\)  2>/dev/null"
+
+        #          CMD.cmd(cmd, :pipe => true).read.split("\n")
+        #        end
+
+        files = begin
                   cmd = "find -L '#{ taskdir }/' -not \\( -path \"#{taskdir}/.info/*\" -prune \\) -not \\( -path \"#{taskdir}/*.files/*\" -prune \\) -not -name '*.pid' -not -name '*.md5' -not -name '*.notify' -not -name '\\.*' \\( -not -type d -o -name '*.files' \\)  2>/dev/null"
 
                   CMD.cmd(cmd, :pipe => true).read.split("\n")

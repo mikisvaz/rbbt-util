@@ -32,7 +32,8 @@ module Filtered
       when Hash === persistence
         @persistence = persistence
       when String === persistence
-        @persistence = TSV.setup Persist.open_tokyocabinet(persistence, false, :list)
+        @persistence = Persist.open_tokyocabinet(persistence, false, :list)
+        @persistence = TSV.setup(@persistence)
         @persistence.read
       end
 
@@ -192,7 +193,7 @@ module Filtered
     if filters.empty?
       unfiltered_filename
     else
-      unfiltered_filename + ":Filtered[#{filters.collect{|f| [f.match, Array === f.value ? Misc.hash2md5(:values => f.value) : f.value] * "="} * ", "}]"
+      unfiltered_filename + ":Filtered[#{filters.collect{|f| [f.match, Array === f.value ? Misc.digest(:values => f.value) : f.value] * "="} * ", "}]"
     end
   end
 

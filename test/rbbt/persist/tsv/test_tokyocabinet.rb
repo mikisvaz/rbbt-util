@@ -114,6 +114,7 @@ class TestPersistTSVTC < Test::Unit::TestCase
       persisted_annotations = Persist.persist("Test", :annotations, :annotation_repo => repo) do
         annotations
       end
+      raise
 
       assert_equal "Entity 1", persisted_annotations.first
       assert_equal "Entity 2", persisted_annotations.last

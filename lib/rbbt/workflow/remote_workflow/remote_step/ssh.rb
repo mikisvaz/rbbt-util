@@ -1,5 +1,8 @@
 class RemoteStep
   module SSH
+
+    DEFAULT_REFRESH_TIME = 2
+
     attr_accessor :override_dependencies, :run_type, :batch_options, :produce_dependencies
 
     def init_job(cache_type = nil, other_params = {})
@@ -12,9 +15,15 @@ class RemoteStep
       @input_id ||= "inputs-" << rand(100000).to_s
 
       if override_dependencies && override_dependencies.any?
-        override_dependencies.each do |od|
-          name, _sep, value = od.partition("=")
-          inputs[name] = value
+        if Hash === override_dependencies
+          override_dependencies.each do |name,dep|
+            inputs[name] = dep
+          end
+        else
+          override_dependencies.each do |od|
+            name, _sep, value = od.partition("=")
+            inputs[name] = value
+          end
         end
       end
 
@@ -84,7 +93,7 @@ class RemoteStep
       while ! (done? || error? || aborted?)
         sleep 1
       end
-      raise self.get_exception if error?
+      raise self.exception if error?
       self
     end
 
@@ -97,7 +106,7 @@ class RemoteStep
         issue
       else
         produce
-        self.load unless args.first
+        self.load unless stream
       end
     end
 

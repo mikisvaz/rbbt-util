@@ -1,18 +1,26 @@
-require 'rbbt'
-require 'rbbt/util/misc'
-require 'rbbt/util/open'
-Open.cachedir        = Rbbt.var.cache["open-remote"].find :user
+require_relative 'rbbt'
+require_relative 'rbbt/util/misc'
+require 'scout/open'
+Open.remote_cache_dir = Rbbt.var.cache["open-remote"].find :user
 
-require 'rbbt/persist'
-Persist.cachedir = Rbbt.var.cache.persistence
+require 'scout/path'
 
-require 'rbbt/util/filecache'
-FileCache.cachedir   = Rbbt.var.cache.filecache.find :user
+require 'set'
+require 'scout/persist'
 
-require 'rbbt/util/tmpfile'
-TmpFile.tmpdir       = Rbbt.tmp.find :user
+require 'scout/resource'
 
-require 'rbbt/util/cmd'
-require 'rbbt/tsv'
+require_relative 'rbbt/util/filecache'
 
-require 'rbbt/util/config'
+require_relative 'rbbt/util/tmpfile'
+
+require_relative 'rbbt/util/cmd'
+require_relative 'rbbt/tsv'
+
+require_relative 'rbbt/workflow'
+
+Persist.cache_dir     = Rbbt.var.cache.persistence
+FileCache.cachedir    = Rbbt.var.cache.filecache.find :user
+TmpFile.tmpdir        = Rbbt.tmp.find :user
+Resource.default_resource = Rbbt
+

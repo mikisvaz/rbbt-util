@@ -32,9 +32,13 @@ file = case file
          raise ParameterException, "Please specify the tsv file as argument" if file.nil?
        end
 
-field = options[:field]
 
-options[:header_hash] = options["header_hash"]
+options[:header_hash] ||= options.delete "header_hash"
+options.delete :header_hash if options[:header_hash].nil?
+
+field = options.delete :field
+
+options.keys_to_sym!
 
 case
 when options[:tokyocabinet]

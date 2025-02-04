@@ -1,23 +1,24 @@
 #!/usr/bin/env ruby
 
-require 'rbbt/workflow'
+require 'scout/workflow'
 
-require 'rbbt-util'
-require 'fileutils'
-require 'rbbt/util/simpleopt'
-require 'rbbt/workflow/step'
-require 'rbbt/workflow/util/provenance'
-require 'rbbt/util/misc'
-
-require 'rbbt-util'
-require 'rbbt/util/simpleopt'
+#require 'rbbt/workflow'
+#require 'rbbt-util'
+#require 'fileutils'
+#require 'rbbt/util/simpleopt'
+#require 'rbbt/workflow/step'
+#require 'rbbt/workflow/util/provenance'
+#require 'rbbt/util/misc'
+#
+#require 'rbbt-util'
+#require 'rbbt/util/simpleopt'
 
 $0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
 
 options = SOPT.setup <<EOF
 Examine the provenance of a job result
 
-$ rbbt workflow prov <job-result>
+$ rbbt workflow prov <job_result> [<dependency_task>]
 
 -h--help Help
 -p--plot* draw the dependency plot into <file.png>
@@ -34,12 +35,15 @@ $info_fields = (options[:info_fields] || "").split(",")
 
 file = ARGV.shift
 
+raise MissingParameterException, :job_result if file.nil?
+dependency_task = ARGV.shift
+
 $seen = []
 def get_step(file)
   file = File.expand_path(file) if File.exist?(file)
   file = file.sub(/\.(info|files)$/,'')
   $seen << file
-  Workflow.load_step file
+  Step.load file
 end
 
 def touch(step)
@@ -130,6 +134,9 @@ if options[:plot]
     end
   end
 
+elsif dependency_task
+  deps = step.rec_dependencies.select{|dep| dep.task_name.to_s == dependency_task}
+  puts deps.collect{|dep| dep.path } * "\n"
 else
   puts Step.prov_report(step, 0, nil, [], options[:expand_repeats])
 end

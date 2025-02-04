@@ -169,20 +169,22 @@ class TestOpen < Test::Unit::TestCase
   end
 
   def test_write_stream_repo
-    TmpFile.with_file do |tmpdir|
-      tmpdir = Rbbt.tmp.repo_dir.find
-      repo = File.join(tmpdir, 'repo')
+    keyword_test :repository_dirs do
+      TmpFile.with_file do |tmpdir|
+        tmpdir = Rbbt.tmp.repo_dir.find
+        repo = File.join(tmpdir, 'repo')
 
-      file = File.join(repo, 'file')
-      Open.repository_dirs.push(repo)
+        file = File.join(repo, 'file')
+        Open.repository_dirs.push(repo)
 
-      text = (["text"] * 5) * "\n"
+        text = (["text"] * 5) * "\n"
 
-      Misc.consume_stream(StringIO.new(text), false, file)
+        Misc.consume_stream(StringIO.new(text), false, file)
 
-      assert_equal text, Open.read(file)
-      assert Open.exists?(file)
-      refute File.exist?(file)
+        assert_equal text, Open.read(file)
+        assert Open.exists?(file)
+        refute File.exist?(file)
+      end
     end
 
   end

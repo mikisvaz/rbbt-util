@@ -66,7 +66,7 @@ puts resource[path].find(search_path)
         target += "/" unless target.end_with? '/'
       end
 
-      next if source_path == target
+      next if source_path == target && ! (options[:source] || options[:target])
 
       if options[:target]
         CMD.cmd("ssh #{options[:target]} mkdir -p '#{File.dirname(target)}'")

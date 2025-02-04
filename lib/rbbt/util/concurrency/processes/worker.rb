@@ -199,10 +199,10 @@ class RbbtProcessQueue
         @queue.close_write 
 
         if @callback_queue
-          Misc.purge_pipes(@callback_queue.swrite) 
+          Open.purge_pipes(@callback_queue.swrite) 
           @callback_queue.close_read 
         else
-          Misc.purge_pipes
+          Open.purge_pipes
         end
 
         if respawn

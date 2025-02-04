@@ -1,4 +1,40 @@
 module R
+  def self.field_classes(data)
+    field_samples = [nil] * data.fields.length
+
+    data.each do |k,vs|
+      vs = [vs] unless Array === vs
+      vs.each_with_index do |v,i|
+        if ! (v.nil? || v == "NA" || v == "")
+          field_samples[i] = v 
+        end
+      end
+      break unless field_samples.include?(nil)
+    end
+
+    field_samples.collect do |v| 
+      v = v.first if Array === v
+      case v
+      when FalseClass, TrueClass
+        "'logical'"
+      when Numeric
+        "'numeric'"
+      when String
+        if v.strip =~ /^[-+]?[\d\.]+$/
+          "'numeric'"
+        else
+          "'character'"
+        end
+      when Time
+        "'Date'"
+      when Symbol
+        "'factor'"
+      else
+        "NA"
+      end
+    end
+  end
+
   module SVG
 
     def self.plot(filename, data = nil, script = nil, width = nil, height = nil, options = {}, &block)
@@ -43,35 +79,11 @@ module R
         script << "\n" << s.read
       end
       sources = [:plot, options[:source]].flatten.compact
-      
+
+      field_classes = options[:field_classes]
+
       if data
-        data.each do |k,v|
-          v = Array === v ? v : [v]
-          next if v == "NA" or v.nil? or v.include? "NA" or v.include? nil
-          values = v
-          break
-        end 
-
-        values = [values] unless values.nil? or Array === values
-
-        field_classes = values.collect do |v| 
-          case v
-          when FalseClass, TrueClass
-            "'logical'"
-          when Numeric
-            "'numeric'"
-          when String
-            if v.strip =~ /^[-+]?[\d\.]+$/
-              "'numeric'"
-            else
-              "'character'"
-            end
-          when Symbol
-            "'factor'"
-          else
-            ":NA"
-          end
-        end
+        field_classes = R.field_classes(data) if field_classes.nil?
 
         options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')' if field_classes.any?
 
@@ -91,14 +103,16 @@ module R
     end
 
     def self.ggplot(data, script = nil, width = nil, height = nil, options = {})
-      width ||= 3
-      height ||= 3
+      width ||= 2
+      height ||= 2
       values = []
 
       options = options.dup
 
       sources = [:plot, :svg, options[:source]].flatten.compact
       options.delete :source
+
+      entity_geom = options.delete :entity_geom
 
       field_classes = options[:field_classes]
 
@@ -111,35 +125,8 @@ module R
       end
 
       if data
-        data.each do |k,v|
-          v = Array === v ? v : [v]
-          next if v == "NA" or v.nil? or v.include? "NA" or v.include? nil
-          values = v
-          break
-        end
-        values = [values] unless Array === values
 
-        field_classes = values.collect do |v| 
-          v = v.first if Array === v
-          case v
-          when FalseClass, TrueClass
-            "'logical'"
-          when Numeric
-            "'numeric'"
-          when String
-            if v.strip =~ /^[-+]?[\d\.]+$/
-              "'numeric'"
-            else
-              "'character'"
-            end
-          when Time
-            "'Date'"
-          when Symbol
-            "'factor'"
-          else
-            ":NA"
-          end
-        end if field_classes.nil?
+        field_classes = R.field_classes(data) if field_classes.nil?
 
         if field_classes.any?
           options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')'
@@ -149,15 +136,22 @@ module R
 
         TmpFile.with_file nil, true, :extension => 'svg' do |tmpfile|
 
-          data.R <<-EOF, sources, options
+          if entity_geom
+            data.R <<-EOF, sources, options
+  plot = { #{script} }
+  #{save_method}('#{tmpfile}', plot, width = #{R.ruby2R width}, height = #{R.ruby2R height}, entity.geom=#{R.ruby2R(entity_geom)}, data=data)
+  data = NULL
+            EOF
+          else
+            data.R <<-EOF, sources, options
   plot = { #{script} }
 
   #{save_method}('#{tmpfile}', plot, width = #{R.ruby2R width}, height = #{R.ruby2R height})
   data = NULL
-          EOF
+            EOF
+          end
 
           Open.read(tmpfile).gsub(/(glyph\d+-\d+)/, '\1-' + File.basename(tmpfile))
-
         end
       else
 
@@ -201,31 +195,8 @@ module R
 
       sources = [:plot, options[:source]].flatten.compact
 
-      data.each do |k,v|
-        v = Array === v ? v : [v]
-        next if v == "NA" or v.nil? or v.include? "NA" or v.include? nil
-        values = v
-        break
-      end
-      values = [values] unless Array === values
-      field_classes = values.collect do |v| 
-        case v
-        when FalseClass, TrueClass
-          "'logical'"
-        when Numeric
-          "'numeric'"
-        when String
-          if v.strip =~ /^[-+]?[\d\.]+$/
-            "'numeric'"
-          else
-            "'character'"
-          end
-        when Symbol
-          "'factor'"
-        else
-          ":NA"
-        end
-      end
+      field_classes = R.field_classes(data) if field_classes.nil?
+
       options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')'
 
       data.R <<-EOF, :plot, options
@@ -281,33 +252,7 @@ data = NULL
       sources = [:plot, options[:source]].flatten.compact
       
       if data
-        data.each do |k,v|
-          v = Array === v ? v : [v]
-          next if v == "NA" or v.nil? or v.include? "NA" or v.include? nil
-          values = v
-          break
-        end 
-
-        values = [values] unless values.nil? or Array === values
-
-        field_classes = values.collect do |v| 
-          case v
-          when FalseClass, TrueClass
-            "'logical'"
-          when Numeric
-            "'numeric'"
-          when String
-            if v.strip =~ /^[-+]?[\d\.]+$/
-              "'numeric'"
-            else
-              "'character'"
-            end
-          when Symbol
-            "'factor'"
-          else
-            ":NA"
-          end
-        end
+        field_classes = R.field_classes(data) if field_classes.nil?
 
         options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')' if field_classes.any?
 
@@ -347,31 +292,8 @@ data = NULL
 
       sources = [:plot, options[:source]].flatten.compact
 
-      data.each do |k,v|
-        v = Array === v ? v : [v]
-        next if v == "NA" or v.nil? or v.include? "NA" or v.include? nil
-        values = v
-        break
-      end
-      values = [values] unless Array === values
-      field_classes = values.collect do |v| 
-        case v
-        when FalseClass, TrueClass
-          "'logical'"
-        when Numeric
-          "'numeric'"
-        when String
-          if v.strip =~ /^[-+]?[\d\.]+$/
-            "'numeric'"
-          else
-            "'character'"
-          end
-        when Symbol
-          "'factor'"
-        else
-          ":NA"
-        end
-      end
+      field_classes = R.field_classes(data) if field_classes.nil?
+
       options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')'
 
       delay = options[:delay]
@@ -445,33 +367,7 @@ data = NULL
       frames = (1..frames).to_a if Integer === frames
 
       if data
-        data.each do |k,v|
-          v = Array === v ? v : [v]
-          next if v == "NA" or v.nil? or v.include? "NA" or v.include? nil
-          values = v
-          break
-        end 
-
-        values = [values] unless values.nil? or Array === values
-
-        field_classes = values.collect do |v| 
-          case v
-          when FalseClass, TrueClass
-            "'logical'"
-          when Numeric
-            "'numeric'"
-          when String
-            if v.strip =~ /^[-+]?[\d\.]+$/
-              "'numeric'"
-            else
-              "'character'"
-            end
-          when Symbol
-            "'factor'"
-          else
-            ":NA"
-          end
-        end
+        field_classes = R.field_classes(data) if field_classes.nil?
 
         options[:R_open] ||= "colClasses=c('character'," + field_classes * ", " + ')' if field_classes.any?
 

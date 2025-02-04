@@ -59,6 +59,5 @@ class TestBatch < Test::Unit::TestCase
 
     end
   end
-  
 end
 

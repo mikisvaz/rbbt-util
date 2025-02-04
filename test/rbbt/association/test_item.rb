@@ -1,9 +1,8 @@
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '../../..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'test/unit'
-require 'rbbt/tsv'
-require 'rbbt/association/item'
 
+require 'scout/association'
 class TestAssociationItem < Test::Unit::TestCase
   def test_incidence
     pairs = [[:A, :a], [:B, :b]].collect{|p| "#{p.first.to_s}~#{p.last.to_s}"}

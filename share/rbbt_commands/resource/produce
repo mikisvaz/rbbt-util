@@ -54,5 +54,12 @@ end
 
 force = options[:force]
 
-puts resource[path].produce(force).find
+file = resource[path].produce(force)
+
+if file
+    puts file.find
+else
+    puts Log.color("Error: Could not produce #{path} (#{resource})")
+    exit -1
+end
 

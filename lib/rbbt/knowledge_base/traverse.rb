@@ -80,7 +80,7 @@ class KnowledgeBase
 
       paths = {}
       matches = clean_matches[rule]
-      Annotated.purge(matches).each do |match|
+      Annotation.purge(matches).each do |match|
         new_assignments = nil
         match_source, _sep, match_target = match.partition "~"
 

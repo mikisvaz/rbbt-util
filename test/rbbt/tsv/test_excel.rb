@@ -125,11 +125,11 @@ row2    A    B    Id3
       TmpFile.with_file(nil, false, :extension => 'xlsx') do |excelfile|
         tsv.xlsx(excelfile, :unmerge => true)
 
-        new = TSV.excel(excelfile, :merge => false)
-        assert_equal %w(a), new["row1"]["ValueA"]
-
         new = TSV.excel(excelfile, :merge => true)
         assert_equal %w(a aa), new["row1"]["ValueA"]
+
+        new = TSV.excel(excelfile, :merge => false)
+        assert_equal %w(aa), new["row1"]["ValueA"]
       end
     end
   end

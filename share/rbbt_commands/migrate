@@ -36,4 +36,4 @@ search_path = 'user' if search_path.nil?
 
 options[:other] = other
 
-Rbbt.migrate(path, search_path, options)
+Rbbt.migrate(path.dup, search_path, options)

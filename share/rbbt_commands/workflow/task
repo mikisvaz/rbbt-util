@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
+require 'rbbt-util'
 require 'rbbt/util/simpleopt'
 require 'rbbt/workflow'
-require 'rbbt/workflow/usage'
 require 'time'
 
 def report_options(options)
@@ -25,7 +25,7 @@ def usage(workflow = nil, task = nil, exception=nil, abridge = false)
 
   if task.nil?
     workflow.load_tasks if workflow.respond_to? :load_tasks
-    workflow.doc nil, abridge
+    workflow.usage nil, abridge
     puts
     puts "E.g. rbbt workflow task #{workflow.to_s} #{workflow.tasks.keys.first.to_s} -h"
   else
@@ -40,7 +40,7 @@ def usage(workflow = nil, task = nil, exception=nil, abridge = false)
       puts Misc.format_paragraph workflow.documentation[:description] 
     end
     puts
-    workflow.doc(task, abridge)
+    workflow.usage task, abridge
   end
 
   print_error(exception.message, exception.backtrace) if exception
@@ -75,6 +75,7 @@ def fix_options(workflow, task, job_options)
   job_options.each do |name, value|
     type = input_types[name]
     type = type.to_sym if type
+    noload = input_options[name] && (input_options[name][:nofile] || input_options[name][:noload])
 
     if Step === value
         job_options_cleaned[name] = value
@@ -82,19 +83,19 @@ def fix_options(workflow, task, job_options)
     end
 
     if Path === value && Step === value.resource
-        job_options_cleaned[name] = value
-        next
+      job_options_cleaned[name] = value
+      next
     end
 
     value = case type
             when nil
-                value
+              value
             when :boolean
               TrueClass === value or %w(true TRUE T yes).include? value
             when :float
               value.to_f
             when :path
-              Path.setup(value)
+              Path.setup(value.dup)
             when :integer
               value.to_i
             when :text
@@ -111,10 +112,12 @@ def fix_options(workflow, task, job_options)
                 end
               end
             when :array
-              if input_options[name] && input_options[name][:stream] && String === value && Misc.is_filename?(value) && !! input_options[name][:nofile]
+              if input_options[name] && input_options[name][:stream] && String === value && Misc.is_filename?(value) && noload
                 get_value_stream(value)
               elsif input_options[name] and input_options[name][:stream] and value == "-"
                 STDIN
+              elsif Path.is_filename?(value) && (Path.step_file?(value) || Open.exists?(value))
+                value
               else
                 if Array === value || IO === value
                   value
@@ -124,7 +127,7 @@ def fix_options(workflow, task, job_options)
                         when value == '-'
                           array_separator ||= "\n"
                           STDIN.read
-                        when (String === value and File.exist?(value) and not (input_options[name] && input_options[name][:nofile]))
+                        when (String === value and File.exist?(value) and ! noload)
                           array_separator ||= "\n"
                           Open.read(value)
                         else
@@ -141,6 +144,8 @@ def fix_options(workflow, task, job_options)
             when :tsv
               if input_options[name] and input_options[name][:stream] and String === value
                 TSV::Parser.new(value == '-' ? STDIN : Open.open(value), :filename => value )
+              elsif noload
+                value
               else
                 case value
                 when TSV
@@ -180,7 +185,7 @@ available. Examples can be enacted using `rbbt workflow example <workflow>
 [<task>] [<example>]`.
 
 When a task is enacted a job is instantiated. This job is identified by the
-`jobname` (which is *#{Workflow::DEFAULT_NAME}* unless specified otherwise) and the values of the
+`jobname` (which is *#{Task::DEFAULT_NAME}* unless specified otherwise) and the values of the
 parameters; these two things determine the filename under which the job result
 will be saved. If the taks is enacted using the same `jobname` and parameters
 it will result in the same job, pointing to the same result file.
@@ -196,12 +201,13 @@ The `recursive_clean` cleans all the job dependency steps recursively.
 -wda--workdir_all* Change the working directory of ALL workflow
 -as--array_separator* Change the character that separates elements of Arrays, ',', '|', or '\\n' by default
 -fs--field_separator* Change the character that separates fields of TSV files '\\t' by default
--jn--jobname* Job name to use. The name '#{Workflow::DEFAULT_NAME}' is used by default
+-jn--jobname* Job name to use. The name '#{Task::DEFAULT_NAME}' is used by default
 -pn--printname Print the name of the job and exit without starting it
 -pf--printpath Print the path of the job result
 -cl--clean Clean the last step of the job so that it gets recomputed
 -ct--clean_task* Clean a particular dependency task
 -rcl--recursive_clean Clean the last step and its dependencies to recompute the job completely
+-u--update Update jobs if dependencies are newer
 -uaj--update_all_jobs Consider all dependencies when checking for updates, even when they have no info files
 --fork Run job asyncronously and monitor progress. It monitors detached processes as well
 --orchestrate* Run the job through the orchestrator
@@ -217,6 +223,7 @@ The `recursive_clean` cleans all the job dependency steps recursively.
 -R--requires* Require a list of files
 -pro--produce* Prepare dependencies
 -proc--produce_cpus* Number of dependencies prepared in parallel
+-prot--produce_timer* Time step for refreshing the orchestrator status
 -rwt--remote_workflow_tasks* Load a yaml file describing remote workflow tasks
 -od--override_deps* Override deps using 'Workflow#task=<path>' array_separated
 -PERF--procpath_performance* Measure performance using procpath
@@ -229,7 +236,9 @@ EOF
 workflow = ARGV.shift
 usage and exit! -1 if workflow.nil?
 
-task     = ARGV.shift
+task_name     = ARGV.shift
+
+task_name = task_name.to_sym if task_name
 
 # Set log, fork, clean, recursive_clean and help
 help = !!options.delete(:help)
@@ -241,6 +250,7 @@ clean = !!options.delete(:clean) || clean_task
 override_deps = options.delete(:override_deps)
 recursive_clean = !!options.delete(:recursive_clean)
 out = options.include?(:output) ? File.open(options[:output], 'wb') : STDOUT
+provenance = options.delete(:provenance)
 
 $array_separator = options.delete(:array_separator)
 $field_separator = options.delete(:field_separator) || "\t"
@@ -257,14 +267,17 @@ end
 Workflow.workdir.search_paths.merge!({:workdir => File.expand_path(options.delete(:workdir_all)), :default => :workdir }) if options[:workdir_all]
 
 workflow = Workflow.require_workflow workflow
-
 if clean_task
-  ENV["RBBT_UPDATE"] = 'true'
+  ENV["SCOUT_UPDATE"] = 'true'
+end
+
+if options[:update]
+  ENV["SCOUT_UPDATE"] = 'true'
 end
 
 if options[:update_all_jobs]
-  ENV["RBBT_UPDATE_ALL_JOBS"] = 'true'
-  ENV["RBBT_UPDATE"] = 'true'
+  ENV["SCOUT_UPDATE_ALL_JOBS"] = 'true'
+  ENV["SCOUT_UPDATE"] = 'true'
 end
 
 if options[:workflows]
@@ -291,38 +304,35 @@ end
 # Set task
 namespace = nil, nil
 
-case 
-when task.nil?
-  usage workflow, nil, nil, options[:abridge] and exit 0
-else
-  task_name = task.to_sym
-  begin
-    task = workflow.tasks[task_name]
-    raise Workflow::TaskNotFoundException.new workflow, task_name if task.nil?
-  rescue Workflow::TaskNotFoundException
-    usage workflow, nil, nil, options[:abridge]
+help = options[:help] = true if task_name.nil?
 
-    puts
-    puts Log.color :magenta, "## Error"
-    puts
-    puts $!.message
-    puts
-
-    exit -1
+if help
+  if defined? scout_usage
+    scout_usage 
+  else
+    puts SOPT.doc
   end
+
+  puts workflow.usage(task_name) if workflow
+  exit 0
+else
+  task = workflow.tasks[task_name.to_sym] if task_name
+  raise ParameterException, "Task #{task_name} not found" if task.nil?
 end
 
-usage workflow, task, nil, options[:abridge] and exit 0 if help
+#usage workflow, task, nil, options[:abridge] and exit 0 if help
+#puts workflow.usage(task, options[:abridge]) and exit 0 if help
 
 name = options.delete(:jobname) 
 
 # get job args
-job_options = workflow.get_SOPT(task)
+job_options = task.get_SOPT
 
 if options[:load_inputs]
   task_info = workflow.task_info(task_name)
-  job_options = Workflow.load_inputs(options[:load_inputs], task_info[:inputs], task_info[:input_types]).merge(job_options)
+  job_options = workflow.tasks[task_name].load_inputs(options[:load_inputs]).merge(job_options)
 end
+
 
 job_options = fix_options(workflow, task, job_options)
 saved_job_options = job_options
@@ -343,7 +353,13 @@ $job = job
 
 # clean job
 if clean 
-  job.clean 
+  if job.info[:task_alias]
+    Log.info "Cleaning task_alias #{Log.fingerprint job.dependencies.last}"
+    job.dependencies.last.clean
+    job.clean 
+  else
+    job.clean 
+  end
   sleep 1
 end
 
@@ -368,11 +384,11 @@ if recursive_clean
   job.recursive_clean 
 end
 
-require 'pp'
 
 # run
 begin
   if options[:info]
+    require 'pp'
     pp job.info
     exit 0
   end
@@ -385,11 +401,17 @@ begin
   if do_exec or (job.respond_to?(:is_exec) and job.is_exec)
     res = job.exec(:stream)
 
-    result_type = job.result_type
+    result_type = job.type
 
     res = JSON.parse(res.read) if (defined?(RemoteStep) and RemoteStep === job) && %w(array float integer boolean).include?(result_type.to_s)
 
     case
+    when res.respond_to?(:stream)
+      begin
+        Misc.consume_stream(res.stream, false, out)
+      rescue EOFError, IOError
+      end
+      res.join if res.respond_to? :join
     when res.respond_to?(:gets)
       begin
         Misc.consume_stream(res, false, out)
@@ -412,7 +434,7 @@ begin
     exit 0
   end
 
-  if options.delete(:provenance)
+  if provenance
     if options.delete(:printpath)
       puts job.path
     else
@@ -455,30 +477,19 @@ begin
         else
           RemoteWorkflow::SSH.relay_job_list([@job], @host, :run_type => run_type, :migrate => true, :produce_dependencies => @produce_dependencies)
           Step.migrate(@job, 'user', :source => @host)
-          load
+          nil
         end
       end
-      #job.dependencies = []
-
-      #([job] + job.rec_dependencies).each do |j|
-      #  next if job.done?
-      #  jmeta = class << j; self; end
-
-      #  j.instance_variable_set(:@job, job)
-      #  j.instance_variable_set(:@host, server)
-      #  j.instance_variable_set(:@produce_dependencies, produce_dependencies_for_relay)
-
-      #  jmeta.define_method :run do |*args|
-      #    if done?
-      #      load
-      #    else
-      #      RemoteWorkflow::SSH.relay_job_list([@job], @host, :run_type => run_type, :migrate => true, :produce_dependencies => @produce_dependencies)
-      #      Step.migrate(@job, 'user', :source => @host)
-      #      load
-      #    end
-      #  end
-      #end
     end
+  end
+
+  if tasks = options.delete(:produce)
+    tasks = tasks.split(",")
+    produce_cpus = (options[:produce_cpus] || 1)
+    produce_timer = (options[:produce_timer] || 5)
+    jobs = Workflow.produce_dependencies(job, tasks,  produce_cpus, produce_timer.to_f)
+    puts "Produced #{jobs.length} dependency jobs: #{Log.fingerprint jobs}"
+    exit 0
   end
 
 
@@ -491,6 +502,7 @@ begin
     jobs_to_relay.reject!{|d| d.done? }
 
     replace_relayed_jobs(jobs_to_relay, server, produce_dependencies_for_relay, :run)
+    RemoteWorkflow::SSH.relay_job_list(jobs_to_relay, server, :run_type => :run, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
   end
 
   if server = options.delete(:batch_relay)
@@ -501,6 +513,7 @@ begin
     jobs_to_relay.reject!{|d| d.done? }
 
     replace_relayed_jobs(jobs_to_relay, server, produce_dependencies_for_relay, :orchestrate)
+    RemoteWorkflow::SSH.relay_job_list(jobs_to_relay, server, :run_type => :orchestrate, :migrate => true, :produce_dependencies => produce_dependencies_for_relay)
   end
 
 
@@ -522,16 +535,8 @@ begin
     end
   end
 
-  if tasks = options.delete(:produce)
-    tasks = tasks.split(",")
-    produce_cpus = (options[:produce_cpus] || 1)
-    puts Step.produce_dependencies(job, tasks,  produce_cpus)
-    exit 0
-  end
-
-
   if do_fork
-    ENV["RBBT_NO_PROGRESS"] = "true"
+    ENV["SCOUT_NO_PROGRESS"] = "true"
     if detach
       job.fork
       Process.detach job.pid if job.pid
@@ -690,7 +695,7 @@ when Step
     exit! 0
   else
     res.join if res.running?
-    if %w(float integer string boolean).include?(res.result_type.to_s)
+    if %w(float integer string boolean).include?(res.type.to_s)
       out.puts res.load
     else
       Open.open(res.path, :mode => 'rb') do |io|

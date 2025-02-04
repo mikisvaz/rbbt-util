@@ -1,6 +1,7 @@
 require File.join(File.expand_path(File.dirname(__FILE__)), '../../', 'test_helper.rb')
 require 'rbbt/tsv'
 require 'rbbt/tsv/field_index'
+require 'rbbt/persist'
 
 class TestTSVFieldIndex < Test::Unit::TestCase
 
