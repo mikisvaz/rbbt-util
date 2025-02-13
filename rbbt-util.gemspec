@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
   s.authors = ["Miguel Vazquez".freeze]
-  s.date = "2025-01-17"
+  s.date = "2025-02-13"
   s.description = "Utilities for handling tsv files, caches, etc".freeze
   s.email = "miguel.vazquez.g@bsc.es".freeze
   s.executables = ["rbbt_query.rb".freeze, "rbbt_exec.rb".freeze, "rbbt_Rutil.rb".freeze, "rbbt".freeze, "rbbt_dangling_locks.rb".freeze, "rbbt_find.rb".freeze]
@@ -37,6 +37,7 @@ Gem::Specification.new do |s|
     "lib/rbbt.rb",
     "lib/rbbt/annotations.rb",
     "lib/rbbt/annotations/annotated_array.rb",
+    "lib/rbbt/annotations/refactor.rb",
     "lib/rbbt/annotations/util.rb",
     "lib/rbbt/association.rb",
     "lib/rbbt/association/database.rb",
@@ -46,6 +47,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/association/util.rb",
     "lib/rbbt/entity.rb",
     "lib/rbbt/entity/identifiers.rb",
+    "lib/rbbt/entity/refactor.rb",
     "lib/rbbt/fix_width_table.rb",
     "lib/rbbt/hpc.rb",
     "lib/rbbt/hpc/batch.rb",
@@ -67,6 +69,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/monitor.rb",
     "lib/rbbt/packed_index.rb",
     "lib/rbbt/persist.rb",
+    "lib/rbbt/persist/refactor.rb",
     "lib/rbbt/persist/tsv.rb",
     "lib/rbbt/persist/tsv/adapter.rb",
     "lib/rbbt/persist/tsv/cdb.rb",
@@ -78,8 +81,10 @@ Gem::Specification.new do |s|
     "lib/rbbt/persist/tsv/sharder.rb",
     "lib/rbbt/persist/tsv/tokyocabinet.rb",
     "lib/rbbt/persist/tsv/tokyocabinet/marshal.rb",
+    "lib/rbbt/refactor.rb",
     "lib/rbbt/resource.rb",
     "lib/rbbt/resource/path.rb",
+    "lib/rbbt/resource/path/refactor.rb",
     "lib/rbbt/resource/rake.rb",
     "lib/rbbt/resource/util.rb",
     "lib/rbbt/resource/with_key.rb",
@@ -102,6 +107,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/tsv/parallel/through.rb",
     "lib/rbbt/tsv/parallel/traverse.rb",
     "lib/rbbt/tsv/parser.rb",
+    "lib/rbbt/tsv/refactor.rb",
     "lib/rbbt/tsv/serializers.rb",
     "lib/rbbt/tsv/stream.rb",
     "lib/rbbt/tsv/util.rb",
@@ -115,6 +121,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/colorize.rb",
     "lib/rbbt/util/concurrency.rb",
     "lib/rbbt/util/concurrency/processes.rb",
+    "lib/rbbt/util/concurrency/processes/refactor.rb",
     "lib/rbbt/util/concurrency/processes/socket.rb",
     "lib/rbbt/util/concurrency/processes/worker.rb",
     "lib/rbbt/util/concurrency/threads.rb",
@@ -122,10 +129,12 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/docker.rb",
     "lib/rbbt/util/excel2tsv.rb",
     "lib/rbbt/util/filecache.rb",
+    "lib/rbbt/util/iruby.rb",
     "lib/rbbt/util/log.rb",
     "lib/rbbt/util/log/progress.rb",
     "lib/rbbt/util/log/progress/report.rb",
     "lib/rbbt/util/log/progress/util.rb",
+    "lib/rbbt/util/log/refactor.rb",
     "lib/rbbt/util/migrate.rb",
     "lib/rbbt/util/misc.rb",
     "lib/rbbt/util/misc/annotated_module.rb",
@@ -145,13 +154,19 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/misc/omics.rb",
     "lib/rbbt/util/misc/options.rb",
     "lib/rbbt/util/misc/pipes.rb",
+    "lib/rbbt/util/misc/refactor.rb",
     "lib/rbbt/util/misc/serialize.rb",
     "lib/rbbt/util/misc/ssw.rb",
     "lib/rbbt/util/misc/system.rb",
     "lib/rbbt/util/named_array.rb",
+    "lib/rbbt/util/named_array/refactor.rb",
     "lib/rbbt/util/open.rb",
+    "lib/rbbt/util/open/refactor.rb",
     "lib/rbbt/util/procpath.rb",
     "lib/rbbt/util/python.rb",
+    "lib/rbbt/util/python/paths.rb",
+    "lib/rbbt/util/python/run.rb",
+    "lib/rbbt/util/python/script.rb",
     "lib/rbbt/util/python/step.rb",
     "lib/rbbt/util/python/util.rb",
     "lib/rbbt/util/semaphore.rb",
@@ -163,6 +178,7 @@ Gem::Specification.new do |s|
     "lib/rbbt/util/simpleopt/parse.rb",
     "lib/rbbt/util/simpleopt/setup.rb",
     "lib/rbbt/util/ssh.rb",
+    "lib/rbbt/util/ssh/refactor.rb",
     "lib/rbbt/util/tar.rb",
     "lib/rbbt/util/task/job.rb",
     "lib/rbbt/util/tc_cache.rb",
@@ -179,6 +195,12 @@ Gem::Specification.new do |s|
     "lib/rbbt/workflow/integration/ansible/workflow.rb",
     "lib/rbbt/workflow/integration/cromwell.rb",
     "lib/rbbt/workflow/integration/nextflow.rb",
+    "lib/rbbt/workflow/refactor.rb",
+    "lib/rbbt/workflow/refactor/entity.rb",
+    "lib/rbbt/workflow/refactor/export.rb",
+    "lib/rbbt/workflow/refactor/inputs.rb",
+    "lib/rbbt/workflow/refactor/recursive.rb",
+    "lib/rbbt/workflow/refactor/task_info.rb",
     "lib/rbbt/workflow/remote_workflow.rb",
     "lib/rbbt/workflow/remote_workflow/driver.rb",
     "lib/rbbt/workflow/remote_workflow/driver/rest.rb",
@@ -326,7 +348,7 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "http://github.com/mikisvaz/rbbt-util".freeze
   s.licenses = ["MIT".freeze]
-  s.rubygems_version = "3.6.1".freeze
+  s.rubygems_version = "3.5.23".freeze
   s.summary = "Utilities for the Ruby Bioinformatics Toolkit (rbbt)".freeze
 
   s.specification_version = 4
