@@ -6,7 +6,7 @@ module Rbbt
 require 'rbbt-util'
 path = "#{path}"
 if Open.exists?(path)
-  path = #{resource.to_s}.identify(path)
+  path = Path.setup(#{resource.to_s}.identify(path))
 else
   path = Path.setup(path)
 end

@@ -1,5 +1,5 @@
-require_relative '../refactor'
 Rbbt.require_instead 'scout/tsv'
+require_relative '../refactor'
 require 'spreadsheet'
 require 'rubyXL'
 
