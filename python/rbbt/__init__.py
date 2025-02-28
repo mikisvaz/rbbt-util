@@ -2,6 +2,8 @@ import warnings
 import sys
 import os
 import subprocess
+import tempfile
+import shutil
 
 def cmd(cmd = None):
     if cmd is None:
@@ -144,4 +146,44 @@ def save_tsv(filename, df, key=None):
     key = "#" + key
     df.to_csv(filename, sep="\t", index_label=key)
 
+def save_job_inputs(data):
+    temp_dir = tempfile.mkdtemp()  # Create a temporary directory
 
+    for name, value in data.items():
+        file_path = os.path.join(temp_dir, name)
+
+        if isinstance(value, str):
+            file_path += ".txt"
+            with open(file_path, "w") as f:
+                f.write(value)
+
+        elif isinstance(value, (int, float, bool)):
+            with open(file_path, "w") as f:
+                f.write(str(value))
+
+        elif isinstance(value, pd.DataFrame):
+            file_path += ".tsv"
+            save_tsv(file_path, value)
+
+        elif isinstance(value, np.ndarray) or isinstance(value, list):
+            file_path += ".list"
+            with open(file_path, "w") as f:
+                f.write(value.join("\n"))
+
+        else:
+            raise TypeError(f"Unsupported data type for argument '{name}': {type(value)}")
+
+    return temp_dir
+
+
+def run_job(workflow, task, name='Default', **kwargs):
+    inputs_dir = save_job_inputs(kwargs)
+    cmd = f"workflow task {workflow} {task} -jn {name} --load_inputs {inputs_dir}"
+    cmd = ['rbbt', 'workflow', 'task', workflow, task, '--jobname', name, '--load_inputs', inputs_dir]
+    result = subprocess.run(cmd, capture_output=True).stdout.decode()
+    shutil.rmtree(inputs_dir)
+    return result
+
+if __name__ == "__main__":
+    res = run_job('Baking', 'bake_muffin_tray', 'test', blueberries=True)
+    print(res)

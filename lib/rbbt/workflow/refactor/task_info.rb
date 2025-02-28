@@ -10,7 +10,7 @@ module Workflow
     @task_info[id] ||= begin 
                          description = task.description
                          result_description = task.result_description
-                         result_type = task.result_type
+                         returns = task.returns
 
                          inputs = rec_inputs(name).uniq
                          input_types = rec_input_types(name)
@@ -42,8 +42,9 @@ module Workflow
                            :input_defaults => input_defaults,
                            :input_options => input_options,
                            :input_use => input_use,
-                           :result_type => result_type,
-                           :result_description => result_description,
+                           :returns => returns,
+                           #:result_type => result_type,
+                           #:result_description => result_description,
                            :dependencies => dependencies,
                            :extension => extension
                          }

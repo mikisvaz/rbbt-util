@@ -146,7 +146,6 @@ class RemoteWorkflow
                              task_info = RemoteWorkflow::REST.get_json(File.join(url, task.to_s, 'info'))
                              task_info = RemoteWorkflow.fix_hash(task_info)
 
-                             task_info[:result_type] = task_info[:result_type].to_sym
                              task_info[:export] = task_info[:export].to_sym
                              task_info[:input_types] = RemoteWorkflow.fix_hash(task_info[:input_types], true)
                              task_info[:inputs] = task_info[:inputs].collect{|input| input.to_sym }
@@ -248,7 +247,6 @@ class RemoteWorkflow
       end
     end
 
-
     def task_info(task)
       RemoteWorkflow::REST.task_info(url, task)
     end
@@ -260,6 +258,7 @@ class RemoteWorkflow
       @exec_exports = (task_exports["exec"] || []).collect{|task| task.to_sym }
       @stream_exports = (task_exports["stream"] || []).collect{|task| task.to_sym }
       @can_stream = task_exports["can_stream"]
+      (@asynchronous_exports + @synchronous_exports + @exec_exports).uniq.each do |e| tasks[e] end
     end
   end
 end
