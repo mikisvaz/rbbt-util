@@ -464,12 +464,18 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
    }
   }
  }
- python=python filter="*"{
-  rbbt=rbbt{
+
+ python=python filter="*" {
+  test.py
+  rbbt=rbbt {
    __init__.py
    workflow.py
+   workflow=workflow {
+    remote.py
+   }
   }
  }
+
  integration_test=integration_test{
   test_bed.rb
   test_helper.rb

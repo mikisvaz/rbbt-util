@@ -17,6 +17,8 @@ class TestTaskInfo < Test::Unit::TestCase
       task :step2 do end
     end
 
+    iii m.task_info :step1
+
   end
 end
 

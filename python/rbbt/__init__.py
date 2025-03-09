@@ -1,24 +1,27 @@
-import warnings
 import sys
 import os
 import subprocess
 import tempfile
 import shutil
 
-def cmd(cmd = None):
+
+def cmd(cmd=None):
     if cmd is None:
         print("Rbbt")
     else:
         return subprocess.run('rbbt_exec.rb', input=cmd.encode('utf-8'), capture_output=True).stdout.decode()
 
+
 def libdir():
-    return rbbt('puts Rbbt.find(:lib)').rstrip()
+    return cmd('puts Rbbt.find(:lib)').rstrip()
+
 
 def add_libdir():
     pythondir = os.path.join(libdir(), 'python')
     sys.path.insert(0, pythondir)
 
-def path(subdir = None, base_dir = None):
+
+def path(subdir=None, base_dir=None):
     from pathlib import Path
     import os
 
@@ -157,7 +160,14 @@ def save_job_inputs(data):
             with open(file_path, "w") as f:
                 f.write(value)
 
-        elif isinstance(value, (int, float, bool)):
+        elif isinstance(value, (bool)):
+            with open(file_path, "w") as f:
+                if value:
+                    f.write('true')
+                else:
+                    f.write('false')
+
+        elif isinstance(value, (int, float)):
             with open(file_path, "w") as f:
                 f.write(str(value))
 
@@ -176,14 +186,25 @@ def save_job_inputs(data):
     return temp_dir
 
 
-def run_job(workflow, task, name='Default', **kwargs):
+def run_job(workflow, task, name='Default', fork=False, clean=False, **kwargs):
     inputs_dir = save_job_inputs(kwargs)
-    cmd = f"workflow task {workflow} {task} -jn {name} --load_inputs {inputs_dir}"
     cmd = ['rbbt', 'workflow', 'task', workflow, task, '--jobname', name, '--load_inputs', inputs_dir]
+
+    if fork:
+        cmd.append('--fork')
+        cmd.append('--detach')
+
+    if clean:
+        if clean == 'recursive':
+            cmd.append('--recursive_clean')
+        else:
+            cmd.append('--clean')
+
     result = subprocess.run(cmd, capture_output=True).stdout.decode()
     shutil.rmtree(inputs_dir)
     return result
 
 if __name__ == "__main__":
-    res = run_job('Baking', 'bake_muffin_tray', 'test', blueberries=True)
+    import json
+    res = run_job('Baking', 'bake_muffin_tray', 'test', add_blueberries=True, fork=True)
     print(res)

@@ -535,12 +535,14 @@ begin
     end
   end
 
-  if do_fork
+  if do_fork || detach
     ENV["SCOUT_NO_PROGRESS"] = "true"
     if detach
       job.fork
       Process.detach job.pid if job.pid
-      puts Log.color(:magenta, "Issued: ") + Log.color(:magenta, job.pid ? job.pid.to_s : 'no pid') + ' -- ' + job.path
+      Log.info(Log.color(:magenta, "Issued: ") + Log.color(:magenta, job.pid ? job.pid.to_s : 'no pid') + ' -- ' + job.path)
+      puts job.path
+
       exit 0
     end
 

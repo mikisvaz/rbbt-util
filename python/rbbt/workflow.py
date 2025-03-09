@@ -1,104 +1,65 @@
-import requests
-import logging
+from . import cmd, run_job
+import subprocess
 import json
-from urllib.parse import urlencode, urljoin
-from time import sleep
-import itertools
+import time
 
-def request_post(url, params):
-    response = requests.post(url, params)
-    return response
+def save_inputs(directory, inputs, types):
+    return
 
-def request_get(url, params):
-    query = urlencode(params)
-    full_url = f"{url}?{query}"
-    response = requests.get(full_url)
-    return response
+class Workflow:
+    def __init__(self, name):
+        self.name = name
 
-def get_json(url, params={}):
-    params['_format'] = 'json'
-    response = request_get(url, params)
-    if response.status_code == 200:
-        return json.loads(response.content)  # parse the JSON content from the response
-    else:
-        logging.error("Failed to initialize remote tasks")
+    def tasks(self):
+        ruby=f'Workflow.require_workflow("{self.name}").tasks.keys * "\n"'
+        return cmd(ruby).strip().split("\n")
 
-def get_raw(url, params={}):
-    params['_format'] = 'raw'
-    response = request_get(url, params)
-    if response.status_code == 200:
-        return response.content  # parse the JSON content from the response
-    else:
-        logging.error("Failed to initialize remote tasks")
+    def task_info(self, name):
+        ruby=f'Workflow.require_workflow("{self.name}").task_info("{name}").to_json'
+        return cmd(ruby)
 
-def join(url, *subpaths):
-    return url + "/" + "/".join(subpaths)
+    def run(self, task, **kwargs):
+        return run_job(self.name, task, **kwargs)
 
-class RemoteStep:
-    def __init__(self, url):
-        self.url = url
+    def fork(self, task, **kwargs):
+        path = run_job(self.name, task, fork=True, **kwargs)
+        return Step(path)
 
+class Step:
+    def __init__(self, path):
+        self.path = path
+        self.info_content = None
+    
     def info(self):
-        return get_json(join(self.url, 'info'))
+        if self.info_content:
+            return self.info_content
+        ruby=f'puts Step.load("{self.path}").info.to_json'
+        txt = cmd(ruby)
+        info_content = json.loads(txt)
+        status = info_content["status"]
+        if status == "done" or status == "error" or status == "aborted":
+            self.info_content = info_content
+        return info_content
+    
     def status(self):
-        return self.info()['status']
+        return self.info()["status"]
 
     def done(self):
         return self.status() == 'done'
 
     def error(self):
-        return self.status() == 'error' or self.status() == 'aborted'
+        return self.status() == 'error'
 
-    def running(self):
-        return not (self.done() or self.error())
+    def aborted(self):
+        return self.status() == 'aborted'
 
-    def wait(self, time=1):
-        while self.running():
-            sleep(time)
-
-
-    def raw(self):
-        return get_raw(self.url)
-
-    def json(self):
-        return get_json(self.url)
-
-class RemoteWorkflow:
-    def __init__(self, url):
-        self.url = url
-        self.task_exports = {}
-        self.init_remote_tasks()
-
-    def init_remote_tasks(self):
-        self.task_exports = get_json(self.url)
-        self.tasks = []
-        self.tasks += self.task_exports['asynchronous']
-        self.tasks += self.task_exports['synchronous']
-        self.tasks += self.task_exports['exec']
-
-    def task_info(self, name):
-        return get_json(join(self.url, name, '/info'))
-
-    def job(self, task, **kwargs):
-        kwargs['_format'] = 'jobname'
-        response = request_post(join(self.url, task), kwargs)
-        if response.status_code == 200:
-            jobname = response.content.decode('utf-8')
-            step_url = join(self.url, task, jobname)
-            print(step_url)
-            return RemoteStep(step_url)
-        else:
-            logging.error("Failed to initialize remote tasks")
-
-
-if __name__ == "__main__":
-    wf = RemoteWorkflow('http://localhost:1900/Baking')
-    print(wf.tasks)
-    print(wf.task_info('bake_muffin_tray'))
-
-    step = wf.job('bake_muffin_tray', blueberries=True)
-    step.wait()
-    print(step.json())
-
-
-
+    def join(self):
+        while not (self.done() or self.error() or self.aborted()):
+            print(self.status())
+            time.sleep(1)
+    
+    def load(self):
+        ruby=f'puts Step.load("{self.path}").load.to_json'
+        txt = cmd(ruby)
+        return json.loads(txt)
+        

@@ -30,7 +30,7 @@ data = data * "\n" if Array === data
 
 case
 when (output.nil? or output == '-')
-  puts data
+  STDOUT.write data
 when output == "file"
   if Misc.filename? data
     tmpfile = data
@@ -39,7 +39,7 @@ when output == "file"
     Open.write(tmpfile, data.to_s)
   end
 
-  puts tmpfile
+  STDOUT.puts tmpfile
 else
   Open.write(output, data.to_s)
 end
