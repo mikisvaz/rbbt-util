@@ -36,6 +36,7 @@ class Step:
         ruby=f'puts Step.load("{self.path}").info.to_json'
         txt = cmd(ruby)
         info_content = json.loads(txt)
+        print(info_content)
         status = info_content["status"]
         if status == "done" or status == "error" or status == "aborted":
             self.info_content = info_content

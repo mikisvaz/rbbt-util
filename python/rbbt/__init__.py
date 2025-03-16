@@ -3,6 +3,8 @@ import os
 import subprocess
 import tempfile
 import shutil
+import pandas
+import numpy
 
 
 def cmd(cmd=None):
@@ -171,14 +173,14 @@ def save_job_inputs(data):
             with open(file_path, "w") as f:
                 f.write(str(value))
 
-        elif isinstance(value, pd.DataFrame):
+        elif isinstance(value, pandas.DataFrame):
             file_path += ".tsv"
             save_tsv(file_path, value)
 
-        elif isinstance(value, np.ndarray) or isinstance(value, list):
+        elif isinstance(value, numpy.ndarray) or isinstance(value, list):
             file_path += ".list"
             with open(file_path, "w") as f:
-                f.write(value.join("\n"))
+                f.write("\n".join(value))
 
         else:
             raise TypeError(f"Unsupported data type for argument '{name}': {type(value)}")
@@ -188,7 +190,7 @@ def save_job_inputs(data):
 
 def run_job(workflow, task, name='Default', fork=False, clean=False, **kwargs):
     inputs_dir = save_job_inputs(kwargs)
-    cmd = ['rbbt', 'workflow', 'task', workflow, task, '--jobname', name, '--load_inputs', inputs_dir]
+    cmd = ['rbbt', 'workflow', 'task', workflow, task, '--jobname', name, '--load_inputs', inputs_dir, '--nocolor']
 
     if fork:
         cmd.append('--fork')
@@ -200,9 +202,18 @@ def run_job(workflow, task, name='Default', fork=False, clean=False, **kwargs):
         else:
             cmd.append('--clean')
 
-    result = subprocess.run(cmd, capture_output=True).stdout.decode()
+    proc = subprocess.run(
+        cmd,
+        capture_output=True,  # Capture both stdout and stderr
+        text=True  # Automatically decode outputs to strings
+        )
     shutil.rmtree(inputs_dir)
-    return result
+    if proc.returncode != 0:
+        output = proc.stderr.strip()
+        if output == '' :
+            output = proc.stdout.strip()
+        raise RuntimeError(output)  # Raise error with cleaned stderr content
+    return proc.stdout.strip()
 
 if __name__ == "__main__":
     import json
