@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+
+require 'rbbt/workflow'
+
+require 'rbbt-util'
+require 'rbbt-util'
+require 'rbbt/util/simpleopt'
+
+$0 = "rbbt #{$previous_commands*""} #{ File.basename(__FILE__) }" if $previous_commands
+
+options = SOPT.setup <<EOF
+Retry a failed job
+
+$ rbbt workflow retry <job-path>
+
+Does not retry if job is done unless clean is specified
+
+-h--help Help
+-cl--clean Clean the job
+-rcl--recursive_clean Recursively clean the job
+EOF
+
+SOPT.usage if options[:help]
+
+file = ARGV.shift
+def get_step(file)
+  file = file.sub(/\.(info|files)/,'')
+  step = Workflow.load_step file
+  step
+end
+
+step = get_step(file)
+inputs = step.recursive_inputs
+
+step.clean if options[:clean]
+step.recursive_clean if options[:recursive_clean]
+
+if ! step.done?
+  wf = Workflow.require_workflow step.workflow
+  job = wf.job(step.task_name, step.clean_name, inputs.to_hash)
+  job.run
+end
+
