@@ -1,5 +1,3 @@
-require_relative 'refactor/export'
-require_relative 'refactor/recursive'
 require_relative 'refactor/inputs'
 require_relative 'refactor/entity'
 

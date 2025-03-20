@@ -132,9 +132,6 @@ rbbt-util=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass 
     refactor.rb
     refactor=refactor{
      inputs.rb
-     export.rb
-     recursive.rb
-     task_info.rb
      entity.rb
     }
     annotate.rb
