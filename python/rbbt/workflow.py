@@ -29,19 +29,18 @@ class Step:
     def __init__(self, path):
         self.path = path
         self.info_content = None
-    
+
     def info(self):
         if self.info_content:
             return self.info_content
         ruby=f'puts Step.load("{self.path}").info.to_json'
         txt = cmd(ruby)
         info_content = json.loads(txt)
-        print(info_content)
         status = info_content["status"]
         if status == "done" or status == "error" or status == "aborted":
             self.info_content = info_content
         return info_content
-    
+
     def status(self):
         return self.info()["status"]
 
@@ -56,11 +55,10 @@ class Step:
 
     def join(self):
         while not (self.done() or self.error() or self.aborted()):
-            print(self.status())
             time.sleep(1)
-    
+
     def load(self):
         ruby=f'puts Step.load("{self.path}").load.to_json'
         txt = cmd(ruby)
         return json.loads(txt)
-        
+
