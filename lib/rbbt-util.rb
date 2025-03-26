@@ -20,7 +20,7 @@ require_relative 'rbbt/tsv'
 require_relative 'rbbt/workflow'
 
 Persist.cache_dir     = Rbbt.var.cache.persistence
-FileCache.cachedir    = Rbbt.var.cache.filecache.find :user
-TmpFile.tmpdir        = Rbbt.tmp.find :user
+FileCache.cachedir    = Rbbt.var.cache.filecache.find
+TmpFile.tmpdir        = Rbbt.tmp.find
 Resource.default_resource = Rbbt
 

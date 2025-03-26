@@ -12,7 +12,7 @@ module FileCache
 
   def self.cachedir=(cachedir)
     CACHEDIR.replace cachedir
-    FileUtils.mkdir_p CACHEDIR unless File.exist? CACHEDIR
+    Open.mkdir CACHEDIR unless Open.exist? CACHEDIR
   end
 
   def self.cachedir
