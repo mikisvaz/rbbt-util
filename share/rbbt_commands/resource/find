@@ -74,7 +74,7 @@ end if resource
 
 path = (resource || Rbbt)[path]
 
-if where.nil? || where == 'all' || path.search_paths.include?(where.to_sym)
+if where.nil? || where == 'all' || path.map_maps.include?(where.to_sym)
   location = path.find(where)
 
   if Array === location
