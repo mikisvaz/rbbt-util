@@ -5,7 +5,8 @@ class RemoteWorkflow
 
   attr_accessor :url, :name, :exec_exports, :synchronous_exports, :asynchronous_exports, :stream_exports
 
-  def initialize(url, name)
+  def initialize(url, name = nil)
+    name = File.basename(url) if name.nil?
     Log.debug{ "Loading remote workflow #{ name }: #{ url }" }
     @url, @name = url, name
 

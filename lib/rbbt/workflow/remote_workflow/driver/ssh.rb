@@ -94,7 +94,7 @@ job = wf.job(task, jobname, job_inputs)
 STDOUT.write res.to_json
       EOF
 
-      json = Misc.ssh_run(server, script)
+      json = SSHLine.ruby(server, script)
       Log.debug "JSON (#{ url }): #{json}" if RBBT_DEBUG_REMOTE_JSON
       JSON.parse(json)
     end
@@ -107,7 +107,7 @@ STDOUT.write res.to_json
 STDOUT.write res
       EOF
 
-      Misc.ssh_run(server, script)
+      SSHLine.ruby(server, script)
     end
 
     def self.post_job(url, inputs_id, jobname = nil)
@@ -119,7 +119,7 @@ STDOUT.write res
 job.init_info
 STDOUT.write job.path
       EOF
-      Misc.ssh_run(server, script)
+      SSHLine.ruby(server, script)
     end
 
     def self.run_job(url, input_id, jobname = nil)
@@ -133,7 +133,7 @@ job.clean if job.error? and job.recoverable_error?
 job.run unless job.done? || job.error?
 STDOUT.write job.path
       EOF
-      Misc.ssh_run(server, script)
+      SSHLine.ruby(server, script)
     end
 
     def self.run_batch_job(url, input_id, jobname = nil, batch_options = {})
@@ -149,7 +149,7 @@ job.clean if job.error? and job.recoverable_error?
 HPC::BATCH_MODULE.run_job(job, batch_options) unless job.done? || job.error?
 STDOUT.write job.path
       EOF
-      Misc.ssh_run(server, script)
+      SSHLine.ruby(server, script)
     end
 
     def self.orchestrate_batch_job(url, input_id, jobname = nil, batch_options = {})
@@ -165,7 +165,7 @@ job.clean if job.error? and job.recoverable_error?
 HPC::BATCH_MODULE.orchestrate_job(job, batch_options) unless job.done? || job.error?
 STDOUT.write job.path
       EOF
-      Misc.ssh_run(server, script)
+      SSHLine.ruby(server, script)
     end
 
     def self.clean(url, input_id, jobname = nil)
@@ -175,7 +175,7 @@ STDOUT.write job.path
       script +=<<-EOF
 job.clean
       EOF
-      Misc.ssh_run(server, script)
+      SSHLine.ruby(server, script)
     end
 
     def self.upload_inputs(server, inputs, input_types, input_id)
@@ -234,7 +234,7 @@ job.clean
       all_deps.each do |dep,jobs|
         next if dep.done?
         next if job_list.include?(dep)
-        Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{Misc.fingerprint jobs}"
+        Log.medium "Producing #{dep.workflow}:#{dep.short_path} dependency for #{Log.fingerprint jobs}"
         dep.produce
         missing_deps << dep
       end if produce_dependencies
@@ -243,7 +243,7 @@ job.clean
 
       #migrate_dependencies = all_deps.keys.collect{|d| [d] + d.rec_dependencies + d.input_dependencies }.flatten.select{|d| d.done? }.collect{|d| d.path }
       migrate_dependencies = all_deps.keys.collect{|d| [d] + d.input_dependencies }.flatten.select{|d| d.done? }.collect{|d| d.path }
-      Log.low "Migrating #{migrate_dependencies.length} dependencies from #{Misc.fingerprint job_list} to #{ server }" 
+      Log.low "Migrating #{migrate_dependencies.length} dependencies from #{Log.fingerprint job_list} to #{ server }" 
       Step.migrate(migrate_dependencies, search_path, :target => server) if migrate_dependencies.any?
     end
 
@@ -287,7 +287,7 @@ job.clean
 
       if options[:migrate]
         rjob.produce
-        Step.migrate(Rbbt.identify(job.path), 'user', :source => server) 
+        Step.migrate(Path.identify(job.path), 'user', :source => server) 
       end
 
       rjob
@@ -337,7 +337,7 @@ job.clean
       if options[:migrate]
         rjobs_job.each do |rjob,job|
           rjob.produce
-          Step.migrate(Rbbt.identify(job.path), 'user', :source => server) 
+          Step.migrate(Path.identify(job.path), 'user', :source => server) 
         end
       end
 

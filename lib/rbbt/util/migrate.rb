@@ -2,7 +2,7 @@ module Rbbt
 
   def self.migrate_source_paths(path, resource = Rbbt, source = nil)
     if source
-      lpath, *paths = Misc.ssh_run(source, <<-EOF).split("\n")
+      lpath, *paths = SSHLine.ruby(source, <<-EOF).split("\n")
 require 'rbbt-util'
 path = "#{path}"
 if Open.exists?(path)
@@ -36,7 +36,7 @@ puts path.find_all.collect{|p| File.directory?(p) ? p + "/" : p } * "\n"
 
   def self.migrate_target_path(path, search_path = 'user', resource = Rbbt, target = nil)
     if target
-      Misc.ssh_run(target, <<-EOF).split("\n").first
+      SSHLine.ruby(target, <<-EOF).split("\n").first
 require 'rbbt-util'
 path = "#{path}"
 resource = #{resource.to_s}

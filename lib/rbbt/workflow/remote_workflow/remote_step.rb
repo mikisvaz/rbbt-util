@@ -289,7 +289,7 @@ class RemoteStep < Step
 
     stream = true if res.respond_to? :read
     join unless stream
-    result_type ||= self.result_type
+    result_type ||= self.type
 
     case result_type.to_sym
     when :string
