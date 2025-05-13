@@ -56,7 +56,7 @@ def status_msg(status)
 end
 
 def pid_msg(pid, done = false)
-  color = if pid and (done or Misc.pid_exists? pid)
+  color = if pid and (done or Misc.pid_alive? pid)
             :green
           else
             :red

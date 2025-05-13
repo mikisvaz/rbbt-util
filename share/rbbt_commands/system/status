@@ -36,7 +36,7 @@ inputs = (options[:inputs] || "").split(",")
 info_fields = (options[:info_fields] || "").split(",")
 
 def pid_msg(pid)
-  color = if pid and Misc.pid_exists? pid
+  color = if pid and Misc.pid_alive? pid
             :green
           else
             :red
@@ -211,7 +211,7 @@ workflows.sort.each do |workflow,tasks|
         status = :missing if status == :done and not (Open.exist?(file) && ! Open.broken_link?(file))
         status = :broken if Open.broken_link?(file)
         status = status.to_s
-        if status != "done" and pid and not Misc.pid_exists?(pid)
+        if status != "done" and pid and not Misc.pid_alive?(pid)
           if File.exist? file
             status << Log.color(:red, " (out of sync)") 
           else

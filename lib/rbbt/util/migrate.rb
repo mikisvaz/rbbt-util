@@ -11,7 +11,7 @@ else
   path = Path.setup(path)
 end
 puts path
-puts path.glob_all.collect{|p| File.directory?(p) ? p + "/" : p } * "\n"
+puts path.find_all.collect{|p| File.directory?(p) ? p + "/" : p } * "\n"
       EOF
 
       [path, paths.collect{|p| [source, p] * ":"}, lpath]
