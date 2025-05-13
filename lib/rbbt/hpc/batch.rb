@@ -133,7 +133,7 @@ module HPC
       # Save inputs into inputs_dir
       inputs_dir = IndiferentHash.process_options options, :inputs_dir
       saved = job.save_inputs(inputs_dir)
-      options[:load_inputs] = inputs_dir if saved && saved.any?
+      options[:load_inputs] = inputs_dir if saved && !saved.nil? && !saved.empty?
 
       saved.each do |input|
         options.delete input

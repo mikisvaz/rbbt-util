@@ -338,7 +338,7 @@ workdir.glob("**/command.batch").sort_by{|f| File.mtime(f)}.each do |fcmd|
       step_path = step_line.split(": ").last.strip
       step = Step.new step_path
       has_bar = false
-      (step.rec_dependencies + [step]).reverse.each do |j|
+      (step.rec_dependencies + [step]).to_a.reverse.each do |j|
         next if j.done? 
         if j.file(:progress).exists?
           bar = Log::ProgressBar.new 
