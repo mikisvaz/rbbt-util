@@ -3,7 +3,7 @@ $LOAD_PATH.unshift File.join(__dir__, '../../lib')
 
 require 'scout/path'
 require 'scout/resource'
-Path.add_path :rbbt_util, File.join(Path.caller_lib_dir(__FILE__), "{TOPLEVEL}/{SUBPATH}")
+Path.add_path :rbbt_util_lib, File.join(Path.caller_lib_dir(__FILE__), "{TOPLEVEL}/{SUBPATH}")
 module Rbbt
   extend Resource
 

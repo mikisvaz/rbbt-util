@@ -102,7 +102,7 @@ end
 $scout_command_dir = Scout.bin.scout
 $scout_command_dir.path_maps[:rbbt_bin] = File.join(File.dirname(__dir__), "{PATH/bin\\/scout/bin\\/rbbt}")
 $scout_command_dir.path_maps[:rbbt_commands] = File.join(File.dirname(__dir__), "{PATH/bin\\/scout/share\\/rbbt_commands}")
-$scout_command_dir.path_maps[:scout_commands] = File.join(Scout.root.find(:scout_gear), "{PATH/bin\\/scout/scout_commands}")
+$scout_command_dir.path_maps[:scout_commands] = File.join(Scout.root.find(:scout_gear_lib), "{PATH/bin\\/scout/scout_commands}")
 
 SOPT.description =<<EOF
 This command controls many aspects of the Scout framework, from configuration tasks to running applications. 
