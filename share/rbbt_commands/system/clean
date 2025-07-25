@@ -46,7 +46,7 @@ if locks.any?
   puts
   puts Log.color(:magenta, "Locks:")
   locks.each do |file,info|
-    if force or (info[:pid] && ! Misc.pid_exists?(info[:pid]))
+    if force or (info[:pid] && ! Misc.pid_alive?(info[:pid]))
       puts "  Removing #{ file }"
       File.unlink file 
     end
@@ -58,7 +58,7 @@ if persists.any?
   puts
   puts Log.color(:magenta, "Persist:")
   persists.each do |file,info|
-    if force or (info[:pid] and Misc.pid_exists? info[:pid])
+    if force or (info[:pid] and Misc.pid_alive? info[:pid])
       puts "  Removing #{ file }"
       File.unlink file 
     end
@@ -70,7 +70,7 @@ if sensiblewrites.any?
   puts
   puts Log.color(:magenta, "Writes:")
   sensiblewrites.each do |file,info|
-    if force or (info[:pid] and Misc.pid_exists? info[:pid])
+    if force or (info[:pid] and Misc.pid_alive? info[:pid])
       puts "  Removing #{ file }"
       File.unlink file 
     end
@@ -111,7 +111,7 @@ TSV.traverse jobs do |file,i|
     if status != "noinfo"
       status = :missing if status == "done" and not done
       status = :nopid if status != "done" and pid.nil?
-      status = :dead if status != "done" and pid and not Misc.pid_exists?(pid)
+      status = :dead if status != "done" and pid and not Misc.pid_alive?(pid)
       status = :sync if status != "done" and done
     end
 
