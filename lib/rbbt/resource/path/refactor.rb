@@ -94,7 +94,7 @@ module Path
   end
 
   def identifier_file_path
-    if self.dirname.identifiers.exists?
+    if self.dirname.identifiers.exists?(produce: false)
       self.dirname.identifiers
     else
       nil
