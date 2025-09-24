@@ -862,6 +862,7 @@ rbbt.install.bioc <-function(pkg){
 }
 
 rbbt.install.biocManager <-function(pkg, ...){
+    rbbt.install.CRAN("BiocManager")
     cat("Try BiocManager install:", pkg, "\n")
     res = FALSE
     tryCatch({ BiocManager::install(pkg, ...); res = TRUE }, error = function(e){ warning(paste("Could not install BiocManager ", pkg, "\n")); res = FALSE })
