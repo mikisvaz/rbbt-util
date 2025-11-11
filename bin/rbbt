@@ -72,7 +72,7 @@ $ #{$0} <command> <subcommand> ... -a --arg1 --arg2='value' --arg3 'another-valu
 -ck--config_keys*       #{Log.color :yellow, "Override some config keys"}
 EOF
 
-Log.nocolor = true if options[:nocolor]
+Log.nocolor = true if options.delete :nocolor
 
 locate = options.delete :locate_file
 
