@@ -353,7 +353,7 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "http://github.com/mikisvaz/rbbt-util".freeze
   s.licenses = ["MIT".freeze]
-  s.rubygems_version = "3.6.6".freeze
+  s.rubygems_version = "3.7.0.dev".freeze
   s.summary = "Utilities for the Ruby Bioinformatics Toolkit (rbbt)".freeze
 
   s.specification_version = 4
