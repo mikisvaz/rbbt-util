@@ -857,7 +857,12 @@ rbbt.install.CRAN <- function(pkg){
 rbbt.install.bioc <-function(pkg){
     cat("Try BIOC install:", pkg, "\n")
     res = FALSE
-    tryCatch({ source("http://bioconductor.org/biocLite.R"); biocLite(pkg, ask=FALSE, suppressUpdates = TRUE); res = TRUE }, error = function(e){ warning(paste("Could not install Bioconductor ", pkg, "\n")); res = FALSE })
+    tryCatch({ 
+        if (!require("BiocManager", quietly = TRUE))
+            install.packages("BiocManager")
+        BiocManager::install(version = "3.22")
+        #source("http://bioconductor.org/biocLite.R"); biocLite(pkg, ask=FALSE, suppressUpdates = TRUE); res = TRUE 
+    }, error = function(e){ warning(paste("Could not install Bioconductor ", pkg, "\n")); res = FALSE })
     return(res)
 }
 
