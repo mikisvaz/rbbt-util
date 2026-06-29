@@ -26,7 +26,7 @@ module TSV
   def unzip(field = 0, merge = false, sep = ":", delete = true, **kwargs)
     kwargs[:merge] ||= merge
     kwargs[:sep] ||= sep
-    kwargs[:delete] ||= delete
+    kwargs[:delete] = delete if kwargs[:delete].nil?
     original_unzip(field, **kwargs)
   end
 
