@@ -23,7 +23,7 @@ its position. If not specified 'key' defaults to 0, the first entry.
 -t--type* Type of tsv
 EOF
 
-rbbt_usage and exit 0 if options[:help]
+scout_usage and exit 0 if options[:help]
 
 file, key = ARGV
 
@@ -82,13 +82,14 @@ parser = TSV::Parser.new tsv, **options
 fields ||= parser.fields
 i = 0
 TSV.traverse(parser, :key_field => key_field,  :fields => fields, :type => options[:type]) do |k,v|
-  if key== "#{i}"
-    key = k.first
+  if key == "#{i}"
+    key = Array === k ? k.first : k
   elsif key.nil?
     key = k.first
   end
   i += 1
-  next unless k.include?(key)
+  #next unless k.include?(key)
+  next unless k == key
   k = k.first if Array === k
   puts Log.color(:blue, "Key: #{ k }")
   if fields
