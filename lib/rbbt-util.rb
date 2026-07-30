@@ -22,5 +22,11 @@ require_relative 'rbbt/workflow'
 Persist.cache_dir     = Rbbt.var.cache.persistence
 FileCache.cachedir    = Rbbt.var.cache.filecache.find
 TmpFile.tmpdir        = Rbbt.tmp.find
-Resource.default_resource = Rbbt
+
+default_resource = Scout::Config.get(:default_resource, :scout, :rbbt, env: 'DEFAULT_RESOURCE', default: 'rbbt')
+case default_resource.to_s.downcase
+when 'rbbt'
+  Resource.default_resource = Rbbt
+else
+end
 
