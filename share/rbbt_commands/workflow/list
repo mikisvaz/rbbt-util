@@ -13,7 +13,7 @@ Path.setup(workflow_dir) unless Path === workflow_dir
 workflows = Workflow.installed_workflows
 
 if options[:describe]
-  workflows.sort.each do |workflow|
+  workflows.sort_by(&:downcase).each do |workflow|
     Workflow.require_workflow workflow
     workflow = Workflow.workflows.select{|w| Misc.camel_case(w.to_s) == Misc.camel_case(workflow)}.first
     puts "# "<<[Misc.camel_case(workflow.to_s), workflow.description] * ": "
@@ -24,7 +24,7 @@ if options[:describe]
 
   end
 else
-  workflows.sort.each do |workflow|
+  workflows.sort_by(&:downcase).each do |workflow|
     puts Misc.camel_case(workflow.to_s)
   end
 end
